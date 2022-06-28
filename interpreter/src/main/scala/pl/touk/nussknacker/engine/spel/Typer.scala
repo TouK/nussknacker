@@ -367,7 +367,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def extractSingleProperty(e: PropertyOrFieldReference)
                                    (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult] = {
     t match {
-      case tagged: TypedValueWithData =>
+      case tagged: TypedObjectWithData =>
         extractSingleProperty(e)(tagged.objType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))

@@ -67,7 +67,7 @@ object typing {
 
   }
 
-  sealed trait TypedValueWithData extends SingleTypingResult {
+  sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
     def data: AdditionalDataValue
 
@@ -76,11 +76,11 @@ object typing {
     override def display: String = s"${underlying.display} @ ${data.display}"
   }
 
-  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedValueWithData {
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
     override def data: AdditionalDataValue = tag
   }
 
-  case class TypedEnrichedValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedValueWithData
+  case class TypedObjectWithValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedObjectWithData
 
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
@@ -195,11 +195,11 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def enrichedValue(typ: SingleTypingResult, data: AdditionalDataValue): TypedEnrichedValue =
-      TypedEnrichedValue(typ, data)
+    def valueWithData(typ: SingleTypingResult, data: AdditionalDataValue): TypedObjectWithValue =
+      TypedObjectWithValue(typ, data)
 
-    def typedValue(variable: AdditionalDataValue): TypedEnrichedValue =
-      enrichedValue(variable.typed, variable)
+    def typedValue(variable: AdditionalDataValue): TypedObjectWithValue =
+      valueWithData(variable.typed, variable)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {
