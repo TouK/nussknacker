@@ -73,7 +73,7 @@ object typing {
 
     override def objType: TypedClass = underlying.objType
 
-    override def display: String = s"${underlying.display} @ ${data.display}"
+    override def display: String = s"${underlying.display}(${data.display})"
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
