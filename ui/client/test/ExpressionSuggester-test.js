@@ -1,4 +1,4 @@
-import ExpressionSuggester from '../components/graph/node-modal/editors/expression/ExpressionSuggester'
+import ExpressionSuggester from "../components/graph/node-modal/editors/expression/ExpressionSuggester"
 import {map} from "lodash"
 
 const typesInformation = [
@@ -77,6 +77,14 @@ describe("expression suggester", () => {
 
   it("should suggest all global variables if # specified", (done) => {
     suggestionsFor("#").then(suggestions => {
+      expect(suggestions).toMatchSnapshot()
+    }).then(done)
+  })
+
+  it("should suggest all global variables if # specified (multiline)", (done) => {
+    suggestionsFor(`asdasd\n
+    #\n
+    dsadasdas`, {row: 1, column: 1}).then(suggestions => {
       expect(suggestions).toMatchSnapshot()
     }).then(done)
   })

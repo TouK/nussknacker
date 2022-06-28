@@ -68,7 +68,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 
   const valueChange = useCallback(
     (value: string) => {
-      const encoded = sqlFormatter.encode(value.trim())
+      const encoded = sqlFormatter.encode(value)
       if (encoded !== value) {
         return onValueChange(encoded)
       }

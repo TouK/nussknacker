@@ -134,6 +134,105 @@ Array [
 ]
 `;
 
+exports[`expression suggester should suggest all global variables if # specified (multiline) 1`] = `
+Array [
+  Object {
+    "methodName": "#input",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+  Object {
+    "methodName": "#other",
+    "refClazz": Object {
+      "refClazzName": "org.C",
+    },
+  },
+  Object {
+    "methodName": "#ANOTHER",
+    "refClazz": Object {
+      "refClazzName": "org.A",
+    },
+  },
+  Object {
+    "methodName": "#dynamicMap",
+    "refClazz": Object {
+      "fields": Object {
+        "aField": Object {
+          "refClazzName": "org.A",
+        },
+        "intField": Object {
+          "refClazzName": "java.lang.Integer",
+        },
+      },
+      "refClazzName": "java.util.Map",
+    },
+  },
+  Object {
+    "methodName": "#listVar",
+    "refClazz": Object {
+      "refClazzName": "org.WithList",
+    },
+  },
+  Object {
+    "methodName": "#util",
+    "refClazz": Object {
+      "refClazzName": "org.Util",
+    },
+  },
+  Object {
+    "methodName": "#union",
+    "refClazz": Object {
+      "union": Array [
+        Object {
+          "refClazzName": "org.A",
+        },
+        Object {
+          "refClazzName": "org.B",
+        },
+        Object {
+          "refClazzName": "org.AA",
+        },
+      ],
+    },
+  },
+  Object {
+    "methodName": "#unionOfLists",
+    "refClazz": Object {
+      "union": Array [
+        Object {
+          "params": Array [
+            Object {
+              "refClazzName": "org.A",
+            },
+          ],
+          "refClazz": "java.util.List",
+        },
+        Object {
+          "params": Array [
+            Object {
+              "refClazzName": "org.B",
+            },
+          ],
+          "refClazz": "java.util.List",
+        },
+      ],
+    },
+  },
+  Object {
+    "methodName": "#dict",
+    "refClazz": Object {
+      "dict": Object {
+        "id": "fooDict",
+        "valueType": Object {
+          "refClazzName": "org.A",
+        },
+      },
+    },
+  },
+]
+`;
+
 exports[`expression suggester should suggest all global variables if # specified 1`] = `
 Array [
   Object {
