@@ -50,7 +50,7 @@ object TypeEncoders {
       val objTypeEncoded = encodeTypingResult(underlying)
       val tagEncoded = "tag" -> fromString(tag)
       objTypeEncoded.+:(tagEncoded)
-    case TypedEnrichedValue(underlying, data) =>
+    case TypedObjectWithValue(underlying, data) =>
       val objTypeEncoded = encodeTypingResult(underlying)
       val dataEncoded = "data" -> fromString(data.display)
       objTypeEncoded.+:(dataEncoded)
@@ -154,7 +154,7 @@ object TypingType extends Enumeration {
     case _: TypedDict => TypedDict
     case _: TypedObjectTypingResult => TypedObjectTypingResult
     case _: TypedTaggedValue => TypedTaggedValue
-    case _: TypedEnrichedValue => TypedEnrichedValue
+    case _: TypedObjectWithValue => TypedEnrichedValue
     case typing.Unknown => Unknown
   }
 }

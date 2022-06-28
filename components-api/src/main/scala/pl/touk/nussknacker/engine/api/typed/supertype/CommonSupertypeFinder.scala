@@ -61,20 +61,20 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
             }
             .getOrElse(Typed.empty)
         }
-      case (l@TypedEnrichedValue(leftType, leftData), r@TypedEnrichedValue(rightType, rightData)) if leftData == rightData =>
+      case (l@TypedObjectWithValue(leftType, leftData), r@TypedObjectWithValue(rightType, rightData)) if leftData == rightData =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           Option(singleCommonSupertype(leftType, rightType))
             .collect {
-              case single: SingleTypingResult => TypedEnrichedValue(single, leftData)
+              case single: SingleTypingResult => TypedObjectWithValue(single, leftData)
             }
             .getOrElse(Typed.empty)
         }
-      case (l: TypedValueWithData, r) if !strictTaggedTypesChecking =>
+      case (l: TypedObjectWithData, r) if !strictTaggedTypesChecking =>
         singleCommonSupertype(l.underlying, r)
       case (_: TypedTaggedValue, _) => Typed.empty
-      case (l, r: TypedValueWithData) if !strictTaggedTypesChecking =>
+      case (l, r: TypedObjectWithData) if !strictTaggedTypesChecking =>
         singleCommonSupertype(l, r.underlying)
-      case (_, _: TypedValueWithData) => Typed.empty
+      case (_, _: TypedObjectWithData) => Typed.empty
 
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
