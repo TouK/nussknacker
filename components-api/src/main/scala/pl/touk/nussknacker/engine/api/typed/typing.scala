@@ -72,15 +72,16 @@ object typing {
     def data: AdditionalDataValue
 
     override def objType: TypedClass = underlying.objType
-
-    override def display: String = s"${underlying.display}(${data.display})"
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
     override def data: AdditionalDataValue = tag
+    override def display: String = s"${underlying.display} @ ${data.display}"
   }
 
-  case class TypedObjectWithValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedObjectWithData
+  case class TypedObjectWithValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedObjectWithData {
+    override def display: String = s"${underlying.display} # ${data.display}"
+  }
 
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
