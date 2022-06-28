@@ -21,11 +21,15 @@ interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
 function CustomActionForm(props: CustomActionFormProps): JSX.Element {
   const {onChange, action} = props
 
-  const empty = (action?.parameters || []).reduce((obj, param) => ({...obj, [param.name]: ""}), {})
+  const [state, setState] = useState(() => (action?.parameters || []).reduce((obj, param) => ({
+    ...obj,
+    [param.name]: "",
+  }), {}))
 
-  const [state, setState] = useState(empty)
-
-  const setParam = (name: string) => (value: any) => setState(current => ({...current, [name]: value}))
+  const setParam = useCallback(
+    (name: string) => (value: any) => setState(current => ({...current, [name]: value})),
+    []
+  )
 
   useEffect(
     () => onChange(state),
