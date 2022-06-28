@@ -47,7 +47,7 @@ import java.lang.Thread.UncaughtExceptionHandler
 import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
-import scala.util.control.NonFatal // import extension methods
+import scala.util.control.NonFatal
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
@@ -265,8 +265,9 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
 
     val metricsRegistry = new MetricRegistry
+    //JmxReporter does not allocate resources, safe to close
     JmxReporter.forRegistry(metricsRegistry).build().start()
-    
+
 
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
@@ -279,25 +280,24 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   }
 
   def bindHttp(interface: String, port: Int, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    val settings: HttpMetricsSettings = DropwizardSettings.default
-    val registry: HttpMetricsRegistry = new DropwizardRegistry(settings)(metricsRegistry)
-
     Http().newMeteredServerAt(
       interface = interface,
       port = port,
-      registry
+      prepareHttpMetricRegistry(metricsRegistry)
     ).bind(route)
   }
 
   def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    val settings: HttpMetricsSettings = DropwizardSettings.default
-    val registry: HttpMetricsRegistry = new DropwizardRegistry(settings)(metricsRegistry)
-
     Http().newMeteredServerAt(
       interface = interface,
       port = port,
-      registry
+      prepareHttpMetricRegistry(metricsRegistry)
     ).enableHttps(httpsContext).bind(route)
+  }
+
+  private def prepareHttpMetricRegistry(metricsRegistry: MetricRegistry): HttpMetricsRegistry = {
+    val settings: HttpMetricsSettings = DropwizardSettings.default
+    new DropwizardRegistry(settings)(metricsRegistry)
   }
 
   def initDb(config: Config): DbConfig = {

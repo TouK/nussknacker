@@ -1,7 +1,7 @@
 ---
 lowercaseOutputLabelNames: true
 lowercaseOutputName: true
-whitelistObjectNames: ["java.lang:type=OperatingSystem"]
+whitelistObjectNames: ["java.lang:type=OperatingSystem","metrics:*"]
 blacklistObjectNames: []
 rules:
   - pattern: 'java.lang<type=OperatingSystem><>(committed_virtual_memory|free_physical_memory|free_swap_space|total_physical_memory|total_swap_space)_size:'
@@ -12,3 +12,4 @@ rules:
     name: os_$1
     type: GAUGE
     attrNameSnakeCase: true
+  - pattern: ".*"
