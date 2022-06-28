@@ -10,7 +10,7 @@ describe("Node window", () => {
   })
 
   beforeEach(() => {
-    cy.visitNewProcess(NAME, null, "Default").as("processName")
+    cy.visitNewProcess(NAME).as("processName")
   })
 
   it("should display periodic source", () => {
@@ -23,22 +23,6 @@ describe("Node window", () => {
       .drag("#nk-graph-main", {x: 800, y: 300, position: "right", force: true})
 
     cy.getNode("periodic").dblclick()
-
-    cy.get("[data-testid=window]").should("be.visible")
-    cy.contains(/^hours$/).should("be.visible")
-    cy.get("[data-testid=window]").toMatchImageSnapshot({screenshotConfig: {padding: 16}})
-  })
-
-  it("should display db-lookup", () => {
-    cy.viewport(1500, 800)
-
-    cy.contains(/^enrichers$/)
-      .should("be.visible").click()
-    cy.get("[data-testid='component:db-lookup']")
-      .should("be.visible")
-      .drag("#nk-graph-main", {x: 800, y: 300, position: "right", force: true})
-
-    cy.getNode("db-lookup").dblclick()
 
     cy.get("[data-testid=window]").should("be.visible")
     cy.contains(/^hours$/).should("be.visible")
