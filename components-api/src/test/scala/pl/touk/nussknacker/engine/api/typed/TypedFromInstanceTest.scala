@@ -14,8 +14,24 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     Typed.fromInstance(null: Any) shouldBe Unknown
   }
 
+  test("should type string") {
+    Typed.fromInstance("t") shouldBe Typed.typedValue("t")
+  }
+
+  test("should type long") {
+    // FIXME: must work with all numbers
+    Typed.fromInstance(1547.asInstanceOf[Long]) shouldBe Typed.typedValue(1547)
+  }
+
+  test("should type bool") {
+    Typed.fromInstance(true) shouldBe Typed.typedValue(true)
+  }
+
   test("should type map types") {
-    val fieldTypes = ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String]))
+    val fieldTypes = ListMap(
+      "a" -> Typed(classOf[java.lang.Integer]),
+      "b" -> TypedObjectWithValue(Typed(classOf[java.lang.String]).asInstanceOf[SingleTypingResult], "string")
+    )
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
       (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
@@ -60,6 +76,6 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
   }
 
   test("should fallback to object's class") {
-    Typed.fromInstance("abc") shouldBe Typed(classOf[java.lang.String])
+    Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed(classOf[java.lang.String]).asInstanceOf[SingleTypingResult], "abc")
   }
 }
