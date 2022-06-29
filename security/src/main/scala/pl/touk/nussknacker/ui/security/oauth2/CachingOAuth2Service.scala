@@ -20,9 +20,7 @@ class CachingOAuth2Service[
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)] = {
     delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
       authorizationsCache.put(authorization.accessToken) {
-        val deadline = Deadline.now + authorization.expirationPeriod.getOrElse(defaultExpiration)
-        logger.info(s"obtainAuthorizationAndUserInfo: ${authorization.expirationPeriod} $deadline")
-        Future((userInfo, deadline))
+        Future((userInfo, Deadline.now + authorization.expirationPeriod.getOrElse(defaultExpiration)))
       }
       (authorization, userInfo)
     }
@@ -31,10 +29,7 @@ class CachingOAuth2Service[
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] = {
     authorizationsCache.getOrCreate(accessToken) {
       delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
-        case (userInfo, expiration) =>
-          val deadline = expiration.getOrElse(Deadline.now + defaultExpiration)
-          logger.info(s"checkAuthorizationAndObtainUserinfo: $deadline $defaultExpiration")
-          (userInfo, deadline)
+        case (userInfo, expiration) => (userInfo, expiration.getOrElse(Deadline.now + defaultExpiration))
       }
     }.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }

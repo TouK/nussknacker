@@ -19,6 +19,7 @@
 * [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
 * [#3149][https://github.com/TouK/nussknacker/pull/3149] Changed end bracket for SpEL in SQL to `}#`
 * [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
+* [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
 
 1.4.0 (14 Jun 2022)
 ------------------------
