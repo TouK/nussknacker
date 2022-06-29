@@ -62,7 +62,7 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
           httpOnly = true,
           path = config.path,
           domain = config.domain,
-          maxAge = auth.expirationPeriod.map(_.toMillis),
+          maxAge = auth.expirationPeriod.map(_.toSeconds),
         ))
       }
       ToResponseMarshallable(HttpResponse(entity = HttpEntity(ContentTypes.`application/json`, response.asJson.noSpaces), headers = cookieHeader.toList))

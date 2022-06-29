@@ -5,7 +5,7 @@ import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{DAYS, Deadline, Duration, FiniteDuration, HOURS, MINUTES}
+import scala.concurrent.duration.{DAYS, Deadline, FiniteDuration, HOURS, MINUTES}
 
 class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutures{
 
@@ -89,12 +89,12 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
   }
 
   it should "allow setting expiration time depending on a value" in {
-    case class Value(sub: String, exp: Deadline)
+    case class Value(sub: String, expireAt: Deadline)
     val cache = new DefaultCache[String, Value](
       cacheConfig = CacheConfig(
         expiry = new ExpiryConfig[String, Value] {
           override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.exp)
+            Some(value.expireAt)
         }),
       ticker)
 
@@ -111,12 +111,12 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
 
   it should "allow setting expiration time depending on a value for an async cache" in {
     import scala.concurrent.ExecutionContext.Implicits.global
-    case class Value(sub: String, exp: Deadline)
+    case class Value(sub: String, expireAt: Deadline)
     val cache = new DefaultAsyncCache[String, Value](
       cacheConfig = CacheConfig(
         expiry = new ExpiryConfig[String, Value] {
           override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.exp)
+            Some(value.expireAt)
         }),
       ticker)(global)
 
@@ -135,5 +135,10 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
     whenReady(cache.getOrCreate("key2")(Future.successful(Value("newValue2", currentTime + FiniteDuration(1, HOURS))))) {
       _ should have ('sub ("newValue2"))
     }
+
+    // check that entries were evicted
+    currentTime += FiniteDuration(1, HOURS)
+    cache.get("key1") shouldEqual None
+    cache.get("key2") shouldEqual None
   }
 }
