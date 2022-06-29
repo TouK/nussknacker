@@ -13,16 +13,24 @@ import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
+case class MountableResources(
+                              commonConfigConfigMap: String,
+                              loggingConfigConfigMap: String,
+                              modelConfigSecret: String,
+                             )
+
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
-  private val ConfigMapMountPath = "/data"
+  private val CommonConfigMountPath = "/config"
+  private val LoggingConfigMountPath = "/logging-config"
+  private val ModelConfigMountPath = "/model-config"
 
-  def prepare(processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int): Deployment = {
+  def prepare(processVersion: ProcessVersion, resourcesToMount: MountableResources, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
-    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, configMapId, determinedReplicasCount, config.nussknackerInstanceName)
+    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, resourcesToMount, determinedReplicasCount, config.nussknackerInstanceName)
   }
 
-  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, configMapId: String, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
+  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, resourcesToMount: MountableResources, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion, nussknackerInstanceName)
@@ -41,7 +49,9 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.name)).set(objectName) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(
-          Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+          Volume("common-conf", Volume.ConfigMapVolumeSource(resourcesToMount.commonConfigConfigMap)),
+          Volume("logging-conf", Volume.ConfigMapVolumeSource(resourcesToMount.loggingConfigConfigMap)),
+          Volume("model-conf", Volume.Secret(resourcesToMount.modelConfigSecret)),
         )) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
@@ -65,16 +75,18 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       name = "runtime",
       image = image,
       env = List(
-        EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-        EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-        EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
-        EnvVar("LOGBACK_FILE", "/data/logback.xml"),
+        EnvVar("SCENARIO_FILE", s"$CommonConfigMountPath/scenario.json"),
+        EnvVar("CONFIG_FILE", s"/opt/nussknacker/conf/application.conf,$ModelConfigMountPath/modelConfig.conf"),
+        EnvVar("DEPLOYMENT_CONFIG_FILE", s"$CommonConfigMountPath/deploymentConfig.conf"),
+        EnvVar("LOGBACK_FILE", s"$LoggingConfigMountPath/logback.xml"),
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
         // Hash will be extracted on entrypoint side.
         EnvVar("POD_NAME", FieldRef("metadata.name"))
       ),
       volumeMounts = List(
-        Volume.Mount(name = "configmap", mountPath = ConfigMapMountPath),
+        Volume.Mount(name = "common-conf", mountPath = CommonConfigMountPath),
+        Volume.Mount(name = "logging-conf", mountPath = LoggingConfigMountPath),
+        Volume.Mount(name = "model-conf", mountPath = ModelConfigMountPath),
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value
