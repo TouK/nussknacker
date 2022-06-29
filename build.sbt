@@ -508,8 +508,13 @@ lazy val requestResponseApp = (project in lite("request-response/app")).
     }
   ).
   settings(requestResponseDockerSettings).
-  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
-    componentsUtils % "test", componentsApi % "test")
+  dependsOn(
+    requestResponseRuntime, interpreter,
+    //Those below components are built in and we don't want to add them each time..
+    liteBaseComponents, liteRequestResponseComponents, openapiComponents, sqlComponents,
+    testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
+    componentsUtils % "test", componentsApi % "test"
+  )
 
 
 lazy val flinkDeploymentManager = (project in flink("management")).
