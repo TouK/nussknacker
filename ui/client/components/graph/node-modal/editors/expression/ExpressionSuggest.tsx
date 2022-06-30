@@ -1,6 +1,6 @@
 import ace from "ace-builds/src-noconflict/ace"
 import {isEmpty, map, overSome} from "lodash"
-import React, {ReactElement, useCallback, useMemo, useState} from "react"
+import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
 import {getProcessToDisplay} from "../../../../../reducers/selectors/graph"
