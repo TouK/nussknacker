@@ -20,6 +20,7 @@
 * [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
 * [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
 * [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) Moved switch/filter edges conditions configuration to source node window adding few enhancements (ordered switch edges; only false edge for filter). "Default" switch edge type, exprVal and expression are now deprecated and disabled in new instances. Fix: duplicated union edges.
 
 1.4.0 (14 Jun 2022)
 ------------------------
