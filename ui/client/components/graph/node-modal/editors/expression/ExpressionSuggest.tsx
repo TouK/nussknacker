@@ -97,10 +97,7 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingR
   // We adds hash to identifier pattern to start suggestions just after hash is typed
   private identifierRegexps = identifierRegexpsIncludingDot
 
-  private expressionSuggester: ExpressionSuggester
-
-  constructor(expressionSuggester: ExpressionSuggester) {
-    this.replaceSuggester(expressionSuggester)
+  constructor(private expressionSuggester: ExpressionSuggester) {
   }
 
   replaceSuggester(expressionSuggester: ExpressionSuggester) {
@@ -181,7 +178,10 @@ function ExpressionSuggest(props: Props): JSX.Element {
   const {value, onValueChange} = inputProps
   const [editorFocused, setEditorFocused] = useState(false)
 
-  const expressionSuggester = useMemo(() => new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService), [processingType, typesInformation, variableTypes])
+  const expressionSuggester = useMemo(() => {
+    return new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService)
+  }, [processingType, typesInformation, variableTypes])
+
   const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester))
   useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester])
 
