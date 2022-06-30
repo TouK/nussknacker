@@ -83,6 +83,8 @@ class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = T
     import scala.compat.java8.FutureConverters._
     underlying.put(key, value.toJava.toCompletableFuture)
   }
+
+  override def get(key: K): Option[V] = Option(underlying.getIfPresent(key)).map(_.get())
 }
 
 class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfterWrite: Option[FiniteDuration]) {
@@ -92,5 +94,6 @@ class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfter
   def getOrCreate(value: => T): T = cache.getOrCreate(Unit)(value)
 
   def get(): Option[T] = cache.get(Unit)
+
   def put(value: T): Unit = cache.put(Unit)(value)
 }

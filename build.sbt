@@ -462,7 +462,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteRequestResponseComponents / Compile / assembly,
       defaultModel / Compile / assembly,
-    ).value,
+    ).value
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
     componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
@@ -508,8 +508,13 @@ lazy val requestResponseApp = (project in lite("request-response/app")).
     }
   ).
   settings(requestResponseDockerSettings).
-  dependsOn(requestResponseRuntime, interpreter, testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
-    componentsUtils % "test", componentsApi % "test")
+  dependsOn(
+    requestResponseRuntime, interpreter,
+    //Those below components are built in and we don't want to add them each time..
+    liteBaseComponents, liteRequestResponseComponents, openapiComponents, sqlComponents,
+    testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
+    componentsUtils % "test", componentsApi % "test"
+  )
 
 
 lazy val flinkDeploymentManager = (project in flink("management")).
@@ -1280,7 +1285,7 @@ lazy val sqlComponents = (project in component("sql")).
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "org.hsqldb" % "hsqldb" % hsqldbV % "it,test",
     ),
-  ).dependsOn(componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
+  ).dependsOn(componentsUtils % Provided, componentsApi % Provided, commonUtils % Provided, requestResponseRuntime % "test,it", requestResponseComponentsUtils % "test,it", flinkTestUtils % "it,test", kafkaTestUtils % "it,test")
 
 lazy val flinkBaseComponents = (project in flink("components/base")).
   configs(IntegrationTest).

@@ -1,5 +1,5 @@
 import {isEmpty} from "lodash"
-import React from "react"
+import React, {useMemo} from "react"
 import {VariableTypes} from "../../../../types"
 import {UnknownFunction} from "../../../../types/common"
 import {editors, EditorType, simpleEditorValidators} from "./expression/Editor"
@@ -32,13 +32,22 @@ export function EditableEditor(props: Props): JSX.Element {
     errors, fieldName, validationLabelInfo, validators = [],
   } = props
 
-  const editorType = isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type
+  const editorType = useMemo(
+    () => isEmpty(param) ? EditorType.RAW_PARAMETER_EDITOR : param.editor.type,
+    [param]
+  )
 
-  const Editor = editors[editorType]
+  const Editor = useMemo(
+    () => editors[editorType],
+    [editorType]
+  )
 
   const mergedValidators = validators.concat(simpleEditorValidators(param, errors, fieldName, fieldLabel))
 
-  const formatter = expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null
+  const formatter = useMemo(
+    () => expressionObj.language === ExpressionLang.SpEL ? spelFormatters[param?.typ?.refClazzName] : null,
+    [expressionObj.language, param?.typ?.refClazzName]
+  )
 
   return (
     <Editor

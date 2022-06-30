@@ -18,7 +18,7 @@ type Props = {
   isMarked: boolean,
 }
 
-export default function TimeRangeSection(props: Props) {
+export default function TimeRangeSection(props: Props): JSX.Element {
 
   const {
     components, onComponentValueChange, readOnly, showValidation, validators, value, expression, isMarked,

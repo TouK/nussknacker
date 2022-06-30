@@ -10,6 +10,7 @@ import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import java.net.URI
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with PatientScalaFutures with Suite  {
@@ -29,12 +30,13 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   }
 
   it should ("properly parse data from authentication") in {
-    val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
+    val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", expirationPeriod = Some(FiniteDuration(86400, SECONDS)))
     val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(Set("User")))
+    val authorizeJson = tokenResponse.asJson.toString
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
-      .thenRespond(tokenResponse.asJson.toString)
+      .thenRespond(authorizeJson)
       .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
       .thenRespond(userInfo.asJson.toString)
     val service = ExampleOAuth2ServiceFactory.service(config)
@@ -44,6 +46,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe tokenResponse.accessToken
     data.tokenType shouldBe tokenResponse.tokenType
+    data.expirationPeriod shouldBe tokenResponse.expirationPeriod
   }
 
   it should ("handling BadRequest response from authenticate request") in {
