@@ -13,6 +13,7 @@ import {uniq} from "lodash"
 import {ExpressionLang} from "./editors/expression/types"
 import {mandatoryValueValidator} from "./editors/Validators"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
+import {useTranslation} from "react-i18next"
 
 interface Props {
   index: number,
@@ -25,9 +26,11 @@ interface Props {
 }
 
 export function EdgeFields(props: Props): JSX.Element {
+  const {t} = useTranslation()
   const {readOnly, value, index, onChange, edges, types, variableTypes} = props
   const process = useSelector(getProcessToDisplay)
   const processDefinitionData = useSelector(getProcessDefinitionData)
+
 
   const [edge, setEdge] = useState(value)
 
@@ -73,7 +76,7 @@ export function EdgeFields(props: Props): JSX.Element {
         <EditableEditor
           valueClassName={cx("node-value", css({gridArea: "expr"}))}
           variableTypes={variableTypes}
-          fieldLabel={"Expression"}
+          fieldLabel={t("node.fields.edge.expression", "Expression")}
           expressionObj={{
             expression: edge.edgeType.condition?.expression !== undefined ? edge.edgeType.condition?.expression : "true",
             language: edge.edgeType.condition?.language || ExpressionLang.SpEL,
@@ -122,7 +125,10 @@ export function EdgeFields(props: Props): JSX.Element {
         null}
       <NodeValue className={css({gridArea: !showType && "field"})}>
         <SelectWithFocus
-          placeholder={"Target"}
+          title={freeInputs.length ?
+            t("node.fields.edge.target", "Edge target node") :
+            t("node.fields.edge.target.empty", "No free target nodes")
+          }
           className="node-input"
           value={edge.to}
           onChange={(event) => setEdge(edge => ({...edge, to: event.target.value}))}
