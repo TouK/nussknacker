@@ -566,11 +566,16 @@ class SpelExpressionSpec extends FunSuite with Matchers {
       case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: Integer, found: String" )
-    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: String, found: Integer" )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: String, found: List[Integer]" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: Map[Unknown,Unknown], found: String" )
-    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: Integer, found: String" )
+    shouldHaveBadType( parse[Int]("'abcd'", ctx),
+      s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("abcd").display}" )
+    shouldHaveBadType( parse[String]("111", ctx),
+      s"Bad expression type, expected: String, found: ${Typed.fromInstance(111).display}" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx),
+      s"Bad expression type, expected: String, found: ${Typed.fromInstance(List(1, 2, 3)).display}" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx),
+      s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("'alaMa'").display}" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx),
+      s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("").display}" )
   }
 
   test("resolve imported package") {
