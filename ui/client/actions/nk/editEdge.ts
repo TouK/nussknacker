@@ -1,19 +1,12 @@
 import * as GraphUtils from "../../components/graph/GraphUtils"
 import HttpService from "../../http/HttpService"
-import {Edge, NodeId, Process, ValidationResult} from "../../types"
+import {Edge, Process, ValidationResult} from "../../types"
 import {ThunkAction} from "../reduxTypes"
 
 export type EditEdgeAction = {
   type: "EDIT_EDGE",
   before: Edge,
   after: Edge,
-  validationResult: ValidationResult,
-}
-
-export type ReplaceEdgesAction = {
-  type: "REPLACE_EDGES",
-  node: NodeId,
-  edges: Edge[],
   validationResult: ValidationResult,
 }
 

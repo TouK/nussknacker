@@ -3,7 +3,6 @@ import {concat, isEqual, pick, sortBy, uniq, xor, zipObject} from "lodash"
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
 import * as GraphUtils from "../../components/graph/GraphUtils"
-import {replaceNodeOutputEdges} from "../../components/graph/GraphUtils"
 import * as LayoutUtils from "../layoutUtils"
 import {nodes} from "../layoutUtils"
 import {mergeReducers} from "../mergeReducers"
@@ -107,20 +106,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         state.processToDisplay,
         action.before,
         action.after,
-      )
-      return {
-        ...state,
-        processToDisplay: {
-          ...processToDisplay,
-          validationResult: action.validationResult,
-        },
-      }
-    }
-    case "REPLACE_EDGES": {
-      const processToDisplay = replaceNodeOutputEdges(
-        state.processToDisplay,
-        action.node,
-        action.edges,
       )
       return {
         ...state,

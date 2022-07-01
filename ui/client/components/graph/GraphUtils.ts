@@ -1,8 +1,9 @@
 import NodeUtils from "./NodeUtils"
 import {cloneDeep, isEqual, map, reject} from "lodash"
-import {Edge, NodeId, Process} from "../../types"
+import {Edge, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {enrichNodeWithProcessDependentData, removeBranchParameter} from "../../reducers/graph/utils"
 
-export function mapProcessWithNewNode(process, before, after) {
+export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
   return {
     ...process,
     edges: map(process.edges, (e) => {
@@ -48,10 +49,25 @@ export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edg
   }
 }
 
-export function replaceNodeOutputEdges(process: Process, nodeId: NodeId, edges: Edge[]): Process {
+export function replaceNodeOutputEdges(process: Process, processDefinitionData: ProcessDefinitionData, edgesAfter: Edge[], nodeId: NodeType["id"]): Process {
+  const edgesBefore = process.edges.filter(({from}) => from === nodeId)
+
+  if (isEqual(edgesBefore, edgesAfter)) return process
+
+  const oldTargets = new Set(edgesBefore.map(e => e.to))
+  const newTargets = new Set(edgesAfter.map(e => e.to))
   return {
     ...process,
-    edges: process.edges.filter((storedEdge) => storedEdge.from !== nodeId).concat(edges),
+    edges: process.edges.filter(({from}) => !(from === nodeId)).concat(edgesAfter),
+    nodes: process.nodes.map(node => {
+      if (newTargets.has(node.id)) {
+        return enrichNodeWithProcessDependentData(node, processDefinitionData, edgesAfter)
+      }
+      if (oldTargets.has(node.id)) {
+        return removeBranchParameter(node, nodeId)
+      }
+      return node
+    }),
   }
 }
 

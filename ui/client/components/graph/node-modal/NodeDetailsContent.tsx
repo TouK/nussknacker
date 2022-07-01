@@ -82,7 +82,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     this.state = {
       ...stateForSelectTestResults,
       editedNode: node,
-      originalNode: node,
+      originalNode: nodeToAdjust,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
