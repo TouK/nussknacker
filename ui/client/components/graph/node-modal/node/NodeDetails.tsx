@@ -56,6 +56,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, NodeType> & {r
       {
         title: t("dialog.button.apply", "apply"),
         action: () => performNodeEdit(),
+        disabled: !editedNode.id?.length,
         classname: css({
           //increase (x4) specificity over ladda
           "&&&&": {
