@@ -161,12 +161,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(result) => typeIndexer(e, result.typingResult)
       }
 
-      case e: BooleanLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Boolean]))
+      case e: BooleanLiteral => valid(Typed[Boolean])
       case e: IntLiteral => valid(Typed[java.lang.Integer])
-      case e: LongLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Long]))
+      case e: LongLiteral => valid(Typed[java.lang.Long])
       case e: RealLiteral => valid(Typed(Typed[java.lang.Float]))
       case e: FloatLiteral => valid(Typed[java.lang.Float])
-      case e: StringLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[String]))
+      case e: StringLiteral => valid(Typed[String])
       case e: NullLiteral => valid(Typed.fromInstance(null))
 
 
@@ -367,8 +367,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def extractSingleProperty(e: PropertyOrFieldReference)
                                    (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult] = {
     t match {
-      case tagged: TypedObjectWithData =>
-        extractSingleProperty(e)(tagged.objType)
+      case typedObjectWithData: TypedObjectWithData =>
+        extractSingleProperty(e)(typedObjectWithData.objType)
       case typedClass: TypedClass =>
         propertyTypeBasedOnMethod(e)(typedClass).orElse(MapLikePropertyTyper.mapLikeValueType(typedClass))
           .map(Valid(_))
