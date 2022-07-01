@@ -200,14 +200,14 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   test("determinate if can be superclass for objects with value") {
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(Typed.typedValue(65), Typed.typedValue(65)) shouldBe Typed.typedValue(65)
-    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Long]
+    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Int]
     unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
   }
 
   test("should calculate supertype for objects with value when strict type checking is on") {
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     unionFinder.commonSupertype(Typed.typedValue(65), Typed.typedValue(65)) shouldBe Typed.typedValue(65)
-    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Long]
+    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Int]
     unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
   }
 

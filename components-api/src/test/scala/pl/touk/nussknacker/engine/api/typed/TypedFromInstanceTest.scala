@@ -15,12 +15,23 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
   }
 
   test("should type string") {
-    Typed.fromInstance("t") shouldBe Typed.typedValue("t")
+    Typed.fromInstance("t") shouldBe TypedObjectWithValue(Typed.typedClass[String], "t")
+  }
+
+  test("should type int") {
+    Typed.fromInstance(1547) shouldBe TypedObjectWithValue(Typed.typedClass[Int], 1547)
   }
 
   test("should type long") {
-    // FIXME: must work with all numbers
-    Typed.fromInstance(1547.asInstanceOf[Long]) shouldBe Typed.typedValue(1547)
+    Typed.fromInstance(42L) shouldBe TypedObjectWithValue(Typed.typedClass[Long], 42L)
+  }
+
+  test("should type float") {
+    Typed.fromInstance(1.4f) shouldBe TypedObjectWithValue(Typed.typedClass[Float], 1.4f)
+  }
+
+  test("should type double") {
+    Typed.fromInstance(15.78d) shouldBe TypedObjectWithValue(Typed.typedClass[Double], 15.78d)
   }
 
   test("should type bool") {
@@ -29,8 +40,8 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
 
   test("should type map types") {
     val fieldTypes = ListMap(
-      "a" -> Typed(classOf[java.lang.Integer]),
-      "b" -> TypedObjectWithValue(Typed(classOf[java.lang.String]).asInstanceOf[SingleTypingResult], "string")
+      "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1),
+      "b" -> TypedObjectWithValue(Typed.typedClass[String], "string")
     )
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
@@ -76,6 +87,6 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
   }
 
   test("should fallback to object's class") {
-    Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed(classOf[java.lang.String]).asInstanceOf[SingleTypingResult], "abc")
+    Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed.typedClass[String], "abc")
   }
 }
