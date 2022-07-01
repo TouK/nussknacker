@@ -66,19 +66,24 @@ trait CanBeSubclassDeterminer {
           ().validNel
       }
     }
-    val taggedValueRestriction = (_: Unit) => {
+    val dataValueRestriction = (_: Unit) => {
       (givenType, superclassCandidate) match {
         case (givenTaggedValue: TypedTaggedValue, superclassTaggedValue: TypedTaggedValue) =>
           condNel(givenTaggedValue.tag == superclassTaggedValue.tag, (),
             s"Tagged values have unequal tags: ${givenTaggedValue.tag} and ${superclassTaggedValue.tag}")
-        case (_: TypedTaggedValue, _) => ().validNel
+        case (givenEnrichedValue: TypedObjectWithValue, superclassEnrichedValue: TypedObjectWithValue) =>
+          condNel(givenEnrichedValue.data == superclassEnrichedValue.data, (),
+            s"Values with data have different data: ${givenEnrichedValue.data.display} and ${superclassEnrichedValue.data.display}")
+        case (_: TypedObjectWithData, _) => ().validNel
         case (_, _: TypedTaggedValue) =>
-          s"The type is not a tagged value".invalidNel
+          "The type is not a tagged value".invalidNel
+        case (_, _: TypedObjectWithValue) =>
+          "The type does not have any data".invalidNel
         case _ => ().validNel
       }
     }
     classCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
-      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction)
+      (typedObjectRestrictions combine dictRestriction combine dataValueRestriction)
   }
 
   protected def classCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {

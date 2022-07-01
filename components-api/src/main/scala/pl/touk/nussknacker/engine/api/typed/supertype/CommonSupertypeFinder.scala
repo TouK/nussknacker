@@ -52,6 +52,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
         }
       case (_: TypedDict, _) => Typed.empty
       case (_, _: TypedDict) => Typed.empty
+
       case (l@TypedTaggedValue(leftType, leftTag), r@TypedTaggedValue(rightType, rightTag)) if leftTag == rightTag =>
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           Option(singleCommonSupertype(leftType, rightType))
@@ -60,12 +61,19 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
             }
             .getOrElse(Typed.empty)
         }
-      case (TypedTaggedValue(leftType, _), notTaggedRightType) if !strictTaggedTypesChecking =>
-        singleCommonSupertype(leftType, notTaggedRightType)
-      case (_: TypedTaggedValue, _) => Typed.empty
-      case (notTaggedLeftType, TypedTaggedValue(rightType, _)) if !strictTaggedTypesChecking =>
-        singleCommonSupertype(notTaggedLeftType, rightType)
-      case (_, _: TypedTaggedValue) => Typed.empty
+      case (l@TypedObjectWithValue(leftType, leftData), r@TypedObjectWithValue(rightType, rightData)) if leftData == rightData =>
+        checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
+          Option(singleCommonSupertype(leftType, rightType))
+            .collect {
+              case single: SingleTypingResult => TypedObjectWithValue(single, leftData)
+            }
+            .getOrElse(Typed.empty)
+        }
+      case (_: TypedTaggedValue, _) if strictTaggedTypesChecking => Typed.empty
+      case (l: TypedObjectWithData, r) => singleCommonSupertype(l.underlying, r)
+      case (_, _: TypedTaggedValue) if strictTaggedTypesChecking => Typed.empty
+      case (l, r: TypedObjectWithData) => singleCommonSupertype(l, r.underlying)
+
       case (f: TypedClass, s: TypedClass) => klassCommonSupertype(f, s)
     }
 

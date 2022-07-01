@@ -215,8 +215,10 @@ object typing {
         case javaList: java.util.List[_] =>
           typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case other =>
-          Typed(other.getClass)
+        case string: String => Typed.typedValue(string)
+        case long: Long => Typed.typedValue(long)
+        case bool: Boolean => Typed.typedValue(bool)
+        case other => Typed(other.getClass)
       }
     }
 

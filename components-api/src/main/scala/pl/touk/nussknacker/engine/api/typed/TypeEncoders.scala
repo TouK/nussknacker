@@ -82,7 +82,6 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
-      case TypingType.TypedObjectWithValue => typedObjectWithValue(hcursor)
       case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
       case TypingType.TypedClass => typedClass(hcursor)
     }

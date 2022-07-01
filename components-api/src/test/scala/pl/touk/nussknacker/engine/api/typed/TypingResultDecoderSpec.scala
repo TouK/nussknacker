@@ -14,6 +14,8 @@ class TypingResultDecoderSpec extends FunSuite with Matchers {
       Typed.fromDetailedType[List[String]],
       Typed.fromDetailedType[Map[String, AnyRef]],
       Typed.tagged(Typed.typedClass[String], "alamakota"),
+      Typed.typedValue("t"),
+      Typed.typedValue(789),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
       TypedUnion(Set(Typed.typedClass[String], Typed.typedClass[java.lang.Long])),
       //this wont' work, handling primitives should be done with more sophisticated classloading

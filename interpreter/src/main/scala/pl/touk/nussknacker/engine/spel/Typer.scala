@@ -161,12 +161,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(result) => typeIndexer(e, result.typingResult)
       }
 
-      case e: BooleanLiteral => valid(Typed[Boolean])
+      case e: BooleanLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Boolean]))
       case e: IntLiteral => valid(Typed[java.lang.Integer])
-      case e: LongLiteral => valid(Typed[java.lang.Long])
+      case e: LongLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Long]))
       case e: RealLiteral => valid(Typed(Typed[java.lang.Float]))
       case e: FloatLiteral => valid(Typed[java.lang.Float])
-      case e: StringLiteral => valid(Typed[String])
+      case e: StringLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[String]))
       case e: NullLiteral => valid(Typed.fromInstance(null))
 
 
