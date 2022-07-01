@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -30,6 +30,7 @@ import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers {
@@ -233,7 +234,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("subtraction of non numeric types") {
-    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: String and Integer")))
+    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(
+      ExpressionParseError(s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}")))
   }
 
   test("use not existing method reference") {
@@ -294,7 +296,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
 
     val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(String, Integer). Required: add(Integer, Integer)")))
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError(
+      s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)")))
   }
 
   test("validate MethodReference for scala varargs") {
@@ -312,7 +315,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("return invalid type for MethodReference with invalid arity ") {
     val parsed = parse[Any]("#processHelper.add(1)", ctxWithGlobal)
-    val expectedValidation = Invalid("Mismatch parameter types. Found: add(Integer). Required: add(Integer, Integer)")
+    val expectedValidation = Invalid(s"Mismatch parameter types. Found: add(${Typed.fromInstance(1).display}). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
@@ -825,9 +828,9 @@ object SimpleEnum extends Enumeration {
 object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
-  def addLongs(a: Long, b: Long) = a + b
+  def addLongs(a: Long, b: Long): Long = a + b
   //varargs annotation is needed to invoke Scala varargs from Java (including SpEL...)
-  @varargs def addAll(a: Int*) = a.sum
+  @varargs def addAll(a: Int*): Int = a.sum
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map
