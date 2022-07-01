@@ -1,35 +1,35 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import io.circe.{Decoder, DecodingFailure, HCursor, Json}
+import io.circe.{ACursor, Decoder, DecodingFailure, HCursor, Json}
 import io.circe.Json.{fromBoolean, fromDouble, fromFloat, fromInt, fromLong, fromString}
-import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 
 object TypedObjectEncoder {
-  private val intClass = classOf[Int]
-  private val longClass = classOf[Double]
-  private val floatClass = classOf[Float]
-  private val doubleClass = classOf[Double]
-  private val booleanClass = classOf[Boolean]
-  private val stringClass = classOf[String]
+  private val intClass = Typed.typedClass[Int]
+  private val longClass = Typed.typedClass[Long]
+  private val floatClass = Typed.typedClass[Float]
+  private val doubleClass = Typed.typedClass[Double]
+  private val booleanClass = Typed.typedClass[Boolean]
+  private val stringClass = Typed.typedClass[String]
 
   def encode(typ: TypedClass, data: Any): Json = (typ, data) match {
-    case (TypedClass(`intClass`, Nil), intValue: Int) => fromInt(intValue)
-    case (TypedClass(`longClass`, Nil), longValue: Long) => fromLong(longValue)
-    case (TypedClass(`floatClass`, Nil), floatValue: Float) => fromFloat(floatValue).get // FIXME: Error handling.
-    case (TypedClass(`doubleClass`, Nil), doubleValue: Double) => fromDouble(doubleValue).get
-    case (TypedClass(`booleanClass`, Nil), booleanValue: Boolean) => fromBoolean(booleanValue)
-    case (TypedClass(`stringClass`, Nil), stringValue: String) => fromString(stringValue)
+    case (`intClass`, intValue: Int) => fromInt(intValue)
+    case (`longClass`, longValue: Long) => fromLong(longValue)
+    case (`floatClass`, floatValue: Float) => fromFloat(floatValue).get // FIXME: Error handling.
+    case (`doubleClass`, doubleValue: Double) => fromDouble(doubleValue).get
+    case (`booleanClass`, booleanValue: Boolean) => fromBoolean(booleanValue)
+    case (`stringClass`, stringValue: String) => fromString(stringValue)
     case _ => Json.Null
     // TODO: Handle illegal cases.
   }
 
-  def decode(typ: TypedClass, obj: HCursor): Decoder.Result[Any] = typ match {
-    case TypedClass(`intClass`, Nil) => obj.as[Int]
-    case TypedClass(`longClass`, Nil) => obj.as[Long]
-    case TypedClass(`floatClass`, Nil) => obj.as[Float]
-    case TypedClass(`doubleClass`, Nil) => obj.as[Double]
-    case TypedClass(`booleanClass`, Nil) => obj.as[Boolean]
-    case TypedClass(`stringClass`, Nil) => obj.as[String]
+  def decode(typ: TypedClass, obj: ACursor): Decoder.Result[Any] = typ match {
+    case `intClass` => obj.as[Int]
+    case `longClass` => obj.as[Long]
+    case `floatClass` => obj.as[Float]
+    case `doubleClass` => obj.as[Double]
+    case `booleanClass` => obj.as[Boolean]
+    case `stringClass` => obj.as[String]
     case typ => Left(DecodingFailure(s"No deserialization logic for $typ.", List()))
   }
 }

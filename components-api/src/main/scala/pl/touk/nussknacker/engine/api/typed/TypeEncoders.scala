@@ -107,7 +107,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
-    data <- TypedObjectEncoder.decode(valueClass, obj)
+    data <- TypedObjectEncoder.decode(valueClass, obj.downField("data"))
   } yield TypedObjectWithValue(valueClass, data)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {

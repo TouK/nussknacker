@@ -65,7 +65,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
         checkDirectEqualityOrMorePreciseCommonSupertype(l, r) {
           Option(singleCommonSupertype(leftType, rightType))
             .collect {
-              case single: SingleTypingResult => TypedObjectWithValue(single, leftData)
+              case single: TypedClass => TypedObjectWithValue(single, leftData)
             }
             .getOrElse(Typed.empty)
         }
