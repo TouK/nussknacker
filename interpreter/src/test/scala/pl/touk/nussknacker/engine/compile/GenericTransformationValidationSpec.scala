@@ -79,9 +79,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
-      "val1" -> Typed[String],
-      "val2" -> Typed[java.lang.Integer],
-      "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
+      "val1" -> Typed.fromInstance("aa"),
+      "val2" -> Typed.fromInstance(11),
+      "val3" -> Typed.fromInstance(List(false))
     ))
 
     result.parametersInNodes("generic") shouldBe expectedGenericParameters
@@ -102,9 +102,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      val info1 = result.typing("end")
 
      info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(ListMap(
-       "val1" -> Typed[String],
-       "val2" -> Typed[java.lang.Integer],
-       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
+       "val1" -> Typed.fromInstance("aa"),
+       "val2" -> Typed.fromInstance(11),
+       "val3" -> Typed.fromInstance(List(false))
      ))
 
     result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
@@ -191,7 +191,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
@@ -214,7 +214,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
-      "val1" -> Typed[String],
+      "val1" -> Typed.fromInstance(""),
       "val2" -> Unknown
     ))
 
@@ -238,7 +238,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
@@ -269,7 +269,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val varsInEnd = validationResult.variablesInNodes("end")
     varsInEnd("outPutVar") shouldBe Typed[String]
-    varsInEnd("intVal") shouldBe Typed[Integer]
+    varsInEnd("intVal") shouldBe Typed.fromInstance(123)
     varsInEnd.get("strVal") shouldBe None
   }
 
