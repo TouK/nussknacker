@@ -67,12 +67,20 @@ object typing {
 
   }
 
-  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends SingleTypingResult {
+  sealed trait TypedObjectWithData extends SingleTypingResult {
+    def underlying: SingleTypingResult
+    def data: Any
 
     override def objType: TypedClass = underlying.objType
+  }
 
+  case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
+    override def data: Any = tag
     override def display: String = s"${underlying.display} @ $tag"
+  }
 
+  case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
+    override def display: String = s"${underlying.display}{$data}"
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -187,6 +195,9 @@ object typing {
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
+
+    def typedValue[T: ClassTag](data: T): TypedObjectWithValue =
+      TypedObjectWithValue(Typed.typedClass[T], data)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {
