@@ -69,18 +69,18 @@ object typing {
 
   sealed trait TypedObjectWithData extends SingleTypingResult {
     def underlying: SingleTypingResult
-    def data: AdditionalDataValue
+    def data: Any
 
     override def objType: TypedClass = underlying.objType
   }
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
-    override def data: AdditionalDataValue = tag
-    override def display: String = s"${underlying.display} @ ${data.display}"
+    override def data: Any = tag
+    override def display: String = s"${underlying.display} @ $tag"
   }
 
-  case class TypedObjectWithValue(underlying: SingleTypingResult, data: AdditionalDataValue) extends TypedObjectWithData {
-    override def display: String = s"${underlying.display}"
+  case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
+    override def display: String = s"${underlying.display}{$data}"
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -196,11 +196,8 @@ object typing {
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
 
-    def valueWithData(typ: SingleTypingResult, data: AdditionalDataValue): TypedObjectWithValue =
-      TypedObjectWithValue(typ, data)
-
-    def typedValue(variable: AdditionalDataValue): TypedObjectWithValue =
-      valueWithData(variable.typed, variable)
+    def typedValue[T: ClassTag](data: T): TypedObjectWithValue =
+      TypedObjectWithValue(Typed.typedClass[T], data)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {
@@ -218,9 +215,12 @@ object typing {
         case javaList: java.util.List[_] =>
           typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case string: String => Typed.typedValue(string)
+        case int: Int => Typed.typedValue(int)
         case long: Long => Typed.typedValue(long)
+        case float: Float => Typed.typedValue(float)
+        case double: Double => Typed.typedValue(double)
         case bool: Boolean => Typed.typedValue(bool)
+        case string: String => Typed.typedValue(string)
         case other => Typed(other.getClass)
       }
     }
@@ -271,25 +271,13 @@ object typing {
 
   }
 
-  sealed trait AdditionalDataValue {
-    def display: String
-    def typed: SingleTypingResult
-  }
+  sealed trait AdditionalDataValue
 
-  case class StringValue(value: String) extends AdditionalDataValue {
-    override def display: String = value
-    override def typed: SingleTypingResult = Typed.fromDetailedType[String].asInstanceOf[SingleTypingResult]
-  }
+  case class StringValue(value: String) extends AdditionalDataValue
 
-  case class LongValue(value: Long) extends AdditionalDataValue {
-    override def display: String = value.toString
-    override def typed: SingleTypingResult = Typed.fromDetailedType[Long].asInstanceOf[SingleTypingResult]
-  }
+  case class LongValue(value: Long) extends AdditionalDataValue
 
-  case class BooleanValue(value: Boolean) extends AdditionalDataValue {
-    override def display: String = value.toString
-    override def typed: SingleTypingResult = Typed.fromDetailedType[Boolean].asInstanceOf[SingleTypingResult]
-  }
+  case class BooleanValue(value: Boolean) extends AdditionalDataValue
 
   trait TypedFromInstance {
     def typingResult: TypingResult

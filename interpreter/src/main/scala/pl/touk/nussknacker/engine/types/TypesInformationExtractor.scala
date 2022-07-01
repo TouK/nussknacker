@@ -58,8 +58,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
       typesFromTypedClass(clazz) ++ fields.values.flatMap(typesFromTypingResult)
     case dict: TypedDict =>
       typesFromTypedClass(dict.objType)
-    case typingResult: TypedObjectWithData =>
-      typesFromTypedClass(typingResult.underlying.objType)
+    case typedObjectWithData: TypedObjectWithData =>
+      typesFromTypedClass(typedObjectWithData.underlying.objType)
     case Unknown =>
       Set.empty
   }
