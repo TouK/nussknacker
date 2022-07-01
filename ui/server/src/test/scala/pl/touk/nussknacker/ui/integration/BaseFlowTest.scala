@@ -9,6 +9,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
+import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
@@ -50,7 +51,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
     system.settings.config,
-    NussknackerAppInitializer.initDb(system.settings.config)
+    NussknackerAppInitializer.initDb(system.settings.config),
+    new MetricRegistry
   )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")

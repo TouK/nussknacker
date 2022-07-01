@@ -7,6 +7,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -27,7 +28,8 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
     system.settings.config,
-    NussknackerAppInitializer.initDb(system.settings.config)
+    NussknackerAppInitializer.initDb(system.settings.config),
+    new MetricRegistry
   )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")

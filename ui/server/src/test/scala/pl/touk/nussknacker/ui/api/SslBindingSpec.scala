@@ -24,7 +24,8 @@ class SslBindingSpec extends FlatSpec with Matchers {
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(
       system.settings.config,
-      NussknackerAppInitializer.initDb(system.settings.config)
+      NussknackerAppInitializer.initDb(system.settings.config),
+      new MetricRegistry
     )
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
     val serverContext = HttpsConnectionContextFactory.createServerContext(keyStoreConfig)
