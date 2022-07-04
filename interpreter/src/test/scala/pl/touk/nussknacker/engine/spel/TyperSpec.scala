@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -30,27 +30,26 @@ class TyperSpec extends FunSuite with Matchers {
   }
 
   test("detect proper selection types") {
-    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.fromInstance(List(1, 2))
+    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper first selection types") {
-    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
-      TypedUnion(Set(Typed.fromInstance(1).asInstanceOf[SingleTypingResult], Typed.fromInstance(2).asInstanceOf[SingleTypingResult]))
+    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper last selection types") {
-    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
-      TypedUnion(Set(Typed.fromInstance(1).asInstanceOf[SingleTypingResult], Typed.fromInstance(2).asInstanceOf[SingleTypingResult]))
+    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper nested selection types") {
     typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult shouldBe
-      TypedUnion(Set(Typed.fromInstance(List(1)).asInstanceOf[SingleTypingResult], Typed.fromInstance(List(1, 2)).asInstanceOf[SingleTypingResult]))
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper chained selection types") {
     typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
-      TypedUnion(Set(Typed.fromInstance(1).asInstanceOf[SingleTypingResult], Typed.fromInstance(2).asInstanceOf[SingleTypingResult]))
+      Typed.typedClass[Int]
   }
 
   test("restricting simple type selection") {

@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
@@ -171,8 +171,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 
       case e: InlineList => withTypedChildren { children =>
+        val localSupertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
+        def getSupertype(a: TypingResult, b: TypingResult): TypingResult =
+          localSupertypeFinder.commonSupertype(a, b)(NumberTypesPromotionStrategy.ToSupertype)
+
         //We don't want Typed.empty here, as currently it means it won't validate for any signature
-        val elementType = if (children.isEmpty) TypingResultWithContext(Unknown) else TypingResultWithContext(Typed(children.map(typ => typ.typingResult).toSet))
+        val elementType = if (children.isEmpty) TypingResultWithContext(Unknown)
+          else TypingResultWithContext(children.map(typ => typ.typingResult).reduce(getSupertype))
         Valid(TypingResultWithContext(Typed.genericTypeClass[java.util.List[_]](List(elementType.typingResult))))
       }
 
