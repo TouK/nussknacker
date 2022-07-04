@@ -98,6 +98,20 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     result.errors.invalidNodes shouldBe Map("loose" -> List(PrettyValidationErrors.looseNode(validator.uiValidationError)))
   }
 
+  test("check for empty ids") {
+      val process = createProcess(
+        List(
+          Source("", SourceRef("barSource", List())),
+          Sink("out", SinkRef("barSink", List()))
+        ),
+        List(Edge("", "out", None))
+      )
+      val result = validator.validate(process)
+
+      result.errors.globalErrors shouldBe List(PrettyValidationErrors.emptyNodeId(validator.uiValidationError))
+    }
+
+
   test("check for duplicated ids") {
     val process = createProcess(
       List(

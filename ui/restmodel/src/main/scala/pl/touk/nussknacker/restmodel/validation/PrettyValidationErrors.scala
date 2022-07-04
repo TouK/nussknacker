@@ -80,6 +80,12 @@ object PrettyValidationErrors {
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
 
+  def emptyNodeId(typ: String): NodeValidationError = {
+    NodeValidationError(typ, "Nodes cannot have empty id", "Nodes cannot have empty id", fieldName = None,
+      errorType = NodeValidationErrorType.RenderNotAllowed)
+  }
+
+
   def nonuniqeEdgeType(typ: String, etype: EdgeType): NodeValidationError = {
     NodeValidationError(typ, "Edges are not unique",
       s"Node has duplicate outgoing edges of type: $etype, it cannot be saved properly", fieldName = None, errorType = NodeValidationErrorType.SaveNotAllowed)
