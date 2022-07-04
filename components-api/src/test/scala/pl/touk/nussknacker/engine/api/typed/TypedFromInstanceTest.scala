@@ -65,6 +65,9 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
       val typingResult = Typed.fromInstance(obj)
 
       typingResult.canBeSubclassOf(Typed(klass)) shouldBe true
+      println(typingResult.display)
+      println(paramTypingResult.display)
+      println(typingResult.asInstanceOf[TypedClass].params.loneElement.display)
       typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(paramTypingResult) shouldBe true
     }
 
