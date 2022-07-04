@@ -329,7 +329,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val validationResult = processValidation.validate(processWithSub)
     validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
-    validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed(classOf[String])
+    validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
     validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
       "bar" -> Typed(classOf[String])
     ))
