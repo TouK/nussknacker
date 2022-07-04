@@ -81,7 +81,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
       "val1" -> Typed.fromInstance("aa"),
       "val2" -> Typed.fromInstance(11),
-      "val3" -> Typed.fromInstance(List(false))
+      "val3" -> Typed.typedClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
     ))
 
     result.parametersInNodes("generic") shouldBe expectedGenericParameters
@@ -104,7 +104,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(ListMap(
        "val1" -> Typed.fromInstance("aa"),
        "val2" -> Typed.fromInstance(11),
-       "val3" -> Typed.fromInstance(List(false))
+       "val3" -> Typed.typedClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
      ))
 
     result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
