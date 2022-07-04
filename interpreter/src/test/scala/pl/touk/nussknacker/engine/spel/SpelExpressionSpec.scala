@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -30,7 +30,6 @@ import scala.annotation.varargs
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
-import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends FunSuite with Matchers {
@@ -574,9 +573,9 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     shouldHaveBadType( parse[String]("111", ctx),
       s"Bad expression type, expected: String, found: ${Typed.fromInstance(111).display}" )
     shouldHaveBadType( parse[String]("{1, 2, 3}", ctx),
-      s"Bad expression type, expected: String, found: ${Typed.fromInstance(List(1, 2, 3)).display}" )
+      s"Bad expression type, expected: String, found: ${Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
     shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx),
-      s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("'alaMa'").display}" )
+      s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("alaMa").display}" )
     shouldHaveBadType( parse[Int]("#strVal", ctx),
       s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("").display}" )
   }

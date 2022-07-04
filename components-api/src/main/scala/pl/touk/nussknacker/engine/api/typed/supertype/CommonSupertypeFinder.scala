@@ -149,7 +149,10 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     else if (left == right)
       Typed(left)
     else
-      Typed.empty
+      classResolutionStrategy match {
+        case SupertypeClassResolutionStrategy.AnySuperclass => Unknown
+        case _ => Typed.empty
+      }
   }
 
   private def commonSuperTypeForComplexTypes(left: Class[_], leftParams: List[TypingResult], right: Class[_], rightParams: List[TypingResult])
@@ -160,7 +163,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
       Typed.genericTypeClass(right, commonSuperTypesForGenericParams(leftParams, rightParams))
     } else {
       // until here things are rather simple
-      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right).map(Typed(_)))
+      Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right))
     }
   }
 
@@ -169,10 +172,15 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     leftParams.zip(rightParams).map { case (l, p) => commonSupertype(l, p) }
   }
 
-  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[Class[_]] = {
+  private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {
     classResolutionStrategy match {
-      case SupertypeClassResolutionStrategy.Intersection => ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right)
-      case SupertypeClassResolutionStrategy.Union => Set(left, right)
+      case SupertypeClassResolutionStrategy.Intersection =>
+        ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
+      case SupertypeClassResolutionStrategy.AnySuperclass =>
+        val res = ClassHierarchyCommonSupertypeFinder.findCommonSupertypes(left, right).map(Typed(_))
+        if (res.isEmpty) Set(Unknown) else res
+      case SupertypeClassResolutionStrategy.Union =>
+        Set(left, right).map(Typed(_))
     }
   }
 
@@ -188,5 +196,7 @@ object SupertypeClassResolutionStrategy {
   case object Intersection extends SupertypeClassResolutionStrategy
 
   case object Union extends SupertypeClassResolutionStrategy
+
+  case object AnySuperclass extends SupertypeClassResolutionStrategy
 
 }

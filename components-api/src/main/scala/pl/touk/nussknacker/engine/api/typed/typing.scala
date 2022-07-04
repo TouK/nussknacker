@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.api.typed
 
+import cats.data.Validated.{Invalid, Valid}
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
 import scala.reflect.ClassTag
@@ -211,17 +213,18 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(obj.getClass, List(unionOfElementTypes(list)))
+          typedClass(obj.getClass, List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(obj.getClass, List(unionOfElementTypes(javaList.asScala.toList)))
+          typedClass(obj.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
-        case int: Int => Typed.typedValue(int)
-        case long: Long => Typed.typedValue(long)
-        case float: Float => Typed.typedValue(float)
-        case double: Double => Typed.typedValue(double)
-        case bool: Boolean => Typed.typedValue(bool)
-        case string: String => Typed.typedValue(string)
-        case other => Typed(other.getClass)
+        case other => Typed(other.getClass) match {
+          case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
+            case Valid(_) => TypedObjectWithValue(typedClass, other)
+            case Invalid(_) => typedClass
+          }
+          case notTypedClass => notTypedClass
+        }
+
       }
     }
 
@@ -229,8 +232,11 @@ object typing {
         case (k, v) => k -> fromInstance(v)
       }.toList
 
-    private def unionOfElementTypes(list: List[_]): TypingResult = {
-      apply(list.map(fromInstance).toSet)
+    private def supertypeOfElementTypes(list: List[_]): TypingResult = {
+      val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
+      list.map(fromInstance)
+        .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
+        .getOrElse(Unknown)
     }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {

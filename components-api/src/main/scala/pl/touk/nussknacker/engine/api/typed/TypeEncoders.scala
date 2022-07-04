@@ -52,7 +52,7 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, data) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded = "data" -> TypedObjectEncoder.encode(underlying, data)
+      val dataEncoded = "data" -> SimpleObjectEncoder.encode(underlying, data).toOption.get
       objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
@@ -107,7 +107,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
-    data <- TypedObjectEncoder.decode(valueClass, obj.downField("data"))
+    data <- SimpleObjectEncoder.decode(valueClass, obj.downField("data"))
   } yield TypedObjectWithValue(valueClass, data)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
