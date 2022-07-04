@@ -2,20 +2,20 @@ import React from "react"
 import {Formatter, FormatterType, spelFormatters} from "../components/graph/node-modal/editors/expression/Formatter"
 
 const text = `
-Lorem ipsum #{dolor} sit amet #\\{enim\\}. Etiam #{
+Lorem ipsum #{dolor}# sit amet #\\{enim\\}#. Etiam #{
 ullamcorper.
 Suspendisse  
-  } a pellentesque dui, non #{ felis }. Maecenas malesuada elit lectus
+  }# a pellentesque dui, non #{ felis }#. Maecenas malesuada elit lectus
 `
 
 const textEncoded = `'
-Lorem ipsum '+dolor+' sit amet #{enim}. Etiam '+ullamcorper.
+Lorem ipsum '+dolor+' sit amet #{enim}#. Etiam '+ullamcorper.
 Suspendisse+' a pellentesque dui, non '+felis+'. Maecenas malesuada elit lectus
 '`
 
 const textDecoded = `
-Lorem ipsum #{dolor} sit amet #\\{enim\\}. Etiam #{ullamcorper.
-Suspendisse} a pellentesque dui, non #{felis}. Maecenas malesuada elit lectus
+Lorem ipsum #{dolor}# sit amet #\\{enim\\}#. Etiam #{ullamcorper.
+Suspendisse}# a pellentesque dui, non #{felis}#. Maecenas malesuada elit lectus
 `
 
 describe("Formatter", () => {
@@ -30,10 +30,10 @@ describe("Formatter", () => {
         expect(spelFormatter).toBe(spelFormatters[FormatterType.String])
       })
 
-      it("should be same as for String", () => {
+      it("should encode", () => {
         expect(spelFormatter.encode(text)).toBe(textEncoded)
       })
-      it("should be same as for String", () => {
+      it("should decode", () => {
         expect(spelFormatter.decode(textEncoded)).toBe(textDecoded)
       })
     })

@@ -1,6 +1,22 @@
 /* eslint-disable i18next/no-literal-string */
-import {isEmpty, isEqual, omit, flatten, transform, pickBy, indexOf, keys, find, map, concat, mapValues, flatMap, reduce, get} from "lodash"
-import {NodeResults, TypingResult} from "../types"
+import {
+  concat,
+  find,
+  flatMap,
+  flatten,
+  get,
+  indexOf,
+  isEmpty,
+  isEqual,
+  keys,
+  map,
+  mapValues,
+  omit,
+  pickBy,
+  reduce,
+  transform,
+} from "lodash"
+import {NodeResults, Process, TypingResult} from "../types"
 
 class ProcessUtils {
 
@@ -8,7 +24,7 @@ class ProcessUtils {
     const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     const processToDisplay = state.graphReducer.processToDisplay
     //TODO: validationResult should be removed from processToDisplay...
-    const omitValidation = (details) => omit(details, ['validationResult'])
+    const omitValidation = (details) => omit(details, ["validationResult"])
     return !isEmpty(fetchedProcessDetails) ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay)) : true
   }
 
@@ -53,7 +69,7 @@ class ProcessUtils {
   findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
-    return transform(nodeResults || {}, function(result, nodeResult, key: string) {
+    return transform(nodeResults || {}, function (result, nodeResult, key: string) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
         result[branch[1]] = nodeResult.variableTypes
@@ -69,7 +85,7 @@ class ProcessUtils {
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
-    const withoutVariablesToHide =  pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
+    const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
     //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
@@ -108,7 +124,7 @@ class ProcessUtils {
     }, {})
   }
 
-  _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
+  _findVariablesDefinedInProcess = (nodeId, process: Process, processDefinition) => {
     const node = find(process.nodes, (node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
     const clazzName = get(nodeObjectTypeDefinition, "returnType")
@@ -118,7 +134,7 @@ class ProcessUtils {
         return isEmpty(clazzName) ? [] : [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
-        return node.parameters.map(param => ({[param.name]: param.typ}))
+        return node.parameters?.map(param => ({[param.name]: param.typ}))
       }
       case "Enricher": {
         return [{[node.output]: clazzName}]

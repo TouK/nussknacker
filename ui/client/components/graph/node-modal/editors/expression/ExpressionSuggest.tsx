@@ -1,6 +1,6 @@
 import ace from "ace-builds/src-noconflict/ace"
 import {isEmpty, map, overSome} from "lodash"
-import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react"
+import React, {ReactElement, useCallback, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
 import {getProcessToDisplay} from "../../../../../reducers/selectors/graph"
@@ -14,6 +14,8 @@ import AceEditor from "./AceWithSettings"
 import ValidationLabels from "../../../../modals/ValidationLabels"
 import ReactAce from "react-ace/lib/ace"
 import {ExpressionLang} from "./types"
+import {TypingResult} from "../../../../../types"
+import type {Ace} from "ace-builds"
 
 const {TokenIterator} = ace.require("ace/token_iterator")
 
@@ -60,34 +62,51 @@ interface Props {
   variableTypes: Record<string, unknown>,
 }
 
-interface AceEditorCompleter<P = unknown> {
-  isTokenAllowed: (...args: unknown[]) => boolean,
-  identifierRegexps: RegExp[],
-  getCompletions: (editor, session, caretPosition2d: { row: number, column: number }, prefix: string, callback) => void,
-  getDocTooltip: (item: {
-    description: ReactElement,
-    parameters: P[],
-    returnType: string,
-    name: string,
-    docHTML: string,
-  }) => void,
+interface Completion<P = unknown> extends Ace.Completion {
+  description: ReactElement,
+  parameters: P[],
+  returnType: string,
+  name: string,
+  docHTML: string,
 }
 
-class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: string, name: string }> {
-  isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed])
+interface Editor extends Ace.Editor {
+  readonly completer: {
+    activated: boolean,
+  },
+}
+
+interface EditSession extends Ace.EditSession {
+  readonly $modeId: unknown,
+}
+
+interface AceEditorCompleter<P = unknown> extends Ace.Completer {
+  getDocTooltip(item: Completion<P>): void,
+
+  getCompletions(
+    editor: Editor,
+    session: EditSession,
+    position: Ace.Point,
+    prefix: string,
+    callback: Ace.CompleterCallback
+  ): void,
+}
+
+class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingResult, name: string }> {
+  private isTokenAllowed = overSome([isSqlTokenAllowed, isSpelTokenAllowed])
   // We adds hash to identifier pattern to start suggestions just after hash is typed
-  identifierRegexps = identifierRegexpsIncludingDot
+  private identifierRegexps = identifierRegexpsIncludingDot
 
   constructor(private expressionSuggester: ExpressionSuggester) {
   }
 
-  getCompletions = (editor, session, caretPosition2d, prefix, callback): void => {
+  getCompletions(editor: Editor, session: EditSession, caretPosition2d: Ace.Point, prefix: string, callback: Ace.CompleterCallback): void {
     const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
     if (!this.isTokenAllowed(iterator, session.$modeId)) {
-      callback()
+      callback(null, [])
     }
 
-    this.expressionSuggester.suggestionsFor(prefix, caretPosition2d).then(suggestions => {
+    this.expressionSuggester.suggestionsFor(editor.getValue(), caretPosition2d).then(suggestions => {
       // This trick enforce autocompletion to invoke getCompletions even if some result found before - in case if list of suggestions will change during typing
       editor.completer.activated = false
       // We have dot in identifier pattern to enable live autocompletion after dots, but also we remove it from pattern just before callback, because
@@ -121,7 +140,7 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: string,
     })
   }
 
-  getDocTooltip = (item): void => {
+  getDocTooltip(item: Completion<{ refClazz: TypingResult, name: string }>): void {
     if (item.description || !isEmpty(item.parameters)) {
       const paramsSignature = item.parameters.map(p => `${ProcessUtils.humanReadableType(p.refClazz)} ${p.name}`).join(", ")
       const javaStyleSignature = `${item.returnType} ${item.name}(${paramsSignature})`

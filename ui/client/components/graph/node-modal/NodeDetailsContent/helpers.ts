@@ -8,7 +8,7 @@ import Variable from "../Variable"
 import {branchErrorFieldName} from "../BranchParameters"
 import {AdditionalPropertiesConfig, DynamicParameterDefinitions, NodeType, Parameter} from "../../../../types"
 
-function joinFields(editedNode: NodeType, parametersFromDefinition: Parameter[]): string[] {
+function joinFields(editedNode: NodeType, parametersFromDefinition: Parameter[] = []): string[] {
   const commonFields = ["id", "outputVar"]
   const paramFields = parametersFromDefinition.map(param => param.name)
   const branchParamsFields = editedNode?.branchParameters?.flatMap(branchParam => branchParam.parameters.map(param => branchErrorFieldName(param.name, branchParam.branchId)))
@@ -63,7 +63,7 @@ export function getAvailableFields(editedNode: NodeType, node: NodeType, additio
     }
     case "CustomNode": {
       const commonFields = ["id", "outputVar"]
-      const paramFields = editedNode.parameters.map(param => param.name)
+      const paramFields = editedNode.parameters?.map(param => param.name)
       return concat(commonFields, paramFields)
     }
     case "VariableBuilder":

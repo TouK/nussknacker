@@ -16,6 +16,10 @@
 * [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
 * [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
 * [#3192](https://github.com/TouK/nussknacker/pull/3192) Improvements: db enrichers measuring
+* [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
+* [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
+* [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
+* [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
 * [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
 
 1.4.0 (14 Jun 2022)

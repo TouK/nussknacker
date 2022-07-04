@@ -421,7 +421,7 @@ rules: [
   {
     role: "User" //this is default role for all users
     permissions: ["Read", "Write", "Deploy"]
-    categories: ["Defautl", "FraudDetection"]
+    categories: ["Default", "FraudDetection"]
   }
 ]
 ```

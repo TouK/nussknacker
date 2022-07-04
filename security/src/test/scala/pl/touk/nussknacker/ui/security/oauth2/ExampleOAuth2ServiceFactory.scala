@@ -61,8 +61,10 @@ object ExampleOAuth2ServiceFactory {
 
   val testRules: List[AuthenticationConfiguration.ConfigRule] = AuthenticationConfiguration.getRules(testConfig.usersFile)
 
-  @ConfiguredJsonCodec case class TestAccessTokenResponse(@JsonKey("access_token") accessToken: String, @JsonKey("token_type") tokenType: String) extends OAuth2AuthorizationData {
-    val expirationPeriod: Option[FiniteDuration] = None
+  @ConfiguredJsonCodec case class TestAccessTokenResponse(@JsonKey("access_token") accessToken: String,
+                                                          @JsonKey("token_type") tokenType: String,
+                                                          @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration],
+                                                         ) extends OAuth2AuthorizationData {
     val refreshToken: Option[String] = None
   }
 

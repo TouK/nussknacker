@@ -29,9 +29,10 @@ export type NodeType<F extends Field = Field> = {
   service?: {
     parameters?: $TodoType[],
   },
-  typeSpecificProperties?:{
+  typeSpecificProperties?: {
     type: $TodoType,
   },
+  [key: string]: any,
 }
 
 export type SubprocessNodeType = NodeType
@@ -44,6 +45,7 @@ export type Field = {
 export type Parameter = {
   name: string,
   expression: Expression,
+  typ?: unknown,
 }
 
 export type Expression = {

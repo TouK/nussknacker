@@ -8,3 +8,10 @@ You can learn more about contributing to Nussknacker here: https://github.com/To
 Happy contributing!
 
 -->
+
+
+
+Hi,
+Please add changelog entry in docs/Changelog.md.
+After that update description of this PR.
+Thanks.

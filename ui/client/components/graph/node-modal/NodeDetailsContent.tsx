@@ -339,7 +339,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 findAvailableVariables={findAvailableVariables}
               />
             )}
-            {editedNode.parameters.map((param, index) => {
+            {editedNode.parameters?.map((param, index) => {
               return (
                 <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
