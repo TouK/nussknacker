@@ -93,7 +93,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {id: String, amount: Double, currency: EnumSymbol | String, company: {name: String, address: {street: String, city: String} | {street: String, city: String}} | {name: String, address: {street: String, city: String} | {street: String, city: String}}, products: List[{id: String, name: String, price: Double} | {id: String, name: String, price: Double}], vat: Integer}",
+      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String{}\ncan be a subclass of any of:\n - {id: String, amount: Double, currency: EnumSymbol | String, company: {name: String, address: {street: String, city: String} | {street: String, city: String}} | {name: String, address: {street: String, city: String} | {street: String, city: String}}, products: List[{id: String, name: String, price: Double} | {id: String, name: String, price: Double}], vat: Integer}",
       Some(SinkValueParamName)) :: Nil
   }
 
