@@ -13,7 +13,7 @@ import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoading?: boolean }): JSX.Element {
+export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean, withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
 
@@ -98,6 +98,7 @@ export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoadi
                     <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
                         <OtherOptionsStack />
                     </FilterMenu>
+                    {withSort?(
                     <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>
                         <SortOptionsStack
                             label={t("table.filter.SORT_BY", "Sort")}
@@ -106,6 +107,7 @@ export function FiltersPart({ isLoading, data = [] }: { data: RowType[]; isLoadi
                             onChange={setFilter("SORT_BY")}
                         />
                     </FilterMenu>
+                    ):null}
                 </Stack>
             </QuickFilter>
             <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== "NAME" && k !== "SORT_BY")} />

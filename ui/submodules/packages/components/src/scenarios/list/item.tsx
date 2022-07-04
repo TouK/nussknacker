@@ -8,11 +8,30 @@ import { ScenariosFiltersModel } from "../filters/scenariosFiltersModel";
 import { RowType } from "./listPart";
 import { FiltersContextType } from "../../common/filters/filtersContext";
 import { CopyTooltip } from "./copyTooltip";
+import { ProcessActionType } from "nussknackerUi/components/Process/types";
 
 function Category({ value, filtersContext }: { value: string; filtersContext: FiltersContextType<ScenariosFiltersModel> }): JSX.Element {
     const { setFilter, getFilter } = filtersContext;
     const filterValue = useMemo(() => getFilter("CATEGORY", true), [getFilter]);
     return <CategoryChip value={value} filterValue={filterValue} setFilter={setFilter("CATEGORY")} />;
+}
+
+export function LastAction({ lastAction }: { lastAction: ProcessActionType }): JSX.Element {
+  const { t } = useTranslation();
+
+  return lastAction ? (
+    <Stack
+      spacing={1}
+      direction="row"
+      alignItems="center"
+      title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
+        date: new Date(lastAction.performedAt)
+      })}
+    >
+      <History />
+      <Typography variant="caption">{lastAction.action}</Typography>
+    </Stack>
+  ) : null;
 }
 
 export function FirstLine({ row }: { row: RowType }): JSX.Element {
@@ -25,19 +44,7 @@ export function FirstLine({ row }: { row: RowType }): JSX.Element {
                 <Highlight value={row.id} filterText={filtersContext.getFilter("NAME")} />
             </CopyTooltip>
             <Category value={row.processCategory} filtersContext={filtersContext} />
-            {row.lastAction && (
-                <Stack
-                    spacing={1}
-                    direction="row"
-                    alignItems="center"
-                    title={t("scenario.lastAction", "Last action performed {{date, relativeDate}}.", {
-                        date: new Date(row.lastAction.performedAt),
-                    })}
-                >
-                    <History />
-                    <Typography variant="caption">{row.lastAction.action}</Typography>
-                </Stack>
-            )}
+            <LastAction lastAction={row.lastAction}/>
         </Stack>
     );
 }
