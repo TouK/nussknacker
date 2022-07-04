@@ -20,6 +20,7 @@
 * [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
 * [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
 * [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
+* [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
 
 1.4.0 (14 Jun 2022)
 ------------------------

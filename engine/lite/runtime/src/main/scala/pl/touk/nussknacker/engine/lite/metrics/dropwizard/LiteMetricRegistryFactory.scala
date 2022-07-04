@@ -37,6 +37,7 @@ class LiteMetricRegistryFactory(defaultInstanceId: => String) extends LazyLoggin
     } else {
       LiteEngineInfluxDbReporter.createAndRunReporterIfConfigured(metricRegistry, prefix, metricsConfig)
     }
+    new JmxMetricsReporter().createAndRunReporter(metricRegistry, prefix, metricsConfig)
   }
 
   private def preparePrefix(conf: CommonMetricConfig): MetricName = {

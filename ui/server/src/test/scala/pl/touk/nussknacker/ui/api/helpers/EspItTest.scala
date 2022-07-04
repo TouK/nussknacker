@@ -9,6 +9,7 @@ import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json, parser}
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
@@ -152,7 +153,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     deploymentCommentSettings = deploymentCommentSettings,
     processResolving = processResolving,
     processService = processService,
-    testDataSettings = TestDataSettings(5, 1000, 100000)
+    testDataSettings = TestDataSettings(5, 1000, 100000),
+    metricRegistry = new MetricRegistry
   )
   val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
   val processActivityRoute = new ProcessActivityResource(processActivityRepository, fetchingProcessRepository, processAuthorizer)
