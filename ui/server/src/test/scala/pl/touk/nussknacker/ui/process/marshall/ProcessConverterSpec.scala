@@ -123,7 +123,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty).copy(nodeResults = Map(
           "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
           "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
-          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]), None, Map.empty))
+          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")), None, Map.empty))
       )
     )
 
