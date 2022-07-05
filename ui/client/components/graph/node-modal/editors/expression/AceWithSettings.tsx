@@ -2,7 +2,7 @@
 import React, {ForwardedRef, forwardRef, useMemo} from "react"
 import ReactAce from "react-ace/lib/ace"
 import {useUserSettings} from "../../../../../common/userSettings"
-import AceWrapper, {AceWrapperProps} from "./AceWrapper"
+import AceWrapper, {AceKeyCommand, AceWrapperProps} from "./AceWrapper"
 
 export default forwardRef(function AceWithSettings(props: Omit<AceWrapperProps, "noWrap" | "showLines">, ref: ForwardedRef<ReactAce>): JSX.Element {
   const [userSettings, toggleSettings] = useUserSettings()
@@ -12,7 +12,7 @@ export default forwardRef(function AceWithSettings(props: Omit<AceWrapperProps, 
     [props],
   )
 
-  const commands = useMemo(() => [
+  const commands = useMemo<AceKeyCommand[]>(() => [
     {
       name: "showLines",
       bindKey: {win: "F1", mac: "F1"},
