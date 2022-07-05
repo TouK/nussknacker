@@ -13,11 +13,9 @@ import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
-case class MountableResources(
-                              commonConfigConfigMap: String,
+case class MountableResources(commonConfigConfigMap: String,
                               loggingConfigConfigMap: String,
-                              modelConfigSecret: String,
-                             )
+                              modelConfigSecret: String)
 
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
