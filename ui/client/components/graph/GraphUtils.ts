@@ -1,8 +1,9 @@
 import NodeUtils from "./NodeUtils"
-import {cloneDeep, filter, isEqual, map, reject} from "lodash"
-import {Edge, Process} from "../../types"
+import {cloneDeep, isEqual, map, reject} from "lodash"
+import {Edge, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {enrichNodeWithProcessDependentData, removeBranchParameter} from "../../reducers/graph/utils"
 
-export function mapProcessWithNewNode(process, before, after) {
+export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
   return {
     ...process,
     edges: map(process.edges, (e) => {
@@ -48,12 +49,32 @@ export function mapProcessWithNewEdge(process: Process, before: Edge, after: Edg
   }
 }
 
-export function deleteNode(process, id) {
+export function replaceNodeOutputEdges(process: Process, processDefinitionData: ProcessDefinitionData, edgesAfter: Edge[], nodeId: NodeType["id"]): Process {
+  const edgesBefore = process.edges.filter(({from}) => from === nodeId)
+
+  if (isEqual(edgesBefore, edgesAfter)) return process
+
+  const oldTargets = new Set(edgesBefore.map(e => e.to))
+  const newTargets = new Set(edgesAfter.map(e => e.to))
   return {
     ...process,
-    edges: filter(process.edges, (e) => !isEqual(e.from, id) && !isEqual(e.to, id)),
-    nodes: filter(process.nodes, (n) => !isEqual(n.id, id)),
+    edges: process.edges.filter(({from}) => !(from === nodeId)).concat(edgesAfter),
+    nodes: process.nodes.map(node => {
+      if (newTargets.has(node.id)) {
+        return enrichNodeWithProcessDependentData(node, processDefinitionData, edgesAfter)
+      }
+      if (oldTargets.has(node.id)) {
+        return removeBranchParameter(node, nodeId)
+      }
+      return node
+    }),
   }
+}
+
+export function deleteNode(process, id) {
+  const edges = process.edges.filter((e) => e.from !== id).map((e) => e.to === id ? {...e, to: ""} : e)
+  const nodes = process.nodes.filter((n) => n.id !== id)
+  return {...process, edges, nodes}
 }
 
 export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {

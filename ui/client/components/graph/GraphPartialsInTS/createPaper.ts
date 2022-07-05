@@ -74,17 +74,18 @@ export function createPaper(): dia.Paper {
   )
 
   return paper
-    //we want to inject node during 'Drag and Drop' from toolbox
+    //we want to inject node during 'Drag and Drop' from graph paper
     .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
       this.changeLayoutIfNeeded()
       this.handleInjectBetweenNodes(cell.model)
     })
     .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
-      this.props.actions.nodesConnected(
-        sourceView.model.attributes.nodeData,
-        targetView.model.attributes.nodeData,
-        model.attributes.edgeData?.edgeType
-      )
+      const from = sourceView?.model.attributes.nodeData
+      const to = targetView?.model.attributes.nodeData
+      if (from && to) {
+        const type = model.attributes.edgeData?.edgeType
+        this.props.actions.nodesConnected(from, to, type)
+      }
     })
     .on(Events.LINK_DISCONNECT, ({model}) => {
       this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
