@@ -116,7 +116,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
-        Switch("switchID", Expression("spel", "''"), "expr1"),
+        Switch("switchID"),
         Sink("out", SinkRef("barSink", List())),
         Sink("switchID", SinkRef("barSink", List()))
       ),
