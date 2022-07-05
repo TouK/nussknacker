@@ -60,7 +60,7 @@ object ComponentDefinitionPreparer {
     val base = ComponentGroup(BaseGroupName, List(
       ComponentTemplate.create(ComponentType.Filter, Filter("", Expression("spel", "true")), userProcessingTypeCategories),
       ComponentTemplate.create(ComponentType.Split, Split(""), userProcessingTypeCategories),
-      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), userProcessingTypeCategories),
+      ComponentTemplate.create(ComponentType.Switch, Switch("", Expression("spel", "true"), "output"), userProcessingTypeCategories).copy(label = "choice"),
       ComponentTemplate.create(ComponentType.Variable, Variable("", "varName", Expression("spel", "'value'")), userProcessingTypeCategories),
       ComponentTemplate.create(ComponentType.MapVariable, VariableBuilder("", "mapVarName", List(Field("varName", Expression("spel", "'value'")))), userProcessingTypeCategories),
     ))
