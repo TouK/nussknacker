@@ -124,7 +124,7 @@ trait ExpressionRewriter {
           expression = rewriteDefaultExpressionInternal(n.expression))
       case n: node.Switch =>
         n.copy(
-          expression = rewriteDefaultExpressionInternal(n.expression))
+          expression = n.expression.map(rewriteDefaultExpressionInternal))
       case n: Source =>
         n.copy(
           ref = n.ref.copy(parameters = rewriteParameters(n.ref.parameters)))

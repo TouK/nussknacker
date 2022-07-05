@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.compiledgraph
 
-import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.api.expression.Expression
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.compiledgraph.service.ServiceRef
 import pl.touk.nussknacker.engine.compiledgraph.variable.Field
 import pl.touk.nussknacker.engine.graph.node.BranchEndDefinition
@@ -32,7 +31,7 @@ object node {
   case class Filter(id: String, expression: Expression, nextTrue: Next,
                     nextFalse: Option[Next], isDisabled: Boolean) extends Node
 
-  case class Switch(id: String, expression: Expression, exprVal: String,
+  case class Switch(id: String, expression: Option[(String, Expression)],
                     nexts: List[Case], defaultNext: Option[Next]) extends Node
 
   case class Case(expression: Expression, node: Next)

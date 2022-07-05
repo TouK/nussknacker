@@ -109,10 +109,13 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
           interpretNext(nextTrue, valueWithModifiedContext.context)
         else
           interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
-      case Switch(_, expression, exprVal, nexts, defaultNext) =>
-        val vmc = evaluateExpression[Any](expression, ctx, expressionName)
-        val newCtx = (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next])
-        nexts.zipWithIndex.foldLeft(newCtx) { case (acc, (casee, i)) =>
+      case Switch(_, expr, nexts, defaultNext) =>
+        val newCtx = expr.map { case (exprVal, expression) =>
+          val vmc = evaluateExpression[Any](expression, ctx, expressionName)
+          vmc.context.withVariable(exprVal, vmc.value)
+        }.getOrElse(ctx)
+
+        nexts.zipWithIndex.foldLeft((newCtx, Option.empty[Next])) { case (acc, (casee, i)) =>
           acc match {
             case (accCtx, None) =>
               val valueWithModifiedContext = evaluateExpression[Boolean](casee.expression, accCtx, s"$expressionName-$i")

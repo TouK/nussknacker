@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
+import cats.Applicative
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -53,7 +54,7 @@ object NodeDataValidator {
         case a: Variable => toValidationResponse(compiler.compileExpression(a.value, validationContext, expectedType = typing.Unknown, outputVar = Some(OutputVar.variable(a.varName))))
         case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName))))
         case a: SubprocessOutputDefinition => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.subprocess(a.outputName))))
-        case a: Switch => toValidationResponse(compiler.compileSwitch(Some((a.exprVal, a.expression)), outgoingEdges.collect {
+        case a: Switch => toValidationResponse(compiler.compileSwitch(Applicative[Option].product(a.exprVal, a.expression), outgoingEdges.collect {
           case (k, Some(NextSwitch(expression))) => (k, expression)
         }.toList, validationContext))
         case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
