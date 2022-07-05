@@ -65,11 +65,11 @@ trait GraphBuilder[R] {
     creator(BranchEnd(node.BranchEndData(BranchEndDefinition(branchId, joinId))))
 
   def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): R =
-    creator(SwitchNode(Switch(id, expression, exprVal), nexts.toList, None))
+    creator(SwitchNode(Switch(id, Some(expression), Some(exprVal)), nexts.toList, None))
 
   def switch(id: String, expression: Expression, exprVal: String,
              defaultNext: SubsequentNode, nexts: Case*): R =
-    creator(SwitchNode(Switch(id, expression, exprVal), nexts.toList, Some(defaultNext)))
+    creator(SwitchNode(Switch(id, Some(expression), Some(exprVal)), nexts.toList, Some(defaultNext)))
 
   def customNode(id: String, outputVar: String, customNodeRef: String, params: (String, Expression)*): GraphBuilder[R]  =
     build(node => creator(OneOutputSubsequentNode(CustomNode(id, Some(outputVar), customNodeRef, params.map(Parameter.tupled).toList), node)))

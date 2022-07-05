@@ -1,24 +1,23 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.Applicative
 import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
-import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 
@@ -67,7 +66,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
               isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(Switch(id, expression, varName, _), nexts, defaultNext) =>
-        val result = nodeCompiler.compileSwitch(Some((varName, expression)), nexts.map(c => (c.node.id, c.expression)), ctx)
+        val result = nodeCompiler.compileSwitch(varName.flatMap(n => expression.map(n -> _)), nexts.map(c => (c.node.id, c.expression)), ctx)
         val contextAfter = result.validationContext.getOrElse(ctx)
 
         CompilationResult.map4(
@@ -76,7 +75,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
           f2 = nexts.map(caseNode => compile(caseNode.node, contextAfter)).sequence,
           f3 = defaultNext.map(dn => compile(dn, contextAfter)).sequence) { case (_, (expr, caseExpressions), cases, defaultNext) =>
             val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
-            compiledgraph.node.Switch(id, expr.getOrElse(NullExpression("null", SpelExpressionParser.Standard)), varName, compiledCases, defaultNext)
+            compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
           }
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 

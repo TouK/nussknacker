@@ -120,7 +120,11 @@ object node {
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with DeadEndingData
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
+  object Switch {
+    def apply(id: String, expression: Expression, exprVal: String): Switch = Switch(id, Some(expression), Some(exprVal))
+  }
+
+  case class Switch(id: String, expression: Option[Expression], exprVal: Option[String], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
