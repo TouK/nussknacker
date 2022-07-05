@@ -158,6 +158,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val expressionCompilation = expression.map { case (output, expression) =>
       compileExpression(expression, ctx, Unknown, NodeExpressionId.DefaultExpressionId, Some(OutputVar.switch(output)))
     }
+    println("DUUPA" + expressionCompilation)
 
     val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
     val caseExpressions = choices.map { case (outEdge, caseExpr) =>
@@ -167,9 +168,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       .map(_.expressionTypingInfo)
       .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)){ _ ++ _}
     val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
+    println("ooo" + objExpression)
     val objCases = caseExpressions.map(_.compiledObject).sequence
     //TODO: should we really return caseCtx as output?
-    NodeCompilationResult(expressionTypingInfos, None, Valid(caseCtx), objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
+    NodeCompilationResult(expressionTypingInfos, None, expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
+      objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
   }
 
   def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],
