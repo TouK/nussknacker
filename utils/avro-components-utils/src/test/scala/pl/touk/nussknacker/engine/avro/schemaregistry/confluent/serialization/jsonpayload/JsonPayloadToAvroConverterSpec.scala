@@ -20,7 +20,7 @@ class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionV
   val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
 
   test("date logical type") {
-    val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""")
+    val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""", defaultOpt = Some("124"))
 
     val recordWithUnderlyingType = convert("123", schema)
     recordWithUnderlyingType.fieldValue shouldEqual LocalDate.ofEpochDay(123L)
@@ -29,13 +29,16 @@ class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionV
     val recordWithFormattedValue = convert("\"1970-05-04\"", schema)
     recordWithFormattedValue.fieldValue shouldEqual LocalDate.ofEpochDay(123L)
     avroToJsonEncoder(recordWithFormattedValue).fieldValue shouldEqual fromString("1970-05-04")
+
+    val recordWithDefaultValue = convertMissingField(schema)
+    recordWithDefaultValue.fieldValue shouldEqual LocalDate.ofEpochDay(124L)
   }
 
   test("invalid format of date logical type") {
     val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""")
     inside(Try(convert("\"invalid\"", schema))) {
       case Failure(ex) =>
-        ex.getCause should have message "Field: field is expected to has 'yyyy-MM-dd' or number of epoch days format"
+        ex.getCause should have message "Field field should be a valid date."
     }
   }
 
@@ -107,23 +110,23 @@ class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionV
   test("decimal logical type") {
     val schema = prepareSchema("""{ "type": "bytes", "logicalType": "decimal", "precision": 4, "scale": 2 }""")
 
-    val recordWithNumberType = convert("123.456", schema)
+    val recordWithNumberType = convert("123.45", schema)
     recordWithNumberType.fieldValue shouldEqual new java.math.BigDecimal("123.45")
     avroToJsonEncoder(recordWithNumberType).fieldValue shouldEqual fromDoubleOrNull(123.45)
 
 
-    val recordWithStringType = convert("123.456", schema)
+    val recordWithStringType = convert("123.45", schema)
     recordWithStringType.fieldValue shouldEqual new java.math.BigDecimal("123.45")
     avroToJsonEncoder(recordWithStringType).fieldValue shouldEqual fromDoubleOrNull(123.45)
   }
 
-  private def prepareSchema(fieldType: String) = {
+  private def prepareSchema(fieldType: String, defaultOpt: Option[String] = None) = {
     new Schema.Parser().parse(
       s"""{
          |  "name": "sample",
          |  "type": "record",
          |  "fields": [
-         |    { "name": "field", "type": $fieldType }
+         |    { "name": "field", "type": $fieldType${defaultOpt.map(d => ", \"default\": " + d).getOrElse("")} }
          |  ]
          |}""".stripMargin)
   }
@@ -132,12 +135,16 @@ class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionV
     jsonToAvroConverter.convert(s"""{"field": $fieldJsonValue}""".getBytes(StandardCharsets.UTF_8), schema)
   }
 
+  private def convertMissingField(schema: Schema): GenericRecord = {
+    jsonToAvroConverter.convert("{}".getBytes(StandardCharsets.UTF_8), schema)
+  }
+
   implicit class GenericRecordExt(record: GenericRecord) {
-    def fieldValue = record.get("field")
+    def fieldValue: AnyRef = record.get("field")
   }
 
   implicit class JsonRecordExt(json: Json) {
-    def fieldValue = json.asObject.value("field").value
+    def fieldValue: Json = json.asObject.value("field").value
   }
 
 }
