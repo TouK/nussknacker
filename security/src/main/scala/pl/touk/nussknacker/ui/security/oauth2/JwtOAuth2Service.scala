@@ -78,6 +78,6 @@ class JwtOAuth2Service[
   @JsonKey("jti") jwtId: Option[String]
 ) extends JwtStandardClaims
 
-object DefaultJwtAccessToken extends EitherCodecs with EpochSecondsToInstantCodecs {
+object DefaultJwtAccessToken extends EitherCodecs with EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }

@@ -52,7 +52,7 @@ import scala.concurrent.duration.Deadline
   val notBefore: Option[Instant] = None
 }
 
-object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsToInstantCodecs {
+object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]

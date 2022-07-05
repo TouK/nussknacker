@@ -5,7 +5,7 @@ import io.circe._
 import java.time.Instant
 import scala.concurrent.duration.{Deadline, FiniteDuration, SECONDS}
 
-protected[oauth2] trait EpochSecondsCodecs {
+protected[oauth2] trait RelativeSecondsCodecs {
   import cats.syntax.either._
   implicit val decodeDeadline: Decoder[Deadline] = new Decoder[Deadline] {
     def apply(c: HCursor): Decoder.Result[Deadline] = {
@@ -31,7 +31,7 @@ protected[oauth2] trait EpochSecondsCodecs {
   }
 }
 
-protected[oauth2] trait EpochSecondsToInstantCodecs {
+protected[oauth2] trait EpochSecondsCodecs {
   implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
   implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
 }

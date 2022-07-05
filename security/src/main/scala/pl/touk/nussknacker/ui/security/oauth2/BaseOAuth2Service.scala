@@ -61,7 +61,7 @@ class BaseOAuth2Service[
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
 ) extends OAuth2AuthorizationData
 
-object DefaultOAuth2AuthorizationData extends EpochSecondsCodecs {
+object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
 

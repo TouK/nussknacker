@@ -68,7 +68,7 @@ object ExampleOAuth2ServiceFactory {
     val refreshToken: Option[String] = None
   }
 
-  object TestAccessTokenResponse extends EpochSecondsCodecs {
+  object TestAccessTokenResponse extends RelativeSecondsCodecs {
     implicit val config: Configuration = Configuration.default
   }
 
