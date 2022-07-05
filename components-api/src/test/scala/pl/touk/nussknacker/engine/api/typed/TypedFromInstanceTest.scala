@@ -65,9 +65,6 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
       val typingResult = Typed.fromInstance(obj)
 
       typingResult.canBeSubclassOf(Typed(klass)) shouldBe true
-      println(typingResult.display)
-      println(paramTypingResult.display)
-      println(typingResult.asInstanceOf[TypedClass].params.loneElement.display)
       typingResult.asInstanceOf[TypedClass].params.loneElement.canBeSubclassOf(paramTypingResult) shouldBe true
     }
 
@@ -77,8 +74,8 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
-    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Integer]))
-    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Integer]))
+    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
+    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = TypedObjectTypingResult(ListMap("a" -> Typed(classOf[Integer])))
