@@ -24,8 +24,10 @@ import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
+import {EdgesDndComponent} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
-import {NodeType, VariableTypes} from "../../../types"
+import {Edge, EdgeKind, NodeType, VariableTypes} from "../../../types"
+import {UserSettings} from "../../../reducers/userSettings"
 
 export interface NodeDetailsContentProps {
   testResults?,
@@ -38,25 +40,29 @@ export interface NodeDetailsContentProps {
   showSwitch?,
   findAvailableVariables?,
   processDefinitionData?,
-  node?,
+  node: NodeType,
+  edges?: Edge[],
   expressionType?,
-  originalNodeId?,
+  originalNodeId?: NodeType["id"],
   nodeTypingInfo?,
   updateNodeData?,
   findAvailableBranchVariables?,
   processProperties?,
   pathsToMark?: string[],
-  onChange?: (node: NodeType) => void,
+  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   variableTypes?: VariableTypes,
+  userSettings: UserSettings,
 }
 
 interface State {
   testResultsToShow,
   testResultsToHide,
   testResultsIdToShow,
-  editedNode,
+  editedNode: NodeType,
+  originalNode: NodeType,
   unusedParameters,
   codeCompletionEnabled,
+  edges: Edge[],
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -76,10 +82,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     this.state = {
       ...stateForSelectTestResults,
       editedNode: node,
+      originalNode: nodeToAdjust,
       unusedParameters: unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
+      edges: props.edges,
     }
+
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
     if (this.props.isEditMode) {
@@ -186,6 +195,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
 
     const variableTypes = findAvailableVariables(originalNodeId)
     const editedNode = this.state.editedNode
+    //compare window uses legacy egde component
+    const isCompareView = this.props.pathsToMark !== undefined
 
     switch (NodeUtils.nodeType(node)) {
       case "Source":
@@ -240,6 +251,23 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
+            {!isCompareView ? (
+              <EdgesDndComponent
+                label={"Outputs"}
+                nodeId={originalNodeId}
+                value={this.state.edges}
+                onChange={(edges) => {
+                  if (edges !== this.state.edges) {
+                    this.setState({edges}, this.publishNodeChange)
+                  }
+                }}
+                edgeTypes={[
+                  {value: EdgeKind.filterTrue, onlyOne: true},
+                  {value: EdgeKind.filterFalse, onlyOne: true},
+                ]}
+                readOnly={!isEditMode}
+              />
+            ) : null}
             {this.descriptionField()}
           </div>
         )
@@ -386,16 +414,38 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           />
         )
       case "Switch":
+        const nodeDefinition = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.createStaticExpressionField(
-              "expression",
-              "Expression",
-              "expression",
-              fieldErrors
-            )}
-            {this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")])}
+            {!isEqual(nodeDefinition.node["expression"], this.state.originalNode["expression"]) ?
+              this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors) :
+              null}
+            {nodeDefinition.node["exprVal"] !== this.state.originalNode["exprVal"] ?
+              this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
+              null}
+            {!isCompareView ? (
+              <EdgesDndComponent
+                label={"Conditions"}
+                nodeId={originalNodeId}
+                value={this.state.edges}
+                onChange={(edges) => {
+                  if (edges !== this.state.edges) {
+                    this.setState({edges}, this.publishNodeChange)
+                  }
+                }}
+                edgeTypes={[
+                  {value: EdgeKind.switchNext},
+                  {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
+                ]}
+                ordered
+                readOnly={!isEditMode}
+                variableTypes={{
+                  ...variableTypes,
+                  [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                }}
+              />
+            ) : null}
             {this.descriptionField()}
           </div>
         )
@@ -645,8 +695,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     )
   }
 
-  publishNodeChange = () => {
-    this.props.onChange?.(this.state.editedNode)
+  publishNodeChange = (): void => {
+    this.props.onChange?.(this.state.editedNode, this.state.edges)
   }
 
   setNodeDataAt = (propToMutate, newValue, defaultValue?) => {

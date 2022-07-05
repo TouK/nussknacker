@@ -21,6 +21,7 @@ import {prepareSvg} from "./svg-export/prepareSvg"
 import * as GraphUtils from "./GraphUtils"
 import {ComponentDragPreview} from "../ComponentDragPreview"
 import {rafThrottle} from "./rafThrottle"
+import {isEdgeEditable} from "../../common/EdgeUtils"
 
 export class Graph extends React.Component {
 
@@ -30,7 +31,6 @@ export class Graph extends React.Component {
     connectDropTarget: PropTypes.func,
     isDraggingOver: PropTypes.bool,
     showModalNodeDetails: PropTypes.func.isRequired,
-    showModalEdgeDetails: PropTypes.func.isRequired,
     isSubprocess: PropTypes.bool,
   }
   redrawing = false
@@ -130,7 +130,7 @@ export class Graph extends React.Component {
       this.highlightHoveredLink()
     })
 
-    //we want to inject node during 'Drag and Drop' from graph paper
+    //we want to inject node during 'Drag and Drop' from toolbox
     this.graph.on(Events.ADD, (cell) => {
       if (isModelElement(cell)) {
         this.handleInjectBetweenNodes(cell)
@@ -220,11 +220,20 @@ export class Graph extends React.Component {
     return await prepareSvg(this._exportGraphOptions)
   }
 
+  /**
+   * @param {dia.CellView} cellViewS
+   * @param {SVGElement} magnetS
+   * @param {dia.CellView} cellViewT
+   * @param {SVGElement} magnetT
+   * @param {dia.LinkEnd} end
+   * @param {dia.LinkView} linkView
+   */
   validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
     const from = cellViewS.model.id
     const to = cellViewT.model.id
     const previousEdge = linkView.model.attributes.edgeData || {}
-    return magnetT && NodeUtils.canMakeLink(from, to, this.props.processToDisplay, this.props.processDefinitionData, previousEdge)
+    const {processToDisplay, processDefinitionData} = this.props
+    return magnetT.getAttribute("port") === "In" && NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge)
   }
 
   disconnectPreviousEdge = (from, to) => {
@@ -259,7 +268,7 @@ export class Graph extends React.Component {
           sourceNode,
           middleManNode,
           targetNode,
-          linkBelowCell.attributes.edgeData.edgeType,
+          linkBelowCell.attributes.edgeData,
         )
       }
     }
@@ -348,11 +357,20 @@ export class Graph extends React.Component {
       if (nodeDataId) {
         const nodeData = this.getNodeData(cellView.model)
         const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
-        this.props.showModalNodeDetails({...nodeData, id: prefixedNodeId}, this.props.readonly)
+        this.props.showModalNodeDetails({
+          ...nodeData,
+          id: prefixedNodeId,
+        }, this.props.processToDisplay, this.props.readonly)
       }
 
-      if (cellView.model.attributes.edgeData) {
-        this.props.showModalEdgeDetails(cellView.model.attributes.edgeData)
+      //TODO: open node window instead for switch (for filter too?)
+      const edgeData = cellView.model.attributes.edgeData
+      if (edgeData && isEdgeEditable(edgeData)) {
+        this.props.showModalNodeDetails(
+          NodeUtils.getNodeById(cellView.model.attributes.edgeData.from, this.props.processToDisplay),
+          this.props.processToDisplay,
+          this.props.readonly
+        )
       }
     })
 

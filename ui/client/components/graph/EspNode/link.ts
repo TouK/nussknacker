@@ -1,12 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
-import {Edge} from "../../../types"
+import {Edge, EdgeKind} from "../../../types"
 import NodeUtils from "../NodeUtils"
 
 const LINK_TEXT_COLOR = "#686868"
 const LINK_COLOR = "#F5F5F5"
 
-function makeLabels(label = ""): dia.Link.Label[] {
+function makeLabels(label = "", prefix = ""): dia.Link.Label[] {
+  const havePrefix = prefix.length > 0
   return label.length === 0 ? [] : [{
     position: 0.5,
     attrs: {
@@ -26,7 +27,7 @@ function makeLabels(label = ""): dia.Link.Label[] {
         cursor: "pointer",
       },
       text: {
-        text: label,
+        text: havePrefix ? `${prefix}: ${label}` : label,
         fontWeight: 600,
         fontSize: 10,
         fill: LINK_TEXT_COLOR,
@@ -47,9 +48,10 @@ export const defaultLink = (arrowMarkerId: string) => new dia.Link({
   },
 })
 
-export const makeLink = (edge: Edge, arrowMarkerId: string): dia.Link => {
+export const makeLink = (edge: Edge & { index: number }, arrowMarkerId: string): dia.Link => {
   const edgeLabel = NodeUtils.edgeLabel(edge)
-  const labels = makeLabels(edgeLabel)
+  const switchEdges: string[] = [EdgeKind.switchNext, EdgeKind.switchDefault]
+  const labels = makeLabels(edgeLabel, switchEdges.includes(edge.edgeType?.type) ? `${edge.index}` : "")
   const link = defaultLink(arrowMarkerId) as dia.Link
   return link
     //TODO: some different way to create id? Must be deterministic and unique
