@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid, invalid, valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import cats.instances.list._
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.context.transformation.{JoinGenericNodeTransformation, SingleInputGenericNodeTransformation}
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTy
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, Source}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.{ExpressionCompilation, NodeCompilationResult}
 import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, NodeValidationExceptionHandler, ProcessObjectFactory}
 import pl.touk.nussknacker.engine.compiledgraph.evaluatedparam.TypedParameter
@@ -150,6 +150,26 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     }
     val expressionTypingInfo = validParams.map(_.map(p => p.name -> p.typingInfo).toMap).valueOr(_ => Map.empty[String, ExpressionTypingInfo])
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
+  }
+
+  def compileSwitch(expression: Option[(String, Expression)], choices: List[(String, Expression)], ctx: ValidationContext)
+                   (implicit nodeId: NodeId): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
+
+    val expressionCompilation = expression.map { case (output, expression) =>
+      compileExpression(expression, ctx, Unknown, NodeExpressionId.DefaultExpressionId, Some(OutputVar.switch(output)))
+    }
+
+    val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
+    val caseExpressions = choices.map { case (outEdge, caseExpr) =>
+      compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
+    }
+    val expressionTypingInfos = caseExpressions
+      .map(_.expressionTypingInfo)
+      .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)){ _ ++ _}
+    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
+    val objCases = caseExpressions.map(_.compiledObject).sequence
+    //TODO: should we really return caseCtx as output?
+    NodeCompilationResult(expressionTypingInfos, None, Valid(caseCtx), objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
   }
 
   def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],

@@ -60,7 +60,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -79,7 +79,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         Parameter("value", Expression("spel", "notvalidspelexpression")),
         Parameter("topic", Expression("spel", "'test-topic'")))),
         None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -96,7 +96,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -125,7 +125,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
           "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
           "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
         )
-      ))
+      ), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         val res = responseAs[NodeValidationResult]
