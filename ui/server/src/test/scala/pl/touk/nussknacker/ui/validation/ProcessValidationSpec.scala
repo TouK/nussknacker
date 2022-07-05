@@ -331,7 +331,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
     validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
-      "bar" -> Typed(classOf[String])
+      "bar" -> Typed.fromInstance("42")
     ))
   }
 
@@ -395,7 +395,7 @@ private object ProcessValidationSpec {
     emptyProcessingTypeDataProvider
   )
 
-  def validProcessWithFields(fields: Map[String, String]) = {
+  def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
     createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -405,7 +405,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]) = {
+  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]): DisplayableProcess = {
     createProcess(
       List(
         Source("inID", SourceRef("barSource", List())),
@@ -421,7 +421,7 @@ private object ProcessValidationSpec {
   def createProcess(nodes: List[NodeData],
                     edges: List[Edge],
                     `type`: ProcessingType = TestProcessingTypes.Streaming,
-                    additionalFields: Map[String, String] = Map()) = {
+                    additionalFields: Map[String, String] = Map()): DisplayableProcess = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
   }
 
