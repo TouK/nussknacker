@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
+import pl.touk.nussknacker.engine.graph.EdgeType
+import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -23,13 +25,13 @@ case class ValidationPerformed(errors: List[ProcessCompilationError],
 
 case object ValidationNotPerformed extends ValidationResponse
 
-
 object NodeDataValidator {
 
   def validate(nodeData: NodeData, modelData: ModelData,
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext],
-               getFragment: String => Option[CanonicalProcess]
+               getFragment: String => Option[CanonicalProcess],
+               outgoingEdges: Map[String, Option[EdgeType]]
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
@@ -51,8 +53,9 @@ object NodeDataValidator {
         case a: Variable => toValidationResponse(compiler.compileExpression(a.value, validationContext, expectedType = typing.Unknown, outputVar = Some(OutputVar.variable(a.varName))))
         case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName))))
         case a: SubprocessOutputDefinition => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.subprocess(a.outputName))))
-        //TODO: validate case expressions
-        case a: Switch => toValidationResponse(compiler.compileExpression(a.expression, validationContext, expectedType = Unknown, outputVar = Some(OutputVar.switch(a.exprVal))))
+        case a: Switch => toValidationResponse(compiler.compileSwitch(Some((a.exprVal, a.expression)), outgoingEdges.collect {
+          case (k, Some(NextSwitch(expression))) => (k, expression)
+        }.toList, validationContext))
         case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
           errors => ValidationPerformed(errors.toList, None, None),
           params => toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))

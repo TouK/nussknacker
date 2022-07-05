@@ -29,6 +29,7 @@ import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.api.NodesResources.prepareValidationContext
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
@@ -36,8 +37,8 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
- * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
- */
+  * This class should contain operations invoked for each node (e.g. node validation, retrieving additional data etc.)
+  */
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData])(implicit val ec: ExecutionContext)
@@ -66,16 +67,19 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
               val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
 
-              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical)) match {
+              val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => e.to -> e.edgeType).toMap
+              NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical), edges) match {
                 case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters, expressionType) =>
                   val uiParams = parameters.map(_.map(UIProcessObjectsFactory.createUIParameter))
+
                   //We don't return MissingParameter error when we are returning those missing parameters to be added - since
                   //it's not really exception ATM
                   def shouldIgnoreError(pce: ProcessCompilationError): Boolean = pce match {
                     case MissingParameters(params, _) => params.forall(missing => uiParams.exists(_.exists(_.name == missing)))
                     case _ => false
                   }
+
                   val uiErrors = errors.filterNot(shouldIgnoreError).map(PrettyValidationErrors.formatErrorMessage)
                   NodeValidationResult(
                     parameters = uiParams,
@@ -132,7 +136,9 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
                                                               validationPerformed: Boolean)
 
 @JsonCodec(encodeOnly = true) case class NodeValidationRequest(nodeData: NodeData,
-                                            processProperties: ProcessProperties,
-                                            variableTypes: Map[String, TypingResult], branchVariableTypes: Option[Map[String, Map[String, TypingResult]]])
+                                                               processProperties: ProcessProperties,
+                                                               variableTypes: Map[String, TypingResult],
+                                                               branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
+                                                               outgoingEdges: Option[List[Edge]])
 
 

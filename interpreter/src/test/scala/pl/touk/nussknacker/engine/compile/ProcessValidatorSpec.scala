@@ -799,6 +799,17 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
   }
 
+  test("validates case expressions in switch") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "source")
+      .switch("switch", "''", "var2", Case("#notExist", GraphBuilder.emptySink("end1", "sink")))
+
+    validate(process, definitionWithTypedSource).result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'notExist'", "switch", Some("end1"), "#notExist"), _)) =>
+    }
+  }
+
   test("not allow customNode outputVar when no return type in definition") {
     val processWithInvalidExpresssion =
       ScenarioBuilder
