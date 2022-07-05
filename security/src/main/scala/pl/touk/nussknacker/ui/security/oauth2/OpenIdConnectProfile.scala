@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import io.circe.{Decoder, Json}
+import io.circe.{Decoder, Encoder, Json}
 
-import java.time.LocalDate
+import java.time.{Instant, LocalDate}
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
@@ -34,25 +34,25 @@ import scala.concurrent.duration.Deadline
   @JsonKey("phone_number") phoneNumber: Option[String], //RFC 3963
   @JsonKey("phone_number_verified") phoneNumberVerified: Option[Boolean],
   address: Option[Map[String, String]],
-  @JsonKey("updated_at") updatedAt: Option[Deadline],
+  @JsonKey("updated_at") updatedAt: Option[Instant],
 
   @JsonKey("iss") issuer: Option[String],
   @JsonKey("aud") audience: Option[Either[List[String], String]],
 
   // All the following are set only when the userinfo is from an ID token
-  @JsonKey("exp") expirationTime: Option[Deadline],
-  @JsonKey("iat") issuedAt: Option[Deadline],
-  @JsonKey("auth_time") authenticationTime: Option[Deadline],
+  @JsonKey("exp") expirationTime: Option[Instant],
+  @JsonKey("iat") issuedAt: Option[Instant],
+  @JsonKey("auth_time") authenticationTime: Option[Instant],
 
   // Not a standard but convenient claim that can be used by a few Authorization Server implementations.
   // The key name is taken from the rolesClaim field in the configuration.
   roles: Set[String] = Set.empty
 ) extends JwtStandardClaims {
   val jwtId: Option[String] = None
-  val notBefore: Option[Deadline] = None
+  val notBefore: Option[Instant] = None
 }
 
-object OpenIdConnectUserInfo extends EpochSecondsCodecs with EitherCodecs {
+object OpenIdConnectUserInfo extends EitherCodecs with EpochSecondsToInstantCodecs {
   implicit val config: Configuration = Configuration.default.withDefaults
 
   lazy val decoder: Decoder[OpenIdConnectUserInfo] = deriveConfiguredDecoder[OpenIdConnectUserInfo]
