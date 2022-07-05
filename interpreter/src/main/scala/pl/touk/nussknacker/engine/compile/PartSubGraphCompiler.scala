@@ -66,7 +66,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
               isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(Switch(id, expression, varName, _), nexts, defaultNext) =>
-        val result = nodeCompiler.compileSwitch(varName.flatMap(n => expression.map(n -> _)), nexts.map(c => (c.node.id, c.expression)), ctx)
+        val result = nodeCompiler.compileSwitch(Applicative[Option].product(varName, expression), nexts.map(c => (c.node.id, c.expression)), ctx)
         val contextAfter = result.validationContext.getOrElse(ctx)
 
         CompilationResult.map4(

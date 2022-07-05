@@ -19,7 +19,7 @@ describe("Process", () => {
       cy.visitNewProcess(seed, "testProcess")
     })
 
-    it("should allow editing switch edge expression", () => {
+    test("should allow editing switch edge expression", () => {
       cy.contains(/^layout$/).click()
       cy.contains(/^base$/).should("be.visible").click()
       cy.contains(/^switch$/)

@@ -152,24 +152,26 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     NodeCompilationResult(expressionTypingInfo, None, newCtx, validParams)
   }
 
+  //expression is deprecated, will be removed in the future
   def compileSwitch(expression: Option[(String, Expression)], choices: List[(String, Expression)], ctx: ValidationContext)
                    (implicit nodeId: NodeId): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
 
     val expressionCompilation = expression.map { case (output, expression) =>
       compileExpression(expression, ctx, Unknown, NodeExpressionId.DefaultExpressionId, Some(OutputVar.switch(output)))
     }
+    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
 
     val caseCtx = expressionCompilation.flatMap(_.validationContext.toOption).getOrElse(ctx)
     val caseExpressions = choices.map { case (outEdge, caseExpr) =>
       compileExpression(caseExpr, caseCtx, Typed[Boolean], outEdge, None)
     }
-    val expressionTypingInfos = caseExpressions
-      .map(_.expressionTypingInfo)
+    val expressionTypingInfos = caseExpressions.map(_.expressionTypingInfo)
       .foldLeft(expressionCompilation.map(_.expressionTypingInfo).getOrElse(Map.empty)){ _ ++ _}
-    val objExpression = expressionCompilation.map(_.compiledObject.map(Some(_))).getOrElse(Valid(None))
+
     val objCases = caseExpressions.map(_.compiledObject).sequence
-    //TODO: should we really return caseCtx as output?
-    NodeCompilationResult(expressionTypingInfos, None, Valid(caseCtx), objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
+
+    NodeCompilationResult(expressionTypingInfos, None, expressionCompilation.map(_.validationContext).getOrElse(Valid(ctx)),
+      objExpression.product(objCases), expressionCompilation.flatMap(_.expressionType))
   }
 
   def compileFields(fields: List[pl.touk.nussknacker.engine.graph.variable.Field],

@@ -69,7 +69,7 @@ class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with Patient
     val testingData = Table(
       ("nodeData", "expected"),
       (Filter(componentName, ""), Some(cid(ComponentType.Filter))),
-      (Switch(componentName, "", ""), Some(cid(ComponentType.Switch))),
+      (Switch(componentName), Some(cid(ComponentType.Switch))),
       (VariableBuilder(componentName, "", Nil), Some(cid(ComponentType.MapVariable))),
       (Variable(componentName, "", ""), Some(cid(ComponentType.Variable))),
       (Split(componentName), Some(cid(ComponentType.Split))),

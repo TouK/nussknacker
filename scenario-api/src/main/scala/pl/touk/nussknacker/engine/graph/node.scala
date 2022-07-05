@@ -121,9 +121,13 @@ object node {
                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with DeadEndingData
 
   object Switch {
+
+    def apply(id: String): Switch = Switch(id, None, None)
+
     def apply(id: String, expression: Expression, exprVal: String): Switch = Switch(id, Some(expression), Some(exprVal))
   }
 
+  //expression and expressionVal are deprecated, will be removed in the future
   case class Switch(id: String, expression: Option[Expression], exprVal: Option[String], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
