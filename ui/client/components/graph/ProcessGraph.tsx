@@ -4,7 +4,13 @@ import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
-import {getFetchedProcessDetails, getLayout, getNodeToDisplay, getProcessCounts, getProcessToDisplay} from "../../reducers/selectors/graph"
+import {
+  getFetchedProcessDetails,
+  getLayout,
+  getNodeToDisplay,
+  getProcessCounts,
+  getProcessToDisplay
+} from "../../reducers/selectors/graph"
 import {setLinksHovered} from "./dragHelpers"
 import {commonState, Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
@@ -45,7 +51,6 @@ function mapState(state) {
     // eslint-disable-next-line i18next/no-literal-string
     divId: "nk-graph-main",
     singleClickNodeDetailsEnabled: true,
-    nodeIdPrefixForSubprocessTests: "",
     readonly: false,
     processToDisplay: getProcessToDisplay(state),
     fetchedProcessDetails: getFetchedProcessDetails(state),

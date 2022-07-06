@@ -3,7 +3,6 @@ import {connect} from "react-redux"
 import {compose} from "redux"
 import ActionsUtils from "../../actions/ActionsUtils"
 import * as LayoutUtils from "../../reducers/layoutUtils"
-import {getNodeId} from "../../reducers/selectors/graph"
 import {commonState} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
 
@@ -16,7 +15,6 @@ function mapSubprocessState(state, props) {
     readonly: true,
     isSubprocess: true,
     singleClickNodeDetailsEnabled: false,
-    nodeIdPrefixForSubprocessTests: `${getNodeId(state)}-`, //TODO where should it be?
   }
 }
 
