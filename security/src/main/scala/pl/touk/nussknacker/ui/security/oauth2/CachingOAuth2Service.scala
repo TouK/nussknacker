@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.github.benmanes.caffeine.cache.Ticker
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultAsyncCache, DefaultCache, ExpiryConfig}
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, ExpiryConfig}
 
 import java.time.{Duration, Instant}
 import java.util.concurrent.TimeUnit

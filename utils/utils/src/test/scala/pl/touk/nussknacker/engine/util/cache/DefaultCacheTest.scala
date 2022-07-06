@@ -108,37 +108,4 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
     currentTime += FiniteDuration(2, MINUTES)
     cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have ('sub ("newValue"))
   }
-
-  it should "allow setting expiration time depending on a value for an async cache" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    case class Value(sub: String, expireAt: Deadline)
-    val cache = new DefaultAsyncCache[String, Value](
-      cacheConfig = CacheConfig(
-        expiry = new ExpiryConfig[String, Value] {
-          override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.expireAt)
-        }),
-      ticker)(global)
-
-    cache.getOrCreate("key1")(Future.successful(Value("value1", currentTime + FiniteDuration(1, MINUTES))))
-    cache.getOrCreate("key2")(Future.successful(Value("value2", currentTime + FiniteDuration(3, MINUTES))))
-
-    currentTime += FiniteDuration(2, MINUTES)
-    whenReady(cache.getOrCreate("key1")(Future.successful(Value("newValue1", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should have ('sub("newValue1"))
-    }
-    whenReady(cache.getOrCreate("key2")(Future.successful(Value("newValue2", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should /*still*/ have ('sub ("value2"))
-    }
-
-    currentTime += FiniteDuration(2, MINUTES)
-    whenReady(cache.getOrCreate("key2")(Future.successful(Value("newValue2", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should have ('sub ("newValue2"))
-    }
-
-    // check that entries were evicted
-    currentTime += FiniteDuration(1, HOURS)
-    cache.get("key1") shouldEqual None
-    cache.get("key2") shouldEqual None
-  }
 }
