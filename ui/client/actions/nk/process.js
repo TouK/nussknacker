@@ -1,13 +1,8 @@
-import _ from "lodash"
 import {events} from "../../analytics/TrackingEvents"
-import {mapProcessWithNewNode} from "../../components/graph/GraphUtils"
-import NodeUtils from "../../components/graph/NodeUtils"
-import * as SubprocessSchemaAligner from "../../components/graph/SubprocessSchemaAligner"
 import HttpService from "../../http/HttpService"
 import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
 import {displayProcessCounts} from "./displayProcessCounts"
-import {fetchProcessDefinition} from "./processDefinitionData"
 import {reportEvent} from "./reportEvent"
 
 export function fetchProcessToDisplay(processId, versionId) {
@@ -78,36 +73,6 @@ export function clearProcess() {
       type: "CLEAR_PROCESS",
     })
   }
-}
-
-export function calculateProcessAfterChange(process, before, after) {
-  return dispatch => {
-    if (NodeUtils.nodeIsProperties(after)) {
-      return dispatch(
-        fetchProcessDefinition(process.processingType, process.properties.isSubprocess),
-      ).then((processDef) => {
-        const processWithNewSubprocessSchema = alignSubprocessesWithSchema(process, processDef.processDefinitionData)
-        const {id, ...properties} = after
-        if (id && id !== before.id) {
-          dispatch({type: "PROCESS_RENAME", name: id})
-        }
-        return {...processWithNewSubprocessSchema, properties}
-      })
-    } else {
-      return Promise.resolve(mapProcessWithNewNode(process, before, after))
-    }
-  }
-}
-
-function alignSubprocessesWithSchema(process, processDefinitionData) {
-  const nodesWithNewSubprocessSchema = _.map(process.nodes, (node) => {
-    if (node.type === "SubprocessInput") {
-      return SubprocessSchemaAligner.alignSubprocessWithSchema(processDefinitionData, node)
-    } else {
-      return node
-    }
-  })
-  return {...process, nodes: nodesWithNewSubprocessSchema}
 }
 
 export function testProcessFromFile(id, testDataFile, process) {

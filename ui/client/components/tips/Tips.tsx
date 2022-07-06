@@ -15,13 +15,13 @@ import Warnings from "./Warnings"
 
 export default function Tips(): JSX.Element {
   const {openNodeWindow} = useWindows()
+  const currentProcess = useSelector(getProcessToDisplay)
 
   const showDetails = useCallback((event, node) => {
     event.preventDefault()
-    openNodeWindow(node)
-  }, [openNodeWindow])
+    openNodeWindow(node, currentProcess)
+  }, [openNodeWindow, currentProcess])
 
-  const currentProcess = useSelector(getProcessToDisplay)
   const {isToolTipsHighlighted: isHighlighted} = useSelector(getUi)
   const testResults = useSelector(getTestResults)
 

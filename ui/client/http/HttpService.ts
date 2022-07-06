@@ -369,8 +369,8 @@ class HttpService {
 
   //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess(process) {
-    return api.post("/processValidation", process)
+  validateProcess({edges,...process}) {
+    return api.post("/processValidation", {...process, edges: edges.filter(e => e.to)})
       .catch(error => {
         this.addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)

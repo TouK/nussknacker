@@ -11,13 +11,12 @@ export interface GraphProps extends ReturnType<typeof commonState> {
 
 // Graph wrapped to make partial (for now) refactor to TS and hooks
 export default forwardRef<Graph, GraphProps>(function GraphWrapped(props, forwardedRef): JSX.Element {
-  const {openNodeWindow, editEdge} = useWindows()
+  const {openNodeWindow} = useWindows()
   return (
     <Graph
       ref={forwardedRef}
       {...props}
       showModalNodeDetails={openNodeWindow}
-      showModalEdgeDetails={editEdge}
     />
   )
 })

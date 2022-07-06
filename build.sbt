@@ -242,6 +242,9 @@ lazy val commonSettings =
         "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
       )
     )
 
@@ -273,7 +276,7 @@ val commonsTextV = "1.8"
 val commonsIOV = "2.4"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
-val dropWizardV = "5.0.0-rc3"
+val dropWizardV = "5.0.0-rc11"
 val scalaCollectionsCompatV = "2.3.2"
 val testcontainersScalaV = "0.39.12"
 val nettyV = "4.1.48.Final"
@@ -740,7 +743,7 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "tech.allegro.schema.json2avro" % "converter" % "0.2.11",
+        "tech.allegro.schema.json2avro" % "converter" % "0.2.15",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -966,6 +969,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
       Seq(
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
         "com.softwaremill.sttp.client" %% "core" % sttpV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "ch.qos.logback.contrib" % "logback-json-classic" % logbackJsonV,
@@ -1419,6 +1423,10 @@ lazy val ui = (project in file("ui/server"))
 
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "test",
         "com.dimafeng" %% "testcontainers-scala-postgresql" % testcontainersScalaV % "test",
+
+        "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
+        "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
+        "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
       )
     }
   )

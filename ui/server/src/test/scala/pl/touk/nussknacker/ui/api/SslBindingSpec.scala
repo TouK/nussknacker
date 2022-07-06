@@ -6,6 +6,7 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.Materializer
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest._
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -23,13 +24,14 @@ class SslBindingSpec extends FlatSpec with Matchers {
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(
       system.settings.config,
-      NussknackerAppInitializer.initDb(system.settings.config)
+      NussknackerAppInitializer.initDb(system.settings.config),
+      new MetricRegistry
     )
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
     val serverContext = HttpsConnectionContextFactory.createServerContext(keyStoreConfig)
     val clientContext = HttpsConnectionContextFactory.createClientContext(keyStoreConfig)
 
-    val binding = Await.result(NussknackerAppInitializer.bindHttps("localhost", 0, serverContext, route), 10.seconds) // port = 0 - random port
+    val binding = Await.result(NussknackerAppInitializer.bindHttps("localhost", 0, serverContext, route, new MetricRegistry), 10.seconds) // port = 0 - random port
     try {
       val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
       val request = HttpRequest(
