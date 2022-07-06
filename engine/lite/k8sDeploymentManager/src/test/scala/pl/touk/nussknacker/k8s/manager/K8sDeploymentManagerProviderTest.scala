@@ -25,7 +25,7 @@ import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, Secret, k8sInit}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
 import java.io.File
@@ -334,6 +334,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     eventually {
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
+      k8s.listSelected[ListResource[Secret]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[Pod]](selector).futureValue.items shouldBe Nil
     }
   }

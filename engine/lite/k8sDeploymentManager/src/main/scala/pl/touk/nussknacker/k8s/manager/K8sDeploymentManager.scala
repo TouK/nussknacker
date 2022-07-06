@@ -22,15 +22,15 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer}
+import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer, MountableResources}
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
-import java.util.Collections
+import java.util.{Base64, Collections}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
@@ -94,15 +94,24 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
       validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
       _ <- Future.fromTry(validationResult.toEither.toTry)
-      configMap <- k8sUtils.createOrUpdate(k8s, configMapForData(processVersion, canonicalProcess, scalingOptions.noOfTasksInReplica, config.nussknackerInstanceName))
-      //we append hash to configMap name so we can guarantee pods will be restarted.
-      //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-      deployment <- k8sUtils.createOrUpdate(k8s, deploymentPreparer.prepare(processVersion, configMap.name, scalingOptions.replicasCount))
+      configMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map(
+        "scenario.json" -> canonicalProcess.asJson.noSpaces,
+        "deploymentConfig.conf" -> ConfigFactory.empty().withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica)).root().render()
+      )))
+      loggingConfigMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf")))
+      //modelConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
+      secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
+      mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
+      deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, mountableResources, scalingOptions.replicasCount))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
         requirementForName(processVersion.processName),
-        configMapIdLabel isNot configMap.name
+        configMapIdLabel isNotIn List(configMap, loggingConfigMap).map(_.name)
+      ))
+      _ <- k8s.deleteAllSelected[ListResource[Secret]](LabelSelector(
+        requirementForName(processVersion.processName),
+        secretIdLabel isNot secret.name
       ))
     } yield {
       logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
@@ -147,22 +156,30 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     } yield mapper.findStatusForDeploymentsAndPods(deployments, pods)
   }
 
-  protected def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, noOfTasksInReplica: Int, nussknackerInstanceName: Option[String]): ConfigMap = {
+  private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
+                                (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): ConfigMap = {
     val scenario = canonicalProcess.asJson.spaces2
-    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + serializedModelConfig))
+    //we append serialized data to name so we can guarantee pods will be restarted.
+    //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
+    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + data.toString()))
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
-    val deploymentConfig = ConfigFactory.empty().withValue("tasksCount", fromAnyRef(noOfTasksInReplica))
-
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
-        labels = labelsForScenario(processVersion, nussknackerInstanceName) + (configMapIdLabel -> objectName)
-      ), data = Map(
-        "scenario.json" -> scenario,
-        "modelConfig.conf" -> serializedModelConfig,
-        "logback.xml" -> logbackConfig,
-        "deploymentConfig.conf" -> deploymentConfig.root().render()
-      )
+        labels = labelsForScenario(processVersion, nussknackerInstanceName) + (configMapIdLabel -> objectName) ++ additionalLabels
+      ), data = data
+    )
+  }
+
+  private def secretForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
+                             (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): Secret = {
+    val scenario = canonicalProcess.asJson.spaces2
+    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + data.toString()))
+    Secret(
+      metadata = ObjectMeta(
+        name = objectName,
+        labels = labelsForScenario(processVersion, nussknackerInstanceName) + (secretIdLabel -> objectName) ++ additionalLabels
+      ), data = data.mapValues(v => Base64.getEncoder.encode(v.getBytes))
     )
   }
 
@@ -193,6 +210,10 @@ object K8sDeploymentManager {
   val scenarioVersionAnnotation: String = "nussknacker.io/scenarioVersion"
 
   val configMapIdLabel: String = "nussknacker.io/configMapId"
+
+  val secretIdLabel: String = "nussknacker.io/secretId"
+
+  val resourceTypeLabel: String = "nussknacker.io/resourceType"
 
   def apply(modelData: BaseModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
     new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
