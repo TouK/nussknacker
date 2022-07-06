@@ -37,6 +37,15 @@ describe("Process", () => {
       cy.location("href").should("contain", "-renamed")
     })
 
+    it("should allow archive with redirect to list", function () {
+      cy.contains(/^archive/i).should("be.enabled").click()
+      cy.contains("want to archive").should("be.visible")
+      cy.contains(/^yes$/i).should("be.enabled").click()
+      cy.contains(/^archived visible$/i, {timeout: 60000}).should("be.visible")
+      cy.contains(this.processName).should("be.visible").click({force: true})
+      cy.contains(/scenario was archived/i).should("be.visible")
+    })
+
     it("should open properites from tips panel", () => {
       cy.viewport("macbook-15")
       cy.contains(/^properties/i).should("be.enabled").click()
