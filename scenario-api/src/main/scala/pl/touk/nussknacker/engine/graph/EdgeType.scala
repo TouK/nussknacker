@@ -4,6 +4,7 @@ import io.circe.generic.extras.ConfiguredJsonCodec
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
+//unstable, may change in the future...
 @ConfiguredJsonCodec sealed abstract class EdgeType
 object EdgeType {
   sealed trait FilterEdge extends EdgeType

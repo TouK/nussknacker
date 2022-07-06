@@ -29,6 +29,7 @@ import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.ui.api.NodesResources.prepareValidationContext
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
@@ -67,7 +68,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
               val validationContext = prepareValidationContext(modelData)(nodeData.variableTypes)
               val branchCtxs = nodeData.branchVariableTypes.getOrElse(Map.empty).mapValues(prepareValidationContext(modelData))
 
-              val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => e.to -> e.edgeType).toMap
+              val edges = nodeData.outgoingEdges.getOrElse(Nil).map(e => OutgoingEdge(e.to, e.edgeType))
               NodeDataValidator.validate(nodeData.nodeData, modelData, validationContext, branchCtxs, k => subprocessRepository.get(k).map(_.canonical), edges) match {
                 case ValidationNotPerformed => NodeValidationResult(parameters = None, expressionType = None, validationErrors = Nil, validationPerformed = false)
                 case ValidationPerformed(errors, parameters, expressionType) =>

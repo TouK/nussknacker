@@ -13,12 +13,13 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{EdgeType, node}
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
@@ -247,7 +248,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should validate switch") {
     inside(
-     validate(Switch("switchId", "input", "value1"), ValidationContext.empty, Map.empty, Map("caseTarget1" -> Some(NextSwitch("notExist"))))
+     validate(Switch("switchId", "input", "value1"), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
    ) {
      case ValidationPerformed(List(
       ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
@@ -267,7 +268,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   private def validate(nodeData: NodeData,
                        ctx: ValidationContext,
                        branchCtxs: Map[String, ValidationContext] = Map.empty,
-                       outgoingEdges: Map[String, Option[EdgeType]] = Map.empty): ValidationResponse = {
+                       outgoingEdges: List[OutgoingEdge] = Nil): ValidationResponse = {
     val fragmentDef = CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       FlatNode(SubprocessOutputDefinition("out", "out1", Nil)),
