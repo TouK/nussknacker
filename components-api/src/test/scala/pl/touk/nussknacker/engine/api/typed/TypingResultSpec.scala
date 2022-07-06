@@ -204,11 +204,16 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
   }
 
-  test("should calculate supertype for objects with value when strict type checking is on") {
-    val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
-    unionFinder.commonSupertype(Typed.typedValue(65), Typed.typedValue(65)) shouldBe Typed.typedValue(65)
-    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Int]
-    unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
+  test("should calculate common superclass using AnySuperclass method") {
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
+    val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, false)
+    unionFinder.commonSupertype(Typed.fromInstance(94), Typed.fromInstance(12)) shouldBe Typed.typedClass[Int]
+
+    unionFinder.commonSupertype(Typed.typedClass[Int], Typed.typedClass[Double]) shouldBe Typed.typedClass[Number]
+    unionFinder.commonSupertype(Typed.fromInstance(45), Typed.fromInstance(8.57d)) shouldBe Typed.typedClass[Number]
+
+    unionFinder.commonSupertype(Typed.typedClass[Float], Typed.typedClass[String]) shouldBe Unknown
+    unionFinder.commonSupertype(Typed.fromInstance(4.12f), Typed.fromInstance("string")) shouldBe Unknown
   }
 
   object ClassHierarchy {

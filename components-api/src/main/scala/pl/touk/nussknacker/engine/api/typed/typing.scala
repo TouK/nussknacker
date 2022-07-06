@@ -213,9 +213,9 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(obj.getClass, List(supertypeOfElementTypes(list)))
+          typedClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(obj.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other => Typed(other.getClass) match {
           case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
@@ -233,6 +233,7 @@ object typing {
       }.toList
 
     private def supertypeOfElementTypes(list: List[_]): TypingResult = {
+      implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
       val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
       list.map(fromInstance)
         .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))

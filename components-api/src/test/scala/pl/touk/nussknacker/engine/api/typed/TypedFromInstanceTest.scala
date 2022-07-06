@@ -86,7 +86,20 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("a" -> Typed(classOf[String]))))
   }
 
+  test("should find element type for lists of different elements") {
+    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.typedClass(classOf[List[_]], List(Typed.typedClass[Number]))
+    Typed.fromInstance(List(3, "t")) shouldBe Typed.typedClass(classOf[List[_]], List(Unknown))
+  }
+
   test("should fallback to object's class") {
     Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed.typedClass[String], "abc")
   }
+
+  test("should not save types that cannot be encoded") {
+    Typed.fromInstance(Float.NaN) shouldBe Typed.typedClass[Float]
+    Typed.fromInstance(Double.PositiveInfinity) shouldBe Typed.typedClass[Double]
+    Typed.fromInstance(TestClass(8)) shouldBe Typed.typedClass[TestClass]
+  }
+
+  case class TestClass(value: Int)
 }
