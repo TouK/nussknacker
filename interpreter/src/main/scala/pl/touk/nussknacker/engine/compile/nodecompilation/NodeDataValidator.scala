@@ -28,11 +28,13 @@ case object ValidationNotPerformed extends ValidationResponse
 
 object NodeDataValidator {
 
+  case class OutgoingEdge(target: String, edgeType: Option[EdgeType])
+
   def validate(nodeData: NodeData, modelData: ModelData,
                validationContext: ValidationContext,
                branchContexts: Map[String, ValidationContext],
                getFragment: String => Option[CanonicalProcess],
-               outgoingEdges: Map[String, Option[EdgeType]]
+               outgoingEdges: List[OutgoingEdge]
               )(implicit metaData: MetaData): ValidationResponse = {
     modelData.withThisAsContextClassLoader {
 
@@ -55,8 +57,8 @@ object NodeDataValidator {
         case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName))))
         case a: SubprocessOutputDefinition => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.subprocess(a.outputName))))
         case a: Switch => toValidationResponse(compiler.compileSwitch(Applicative[Option].product(a.exprVal, a.expression), outgoingEdges.collect {
-          case (k, Some(NextSwitch(expression))) => (k, expression)
-        }.toList, validationContext))
+          case OutgoingEdge(k, Some(NextSwitch(expression))) => (k, expression)
+        }, validationContext))
         case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
           errors => ValidationPerformed(errors.toList, None, None),
           params => toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))
