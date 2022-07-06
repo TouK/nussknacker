@@ -133,8 +133,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     for {
       deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
       configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
+      secrets <- k8s.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
-      logger.debug(s"Canceled ${name.value}, removed deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}")
+      logger.debug(s"Canceled ${name.value}, removed deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
       ()
     }
   }
@@ -179,7 +180,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       metadata = ObjectMeta(
         name = objectName,
         labels = labelsForScenario(processVersion, nussknackerInstanceName) + (secretIdLabel -> objectName) ++ additionalLabels
-      ), data = data.mapValues(v => Base64.getEncoder.encode(v.getBytes))
+      ), data = data.mapValues(_.getBytes)
     )
   }
 

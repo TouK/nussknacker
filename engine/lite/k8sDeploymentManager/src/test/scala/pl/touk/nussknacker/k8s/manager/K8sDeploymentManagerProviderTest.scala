@@ -244,14 +244,18 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
 
     withManager(manager) { version =>
       eventually {
-        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.head
+        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.find {
+          _.data.isDefinedAt("logback.xml")
+        }.head
         cm.data("logback.xml").contains(customLogger) shouldBe true
       }
     }
 
     withManager(prepareManager()) { version =>
       eventually {
-        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.head
+        val cm = k8s.listSelected[ListResource[ConfigMap]](requirementForName(version.processName)).futureValue.items.find {
+          _.data.isDefinedAt("logback.xml")
+        }.head
         cm.data("logback.xml").contains(customLogger) shouldBe false
       }
     }
