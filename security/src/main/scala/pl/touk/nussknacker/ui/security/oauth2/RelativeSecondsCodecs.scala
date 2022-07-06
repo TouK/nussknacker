@@ -7,16 +7,6 @@ import scala.concurrent.duration.{Deadline, FiniteDuration, SECONDS}
 
 protected[oauth2] trait RelativeSecondsCodecs {
   import cats.syntax.either._
-  implicit val decodeDeadline: Decoder[Deadline] = new Decoder[Deadline] {
-    def apply(c: HCursor): Decoder.Result[Deadline] = {
-      decodeFiniteDuration(c).map(Deadline(_))
-    }
-  }
-
-  implicit val encodeDeadline: Encoder[Deadline] = new Encoder[Deadline] {
-    def apply(value: Deadline): Json = Json.fromLong(value.time.toSeconds)
-  }
-
   implicit val decodeFiniteDuration: Decoder[FiniteDuration] = new Decoder[FiniteDuration] {
     def apply(c: HCursor): Decoder.Result[FiniteDuration] = {
       c.value.asNumber.flatMap(_.toLong)

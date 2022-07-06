@@ -3,6 +3,8 @@ package pl.touk.nussknacker.ui.security.oauth2
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client.{NothingT, SttpBackend}
 
+import java.time.{Duration, Instant}
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -20,7 +22,10 @@ trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData
    String comparison is performed by the authorization server, hence the type.
    */
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)]
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])]
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])]
+
+  final protected def isOverdue(instant: Instant): Boolean = (Deadline.now + FiniteDuration(Duration.between(Instant.now(), instant).toNanos, TimeUnit.NANOSECONDS)).isOverdue()
+
 }
 
 

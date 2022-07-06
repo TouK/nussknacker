@@ -12,21 +12,16 @@ import sttp.model.Uri
 
 import java.net.URI
 import java.security.KeyPairGenerator
-import java.time.Clock
+import java.time.{Clock, Instant}
 import java.util.Base64
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class JwtOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers {
-
-  final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
-
-  implicit val clock: Clock = Clock.systemUTC()
-
-  private val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
+trait WithJwtOauth2Service {
+  protected val keyPair = KeyPairGenerator.getInstance("RSA").generateKeyPair()
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))
-  private val audience = "http://nussknacker"
+  protected val audience = "http://nussknacker"
 
-  private val config = OAuth2Configuration.create(ConfigFactory.parseString(
+  protected val config = OAuth2Configuration.create(ConfigFactory.parseString(
     s"""authentication: {
        |  method: "OAuth2"
        |  usersFile: "classpath:oauth2-users.conf"
@@ -48,12 +43,21 @@ class JwtOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers {
     .thenRespond(s""" { "sub": "admin" } """))
 
   implicit private val decoder: Decoder[OpenIdConnectUserInfo] = OpenIdConnectUserInfo.decoder
-  private val service = new JwtOAuth2Service(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](config), config)
+  protected val jwtOAuth2Service = new JwtOAuth2Service(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](config), config)
+}
+
+class JwtOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
+
+  final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
+
+  implicit val clock: Clock = Clock.systemUTC()
+
+
 
   it("should respect expiration period") {
     val validAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
-    val seconds = service.checkAuthorizationAndObtainUserinfo(validAccessToken).futureValue._2.get.time.toSeconds
+    val seconds = jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(validAccessToken).futureValue._2.get.getEpochSecond - Instant.now().getEpochSecond
 
     seconds should be <= 180L
   }

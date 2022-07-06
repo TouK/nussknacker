@@ -7,9 +7,9 @@ import pl.touk.nussknacker.ui.security.api.{AuthenticatedUser, AuthenticationCon
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileResponse}
 import sttp.client.{NothingT, SttpBackend}
 
-import java.io.File
 import java.net.URI
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestAccessTokenResponse], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT]) extends OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData] with LazyLogging {
@@ -20,7 +20,7 @@ class ExampleOAuth2Service(clientApi: OAuth2ClientApi[TestProfileResponse, TestA
       authenticatedUser <- checkAuthorizationAndObtainUserinfo(accessTokenResponse.accessToken).map(_._1)
     } yield (accessTokenResponse, authenticatedUser)
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Deadline])] =
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Instant])] =
     clientApi.profileRequest(accessToken).map{ prf: TestProfileResponse =>
       AuthenticatedUser(
         prf.uid,

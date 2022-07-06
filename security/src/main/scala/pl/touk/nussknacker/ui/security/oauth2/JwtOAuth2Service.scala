@@ -8,7 +8,7 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
-import java.time.Instant
+import java.time.{Duration, Instant}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,13 +46,13 @@ class JwtOAuth2Service[
     case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
   }
 
-  override def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
+  override def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
     if (accessTokenIsJwt) {
       Future(accessToken)
         .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
         .flatMap(claims =>
           if (requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)) {
-            Future.successful(claims.expirationTime.map(_.toEpochMilli).map(t => Deadline(FiniteDuration(t - System.currentTimeMillis(), TimeUnit.MILLISECONDS))))
+            Future.successful(claims.expirationTime)
           }
           else
             Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim"))))
