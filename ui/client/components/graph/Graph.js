@@ -85,7 +85,6 @@ export class Graph extends React.Component {
     this.processGraphPaper.on(Events.BLANK_POINTERUP, event => {
       if (!event.isPropagationStopped()) {
         if (this.props.fetchedProcessDetails != null) {
-          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
           this.props.actions.resetSelection()
         }
       }
@@ -157,6 +156,7 @@ export class Graph extends React.Component {
 
     this.processGraphPaper.unfreeze()
   })
+
   canAddNode(node) {
     return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&
@@ -381,8 +381,6 @@ export class Graph extends React.Component {
         if (!nodeDataId) {
           return
         }
-
-        this.props.actions.displayNodeDetails(this.getNodeData(cellView.model))
 
         if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
           this.props.actions.toggleSelection(nodeDataId)
