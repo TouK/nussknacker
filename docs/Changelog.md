@@ -19,6 +19,7 @@
 * [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
 * [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
 * [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
+* [#3227](https://github.com/TouK/nussknacker/pull/3227) Allow TAB navigation from expression editors
 * [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
 * [#3209](https://github.com/TouK/nussknacker/pull/3209) ConfigMap for K8 runtime has been split into two config maps (to separate logback conf) and one secret (with model config - which often contains confidential data)
 * [#3187](https://github.com/TouK/nussknacker/pull/3187) Moved switch/filter edges conditions configuration to source node window adding few enhancements (ordered switch edges; only false edge for filter). "Default" switch edge type, exprVal and expression are now deprecated and disabled in new instances. Fix: duplicated union edges.
