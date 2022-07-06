@@ -323,6 +323,7 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
     Future.sequence(List(
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+      k8s.deleteAllSelected[ListResource[Secret]](selector),
       k8s.delete[Resource.Quota]("nu-pods-limit")
     )).futureValue
     assertNoGarbageLeft()
