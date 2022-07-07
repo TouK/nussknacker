@@ -213,9 +213,9 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
+          typedClass(list.getClass, List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
+          typedClass(javaList.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other => Typed(other.getClass) match {
           case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {

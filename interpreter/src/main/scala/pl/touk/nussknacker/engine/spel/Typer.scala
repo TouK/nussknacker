@@ -205,8 +205,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: MethodReference =>
         extractMethodReference(e, validationContext, node, current, methodExecutionForUnknownAllowed)
 
-      case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current)
-      case e: OpNE => checkEqualityLikeOperation(validationContext, e, current)
+      case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current, isEquality = true)
+      case e: OpNE => checkEqualityLikeOperation(validationContext, e, current, isEquality = false)
 
       case e: OpAnd => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
       case e: OpOr => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
@@ -311,12 +311,29 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     if (isSingleElementSelection) TypingResultWithContext(childElementType) else parentType
   }
 
-  private def checkEqualityLikeOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def checkEqualityLikeOperation(validationContext: ValidationContext,
+                                         node: Operator,
+                                         current: TypingContext,
+                                         isEquality: Boolean): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
-      case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if commonSupertypeFinder.commonSupertype(right, left)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty => Valid(TypingResultWithContext(Typed[Boolean]))
-      case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil => invalid(s"Operator '${node.getOperatorName}' used with not comparable types: ${left.display} and ${right.display}")
-      case _ => invalid(s"Bad '${node.getOperatorName}' operator construction") // shouldn't happen
+      case TypingResultWithContext(TypedObjectWithValue(leftVariable, leftValue), _) ::
+        TypingResultWithContext(TypedObjectWithValue(rightVariable, rightValue), _) :: Nil =>
+        checkEqualityComparableTypes(leftVariable, rightVariable, node).map{
+          case typedClass: TypedClass => TypedObjectWithValue(typedClass, leftValue == rightValue ^ !isEquality)
+          case other => other
+        }.map(TypingResultWithContext(_))
+      case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
+        checkEqualityComparableTypes(left, right, node).map(TypingResultWithContext(_))
+      case _ =>
+        invalid(s"Bad '${node.getOperatorName}' operator construction") // shouldn't happen
     }
+  }
+
+  private def checkEqualityComparableTypes(left: TypingResult, right: TypingResult, node: Operator): ValidatedNel[ExpressionParseError, TypingResult] = {
+    if (commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty)
+      Valid(Typed[Boolean])
+    else
+      invalid(s"Operator '${node.getOperatorName}' used with not comparable types: ${left.display} and ${right.display}")
   }
 
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
