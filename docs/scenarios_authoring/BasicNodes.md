@@ -64,7 +64,7 @@ The Expression field should contain the SpEL expression for the filtering condit
 
 ## Choice
 
-Choice is more complex filter component version - instead of one filtering condition, you can define multiple conditions in some defined order.
+Choice is more advanced variant of filter component - instead of one filtering condition, you can define multiple conditions in some defined order.
 It distributes incoming records among output branches in accordance with the filtering conditions configured for those branches.
 
 ![switch graph](img/switch_graph.png)
