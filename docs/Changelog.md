@@ -28,6 +28,7 @@
 * [#3187](https://github.com/TouK/nussknacker/pull/3187) Fix: duplicated union edges.
 * [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
 * [#3045](https://github.com/TouK/nussknacker/pull/3045) json2avro bump 0.2.11 -> 0.2.15 + fix default values wasn't converted to logical types
+* [#3239](https://github.com/TouK/nussknacker/pull/3239) Added jul-to-slf4j to be sure that all logs going via logback
 
 1.4.0 (14 Jun 2022)
 ------------------------
