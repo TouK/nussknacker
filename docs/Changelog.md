@@ -25,6 +25,7 @@
 * [#3187](https://github.com/TouK/nussknacker/pull/3187) Moved switch/filter edges conditions configuration to source node window adding few enhancements (ordered switch edges; only false edge for filter). "Default" switch edge type, exprVal and expression are now deprecated and disabled in new instances. Fix: duplicated union edges.
 * [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
 * [#3045](https://github.com/TouK/nussknacker/pull/3045) json2avro bump 0.2.11 -> 0.2.15 + fix default values wasn't converted to logical types
+* [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
 
 1.4.0 (14 Jun 2022)
 ------------------------
