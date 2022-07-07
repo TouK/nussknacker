@@ -52,7 +52,8 @@ object TypeEncoders {
       objTypeEncoded.+:(tagEncoded)
     case TypedObjectWithValue(underlying, data) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded = "data" -> SimpleObjectEncoder.encode(underlying, data).toOption.get
+      val dataEncoded: (String, Json) = "data" -> SimpleObjectEncoder.encode(underlying, data)
+        .getOrElse(throw new IllegalStateException(s"Not supported data value: $data"))
       objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
