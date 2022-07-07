@@ -59,6 +59,10 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
     }
   }
 
+  test("special combination of operands for power operator") {
+    checkIfEvaluatedClassMatchesExpected("^", Int.MaxValue, Int.MaxValue)
+  }
+
   test("all combinations of operands for divide and modulus operator") {
     val operatorGen = Gen.oneOf(NotAcceptingZeroOnRrightOperarators)
 
