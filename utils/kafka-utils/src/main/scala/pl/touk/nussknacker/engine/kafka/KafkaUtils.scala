@@ -30,14 +30,14 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaBootstrapServer: String): Admin = {
-    val properties = new Properties()
-    properties.setProperty("bootstrap.servers", kafkaBootstrapServer)
+  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+    val properties = toProperties(kafkaConfig, None)
     AdminClient.create(properties)
   }
 
-  def usingAdminClient[T](kafkaBootstrapServer: String)(adminClientOperation: Admin => T): T =
-    Using.resource(createKafkaAdminClient(kafkaBootstrapServer))(adminClientOperation)
+
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
