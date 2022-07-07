@@ -16,6 +16,7 @@
         "build": "npm run build -workspaces --if-present",
         "prestart": "npm run make-types",
         "start": "ts-node runWorkspacesConcurrently start",
+        "start:core-dev": "NU_FE_CORE_URL=http://localhost:3000",
         "make-types": "npm run make-types -workspaces --if-present",
         "env": "chmod +x ./env.sh && ./env.sh",
         "lint": "eslint --fix .",
