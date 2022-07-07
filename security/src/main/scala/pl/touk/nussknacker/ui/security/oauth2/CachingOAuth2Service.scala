@@ -26,8 +26,8 @@ class CachingOAuth2Service[
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)] = {
     delegate.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri).map { case (authorization, userInfo) =>
       authorizationsCache.put(authorization.accessToken) {
-        val expiration = authorization.expirationPeriod.getOrElse(defaultExpiration)
-        (userInfo, Instant.now() plusNanos expiration.toNanos)
+        val expirationDuration = authorization.expirationPeriod.getOrElse(defaultExpirationDuration)
+        (userInfo, Instant.now() plusNanos expirationDuration.toNanos)
       }
       (authorization, userInfo)
     }
@@ -39,7 +39,7 @@ class CachingOAuth2Service[
         Future.successful(value)
       case None =>
         val f = delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
-          case (userInfo, expiration) => (userInfo, expiration.getOrElse(Instant.now() plusNanos defaultExpiration.toNanos))
+          case (userInfo, expirationInstant) => (userInfo, expirationInstant.getOrElse(Instant.now() plusNanos defaultExpirationDuration.toNanos))
         }
         f.onComplete {
           case Success(value) => authorizationsCache.put(accessToken)(value)
@@ -50,5 +50,5 @@ class CachingOAuth2Service[
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }
 
-  private lazy val defaultExpiration = configuration.defaultTokenExpirationTime
+  private lazy val defaultExpirationDuration = configuration.defaultTokenExpirationDuration
 }

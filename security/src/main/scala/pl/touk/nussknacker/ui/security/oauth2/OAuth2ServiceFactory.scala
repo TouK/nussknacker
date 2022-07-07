@@ -23,9 +23,6 @@ trait OAuth2Service[+UserInfoData, +AuthorizationData <: OAuth2AuthorizationData
    */
   def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(AuthorizationData, UserInfoData)]
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])]
-
-  final protected def isOverdue(instant: Instant): Boolean = (Deadline.now + FiniteDuration(Duration.between(Instant.now(), instant).toNanos, TimeUnit.NANOSECONDS)).isOverdue()
-
 }
 
 

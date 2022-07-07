@@ -7,8 +7,9 @@ import org.scalatest.{FunSpec, Matchers}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 
 import java.time.{Clock, Instant}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.duration.Deadline
+import scala.concurrent.duration._
 
 class CachingOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
 
@@ -20,7 +21,6 @@ class CachingOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers w
 
   private var prev = Deadline.now
 
-
   private val ticker = new Ticker {
     override def read(): Long = {
       if (currentTime != prev) {
@@ -31,23 +31,18 @@ class CachingOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers w
     }
   }
 
-  var checkRecordings = Map[String, Int]()
+  private var checkRecordings = Map[String, Int]()
 
-  val recordingJwtOauth2Service = new OAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] {
+  private val recordingJwtOauth2Service = new OAuth2Service[OpenIdConnectUserInfo, DefaultOidcAuthorizationData] {
     override def obtainAuthorizationAndUserInfo(authorizationCode: String, redirectUri: String): Future[(DefaultOidcAuthorizationData, OpenIdConnectUserInfo)] =
       jwtOAuth2Service.obtainAuthorizationAndUserInfo(authorizationCode, redirectUri)
-
     override def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(OpenIdConnectUserInfo, Option[Instant])] = {
       checkRecordings = checkRecordings + (accessToken -> (checkRecordings.getOrElse(accessToken, 0) + 1))
       jwtOAuth2Service.checkAuthorizationAndObtainUserinfo(accessToken)
     }
   }
 
-
-  val cachingOAuth2Service = new CachingOAuth2Service(recordingJwtOauth2Service, config, ticker)
-
-  import scala.concurrent.duration._
-
+  private val cachingOAuth2Service = new CachingOAuth2Service(recordingJwtOauth2Service, config, ticker)
 
   it("should cache token only for period when token is valid") {
     val token = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)

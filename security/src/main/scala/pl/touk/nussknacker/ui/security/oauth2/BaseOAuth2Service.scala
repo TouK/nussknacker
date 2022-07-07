@@ -26,9 +26,9 @@ class BaseOAuth2Service[
 
   final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] =
     for {
-      expiration <- introspectAccessToken(accessToken)
+      expirationInstant <- introspectAccessToken(accessToken)
       userInfo <- obtainUserInfo(accessToken)
-    } yield (userInfo, expiration)
+    } yield (userInfo, expirationInstant)
 
   protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
     clientApi.accessTokenRequest(authorizationCode, redirectUri)
