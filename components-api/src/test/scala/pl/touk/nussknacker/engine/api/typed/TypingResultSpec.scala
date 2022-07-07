@@ -216,6 +216,12 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     unionFinder.commonSupertype(Typed.fromInstance(4.12f), Typed.fromInstance("string")) shouldBe Unknown
   }
 
+  test("should not display too long data") {
+    Typed.fromInstance("1234.1234.12").display shouldBe "String{1234.1234.12}"
+    Typed.fromInstance("1234.1234.1234").display shouldBe "String{1234.1234.1234}"
+    Typed.fromInstance("1234.1234.1234.1").display shouldBe "String{1234.1234.12...}"
+  }
+
   object ClassHierarchy {
 
     class Animal extends Serializable

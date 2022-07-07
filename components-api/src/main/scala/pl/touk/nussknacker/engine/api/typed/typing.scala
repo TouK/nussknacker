@@ -82,7 +82,16 @@ object typing {
   }
 
   case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
-    override def display: String = s"${underlying.display}{$data}"
+    val maxDataDisplaySize = 15
+    val maxDataDisplaySizeWithDots = 12
+
+    override def display: String = {
+      val dataString = data.toString
+      val shortenedDataString =
+        if (dataString.length <= maxDataDisplaySize) dataString
+        else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
+      s"${underlying.display}{$shortenedDataString}"
+    }
   }
 
   // Unknown is representation of TypedUnion of all possible types
