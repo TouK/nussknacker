@@ -82,8 +82,8 @@ object typing {
   }
 
   case class TypedObjectWithValue(underlying: TypedClass, data: Any) extends TypedObjectWithData {
-    val maxDataDisplaySize = 15
-    val maxDataDisplaySizeWithDots = 12
+    val maxDataDisplaySize: Int = 15
+    val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def display: String = {
       val dataString = data.toString
