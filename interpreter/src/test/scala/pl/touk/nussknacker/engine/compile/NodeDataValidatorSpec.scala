@@ -13,8 +13,10 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -246,9 +248,12 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should validate switch") {
     inside(
-     validate(Switch("switchId", "input", "value1"), ValidationContext.empty)
+     validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
    ) {
-     case ValidationPerformed(List(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input")), None, Some(Unknown)) =>
+     case ValidationPerformed(List(
+      ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
+      ExpressionParseError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
+     ), None, Some(Unknown)) =>
    }
   }
 
@@ -260,12 +265,15 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     definition.Parameter[Any]("b")
   )
 
-  private def validate(nodeData: NodeData, ctx: ValidationContext, branchCtxs: Map[String, ValidationContext] = Map.empty): ValidationResponse = {
+  private def validate(nodeData: NodeData,
+                       ctx: ValidationContext,
+                       branchCtxs: Map[String, ValidationContext] = Map.empty,
+                       outgoingEdges: List[OutgoingEdge] = Nil): ValidationResponse = {
     val fragmentDef = CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       FlatNode(SubprocessOutputDefinition("out", "out1", Nil)),
     ))
-    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get)(MetaData("id", StreamMetaData()))
+    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))
