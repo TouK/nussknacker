@@ -3,10 +3,7 @@ package pl.touk.nussknacker.engine.util.cache
 import com.github.benmanes.caffeine.cache
 import com.github.benmanes.caffeine.cache.{Caffeine, Expiry, Ticker}
 
-import java.util.concurrent.Executor
 import scala.concurrent.duration.{Deadline, FiniteDuration, NANOSECONDS}
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 private object DefaultCacheBuilder {
 
@@ -54,37 +51,6 @@ class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker
   override def get(key: K): Option[V] = Option(underlying.getIfPresent(key))
 
   override def put(key: K)(value: V): Unit = underlying.put(key, value)
-}
-
-class DefaultAsyncCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker.systemTicker())(implicit ec: ExecutionContext) extends AsyncCache[K, V] {
-  private lazy val underlying: cache.AsyncCache[K, V] =
-    DefaultCacheBuilder(cacheConfig, ticker)
-      .executor(new Executor {
-        override def execute(runnable: Runnable): Unit = ec.execute(runnable)
-      })
-      .buildAsync()
-
-  override def getOrCreate(key: K)(value: => Future[V]): Future[V] = {
-    import scala.compat.java8.FunctionConverters._
-    import scala.compat.java8.FutureConverters._
-    val resultF = underlying.get(key, asJavaBiFunction((_: K, _: Executor) => {
-      value.toJava.toCompletableFuture
-    })).toScala
-    resultF.onComplete {
-      case Success(_) =>
-        // we must do get to make sure that read expiration will be respected
-        underlying.getIfPresent(key)
-      case Failure(_) =>
-    }
-    resultF
-  }
-
-  override def put(key: K)(value: Future[V]): Unit = {
-    import scala.compat.java8.FutureConverters._
-    underlying.put(key, value.toJava.toCompletableFuture)
-  }
-
-  override def get(key: K): Option[V] = Option(underlying.getIfPresent(key)).map(_.get())
 }
 
 class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfterWrite: Option[FiniteDuration]) {

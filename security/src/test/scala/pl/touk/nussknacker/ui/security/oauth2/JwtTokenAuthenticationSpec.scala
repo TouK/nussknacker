@@ -44,6 +44,7 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
        |}""".stripMargin)
 
   private val validAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val expiredAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
   private val accessTokenWithInvalidAudience = JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
   implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
@@ -76,6 +77,12 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
 
   it("should request authorization on a token with an invalid audience claim") {
     Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessTokenWithInvalidAudience)) ~> testRoute ~> check {
+      status shouldEqual StatusCodes.Unauthorized
+    }
+  }
+
+  it("should request authorization on expired token") {
+    Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(expiredAccessToken)) ~> testRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
     }
   }

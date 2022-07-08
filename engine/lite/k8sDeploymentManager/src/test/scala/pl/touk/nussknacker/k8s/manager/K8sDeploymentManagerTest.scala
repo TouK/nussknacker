@@ -25,7 +25,7 @@ import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, Secret, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, Secret, Volume, k8sInit}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
 import java.io.File
@@ -38,7 +38,7 @@ import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
-class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with ExtremelyPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
+class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem = ActorSystem()
   private lazy val k8s = k8sInit
@@ -259,6 +259,28 @@ class K8sDeploymentManagerProviderTest extends FunSuite with Matchers with Extre
         cm.data("logback.xml").contains(customLogger) shouldBe false
       }
     }
+  }
+
+  test("should deploy scenarios with common logging conf") {
+    val configMapName = "test" + new Random().nextInt(1000000)
+    val f = createFixture(deployConfig = deployConfig.withValue("commonConfigMapForLogback", fromAnyRef(configMapName)))
+
+    f.withRunningScenario {
+      //check if cm exists
+      k8s.list[ListResource[ConfigMap]].futureValue.items.exists(_.name == configMapName) shouldBe true
+
+      //check if cm is actually mounted
+      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
+      pod.spec.get.volumes.exists(_.source match {
+        case Volume.ConfigMapVolumeSource(`configMapName`, _, _, _) => true
+        case _ => false
+      }) shouldBe true
+    }
+    // check that after cancelling scenario CM is still there
+    k8s.list[ListResource[ConfigMap]].futureValue.items.exists(_.name == configMapName) shouldBe true
+
+    //cleanup
+    k8s.delete[ConfigMap](configMapName)
   }
 
   test("should deploy within specified resource quota") {

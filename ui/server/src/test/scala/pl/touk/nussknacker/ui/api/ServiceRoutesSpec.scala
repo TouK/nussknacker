@@ -81,6 +81,25 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
     }
   }
+  test("invoke service with null result") {
+    val entity = HttpEntity(MediaTypes.`application/json`,
+      """
+        |[
+        | {
+        |    "name": "param",
+        |    "expression": {
+        |       "language":"spel",
+        |       "expression":"'parameterValue'"
+        |    }
+        | }
+        |]
+      """.stripMargin)
+    Post("/service/streaming/enricherNullResult", entity) ~> serviceRoutes.securedRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = entityAs[io.circe.Json]
+      result.asObject.flatMap(_.apply("result")).get.isNull shouldEqual true
+    }
+  }
   test("display valuable error message for mismatching parameters") {
     val entity = HttpEntity(MediaTypes.`application/json`, "[]")
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {

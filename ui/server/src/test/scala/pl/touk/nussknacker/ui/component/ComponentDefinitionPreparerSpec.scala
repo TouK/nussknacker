@@ -34,8 +34,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.components.map(n=>n.label)) shouldBe List(
-      List("filter", "mapVariable","split","switch","variable"),
-      List("alaMaKota","BarFilter","foo")
+      List("choice", "filter", "mapVariable", "split", "variable"),
+      List("alaMaKota", "BarFilter", "foo")
     )
   }
 
