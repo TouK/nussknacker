@@ -37,7 +37,6 @@ Errors are sent to Kafka, to a dedicated topic:
 modelConfig {
   exceptionHandlingConfig: {
     topic: "errors"
-    createTopicIfNotExists: "true"
   }
 }
 ```

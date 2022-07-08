@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 case class KafkaExceptionConsumerConfig(topic: String,
-                                        createTopicIfNotExists: Boolean = true,
                                         //quite large to be able to show nested exception
                                         stackTraceLengthLimit: Int = 50,
                                         includeHost: Boolean = true,

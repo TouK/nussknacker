@@ -15,10 +15,9 @@ import scala.util.Random
 
 class KafkaErrorTopicInitializerTest extends FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
-  private def initializer(topic: String, createIfNotExists: Boolean): KafkaErrorTopicInitializer = {
+  private def initializer(topic: String): KafkaErrorTopicInitializer = {
     val engineConfig = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef(topic))
-      .withValue("exceptionHandlingConfig.createTopicIfNotExists", fromAnyRef(createIfNotExists))
       .as[EngineConfig]
     new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
   }
@@ -27,7 +26,7 @@ class KafkaErrorTopicInitializerTest extends FunSuite with KafkaSpec with Matche
     val name = s"topic-${Random.nextInt()}"
 
     kafkaClient.topic(name) shouldBe 'empty
-    initializer(name, createIfNotExists = true).init()
+    initializer(name).init()
     kafkaClient.topic(name) shouldBe 'defined
   }
 
@@ -36,21 +35,10 @@ class KafkaErrorTopicInitializerTest extends FunSuite with KafkaSpec with Matche
     kafkaClient.createTopic(name, partitions = 10)
 
     kafkaClient.topic(name) shouldBe 'defined
-    initializer(name, createIfNotExists = true).init()
+    initializer(name).init()
     kafkaClient.topic(name).map(_.partitions().size()) shouldBe Some(10)
 
-    initializer(name, createIfNotExists = false).init()
-    kafkaClient.topic(name).map(_.partitions().size()) shouldBe Some(10)
 
-  }
-
-  test("should fail if topic not exists and configured not to create") {
-    val name = s"topic-${Random.nextInt()}"
-
-    kafkaClient.topic(name) shouldBe 'empty
-    intercept[IllegalArgumentException] {
-      initializer(name, createIfNotExists = false).init()
-    }.getMessage shouldBe s"Errors topic: $name does not exist, 'createTopicIfNotExists' is 'false', please create the topic"
   }
 
 }
