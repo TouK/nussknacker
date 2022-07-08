@@ -18,7 +18,7 @@ trait KafkaSignalStreamConnector {
     @silent("deprecated")
     @nowarn("cat=deprecation")
     val signalsSource = new FlinkKafkaConsumer[B](signalsTopic, schema,
-      KafkaUtils.toProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
+      KafkaUtils.toConsumerProperties(kafkaConfig, Some(s"$processId-$nodeId-signal")))
     val signalsStream = start.executionEnvironment
       .addSource(signalsSource).name(s"signals-$processId-$nodeId")
     val withTimestamps = assignTimestampsAndWatermarks(signalsStream)

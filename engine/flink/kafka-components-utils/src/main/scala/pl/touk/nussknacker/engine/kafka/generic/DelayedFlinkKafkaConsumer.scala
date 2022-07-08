@@ -37,7 +37,7 @@ object DelayedFlinkKafkaConsumer {
                delayCalculator: DelayCalculator,
                timestampAssigner: Option[TimestampWatermarkHandler[T]]): FlinkKafkaConsumerBase[T] = {
 
-    val props = KafkaUtils.toProperties(config, Some(consumerGroupId))
+    val props = KafkaUtils.toConsumerProperties(config, Some(consumerGroupId))
 
     // Here: partitionState.extractTimestamp works correctly only when WatermarkStrategy is assigned
     // For legacy TimestampAssigners we extract timestamp from Assigner

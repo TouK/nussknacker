@@ -93,7 +93,6 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id, liteKafkaJobData.tasksCount, createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
-    new ErrorHandlerInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
     sourceMetrics.registerOwnMetrics(context.metricsProvider)
     interpreter.open(context)
     taskRunner.run(ec)

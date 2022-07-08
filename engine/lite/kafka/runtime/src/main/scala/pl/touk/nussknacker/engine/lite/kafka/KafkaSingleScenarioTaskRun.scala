@@ -54,6 +54,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   def init(): Unit = {
     configSanityCheck()
+    new ErrorHandlerInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
 
     consumer = prepareConsumer
     producer = prepareProducer
