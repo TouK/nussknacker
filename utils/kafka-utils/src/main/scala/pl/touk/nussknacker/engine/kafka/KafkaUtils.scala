@@ -12,9 +12,11 @@ import org.apache.kafka.common.requests.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
+import java.time
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
+import scala.util.Using.Releasable
 import scala.util.{Failure, Success, Using}
 
 object KafkaUtils extends KafkaUtils
@@ -34,8 +36,13 @@ trait KafkaUtils extends LazyLogging {
     AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }
 
-  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T =
-    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
+    //we don't use default close not to block indefinitely
+    val releasable = new Releasable[Admin] {
+      override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
+    }
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)(releasable)
+  }
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
