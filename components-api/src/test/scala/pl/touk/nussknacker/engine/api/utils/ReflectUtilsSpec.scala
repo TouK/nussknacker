@@ -19,7 +19,7 @@ class ReflectUtilsSpec extends FunSuite with Matchers {
   }
 
   test("simpleNameWithoutSuffix on class with companion object") {
-    ReflectUtils.simpleNameWithoutSuffix((new TestCompanionObject).getClass) should equal("TestCompasdanionObject")
+    ReflectUtils.simpleNameWithoutSuffix((new TestCompanionObject).getClass) should equal("TestCompanionObject")
   }
 
 }
