@@ -845,6 +845,7 @@ lazy val commonUtils = (project in utils("utils")).
         "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
+        "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
       )
     }

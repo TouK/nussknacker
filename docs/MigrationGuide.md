@@ -27,6 +27,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
 
+### Scenario authoring changes
+
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Choice component replaces Switch component. "Default" choice edge type, exprVal and expression are now deprecated. 
+  For existing usages, you don't need to change anything. For new usages, if you want extract value e.g. to simplify choice conditions, you need to define new local variable before choice using variable component.
+  "Default" choice edge type can be replaced by adding "true" condition at the end of list of conditions
+
 ### Other changes
 
 ## In version 1.4.0
