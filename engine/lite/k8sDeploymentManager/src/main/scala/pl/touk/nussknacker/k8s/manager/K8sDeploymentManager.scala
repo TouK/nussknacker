@@ -64,7 +64,7 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
                                       nussknackerInstanceName: Option[String] = None,
                                       logbackConfigPath: Option[String] = None,
-                                      nameOfCommonConfigMapForLogback: Option[String] = None,
+                                      commonConfigMapForLogback: Option[String] = None,
                                      )
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
@@ -100,7 +100,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         "deploymentConfig.conf" -> ConfigFactory.empty().withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica)).root().render()
       )))
       loggingConfigMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
-        Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf"), overrideName = config.nameOfCommonConfigMapForLogback))
+        Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf"), overrideName = config.commonConfigMapForLogback))
       //modelConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
       secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)

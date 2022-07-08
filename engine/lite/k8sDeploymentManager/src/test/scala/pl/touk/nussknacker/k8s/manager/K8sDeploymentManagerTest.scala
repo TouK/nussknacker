@@ -263,7 +263,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
 
   test("should deploy scenarios with common logging conf") {
     val configMapName = "test" + new Random().nextInt(1000000)
-    val f = createFixture(deployConfig = deployConfig.withValue("nameOfCommonConfigMapForLogback", fromAnyRef(configMapName)))
+    val f = createFixture(deployConfig = deployConfig.withValue("commonConfigMapForLogback", fromAnyRef(configMapName)))
 
     f.withRunningScenario {
       //check if cm exists
