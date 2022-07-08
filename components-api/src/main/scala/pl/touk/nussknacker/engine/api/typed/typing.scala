@@ -81,7 +81,7 @@ object typing {
     override def display: String = s"${underlying.display} @ $tag"
   }
 
-  case class TypedObjectWithValue(underlying: TypedClass, value: Any) extends TypedObjectWithData {
+  case class TypedObjectWithValue private[typing](underlying: TypedClass, value: Any) extends TypedObjectWithData {
     val maxDataDisplaySize: Int = 15
     val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
@@ -208,9 +208,6 @@ object typing {
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
     def tagged(typ: SingleTypingResult, tag: String): TypedTaggedValue = TypedTaggedValue(typ, tag)
-
-    def typedValue[T: ClassTag](value: T): TypedObjectWithValue =
-      TypedObjectWithValue(Typed.typedClass[T], value)
 
     def fromInstance(obj: Any): TypingResult = {
       obj match {

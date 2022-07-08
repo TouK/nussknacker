@@ -161,12 +161,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case Some(result) => typeIndexer(e, result.typingResult)
       }
 
-      case e: BooleanLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Boolean]))
-      case e: IntLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Int]))
-      case e: LongLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Long]))
-      case e: FloatLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Float]))
-      case e: RealLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[Double]))
-      case e: StringLiteral => valid(Typed.typedValue(e.getLiteralValue.getValue.asInstanceOf[String]))
+      case e: BooleanLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[Boolean]))
+      case e: IntLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[Int]))
+      case e: LongLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[Long]))
+      case e: FloatLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[Float]))
+      case e: RealLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[Double]))
+      case e: StringLiteral => valid(Typed.fromInstance(e.getLiteralValue.getValue.asInstanceOf[String]))
       case e: NullLiteral => valid(Typed.fromInstance(null))
 
 

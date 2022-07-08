@@ -163,7 +163,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "42")
       .emptySink("out", "dummySink")
 
-    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.typedValue(42).display}"
+    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(42).display}"
     validator.validate(invalidProcess).result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParseError(`expectedMsg`, "custom1", Some("stringVal"), "42"), _)) =>
     }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{AdditionalDataValue, Typed, TypedObjectTypingResult, TypedUnion, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{AdditionalDataValue, Typed, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, Unknown}
 
 import scala.collection.immutable.ListMap
 
@@ -14,12 +14,12 @@ class TypingResultDecoderSpec extends FunSuite with Matchers {
       Typed.fromDetailedType[List[String]],
       Typed.fromDetailedType[Map[String, AnyRef]],
       Typed.tagged(Typed.typedClass[String], "alamakota"),
-      Typed.typedValue("t"),
-      Typed.typedValue(789),
-      Typed.typedValue(15L),
-      Typed.typedValue(1.57f),
-      Typed.typedValue(23.547d),
-      Typed.typedValue(false),
+      TypedObjectWithValue(Typed.typedClass[String], "t"),
+      TypedObjectWithValue(Typed.typedClass[Int], 789),
+      TypedObjectWithValue(Typed.typedClass[Long], 15L),
+      TypedObjectWithValue(Typed.typedClass[Float], 1.57f),
+      TypedObjectWithValue(Typed.typedClass[Double], 23.547d),
+      TypedObjectWithValue(Typed.typedClass[Boolean], false),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
       TypedUnion(Set(Typed.typedClass[String], Typed.typedClass[java.lang.Long])),
       //this wont' work, handling primitives should be done with more sophisticated classloading

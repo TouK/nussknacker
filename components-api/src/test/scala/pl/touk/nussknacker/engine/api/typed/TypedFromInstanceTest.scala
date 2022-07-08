@@ -35,7 +35,7 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
   }
 
   test("should type bool") {
-    Typed.fromInstance(true) shouldBe Typed.typedValue(true)
+    Typed.fromInstance(true) shouldBe TypedObjectWithValue(Typed.typedClass[Boolean], true)
   }
 
   test("should type map types") {

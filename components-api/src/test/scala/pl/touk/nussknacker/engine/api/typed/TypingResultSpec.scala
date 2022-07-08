@@ -189,26 +189,26 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("determine if can be subclass for object with value") {
-    Typed.typedValue(45).canBeSubclassOf(Typed.typedClass[Long]) shouldBe true
-    Typed.typedValue(29).canBeSubclassOf(Typed.typedClass[String]) shouldBe false
-    Typed.typedValue(78).canBeSubclassOf(Typed.typedValue(78)) shouldBe true
-    Typed.typedValue(12).canBeSubclassOf(Typed.typedValue(15)) shouldBe false
-    Typed.typedValue(41).canBeSubclassOf(Typed.typedValue("t")) shouldBe false
-    Typed.typedClass[String].canBeSubclassOf(Typed.typedValue("t")) shouldBe true
+    Typed.fromInstance(45).canBeSubclassOf(Typed.typedClass[Long]) shouldBe true
+    Typed.fromInstance(29).canBeSubclassOf(Typed.typedClass[String]) shouldBe false
+    Typed.fromInstance(78).canBeSubclassOf(Typed.fromInstance(78)) shouldBe true
+    Typed.fromInstance(12).canBeSubclassOf(Typed.fromInstance(15)) shouldBe false
+    Typed.fromInstance(41).canBeSubclassOf(Typed.fromInstance("t")) shouldBe false
+    Typed.typedClass[String].canBeSubclassOf(Typed.fromInstance("t")) shouldBe true
   }
 
   test("determinate if can be superclass for objects with value") {
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
-    unionFinder.commonSupertype(Typed.typedValue(65), Typed.typedValue(65)) shouldBe Typed.typedValue(65)
-    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Int]
-    unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
+    unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
+    unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
+    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(Set.empty)
   }
 
   test("should calculate supertype for objects with value when strict type checking is on") {
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
-    unionFinder.commonSupertype(Typed.typedValue(65), Typed.typedValue(65)) shouldBe Typed.typedValue(65)
-    unionFinder.commonSupertype(Typed.typedValue(91), Typed.typedValue(35)) shouldBe Typed.typedClass[Int]
-    unionFinder.commonSupertype(Typed.typedValue("t"), Typed.typedValue(32)) shouldBe Typed(Set.empty)
+    unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
+    unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
+    unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(Set.empty)
   }
 
   test("should not display too long data") {
