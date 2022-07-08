@@ -36,7 +36,8 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
     //io.circe.generic.semiauto.deriveConfiguredEncoder[ServiceQuery.QueryResult]
     new Encoder[QueryResult] {
       override def apply(a: QueryResult): Json = {
-        val resultEncoder: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false, a.result.getClass.getClassLoader).circeEncoder
+        val classLoader = if(a.result != null) a.result.getClass.getClassLoader else ClassLoader.getSystemClassLoader
+        val resultEncoder: Encoder[Any] = BestEffortJsonEncoder(failOnUnkown = false, classLoader).circeEncoder
         Json.obj(
           "result" -> resultEncoder(a.result),
           "collectedResults" -> Json.fromValues(a.collectedResults.map(r => Json.obj("name" -> Json.fromString(r.name), "result" -> resultEncoder(r.result)))))
