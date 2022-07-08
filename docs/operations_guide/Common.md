@@ -131,7 +131,7 @@ Below we describe common
 | eventtimedelay.histogram    | nodeId          | histogram             | only for sources with eventTime, measures delay from event time to system time |
 | eventtimedelay.minimalDelay | nodeId          | gauge                 | time from last event (eventTime) to system time                                |
 | end                         | nodeId          | instantRate + counter | for sinks and end processors                                                   |
-| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, switches etc.                               |
+| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, choices etc.                                |
 
 
 Each of these metrics comes with the tags specific for execution engine:

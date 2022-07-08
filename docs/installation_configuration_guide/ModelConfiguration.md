@@ -72,7 +72,7 @@ Below you can see typical component configuration, each section describes config
       mlFlowUrl:
     }
     #we can disable particular component provider, if it's not needed in our installation
-    #note: you cannot disable certain basic components like filter, variable, switch and split
+    #note: you cannot disable certain basic components like filter, variable, choice and split
     aggregation {
       disabled: true
     }
