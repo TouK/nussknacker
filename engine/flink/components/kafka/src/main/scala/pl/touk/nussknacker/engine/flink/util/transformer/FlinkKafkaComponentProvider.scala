@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
+import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.generic.sinks.GenericKafkaJsonSinkFactory
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
@@ -39,7 +39,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider
     val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider
 
-    List(
+    val lowLevelKafkaComponents = List(
       ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(overriddenDependencies)).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
@@ -50,6 +50,13 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
     )
+
+    // TODO: change link to the documentation when json schema handling will be available
+    val universalKafkaComponents = List(
+      ComponentDefinition("kafka", new UniversalKafkaSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
+      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+
+    lowLevelKafkaComponents ::: universalKafkaComponents
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true

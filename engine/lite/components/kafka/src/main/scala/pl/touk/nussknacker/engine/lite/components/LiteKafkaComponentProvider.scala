@@ -7,8 +7,8 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
+import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
@@ -16,9 +16,11 @@ import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSin
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
+import java.util
 import scala.language.higherKinds
 
 object LiteKafkaComponentProvider {
+  val KafkaUniversalName = "kafka"
   val KafkaJsonName = "kafka-json"
   val KafkaTypedJsonName = "kafka-typed-json"
   val KafkaAvroName = "kafka-avro"
@@ -53,9 +55,9 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider
     val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider
 
-    List(
+    val lowLevelKafkaComponents = List(
       ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
-      ComponentDefinition(KafkaJsonName, new KafkaSourceFactory[String, java.util.Map[_, _]](
+      ComponentDefinition(KafkaJsonName, new KafkaSourceFactory[String, util.Map[_, _]](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(noTypeInfo),
       ComponentDefinition(KafkaTypedJsonName, new KafkaSourceFactory[String, TypedMap](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
@@ -66,9 +68,18 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
       ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
-    )
+      ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+
+    // TODO: change link to the documentation when json schema handling will be available
+    val universalKafkaComponents = List(
+      ComponentDefinition(KafkaAvroName, new UniversalKafkaSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+
+    lowLevelKafkaComponents ::: universalKafkaComponents
   }
+
+
+
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 
