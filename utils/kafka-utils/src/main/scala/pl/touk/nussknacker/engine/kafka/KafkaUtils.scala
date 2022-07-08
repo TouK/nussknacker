@@ -68,7 +68,8 @@ trait KafkaUtils extends LazyLogging {
   }
 
   private def withPropertiesFromConfig(defaults: Properties, kafkaConfig: KafkaConfig): Properties = {
-    val props = new Properties(defaults)
+    val props = new Properties()
+    defaults.forEach((k, v) => props.put(k, v))
     props.setProperty("bootstrap.servers", kafkaConfig.kafkaAddress)
     kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.put(k, v)
