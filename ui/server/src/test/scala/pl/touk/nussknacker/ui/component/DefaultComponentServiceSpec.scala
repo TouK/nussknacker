@@ -227,7 +227,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     List(
       baseComponent(Filter, overriddenIcon, BaseGroupName, AllCategories),
       baseComponent(Split, SplitIcon, BaseGroupName, AllCategories),
-      baseComponent(Switch, SwitchIcon, BaseGroupName, AllCategories),
+      baseComponent(Switch, componentName = "choice", SwitchIcon, BaseGroupName, AllCategories),
       baseComponent(Variable, VariableIcon, BaseGroupName, AllCategories),
       baseComponent(MapVariable, MapVariableIcon, BaseGroupName, AllCategories),
     )
@@ -310,11 +310,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, links, usageCount)
   }
 
-  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
+  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]): ComponentListElement =
+    baseComponent(componentType, componentType.toString, icon, componentGroupName, categories)
+
+  private def baseComponent(componentType: ComponentType, componentName: String, icon: String, componentGroupName: ComponentGroupName, categories: List[String]): ComponentListElement = {
     val componentId = bid(componentType)
     val docsLinks = if (componentType == Filter) List(filterDocsLink) else Nil
-    val links = docsLinks ++ createLinks(componentId, componentType.toString, componentType)
-    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
+    val links = docsLinks ++ createLinks(componentId, componentName, componentType)
+    ComponentListElement(componentId, componentName, icon, componentType, componentGroupName, categories, links, 0)
   }
 
   private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentLink] =
