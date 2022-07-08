@@ -6,6 +6,7 @@ import io.circe.{ACursor, Decoder, DecodingFailure, Json}
 import io.circe.Json.{fromBoolean, fromDouble, fromFloat, fromInt, fromLong, fromString}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 
+// TODO: Add support for more types.
 object SimpleObjectEncoder {
   private val intClass = Typed.typedClass[Int]
   private val longClass = Typed.typedClass[Long]

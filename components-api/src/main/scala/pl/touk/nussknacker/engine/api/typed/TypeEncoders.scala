@@ -50,10 +50,10 @@ object TypeEncoders {
       val objTypeEncoded = encodeTypingResult(underlying)
       val tagEncoded = "tag" -> fromString(tag)
       objTypeEncoded.+:(tagEncoded)
-    case TypedObjectWithValue(underlying, data) =>
+    case TypedObjectWithValue(underlying, value) =>
       val objTypeEncoded = encodeTypingResult(underlying)
-      val dataEncoded: (String, Json) = "data" -> SimpleObjectEncoder.encode(underlying, data)
-        .getOrElse(throw new IllegalStateException(s"Not supported data value: $data"))
+      val dataEncoded: (String, Json) = "value" -> SimpleObjectEncoder.encode(underlying, value)
+        .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
       objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
@@ -108,8 +108,8 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
 
   private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
-    data <- SimpleObjectEncoder.decode(valueClass, obj.downField("data"))
-  } yield TypedObjectWithValue(valueClass, data)
+    value <- SimpleObjectEncoder.decode(valueClass, obj.downField("value"))
+  } yield TypedObjectWithValue(valueClass, value)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
