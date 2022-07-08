@@ -62,6 +62,25 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     )
   }
 
+  test("switch edges do not have to be unique") {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Switch("switch"),
+        Sink("out", SinkRef("barSink", List())),
+        Sink("out2", SinkRef("barSink", List())),
+      ),
+      List(
+        Edge("in", "switch", None),
+        Edge("switch", "out", Some(EdgeType.NextSwitch("true"))),
+        Edge("switch", "out2", Some(EdgeType.NextSwitch("true"))),
+      )
+    )
+
+    val result = validator.validate(process)
+    result.errors.invalidNodes shouldBe 'empty
+  }
+
   test("check for notunique edges") {
       val process = createProcess(
         List(
