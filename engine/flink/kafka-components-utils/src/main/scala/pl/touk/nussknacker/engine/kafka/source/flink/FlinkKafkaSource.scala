@@ -56,7 +56,7 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   @silent("deprecated")
   @nowarn("cat=deprecation")
   protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
-    new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toProperties(kafkaConfig, Some(consumerGroupId)))
+    new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)))
   }
 
   //Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
