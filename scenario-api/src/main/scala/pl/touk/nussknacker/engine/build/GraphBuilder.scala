@@ -64,6 +64,9 @@ trait GraphBuilder[R] {
   def branchEnd(branchId: String, joinId: String): R =
     creator(BranchEnd(node.BranchEndData(BranchEndDefinition(branchId, joinId))))
 
+  def switch(id: String, nexts: Case*): R =
+    creator(SwitchNode(Switch(id), nexts.toList, None))
+
   def switch(id: String, expression: Expression, exprVal: String, nexts: Case*): R =
     creator(SwitchNode(Switch(id, Some(expression), Some(exprVal)), nexts.toList, None))
 

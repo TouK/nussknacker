@@ -140,6 +140,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
                                                                processProperties: ProcessProperties,
                                                                variableTypes: Map[String, TypingResult],
                                                                branchVariableTypes: Option[Map[String, Map[String, TypingResult]]],
+                                                              //TODO: remove Option when FE is ready
                                                                outgoingEdges: Option[List[Edge]])
 
 

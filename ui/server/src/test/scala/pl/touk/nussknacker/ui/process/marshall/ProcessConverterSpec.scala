@@ -84,7 +84,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     forAll(Table(
       "unexpectedEnd",
       Filter("e", Expression("spel", "0")),
-      Switch("e", Expression("spel", "0"), "a"),
+      Switch("e"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { unexpectedEnd =>

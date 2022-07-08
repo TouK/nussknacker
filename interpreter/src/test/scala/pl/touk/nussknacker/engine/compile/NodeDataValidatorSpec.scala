@@ -248,7 +248,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should validate switch") {
     inside(
-     validate(Switch("switchId", "input", "value1"), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
+     validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
    ) {
      case ValidationPerformed(List(
       ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),

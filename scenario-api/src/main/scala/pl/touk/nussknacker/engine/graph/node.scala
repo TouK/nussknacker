@@ -45,6 +45,7 @@ object node {
   //this should never occur in process to be run (unresolved)
   case class SubprocessNode(data: SubprocessInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
 
+  //defaultNext is deprecated, will be removed in future versions
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
 
   case class SplitNode(data: Split, nextParts: List[SubsequentNode]) extends SubsequentNode
@@ -124,7 +125,6 @@ object node {
 
     def apply(id: String): Switch = Switch(id, None, None)
 
-    def apply(id: String, expression: Expression, exprVal: String): Switch = Switch(id, Some(expression), Some(exprVal))
   }
 
   //expression and expressionVal are deprecated, will be removed in the future
