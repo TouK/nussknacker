@@ -4,7 +4,7 @@ import io.circe.Decoder
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.duration.Deadline
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth2AuthorizationData : Decoder]
@@ -20,7 +20,7 @@ class UserMappingOAuth2Service[UserInfoData: Decoder, AuthorizationData <: OAuth
       (authorization, loggedUserFunction(userInfo))
     }
 
-  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Deadline])] =
+  def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(AuthenticatedUser, Option[Instant])] =
     delegate.checkAuthorizationAndObtainUserinfo(accessToken).map { case (userInfo, expiration) =>
       (loggedUserFunction(userInfo), expiration)
     }
