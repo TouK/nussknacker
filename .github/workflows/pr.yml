@@ -199,6 +199,11 @@ jobs:
         with:
           name: BackendTests-results
           path: '**/test-reports/*.xml'
+      - name: Publish Test Results
+        uses: EnricoMi/publish-unit-test-result-action@v1
+        if: success() || failure()
+        with:
+          files: '**/test-reports/*.xml'
       - name: Upload Coverage data to Coveralls
         shell: bash
         if: ${{ github.ref == 'refs/heads/staging' }}
