@@ -218,10 +218,9 @@ Check [Schema Registry + Avro serialization
 
 ### Nussknacker configuration
 
-* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`) - in case of Flink execution engine
 * Configure restart strategy and error handler
   * By default, scenarios are not restarted, so that errors do not go unnoticed
-  * Kafka exception handler should be used in production - configure error topic, with long enough retention
+  * [Kafka exception handler](../installation_configuration_guide/ModelConfiguration.md#kafka-exception-handling) should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API
   * K8s REST API
@@ -234,6 +233,7 @@ Check [Schema Registry + Avro serialization
   * Generate test data from some Kafka topic
   * Check if counts can be accessed
   * See if metrics links are working properly
+* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`) - in case of Flink execution engine
 
 ##### Setup metrics/alerting
 

@@ -31,6 +31,7 @@
 * [#3223](https://github.com/TouK/nussknacker/pull/3223) Fix for encoding/decoding JWT & OIDC tokens - correct handling fields representing epoch time (e.g. `exp` - which represents token expiration time). Also, CachingOAuth2Service was migrated to use sync cache instead of async (evicting data in async cache can be tricky - `expireAfterWriteFn` is not applied to not completed futures). Since, it was only usage of `DefaultAsyncCache` - it has been removed from the codebase.
 * [#3239](https://github.com/TouK/nussknacker/pull/3239) Added jul-to-slf4j to be sure that all logs going via logback
 * [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
+* [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
 
 1.4.0 (14 Jun 2022)
 ------------------------

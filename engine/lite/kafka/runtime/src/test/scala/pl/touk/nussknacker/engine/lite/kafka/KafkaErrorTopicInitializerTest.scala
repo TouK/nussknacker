@@ -6,20 +6,21 @@ import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, _}
+import pl.touk.nussknacker.engine.kafka.exception.KafkaErrorTopicInitializer
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter._
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.util.Random
 
 
-class ErrorHandlerInitializerTest extends FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
+class KafkaErrorTopicInitializerTest extends FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
-  private def initializer(topic: String, createIfNotExists: Boolean): ErrorHandlerInitializer = {
+  private def initializer(topic: String, createIfNotExists: Boolean): KafkaErrorTopicInitializer = {
     val engineConfig = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef(topic))
       .withValue("exceptionHandlingConfig.createTopicIfNotExists", fromAnyRef(createIfNotExists))
       .as[EngineConfig]
-    new ErrorHandlerInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
+    new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
   }
 
   test("should create topic if not exists") {
