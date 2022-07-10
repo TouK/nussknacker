@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
-import pl.touk.nussknacker.engine.flink.util.source.EmptySource
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 
 class VerificationFlinkProcessCompiler(process: EspProcess,
@@ -21,5 +21,5 @@ class VerificationFlinkProcessCompiler(process: EspProcess,
     overrideObjectWithMethod(service, (_, _) => null)
 
   override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef
-    = overrideObjectWithMethod(sourceFactory, (_, returnType) =>  new EmptySource[Object](returnType))
+    = overrideObjectWithMethod(sourceFactory, (_, returnType) =>  new CollectionSource[Object](Nil, None, returnType))
 }
