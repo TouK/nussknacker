@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -62,6 +63,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     //we don't wait for start, since the job may fail before starting...
+    env.setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val executionResult = env.execute(process.id)
     env.waitForFail(executionResult.getJobID, process.id)()
   }

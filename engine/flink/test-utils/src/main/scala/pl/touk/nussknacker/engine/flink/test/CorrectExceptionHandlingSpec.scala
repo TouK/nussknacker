@@ -4,10 +4,10 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{Matchers, Suite}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, ProcessMetaDataBuilder}
+import pl.touk.nussknacker.engine.build.{ProcessMetaDataBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
+import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus, RuntimeExecutionMode}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
@@ -10,8 +10,8 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
-import org.scalatest.{Assertion, Matchers}
 import org.scalatest.concurrent.Eventually
+import org.scalatest.{Assertion, Matchers}
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
 import scala.collection.JavaConverters._
@@ -25,6 +25,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
 
   def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
+    setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
     try {
       actionToInvokeWithJobRunning(executionResult)
@@ -50,6 +51,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   def executeAndWaitForFinished[T](jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
+    setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val res = execute(jobName)
     waitForJobState(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
     res
@@ -65,8 +67,9 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
       val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
       assertJobInitialized(executionGraph)
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
-      val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
-      assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
+      val notRunning = executionVertices
+        .filterNot(v => expectedState.contains(v.getExecutionState))
+      assert(notRunning.isEmpty, s"Some vertices of $name are still not ${expectedState.mkString(" or ")}: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
     }(patience, implicitly[Position])
   }
 
@@ -80,6 +83,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   override def execute(streamGraph: StreamGraph): JobExecutionResult = {
+    
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 
