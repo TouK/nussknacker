@@ -68,7 +68,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
     import scala.collection.JavaConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-    new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+    new CollectionSource[String](elements, None, Typed[String])
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 

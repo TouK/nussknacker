@@ -56,10 +56,10 @@ object SampleNodes {
 
   @JsonCodec case class SimpleJsonRecord(id: String, field: String)
 
-  class IntParamSourceFactory(exConfig: ExecutionConfig) extends SourceFactory {
+  class IntParamSourceFactory extends SourceFactory {
 
     @MethodToInvoke
-    def create(@ParamName("param") param: Int) = new CollectionSource[Int](config = exConfig,
+    def create(@ParamName("param") param: Int) = new CollectionSource[Int](
       list = List(param),
       timestampAssigner = None, returnType = Typed[Int])
 
@@ -599,7 +599,7 @@ object SampleNodes {
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
       val out = params("type") + "-" + params("version")
-      CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, out::Nil, None, Typed[String])
+      CollectionSource(out::Nil, None, Typed[String])
     }
 
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
@@ -658,7 +658,7 @@ object SampleNodes {
       import scala.collection.JavaConverters._
       val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-      new CollectionSource(StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+      new CollectionSource(elements, None, Typed[String])
         with TestDataGenerator
         with FlinkSourceTestSupport[String] {
 
@@ -745,7 +745,7 @@ object SampleNodes {
   }
 
   def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParam[SimpleRecord](
-    new CollectionSource[SimpleRecord](new ExecutionConfig, data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
+    new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
       override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
@@ -753,7 +753,7 @@ object SampleNodes {
 
 
   val jsonSource: SourceFactory = SourceFactory.noParam[SimpleJsonRecord](
-    new CollectionSource[SimpleJsonRecord](new ExecutionConfig, List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
+    new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
       override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
 
         override def parseElement(json: String): SimpleJsonRecord = {
@@ -770,7 +770,7 @@ object SampleNodes {
 
     @MethodToInvoke
     def create(processMetaData: MetaData, componentUseCase: ComponentUseCase, @ParamName("type") definition: java.util.Map[String, _]): Source = {
-      new CollectionSource[TypedMap](new ExecutionConfig, List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
+      new CollectionSource[TypedMap](List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
         override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
           override def parseElement(json: String): TypedMap = {

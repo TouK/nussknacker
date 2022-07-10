@@ -12,6 +12,6 @@ object BoundedSource extends SourceFactory {
 
   @MethodToInvoke
   def source(@ParamName("elements") elements: java.util.List[Any]) =
-    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements.asScala.toList, None, Unknown)
+    new CollectionSource[Any](elements.asScala.toList, None, Unknown)
 
 }

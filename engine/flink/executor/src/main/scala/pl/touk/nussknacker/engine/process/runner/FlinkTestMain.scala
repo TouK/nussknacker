@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.api.common.{ExecutionConfig, RuntimeExecutionMode}
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCollectingListenerHolder}
 
 object FlinkTestMain extends FlinkRunner {
@@ -39,7 +39,7 @@ class FlinkTestMain(val modelData: ModelData,
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
-      val registrar: FlinkProcessRegistrar = prepareRegistrar(env.getConfig, collectingListener, testData)
+      val registrar: FlinkProcessRegistrar = prepareRegistrar(collectingListener, testData)
       registrar.register(env, process, processVersion, deploymentData, Option(collectingListener.runId))
       execute(env, SavepointRestoreSettings.none())
       collectingListener.results
@@ -48,14 +48,13 @@ class FlinkTestMain(val modelData: ModelData,
     }
   }
 
-  protected def prepareRegistrar[T](config: ExecutionConfig, collectingListener: ResultsCollectingListener, testData: TestData): FlinkProcessRegistrar = {
+  protected def prepareRegistrar[T](collectingListener: ResultsCollectingListener, testData: TestData): FlinkProcessRegistrar = {
     FlinkProcessRegistrar(new TestFlinkProcessCompiler(
       modelData.configCreator,
       modelData.processConfig,
       collectingListener,
       process,
       testData,
-      config,
       modelData.objectNaming),
       ExecutionConfigPreparer.defaultChain(modelData))
   }

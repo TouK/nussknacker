@@ -75,7 +75,7 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
-    "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
+    "intInputWithParam" -> WithCategories(new IntParamSourceFactory),
     "genericParametersSource" -> WithCategories(GenericParametersSource),
     "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
   )

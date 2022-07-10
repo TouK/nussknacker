@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.compiler
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
@@ -15,7 +14,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
+import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
@@ -54,7 +53,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
       case source: SourcePart => source.obj
     }
     sources should matchPattern {
-      case (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
+      case (_: CollectionSource[_]) :: (_: CollectionSource[_]) :: Nil =>
     }
   }
 
@@ -65,7 +64,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
       case source: SourcePart => source.obj
     }
     sources should matchPattern {
-      case CollectionSource(_, List(1, 2, 3), _, _) :: Nil =>
+      case CollectionSource(List(1, 2, 3), _, _) :: Nil =>
     }
   }
 
@@ -78,7 +77,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 
   private def testCompile(scenario: EspProcess, testData: TestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, testData, new ExecutionConfig, DefaultNamespacedObjectNaming)
+      scenario, testData, DefaultNamespacedObjectNaming)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 
@@ -91,7 +90,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
     }
   }
 
-  object SampleTestSupportSource extends CollectionSource[Int](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[Int]) with FlinkSourceTestSupport[Int] {
+  object SampleTestSupportSource extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int]) with FlinkSourceTestSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
     override def testDataParser: TestDataParser[Int] = (data: TestData) => data.testData.map(_.toInt).toList
   }

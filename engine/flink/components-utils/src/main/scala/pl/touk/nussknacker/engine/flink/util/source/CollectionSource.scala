@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
@@ -11,8 +10,7 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 import scala.collection.JavaConverters._
 
-case class CollectionSource[T: TypeInformation](config: ExecutionConfig,
-                                                list: List[T],
+case class CollectionSource[T: TypeInformation](list: List[T],
                                                 timestampAssigner: Option[TimestampWatermarkHandler[T]],
                                                 returnType: TypingResult
                                                ) extends FlinkSource with FlinkIntermediateRawSource[T] with ReturningType {
