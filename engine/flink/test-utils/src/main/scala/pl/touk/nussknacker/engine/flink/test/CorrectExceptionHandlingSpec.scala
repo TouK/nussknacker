@@ -4,7 +4,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
 import org.scalatest.{Suite}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.build.{ProcessMetaDataBuilder, ScenarioBuilder}

@@ -33,6 +33,9 @@ class FlinkTestMain(val modelData: ModelData,
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val env = createEnv
+    //we want to fail fast if we cannot be bounded...
+    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
+
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
       val registrar: FlinkProcessRegistrar = prepareRegistrar(collectingListener, testData)
