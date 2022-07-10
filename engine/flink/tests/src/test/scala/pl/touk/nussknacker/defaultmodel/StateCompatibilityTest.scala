@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.api.common.JobExecutionResult
+import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.Eventually
@@ -124,7 +125,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       verifyOutputEvent(outputTopicConfig.output, input = event1, previousInput = event1)
 
       val savepointLocation = eventually {
-        clusterClient.triggerSavepoint(jobExecutionResult.getJobID, savepointDir.toString).get()
+        clusterClient.triggerSavepoint(jobExecutionResult.getJobID, savepointDir.toString, SavepointFormatType.DEFAULT).get()
       }
 
       saveSnapshot(savepointLocation)
