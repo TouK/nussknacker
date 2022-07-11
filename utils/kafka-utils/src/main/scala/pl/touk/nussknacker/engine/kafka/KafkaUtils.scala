@@ -8,7 +8,7 @@ import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.requests.IsolationLevel
+import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 

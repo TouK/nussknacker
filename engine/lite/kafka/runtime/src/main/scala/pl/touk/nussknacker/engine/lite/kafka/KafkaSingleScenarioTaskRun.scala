@@ -98,7 +98,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     try {
       processRecords(records)
       val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
-      producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
+      producer.sendOffsetsToTransaction(offsetsMap.asJava, consumer.groupMetadata())
       producer.commitTransaction()
     } catch {
       // Those are rather not our cases but their shouldn't cause transaction abortion:

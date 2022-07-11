@@ -54,13 +54,12 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0L,
       constTimestamp,
       TimestampType.CREATE_TIME,
-      ConsumerRecord.NULL_CHECKSUM.toLong,
       ConsumerRecord.NULL_SIZE,
       ConsumerRecord.NULL_SIZE,
       null,
       givenObj,
       ConsumerRecordUtils.emptyHeaders,
-      Optional.of(0)
+      Optional.of(0: Integer)
     )
     pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
     val result = readLastMessage(StringSourceFactory, topic).head.asInstanceOf[ConsumerRecord[String, String]]

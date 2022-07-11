@@ -23,8 +23,7 @@ lazy val supportedScalaVersions = List(scala212)
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-val silencerV_2_12 = "1.6.0"
-val silencerV = "1.7.0"
+val silencerV = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -171,9 +170,7 @@ lazy val commonSettings =
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
       addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
-      // We can't use addCompilerPlugin because it not support usage of scalaVersion.value
-      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
-        silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
+      addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -204,10 +201,7 @@ lazy val commonSettings =
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % (CrossVersion.partialVersion(scalaVersion.value) match {
-          case Some((2, 12)) => silencerV_2_12
-          case _ => silencerV
-        }) % Provided cross CrossVersion.full
+        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full
       ),
       //here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
@@ -230,6 +224,9 @@ lazy val commonSettings =
         "com.typesafe.akka" %% "akka-stream" % akkaV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV,
 
+        // akka-actor depends on old, 0.8 version
+        "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
+
         //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "org.apache.kafka" %% "kafka" % kafkaV,
@@ -248,20 +245,18 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.14.4"
+val flinkV = "1.14.5"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-//however, we stick to 2.4.1, as it's last version supported by scala 2.11 (we use kafka server in tests...)
-val kafkaV = "2.4.1"
-val kafkaServerV = "2.4.1"
+val kafkaV = "3.2.0"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.0.8"
 val scalaCheckV = "1.14.0"
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
-val circeV = "0.14.1"
-val jwtCirceV = "9.0.1"
+val circeV = "0.14.2"
+val jwtCirceV = "9.0.5"
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
@@ -281,10 +276,10 @@ val scalaCollectionsCompatV = "2.3.2"
 val testcontainersScalaV = "0.39.12"
 val nettyV = "4.1.48.Final"
 
-val akkaV = "2.6.17"
-val akkaHttpV = "10.2.7"
-val akkaManagementV = "1.1.2"
-val akkaHttpCirceV = "1.38.2"
+val akkaV = "2.6.19"
+val akkaHttpV = "10.2.9"
+val akkaManagementV = "1.1.3"
+val akkaHttpCirceV = "1.39.2"
 val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.3.4"

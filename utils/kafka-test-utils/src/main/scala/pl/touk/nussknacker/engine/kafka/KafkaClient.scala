@@ -27,7 +27,7 @@ class KafkaClient(kafkaAddress: String, id: String) {
     adminClient.deleteTopics(util.Arrays.asList(name)).all().get()
   }
 
-  def topic(name: String): Option[TopicDescription] = Try(adminClient.describeTopics(util.Arrays.asList(name)).all().get()).toOption.map(_.get(name))
+  def topic(name: String): Option[TopicDescription] = Try(adminClient.describeTopics(util.Arrays.asList(name)).allTopicNames().get()).toOption.map(_.get(name))
 
   def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
