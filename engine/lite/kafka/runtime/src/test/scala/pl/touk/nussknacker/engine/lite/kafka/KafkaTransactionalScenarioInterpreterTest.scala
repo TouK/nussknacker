@@ -287,17 +287,20 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
         }
       }
     }
-    val runResult = Using.resource(kafkaInterpreter) { interpreter =>
+    val (runResult, attemptGauges, restartingGauges) = Using.resource(kafkaInterpreter) { interpreter =>
       val result = interpreter.run()
       //TODO: figure out how to wait for restarting tasks after failure?
       Thread.sleep(2000)
-      result
+      //we have to get gauge here, as metrics are unregistered in close
+      (result, metricsForName[Gauge[Int]]("task.attempt"), metricsForName[Gauge[Int]]("task.restarting"))
     }
 
     Await.result(runResult, 10 seconds)
     initAttempts should be > 1
     // we check if there weren't any errors in init causing that run next run won't be executed anymore
     runAttempts should be > 1
+    attemptGauges.exists(_._2.getValue > 1)
+    restartingGauges.exists(_._2.getValue > 1)
   }
 
   test("detects source failure") { fixture =>
@@ -340,13 +343,17 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
   private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
     val results = metricsForName[T](name).map(m => Try(action(m._2)))
-    results should not be empty
+    withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
+      results should not be empty
+    }
     results.exists(_.isSuccess) shouldBe true
   }
 
   private def forEachNonEmptyMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
     val metrics = metricsForName[T](name)
-    metrics should not be empty
+    withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
+      metrics should not be empty
+    }
     metrics.map(_._2).foreach(action)
   }
 
