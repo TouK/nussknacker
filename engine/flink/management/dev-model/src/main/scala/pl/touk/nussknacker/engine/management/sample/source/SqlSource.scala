@@ -16,5 +16,5 @@ object SqlSource extends SourceFactory {
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.SQL_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
              )  sql: String) =
-    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, List.empty, None, Unknown)
+    new CollectionSource[Any](List.empty, None, Unknown)
 }
