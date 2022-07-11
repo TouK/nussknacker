@@ -60,7 +60,7 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
     val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
 
-    strategy.open(modelData.asInvokableModelData, contextPreparer)
+    strategy.open(modelData.asInvokableModelData, contextPreparer, metricRegistry)
     new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy)
   }
 

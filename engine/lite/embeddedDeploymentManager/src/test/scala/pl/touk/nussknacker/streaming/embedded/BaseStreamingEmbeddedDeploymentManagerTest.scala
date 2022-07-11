@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.streaming.embedded
 
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
+import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -54,7 +55,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
       val strategy = new StreamingDeploymentStrategy {
         override protected def handleUnexpectedError(version: ProcessVersion, throwable: Throwable): Unit = throw new AssertionError("Should not happen...")
       }
-      strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp)
+      strategy.open(modelData, LiteEngineRuntimeContextPreparer.noOp, new MetricRegistry)
       val manager = new EmbeddedDeploymentManager(modelData, deploymentService, strategy)
       FixtureParam(manager, modelData, inputTopic, outputTopic)
     }

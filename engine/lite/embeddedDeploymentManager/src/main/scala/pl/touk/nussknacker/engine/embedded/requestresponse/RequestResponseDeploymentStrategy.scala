@@ -8,6 +8,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import io.dropwizard.metrics5.MetricRegistry
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ModelData
@@ -50,8 +51,8 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   private var server: ServerBinding = _
   
-  override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
-    super.open(modelData, contextPreparer)
+  override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer, metricRegistry: MetricRegistry): Unit = {
+    super.open(modelData, contextPreparer, metricRegistry)
     logger.info(s"Serving request-response on ${config.port}")
 
     val route = new ScenarioRoute(pathToRequestHandler)

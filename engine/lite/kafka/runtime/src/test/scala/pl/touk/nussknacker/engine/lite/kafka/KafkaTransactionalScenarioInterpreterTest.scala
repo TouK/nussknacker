@@ -219,7 +219,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer) {
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer, metricRegistry) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
@@ -264,7 +264,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
 
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer) {
+    val kafkaInterpreter = new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer, metricRegistry) {
       override private[kafka] def createScenarioTaskRun(taskId: String): Task = {
         val original = super.createScenarioTaskRun(taskId)
         //we simulate throwing exception on shutdown
@@ -364,7 +364,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     val modelDataToUse = modelData(configToUse)
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelDataToUse)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer)) { interpreter =>
+    val (runResult, output) = Using.resource(new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelDataToUse, preparer, metricRegistry)) { interpreter =>
       val result = interpreter.run()
       (result, action)
     }
