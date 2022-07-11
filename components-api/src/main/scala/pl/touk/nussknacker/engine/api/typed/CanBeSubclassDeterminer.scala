@@ -77,6 +77,10 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
+    // Type like Integer can be subclass of Integer{5}, because Integer could
+    // possibly have value of 5, that would make it subclass of Integer{5}.
+    // This allows us to supply unknown Integer to function that requires
+    // Integer{5}.
     val dataValueRestriction = (_: Unit) => {
       (givenType, superclassCandidate) match {
         case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue)) if givenValue == candidateValue =>
