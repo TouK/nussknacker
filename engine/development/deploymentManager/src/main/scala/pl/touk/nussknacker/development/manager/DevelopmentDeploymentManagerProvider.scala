@@ -54,6 +54,14 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     }
   }
 
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    if (canonicalProcess.metaData.additionalFields.flatMap(_.description).contains("fail")) {
+      Future.failed(new IllegalArgumentException("Should fail"))
+    } else {
+      Future.successful(())
+    }
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)

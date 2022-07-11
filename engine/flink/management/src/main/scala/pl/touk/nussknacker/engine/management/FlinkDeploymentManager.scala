@@ -24,17 +24,15 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    checkWithOldJob(processVersion, canonicalProcess).value.map(_ => ())
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
 
     val stoppingResult = for {
-      oldJob <- OptionT(findJobStatus(processName))
-      deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
-      _ <- OptionT[Future, Unit](if (!oldJob.allowedActions.contains(ProcessActionType.Deploy))
-        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
-      //when it's failed we don't need savepoint...
-      if oldJob.isDeployed
-      _ <- OptionT(checkRequiredSlotsExceedAvailableSlots(canonicalProcess, Some(deploymentId)).map(Option(_)))
+      deploymentId <- checkWithOldJob(processVersion, canonicalProcess)
       maybeSavePoint <- OptionT.liftF(stopSavingSavepoint(processVersion, deploymentId, canonicalProcess))
     } yield {
       logger.info(s"Deploying $processName. Saving savepoint finished")
@@ -52,6 +50,19 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
         savepointPath.orElse(maybeSavepoint)
       )
     } yield runResult
+  }
+
+  private def checkWithOldJob(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess) = {
+    val processName = processVersion.processName
+    for {
+      oldJob <- OptionT(findJobStatus(processName))
+      deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
+      _ <- OptionT[Future, Unit](if (!oldJob.allowedActions.contains(ProcessActionType.Deploy))
+        Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.status.name}")) else Future.successful(Some(())))
+      //when it's failed we don't need savepoint...
+      if oldJob.isDeployed
+      _ <- OptionT(checkRequiredSlotsExceedAvailableSlots(canonicalProcess, Some(deploymentId)).map(Option(_)))
+    } yield deploymentId
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -78,6 +78,11 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   customActionsProvider: PeriodicCustomActionsProvider,
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
+
+
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    delegate.validate(processVersion, deploymentData, canonicalProcess)
+  }
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,

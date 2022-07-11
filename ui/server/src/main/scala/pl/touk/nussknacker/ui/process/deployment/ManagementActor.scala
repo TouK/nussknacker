@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User => ManagerUser}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
@@ -64,8 +63,9 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   override def receive: PartialFunction[Any, Unit] = {
     case Deploy(process, user, savepointPath, deploymentComment) =>
       ensureNoDeploymentRunning {
-        val deployRes = deploymentService.deployProcess(process.id, savepointPath, deploymentComment, performDeploy)(user)
-        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes))
+        val deployRes = deploymentService.deployProcess(process.id, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
+        withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
+        reply(deployRes)
       }
     case Snapshot(id, user, savepointDir) =>
       reply(deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
@@ -280,11 +280,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
-
-
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, canonicalProcess, savepointPath)
-  }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
     processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)
