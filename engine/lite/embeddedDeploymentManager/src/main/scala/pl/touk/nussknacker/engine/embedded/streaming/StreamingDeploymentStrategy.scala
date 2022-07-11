@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
-import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
+import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy, EmbeddedStateStatus}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
@@ -26,7 +26,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1))
-    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer, metricRegistry))
+    val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer))
     interpreterTry.flatMap { interpreter =>
       val runTry = Try {
         val result = interpreter.run()

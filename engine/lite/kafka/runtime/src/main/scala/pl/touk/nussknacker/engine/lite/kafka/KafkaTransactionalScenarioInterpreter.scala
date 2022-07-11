@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import io.dropwizard.metrics5.MetricRegistry
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
@@ -65,11 +64,10 @@ object KafkaTransactionalScenarioInterpreter {
             jobData: JobData,
             liteKafkaJobData: LiteKafkaJobData,
             modelData: ModelData,
-            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer,
-            metricRegistry: MetricRegistry)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
+            engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext): KafkaTransactionalScenarioInterpreter = {
     val interpreter = ScenarioInterpreterFactory.createInterpreter[Future, Input, Output](scenario, modelData)
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelData, engineRuntimeContextPreparer, metricRegistry)
+    new KafkaTransactionalScenarioInterpreter(interpreter, scenario, jobData, liteKafkaJobData, modelData, engineRuntimeContextPreparer)
   }
 }
 
@@ -78,8 +76,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
                                                            jobData: JobData,
                                                            liteKafkaJobData: LiteKafkaJobData,
                                                            modelData: ModelData,
-                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer,
-                                                           metricRegistry: MetricRegistry)(implicit ec: ExecutionContext) extends AutoCloseable {
+                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
   def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._
@@ -93,12 +90,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   private val engineConfig = modelData.processConfig.as[EngineConfig]
 
-  private val taskRunner: TaskRunner = new TaskRunner(scenario.id,
-    liteKafkaJobData.tasksCount,
-    createScenarioTaskRun,
-    engineConfig.shutdownTimeout,
-    engineConfig.waitAfterFailureDelay,
-    metricRegistry)
+  private val taskRunner: TaskRunner = new TaskRunner(scenario.id, liteKafkaJobData.tasksCount, createScenarioTaskRun , engineConfig.shutdownTimeout, engineConfig.waitAfterFailureDelay)
 
   def run(): Future[Unit] = {
     sourceMetrics.registerOwnMetrics(context.metricsProvider)

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.embedded
 
-import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
@@ -15,13 +14,10 @@ trait DeploymentStrategy {
 
   protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
   protected var modelData: ModelData = _
-  protected var metricRegistry: MetricRegistry = _
 
-
-  def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer, metricRegistry: MetricRegistry): Unit = {
+  def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     this.modelData = modelData
     this.contextPreparer = contextPreparer
-    this.metricRegistry = metricRegistry
   }
 
   def close(): Unit

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
@@ -19,8 +18,7 @@ class TaskRunner(taskName: String,
                  taskParallelCount: Int,
                  singleRun: String => Task,
                  terminationTimeout: Duration,
-                 waitAfterFailureDelay: FiniteDuration,
-                 metricRegistry: MetricRegistry) extends AutoCloseable with LazyLogging {
+                 waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
   def status(): TaskStatus = Option(tasks).filterNot(_.isEmpty)
     .map(_.maxBy(_.status)).map(_.status)
     .getOrElse(Running)
