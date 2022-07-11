@@ -66,7 +66,7 @@ describe("Components list", () => {
     cy.matchQuery("?CATEGORY=Default&GROUP=base")
     cy.get("@options").contains(/^source/i).click()
     cy.matchQuery("?CATEGORY=Default&GROUP=base&GROUP=sources")
-    cy.get("[role=row]").should("have.lengthOf", 11)
+    cy.get("[role=row]").should("have.lengthOf", 12)
     cy.get("body").click()
     cy.contains(`:has([data-testid="CancelIcon"])`, /^sources/).find(`[data-testid="CancelIcon"]`).click()
     cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(":not(title)", /^filter$/).should("be.visible")
