@@ -25,7 +25,6 @@ import java.time.temporal.ChronoUnit
 import java.util.Properties
 import java.util.function.Consumer
 import java.{lang, time, util}
-import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 object DelayedFlinkKafkaConsumer {
@@ -55,7 +54,6 @@ object DelayedFlinkKafkaConsumer {
 }
 
 @silent("deprecated")
-@nowarn("cat=deprecation")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    props: Properties,

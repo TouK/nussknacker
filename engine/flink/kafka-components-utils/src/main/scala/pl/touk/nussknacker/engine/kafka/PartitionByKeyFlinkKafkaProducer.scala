@@ -4,10 +4,7 @@ import com.github.ghik.silencer.silent
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkSerializationSchema
 
-import scala.annotation.nowarn
-
 @silent("deprecated")
-@nowarn("cat=deprecation")
 object PartitionByKeyFlinkKafkaProducer {
 
   def apply[T](config: KafkaConfig,
