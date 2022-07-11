@@ -287,12 +287,12 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
         }
       }
     }
-    val (runResult, attemptGauges) = Using.resource(kafkaInterpreter) { interpreter =>
+    val (runResult, attemptGauges, restartingGauges) = Using.resource(kafkaInterpreter) { interpreter =>
       val result = interpreter.run()
       //TODO: figure out how to wait for restarting tasks after failure?
       Thread.sleep(2000)
       //we have to get gauge here, as metrics are unregistered in close
-      (result, metricsForName[Gauge[Int]]("attempt"))
+      (result, metricsForName[Gauge[Int]]("task.attempt"), metricsForName[Gauge[Int]]("task.restarting"))
     }
 
     Await.result(runResult, 10 seconds)
@@ -300,6 +300,7 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
     // we check if there weren't any errors in init causing that run next run won't be executed anymore
     runAttempts should be > 1
     attemptGauges.exists(_._2.getValue > 1)
+    restartingGauges.exists(_._2.getValue > 1)
   }
 
   test("detects source failure") { fixture =>
