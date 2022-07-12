@@ -28,7 +28,16 @@ interface Props {
   fieldErrors?: Error[],
 }
 
-type WithTempId<T> = T & { _id?: string }
+export type WithTempId<T> = T & { _id?: string }
+
+function withFakeId(edge: WithTempId<Edge>): WithTempId<Edge> {
+  if (edge.to?.length > 0) {
+    delete edge._id
+  } else if (!edge._id) {
+    edge._id = `id${Math.random()}`
+  }
+  return edge
+}
 
 export function EdgesDndComponent(props: Props): JSX.Element {
   const {nodeId, label, readOnly, value, onChange, ordered, variableTypes, fieldErrors = []} = props
@@ -47,11 +56,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
 
   const replaceEdge = useCallback((current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
     if (current !== next) {
-      if (next.to) {
-        delete next._id
-      } else if (!next._id) {
-        next._id = Math.random().toString()
-      }
+      withFakeId(next)
       setEdges(edges => edges.map(e => e === current ? next : e))
     }
   }, [])
@@ -72,7 +77,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
         } :
         {type: value},
     }
-    setEdges(edges => edges.concat(item))
+    setEdges(edges => edges.concat(withFakeId(item)))
   }, [availableTypes, nodeId])
 
   useEffect(() => {
@@ -96,7 +101,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
             edges={array}
             types={types}
             variableTypes={variableTypes}
-            validators={[mandatoryValueValidator, errorValidator(fieldErrors, edge.to), errorValidator(fieldErrors, `edges[${index}]`)]}
+            validators={[mandatoryValueValidator, errorValidator(fieldErrors, edge._id || edge.to)]}
           />
         ),
       }

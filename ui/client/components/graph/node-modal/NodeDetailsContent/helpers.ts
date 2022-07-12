@@ -71,7 +71,7 @@ export function getAvailableFields(editedNode: NodeType, node: NodeType, additio
     case "Variable":
       return Variable.availableFields
     case "Switch":
-      return ["id", DEFAULT_EXPRESSION_ID, "exprVal", "edge"]
+      return ["id", DEFAULT_EXPRESSION_ID, "exprVal"]
     case "Split":
       return ["id"]
     case "Properties": {

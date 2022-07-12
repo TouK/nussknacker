@@ -24,7 +24,7 @@ import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
-import {EdgesDndComponent} from "./EdgesDndComponent"
+import {EdgesDndComponent, WithTempId} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {Edge, EdgeKind, NodeType, NodeValidationError, VariableTypes} from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
@@ -63,7 +63,7 @@ interface State {
   originalNode: NodeType,
   unusedParameters,
   codeCompletionEnabled,
-  edges: Edge[],
+  edges: WithTempId<Edge>[],
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -145,7 +145,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         branchVariableTypes: this.props.findAvailableBranchVariables(this.props.originalNodeId),
         nodeData: currentNode,
         processProperties: this.props.processProperties,
-        outgoingEdges: this.state.edges,
+        outgoingEdges: this.state.edges.map(e => ({...e, to: e._id || e.to})),
       })
     } else {
       this.updateNodeState(currentNode, [])
@@ -762,7 +762,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     const fieldErrors = currentErrors.filter(error => {
       if (error.fieldName) {
         const fields = getAvailableFields(editedNode, node, additionalPropertiesConfig, dynamicParameterDefinitions)
-        const edges = this.state.edges.flatMap((e, index) => [e.to, `edges[${index}]`])
+        const edges = this.state.edges.map(e => e._id || e.to)
         return [...fields, ...edges].includes(error.fieldName)
       }
       return false
