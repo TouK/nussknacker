@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import cats.data.NonEmptyList
-
-import java.util.Date
 import org.apache.flink.configuration.Configuration
-import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
-import org.scalatest.LoneElement._
+import org.apache.flink.metrics.{Counter, Gauge, Histogram}
+import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
+import org.scalatest.{BeforeAndAfterEach, Matchers, Outcome, fixture}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -15,23 +15,30 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, Simp
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import spel.Implicits.asSpelExpression
+import java.util.Date
 
-class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
+class MetricsSpec extends fixture.FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
 
-  import spel.Implicits.asSpelExpression
+  private val reporterName = getClass.getName
 
-  override protected def beforeEach(): Unit = {
-    TestReporter.reset(this.getClass.getName)
-  }
+  private def reporter: TestReporter = TestReporter.get(reporterName)
 
   override protected def afterAll(): Unit = {
     super.afterAll()
-    TestReporter.remove(this.getClass.getName)
+    TestReporter.remove(reporterName)
   }
 
-  test("measure time for service") {
+  type FixtureParam = ProcessName
 
-    val process = ScenarioBuilder.streaming("proc1")
+  def withFixture(test: OneArgTest): Outcome = {
+    //this *has* to be scenario name in the test
+    withFixture(test.toNoArgTest(ProcessName(test.name)))
+  }
+
+  test("measure time for service") { implicit scenarioName =>
+
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "#input.value2")
       .emptySink("out", "monitor")
@@ -42,14 +49,14 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldNot be('empty)
-    val histogram = TestReporter.get(this.getClass.getName).testHistogram("service.OK.serviceName.mockService.histogram")
+    val histogram = reporter.testMetrics[Histogram]("service.OK.serviceName.mockService.histogram").loneElement
     histogram.getCount shouldBe 1
 
   }
 
-  test("measure errors") {
+  test("measure errors") { implicit scenarioName =>
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("id", "input")
       .processor("proc2", "logService", "all" -> "1 / #input.value1")
       .emptySink("out", "monitor")
@@ -58,24 +65,20 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     )
     processInvoker.invokeWithSampleData(process, data)
 
+    //we measure counts, as instant rate is reset after read so it's quite unstable...
     eventually {
-      val reporter = TestReporter.get(this.getClass.getName)
+      val totalCounter = reporter.testMetrics[Counter]("error.instantRate")
+      totalCounter.exists(_.getCount > 0) shouldBe true
 
-      val totalGauges = reporter.testGauges("error.instantRate.instantRate")
-      totalGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
-
-      val nodeGauges = reporter.testGauges("error.instantRateByNode.nodeId.proc2.instantRate")
-      nodeGauges.exists(_.getValue.asInstanceOf[Double] > 0) shouldBe true
-
-      val nodeCounts = reporter.testCounters("error.instantRateByNode.nodeId.proc2")
+      val nodeCounts = reporter.testMetrics[Counter]("error.instantRateByNode.nodeId.proc2")
       nodeCounts.exists(_.getCount > 0) shouldBe true
     }
 
   }
 
-  test("measure node counts") {
+  test("measure node counts") { implicit scenarioName =>
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("source1", "input")
       .filter("filter1", "#input.value1 == 10")
       .split("split1",
@@ -101,13 +104,13 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     counter("nodeId.out2.nodeCount") shouldBe 1L
   }
 
-  test("measure ends") {
+  test("measure ends") { implicit scenarioName =>
     val data = List(
       SimpleRecord("1", 10, "a", new Date(0)),
       SimpleRecord("1", 12, "a", new Date(0)),
     )
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("source", "input")
       .filter("filter", "#input.value1 > 10")
       .split("split",
@@ -128,7 +131,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     gauge("end.nodeId.custom node.instantRate") should be >= 0.0d
   }
 
-  test("measure dead ends") {
+  test("measure dead ends") { implicit scenarioName =>
     val data = List(
       SimpleRecord("1", 10, "a", new Date(0)),
       SimpleRecord("1", 11, "a", new Date(0)),
@@ -136,7 +139,7 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
       SimpleRecord("1", 13, "a", new Date(0)),
     )
 
-    val process = ScenarioBuilder.streaming("proc1")
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("source", "input")
       .filter("filter1", "#input.value1 > 10")
       .switch("switch2", "#input.value1", "output",
@@ -151,8 +154,8 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     gauge("dead_end.nodeId.switch2.instantRate") should be >= 0.0d
   }
 
-  test("open measuring service"){
-    val process = ScenarioBuilder.streaming("proc1")
+  test("open measuring service"){ implicit scenarioName =>
+    val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
       .emptySink("out", "sinkForStrings", "value" -> "#outputValue")
@@ -165,9 +168,9 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     SinkForStrings.data shouldBe List("initialized!")
   }
 
-  test("initializes counts, ends, dead ends") {
+  test("initializes counts, ends, dead ends") { implicit scenarioName =>
 
-    val scenario = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val scenario = EspProcess(MetaData(scenarioName.value, StreamMetaData()), NonEmptyList.of(
       GraphBuilder.source("id", "input")
         .split("split",
           GraphBuilder.filter("left", "false").branchEnd("end1", "join1"),
@@ -201,16 +204,16 @@ class MetricsSpec extends FunSuite with Matchers with VeryPatientScalaFutures wi
     }
   }
 
-  private def counter(name: String): Long = withClue(s"counter $name") {
-    TestReporter.get(this.getClass.getName).testCounters(name).loneElement.getCount
+  private def counter(name: String)(implicit scenarioName: ProcessName): Long = withClue(s"counter $name") {
+    reporter.testMetrics[Counter](name).loneElement.getCount
   }
 
-  private def gauge(name: String): Double = withClue(s"gauge $name"){
-    TestReporter.get(this.getClass.getName).testGauges(name).loneElement.getValue.asInstanceOf[Double]
+  private def gauge(name: String)(implicit scenarioName: ProcessName): Double = withClue(s"gauge $name"){
+    reporter.testMetrics[Gauge[Double]](name).loneElement.getValue
   }
 
   override protected def prepareFlinkConfiguration(): Configuration = {
-    TestReporterUtil.configWithTestMetrics(new Configuration(), this.getClass.getName)
+    TestReporterUtil.configWithTestMetrics(reporterName)
   }
 
 }
