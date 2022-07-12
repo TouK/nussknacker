@@ -37,6 +37,15 @@ describe("Process", () => {
       cy.location("href").should("contain", "-renamed")
     })
 
+    it("should allow archive with redirect to list", function () {
+      cy.contains(/^archive/i).should("be.enabled").click()
+      cy.contains("want to archive").should("be.visible")
+      cy.contains(/^yes$/i).should("be.enabled").click()
+      cy.contains(/^archived visible$/i, {timeout: 60000}).should("be.visible")
+      cy.contains(this.processName).should("be.visible").click({force: true})
+      cy.contains(/scenario was archived/i).should("be.visible")
+    })
+
     it("should open properites from tips panel", () => {
       cy.viewport("macbook-15")
       cy.contains(/^properties/i).should("be.enabled").click()
@@ -46,6 +55,7 @@ describe("Process", () => {
         cy.wrap(inputs).eq(6).click().type("wrong data")
       })
       cy.contains(/^apply/i).should("be.enabled").click()
+      cy.get("[data-testid=window]").should("not.exist")
       cy.contains(/^tips.*errors in/i).contains(/^properties/i).should("be.visible").click()
       cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
@@ -215,7 +225,8 @@ describe("Process", () => {
       .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
 
     cy.get(`[model-id$="false"] .label`).dblclick()
-    cy.contains(/^Expression$/).parent().toMatchImageSnapshot({screenshotConfig: {padding: 8}})
+    cy.get("[data-testid=window]").should("be.visible")
+    cy.contains(/^Conditions:$/).parent().toMatchImageSnapshot({screenshotConfig: {padding: 8}})
   })
 
   it("should preserve condition on link move (filter)", () => {

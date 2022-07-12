@@ -9,6 +9,7 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
+import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
@@ -50,7 +51,8 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
     system.settings.config,
-    NussknackerAppInitializer.initDb(system.settings.config)
+    NussknackerAppInitializer.initDb(system.settings.config),
+    new MetricRegistry
   )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
@@ -270,7 +272,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None).asJson
+      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None, None).asJson
       Post(s"/api/nodes/$processId/validation", request) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
         val responseJson = responseAs[Json]

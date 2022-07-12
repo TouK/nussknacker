@@ -7,10 +7,15 @@ import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import fr.davit.akka.http.metrics.core.HttpMetrics._
+import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
+import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
+import io.dropwizard.metrics5.MetricRegistry
+import io.dropwizard.metrics5.jmx.JmxReporter
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
+import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -23,6 +28,7 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.metrics.RepositoryGauges
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -46,7 +52,7 @@ import scala.util.control.NonFatal
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
-  def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
+  def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
 
 }
 
@@ -70,7 +76,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
   }
 
-  override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
+  def initMetrics(metricsRegistry: MetricRegistry, processRepository: DBFetchingProcessRepository[Future] with BasicRepository): Unit = {
+    new RepositoryGauges(metricsRegistry, processRepository).prepareGauges()
+  }
+
+  override def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
     implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
@@ -141,6 +151,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
+    initMetrics(metricsRegistry, processRepository)
+
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
         new ProcessesResources(
@@ -156,7 +168,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService),
+        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
         new ValidationResources(processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
@@ -250,36 +262,50 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
     JavaClassVersionChecker.check()
+    SLF4JBridgeHandlerRegistrar.register()
 
     val db = initDb(config)
+    val metricsRegistry = new MetricRegistry
 
-    val (route, objectsToClose) = router.create(config, db)
+    val (route, objectsToClose) = router.create(config, db, metricsRegistry)
 
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
+
+    //JmxReporter does not allocate resources, safe to close
+    JmxReporter.forRegistry(metricsRegistry).build().start()
+
+
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
-        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route)
+        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route, metricsRegistry)
       case None =>
-        bindHttp(interface, port, route)
+        bindHttp(interface, port, route, metricsRegistry)
     }
 
     (route, objectsToClose)
   }
 
-  def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttp(interface: String, port: Int, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    Http().newMeteredServerAt(
       interface = interface,
-      port = port
+      port = port,
+      prepareHttpMetricRegistry(metricsRegistry)
     ).bind(route)
   }
 
-  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    Http().newMeteredServerAt(
       interface = interface,
       port = port,
+      prepareHttpMetricRegistry(metricsRegistry)
     ).enableHttps(httpsContext).bind(route)
+  }
+
+  private def prepareHttpMetricRegistry(metricsRegistry: MetricRegistry): HttpMetricsRegistry = {
+    val settings: HttpMetricsSettings = DropwizardSettings.default
+    new DropwizardRegistry(settings)(metricsRegistry)
   }
 
   def initDb(config: Config): DbConfig = {

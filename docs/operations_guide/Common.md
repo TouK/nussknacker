@@ -131,7 +131,7 @@ Below we describe common
 | eventtimedelay.histogram    | nodeId          | histogram             | only for sources with eventTime, measures delay from event time to system time |
 | eventtimedelay.minimalDelay | nodeId          | gauge                 | time from last event (eventTime) to system time                                |
 | end                         | nodeId          | instantRate + counter | for sinks and end processors                                                   |
-| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, switches etc.                               |
+| dead_end                    | nodeId          | instantRate + counter | for event filtered out on filters, choices etc.                                |
 
 
 Each of these metrics comes with the tags specific for execution engine:
@@ -218,10 +218,9 @@ Check [Schema Registry + Avro serialization
 
 ### Nussknacker configuration
 
-* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`) - in case of Flink execution engine
 * Configure restart strategy and error handler
   * By default, scenarios are not restarted, so that errors do not go unnoticed
-  * Kafka exception handler should be used in production - configure error topic, with long enough retention
+  * [Kafka exception handler](../installation_configuration_guide/ModelConfiguration.md#kafka-exception-handling) should be used in production - configure error topic, with long enough retention
 * Check if Nussknacker has access to all needed services:
   * Flink REST API
   * K8s REST API
@@ -234,6 +233,7 @@ Check [Schema Registry + Avro serialization
   * Generate test data from some Kafka topic
   * Check if counts can be accessed
   * See if metrics links are working properly
+* Make sure to configure RocksDB properly (e.g. `rocksdb.enable`) - in case of Flink execution engine
 
 ##### Setup metrics/alerting
 

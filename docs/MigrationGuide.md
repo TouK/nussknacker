@@ -10,6 +10,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
 * commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
 * [#3165](https://github.com/TouK/nussknacker/pull/3165) Config is not exposed over http (GET /api/app/config/) by default. To enable it set configuration `enableConfigEndpoint` to `true`.
+* [#3223](https://github.com/TouK/nussknacker/pull/3223) OAuth2 configuration `defaultTokenExpirationTime` changed to `defaultTokenExpirationDuration`
 
 ### Code API changes
 
@@ -26,7 +27,16 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
 
+### Scenario authoring changes
+
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Choice component replaces Switch component. "Default" choice edge type, exprVal and expression are now deprecated. 
+  For existing usages, you don't need to change anything. For new usages, if you want extract value e.g. to simplify choice conditions, you need to define new local variable before choice using variable component.
+  "Default" choice edge type can be replaced by adding "true" condition at the end of list of conditions
+
 ### Other changes
+
+* [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
+  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module 
 
 ## In version 1.4.0
                  

@@ -41,6 +41,7 @@ export type ProcessDefinitionData = {
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
   additionalPropertiesConfig?: AdditionalPropertiesConfig,
+  edgesForNodes?: $TodoType[],
 }
 
 export type ProcessDefinition = {

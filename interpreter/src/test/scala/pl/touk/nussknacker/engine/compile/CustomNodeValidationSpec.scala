@@ -163,8 +163,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "42")
       .emptySink("out", "dummySink")
 
+    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(42).display}"
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: String, found: Integer", "custom1", Some("stringVal"), "42"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParseError(`expectedMsg`, "custom1", Some("stringVal"), "42"), _)) =>
     }
   }
 
@@ -340,12 +341,13 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "sourceId2" -> Map.empty,
       "$edge-branch2-join1" -> Map.empty,
       "join1" -> Map(
-        "key-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String]), Typed[String]),
-        "key-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String]), Typed[String]),
-        "value-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]),
-        "value-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[Integer]), Typed[Integer])
+        "key-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed.fromInstance("key1")), Typed.fromInstance("key1")),
+        "key-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed.fromInstance("key2")), Typed.fromInstance("key2")),
+        "value-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("ala")), Typed.fromInstance("ala")),
+        "value-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed.fromInstance(123)), Typed.fromInstance(123))
       ),
-      "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
+      "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(
+        Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123")))
     )
   }
 
@@ -369,8 +371,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       ))
 
     val validationResult = validator.validate(process)
+    val expectedMsg = s"Bad expression type, expected: CharSequence, found: ${Typed.fromInstance(123).display}"
     validationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: CharSequence, found: Integer", "join1" , Some("key for branch branch2"), "123"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParseError(`expectedMsg`, "join1", Some("key for branch branch2"), "123"), Nil)) =>
     }
   }
 

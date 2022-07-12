@@ -1,14 +1,13 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -75,7 +74,7 @@ class ProcessBaseTestHelpers(data: List[SimpleRecord]) extends ProcessConfigCrea
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
     "input" -> WithCategories(SampleNodes.simpleRecordSource(data)),
-    "intInputWithParam" -> WithCategories(new IntParamSourceFactory(new ExecutionConfig)),
+    "intInputWithParam" -> WithCategories(new IntParamSourceFactory),
     "genericParametersSource" -> WithCategories(GenericParametersSource),
     "genericSourceWithCustomVariables" -> WithCategories(GenericSourceWithCustomVariables)
   )

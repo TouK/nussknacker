@@ -82,7 +82,8 @@ class VersionsForm extends React.Component<Props, State> {
     const versionId = versionPrefix + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
+        {this.versionDisplayString(versionId)} - created
+        by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
     )
   }
 
@@ -120,7 +121,8 @@ class VersionsForm extends React.Component<Props, State> {
                     {_.keys(this.state.difference).map((diffId) => {
                       const isLayoutOnly = this.isLayoutChangeOnly(diffId)
                       return (
-                        <option key={diffId} value={diffId} disabled={isLayoutOnly}>{diffId} {isLayoutOnly && "(position only)"}</option>)
+                        <option key={diffId} value={diffId}
+                                disabled={isLayoutOnly}>{diffId} {isLayoutOnly && "(position only)"}</option>)
                     })}
                   </SelectWithFocus>
                 </div>
@@ -190,23 +192,24 @@ class VersionsForm extends React.Component<Props, State> {
       (<div className="notPresent">Node not present</div>)
   }
 
-  stubOnChange = () => {return}
-  printEdge(edge, pathsToMark) {
-    return edge ?
-      (
-        <EdgeDetailsContent
-          edge={edge}
-          readOnly={true}
-          showValidation={false}
-          showSwitch={false}
-          changeEdgeTypeValue={this.stubOnChange}
-          changeEdgeTypeCondition={this.stubOnChange}
-          pathsToMark={pathsToMark}
-          variableTypes={{}}
-        />
-      ) :
-      (<div className="notPresent">Edge not present</div>)
+  stubOnChange = () => {
+    return
   }
+
+  printEdge = (edge, pathsToMark) => edge ?
+    (
+      <EdgeDetailsContent
+        edge={edge}
+        readOnly={true}
+        showValidation={false}
+        showSwitch={false}
+        changeEdgeTypeValue={this.stubOnChange}
+        changeEdgeTypeCondition={this.stubOnChange}
+        pathsToMark={pathsToMark}
+        variableTypes={{}}
+      />
+    ) :
+    (<div className="notPresent">Edge not present</div>)
 
   printProperties(property, pathsToMark) {
     return property ?

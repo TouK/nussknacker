@@ -1,6 +1,6 @@
 import ace from "ace-builds/src-noconflict/ace"
 import {isEmpty, map, overSome} from "lodash"
-import React, {ReactElement, useCallback, useMemo, useState} from "react"
+import React, {ReactElement, useCallback, useEffect, useMemo, useState} from "react"
 import {useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../../../reducers/selectors/settings"
 import {getProcessToDisplay} from "../../../../../reducers/selectors/graph"
@@ -100,6 +100,10 @@ class CustomAceEditorCompleter implements AceEditorCompleter<{ refClazz: TypingR
   constructor(private expressionSuggester: ExpressionSuggester) {
   }
 
+  replaceSuggester(expressionSuggester: ExpressionSuggester) {
+    this.expressionSuggester = expressionSuggester
+  }
+
   getCompletions(editor: Editor, session: EditSession, caretPosition2d: Ace.Point, prefix: string, callback: Ace.CompleterCallback): void {
     const iterator = new TokenIterator(session, caretPosition2d.row, caretPosition2d.column)
     if (!this.isTokenAllowed(iterator, session.$modeId)) {
@@ -178,7 +182,8 @@ function ExpressionSuggest(props: Props): JSX.Element {
     return new ExpressionSuggester(typesInformation, variableTypes, processingType, HttpService)
   }, [processingType, typesInformation, variableTypes])
 
-  const customAceEditorCompleter = useMemo(() => new CustomAceEditorCompleter(expressionSuggester), [expressionSuggester])
+  const [customAceEditorCompleter] = useState(() => new CustomAceEditorCompleter(expressionSuggester))
+  useEffect(() => customAceEditorCompleter.replaceSuggester(expressionSuggester), [customAceEditorCompleter, expressionSuggester])
 
   const onChange = useCallback((value: string) => onValueChange(value), [onValueChange])
   const editorFocus = useCallback((editorFocused: boolean) => () => setEditorFocused(editorFocused), [])

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.kafka.clients.admin.NewTopic
+import org.apache.kafka.clients.admin.{NewTopic, TopicDescription}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
@@ -17,7 +17,7 @@ class KafkaClient(kafkaAddress: String, id: String) {
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(kafkaAddress)
+  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(kafkaAddress, None, None))
 
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
@@ -26,6 +26,8 @@ class KafkaClient(kafkaAddress: String, id: String) {
   def deleteTopic(name: String): Unit = {
     adminClient.deleteTopics(util.Arrays.asList(name)).all().get()
   }
+
+  def topic(name: String): Option[TopicDescription] = Try(adminClient.describeTopics(util.Arrays.asList(name)).allTopicNames().get()).toOption.map(_.get(name))
 
   def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
@@ -73,8 +75,8 @@ class KafkaClient(kafkaAddress: String, id: String) {
     adminClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
-    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
+  def createConsumer(groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

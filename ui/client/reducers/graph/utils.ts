@@ -1,11 +1,10 @@
-import {cloneDeep, map, reject, without, zipWith} from "lodash"
+import {cloneDeep, map, reject, zipWith} from "lodash"
 import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import NodeUtils from "../../components/graph/NodeUtils"
 import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
-
 
 export function displayNode(state: GraphState, node: NodeType): GraphState {
   return {
@@ -100,7 +99,7 @@ export function createEdge(
   return adjustedEdgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
 }
 
-function removeBranchParameter(node: NodeType, branchId: NodeId) {
+export function removeBranchParameter(node: NodeType, branchId: NodeId) {
   const {branchParameters, ...clone} = cloneDeep(node)
   return {
     ...clone,
@@ -112,41 +111,49 @@ export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removed
   const node = nodes.find(n => n.id === removedEdgeTo)
   if (node && NodeUtils.nodeIsJoin(node)) {
     const newToNode = removeBranchParameter(node, removedEdgeFrom)
-    return nodes.map((n) => { return n.id === removedEdgeTo ? newToNode : n })
+    return nodes.map((n) => {
+      return n.id === removedEdgeTo ? newToNode : n
+    })
   } else {
     return nodes
   }
 }
 
-export function enrichNodeWithProcessDependentData(originalNode: NodeType, processDefinitionData: ProcessDefinitionData, edges: Edge[]) {
+export function enrichNodeWithProcessDependentData(originalNode: NodeType, processDefinitionData: ProcessDefinitionData, edges: Edge[]): NodeType {
   const node = cloneDeep(originalNode)
-  if (NodeUtils.nodeIsJoin(node)) {
-    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
-    const declaredBranchParameters = nodeObjectDetails.parameters.filter(p => p.branchParam)
-    const incomingEdges = edges.filter(e => e.to === node.id)
 
-    node.branchParameters = incomingEdges.map((edge) => {
-      const branchId = edge.from
-      const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-      const newBranchParams = declaredBranchParameters.map((branchParamDef) => {
-        const existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-        const templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-        return existingParamValue || cloneDeep(templateParamValue) ||
-          // We need to have this fallback to some template for situation when it is existing node and it has't got
-          // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-          cloneDeep({
-            name: branchParamDef.name,
-            expression: {
-              expression: `#${branchParamDef.name}`,
-              language: ExpressionLang.SpEL,
-            },
-          })
-      })
+  switch (NodeUtils.nodeType(node)) {
+    case "Join":
+      const {parameters} = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
+      const declaredBranchParameters = parameters.filter(p => p.branchParam)
+      const incomingEdges = edges.filter(e => e.to === node.id)
+
       return {
-        branchId: branchId,
-        parameters: newBranchParams,
+        ...node,
+        branchParameters: incomingEdges.map((edge) => {
+          const branchId = edge.from
+          const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
+          const newBranchParams = declaredBranchParameters.map((branchParamDef) => {
+            const existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
+            const templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
+            return existingParamValue || cloneDeep(templateParamValue) ||
+              // We need to have this fallback to some template for situation when it is existing node and it has't got
+              // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+              cloneDeep({
+                name: branchParamDef.name,
+                expression: {
+                  expression: `#${branchParamDef.name}`,
+                  language: ExpressionLang.SpEL,
+                },
+              })
+          })
+          return {
+            branchId: branchId,
+            parameters: newBranchParams,
+          }
+        }),
       }
-    })
   }
+
   return node
 }

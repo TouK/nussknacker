@@ -12,8 +12,6 @@ import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDe
 import pl.touk.nussknacker.engine.definition.parameter.ParameterExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
-import scala.annotation.nowarn
-
 // We should think about things that happens here as a Dependency Injection where @ParamName and so on are kind of
 // BindingAnnotation in guice meaning. Maybe we should switch to some lightweight DI framework (like guice) instead
 // of writing its on ours own?

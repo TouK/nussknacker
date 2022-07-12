@@ -45,6 +45,7 @@ object node {
   //this should never occur in process to be run (unresolved)
   case class SubprocessNode(data: SubprocessInput, nexts: Map[String, SubsequentNode]) extends SubsequentNode
 
+  //defaultNext is deprecated, will be removed in future versions
   case class SwitchNode(data: Switch, nexts: List[Case], defaultNext: Option[SubsequentNode] = None) extends SubsequentNode
 
   case class SplitNode(data: Split, nextParts: List[SubsequentNode]) extends SubsequentNode
@@ -120,7 +121,14 @@ object node {
   case class Filter(id: String, expression: Expression, isDisabled: Option[Boolean] = None,
                     additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with Disableable with RealNodeData with DeadEndingData
 
-  case class Switch(id: String, expression: Expression, exprVal: String, additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
+  object Switch {
+
+    def apply(id: String): Switch = Switch(id, None, None)
+
+  }
+
+  //expression and expressionVal are deprecated, will be removed in the future
+  case class Switch(id: String, expression: Option[Expression], exprVal: Option[String], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends NodeData with RealNodeData with DeadEndingData
 
   case class VariableBuilder(id: String, varName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None) extends OneOutputSubsequentNodeData
 
