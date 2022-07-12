@@ -1,14 +1,8 @@
 import {useDispatch, useSelector} from "react-redux"
-import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
-import React, {useEffect} from "react"
+import {nodeValidationDataClear, updateNodeData, ValidationRequest} from "../../../../actions/nk"
+import React, {useCallback, useEffect} from "react"
 import {NodeDetailsContent, NodeDetailsContentProps} from "../NodeDetailsContent"
-import {
-  AdditionalPropertiesConfig,
-  DynamicParameterDefinitions,
-  NodeType,
-  PropertiesType,
-  VariableTypes,
-} from "../../../../types"
+import {AdditionalPropertiesConfig, DynamicParameterDefinitions,} from "../../../../types"
 import classNames from "classnames"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import {
@@ -54,16 +48,20 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
 
   const nodeClass = classNames("node-table", {"node-editable": isEditMode})
 
-  const onNodeDataUpdate = (processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType) => dispatch(updateNodeData(processId, variableTypes, branchVariableTypes, nodeData, processProperties))
+  const onNodeDataUpdate = useCallback(
+      (processId: string, validationRequestData: ValidationRequest) => dispatch(updateNodeData(processId, validationRequestData)),
+      [dispatch]
+  )
+
   return (
-    <div className={nodeClass}>
-      <NodeDetailsContent
-        node={node}
-        {...passProps}
-        originalNodeId={nodeId}
-        expressionType={expressionType(nodeId)}
-        nodeTypingInfo={nodeTypingInfo(nodeId)}
-        variableTypes={variableTypes(nodeId)}
+      <div className={nodeClass}>
+        <NodeDetailsContent
+            node={node}
+            {...passProps}
+            originalNodeId={nodeId}
+            expressionType={expressionType(nodeId)}
+            nodeTypingInfo={nodeTypingInfo(nodeId)}
+            variableTypes={variableTypes(nodeId)}
         currentErrors={currentErrors(nodeId, nodeErrors)}
         dynamicParameterDefinitions={dynamicParameterDefinitions(nodeId)}
         processDefinitionData={processDefinitionData}

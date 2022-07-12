@@ -1,4 +1,5 @@
 import {TypingResult, UIParameter} from "./definition"
+import {Error} from "../components/graph/node-modal/editors/Validators"
 
 export type ValidationResult = {
     validationErrors: ValidationErrors[],
@@ -29,11 +30,7 @@ export type ValidationErrors = {
     globalErrors: NodeValidationError[],
 }
 
-export type NodeValidationError = {
-    typ: string,
-    message: string,
-    description: string,
-    fieldName?: string,
+export interface NodeValidationError extends Error {
     errorType: ErrorType,
 }
 

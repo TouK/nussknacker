@@ -45,22 +45,23 @@ export type PossibleValue = {
   label: string,
 }
 
-export type Error = {
+export interface Error {
   fieldName: string,
   message: string,
   description: string,
   typ: string,
 }
 
-const error = (errors: Array<Error>, fieldName: string): Error => errors && errors.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
-
-export const errorValidator = (errors: Array<Error>, fieldName: string): Validator => ({
-  isValid: () => !error(errors, fieldName),
-  message: () => error(errors, fieldName)?.message,
-  description: () => error(errors, fieldName)?.description,
-  handledErrorType: error(errors, fieldName)?.typ ? HandledErrorType[error(errors, fieldName)?.typ] : HandledErrorType.ErrorValidator,
-  validatorType: ValidatorType.Backend,
-})
+export const errorValidator = (errors: Error[], fieldName: string): Validator => {
+  const error = errors?.find(error => error.fieldName === fieldName || error.fieldName === `$${fieldName}`)
+  return {
+    isValid: () => !error,
+    message: () => error?.message,
+    description: () => error?.description,
+    handledErrorType: error?.typ ? HandledErrorType[error?.typ] : HandledErrorType.ErrorValidator,
+    validatorType: ValidatorType.Backend,
+  }
+}
 
 export const mandatoryValueValidator: Validator = {
   isValid: value => !isEmpty(value),
@@ -154,7 +155,8 @@ export const jsonValidator: Validator = {
 }
 
 export function withoutDuplications(validators: Array<Validator>): Array<Validator> {
-  return isEmpty(validators) ? [] :
+  return isEmpty(validators) ?
+    [] :
     chain(validators)
       .groupBy(validator => validator.handledErrorType)
       .map((value, key) => chain(value).sortBy(validator => validator.validatorType).head().value())
@@ -173,7 +175,7 @@ export const validators: Record<BackendValidator, (...args: any[]) => Validator>
   [BackendValidator.RegExpParameterValidator]: ({
     pattern,
     message,
-    description
+    description,
   }) => regExpValueValidator(pattern, message, description),
   [BackendValidator.MinimalNumberValidator]: ({minimalNumber}) => minimalNumberValidator(minimalNumber),
   [BackendValidator.MaximalNumberValidator]: ({maximalNumber}) => maximalNumberValidator(maximalNumber),
