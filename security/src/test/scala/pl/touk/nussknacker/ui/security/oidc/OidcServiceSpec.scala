@@ -64,6 +64,7 @@ class OidcServiceSpec extends FunSuite with Matchers with EitherValuesDetailedMe
 
     inside(validator.introspect[String](validToken)) {
       case Invalid(err: OAuth2JwtDecodeClaimsJsonError) =>
+        err.msg should not include "Foo Bar"
     }
 
     val invalidToken = JwtCirce.encode(JwtClaim().about(name).to(audience), "invalid", JwtAlgorithm.HS256)
