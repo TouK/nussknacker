@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.deployment.DeploymentData

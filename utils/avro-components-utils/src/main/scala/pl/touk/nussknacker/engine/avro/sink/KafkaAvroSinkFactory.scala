@@ -5,10 +5,10 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
+import pl.touk.nussknacker.engine.api.process.{OutputValidatorErrorsConverter, ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -37,6 +37,8 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
 
   override type State = KafkaAvroSinkFactoryState
 
+  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(KafkaAvroBaseComponentTransformer.SinkValueParamName)
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep(
@@ -59,7 +61,9 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       }
       val validationResult = validatedSchema
         .andThen { schema =>
-          OutputValidator.validateOutput(value.returnType, schema, extractValidationMode(mode))
+          new AvroSchemaOutputValidator(extractValidationMode(mode))
+            .validateTypingResultToSchema(value.returnType, schema)
+            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
       val finalState = determinedSchema.toOption.map(schema => KafkaAvroSinkFactoryState(schema, schemaDeterminer.toRuntimeSchema(schema)))

@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.{AvroUtils, TestSchemaRegistryClientFacto
 
 trait KafkaAvroSourceSpecMixin {
 
-  final private val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  final private val avroEncoder = BestEffortAvroEncoder(ValidationMode.allowOptional)
 
   protected def createOutput(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)

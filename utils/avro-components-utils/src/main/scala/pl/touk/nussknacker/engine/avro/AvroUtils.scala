@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
@@ -11,7 +12,6 @@ import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
-import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
@@ -108,28 +108,43 @@ object AvroUtils extends LazyLogging {
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
     */
   def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
-    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
+    def createValue(value: Any, schema: Schema): Any =
+      (value, schema.getType) match {
       case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
           createRecord(schema, map)
       case (l: List[_], Schema.Type.ARRAY) =>
-        l.map(createValue(_, schema)).asJava
+        l.map(createValue(_, schema.getElementType)).asJava
       case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
-        map.mapValues(createValue(_, schema)).asJava
+        map.mapValues(createValue(_, schema.getValueType)).asJava
       case (str: String, Schema.Type.ENUM) =>
-        new GenericData.EnumSymbol(schema, str)
+        new EnumSymbol(schema, str)
+      case (str: String, Schema.Type.FIXED) =>
+        new Fixed(schema, str.getBytes("UTF-8"))
+      case (null, Schema.Type.UNION) if schema.isNullable => null
+      case (None, Schema.Type.UNION) if schema.isNullable => null
+      case (any, Schema.Type.UNION) =>
+        schema.getTypes.asScala.filterNot(_.isNullable).map(createValue(any, _)).headOption.orNull
       case (_, _) => value
     }
 
+    val fields = schema.getFields.asScala.map(_.name()).toSet
     val builder = new LogicalTypesGenericRecordBuilder(schema)
-    data.foreach{ case (key, value) =>
+    
+    data
+      .filter{ case (key, _) => fields.contains(key) }
+      .foreach{ case (key, value) =>
+        val field = schema.getField(key)
+        val valueToSet = createValue(value, field.schema())
 
-      val valueToSet = Option(schema.getField(key))
-        .map(field => createValue(value, field.schema()))
-        .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
+        builder.set(key, valueToSet)
+      }
 
-      builder.set(key, valueToSet)
-    }
     builder.build()
+  }
+
+  def verifyLogicalType[T: ClassTag](schema: Schema): Boolean = {
+    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    schema.getLogicalType != null && clazz.isAssignableFrom(schema.getLogicalType.getClass)
   }
 
 }

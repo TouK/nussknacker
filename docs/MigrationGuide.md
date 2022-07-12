@@ -22,6 +22,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Right now each method from `TestScenarioRunner` should return `ValidatedNel[ProcessCompilationError, RunResult[R]]` where:
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) Improvements: Avro Sink Validation
+  * `ValidationMode.strict` was removed, instead of it please use `ValidationMode.allowOptional`
 
 ### REST API changes
 

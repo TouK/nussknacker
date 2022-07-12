@@ -269,7 +269,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
-        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+        SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 
@@ -298,7 +298,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
-        SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+        SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
 

@@ -95,7 +95,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
     val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
-    implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
+    implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.allowOptional)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])

@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
 
-  val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  val avroEncoder = BestEffortAvroEncoder(ValidationMode.allowOptional)
 
   def encode(a: Any, schema: Schema): AnyRef =
     avroEncoder.encode(a, schema)

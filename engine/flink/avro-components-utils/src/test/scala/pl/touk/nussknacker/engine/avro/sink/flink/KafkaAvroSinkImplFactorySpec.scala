@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -40,10 +41,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate specific version") {
+    val input = sampleToInput(FullNameV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+      SinkValueParamName -> input,
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
 
@@ -51,10 +53,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate latest version") {
+    val input = sampleToInput(PaymentV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+      SinkValueParamName -> input,
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
@@ -65,7 +68,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "'1'")
 
@@ -77,7 +80,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'343543'")
 
@@ -88,13 +91,27 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "''",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - String\ncan be a subclass of any of:\n - {id: String, amount: Double, currency: EnumSymbol | String, company: {name: String, address: {street: String, city: String} | {street: String, city: String}} | {name: String, address: {street: String, city: String} | {street: String, city: String}}, products: List[{id: String, name: String, price: Double} | {id: String, name: String, price: Double}], vat: Integer}",
+      "Provided value does not match scenario output - errors:\nType validation: path 'Data' actual: 'String' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | null}'.",
       Some(SinkValueParamName)) :: Nil
+  }
+
+  private def sampleToInput(data: Any): String = {
+    def convertCollection(data: List[String]) = s"""{${data.mkString(",")}}"""
+
+    data match {
+      case map: Map[String@unchecked, Any@unchecked] =>
+        val elements = map.map{case (key, value) => s""""$key": ${sampleToInput(value)}"""}
+        convertCollection(elements.toList)
+      case list: List[Any] => convertCollection(list.map(sampleToInput))
+      case str: String => s""""$str""""
+      case null => "null"
+      case v => v.toString
+    }
   }
 
 }

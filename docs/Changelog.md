@@ -34,6 +34,7 @@
 * [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
 * [#3245](https://github.com/TouK/nussknacker/pull/3245) Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) Improvements: Avro Sink Validation
 
 1.4.0 (14 Jun 2022)
 ------------------------

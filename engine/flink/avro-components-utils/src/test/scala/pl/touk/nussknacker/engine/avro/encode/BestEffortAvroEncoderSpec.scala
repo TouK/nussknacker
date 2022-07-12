@@ -20,7 +20,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
 
   import collection.JavaConverters._
 
-  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.allowOptional)
 
   it("should create simple record") {
     val schema = wrapWithRecordSchema(
@@ -193,7 +193,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
+    BestEffortAvroEncoder(ValidationMode.allowOptional).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
     BestEffortAvroEncoder(ValidationMode.allowRedundantAndOptional).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
   }
 
