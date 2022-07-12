@@ -61,7 +61,7 @@ object NuKafkaRuntimeTestSamples {
       "kafka-avro-raw",
       TopicParamName -> s"'$outputTopic'",
       SchemaVersionParamName -> "'latest'",
-      SinkValidationModeParameterName -> s"'${ValidationMode.allowOptional.name}'",
+      SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
       SinkKeyParamName -> "",
       SinkValueParamName -> "#input"
     )

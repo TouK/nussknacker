@@ -82,7 +82,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .filter("name-filter", filter)
       .emptySink("end",  "kafka-json", "topic" -> s"'$JsonOutTopic'", "value" -> "#input")
 
-  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.allowOptional) =
+  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     ScenarioBuilder
       .streaming("json-schemed-test")
       .parallelism(1)
@@ -103,7 +103,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
         KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
-  private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.allowOptional) =
+  private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     ScenarioBuilder
       .streaming("avro-test")
       .parallelism(1)
@@ -141,7 +141,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
         KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
         KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.allowOptional.name}'",
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
         KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'"
       )
 
@@ -181,7 +181,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     sendAvro(givenNotMatchingAvroObj, topicConfig.input)
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.strict)) {
       val processed = consumeOneRawAvroMessage(topicConfig.output)
       processed.timestamp shouldBe timeAgo
       valueDeserializer.deserialize(topicConfig.output, processed.message()) shouldEqual givenMatchingAvroObjConvertedToV2
@@ -195,7 +195,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
     logger.info(s"Message sent successful: $sendResult")
 
-    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.strict)) {
       val consumer = kafkaClient.createConsumer()
       val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
       processedMessage.timestamp shouldBe timeAgo
@@ -235,7 +235,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
     converted.put("middle", null)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.strict)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual converted
     }

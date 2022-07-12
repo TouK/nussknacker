@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValidatorExpected, OutputValidatorMissingFieldsError, OutputValidatorRedundantFieldsError, OutputValidatorTypeError}
 
 import java.nio.ByteBuffer
 import scala.language.implicitConversions
@@ -75,6 +76,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateRecordSchema(record, schema, path)
       case (map: TypedObjectTypingResult, Type.MAP) =>
         validateMapSchema(map, schema, path)
+      case (tc@TypedClass(map, _), Type.MAP) if classOf[java.util.Map[_, _]].isAssignableFrom(map)  =>
+        validateTypedClassToMapSchema(tc, schema, path)
       case (array@TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(array, schema, path)
 // Right now we can't handle null value.. Typing for null is Unknown and canBeSubclassOf returns for it always true..
@@ -84,7 +87,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 //        valid
       case (union: TypedUnion, _) if union.isEmptyUnion && schema.isNullable => //situation when we pass #input witch null schema as value
         valid
-      case (TypedClass(cl, _), Type.ENUM) if classOf[java.lang.String].isAssignableFrom(cl) =>
+      case (TypedClass(cl, _), Type.ENUM) =>
         validateClass[java.lang.String](typingResult, schema, path)
       case (_, Type.FIXED) =>
         validateClass[java.lang.String](typingResult, schema, path)
@@ -97,7 +100,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (anyTypingResult, Type.UNION) =>
         val results = validateUnionSchema(anyTypingResult, schema, path)
         results
-      case (_, _) if AvroUtils.verifyLogicalType[LogicalTypes.Decimal](schema) =>
+      case (_, _) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         validateClass[ByteBuffer](typingResult, schema, path)
       case (_, _) =>
         canBeSubclassOf(typingResult, schema, path)
@@ -143,6 +146,16 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
   }
 
+  private def validateTypedClassToMapSchema(map: TypedClass, schema: Schema, path: Option[String]) = {
+    map.params match {
+      case _ :: value :: Nil =>
+        implicit val isNullable = false
+        validateTypingResult(value, schema.getValueType, buildPath("*", path, isGeneric = true))
+      case _ =>
+        canBeSubclassOf(map, schema, path)
+    }
+  }
+
   private def validateMapSchema(map: TypedObjectTypingResult, schema: Schema, path: Option[String]) = {
     val schemaFieldsValidation = map.fields.map{ case (key, value) =>
       val fieldPath = buildPath(key, path)
@@ -155,7 +168,6 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def validateArraySchema(array: TypedClass, schema: Schema, path: Option[String])(implicit isNullable: Boolean) = {
     def validateListElements(params: List[TypingResult]) = {
       params
-        .distinct
         .zipWithIndex
         .map { case (el, index) =>
           val pathKey = params match {
@@ -163,7 +175,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
             case _ => index.toString
           }
 
-          val elementPath = buildPath(pathKey, path, isArray = true)
+          val elementPath = buildPath(pathKey, path, isGeneric = true)
           validateTypingResult(el, schema.getElementType, elementPath)(isNullable = false)
         }
         .foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
@@ -206,16 +218,12 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateClass[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
-    val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
-    validateClass(typingResult, schema, List(clazz), path)
-  }
-
-  private def validateClass(typingResult: TypingResult, schema: Schema, allowedClasses: List[Class[_]], path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     (schemaAsTypedResult, typingResult) match {
       case (TypedClass(schemaClass, _), TypedClass(typeClass, _)) if typeClass.equals(schemaClass) => valid
-      case (_, TypedClass(typeClass, _)) if allowedClasses.contains(typeClass) => valid
+      case (_, TypedClass(typeClass, _)) if clazz == typeClass => valid
       case _ => invalid(typingResult, schema, path) //we don't use canBeSubclassOf here, because it can return true eg. Integer (Number) vs BigDecimal but Avro doesn't allow for that...
     }
   }
@@ -230,7 +238,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def invalid(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
     Validated.invalidNel(OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema)))
 
-  private def buildPath(key: String, path: Option[String], isArray: Boolean = false) = Some(
-    path.map(p => if(isArray) s"$p[$key]" else s"$p.$key").getOrElse(key)
+  private def buildPath(key: String, path: Option[String], isGeneric: Boolean = false) = Some(
+    path.map(p => if(isGeneric) s"$p[$key]" else s"$p.$key").getOrElse(key)
   )
 }

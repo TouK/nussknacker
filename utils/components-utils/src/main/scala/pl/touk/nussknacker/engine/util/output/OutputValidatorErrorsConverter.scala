@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.process
+package pl.touk.nussknacker.engine.util.output
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.NodeId
@@ -21,32 +21,20 @@ class OutputValidatorErrorsConverter(schemaParamName: String) {
   import OutputValidatorErrorsMessageFormatter._
 
   final def convertValidationErrors(errors: NonEmptyList[OutputValidatorError])(implicit nodeId: NodeId): CustomNodeError = {
-    val accumulator = (List.empty[OutputValidatorMissingFieldsError], List.empty[OutputValidatorRedundantFieldsError], List.empty[OutputValidatorTypeError])
-    val (missingFieldsError, redundantFieldsError, typeFieldsError) = errors.toList.foldRight(accumulator) {
-      case (e: OutputValidatorMissingFieldsError, (missingFieldsError, redundantFieldsError, typeFieldsError)) =>
-        (List(e) ::: missingFieldsError, redundantFieldsError, typeFieldsError)
-      case (e: OutputValidatorRedundantFieldsError, (missingFieldsError, redundantFieldsError, typeFieldsError)) =>
-        (missingFieldsError, List(e) ::: redundantFieldsError, typeFieldsError)
-      case (e: OutputValidatorTypeError, (missingFieldsError, redundantFieldsError, typeFieldsError)) =>
-        (missingFieldsError, redundantFieldsError, List(e) ::: typeFieldsError)
-    }
-
-    val groupedTypeFieldsError = typeFieldsError
+    val missingFieldsError = errors.collect { case e: OutputValidatorMissingFieldsError => e }.flatMap(_.fields)
+    val redundantFieldsError = errors.collect { case e: OutputValidatorRedundantFieldsError => e }.flatMap(_.fields)
+    val typeFieldsError = errors
+      .collect { case e: OutputValidatorTypeError => e }
       .groupBy(err => (err.field, err.actual))
       .map { case ((field, actual), errors) =>
         OutputValidatorGroupTypeError(field, actual, errors.map(_.expected).distinct)
       }.toList
 
-    val messageTypeFieldErrors = groupedTypeFieldsError.map(err =>
+    val messageTypeFieldErrors = typeFieldsError.map(err =>
       s"path '${err.field}' actual: '${err.displayActual}' expected: '${err.displayExpected}'"
     )
 
-    val message = makeMessage(
-      messageTypeFieldErrors,
-      missingFieldsError.flatMap(_.fields),
-      redundantFieldsError.flatMap(_.fields)
-    )
-
+    val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError)
     CustomNodeError(message, Option(schemaParamName))
   }
 

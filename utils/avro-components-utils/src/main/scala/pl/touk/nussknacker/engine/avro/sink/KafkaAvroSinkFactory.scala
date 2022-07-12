@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, Valida
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 
 object KafkaAvroSinkFactory {
 

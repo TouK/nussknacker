@@ -960,8 +960,19 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   settings(assemblyNoScala("liteKafka.jar"): _*).
   settings(
     name := "nussknacker-lite-kafka-components",
+    libraryDependencies ++= {
+      Seq(
+        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
+      )
+    },
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsApi % Provided, componentsUtils % Provided, avroComponentsUtils, liteComponentsTestkit % Test)
+  ).dependsOn(
+    liteEngineKafkaComponentsApi % Provided,
+    liteComponentsApi % Provided,
+    componentsUtils % Provided,
+    avroComponentsUtils,
+    liteComponentsTestkit % Test
+  )
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).

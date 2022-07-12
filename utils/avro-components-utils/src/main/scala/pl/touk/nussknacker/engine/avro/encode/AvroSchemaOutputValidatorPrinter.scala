@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.avro.encode
 
 import org.apache.avro.{LogicalType, LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.api.process.{OutputValidatorErrorsConverter, OutputValidatorErrorsMessageFormatter}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorErrorsConverter, OutputValidatorErrorsMessageFormatter}
 
 import scala.collection.JavaConverters
 

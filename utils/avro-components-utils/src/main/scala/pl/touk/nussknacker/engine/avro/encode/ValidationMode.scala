@@ -4,11 +4,11 @@ case class ValidationMode private(name: String, label: String, acceptRedundant: 
 
 object ValidationMode {
 
-  val allowOptional: ValidationMode = ValidationMode("allowOptional", "Allow missing optional parameters", acceptRedundant = false)
+  val strict: ValidationMode = ValidationMode("strict", "Strict mode", acceptRedundant = false)
 
-  val allowRedundantAndOptional: ValidationMode =  ValidationMode("allowRedundantAndOptional", "Allow missing optional and redundant parameters", acceptRedundant = true)
+  val allowRedundant: ValidationMode =  ValidationMode("allowRedundant", "Allow redundant parameters", acceptRedundant = true)
 
-  val values: List[ValidationMode] = List(allowOptional, allowRedundantAndOptional)
+  val values: List[ValidationMode] = List(strict, allowRedundant)
 
   def byName(name: String): Option[ValidationMode] = values.find(_.name == name)
 

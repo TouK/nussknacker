@@ -63,7 +63,7 @@ abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpe
     .withValue(s"components.mockKafka.config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
 
   lazy val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config, "components.mockKafka.config")
-  protected val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.allowOptional)
+  protected val avroEncoder: BestEffortAvroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
   protected val givenNotMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("first" -> "Zenon", "last" -> "Nowak"), RecordSchemaV1

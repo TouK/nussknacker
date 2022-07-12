@@ -50,7 +50,7 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
           KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'",
           KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
           KafkaAvroBaseComponentTransformer.SinkKeyParamName -> generator.throwFromString(),
-          KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.allowOptional.name}'"
+          KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'"
         ),
         GraphBuilder.emptySink("avro",
           "kafka-avro",

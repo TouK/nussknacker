@@ -43,7 +43,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
   * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
 * [#3071](https://github.com/TouK/nussknacker/pull/3071) Improvements: Avro Sink Validation
-  * `ValidationMode.strict` was removed, instead of it please use `ValidationMode.allowOptional`
+  * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.strict`
+  * `ValidationMode.allowRedundantAndOptional` was renamed to `ValidationMode.allowRedundant`
 
 ### REST API changes
 

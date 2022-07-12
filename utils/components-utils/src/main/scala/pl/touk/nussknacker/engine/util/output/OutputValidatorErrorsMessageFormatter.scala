@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api.process
+package pl.touk.nussknacker.engine.util.output
 
 object OutputValidatorErrorsMessageFormatter {
 

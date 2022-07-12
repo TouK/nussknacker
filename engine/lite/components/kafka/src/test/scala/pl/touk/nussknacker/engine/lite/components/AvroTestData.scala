@@ -1,23 +1,23 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import org.apache.avro.Schema.Type
 import org.apache.avro.data.TimeConversions.TimestampMicrosConversion
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
+import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{LogicalTypes, Schema}
+import pl.touk.nussknacker.engine.avro.AvroSchemaCreator._
 import pl.touk.nussknacker.engine.avro.AvroUtils
 
+import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalTime}
+import java.util
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import scala.util.Random
 
 object AvroTestData {
 
-  private implicit class SchemasType(schemas: Seq[Schema]) {
-      def toType: String = schemas.toList match {
-        case head :: Nil => head.toString()
-        case list => s"""[${list.map(_.toString()).mkString(",")}]"""
-      }
-  }
+  import collection.JavaConverters._
 
   implicit class LocalTimeOutput(time: LocalTime) {
     //See org.apache.avro.date.TimeConversions.TimeMillisConversion
@@ -44,6 +44,139 @@ object AvroTestData {
 
   val RecordFieldName: String = "field"
 
+  //Primitive schemas
+  val nullSchema: Schema = Schema.create(Type.NULL)
+
+  val integerSchema: Schema = Schema.create(Type.INT)
+
+  val longSchema: Schema = Schema.create(Type.LONG)
+
+  val floatSchema: Schema = Schema.create(Type.FLOAT)
+
+  val doubleSchema: Schema = Schema.create(Type.DOUBLE)
+
+  val stringSchema: Schema = Schema.create(Type.STRING)
+
+  val booleanSchema: Schema = Schema.create(Type.BOOLEAN)
+
+  val bytesSchema: Schema = Schema.create(Type.BYTES)
+
+  //Record with primitives
+  val recordIntegerSchema: Schema = createSimpleRecord(integerSchema)
+
+  val recordBooleanSchema: Schema = createSimpleRecord(booleanSchema)
+
+  val recordLongSchema: Schema = createSimpleRecord(longSchema)
+
+  val recordPriceSchema: Schema = createRecord(createField("price", nullSchema, doubleSchema))
+
+  val recordStringPriceSchema: Schema = createRecord(createField("price", nullSchema, stringSchema))
+
+  //Union schemas
+  val recordUnionOfStringInteger: Schema = createSimpleRecord(stringSchema, integerSchema)
+
+  val recordMaybeBoolean: Schema = createSimpleRecord(nullSchema, booleanSchema)
+
+  //Avro array schemas
+  val arrayOfStrings: Schema = createArray(stringSchema)
+
+  val recordWithArrayOfStrings: Schema = createSimpleRecord(arrayOfStrings)
+
+  val arrayOfNumbers: Schema = createArray(integerSchema, doubleSchema)
+
+  val recordWithArrayOfNumbers: Schema = createSimpleRecord(arrayOfNumbers)
+
+  val recordWithMaybeArrayOfNumbers: Schema = createSimpleRecord(nullSchema, arrayOfNumbers)
+
+  val recordWithOptionalArrayOfNumbers: Schema = createSimpleRecord(Null, nullSchema, arrayOfNumbers)
+
+  val recordOptionalArrayOfArraysStrings: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfStrings))
+
+  val recordOptionalArrayOfArraysNumbers: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfNumbers))
+
+  val recordOptionalArrayOfRecords: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, recordPriceSchema))
+
+  //Avro map schemas
+  val mapOfStrings: Schema = createMap(nullSchema, stringSchema)
+
+  val recordMapOfStrings: Schema = createSimpleRecord(mapOfStrings)
+
+  val mapOfInts: Schema = createMap(nullSchema, integerSchema)
+
+  val recordMapOfInts: Schema = createRecord(createField(RecordFieldName, mapOfInts))
+
+  val recordMaybeMapOfInts: Schema = createRecord(createField(RecordFieldName, nullSchema, mapOfInts))
+
+  val recordOptionalMapOfInts: Schema = createSimpleRecord(Null, nullSchema, mapOfInts)
+
+  val recordMapOfMapsStrings: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfStrings))
+
+  val recordOptionalMapOfMapsInts: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfInts))
+
+  val recordOptionalMapOfStringRecords: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordStringPriceSchema))
+
+  val recordOptionalMapOfRecords: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
+
+  //Avro record schemas
+  val nestedRecordWithStringPriceSchema: Schema = createSimpleRecord(Null,
+    nullSchema, createRecord(createField("sub", Null,
+      nullSchema, recordStringPriceSchema
+    ))
+  )
+
+  val nestedRecordSchema: Schema = createSimpleRecord(Null,
+    nullSchema, createRecord(createField("sub", Null,
+      nullSchema, recordPriceSchema
+    ))
+  )
+
+  val nestedRecordSchemaV2Fields: Schema = Schema.createUnion(
+    nullSchema,
+    createRecord(
+      createField("sub", Null,
+        nullSchema,
+        createRecord(
+          createField("price", nullSchema, doubleSchema),
+          createField("currency", "USD", stringSchema),
+        )
+      ),
+      createField("str", stringSchema)
+    )
+  )
+
+  val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordSchemaV2Fields)
+
+  //Avro other schemas
+  val recordStringSchema: Schema = createSimpleRecord(stringSchema)
+
+  val baseEnumSchema: Schema = createEnum("Suit", List("SPADES", "HEARTS", "DIAMONDS", "CLUBS"))
+
+  val recordEnumSchema: Schema = createSimpleRecord(baseEnumSchema)
+
+  val enumSchemaV2: Schema = createEnum("Suit", List("SPADES", "HEARTS2", "DIAMONDS2", "CLUBS2"))
+
+  val recordEnumSchemaV2: Schema = createSimpleRecord(enumSchemaV2)
+
+  val baseFixedSchema: Schema = createFixed("md5", size = 32)
+
+  val recordFixedSchema: Schema = createSimpleRecord(baseFixedSchema)
+
+  val recordFixedSchemaV2: Schema = createSimpleRecord(createFixed("short", size = 16))
+
+  val recordUUIDSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.uuid()))
+
+  val recordDecimalSchema: Schema = createSimpleRecord(AvroUtils.parseSchema("""{"type":"bytes","logicalType":"decimal","precision":4,"scale":2}"""))
+
+  val recordDateSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.date()))
+
+  val recordTimeMillisSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.timeMillis()))
+
+  val recordTimeMicrosSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.timeMicros()))
+
+  val recordTimestampMillisSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.timestampMillis()))
+
+  val recordTimestampMicrosSchema: Schema = createSimpleRecord(createLogical(LogicalTypes.timestampMicros()))
+
   //Sample data
   val sampleInteger: Int = 1
   val sampleFloat: Float = 13.3.toFloat
@@ -52,20 +185,38 @@ object AvroTestData {
   val sampleString: String = "lcl"
   val sampleBoolean: Boolean = true
   val sampleBytes: Array[Byte] = sampleString.getBytes("UTf-8")
-  val samplePriceRecord: Map[String, Double] = Map("price" -> sampleDouble)
-  val sampleIntegerArray: List[Int] = List(1, 2)
-  val sampleArrayInArray: List[List[Int]] = List(sampleIntegerArray)
-  val sampleArrayWithRecord: List[Map[String, Double]] = List(samplePriceRecord)
-  val sampleMapInts: Map[String, Int] = Map("tax" -> 7)
-  val sampleMapOfMapsInts: Map[String, Map[String, Int]] = Map("first" -> sampleMapInts)
-  val sampleMapOfRecords: Map[String, Map[String, Double]] = Map("first" -> samplePriceRecord)
-  val sampleNestedRecord: Map[String, Map[String, Double]] = Map("sub" -> samplePriceRecord)
-  val defaultNestedRecordV2: Map[String, Object] = Map("sub" -> samplePriceRecord, "str" -> "sample")
-  val sampleNestedRecordV2: Map[String, Object] = Map("sub" -> Map("price" -> sampleDouble, "currency" -> "PLN"), "str" -> "sample")
-  val sampleEnum = "SPADES"
-  val sampleEnumV2 = "HEARTS2"
-  val sampleFixed = "098f6bcd4621d373cade4e832627b4f6"
-  val sampleFixedV2 = "7551140914207932"
+  val samplePriceRecord: GenericRecord = AvroUtils.createRecord(recordPriceSchema, Map("price" -> sampleDouble))
+  val sampleIntegerArray: util.List[Int] = List(1, 2).asJava
+  val sampleArrayInArray: util.List[util.List[Int]] = List(sampleIntegerArray).asJava
+  val sampleArrayWithRecord: util.List[GenericRecord] = List(samplePriceRecord).asJava
+  val sampleMapInts: util.Map[String, Int] = Map("tax" -> 7).asJava
+  val sampleMapOfMapsInts: util.Map[String, util.Map[String, Int]] = Map("first" -> sampleMapInts).asJava
+  val sampleMapOfRecords: util.Map[String, GenericRecord] = Map("first" -> samplePriceRecord).asJava
+
+  val sampleNestedRecord: GenericRecord = AvroUtils.createRecord(nestedRecordSchema,
+    Map(RecordFieldName -> Map("sub" -> samplePriceRecord))
+  )
+
+  val defaultNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
+    Map(RecordFieldName -> Map("sub" -> samplePriceRecord, "str" -> "sample"))
+  )
+
+  val sampleNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
+    Map(RecordFieldName -> Map("sub" -> Map("price" -> sampleDouble, "currency" -> "PLN"), "str" -> "sample"))
+  )
+
+  val sampleEnumString = "SPADES"
+  val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
+
+  val sampleEnumV2String = "HEARTS2"
+  val sampleEnumV2 = new EnumSymbol(enumSchemaV2, sampleEnumV2String)
+
+  val sampleFixedString = "098f6bcd4621d373cade4e832627b4f6"
+  val sampleFixed = new Fixed(baseFixedSchema, sampleFixedString.getBytes(StandardCharsets.UTF_8))
+
+  val sampleFixedV2String = "7551140914207932"
+  val sampleFixedV2 = new Fixed(recordFixedSchemaV2, sampleFixedV2String.getBytes(StandardCharsets.UTF_8))
+
   val sampleUUID: UUID = UUID.randomUUID()
   val sampleDecimal: java.math.BigDecimal = new java.math.BigDecimal(1).setScale(2)
   val sampleDate: LocalDate = LocalDate.now()
@@ -74,204 +225,7 @@ object AvroTestData {
   val sampleMillisInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   val sampleMicrosInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MICROS)
 
-  //Primitive schemas
-  val nullSchema: Schema = AvroUtils.parseSchema("""{"type":"null"}""")
+  private def createSimpleRecord(schema: Schema*) = createRecord(createField(RecordFieldName, schema:_*))
 
-  val integerSchema: Schema = AvroUtils.parseSchema("""{"type":"int"}""")
-
-  val longSchema: Schema = AvroUtils.parseSchema("""{"type":"long"}""")
-
-  val doubleSchema: Schema = AvroUtils.parseSchema("""{"type":"double"}""")
-
-  val floatSchema: Schema = AvroUtils.parseSchema("""{"type":"float"}""")
-
-  val stringSchema: Schema = AvroUtils.parseSchema("""{"type":"string"}""")
-
-  val booleanSchema: Schema = AvroUtils.parseSchema("""{"type":"boolean"}""")
-
-  val bytesSchema: Schema = AvroUtils.parseSchema("""{"type":"bytes"}""")
-
-  //Record with primitives
-  val recordInteger: Schema = buildRecord(buildField(RecordFieldName, None, integerSchema))
-
-  val recordBoolean: Schema = buildRecord(buildField(RecordFieldName, None, booleanSchema))
-
-  val recordLong: Schema = buildRecord(buildField(RecordFieldName, None, longSchema))
-
-  val recordPrice: Schema = buildRecord(buildField("price", None, nullSchema, doubleSchema))
-
-  val recordStringPrice: Schema = buildRecord(buildField("price", None, nullSchema, stringSchema))
-
-  //Union schemas
-  val recordUnionOfStringInteger: Schema = buildRecord(buildField(RecordFieldName, None, stringSchema, integerSchema))
-
-  val recordMaybeBoolean: Schema = buildRecord(buildField(RecordFieldName, None, nullSchema, booleanSchema))
-
-  //Avro array schemas
-  val arrayOfStrings: Schema = buildArray(stringSchema)
-
-  val recordWithArrayOfStrings: Schema = buildRecord(buildField(RecordFieldName, None, arrayOfStrings))
-
-  val arrayOfNumbers: Schema = buildArray(integerSchema, doubleSchema)
-
-  val recordWithArrayOfNumbers: Schema = buildRecord(buildField(RecordFieldName, None, arrayOfNumbers))
-
-  val recordWithMaybeArrayOfNumbers: Schema = buildRecord(buildField(RecordFieldName, None, nullSchema, arrayOfNumbers))
-
-  val recordWithOptionalArrayOfNumbers: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, arrayOfNumbers
-  ))
-
-  val recordOptionalArrayOfArraysStrings: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildArray(nullSchema, arrayOfStrings)
-  ))
-
-  val recordOptionalArrayOfArraysNumbers: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildArray(nullSchema, arrayOfNumbers)
-  ))
-
-  val recordOptionalArrayOfRecords: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildArray(nullSchema, recordPrice)
-  ))
-
-  //Avro map schemas
-  val mapOfStrings: Schema = buildMap(nullSchema, stringSchema)
-
-  val recordMapOfStrings: Schema = buildRecord(buildField(RecordFieldName, None,
-    mapOfStrings
-  ))
-
-  val mapOfInts: Schema = buildMap(nullSchema, integerSchema)
-
-  val recordMapOfInts: Schema = buildRecord(buildField(RecordFieldName, None,
-    mapOfInts
-  ))
-
-  val recordMaybeMapOfInts: Schema = buildRecord(buildField(RecordFieldName, None,
-    nullSchema, mapOfInts
-  ))
-
-  val recordOptionalMapOfInts: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, mapOfInts
-  ))
-
-  val recordMapOfMapsStrings: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildMap(nullSchema, mapOfStrings)
-  ))
-
-  val recordOptionalMapOfMapsInts: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildMap(nullSchema, mapOfInts)
-  ))
-
-  val recordOptionalMapOfStringRecords: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildMap(nullSchema, recordStringPrice)
-  ))
-
-  val recordOptionalMapOfRecords: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildMap(nullSchema, recordPrice)
-  ))
-
-  //Avro record schemas
-  val nestedRecordWithStringPriceSchema: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildRecord(buildField("sub", Some("null"),
-      nullSchema, recordStringPrice
-    ))
-  ))
-
-
-  val nestedRecordSchema: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildRecord(buildField("sub", Some("null"),
-      nullSchema, recordPrice
-    ))
-  ))
-
-  val subV2RecordSchema: Schema = Schema.createUnion(
-    nullSchema, buildRecord(
-    buildField("price", None, nullSchema, doubleSchema),
-    buildField("currency", Some("USD"), stringSchema),
-  ))
-
-  val nestedRecordSchemaV2: Schema = buildRecord(buildField(RecordFieldName, Some("null"),
-    nullSchema, buildRecord(
-      buildField("sub", Some("null"), subV2RecordSchema),
-      buildField("str", None, stringSchema)
-    )
-  ))
-
-  //Avro other schemas
-  val recordStringSchema: Schema = buildRecord(buildField(RecordFieldName, None, stringSchema))
-
-  val baseEnum: Schema = AvroUtils.parseSchema("""{"name":"Suit","type":"enum","symbols":["SPADES","HEARTS","DIAMONDS","CLUBS"]}""")
-
-  val recordEnumSchema: Schema = buildRecord(buildField(RecordFieldName, None, baseEnum))
-
-  val recordEnumSchemaV2: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"name":"Suit","type":"enum","symbols":["SPADES","HEARTS2","DIAMONDS2","CLUBS2"]}""")
-  ))
-
-  val baseFixed: Schema = AvroUtils.parseSchema("""{"name":"MD5","type":"fixed","size":32}""")
-
-  val recordFixedSchema: Schema = buildRecord(buildField(RecordFieldName, None, baseFixed))
-
-  val recordFixedSchemaV2: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"name":"short","type":"fixed","size":16}""")
-  ))
-
-  val recordUUIDSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"string","logicalType":"uuid"}""")
-  ))
-
-  val recordBytesSchema: Schema = buildRecord(buildField(RecordFieldName, None, bytesSchema))
-
-  val recordDecimalSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"bytes","logicalType":"decimal","precision":4,"scale":2}""")
-  ))
-
-  val recordDateSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"int","logicalType":"date"}""")
-  ))
-
-  val recordTimeMillisSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"int","logicalType":"time-millis"}""")
-  ))
-
-  val recordTimeMicrosSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"long","logicalType":"time-micros"}""")
-  ))
-
-  val recordTimestampMillisSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"long","logicalType":"timestamp-millis"}""")
-  ))
-
-  val recordTimestampMicrosSchema: Schema = buildRecord(buildField(RecordFieldName, None,
-    AvroUtils.parseSchema("""{"type":"long","logicalType":"timestamp-micros"}""")
-  ))
-
-  private def buildRecord(fields: String*): Schema = AvroUtils.parseSchema(
-    s"""
-       |{
-       |  "type": "record",
-       |  "name": "AvroTestRecord_${Math.abs(Random.nextLong())}",
-       |  "fields": [
-       |    ${fields.mkString(",")}
-       |  ]
-       |}
-       |""".stripMargin)
-
-  private def buildField(name: String, default: Option[String], schemas: Schema*): String = {
-    def defaultProperty(value: Any) = s""", "default": $value"""
-
-    val defaultElement = default match {
-      case Some(str: String) if str != "null" => defaultProperty(s""""$str"""")
-      case Some(any) => defaultProperty(any)
-      case None => ""
-    }
-
-    s"""{"name": "$name", "type": ${schemas.toType} $defaultElement}""".stripMargin
-  }
-
-  private def buildArray(schemas: Schema*): Schema = AvroUtils.parseSchema(s"""{"type":"array", "items": ${schemas.toType}}""")
-
-  private def buildMap(schemas: Schema*): Schema = AvroUtils.parseSchema(s"""{"type":"map", "values": ${schemas.toType}}""")
-
+  private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(createField(RecordFieldName, default, schema:_*))
 }

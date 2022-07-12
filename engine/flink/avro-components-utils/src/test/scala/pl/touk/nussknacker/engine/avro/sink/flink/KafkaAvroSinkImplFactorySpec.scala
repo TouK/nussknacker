@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.SinkOutputSpELConverter
 
 class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
@@ -41,11 +42,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate specific version") {
-    val input = sampleToInput(FullNameV1.exampleData)
+    val input = SinkOutputSpELConverter.convert(FullNameV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> input,
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
 
@@ -53,11 +54,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate latest version") {
-    val input = sampleToInput(PaymentV1.exampleData)
+    val input = SinkOutputSpELConverter.convert(PaymentV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> input,
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
@@ -68,7 +69,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "'1'")
 
@@ -80,7 +81,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'343543'")
 
@@ -91,27 +92,13 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "''",
-      SinkValidationModeParameterName -> validationModeParam(ValidationMode.allowOptional),
+      SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
       "Provided value does not match scenario output - errors:\nType validation: path 'Data' actual: 'String' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | null}'.",
       Some(SinkValueParamName)) :: Nil
-  }
-
-  private def sampleToInput(data: Any): String = {
-    def convertCollection(data: List[String]) = s"""{${data.mkString(",")}}"""
-
-    data match {
-      case map: Map[String@unchecked, Any@unchecked] =>
-        val elements = map.map{case (key, value) => s""""$key": ${sampleToInput(value)}"""}
-        convertCollection(elements.toList)
-      case list: List[Any] => convertCollection(list.map(sampleToInput))
-      case str: String => s""""$str""""
-      case null => "null"
-      case v => v.toString
-    }
   }
 
 }
