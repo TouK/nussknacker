@@ -75,8 +75,8 @@ class KafkaClient(kafkaAddress: String, id: String) {
     adminClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
-    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
+  def createConsumer(groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

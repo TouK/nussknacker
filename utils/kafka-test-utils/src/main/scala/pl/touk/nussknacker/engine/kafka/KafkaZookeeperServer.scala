@@ -95,12 +95,13 @@ object KafkaTestUtils {
     props
   }
 
-  def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000, groupId: String = "testGroup"): Properties = {
+  def createConsumerConnectorProperties(kafkaAddress: String, groupId: String = "testGroup"): Properties = {
     val props = new Properties()
     props.put("group.id", groupId)
     props.put("bootstrap.servers", kafkaAddress)
     props.put("auto.offset.reset", "earliest")
-    props.put("consumer.timeout.ms", consumerTimeout.toString)
+    props.put("request.timeout.ms", 2000)
+    props.put("default.api.timeout.ms", 2000)
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
     // default is read uncommitted which is pretty weird and harmful
