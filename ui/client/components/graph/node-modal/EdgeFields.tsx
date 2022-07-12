@@ -32,7 +32,6 @@ export function EdgeFields(props: Props): JSX.Element {
   const process = useSelector(getProcessToDisplay)
   const processDefinitionData = useSelector(getProcessDefinitionData)
 
-
   const [edge, setEdge] = useState(value)
 
   useEffect(() => {

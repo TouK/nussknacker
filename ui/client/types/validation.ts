@@ -2,36 +2,36 @@ import {TypingResult, UIParameter} from "./definition"
 import {Error} from "../components/graph/node-modal/editors/Validators"
 
 export type ValidationResult = {
-    validationErrors: ValidationErrors[],
-    validationWarnings: ValidationWarnings[],
-    nodeResults: NodeResults,
-    errors?: ValidationErrors,
-    warnings?,
+  validationErrors: ValidationErrors[],
+  validationWarnings: ValidationWarnings[],
+  nodeResults: NodeResults,
+  errors?: ValidationErrors,
+  warnings?,
 }
 
 export type NodeResults = Record<string, NodeTypingData>
 
 export type NodeTypingData = {
-    variableTypes: VariableTypes,
-    parameters?: UIParameter[],
-    typingInfo: Record<string, TypingResult>,
+  variableTypes: VariableTypes,
+  parameters?: UIParameter[],
+  typingInfo: Record<string, TypingResult>,
 }
 
 export type VariableTypes = Record<string, TypingResult>
 
 export type ValidationWarnings = {
-    invalidNodes: Record<string, NodeValidationError[]>,
+  invalidNodes: Record<string, NodeValidationError[]>,
 
 }
 
 export type ValidationErrors = {
-    invalidNodes: Record<string, NodeValidationError[]>,
-    processPropertiesErrors: NodeValidationError[],
-    globalErrors: NodeValidationError[],
+  invalidNodes: Record<string, NodeValidationError[]>,
+  processPropertiesErrors: NodeValidationError[],
+  globalErrors: NodeValidationError[],
 }
 
 export interface NodeValidationError extends Error {
-    errorType: ErrorType,
+  errorType: ErrorType,
 }
 
-type ErrorType = "RenderNotAllowed"|"SaveNotAllowed"|"SaveAllowed"
+type ErrorType = "RenderNotAllowed" | "SaveNotAllowed" | "SaveAllowed"

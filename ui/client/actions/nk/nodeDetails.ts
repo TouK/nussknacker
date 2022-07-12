@@ -12,8 +12,8 @@ import {
 
 import {debounce} from "lodash"
 
-export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string}
-export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string}
+export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string }
+export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string }
 export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear
 
 export interface ValidationData {

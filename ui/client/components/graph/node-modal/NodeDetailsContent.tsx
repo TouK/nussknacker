@@ -260,24 +260,26 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
-            {!isCompareView ? (
-              <EdgesDndComponent
-                label={"Outputs"}
-                nodeId={originalNodeId}
-                value={this.state.edges}
-                onChange={(edges) => {
-                  if (edges !== this.state.edges) {
-                    this.setState({edges}, this.publishNodeChange)
-                  }
-                }}
-                edgeTypes={[
-                  {value: EdgeKind.filterTrue, onlyOne: true},
-                  {value: EdgeKind.filterFalse, onlyOne: true},
-                ]}
-                readOnly={!isEditMode}
-                fieldErrors={fieldErrors}
-              />
-            ) : null}
+            {!isCompareView ?
+              (
+                <EdgesDndComponent
+                  label={"Outputs"}
+                  nodeId={originalNodeId}
+                  value={this.state.edges}
+                  onChange={(edges) => {
+                    if (edges !== this.state.edges) {
+                      this.setState({edges}, this.publishNodeChange)
+                    }
+                  }}
+                  edgeTypes={[
+                    {value: EdgeKind.filterTrue, onlyOne: true},
+                    {value: EdgeKind.filterFalse, onlyOne: true},
+                  ]}
+                  readOnly={!isEditMode}
+                  fieldErrors={fieldErrors}
+                />
+              ) :
+              null}
             {this.descriptionField()}
           </div>
         )
@@ -434,31 +436,33 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             {nodeDefinition.node["exprVal"] !== this.state.originalNode["exprVal"] ?
               this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
               null}
-            {!isCompareView ? (
-              <EdgesDndComponent
-                label={"Conditions"}
-                nodeId={originalNodeId}
-                value={this.state.edges}
-                onChange={(edges) => {
-                  if (edges !== this.state.edges) {
-                    this.setState({edges}, this.publishNodeChange)
-                  }
-                }}
-                edgeTypes={[
-                  {value: EdgeKind.switchNext},
-                  {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
-                ]}
-                ordered
-                readOnly={!isEditMode}
-                variableTypes={editedNode["exprVal"] ?
-                  {
-                    ...variableTypes,
-                    [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
-                  } :
-                  variableTypes}
-                fieldErrors={fieldErrors}
-              />
-            ) : null}
+            {!isCompareView ?
+              (
+                <EdgesDndComponent
+                  label={"Conditions"}
+                  nodeId={originalNodeId}
+                  value={this.state.edges}
+                  onChange={(edges) => {
+                    if (edges !== this.state.edges) {
+                      this.setState({edges}, this.publishNodeChange)
+                    }
+                  }}
+                  edgeTypes={[
+                    {value: EdgeKind.switchNext},
+                    {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
+                  ]}
+                  ordered
+                  readOnly={!isEditMode}
+                  variableTypes={editedNode["exprVal"] ?
+                    {
+                      ...variableTypes,
+                      [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                    } :
+                    variableTypes}
+                  fieldErrors={fieldErrors}
+                />
+              ) :
+              null}
             {this.descriptionField()}
           </div>
         )
