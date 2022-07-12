@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.functional
 import org.apache.flink.configuration.{ConfigConstants, Configuration, MetricOptions}
 import org.apache.flink.metrics._
 import org.apache.flink.metrics.reporter.MetricReporter
+import org.apache.flink.runtime.metrics.scope.ScopeFormat
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.util.concurrent.ConcurrentHashMap
@@ -45,7 +46,7 @@ class TestReporter extends MetricReporter with CharacterFilter {
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val metricId = group.getMetricIdentifier(metricName, this)
-    processToMetric.put((ProcessName(group.getAllVariables.get("<job_name>")), metricId), metric)
+    processToMetric.put((ProcessName(group.getAllVariables.get(ScopeFormat.SCOPE_JOB_NAME)), metricId), metric)
   }
 
   override def notifyOfRemovedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {}

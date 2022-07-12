@@ -66,13 +66,11 @@ class MetricsSpec extends fixture.FunSuite with Matchers with VeryPatientScalaFu
     processInvoker.invokeWithSampleData(process, data)
 
     //we measure counts, as instant rate is reset after read so it's quite unstable...
-    eventually {
-      val totalCounter = reporter.testMetrics[Counter]("error.instantRate")
-      totalCounter.exists(_.getCount > 0) shouldBe true
+    val totalCounter = reporter.testMetrics[Counter]("error.instantRate.count")
+    totalCounter.exists(_.getCount > 0) shouldBe true
 
-      val nodeCounts = reporter.testMetrics[Counter]("error.instantRateByNode.nodeId.proc2")
-      nodeCounts.exists(_.getCount > 0) shouldBe true
-    }
+    val nodeCounts = reporter.testMetrics[Counter]("error.instantRateByNode.nodeId.proc2.count")
+    nodeCounts.exists(_.getCount > 0) shouldBe true
 
   }
 
