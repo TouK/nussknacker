@@ -32,6 +32,7 @@
 * [#3239](https://github.com/TouK/nussknacker/pull/3239) Added jul-to-slf4j to be sure that all logs going via logback
 * [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
 * [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
+* [#3245](https://github.com/TouK/nussknacker/pull/3245) Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
 
 1.4.0 (14 Jun 2022)
 ------------------------
