@@ -17,7 +17,7 @@ trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
                                                 schemaDataOpt: Option[RuntimeSchemaData],
                                                 isKey: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-    new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey = isKey, AvroUtils.isSpecificRecord[T])
+    new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, _isKey = isKey, AvroUtils.isSpecificRecord[T])
   }
 
   protected def extractTopic(topics: List[String]): String = {

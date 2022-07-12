@@ -33,6 +33,7 @@
 * [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
 * [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
 * [#3245](https://github.com/TouK/nussknacker/pull/3245) Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
+* [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
 
 1.4.0 (14 Jun 2022)
 ------------------------

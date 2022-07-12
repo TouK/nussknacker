@@ -249,7 +249,7 @@ lazy val commonSettings =
     )
 
 val flinkV = "1.14.4"
-val avroV = "1.9.2" // for java time logical types conversions purpose
+val avroV = "1.11.0"
 //we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 //however, we stick to 2.4.1, as it's last version supported by scala 2.11 (we use kafka server in tests...)
 val kafkaV = "2.4.1"
@@ -289,7 +289,7 @@ val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.3.4"
 val flywayV = "6.3.3"
-val confluentV = "5.5.4"
+val confluentV = "7.2.0"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
