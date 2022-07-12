@@ -16,16 +16,22 @@ object SimpleObjectEncoder {
   private val stringClass = Typed.typedClass[String]
 
   def encode(typ: TypedClass, data: Any): ValidatedNel[String, Json] = (typ, data) match {
-    case (`intClass`, intValue: Int) => Validated.validNel(fromInt(intValue))
-    case (`longClass`, longValue: Long) => Validated.validNel(fromLong(longValue))
+    case (`intClass`, intValue: Int) =>
+      fromInt(intValue).validNel
+    case (`longClass`, longValue: Long) =>
+      fromLong(longValue).validNel
     case (`floatClass`, floatValue: Float) =>
-      fromFloat(floatValue).map(Validated.validNel).getOrElse(Validated.invalidNel(s"Could not encode $floatValue as json."))
+      fromFloat(floatValue).map(_.validNel).getOrElse(s"Could not encode $floatValue as json.".invalidNel)
     case (`doubleClass`, doubleValue: Double) =>
-      fromDouble(doubleValue).map(Validated.validNel).getOrElse(Validated.invalidNel(s"Could not encode $doubleValue as json."))
-    case (`booleanClass`, booleanValue: Boolean) => Validated.validNel(fromBoolean(booleanValue))
-    case (`stringClass`, stringValue: String) => Validated.validNel(fromString(stringValue))
-    case (klass, value) if value.getClass == klass.klass => s"No encoding logic for $typ.".invalidNel
-    case (klass, value) => s"Mismatched class and value: $klass and $value".invalidNel
+      fromDouble(doubleValue).map(_.validNel).getOrElse(s"Could not encode $doubleValue as json.".invalidNel)
+    case (`booleanClass`, booleanValue: Boolean) =>
+      fromBoolean(booleanValue).validNel
+    case (`stringClass`, stringValue: String) =>
+      fromString(stringValue).validNel
+    case (klass, value) if value.getClass == klass.klass =>
+      s"No encoding logic for $typ.".invalidNel
+    case (klass, value) =>
+      s"Mismatched class and value: $klass and $value".invalidNel
   }
 
   def decode(typ: TypedClass, obj: ACursor): Decoder.Result[Any] = typ match {
