@@ -72,7 +72,7 @@ Below you can see typical component configuration, each section describes config
       mlFlowUrl:
     }
     #we can disable particular component provider, if it's not needed in our installation
-    #note: you cannot disable certain basic components like filter, variable, switch and split
+    #note: you cannot disable certain basic components like filter, variable, choice and split
     aggregation {
       disabled: true
     }
@@ -189,14 +189,14 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 Following properties can be configured (please look at correct engine page : [Streaming-Lite](model/Lite#exception-handling) or [Streaming-Flink](model/Flink#configuring-exception-handling), 
 to see where they should be set):
 
-| Name                  | Default value | Description                                                                                                                                                                                |
-| ------------          | ------------- | ------------                                                                                                                                                                               |
-| topic                 | -             | Topic where errors will be sent. It should be configured separately (or topic `auto.create` setting should be enabled on Kafka cluster)                                                    |
-| stackTraceLengthLimit | 50            | Limit of stacktrace length that will be sent (0 to omit stacktrace at all)                                                                                                                 |
-| includeHost           | true          | Should name of host where error occurred (e.g. TaskManager in case of Flink) be included. Can be misleading if there are many network interfaces or hostname is improperly configured)     |
-| includeInputEvent     | false         | Should input event be serialized (can be large or contain sensitive data so use with care)                                                                                                 |
-| useSharedProducer     | false         | For better performance shared Kafka producer can be used (by default it's created and closed for each error), shared Producer is kind of experimental feature and should be used with care |
-| additionalParams      | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                 |
+| Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |
+|------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| topic                  | -             | Topic where errors will be sent. If the topic does not exist, it will be created (with default settings - for production deployments make sure the config is ok) during deploy. If (e.g. due to ACL settings) the topic cannot be created, the scenarios will fail, in that case, the topic has to be configured manually. |
+| stackTraceLengthLimit  | 50            | Limit of stacktrace length that will be sent (0 to omit stacktrace at all)                                                                                                                                                                                                                                                 |
+| includeHost            | true          | Should name of host where error occurred (e.g. TaskManager in case of Flink) be included. Can be misleading if there are many network interfaces or hostname is improperly configured)                                                                                                                                     |
+| includeInputEvent      | false         | Should input event be serialized (can be large or contain sensitive data so use with care)                                                                                                                                                                                                                                 |
+| useSharedProducer      | false         | For better performance shared Kafka producer can be used (by default it's created and closed for each error), shared Producer is kind of experimental feature and should be used with care                                                                                                                                 |
+| additionalParams       | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                                                                                                                                                 |
 
 ## Scenario's additional properties              
 

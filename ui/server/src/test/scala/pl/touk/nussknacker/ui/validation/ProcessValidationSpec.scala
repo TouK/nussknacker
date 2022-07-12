@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{NextSwitch, SwitchDefault}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
+import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
@@ -60,6 +60,25 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     result.errors.invalidNodes shouldBe Map(
       "subIn" -> List(PrettyValidationErrors.nonuniqeEdgeType(validator.uiValidationError, EdgeType.SubprocessOutput("out2")))
     )
+  }
+
+  test("switch edges do not have to be unique") {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef("barSource", List())),
+        Switch("switch"),
+        Sink("out", SinkRef("barSink", List())),
+        Sink("out2", SinkRef("barSink", List())),
+      ),
+      List(
+        Edge("in", "switch", None),
+        Edge("switch", "out", Some(EdgeType.NextSwitch("true"))),
+        Edge("switch", "out2", Some(EdgeType.NextSwitch("true"))),
+      )
+    )
+
+    val result = validator.validate(process)
+    result.errors.invalidNodes shouldBe 'empty
   }
 
   test("check for notunique edges") {
@@ -130,7 +149,7 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val process = createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
-        Switch("switchID", Expression("spel", "''"), "expr1"),
+        Switch("switchID"),
         Sink("out", SinkRef("barSink", List())),
         Sink("switchID", SinkRef("barSink", List()))
       ),
@@ -343,9 +362,9 @@ class ProcessValidationSpec extends FunSuite with Matchers {
     val validationResult = processValidation.validate(processWithSub)
     validationResult.errors.invalidNodes shouldBe 'empty
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
-    validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed(classOf[String])
+    validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
     validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
-      "bar" -> Typed(classOf[String])
+      "bar" -> Typed.fromInstance("42")
     ))
   }
 
@@ -409,7 +428,7 @@ private object ProcessValidationSpec {
     emptyProcessingTypeDataProvider
   )
 
-  def validProcessWithFields(fields: Map[String, String]) = {
+  def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
     createProcess(
       List(
         Source("in", SourceRef("barSource", List())),
@@ -419,7 +438,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]) = {
+  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]): DisplayableProcess = {
     createProcess(
       List(
         Source("inID", SourceRef("barSource", List())),
@@ -435,7 +454,7 @@ private object ProcessValidationSpec {
   def createProcess(nodes: List[NodeData],
                     edges: List[Edge],
                     `type`: ProcessingType = TestProcessingTypes.Streaming,
-                    additionalFields: Map[String, String] = Map()) = {
+                    additionalFields: Map[String, String] = Map()): DisplayableProcess = {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
   }
 

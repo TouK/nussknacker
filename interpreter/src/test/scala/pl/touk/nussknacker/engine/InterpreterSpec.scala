@@ -1,16 +1,12 @@
 package pl.touk.nussknacker.engine
 
-import java.util.{Collections, Optional}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
-
-import javax.annotation.Nullable
-import javax.validation.constraints.NotBlank
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.spel.standard.SpelExpression
-import pl.touk.nussknacker.engine.InterpreterSpec.{DynamicEagerService, _}
+import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
@@ -21,8 +17,8 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{Service, _}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -34,9 +30,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
-import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -45,13 +39,16 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, EnricherContextTransformation}
 import pl.touk.nussknacker.engine.util.{LoggingListener, SynchronousExecutionContext}
 
+import java.util.{Collections, Optional}
+import javax.annotation.Nullable
+import javax.validation.constraints.NotBlank
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
 class InterpreterSpec extends FunSuite with Matchers {
 
-  import pl.touk.nussknacker.engine.util.Implicits._
   import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.util.Implicits._
 
   val resultVariable = "result"
 
@@ -82,8 +79,8 @@ class InterpreterSpec extends FunSuite with Matchers {
                                listeners: Seq[ProcessListener] = listenersDef(),
                                services: Map[String, Service] = servicesDef,
                                transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
-    import SynchronousExecutionContext.ctx
     import Interpreter._
+    import SynchronousExecutionContext.ctx
 
     AccountService.clear()
     NameDictService.clear()
@@ -466,9 +463,9 @@ class InterpreterSpec extends FunSuite with Matchers {
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-        canonicalnode.SwitchNode(Switch("f1", "#param", "switchParam"),
-          List(canonicalnode.Case("#switchParam == 'a'", List(FlatNode(SubprocessOutputDefinition("out1", "output1", List.empty)))),
-            canonicalnode.Case("#switchParam == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2", List.empty))))
+        canonicalnode.SwitchNode(Switch("f1"),
+          List(canonicalnode.Case("#param == 'a'", List(FlatNode(SubprocessOutputDefinition("out1", "output1", List.empty)))),
+            canonicalnode.Case("#param == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2", List.empty))))
           ), List())), List.empty)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)

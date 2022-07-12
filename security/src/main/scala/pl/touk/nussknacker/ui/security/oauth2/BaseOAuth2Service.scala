@@ -7,7 +7,8 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import sttp.client.{NothingT, SttpBackend}
 
-import scala.concurrent.duration.{Deadline, FiniteDuration}
+import java.time.Instant
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class BaseOAuth2Service[
@@ -23,11 +24,11 @@ class BaseOAuth2Service[
     } yield (authorizationData, userInfo)
   }
 
-  final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Deadline])] =
+  final def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] =
     for {
-      deadline <- introspectAccessToken(accessToken)
+      expirationInstant <- introspectAccessToken(accessToken)
       userInfo <- obtainUserInfo(accessToken)
-    } yield (userInfo, deadline)
+    } yield (userInfo, expirationInstant)
 
   protected def obtainAuthorization(authorizationCode: String, redirectUri: String): Future[AuthorizationData] =
     clientApi.accessTokenRequest(authorizationCode, redirectUri)
@@ -37,7 +38,7 @@ class BaseOAuth2Service[
   or use a CachingOAuthService wrapper so that only previously-stored (immediately after retrieval) tokens are accepted
   or do both.
   */
-  protected def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
+  protected def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
     Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("The access token cannot be validated"))))
   }
 
@@ -61,7 +62,7 @@ class BaseOAuth2Service[
   @JsonKey("expires_in") expirationPeriod: Option[FiniteDuration] = None
 ) extends OAuth2AuthorizationData
 
-object DefaultOAuth2AuthorizationData extends EpochSecondsCodecs {
+object DefaultOAuth2AuthorizationData extends RelativeSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
 

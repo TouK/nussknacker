@@ -2,20 +2,11 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe._
 
+import java.time.Instant
 import scala.concurrent.duration.{Deadline, FiniteDuration, SECONDS}
 
-protected[oauth2] trait EpochSecondsCodecs {
+protected[oauth2] trait RelativeSecondsCodecs {
   import cats.syntax.either._
-  implicit val decodeDeadline: Decoder[Deadline] = new Decoder[Deadline] {
-    def apply(c: HCursor): Decoder.Result[Deadline] = {
-      decodeFiniteDuration(c).map(Deadline(_))
-    }
-  }
-
-  implicit val encodeDeadline: Encoder[Deadline] = new Encoder[Deadline] {
-    def apply(value: Deadline): Json = Json.fromLong(value.time.toSeconds)
-  }
-
   implicit val decodeFiniteDuration: Decoder[FiniteDuration] = new Decoder[FiniteDuration] {
     def apply(c: HCursor): Decoder.Result[FiniteDuration] = {
       c.value.asNumber.flatMap(_.toLong)
@@ -29,3 +20,9 @@ protected[oauth2] trait EpochSecondsCodecs {
     def apply(value: FiniteDuration): Json = Json.fromLong(value.toSeconds)
   }
 }
+
+protected[oauth2] trait EpochSecondsCodecs {
+  implicit val instantEncoder: Encoder[Instant] = Encoder.encodeLong.contramap(_.getEpochSecond)
+  implicit val instantDecoder: Decoder[Instant] = Decoder.decodeLong.map(Instant.ofEpochSecond)
+}
+

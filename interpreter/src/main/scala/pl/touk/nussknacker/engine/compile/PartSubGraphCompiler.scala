@@ -1,22 +1,23 @@
 package pl.touk.nussknacker.engine.compile
 
+import cats.Applicative
 import cats.data.Validated._
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.instances.list._
 import cats.instances.option._
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, ExpressionTypingInfo}
-import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.compiledgraph.node
 import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.{Next, SplittedNode}
 
@@ -65,17 +66,17 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
               isDisabled = f.isDisabled.contains(true)))
 
       case splittednode.SwitchNode(Switch(id, expression, varName, _), nexts, defaultNext) =>
-        val NodeCompilationResult(expressionTyping, _, newCtxValidated, compiledExpression, _) =
-          nodeCompiler.compileExpression(expression, ctx, expectedType = Unknown, outputVar = Some(OutputVar.switch(varName)))
-        val newCtx = newCtxValidated.getOrElse(ctx)
+        val result = nodeCompiler.compileSwitch(Applicative[Option].product(varName, expression), nexts.map(c => (c.node.id, c.expression)), ctx)
+        val contextAfter = result.validationContext.getOrElse(ctx)
+
         CompilationResult.map4(
-          f0 = CompilationResult(newCtxValidated),
-          f1 = toCompilationResult(compiledExpression, expressionTyping),
-          f2 = nexts.map(caseNode => compile(caseNode, newCtx)).sequence,
-          f3 = defaultNext.map(dn => compile(dn, newCtx)).sequence)(
-          (_, realCompiledExpression, cases, next) => {
-            compiledgraph.node.Switch(id, realCompiledExpression, varName, cases, next)
-          })
+          f0 = CompilationResult(result.validationContext),
+          f1 = toCompilationResult(result.compiledObject, result.expressionTypingInfo),
+          f2 = nexts.map(caseNode => compile(caseNode.node, contextAfter)).sequence,
+          f3 = defaultNext.map(dn => compile(dn, contextAfter)).sequence) { case (_, (expr, caseExpressions), cases, defaultNext) =>
+            val compiledCases = caseExpressions.zip(cases).map(k => compiledgraph.node.Case(k._1, k._2))
+            compiledgraph.node.Switch(id, Applicative[Option].product(varName, expr), compiledCases, defaultNext)
+          }
       case splittednode.EndingNode(data) => compileEndingNode(ctx, data)
 
     }
@@ -215,14 +216,6 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         CompilationResult(Map(ref -> NodeTypingInfo(ctx, Map.empty, None)), Valid(compiledgraph.node.PartRef(ref)))
     }
   }
-
-  private def compile(n: splittednode.Case, ctx: ValidationContext)
-                     (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.node.Case] =
-    CompilationResult.map2(
-      fa = CompilationResult(nodeCompiler.compileExpression(n.expression, ctx, Typed[Boolean], outputVar = None).compiledObject),
-      fb = compile(n.node, ctx)) {
-      (expr, next) => compiledgraph.node.Case(expr, next)
-    }
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): PartSubGraphCompiler =
     new PartSubGraphCompiler(expressionCompiler.withExpressionParsers(modify), nodeCompiler.withExpressionParsers(modify))

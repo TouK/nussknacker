@@ -40,7 +40,7 @@ trait CanBeSubclassDeterminer {
           case _ => Map.empty[String, TypingResult]
         }
 
-        (superclass.fields.toList.map {
+        superclass.fields.toList.map {
           case (name, typ) => givenTypeFields.get(name) match {
             case None =>
               s"Field '$name' is lacking".invalidNel
@@ -49,7 +49,7 @@ trait CanBeSubclassDeterminer {
                 s"Field '$name' is of the wrong type. Expected: ${givenFieldType.display}, actual: ${typ.display}"
               )
           }
-        }).foldLeft(().validNel[String])(_.combine(_))
+        }.foldLeft(().validNel[String])(_.combine(_))
       case _ =>
         ().validNel
     }
@@ -77,8 +77,21 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
+    // Type like Integer can be subclass of Integer{5}, because Integer could
+    // possibly have value of 5, that would make it subclass of Integer{5}.
+    // This allows us to supply unknown Integer to function that requires
+    // Integer{5}.
+    val dataValueRestriction = (_: Unit) => {
+      (givenType, superclassCandidate) match {
+        case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue)) if givenValue == candidateValue =>
+          ().validNel
+        case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue)) =>
+          s"Types with value have different values: $givenValue and $candidateValue".invalidNel
+        case _ => ().validNel
+      }
+    }
     classCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
-      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction)
+      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
 
   protected def classCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {

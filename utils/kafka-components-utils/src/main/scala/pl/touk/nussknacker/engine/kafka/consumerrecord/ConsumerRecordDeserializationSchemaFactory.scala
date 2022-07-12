@@ -37,7 +37,6 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
           record.offset(),
           record.timestamp(),
           record.timestampType(),
-          ConsumerRecord.NULL_CHECKSUM.toLong, // ignore deprecated checksum
           record.serializedKeySize(),
           record.serializedValueSize(),
           key,

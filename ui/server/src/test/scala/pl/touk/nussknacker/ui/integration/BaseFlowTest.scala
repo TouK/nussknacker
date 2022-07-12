@@ -272,7 +272,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None).asJson
+      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None, None).asJson
       Post(s"/api/nodes/$processId/validation", request) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
         val responseJson = responseAs[Json]

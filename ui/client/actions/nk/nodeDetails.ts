@@ -1,6 +1,14 @@
 import {ThunkAction, ThunkDispatch} from "../reduxTypes"
 import HttpService from "../../http/HttpService"
-import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParameter, TypingResult} from "../../types"
+import {
+    NodeValidationError,
+    PropertiesType,
+    VariableTypes,
+    NodeType,
+    UIParameter,
+    TypingResult,
+    Edge
+} from "../../types"
 
 import {debounce} from "lodash"
 
@@ -20,6 +28,7 @@ type ValidationRequest = {
     variableTypes: VariableTypes,
     branchVariableTypes: Record<string, VariableTypes>,
     processProperties: PropertiesType,
+    outgoingEdges?: Edge[]
 }
 
 function nodeValidationDataUpdated(validationData: ValidationData, nodeId: string): NodeValidationUpdated {

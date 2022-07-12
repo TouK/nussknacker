@@ -129,7 +129,7 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
     val edgesByFrom = displayableProcess.edges.groupBy(_.from)
 
     def findNonUniqueEdge(edgesFromNode: List[Edge]) = {
-      val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect { case (Some(eType), list) if list.size > 1 =>
+      val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect { case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
         PrettyValidationErrors.nonuniqeEdgeType(uiValidationError, eType)
       }
       val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect { case (to, list) if list.size > 1 =>

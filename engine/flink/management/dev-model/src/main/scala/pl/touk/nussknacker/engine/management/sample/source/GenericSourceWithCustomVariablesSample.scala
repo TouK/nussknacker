@@ -40,7 +40,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
         override def apply(input: String): Context = {
           //perform some transformations and/or computations
           val additionalVariables = Map[String, Any](
-            "additionalOne" -> s"transformed:${input}",
+            "additionalOne" -> s"transformed:$input",
             "additionalTwo" -> input.length()
           )
           //initialize context with input variable and append computed values
@@ -60,7 +60,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId)
   : GenericSourceWithCustomVariablesSample.NodeTransformationDefinition = {
     case TransformationStep(Nil, _) => NextParameters(Parameter[java.util.List[String]](`elementsParamName`) :: Nil)
-    case step@TransformationStep((`elementsParamName`, _) :: Nil, None) =>
+    case TransformationStep((`elementsParamName`, _) :: Nil, None) =>
       FinalResults.forValidation(context)(customContextInitializer.validationContext)
   }
 
@@ -68,7 +68,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
     import scala.collection.JavaConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-    new CollectionSource[String](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, elements, None, Typed[String])
+    new CollectionSource[String](elements, None, Typed[String])
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 

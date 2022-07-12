@@ -1,17 +1,15 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
+import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
@@ -20,7 +18,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: Config,
                                collectingListener: ResultsCollectingListener,
                                process: EspProcess,
-                               testData: TestData, executionConfig: ExecutionConfig,
+                               testData: TestData,
                                objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
@@ -44,11 +42,11 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
           val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData)
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {
+              new CollectionSource[Object](parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {
                 override val contextInitializer: ContextInitializer[Object] = providerWithTransformation.contextInitializer
               }
             case _ =>
-              new CollectionSource[Object](executionConfig, parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation)
+              new CollectionSource[Object](parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation)
           }
         case _ =>
           throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it doesn't provide test data parser")

@@ -9804,6 +9804,14 @@
           "refClazz": {"refClazzName": "java.util.UUID"},
           "varArgs": false
         }
+      ],
+      "randomUUID": [
+        {
+          "parameters": [
+          ],
+          "refClazz": {"refClazzName": "java.util.UUID"},
+          "varArgs": false
+        }
       ]
     }
   },

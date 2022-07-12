@@ -66,7 +66,7 @@ describe("Components list", () => {
     cy.matchQuery("?CATEGORY=Default&GROUP=base")
     cy.get("@options").contains(/^source/i).click()
     cy.matchQuery("?CATEGORY=Default&GROUP=base&GROUP=sources")
-    cy.get("[role=row]").should("have.lengthOf", 11)
+    cy.get("[role=row]").should("have.lengthOf", 12)
     cy.get("body").click()
     cy.contains(`:has([data-testid="CancelIcon"])`, /^sources/).find(`[data-testid="CancelIcon"]`).click()
     cy.get("[role=row]").should("have.lengthOf", baseGroupComponents + 1).contains(":not(title)", /^filter$/).should("be.visible")
@@ -130,14 +130,17 @@ describe("Components list", () => {
     cy.get("body").click()
 
     cy.get("[role=row] a")
+      // this number is two times larger than number of components with some usages because it handle also links to documentation
       .should("have.length", 4)
       .as("links")
 
+    // we are clicking filter component because it has many usages and we are able to test usages list expansion
     cy.get("@links")
       .filter((i, e) => /^\d+$/.test(e.innerText))
-      .first()
+      .its(1)
       .click()
 
+    // we are clicking "X more" on list of places of usages to test usages list expansion
     cy.contains("4 more").click()
     cy.get("#app-container>main").toMatchImageSnapshot({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},

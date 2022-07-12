@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import cats.implicits.toTraverseOps
+import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MetaData, VariableConstants}
 import pl.touk.nussknacker.engine.kafka.KafkaUtils
-import pl.touk.nussknacker.engine.kafka.exception.KafkaJsonExceptionSerializationSchema
+import pl.touk.nussknacker.engine.kafka.exception.{KafkaErrorTopicInitializer, KafkaJsonExceptionSerializationSchema}
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
@@ -54,6 +55,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
 
   def init(): Unit = {
     configSanityCheck()
+    new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
 
     consumer = prepareConsumer
     producer = prepareProducer
@@ -87,6 +89,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   // We have both "mostly" side-effect-less interpreter.invoke and sendOutputToKafka in a body of transaction to avoid situation
   // when beginTransaction fails and we keep restarting interpreter.invoke which can cause e.g. sending many unnecessary requests
   // to rest services. beginTransaction is costless (doesn't communicate with transaction coordinator)
+  @silent("deprecated")
   def run(): Unit = {
     val records = consumer.poll(engineConfig.pollDuration.toJava)
     if (records.isEmpty) {
@@ -97,7 +100,8 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     try {
       processRecords(records)
       val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
-      producer.sendOffsetsToTransaction(offsetsMap.asJava, groupId)
+      // group metadata commit API requires brokers to be on version 2.5 or above so for now we use deprecated api
+      producer.sendOffsetsToTransaction(offsetsMap.asJava, consumer.groupMetadata().groupId())
       producer.commitTransaction()
     } catch {
       // Those are rather not our cases but their shouldn't cause transaction abortion:

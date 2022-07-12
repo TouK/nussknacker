@@ -63,7 +63,8 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       configExecutionOverrides: Config = ConfigFactory.empty(),
                                       k8sDeploymentConfig: Config = ConfigFactory.empty(),
                                       nussknackerInstanceName: Option[String] = None,
-                                      logbackConfigPath: Option[String] = None
+                                      logbackConfigPath: Option[String] = None,
+                                      commonConfigMapForLogback: Option[String] = None,
                                      )
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
@@ -98,7 +99,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         "scenario.json" -> canonicalProcess.asJson.noSpaces,
         "deploymentConfig.conf" -> ConfigFactory.empty().withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica)).root().render()
       )))
-      loggingConfigMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf")))
+      loggingConfigMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
+        Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf"), overrideName = config.commonConfigMapForLogback))
       //modelConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
       secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
@@ -158,16 +160,21 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   }
 
   private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
-                                (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): ConfigMap = {
+                                (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty, overrideName: Option[String] = None): ConfigMap = {
     val scenario = canonicalProcess.asJson.spaces2
     //we append serialized data to name so we can guarantee pods will be restarted.
     //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
-    val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + data.toString()))
+    val objectName = overrideName.getOrElse(objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + data.toString())))
+    val identificationLabels: Map[String, String] = overrideName match {
+      case Some(_) => Map.empty // when name is overridden, we do not want DeploymentManager to have control over whole
+      // lifecycle of CM (e.g. delete it on scenario canceling)
+      case None => labelsForScenario(processVersion, nussknackerInstanceName)
+    }
     // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
-        labels = labelsForScenario(processVersion, nussknackerInstanceName) + (configMapIdLabel -> objectName) ++ additionalLabels
+        labels = identificationLabels + (configMapIdLabel -> objectName) ++ additionalLabels
       ), data = data
     )
   }
