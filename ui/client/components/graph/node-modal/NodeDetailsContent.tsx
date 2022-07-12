@@ -450,10 +450,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 ]}
                 ordered
                 readOnly={!isEditMode}
-                variableTypes={{
-                  ...variableTypes,
-                  [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
-                }}
+                variableTypes={editedNode["exprVal"] ?
+                  {
+                    ...variableTypes,
+                    [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                  } :
+                  variableTypes}
                 fieldErrors={fieldErrors}
               />
             ) : null}
