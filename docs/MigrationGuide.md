@@ -11,6 +11,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
 * [#3165](https://github.com/TouK/nussknacker/pull/3165) Config is not exposed over http (GET /api/app/config/) by default. To enable it set configuration `enableConfigEndpoint` to `true`.
 * [#3223](https://github.com/TouK/nussknacker/pull/3223) OAuth2 configuration `defaultTokenExpirationTime` changed to `defaultTokenExpirationDuration`
+* [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
+  For existing scenarios processing type is migrated to `default`. Set `deploymentManager.processingType` to `default`
+  or update periodic scenarios table with actual processing type value - ideally it should be same value as the periodic engine key in `scenarioTypes`.
 
 ### Code API changes
 

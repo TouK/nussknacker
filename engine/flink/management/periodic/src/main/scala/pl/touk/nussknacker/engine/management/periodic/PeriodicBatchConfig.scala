@@ -2,20 +2,22 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.Config
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration._
 
 /**
   * Periodic Flink scenarios deployment configuration.
   *
   * @param db Nussknacker db configuration.
+  * @param processingType processing type of scenarios to be managed by this instance of the periodic engine.
   * @param rescheduleCheckInterval {@link RescheduleFinishedActor} check interval.
   * @param deployInterval {@link DeploymentActor} check interval.
   * @param deploymentRetry {@link DeploymentRetryConfig}  for deployment failure recovery.
   * @param jarsDir Directory for jars storage.
   */
 case class PeriodicBatchConfig(db: Config,
-                               rescheduleCheckInterval: FiniteDuration,
-                               deployInterval: FiniteDuration,
+                               processingType: String,
+                               rescheduleCheckInterval: FiniteDuration = 13 seconds,
+                               deployInterval: FiniteDuration = 17 seconds,
                                deploymentRetry: DeploymentRetryConfig,
                                executionConfig: PeriodicExecutionConfig,
                                jarsDir: String)
