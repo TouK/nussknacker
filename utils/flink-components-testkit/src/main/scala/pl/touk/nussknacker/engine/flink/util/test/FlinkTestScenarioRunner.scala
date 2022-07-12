@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -13,21 +12,21 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
-import pl.touk.nussknacker.engine.process.compiler.{FlinkProcessCompilerWithTestComponents, UsedNodes}
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerWithTestComponents
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult}
 
 import scala.reflect.ClassTag
 
 object testComponents {
 
   def withDataList[T: ClassTag : TypeInformation](data: List[T]): List[ComponentDefinition] = List(
-    "source" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](new ExecutionConfig, data, None, Typed.apply[T])),
-    "noopSource" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](new ExecutionConfig, List.empty, None, Typed.apply[T]))
+    "source" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])),
+    "noopSource" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](List.empty, None, Typed.apply[T]))
   ).map(cd => ComponentDefinition(cd._1, cd._2))
 }
 

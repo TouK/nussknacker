@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.{EdgeType, EspProcess}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
@@ -84,7 +84,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     forAll(Table(
       "unexpectedEnd",
       Filter("e", Expression("spel", "0")),
-      Switch("e", Expression("spel", "0"), "a"),
+      Switch("e"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { unexpectedEnd =>
@@ -123,7 +123,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty).copy(nodeResults = Map(
           "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
           "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
-          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]), None, Map.empty))
+          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")), None, Map.empty))
       )
     )
 

@@ -25,7 +25,6 @@ import java.time.temporal.ChronoUnit
 import java.util.Properties
 import java.util.function.Consumer
 import java.{lang, time, util}
-import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 object DelayedFlinkKafkaConsumer {
@@ -37,7 +36,7 @@ object DelayedFlinkKafkaConsumer {
                delayCalculator: DelayCalculator,
                timestampAssigner: Option[TimestampWatermarkHandler[T]]): FlinkKafkaConsumerBase[T] = {
 
-    val props = KafkaUtils.toProperties(config, Some(consumerGroupId))
+    val props = KafkaUtils.toConsumerProperties(config, Some(consumerGroupId))
 
     // Here: partitionState.extractTimestamp works correctly only when WatermarkStrategy is assigned
     // For legacy TimestampAssigners we extract timestamp from Assigner
@@ -55,7 +54,6 @@ object DelayedFlinkKafkaConsumer {
 }
 
 @silent("deprecated")
-@nowarn("cat=deprecation")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    props: Properties,

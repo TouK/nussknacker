@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
+import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
@@ -34,8 +34,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.components.map(n=>n.label)) shouldBe List(
-      List("filter", "mapVariable","split","switch","variable"),
-      List("alaMaKota","BarFilter","foo")
+      List("choice", "filter", "mapVariable", "split", "variable"),
+      List("alaMaKota", "BarFilter", "foo")
     )
   }
 

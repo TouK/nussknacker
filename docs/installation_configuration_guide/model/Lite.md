@@ -41,3 +41,4 @@ modelConfig {
 }
 ```
 please look at [common cofiguration](../ModelConfiguration#kafka-exception-handling) for the details of the configuration.
+                                  

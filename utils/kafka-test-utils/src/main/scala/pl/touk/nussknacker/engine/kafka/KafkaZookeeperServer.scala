@@ -7,7 +7,7 @@ import java.util.{Locale, Properties}
 import kafka.server.KafkaServer
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.requests.IsolationLevel
+import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
@@ -35,16 +35,13 @@ object KafkaZookeeperServer {
     val properties = new Properties()
     properties.setProperty("zookeeper.connect", s"$localhost:$zkPort")
     properties.setProperty("broker.id", "0")
-    properties.setProperty("host.name", localhost)
-    properties.setProperty("hostname", localhost)
-    properties.setProperty("advertised.host.name", localhost)
+    properties.setProperty("listeners", s"PLAINTEXT://$localhost:$kafkaPort")
     properties.setProperty("num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
     properties.setProperty("transaction.state.log.replication.factor", "1")
     properties.setProperty("transaction.state.log.min.isr", "1")
 
-    properties.setProperty("port", s"$kafkaPort")
     properties.setProperty("log.dir", tempDir().getAbsolutePath)
 
     kafkaBrokerConfig.foreach { case (key, value) =>
@@ -98,12 +95,13 @@ object KafkaTestUtils {
     props
   }
 
-  def createConsumerConnectorProperties(kafkaAddress: String, consumerTimeout: Long = 10000, groupId: String = "testGroup"): Properties = {
+  def createConsumerConnectorProperties(kafkaAddress: String, groupId: String = "testGroup"): Properties = {
     val props = new Properties()
     props.put("group.id", groupId)
     props.put("bootstrap.servers", kafkaAddress)
     props.put("auto.offset.reset", "earliest")
-    props.put("consumer.timeout.ms", consumerTimeout.toString)
+    props.put("request.timeout.ms", 2000)
+    props.put("default.api.timeout.ms", 2000)
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
     // default is read uncommitted which is pretty weird and harmful

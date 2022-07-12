@@ -48,7 +48,7 @@ class GenericOidcService[
   @JsonKey("id_token") idToken: Option[String] = None
 ) extends OidcAuthorizationData
 
-object DefaultOidcAuthorizationData extends EpochSecondsCodecs {
+object DefaultOidcAuthorizationData extends RelativeSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }
 

@@ -27,7 +27,9 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
     val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
     try {
-      actionToInvokeWithJobRunning(executionResult)
+      val res = actionToInvokeWithJobRunning(executionResult)
+      checkJobNotFailing(executionResult.getJobID)
+      res
     } finally {
       stopJob(jobName, executionResult)
     }
@@ -72,6 +74,12 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
 
   def waitForFail(jobID: JobID, name: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
     waitForJobState(jobID, name, ExecutionState.CANCELED, ExecutionState.FAILED)(patience)
+  }
+
+  def checkJobNotFailing(jobID: JobID): Unit = {
+    val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
+    assert(!Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),
+      s"Job: $jobID has failing state. Failure info: ${Option(executionGraph.getFailureInfo).map(_.getExceptionAsString).orNull}")
   }
 
   //Protected, to be overridden in Flink < 1.13 compatibility layer

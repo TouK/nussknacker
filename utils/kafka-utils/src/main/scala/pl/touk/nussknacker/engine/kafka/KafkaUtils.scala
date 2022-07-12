@@ -8,13 +8,15 @@ import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.requests.IsolationLevel
+import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
+import java.time
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
+import scala.util.Using.Releasable
 import scala.util.{Failure, Success, Using}
 
 object KafkaUtils extends KafkaUtils
@@ -30,14 +32,17 @@ trait KafkaUtils extends LazyLogging {
     props.setProperty("client.id", sanitizeClientId(id))
   }
 
-  def createKafkaAdminClient(kafkaBootstrapServer: String): Admin = {
-    val properties = new Properties()
-    properties.setProperty("bootstrap.servers", kafkaBootstrapServer)
-    AdminClient.create(properties)
+  def createKafkaAdminClient(kafkaConfig: KafkaConfig): Admin = {
+    AdminClient.create(withPropertiesFromConfig(new Properties, kafkaConfig))
   }
 
-  def usingAdminClient[T](kafkaBootstrapServer: String)(adminClientOperation: Admin => T): T =
-    Using.resource(createKafkaAdminClient(kafkaBootstrapServer))(adminClientOperation)
+  def usingAdminClient[T](kafkaConfig: KafkaConfig)(adminClientOperation: Admin => T): T = {
+    //we don't use default close not to block indefinitely
+    val releasable = new Releasable[Admin] {
+      override def release(resource: Admin): Unit = resource.close(time.Duration.ofMillis(defaultTimeoutMillis))
+    }
+    Using.resource(createKafkaAdminClient(kafkaConfig))(adminClientOperation)(releasable)
+  }
 
   def sanitizeClientId(originalId: String): String =
     //https://github.com/apache/kafka/blob/trunk/core/src/main/scala/kafka/common/Config.scala#L25-L35
@@ -51,7 +56,7 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def setOffsetToLatest(topic: String, groupId: String, config: KafkaConfig): Unit = {
-    val timeoutMillis = readTimeout(config)
+    val timeoutMillis = readTimeoutForTempConsumer(config)
     logger.info(s"Setting offset to latest for topic: $topic, groupId: $groupId")
     val consumerAfterWork = Future {
       doWithTempKafkaConsumer(config, Some(groupId)) { consumer =>
@@ -61,24 +66,18 @@ trait KafkaUtils extends LazyLogging {
     Await.result(consumerAfterWork, Duration.apply(timeoutMillis, TimeUnit.MILLISECONDS))
   }
 
-  def toProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
-    val props = new Properties()
-    props.setProperty("bootstrap.servers", config.kafkaAddress)
-    props.setProperty("auto.offset.reset", "earliest")
-    groupId.foreach(props.setProperty("group.id", _))
-    withPropertiesFromConfig(props, config)
-  }
-
   def toProducerProperties(config: KafkaConfig, clientId: String): Properties = {
     val props: Properties = new Properties
-    props.setProperty("bootstrap.servers", config.kafkaAddress)
     props.put("key.serializer", classOf[ByteArraySerializer])
     props.put("value.serializer", classOf[ByteArraySerializer])
     setClientId(props, clientId)
     withPropertiesFromConfig(props, config)
   }
 
-  def withPropertiesFromConfig(props: Properties, kafkaConfig: KafkaConfig): Properties = {
+  private def withPropertiesFromConfig(defaults: Properties, kafkaConfig: KafkaConfig): Properties = {
+    val props = new Properties()
+    defaults.forEach((k, v) => props.put(k, v))
+    props.setProperty("bootstrap.servers", kafkaConfig.kafkaAddress)
     kafkaConfig.kafkaProperties.getOrElse(Map.empty).foreach { case (k, v) =>
       props.put(k, v)
     }
@@ -86,18 +85,19 @@ trait KafkaUtils extends LazyLogging {
   }
 
   def toTransactionalAwareConsumerProperties(config: KafkaConfig, group: Option[String]): Properties = {
-    val props = toPropertiesForConsumer(config, group)
+    val props = toConsumerProperties(config, group)
     // default is read uncommitted which is pretty weird and harmful
     props.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.toString.toLowerCase(Locale.ROOT))
     props
   }
 
-  def toPropertiesForConsumer(config: KafkaConfig, group: Option[String]): Properties = {
-    val props = toProperties(config, group)
+  def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
+    val props = new Properties()
+    props.setProperty("auto.offset.reset", "earliest")
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
-    props.setProperty("session.timeout.ms", readTimeout(config).toString)
-    props
+    groupId.foreach(props.setProperty("group.id", _))
+    withPropertiesFromConfig(props, config)
   }
 
   def readLastMessages(topic: String, size: Int, config: KafkaConfig) : List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
@@ -138,12 +138,14 @@ trait KafkaUtils extends LazyLogging {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
-      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(toTransactionalAwareConsumerProperties(config, groupId))
+      val properties = toTransactionalAwareConsumerProperties(config, groupId)
+      properties.setProperty("session.timeout.ms", readTimeoutForTempConsumer(config).toString)
+      val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(properties)
       Using.resource(consumer)(fun)
     }
   }
 
-  private def readTimeout(config: KafkaConfig): Long =
+  private def readTimeoutForTempConsumer(config: KafkaConfig): Long =
     config.kafkaProperties.flatMap(props => props.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)
 
   private def setOffsetToLatest(topic: String, consumer: KafkaConsumer[_, _]): Unit = {

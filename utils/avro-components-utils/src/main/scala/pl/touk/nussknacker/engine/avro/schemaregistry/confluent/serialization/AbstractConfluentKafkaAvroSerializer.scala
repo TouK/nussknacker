@@ -33,7 +33,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
       val (avroSchema, record) = (avroSchemaOpt, data) match {
         case (Some(schema), record: GenericContainer) => (schema, avroSchemaEvolution.alignRecordToSchema(record, schema.rawSchema()))
         case (Some(schema), other) => (schema, other)
-        case (None, other) => (new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection, false)), other)
+        case (None, other) => (new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection, false, false)), other)
       }
 
       try {

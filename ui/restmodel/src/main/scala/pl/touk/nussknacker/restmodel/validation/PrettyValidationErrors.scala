@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -79,6 +79,12 @@ object PrettyValidationErrors {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
+
+  def emptyNodeId(typ: String): NodeValidationError = {
+    NodeValidationError(typ, "Nodes cannot have empty id", "Nodes cannot have empty id", fieldName = None,
+      errorType = NodeValidationErrorType.RenderNotAllowed)
+  }
+
 
   def nonuniqeEdgeType(typ: String, etype: EdgeType): NodeValidationError = {
     NodeValidationError(typ, "Edges are not unique",

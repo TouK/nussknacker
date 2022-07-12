@@ -121,6 +121,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "serviceModelService" -> categories(EmptyService),
     "paramService" -> categories(OneParamService),
     "enricher" -> categories(Enricher),
+    "enricherNullResult" -> categories(EnricherNullResult),
     "multipleParamsService" -> categories(MultipleParamsService)
       .withComponentConfig(SingleComponentConfig.zero.copy(
         params = Some(Map(

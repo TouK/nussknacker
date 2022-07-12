@@ -10,12 +10,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class K8sUtils(client: KubernetesClient) {
 
   //TODO: use https://kubernetes.io/docs/reference/using-api/server-side-apply/ in the future
-  private[manager] def createOrUpdate[O<:ObjectResource](k8s: KubernetesClient, data: O)
+  private[manager] def createOrUpdate[O<:ObjectResource](data: O)
                                                (implicit fmt: Format[O], rd: ResourceDefinition[O],
                                                 lc: LoggingContext, ec: ExecutionContext): Future[O] = {
     client.getOption[O](data.name).flatMap {
-      case Some(_) => k8s.update(data)
-      case None => k8s.create(data)
+      case Some(_) => client.update(data)
+      case None => client.create(data)
     }
   }
 

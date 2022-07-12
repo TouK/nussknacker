@@ -64,7 +64,7 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
     val inputType = Typed.fromDetailedType[java.util.List[Int]]
-    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(new ExecutionConfig, samples, Some(timestamps), inputType
+    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(samples, Some(timestamps), inputType
       ), inputType)))
   }
 

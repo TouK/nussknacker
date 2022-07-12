@@ -29,7 +29,7 @@ case class OAuth2Configuration(usersFile: URI,
                                headers: Map[String, String] = Map.empty,
                                authorizationHeader: String = HeaderNames.Authorization,
                                accessTokenRequestContentType: String = MediaType.ApplicationJson.toString(),
-                               defaultTokenExpirationTime: FiniteDuration = FiniteDuration(1, HOURS),
+                               defaultTokenExpirationDuration: FiniteDuration = FiniteDuration(1, HOURS),
                                anonymousUserRole: Option[String] = None,
                                tokenCookie: Option[TokenCookieConfig] = None,
                               ) extends AuthenticationConfiguration {

@@ -98,7 +98,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1", "''", ""),
+          data = Switch("switch1"),
           nexts = List(
             Case("''", List(disabledFilter1)),
             Case("''", List(sink1))
@@ -109,7 +109,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1", "''", ""),
+          data = Switch("switch1"),
           nexts = List(
             Case("''", List(sink1))
           ),

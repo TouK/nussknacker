@@ -296,13 +296,14 @@ The role names in the `usersFile` should match the roles defined in the Auth0 te
 ```
 authentication: {
   method: ${?AUTHENTICATION_METHOD} (default: "BasicAuth")
+  usersFile: ${?AUTHENTICATION_USERS_FILE}
+  authorizeUri: ${?OAUTH2_AUTHORIZE_URI}
   clientSecret: ${?OAUTH2_CLIENT_SECRET}
   clientId: ${?OAUTH2_CLIENT_ID}
-  authorizeUri: ${?OAUTH2_AUTHORIZE_URI}
-  redirectUri: ${?OAUTH2_REDIRECT_URI}
-  accessTokenUri: ${?OAUTH2_ACCESS_TOKEN_URI}
   profileUri: ${?OAUTH2_PROFILE_URI}
   profileFormat: ${?OAUTH2_PROFILE_FORMAT}
+  accessTokenUri: ${?OAUTH2_ACCESS_TOKEN_URI}
+  redirectUri: ${?OAUTH2_REDIRECT_URI}
   implicitGrantEnabled: ${?OAUTH2_IMPLICIT_GRANT_ENABLED}
   jwt {
     accessTokenIsJwt: ${?OAUTH2_ACCESS_TOKEN_IS_JWT} (default: false)
@@ -317,7 +318,6 @@ authentication: {
   accessTokenParams {
     grant_type: ${?OAUTH2_GRANT_TYPE}
   }
-  accessTokenRequestContentType: "application/json" (default)
   authorizeParams {
     response_type: ${?OAUTH2_RESPONSE_TYPE}
     scope: ${?OAUTH2_SCOPE}
@@ -326,7 +326,11 @@ authentication: {
   headers {
     Accept: ${?AUTHENTICATION_HEADERS_ACCEPT}
   }
-  usersFile: ${?AUTHENTICATION_USERS_FILE}
+  authorizationHeader: "Authorization" (default)
+  accessTokenRequestContentType: "application/json" (default)
+  defaultTokenExpirationDuration: "1 hour" (default)
+  anonymousUserRole: None (default)
+  tokenCookie: None (default)
 }
 ```
 

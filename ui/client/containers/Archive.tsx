@@ -19,8 +19,10 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
     <Td column="category">{process.processCategory}</Td>
     <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
     <Td column="createdAt" className="centered-column" value={process.createdAt}><Date date={process.createdAt}/></Td>
-    <Td column="actionDate" className="centered-column" value={process?.lastAction?.performedAt}><Date date={process?.lastAction?.performedAt}/></Td>
-    <Td column="actionUser" className="centered-column" value={process?.lastAction?.user}>{process?.lastAction?.user}</Td>
+    <Td column="actionDate" className="centered-column" value={process?.lastAction?.performedAt}><Date
+      date={process?.lastAction?.performedAt}/></Td>
+    <Td column="actionUser" className="centered-column"
+        value={process?.lastAction?.user}>{process?.lastAction?.user}</Td>
     <Td column="subprocess" className="centered-column" value={process.isSubprocess}>
       <Glyphicon glyph={process.isSubprocess ? "ok" : "remove"}/>
     </Td>
@@ -45,7 +47,6 @@ function Archive() {
     {key: "subprocess", label: t("archiveList.subprocess", "Fragment")},
     {key: "view", label: t("archiveList.view", "View")},
   ]
-
 
   return (
     <Page className={tabStyles.tabContentPage}>

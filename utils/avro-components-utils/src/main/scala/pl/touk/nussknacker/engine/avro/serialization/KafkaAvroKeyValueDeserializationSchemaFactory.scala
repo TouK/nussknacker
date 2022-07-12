@@ -47,7 +47,6 @@ abstract class KafkaAvroKeyValueDeserializationSchemaFactory
           record.offset(),
           record.timestamp(),
           record.timestampType(),
-          ConsumerRecord.NULL_CHECKSUM.toLong, // ignore deprecated checksum
           record.serializedKeySize(),
           record.serializedValueSize(),
           key,

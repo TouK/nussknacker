@@ -19,10 +19,23 @@
 * [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
 * [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
 * [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
+* [#3227](https://github.com/TouK/nussknacker/pull/3227) Allow TAB navigation from expression editors
 * [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
-* [#3187](https://github.com/TouK/nussknacker/pull/3187) Moved switch/filter edges conditions configuration to source node window adding few enhancements (ordered switch edges; only false edge for filter). "Default" switch edge type, exprVal and expression are now deprecated and disabled in new instances. Fix: duplicated union edges.
+* [#3209](https://github.com/TouK/nussknacker/pull/3209) ConfigMap for K8 runtime has been split into two config maps (to separate logback conf) and one secret (with model config - which often contains confidential data)
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Switch component replaced by Choice component.
+  Moved choice/filter edges conditions configuration to form visible in node window, added few enhancements: ordered of switch edges, only false edge for filter component. 
+  "Default" choice edge type, exprVal and expression are now deprecated and disabled in new usages.
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) Fix: duplicated union edges.
 * [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
 * [#3045](https://github.com/TouK/nussknacker/pull/3045) json2avro bump 0.2.11 -> 0.2.15 + fix default values wasn't converted to logical types
+* [#3223](https://github.com/TouK/nussknacker/pull/3223) Fix for encoding/decoding JWT & OIDC tokens - correct handling fields representing epoch time (e.g. `exp` - which represents token expiration time). Also, CachingOAuth2Service was migrated to use sync cache instead of async (evicting data in async cache can be tricky - `expireAfterWriteFn` is not applied to not completed futures). Since, it was only usage of `DefaultAsyncCache` - it has been removed from the codebase.
+* [#3239](https://github.com/TouK/nussknacker/pull/3239) Added jul-to-slf4j to be sure that all logs going via logback
+* [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
+* [#3201](https://github.com/TouK/nussknacker/pull/3201) Added literal types
+* [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
+* [#3245](https://github.com/TouK/nussknacker/pull/3245) Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
+* [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
+* [#3250](https://github.com/TouK/nussknacker/pull/3250) Kafka 2.4 -> 3.2, flink 0.14.4 -> 0.14.5
 
 1.4.0 (14 Jun 2022)
 ------------------------

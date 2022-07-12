@@ -14,18 +14,18 @@ import scala.collection.JavaConverters._
   * This is Kafka Avro Deserialization class. All events will be deserialized to provided schema.
   */
 class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Option[RuntimeSchemaData], confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
-                                        var isKey: Boolean, _useSpecificAvroReader: Boolean)
+                                        _isKey: Boolean, _useSpecificAvroReader: Boolean)
   extends AbstractConfluentKafkaAvroDeserializer with Deserializer[T] {
 
   schemaRegistry = confluentSchemaRegistryClient.client
   useSpecificAvroReader = _useSpecificAvroReader
 
-  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
+  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, _isKey)
 
-  override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
+  override def configure(configs: util.Map[String, _], _isKey: Boolean): Unit = {
     val deserializerConfig = new KafkaAvroDeserializerConfig(configs)
     configureClientProperties(deserializerConfig, ConfluentUtils.SchemaProvider)
-    this.isKey = isKey
+    isKey = _isKey
   }
 
   override protected def schemaIdSerializationEnabled: Boolean =

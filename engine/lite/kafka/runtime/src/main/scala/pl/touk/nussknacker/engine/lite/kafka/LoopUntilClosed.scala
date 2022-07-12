@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
 import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
+import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.{Executors, TimeUnit}
@@ -18,7 +20,8 @@ class TaskRunner(taskName: String,
                  taskParallelCount: Int,
                  singleRun: String => Task,
                  terminationTimeout: Duration,
-                 waitAfterFailureDelay: FiniteDuration) extends AutoCloseable with LazyLogging {
+                 waitAfterFailureDelay: FiniteDuration,
+                 metricsProviderForScenario: MetricsProviderForScenario) extends AutoCloseable with LazyLogging {
   def status(): TaskStatus = Option(tasks).filterNot(_.isEmpty)
     .map(_.maxBy(_.status)).map(_.status)
     .getOrElse(Running)
@@ -29,7 +32,10 @@ class TaskRunner(taskName: String,
 
   private val threadPool = Executors.newFixedThreadPool(taskParallelCount, threadFactory)
 
-  private val tasks: List[LoopUntilClosed] = (0 until taskParallelCount).map(idx => new LoopUntilClosed(() => singleRun(s"task-$idx"), waitAfterFailureDelay)).toList
+  private val tasks: List[LoopUntilClosed] = (0 until taskParallelCount).map { idx =>
+    val taskId = s"task-$idx"
+    new LoopUntilClosed(taskId, () => singleRun(taskId), waitAfterFailureDelay, metricsProviderForScenario)
+  }.toList
 
   def run(implicit ec: ExecutionContext): Future[Unit] = {
     Future.sequence(runAllTasks()).map(_ => ())
@@ -76,7 +82,10 @@ trait Task extends Runnable with AutoCloseable {
   def init(): Unit
 }
 
-class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: FiniteDuration) extends Runnable with AutoCloseable with LazyLogging {
+class LoopUntilClosed(taskId: String,
+                      prepareSingleRunner: () => Task,
+                      waitAfterFailureDelay: FiniteDuration,
+                      metricsProviderForScenario: MetricsProviderForScenario) extends Runnable with AutoCloseable with LazyLogging {
 
   private val closed = new AtomicBoolean(false)
   @volatile var status: TaskStatus = DuringDeploy
@@ -84,6 +93,7 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
   override def run(): Unit = {
     //we recreate runner until closed
     var attempt = 1
+    registerMetrics(() => attempt)
     var previousErrorWithTimestamp = Option.empty[(Throwable, Long)]
     while (!closed.get()) {
       val wasFailureDuringSleep = handleSleepBeforeRestart(previousErrorWithTimestamp).exists(_.isFailure)
@@ -95,6 +105,17 @@ class LoopUntilClosed(prepareSingleRunner: () => Task, waitAfterFailureDelay: Fi
       }
     }
     logger.info("Finishing runner")
+  }
+
+  private def registerMetrics(attempt: () => Int): Unit = {
+    def metricId(name: String) = MetricIdentifier(NonEmptyList.of("task", name), Map("taskId" -> taskId))
+    metricsProviderForScenario.registerGauge(metricId("attempt"), new Gauge[Int] {
+      override def getValue: Int = attempt()
+    })
+    metricsProviderForScenario.registerGauge(metricId("restarting"), new Gauge[Int] {
+      override def getValue: Int = if (status == TaskStatus.Restarting) 1 else 0
+    })
+
   }
 
   private def handleSleepBeforeRestart(previousErrorWithTimestamp: Option[(Throwable, Long)]): Option[Try[Unit]] = {

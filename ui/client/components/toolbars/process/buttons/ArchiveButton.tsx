@@ -4,13 +4,13 @@ import {useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/archive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
-import {ArchiveTabData} from "../../../../containers/Archive"
 import history from "../../../../history"
 import HttpService from "../../../../http/HttpService"
 import {getProcessId, isArchivePossible} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
+import {ArchivedPath} from "../../../../containers/paths"
 
 function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const processId = useSelector(getProcessId)
@@ -22,7 +22,7 @@ function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.archiveProcess(processId),
-      onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => history.push(ArchiveTabData.path)),
+      onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => history.push(ArchivedPath)),
       confirmText: t("panels.actions.process-archive.yes", "Yes"),
       denyText: t("panels.actions.process-archive.no", "No"),
     },

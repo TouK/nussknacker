@@ -11,4 +11,5 @@ export const SignalsPath = `/signals`
 export const ServicesPath = `/services`
 export const CustomTabBasePath = `/customtabs`
 export const ScenariosBasePath = `/scenarios`
+export const ArchivedPath = `${ScenariosBasePath}/?SHOW_ARCHIVED=true&HIDE_ACTIVE=true`
 

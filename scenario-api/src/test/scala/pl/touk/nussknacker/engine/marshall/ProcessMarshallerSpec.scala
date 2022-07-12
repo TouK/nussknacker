@@ -160,7 +160,7 @@ class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues wit
 
     checkOneInvalid("filter", source, canonicalnode.FilterNode(Filter("filter", Expression("", "")), List()))
     checkOneInvalid("split", source, canonicalnode.SplitNode(Split("split"), List.empty))
-    checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch", Expression("", ""), ""), List.empty, List.empty))
+    checkOneInvalid("switch", source, canonicalnode.SwitchNode(Switch("switch"), List.empty, List.empty))
   }
 
   it should "handle legacy endResult" in {

@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
-import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
@@ -51,7 +50,6 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   @silent("deprecated")
-  @nowarn("cat=deprecation")
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {
@@ -109,10 +107,13 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
           interpretNext(nextTrue, valueWithModifiedContext.context)
         else
           interpretOptionalNext(node, nextFalse, valueWithModifiedContext.context)
-      case Switch(_, expression, exprVal, nexts, defaultNext) =>
-        val vmc = evaluateExpression[Any](expression, ctx, expressionName)
-        val newCtx = (vmc.context.withVariable(exprVal, vmc.value), Option.empty[Next])
-        nexts.zipWithIndex.foldLeft(newCtx) { case (acc, (casee, i)) =>
+      case Switch(_, expr, nexts, defaultNext) =>
+        val newCtx = expr.map { case (exprVal, expression) =>
+          val vmc = evaluateExpression[Any](expression, ctx, expressionName)
+          vmc.context.withVariable(exprVal, vmc.value)
+        }.getOrElse(ctx)
+
+        nexts.zipWithIndex.foldLeft((newCtx, Option.empty[Next])) { case (acc, (casee, i)) =>
           acc match {
             case (accCtx, None) =>
               val valueWithModifiedContext = evaluateExpression[Boolean](casee.expression, accCtx, s"$expressionName-$i")

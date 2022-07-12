@@ -15,9 +15,8 @@ object ValidationResults {
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
   //TODO: consider extracting additional DTO class
-  //TODO: we have ConfiguredJsonCodec to handle empty nodeResults for legacy reasons, remove it after successful NK migration
-  @ConfiguredJsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
-                                                   nodeResults: Map[String, NodeTypingData] = Map.empty) {
+  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
+                                                   nodeResults: Map[String, NodeTypingData]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
