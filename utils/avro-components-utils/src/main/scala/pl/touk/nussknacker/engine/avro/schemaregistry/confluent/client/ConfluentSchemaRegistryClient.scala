@@ -4,10 +4,12 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+
 import scala.collection.JavaConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
@@ -38,14 +40,24 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      val schema = schemaMetadata match {
+        case s if s.getSchemaType == "json" => JsonSchema(JsonSchemaBuilder.parseSchema(s.getSchema))
+        case s if s.getSchemaType == "avro" => AvroSchema(AvroUtils.nonRestrictiveParseSchema(s.getSchema))
+        case s => throw new IllegalArgumentException(s"Not supported schema type: ${s.getSchemaType}")
+      }
+      SchemaWithMetadata(schema, schemaMetadata.getId)
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
-      val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      val schemaMetadata: SchemaMetadata = client.getSchemaMetadata(subject, version)
+      val schema = schemaMetadata match {
+        case s if s.getSchemaType == "json" => JsonSchema(JsonSchemaBuilder.parseSchema(s.getSchema))
+        case s if s.getSchemaType == "avro" => AvroSchema(AvroUtils.nonRestrictiveParseSchema(s.getSchema))
+        case s => throw new IllegalArgumentException(s"Not supported schema type: ${s.getSchemaType}")
+      }
+      SchemaWithMetadata(schema, schemaMetadata.getId)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =

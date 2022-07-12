@@ -6,7 +6,8 @@ import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => C
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{AvroSchema, JsonSchema, SchemaRegistryError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
 import scala.collection.JavaConverters._
@@ -31,7 +32,13 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
         val schemaMetadata = client.getSchemaMetadata(subject, version)
         // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
         // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-        SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+
+        val schema = schemaMetadata match {
+          case s if s.getSchemaType == "json" => JsonSchema(JsonSchemaBuilder.parseSchema(s.getSchema))
+          case s if s.getSchemaType == "avro" => AvroSchema(AvroUtils.nonRestrictiveParseSchema(s.getSchema))
+          case s => throw new IllegalArgumentException(s"Not supported schema type: ${s.getSchemaType}")
+        }
+        SchemaWithMetadata(schema, schemaMetadata.getId)
       }
     }
 
@@ -58,7 +65,12 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
       // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
       // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      val schema = schemaMetadata match {
+        case s if s.getSchemaType == "json" => JsonSchema(JsonSchemaBuilder.parseSchema(s.getSchema))
+        case s if s.getSchemaType == "avro" => AvroSchema(AvroUtils.nonRestrictiveParseSchema(s.getSchema))
+        case s => throw new IllegalArgumentException(s"Not supported schema type: ${s.getSchemaType}")
+      }
+      SchemaWithMetadata(schema, schemaMetadata.getId)
     }
   }
 }

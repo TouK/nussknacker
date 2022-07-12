@@ -9,6 +9,7 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.avro.schemaregistry.AvroSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 
 class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -85,7 +86,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
     val fromSubjectVersionDeserializer = {
       val subject = ConfluentUtils.topicSubject(fromSubjectVersionTopic.input, fromSubjectVersionTopic.isKey)
       val schemaId = schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema))
-      val schemaData = RuntimeSchemaData(PaymentV1.schema, Some(schemaId))
+      val schemaData = RuntimeSchemaData(AvroSchema(PaymentV1.schema), Some(schemaId))
       avroSetup.provider.deserializationSchemaFactory.create(kafkaConfig, None, Some(schemaData))
     }
 
@@ -102,7 +103,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
       val schemaDataOpt = if (schemaEvolution) {
         val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
         val inputSchemaId = schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
-        Option(RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId)))
+        Option(RuntimeSchemaData(AvroSchema(expectedObj.getSchema), Some(inputSchemaId)))
       } else {
         None
       }

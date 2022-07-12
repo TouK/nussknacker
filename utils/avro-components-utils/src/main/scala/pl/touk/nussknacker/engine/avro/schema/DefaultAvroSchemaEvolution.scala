@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.avro.schema
 import org.apache.avro.Schema
 import org.apache.avro.generic._
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
-import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.schemaregistry.AvroSchema
+import pl.touk.nussknacker.engine.avro.{AvroRuntimeSchemaData, AvroUtils, RuntimeSchemaData}
 
 import java.io.{ByteArrayOutputStream, IOException}
 import java.nio.ByteBuffer
@@ -19,6 +20,7 @@ import scala.util.{Try, Using}
   *
   * For now it's easiest way to convert GenericContainer record to wanted schema.
   */
+//todo: sprawdź
 class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin with RecordDeserializer {
 
   /**
@@ -52,7 +54,8 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
       // We always want to create generic record at the end, because speecific can has other fields than expected
       val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
       val buffer = ByteBuffer.wrap(payload)
-      deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0)
+      //todo
+      deserializeRecord(RuntimeSchemaData(AvroSchema(readerSchema), None).asInstanceOf[AvroRuntimeSchemaData], reader, buffer, 0)
     } catch {
       case exc@(_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc

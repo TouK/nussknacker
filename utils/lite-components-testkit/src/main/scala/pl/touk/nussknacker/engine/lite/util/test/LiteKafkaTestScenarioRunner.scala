@@ -48,6 +48,22 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
       }
   }
 
+  def runWithRowDataAndToAvro[K, V](scenario: EspProcess, data: List[SerializedInput]): RunnerResult[ProducerRecord[K, V]] = {
+    runWithRawData(scenario, data)
+      .map{ result =>
+        val successes = result
+          .successes
+          .map{ output =>
+            val value: V = deserialize[V](output.value())
+            val key = Option(output.key()).map(deserialize[K]).getOrElse(null.asInstanceOf[K])
+            new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
+          }
+
+        result.copy(successes = successes)
+      }
+  }
+
+
   def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
@@ -55,6 +71,11 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   def registerAvroSchema(topic: String, schema: Schema): Int = schemaRegistryClient.register(
     ConfluentUtils.topicSubject(topic, false),
     ConfluentUtils.convertToAvroSchema(schema)
+  )
+
+  def registerJsonSchema(topic: String, schema: String): Int = schemaRegistryClient.register(
+    ConfluentUtils.topicSubject(topic, false),
+    new io.confluent.kafka.schemaregistry.json.JsonSchema(schema)
   )
 
   private def serialize[K, V](input: AvroInput[K, V]): SerializedInput = {

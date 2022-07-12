@@ -19,7 +19,7 @@ object FlinkKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
                  clientId: String,
                  schema: RuntimeSchemaData,
                  validationMode: ValidationMode): Sink = {
-    new FlinkKafkaAvroSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema, validationMode)
+    new FlinkKafkaAvroSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.avroSchema.serializableSchema, validationMode)
   }
 
 }

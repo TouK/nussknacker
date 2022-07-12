@@ -21,10 +21,10 @@ object FlinkConfluentUtils extends LazyLogging {
       case Some(schemaData) if !isSpecificRecord && GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig) =>
         logger.debug("Using LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo for GenericRecord serialization")
         val schemaId = schemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
-        new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schemaData.schema, schemaId).asInstanceOf[TypeInformation[T]]
+        new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(schemaData.avroSchema.schema, schemaId).asInstanceOf[TypeInformation[T]]
       case Some(schemaData) if !isSpecificRecord =>
         logger.debug("Using LogicalTypesGenericRecordAvroTypeInfo for GenericRecord serialization")
-        new LogicalTypesGenericRecordAvroTypeInfo(schemaData.schema).asInstanceOf[TypeInformation[T]]
+        new LogicalTypesGenericRecordAvroTypeInfo(schemaData.avroSchema.schema).asInstanceOf[TypeInformation[T]]
       case _ if isSpecificRecord => // For specific records we ignoring version because we have exact schema inside class
         new LogicalTypesAvroTypeInfo(clazz.asInstanceOf[Class[_ <: SpecificRecordBase]]).asInstanceOf[TypeInformation[T]]
       case _ =>

@@ -23,7 +23,7 @@ object LiteKafkaComponentProvider {
   val KafkaTypedJsonName = "kafka-typed-json"
   val KafkaAvroName = "kafka-avro"
   val KafkaRegistryTypedJsonName = "kafka-registry-typed-json"
-  val KafkaSinkRegistryTypedRawJsonName = "kafka-registry-typed-json-raw"
+   val KafkaSinkRegistryTypedRawJsonName = "kafka-registry-typed-json-raw"
   val KafkaSinkRawAvroName = "kafka-avro-raw"
 }
 
@@ -52,20 +52,34 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
 
     val avroSerializingSchemaRegistryProvider = createAvroSchemaRegistryProvider
     val jsonSerializingSchemaRegistryProvider = createJsonSchemaRegistryProvider
+    val jsonOrAvroSerializingSchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonOrAvroPayload(schemaRegistryClientFactory)
 
     List(
-      ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
+      // komunikat json - brak schemy
       ComponentDefinition(KafkaJsonName, new KafkaSourceFactory[String, java.util.Map[_, _]](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(noTypeInfo),
+      // komunikat json - schema manualna
       ComponentDefinition(KafkaTypedJsonName, new KafkaSourceFactory[String, TypedMap](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
         jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
       ) with BaseGenericTypedJsonSourceFactory).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
-      ComponentDefinition(KafkaAvroName, new KafkaAvroSourceFactory(avroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaAvroName, new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
+
+      //schema avro - komunikat json
       ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSourceFactory(jsonSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+
+      //schema avro - komunikat avro
+      ComponentDefinition(KafkaAvroName, new KafkaAvroSourceFactory(jsonOrAvroSerializingSchemaRegistryProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
+
+      //schema json - komunikat json?
+
+
+
+
+
+      ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
+      ComponentDefinition(KafkaAvroName, new KafkaAvroSinkFactoryWithEditor(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
+       ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSinkFactoryWithEditor(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+       ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(jsonSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(avroSerializingSchemaRegistryProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
     )
   }

@@ -738,6 +738,11 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "io.confluent" % "kafka-json-schema-provider" % confluentV excludeAll(
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+          ExclusionRule("com.github.everit-org.json-schema", "org.everit.json.schema")
+        ),
         // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
         "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll(
           ExclusionRule("log4j", "log4j"),
@@ -747,7 +752,7 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test")
+  ).dependsOn(componentsUtils % Provided, jsonUtils, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test")
 
 lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
   settings(commonSettings).

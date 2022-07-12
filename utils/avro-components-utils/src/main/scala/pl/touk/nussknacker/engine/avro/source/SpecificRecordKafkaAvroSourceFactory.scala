@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{AvroSchema, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -16,6 +16,7 @@ import scala.reflect._
 /**
  * Source factory for specific records - mainly generated from schema.
  */
+//todo: unsed - delete it? Or handle later
 class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
                                                                           processObjectDependencies: ProcessObjectDependencies,
                                                                           implProvider: KafkaSourceImplFactory[Any, V])
@@ -27,7 +28,7 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
         val preparedTopic = prepareTopic(topic)
 
         val clazz = classTag[V].runtimeClass.asInstanceOf[Class[V]]
-        val schemaData = RuntimeSchemaData(AvroUtils.extractAvroSpecificSchema(clazz), None)
+        val schemaData = RuntimeSchemaData(AvroSchema(AvroUtils.extractAvroSpecificSchema(clazz)), None)
 
         prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters, Nil)
 

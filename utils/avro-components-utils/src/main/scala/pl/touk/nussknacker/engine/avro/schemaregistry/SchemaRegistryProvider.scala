@@ -13,5 +13,5 @@ trait SchemaRegistryProvider extends Serializable with BaseSchemaRegistryProvide
 
   def recordFormatterFactory: RecordFormatterFactory
 
-  def validateSchema(schema: Schema): ValidatedNel[SchemaRegistryError, Schema]
+  def validateSchema(schema: SchemaContainer): ValidatedNel[SchemaRegistryError, SchemaContainer]
 }

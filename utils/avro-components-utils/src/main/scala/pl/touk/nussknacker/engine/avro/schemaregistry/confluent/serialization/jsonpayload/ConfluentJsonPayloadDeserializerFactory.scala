@@ -1,12 +1,16 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload
 
+import io.circe.{Decoder, Encoder, Json}
 import org.apache.avro.specific.SpecificRecordBase
 import org.apache.kafka.common.serialization.Deserializer
-import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
+import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.avro.{AvroRuntimeSchemaData, JsonRuntimeSchemaData, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializer, ConfluentKafkaAvroDeserializerFactory}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.deserializeToTypedMap
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import java.lang
@@ -54,12 +58,13 @@ import scala.reflect.ClassTag
   *   "time" : 11655000
   * }
   */
+//todo: ConfluentAvroSchemaAndJsonPayloadDeserializer
 trait ConfluentJsonPayloadDeserializer {
 
-  protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                kafkaConfig: KafkaConfig,
-                                                schemaDataOpt: Option[RuntimeSchemaData],
-                                                isKey: Boolean): Deserializer[T] = {
+  protected def createJsonPayloadDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                                           kafkaConfig: KafkaConfig,
+                                                           schemaDataOpt: Option[RuntimeSchemaData],
+                                                           isKey: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
 
     val specificClass = {
@@ -69,12 +74,13 @@ trait ConfluentJsonPayloadDeserializer {
     }
 
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey, specificClass.isDefined) {
-
-      private val converter = new JsonPayloadToAvroConverter(specificClass)
+      private lazy val avroConverter = new JsonPayloadToAvroConverter(specificClass)
 
       override protected def deserialize(topic: String, isKey: lang.Boolean, payload: Array[Byte], readerSchema: Option[RuntimeSchemaData]): AnyRef = {
-        val schema = readerSchema.get.schema
-        converter.convert(payload, schema)
+        readerSchema.get match {
+          case as: AvroRuntimeSchemaData => avroConverter.convert(payload, as.schema)
+          case JsonRuntimeSchemaData(jsonSchema, schemaIdOpt) => deserializeToTypedMap(payload)
+        }
       }
     }
   }
@@ -85,9 +91,29 @@ class ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory:
   extends KafkaAvroKeyValueDeserializationSchemaFactory with ConfluentJsonPayloadDeserializer {
 
   override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
+    createJsonPayloadDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
 
   override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
+    createJsonPayloadDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
+
+}
+
+
+
+class ConfluentKeyValueKafkaJsonOrAvroDeserializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaAvroKeyValueDeserializationSchemaFactory with ConfluentJsonPayloadDeserializer with ConfluentKafkaAvroDeserializerFactory {
+
+  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] = schemaDataOpt match {
+    case Some(_: AvroRuntimeSchemaData) => createAvroPayloadDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
+    case Some(_: JsonRuntimeSchemaData) => createJsonPayloadDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
+    case None => throw new IllegalArgumentException("Missing schema or unsupported type of schema.")
+  }
+
+  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
+    schemaDataOpt match {
+      case Some(_: AvroRuntimeSchemaData) => createAvroPayloadDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
+      case Some(_: JsonRuntimeSchemaData) => createJsonPayloadDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
+      case None => throw new IllegalArgumentException("Missing schema or unsupported type of schema.")
+    }
 
 }

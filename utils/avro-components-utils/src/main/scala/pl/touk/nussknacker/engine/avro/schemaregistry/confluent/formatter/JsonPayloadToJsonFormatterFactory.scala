@@ -4,7 +4,10 @@ import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
@@ -47,4 +50,48 @@ class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaAvroKeyValueDes
     override def deserialize(topic: String, data: Array[Byte]): Json =
       CirceUtil.decodeJsonUnsafe[Json](data)
   }
+}
+
+
+class JsonOrAvroPayloadFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
+
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
+    lazy val jsonFormatter = new JsonPayloadToJsonFormatterFactory().create(kafkaConfig, kafkaSourceDeserializationSchema)
+    lazy val avroFormatter = new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory).create(kafkaConfig, kafkaSourceDeserializationSchema)
+    val srClient = schemaRegistryClientFactory.create(kafkaConfig).client
+
+    def handleSchemaType[T](topic: String)(run: RecordFormatter => T):T  = {
+      val subject = ConfluentUtils.topicSubject(topic, isKey = false)
+      srClient.getLatestSchemaMetadata(subject).getSchemaType match {
+        case "avro" => run(avroFormatter)
+        case "json" => run(jsonFormatter)
+        case _ => throw new IllegalArgumentException("Unsuported schema type")
+      }
+    }
+
+    new RecordFormatter {
+      override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+        handleSchemaType(record.topic())(_.formatRecord(record))
+      }
+      override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
+        handleSchemaType(topic)(_.parseRecord(topic, bytes))
+      }
+      override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
+    }
+  }
+
+}
+
+
+class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
+
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
+
+    val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
+    val messageFormatter = new ConfluentAvroMessageFormatter(schemaRegistryClient.client)
+    val messageReader = new ConfluentAvroMessageReader(schemaRegistryClient.client)
+
+    new ConfluentAvroToJsonFormatter(kafkaConfig, schemaRegistryClient.client, messageFormatter, messageReader, kafkaSourceDeserializationSchema)
+  }
+
 }

@@ -21,6 +21,10 @@ package org.apache.flink.formats.avro.typeutils;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
+import pl.touk.nussknacker.engine.avro.schemaregistry.AvroSchema;
+import pl.touk.nussknacker.engine.avro.schemaregistry.JsonSchema;
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaContainer;
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -69,3 +73,4 @@ public final class NkSerializableAvroSchema implements Serializable {
 		}
 	}
 }
+

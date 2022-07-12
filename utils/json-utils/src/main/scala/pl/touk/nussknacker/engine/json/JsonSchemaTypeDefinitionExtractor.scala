@@ -52,7 +52,11 @@ class JsonSchemaTypeDefinitionExtractor {
       case _: NullSchema => Typed.typedClass[Null]
       case s: StringSchema => resolveStringWithFormat(s)
       //TODO: Add support for union type
-      case s => throw new IllegalArgumentException(s"Schema '${s.toString}' is not supported yet.")
+      //TODO: Add support for enum type
+      //TODO: Add support for nested type
+      case s => {
+        throw new IllegalArgumentException(s"Schema '${s.toString}' is not supported yet.")
+      }
     }
   }
 

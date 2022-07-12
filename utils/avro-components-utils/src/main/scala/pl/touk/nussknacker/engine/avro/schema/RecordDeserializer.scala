@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DatumReader, DecoderFactory}
-import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
+import pl.touk.nussknacker.engine.avro.{AvroRuntimeSchemaData, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
 import java.nio.ByteBuffer
@@ -12,7 +12,7 @@ trait RecordDeserializer {
 
   protected def decoderFactory: DecoderFactory
 
-  protected def deserializeRecord(readerSchemaData: RuntimeSchemaData, reader: DatumReader[AnyRef], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+  protected def deserializeRecord(readerSchemaData: AvroRuntimeSchemaData, reader: DatumReader[AnyRef], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
     val length = buffer.limit() - bufferDataStart
     if (readerSchemaData.schema.getType == Type.BYTES) {
       val bytes = new Array[Byte](length)

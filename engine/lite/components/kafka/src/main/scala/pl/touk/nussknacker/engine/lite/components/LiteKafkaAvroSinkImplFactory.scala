@@ -20,7 +20,7 @@ object LiteKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
       override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[ProducerRecord[Array[Byte], Array[Byte]]] = {
         keyParam.product(valueParam).map {
           case (key, value) =>
-            val transformedValue = avroEncoder.encodeOrError(value, schema.schema)
+            val transformedValue = avroEncoder.encodeOrError(value, schema.avroSchema.schema)
             //FIXME: we have to make sure ContextClassLoader is set to model classloader in lite
             ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
               // TODO: timestamp, override topic, clientId, what about other props from KafkaSink?

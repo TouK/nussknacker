@@ -11,11 +11,12 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{AvroRuntimeSchemaData, AvroSchemaDeterminer, JsonRuntimeSchemaData, KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -71,7 +72,12 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
   protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
   Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+      (schemaDeterminer.toRuntimeSchema(schemaData), {
+        schemaData match {
+          case as: AvroRuntimeSchemaData => AvroSchemaTypeDefinitionExtractor.typeDefinition(as.schema)
+          case JsonRuntimeSchemaData(jsonSchema, _) => JsonSchemaTypeDefinitionExtractor.typeDefinition(jsonSchema.schema)
+        }
+      })
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 

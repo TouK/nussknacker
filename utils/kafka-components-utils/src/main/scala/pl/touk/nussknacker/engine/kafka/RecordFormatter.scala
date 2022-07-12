@@ -15,9 +15,11 @@ trait RecordFormatter extends Serializable {
 
   protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]]
 
+
+
   protected def testDataSplit: TestDataSplit
 
-  def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): Array[Byte] = {
+  protected def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): Array[Byte] = {
     testDataSplit.joinData(records.map(formatRecord))
   }
 

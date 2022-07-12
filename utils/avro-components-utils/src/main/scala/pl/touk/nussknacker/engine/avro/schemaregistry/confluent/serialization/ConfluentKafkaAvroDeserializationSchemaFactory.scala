@@ -12,10 +12,10 @@ import scala.reflect._
 
 trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
 
-  protected def createDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                kafkaConfig: KafkaConfig,
-                                                schemaDataOpt: Option[RuntimeSchemaData],
-                                                isKey: Boolean): Deserializer[T] = {
+  protected def createAvroPayloadDeserializer[T: ClassTag](schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
+                                                           kafkaConfig: KafkaConfig,
+                                                           schemaDataOpt: Option[RuntimeSchemaData],
+                                                           isKey: Boolean): Deserializer[T] = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     new ConfluentKafkaAvroDeserializer[T](kafkaConfig, schemaDataOpt, schemaRegistryClient, isKey = isKey, AvroUtils.isSpecificRecord[T])
   }
@@ -32,9 +32,9 @@ class ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFacto
   extends KafkaAvroKeyValueDeserializationSchemaFactory with ConfluentKafkaAvroDeserializerFactory {
 
   override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
-    createDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
+    createAvroPayloadDeserializer[K](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = true)
 
   override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
-    createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
+    createAvroPayloadDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
 
 }

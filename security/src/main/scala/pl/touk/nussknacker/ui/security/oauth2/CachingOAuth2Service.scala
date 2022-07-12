@@ -36,13 +36,18 @@ class CachingOAuth2Service[
   def checkAuthorizationAndObtainUserinfo(accessToken: String): Future[(UserInfoData, Option[Instant])] = {
     val userInfo = authorizationsCache.get(accessToken) match {
       case Some(value) =>
+        println("_________it is in cache" + ticker.read())
         Future.successful(value)
       case None =>
+        println("none in cache" + ticker.read())
         val f = delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
           case (userInfo, expirationInstant) => (userInfo, expirationInstant.getOrElse(Instant.now() plusNanos defaultExpirationDuration.toNanos))
         }
         f.onComplete {
-          case Success(value) => authorizationsCache.put(accessToken)(value)
+          case Success(value) => {
+            authorizationsCache.put(accessToken)(value)
+            println("put to cache" + ticker.read())
+          }
           case _ => ()
         }
         f
