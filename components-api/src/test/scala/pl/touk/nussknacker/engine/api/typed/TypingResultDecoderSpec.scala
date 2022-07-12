@@ -20,6 +20,7 @@ class TypingResultDecoderSpec extends FunSuite with Matchers {
       TypedObjectWithValue(Typed.typedClass[Float], 1.57f),
       TypedObjectWithValue(Typed.typedClass[Double], 23.547d),
       TypedObjectWithValue(Typed.typedClass[Boolean], false),
+      Typed.fromInstance(Float.NaN),
       Typed.taggedDictValue(Typed.typedClass[String], "alamakota"),
       TypedUnion(Set(Typed.typedClass[String], Typed.typedClass[java.lang.Long])),
       //this wont' work, handling primitives should be done with more sophisticated classloading
