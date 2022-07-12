@@ -35,6 +35,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 
+* [#3249](https://github.com/TouK/nussknacker/pull/3249) Some libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11. It may have influence on your custom components if you depends on `avro-components-utils` module.
+
 ## In version 1.4.0
                  
 ### Configuration changes
