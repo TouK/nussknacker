@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -39,6 +39,8 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
 
   override type State = KafkaAvroSinkFactoryState
 
+  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(KafkaAvroBaseComponentTransformer.SinkValueParamName)
+
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition = topicParamStep orElse schemaParamStep orElse {
     case TransformationStep(
@@ -61,7 +63,9 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
       }
       val validationResult = validatedSchema
         .andThen { schema =>
-          OutputValidator.validateOutput(value.returnType, schema.rawSchema(), extractValidationMode(mode))
+          new AvroSchemaOutputValidator(extractValidationMode(mode))
+            .validateTypingResultToSchema(value.returnType, schema.rawSchema())
+            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
       val finalState = determinedSchema.toOption.map(schema => KafkaAvroSinkFactoryState(schema, schemaDeterminer.toRuntimeSchema(schema)))

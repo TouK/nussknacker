@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 
 trait KafkaAvroSinkSpecMixin {
 
-  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
+  final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.allowOptional)
 
   protected def createLazyParam(schema: Schema, data: Map[String, Any]): LazyParameter[GenericContainer] = {
     val record = avroEncoder.encodeRecordOrError(data, schema)

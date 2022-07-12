@@ -119,6 +119,7 @@ object typing {
       case many => many.map(_.display).mkString(" | ")
     }
 
+    def isEmptyUnion: Boolean = possibleTypes.isEmpty
   }
 
   object TypedClass {

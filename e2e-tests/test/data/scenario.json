@@ -67,7 +67,7 @@
             "name" : "Value validation mode",
             "expression" : {
               "language" : "spel",
-              "expression" : "'strict'"
+              "expression" : "'allowOptional'"
             }
           },
           {

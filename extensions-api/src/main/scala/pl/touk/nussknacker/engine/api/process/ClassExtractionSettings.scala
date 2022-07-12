@@ -221,7 +221,10 @@ object ClassExtractionSettings {
         Pattern.compile(s"clockSequence|randomUUID|fromString|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Traversable[_]], classOf[Option[_]])),
-        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
+        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff")),
+      ClassMemberPatternPredicate(
+        ClassPatternPredicate(Pattern.compile("scala\\.concurrent\\.duration\\..*")),
+        Pattern.compile(".*"))
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =

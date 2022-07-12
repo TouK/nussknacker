@@ -82,7 +82,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .filter("name-filter", filter)
       .emptySink("end",  "kafka-json", "topic" -> s"'$JsonOutTopic'", "value" -> "#input")
 
-  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.allowOptional) =
     ScenarioBuilder
       .streaming("json-schemed-test")
       .parallelism(1)
@@ -103,7 +103,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
         KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
-  private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
+  private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.allowOptional) =
     ScenarioBuilder
       .streaming("avro-test")
       .parallelism(1)
@@ -141,7 +141,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
         KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
         KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
+        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.allowOptional.name}'",
         KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'"
       )
 
