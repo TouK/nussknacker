@@ -233,7 +233,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("subtraction of non numeric types") {
-    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Operator '-' used with mismatch types: String and Integer")))
+    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(
+      ExpressionParseError(s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}")))
   }
 
   test("use not existing method reference") {
@@ -294,7 +295,8 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
 
     val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Mismatch parameter types. Found: add(String, Integer). Required: add(Integer, Integer)")))
+    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError(
+      s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)")))
   }
 
   test("validate MethodReference for scala varargs") {
@@ -312,7 +314,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("return invalid type for MethodReference with invalid arity ") {
     val parsed = parse[Any]("#processHelper.add(1)", ctxWithGlobal)
-    val expectedValidation = Invalid("Mismatch parameter types. Found: add(Integer). Required: add(Integer, Integer)")
+    val expectedValidation = Invalid(s"Mismatch parameter types. Found: add(${Typed.fromInstance(1).display}). Required: add(Integer, Integer)")
     parsed.isInvalid shouldBe true
     parsed.leftMap(_.head).leftMap(_.message) shouldEqual expectedValidation
   }
@@ -566,11 +568,16 @@ class SpelExpressionSpec extends FunSuite with Matchers {
       case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
     }
 
-    shouldHaveBadType( parse[Int]("'abcd'", ctx), "Bad expression type, expected: Integer, found: String" )
-    shouldHaveBadType( parse[String]("111", ctx), "Bad expression type, expected: String, found: Integer" )
-    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx), "Bad expression type, expected: String, found: List[Integer]" )
-    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx), "Bad expression type, expected: Map[Unknown,Unknown], found: String" )
-    shouldHaveBadType( parse[Int]("#strVal", ctx), "Bad expression type, expected: Integer, found: String" )
+    shouldHaveBadType( parse[Int]("'abcd'", ctx),
+      s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("abcd").display}" )
+    shouldHaveBadType( parse[String]("111", ctx),
+      s"Bad expression type, expected: String, found: ${Typed.fromInstance(111).display}" )
+    shouldHaveBadType( parse[String]("{1, 2, 3}", ctx),
+      s"Bad expression type, expected: String, found: ${Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
+    shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx),
+      s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("alaMa").display}" )
+    shouldHaveBadType( parse[Int]("#strVal", ctx),
+      s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("").display}" )
   }
 
   test("resolve imported package") {
@@ -820,9 +827,9 @@ object SimpleEnum extends Enumeration {
 object SampleGlobalObject {
   val constant = 4
   def add(a: Int, b: Int): Int = a + b
-  def addLongs(a: Long, b: Long) = a + b
+  def addLongs(a: Long, b: Long): Long = a + b
   //varargs annotation is needed to invoke Scala varargs from Java (including SpEL...)
-  @varargs def addAll(a: Int*) = a.sum
+  @varargs def addAll(a: Int*): Int = a.sum
   def one() = 1
   def now: LocalDateTime = LocalDateTime.now()
   def identityMap(map: java.util.Map[String, Any]): java.util.Map[String, Any] = map

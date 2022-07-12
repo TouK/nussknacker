@@ -264,8 +264,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
       "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
         "vars" -> TypedObjectTypingResult(ListMap(
-          "v1" -> Typed[Integer],
-          "mapVariable" -> TypedObjectTypingResult(ListMap("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          "v1" -> Typed.fromInstance(42),
+          "mapVariable" -> TypedObjectTypingResult(ListMap(
+            "Field1" -> Typed.fromInstance("Field1Value"),
+            "Field2" -> Typed.fromInstance("Field2Value"),
+            "Field3" -> Typed[BigDecimal]
+          )),
           "spelVariable" ->  Typed[Boolean]
         ))
       )
@@ -516,7 +520,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input" -> Unknown,
       "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
-      "simpleVar" -> Typed[String]
+      "simpleVar" -> Typed.fromInstance("simple")
     )
 
   }
@@ -692,7 +696,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map(
+      "input" -> Typed[SimpleRecord],
+      "meta" -> MetaVariables.typingResult(process.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass),
+      "var1" -> Typed.fromInstance("")
+    )
   }
 
   test("not allow to overwrite variable by switch node") {
@@ -775,13 +784,13 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed[String],
-      "var3" -> Typed[String])
+      "var2" -> Typed.fromInstance(""),
+      "var3" -> Typed.fromInstance(""))
     compilationResult.variablesInNodes("id3") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed[String],
+      "var2" -> Typed.fromInstance(""),
       "var3" -> Typed[Int]
     )
   }
@@ -1032,7 +1041,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]), Typed[Boolean])),
+      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed.fromInstance(true)), Typed.fromInstance(true))),
       "sink" -> Map.empty
     )
   }
@@ -1051,7 +1060,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]), Typed[java.lang.Integer])),
+      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed.fromInstance(123)), Typed.fromInstance(123))),
       "sink" -> Map.empty
     )
   }
@@ -1061,7 +1070,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ScenarioBuilder
         .streaming("process")
         .source("source","source")
-        .emptySink("sink", "sinkWithLazyParam", ("lazyString" -> "'123'"))
+        .emptySink("sink", "sinkWithLazyParam", "lazyString" -> "'123'")
 
     val compilationResult = validate(process, baseDefinition)
 
@@ -1072,7 +1081,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
       "sink" -> Map(
-        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
+        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123")))
     )
   }
 
@@ -1092,7 +1101,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String])),
+      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123"))),
       "sink" -> Map.empty
     )
   }
@@ -1196,11 +1205,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   case class AnotherSimpleRecord(value2: Long)
 
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext) = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
+    def invoke()(implicit ec: ExecutionContext): Future[SimpleRecord] = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
   }
 
   object ProcessHelper {
-    def add(a: Int, b: Int) = a + b
+    def add(a: Int, b: Int): Int = a + b
 
     def identity(nullableVal: String): String = nullableVal
 

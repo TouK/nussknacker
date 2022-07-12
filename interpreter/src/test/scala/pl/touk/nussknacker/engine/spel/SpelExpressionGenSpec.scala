@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedUnion, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectWithValue, TypedUnion, Unknown}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
@@ -59,6 +59,10 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
     }
   }
 
+  test("special combination of operands for power operator") {
+    checkIfEvaluatedClassMatchesExpected("^", Int.MaxValue, Int.MaxValue)
+  }
+
   test("all combinations of operands for divide and modulus operator") {
     val operatorGen = Gen.oneOf(NotAcceptingZeroOnRrightOperarators)
 
@@ -80,6 +84,8 @@ class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks
           fail(other) // shouldn't happen
         case Success(evaluatedClass) =>
           inside(validate(expr, a, b)) {
+            case Valid(TypedExpression(_, TypedObjectWithValue(TypedClass(typedClass, Nil), _), _)) =>
+              typedClass shouldEqual evaluatedClass
             case Valid(TypedExpression(_, TypedClass(typedClass, Nil), _)) =>
               typedClass shouldEqual evaluatedClass
             case Valid(TypedExpression(_, TypedUnion(possibleTypes), _)) =>

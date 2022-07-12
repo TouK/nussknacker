@@ -19,10 +19,10 @@ class TyperSpec extends FunSuite with Matchers {
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
-      PositionRange(0, 2) -> TypingResultWithContext(Typed[Integer]),
-      PositionRange(3, 4) -> TypingResultWithContext(Typed[Integer]),
-      PositionRange(5, 6) -> TypingResultWithContext(Typed[Integer])
-    ), TypingResultWithContext(Typed[Integer])))
+      PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
+      PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(2)),
+      PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
+    ), TypingResultWithContext(Typed.fromInstance(2))))
   }
 
   test("template") {
@@ -30,27 +30,31 @@ class TyperSpec extends FunSuite with Matchers {
   }
 
   test("detect proper selection types") {
-    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.display shouldBe "List[Integer]"
+    typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper first selection types") {
-    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+    typeExpression("{1,2}.$[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper last selection types") {
-    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+    typeExpression("{1,2}.^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe Typed.typedClass[Int]
   }
 
   test("detect proper nested selection types") {
-    typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult.display shouldBe "List[Integer]"
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult shouldBe
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper chained selection types") {
-    typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").toOption.get.finalResult.typingResult.display shouldBe "Integer"
+    typeExpression("{{1},{1,2}}.$[(#this.size > 1)].^[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
+      Typed.typedClass[Int]
   }
 
   test("restricting simple type selection") {
-    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe "Cannot do projection/selection on Integer"
+    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe
+      s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
   private val strictTypeChecking = false

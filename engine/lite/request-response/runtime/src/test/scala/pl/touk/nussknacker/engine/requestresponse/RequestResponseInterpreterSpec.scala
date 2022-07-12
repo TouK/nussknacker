@@ -218,7 +218,7 @@ class RequestResponseInterpreterSpec extends FunSuite with Matchers with Patient
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed[java.lang.Integer])))
+    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15))))
 
   }
 
