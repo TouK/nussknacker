@@ -45,6 +45,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
         //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
         //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
         "max.block.ms" -> 2000,
+        "request.timeout.ms" -> 2000,
         "default.api.timeout.ms" -> 2000
       ).asJava))
 

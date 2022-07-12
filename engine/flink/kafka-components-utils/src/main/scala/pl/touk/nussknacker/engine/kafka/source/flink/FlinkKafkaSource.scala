@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaCo
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
-import scala.annotation.nowarn
 import scala.collection.JavaConverters._
 
 class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
@@ -54,7 +53,6 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
   @silent("deprecated")
-  @nowarn("cat=deprecation")
   protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
     new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)))
   }

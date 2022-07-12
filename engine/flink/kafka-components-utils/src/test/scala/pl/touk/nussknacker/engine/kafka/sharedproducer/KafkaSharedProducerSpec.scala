@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.sharedproducer
 
 import org.apache.kafka.clients.producer.{MockProducer, ProducerRecord}
+import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.kafka.MockProducerCreator
@@ -13,7 +14,7 @@ class KafkaSharedProducerSpec extends FunSuite with Matchers {
 
   test("should close producer after return") {
 
-    val mockProducer = new MockProducer[Array[Byte], Array[Byte]]()
+    val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
     val creator = MockProducerCreator(mockProducer)
 
     val service = SharedKafkaProducerHolder.retrieveService(creator)(MetaData("id", StreamMetaData()))

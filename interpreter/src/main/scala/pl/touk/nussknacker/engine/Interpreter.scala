@@ -16,7 +16,6 @@ import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
-import scala.annotation.nowarn
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 import scala.util.control.NonFatal
@@ -51,7 +50,6 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
   }
 
   @silent("deprecated")
-  @nowarn("cat=deprecation")
   private def interpretNode(node: Node, ctx: Context): F[List[Result[InterpretationResult]]] = {
     implicit val nodeImplicit: Node = node
     node match {
