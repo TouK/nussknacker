@@ -38,14 +38,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      SchemaWithMetadata(schemaMetadata)
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      SchemaWithMetadata(schemaMetadata)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =

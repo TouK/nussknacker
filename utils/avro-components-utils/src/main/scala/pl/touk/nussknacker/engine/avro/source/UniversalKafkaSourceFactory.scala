@@ -2,6 +2,9 @@ package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
+import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
+import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -11,11 +14,12 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
+import pl.touk.nussknacker.engine.avro.schemaregistry.{KafkaSerDeSchemaRegistryProvider, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{UniversalKafkaBaseTransformer, UniversalRuntimeSchemaData, UniversalSchemaDeterminer}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
+import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -26,13 +30,13 @@ import scala.reflect.ClassTag
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
-class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: KafkaSerDeSchemaRegistryProvider,
                                                             val processObjectDependencies: ProcessObjectDependencies,
                                                             protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
-    with KafkaAvroBaseTransformer[Source] {
+    with UniversalKafkaBaseTransformer[Source] {
 
-  override type State = KafkaAvroSourceFactoryState[K, V]
+  override type State = UniversalKafkaSourceFactoryState[K, V]
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
                                     (implicit nodeId: NodeId): NodeTransformationDefinition =
@@ -56,16 +60,16 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
       prepareSourceFinalErrors(context, dependencies, step.parameters, errors = Nil)
   }
 
-  protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
-  Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)] = {
+  protected def determineSchemaAndType(schemaDeterminer: UniversalSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
+  Validated[ProcessCompilationError, (Option[UniversalRuntimeSchemaData], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+      (schemaDeterminer.toRuntimeSchema(schemaData), UniversalSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
   // Source specific FinalResults
   protected def prepareSourceFinalResults(preparedTopic: PreparedKafkaTopic,
-                                          valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)],
+                                          valueValidationResult: Validated[ProcessCompilationError, (Option[UniversalRuntimeSchemaData], TypingResult)],
                                           context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
                                           parameters: List[(String, DefinedParameter)],
@@ -79,7 +83,7 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
     (keyValidationResult, valueValidationResult) match {
       case (Valid((keyRuntimeSchema, keyType)), Valid((valueRuntimeSchema, valueType))) =>
         val finalInitializer = prepareContextInitializer(dependencies, parameters, keyType, valueType)
-        val finalState = KafkaAvroSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
+        val finalState = UniversalKafkaSourceFactoryState(keyRuntimeSchema, valueRuntimeSchema, finalInitializer)
         FinalResults.forValidation(context, errors, Some(finalState))(finalInitializer.validationContext)
       case _ =>
         prepareSourceFinalErrors(context, dependencies, parameters, keyValidationResult.swap.toList ++ valueValidationResult.swap.toList)
@@ -106,16 +110,9 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
     val preparedTopic = extractPreparedTopic(params)
-    val KafkaAvroSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
-
-    // prepare KafkaDeserializationSchema based on given key and value schema (with schema evolution)
-    val deserializationSchema = schemaRegistryProvider
-      .deserializationSchemaFactory.create[K, V](kafkaConfig, keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
-
-    // - avro payload formatter requires to format test data with writer schema, id of writer schema comes with event
-    // - for json payload event does not come with writer schema id
-    val formatterSchema = schemaRegistryProvider.deserializationSchemaFactory.create[K, V](kafkaConfig, None, None)
-    val recordFormatter = schemaRegistryProvider.recordFormatterFactory.create[K, V](kafkaConfig, formatterSchema)
+    val UniversalKafkaSourceFactoryState(keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime, kafkaContextInitializer) = finalState.get
+    val deserializationSchema = schemaRegistryProvider.createKafkaDeserializationSchema[K,V](keySchemaDataUsedInRuntime, valueSchemaUsedInRuntime)
+    val recordFormatter = schemaRegistryProvider.recordFormatter(deserializationSchema)
 
     implProvider.createSource(params, dependencies, finalState.get, List(preparedTopic), kafkaConfig, deserializationSchema, recordFormatter, kafkaContextInitializer)
   }
@@ -123,4 +120,21 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
     TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
+}
+
+object UniversalKafkaSourceFactory {
+  case class UniversalKafkaSourceFactoryState[K, V](keySchemaDataOpt: Option[UniversalRuntimeSchemaData],
+                                                    valueSchemaDataOtp: Option[UniversalRuntimeSchemaData],
+                                                    contextInitializer: ContextInitializer[ConsumerRecord[K, V]])
+
+}
+
+object UniversalSchemaTypeDefinitionExtractor {
+  def typeDefinition(schema: ParsedSchema): TypingResult = {
+    schema.rawSchema() match {
+      case a: Schema => AvroSchemaTypeDefinitionExtractor.typeDefinition(a)
+      case s: org.everit.json.schema.Schema => JsonSchemaTypeDefinitionExtractor.typeDefinition(s)
+      case _ => throw new IllegalArgumentException(s"Unsupported schema type: ${schema.schemaType()}")
+    }
+  }
 }
