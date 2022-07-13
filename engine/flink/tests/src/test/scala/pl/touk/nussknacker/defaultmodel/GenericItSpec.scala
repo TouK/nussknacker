@@ -3,6 +3,7 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.avro.generic.GenericData
+import org.scalatest.concurrent.ScalaFutures.convertScalaFuture
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -267,6 +268,6 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
   private def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
     val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
+    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp).futureValue
   }
 }
