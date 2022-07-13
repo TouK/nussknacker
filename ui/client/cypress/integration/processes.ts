@@ -74,7 +74,8 @@ describe("Processes list (new table)", () => {
     cy.get("[placeholder='Search...']").type(NAME)
     cy.url().should("contain", NAME)
     cy.wait(200) // wait for highlight
-    cy.contains(this.processName).should("be.visible").toMatchImageSnapshot()
+    cy.contains(this.processName).should("be.visible")
+    cy.get("#app-container").toMatchImageSnapshot()
     cy.contains(this.processName).click({x: 10, y: 10})
     cy.url().should("contain", `visualization\/${this.processName}`)
   })
