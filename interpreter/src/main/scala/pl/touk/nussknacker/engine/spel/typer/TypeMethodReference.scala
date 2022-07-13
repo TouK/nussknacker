@@ -3,8 +3,8 @@ package pl.touk.nussknacker.engine.spel.typer
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
-import pl.touk.nussknacker.engine.api.expression.TypingError
-import pl.touk.nussknacker.engine.api.expression.TypingError.{InvocationOnUnknown, UnknownMethod}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnUnknown, UnknownMethod}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -17,7 +17,7 @@ object TypeMethodReference {
             params: List[TypingResult],
             isStatic: Boolean,
             methodExecutionForUnknownAllowed: Boolean)
-           (implicit settings: ClassExtractionSettings): ValidatedNel[TypingError, TypingResult] =
+           (implicit settings: ClassExtractionSettings): ValidatedNel[ExpressionParseError, TypingResult] =
     new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 
   private case class NoDataForEvaluation()
@@ -28,7 +28,7 @@ class TypeMethodReference(methodName: String,
                           calledParams: List[TypingResult],
                           isStatic: Boolean,
                           methodExecutionForUnknownAllowed: Boolean) {
-  def call(implicit settings: ClassExtractionSettings): ValidatedNel[TypingError, TypingResult] =
+  def call(implicit settings: ClassExtractionSettings): ValidatedNel[ExpressionParseError, TypingResult] =
     invocationTarget match {
       case tc: SingleTypingResult =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
@@ -45,7 +45,7 @@ class TypeMethodReference(methodName: String,
       EspTypeUtils.clazzDefinition(typedClass.objType.klass)
     ).toList
 
-  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): ValidatedNel[TypingError, TypingResult] =
+  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): ValidatedNel[ExpressionParseError, TypingResult] =
     validateClassDefinitionsNonEmpty(clazzDefinitions)
       .andThen(validateMethodsNonEmpty)
       .andThen(validateMethodParameterTypes)
@@ -56,12 +56,12 @@ class TypeMethodReference(methodName: String,
     }
 
   private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]):
-    Validated[Either[NonEmptyList[TypingError], NoDataForEvaluation], NonEmptyList[ClazzDefinition]] = {
+    Validated[Either[NonEmptyList[ExpressionParseError], NoDataForEvaluation], NonEmptyList[ClazzDefinition]] = {
     NonEmptyList.fromList(clazzDefinitions).map(_.valid).getOrElse(Right(NoDataForEvaluation()).invalid)
   }
 
   private def validateMethodsNonEmpty(clazzDefinitions: NonEmptyList[ClazzDefinition]):
-    Validated[Either[NonEmptyList[TypingError], NoDataForEvaluation], NonEmptyList[MethodInfo]] = {
+    Validated[Either[NonEmptyList[ExpressionParseError], NoDataForEvaluation], NonEmptyList[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).toList.mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
     def filterMethods(methods: Map[String, List[MethodInfo]], name: String): List[MethodInfo] =
@@ -78,7 +78,7 @@ class TypeMethodReference(methodName: String,
   }
 
   private def validateMethodParameterTypes(methodInfoes: NonEmptyList[MethodInfo]):
-    Validated[Either[NonEmptyList[TypingError], NoDataForEvaluation], NonEmptyList[TypingResult]] = {
+    Validated[Either[NonEmptyList[ExpressionParseError], NoDataForEvaluation], NonEmptyList[TypingResult]] = {
     val returnTypesForMatchingMethods = methodInfoes.map(_.apply(calledParams))
     val validReturnTypesForMatchingMethods = returnTypesForMatchingMethods.collect{ case Valid(x) => x }
     validReturnTypesForMatchingMethods match {
