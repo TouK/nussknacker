@@ -12,7 +12,6 @@ export type ActionTypes =
   | "ZOOM_IN"
   | "ZOOM_OUT"
   | "HANDLE_HTTP_ERROR"
-  | "DISPLAY_NODE_DETAILS"
   | "DELETE_NODES"
   | "NODES_CONNECTED"
   | "NODES_DISCONNECTED"

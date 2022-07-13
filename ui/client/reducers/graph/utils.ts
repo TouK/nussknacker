@@ -6,13 +6,6 @@ import NodeUtils from "../../components/graph/NodeUtils"
 import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
 
-export function displayNode(state: GraphState, node: NodeType): GraphState {
-  return {
-    ...state,
-    nodeToDisplay: node,
-  }
-}
-
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
   return map(layout, (n) => oldId === n.id ? {...n, id: newId} : n)
 }

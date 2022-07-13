@@ -85,7 +85,6 @@ export class Graph extends React.Component {
     this.processGraphPaper.on(Events.BLANK_POINTERUP, event => {
       if (!event.isPropagationStopped()) {
         if (this.props.fetchedProcessDetails != null) {
-          this.props.actions.displayNodeDetails(this.props.fetchedProcessDetails.json.properties)
           this.props.actions.resetSelection()
         }
       }
@@ -157,6 +156,7 @@ export class Graph extends React.Component {
 
     this.processGraphPaper.unfreeze()
   })
+
   canAddNode(node) {
     return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&
@@ -353,24 +353,14 @@ export class Graph extends React.Component {
 
   changeNodeDetailsOnClick() {
     this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, (cellView) => {
-      const nodeDataId = cellView.model.attributes.nodeData?.id
-      if (nodeDataId) {
-        const nodeData = this.getNodeData(cellView.model)
-        const prefixedNodeId = this.props.nodeIdPrefixForSubprocessTests + nodeDataId
+      const {processToDisplay, readonly, nodeIdPrefixForSubprocessTests = ""} = this.props
+      const {nodeData, edgeData} = cellView.model.attributes
+      const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null)
+      if (nodeId) {
         this.props.showModalNodeDetails({
-          ...nodeData,
-          id: prefixedNodeId,
-        }, this.props.processToDisplay, this.props.readonly)
-      }
-
-      //TODO: open node window instead for switch (for filter too?)
-      const edgeData = cellView.model.attributes.edgeData
-      if (edgeData && isEdgeEditable(edgeData)) {
-        this.props.showModalNodeDetails(
-          NodeUtils.getNodeById(cellView.model.attributes.edgeData.from, this.props.processToDisplay),
-          this.props.processToDisplay,
-          this.props.readonly
-        )
+          ...NodeUtils.getNodeById(nodeId, processToDisplay),
+          id: nodeIdPrefixForSubprocessTests + nodeId,
+        }, processToDisplay, readonly)
       }
     })
 
@@ -381,8 +371,6 @@ export class Graph extends React.Component {
         if (!nodeDataId) {
           return
         }
-
-        this.props.actions.displayNodeDetails(this.getNodeData(cellView.model))
 
         if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
           this.props.actions.toggleSelection(nodeDataId)
@@ -402,11 +390,6 @@ export class Graph extends React.Component {
     this.processGraphPaper.on(Events.BLANK_MOUSEOVER, () => {
       this.hideBackgroundsIcons()
     })
-  }
-
-  getNodeData(model) {
-    const {processToDisplay} = this.props
-    return NodeUtils.getNodeById(model.attributes.nodeData.id, processToDisplay)
   }
 
   //needed for proper switch/filter label handling

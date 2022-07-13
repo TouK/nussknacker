@@ -38,6 +38,7 @@ export function SubprocessContent({
         <BareGraph
           processCounts={subprocessCounts}
           processToDisplay={subprocessContent}
+          nodeIdPrefixForSubprocessTests={`${subprocessContent.id}-`}
         />
       )}
     </ErrorBoundary>

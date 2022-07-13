@@ -48,11 +48,6 @@ type ValidationResultAction = {
   validationResult: ValidationResult,
 }
 
-type DisplayNodeDetailsAction = {
-  type: "DISPLAY_NODE_DETAILS",
-  nodeToDisplay: NodeType,
-}
-
 type NodeAddedAction = {
   type: "NODE_ADDED",
   node: NodeType,
@@ -66,13 +61,6 @@ function runSyncActionsThenValidate<S extends RootState>(syncActions: (state: S)
     return HttpService.validateProcess(getState().graphReducer.processToDisplay).then(
       (response) => dispatch({type: "VALIDATION_RESULT", validationResult: response.data}),
     )
-  }
-}
-
-export function displayNodeDetails(node: NodeType): DisplayNodeDetailsAction {
-  return {
-    type: "DISPLAY_NODE_DETAILS",
-    nodeToDisplay: node,
   }
 }
 
@@ -146,7 +134,6 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
 }
 
 export type NodeActions =
-  | DisplayNodeDetailsAction
   | NodeAddedAction
   | DeleteNodesAction
   | NodesConnectedAction

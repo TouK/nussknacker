@@ -8,7 +8,7 @@ const EDITABLE_EDGES: string[] = [
   EdgeKind.subprocessOutput,
 ]
 
-export function isEdgeEditable(edge: Edge): boolean {
+export function isEdgeEditable(edge?: Edge): boolean {
   const edgeType = edge?.edgeType?.type
   return edgeType && EDITABLE_EDGES.includes(edgeType)
 }

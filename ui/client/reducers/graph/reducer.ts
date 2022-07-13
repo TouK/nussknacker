@@ -11,7 +11,6 @@ import {
   addNodesWithLayout,
   adjustBranchParametersAfterDisconnect,
   createEdge,
-  displayNode,
   enrichNodeWithProcessDependentData,
   prepareNewNodesWithLayout,
   updateAfterNodeDelete,
@@ -97,9 +96,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         testResults: null,
       }
     }
-
-    case "DISPLAY_NODE_DETAILS":
-      return displayNode(state, action.nodeToDisplay)
 
     case "EDIT_EDGE": {
       const processToDisplay = GraphUtils.mapProcessWithNewEdge(
