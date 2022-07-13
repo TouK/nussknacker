@@ -192,6 +192,8 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
+    //TODO: without this line, the test often fails. Seems like the first message is sometimes lost (?)
+    sendAsJson(givenNotMatchingJsonObj, topicConfig.input, timeAgo)
     sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo)
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
