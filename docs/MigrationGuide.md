@@ -22,6 +22,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Right now each method from `TestScenarioRunner` should return `ValidatedNel[ProcessCompilationError, RunResult[R]]` where:
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
+* [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
 
 ### REST API changes
 
