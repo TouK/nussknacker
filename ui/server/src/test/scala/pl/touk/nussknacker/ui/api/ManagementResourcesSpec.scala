@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import java.time.LocalDateTime
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -12,20 +11,23 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
+
+import java.time.LocalDateTime
 
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -198,13 +200,29 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  //FIXME
-  ignore("return error on deployment failure") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+  test("should return failure for not validating deployment") {
+    val largeParallelismScenario = ScenarioBuilder
+          .streaming("sampleProcess")
+          .parallelism(MockDeploymentManager.maxParallelism + 1)
+          .source("start", "csv-source")
+          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+    saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
 
     deploymentManager.withFailingDeployment {
+      deployProcess(largeParallelismScenario.id) ~> check {
+        status shouldBe StatusCodes.BadRequest
+        responseAs[String] shouldBe "Parallelism too large"
+      }
+    }
+  }
+
+  test("return from deploy before deployment manager proceeds") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+
+    //TODO: check for returning
+    deploymentManager.withFailingDeployment {
       deployProcess(SampleProcess.process.id) ~> check {
-        status shouldBe StatusCodes.InternalServerError
+        status shouldBe StatusCodes.OK
       }
     }
   }

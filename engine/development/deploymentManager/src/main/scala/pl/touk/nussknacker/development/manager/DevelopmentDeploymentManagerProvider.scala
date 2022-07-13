@@ -20,7 +20,8 @@ import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.Success
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
   import SimpleStateStatus._
@@ -65,9 +66,16 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
-    asyncChangeState(processVersion.processName, Running)
-    logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
-    Future.successful(duringDeployStateStatus.deploymentId)
+    val result = Promise[Option[ExternalDeploymentId]]()
+    actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
+      override def run(): Unit = {
+        logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
+        result.complete(Success(duringDeployStateStatus.deploymentId))
+        asyncChangeState(processVersion.processName, Running)
+      }
+    })
+    logger.debug(s"Finished preliminary deployment part of scenario: ${processVersion.processName}.")
+    result.future
   }
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
