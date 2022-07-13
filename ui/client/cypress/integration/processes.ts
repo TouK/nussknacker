@@ -1,4 +1,4 @@
-describe.skip("Processes list", () => {
+describe("Processes list", () => {
   const NAME = "process-list"
 
   before(() => {
@@ -40,7 +40,7 @@ describe.skip("Processes list", () => {
   })
 })
 
-describe("Processes list (new table)", () => {
+describe.skip("Processes list (new table)", () => {
   const NAME = "process-list"
 
   before(() => {

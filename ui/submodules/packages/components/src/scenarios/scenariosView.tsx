@@ -101,7 +101,7 @@ function ScenariosView({ children, table }: PropsWithChildren<{ table?: boolean 
 }
 
 export const ScenariosWithActions = (props: { addScenario?: () => void; addFragment?: () => void }) => (
-  <ScenariosView table>
+  <ScenariosView table={false}>
     <Actions {...props} />
   </ScenariosView>
 );
