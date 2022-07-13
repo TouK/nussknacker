@@ -105,16 +105,17 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     }.toSet
   }
 
+  // FIXME: Find better alternative than using .generalResult
   private def definitionsFromMethods(classDefinition: ClazzDefinition)
                                     (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.generalResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
       // TODO verify if parameters are need and if they are not, remove this
 //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
     }.toSet ++
     classDefinition.staticMethods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.generalResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
     }.toSet
   }
 
@@ -151,8 +152,9 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     override def print: String = s"[$ix]${classNameWithStrippedPackages(cl)}"
   }
 
+  // FIXME: Find better alternative that using .generalResult
   private case class MethodReturnType(m: MethodInfo) extends DiscoverySegment {
-    override def print: String = s"ret(${classNameWithStrippedPackages(m.refClazz)})"
+    override def print: String = s"ret(${classNameWithStrippedPackages(m.generalResult)})"
   }
 
   private case class MethodParameter(p: Parameter) extends DiscoverySegment {

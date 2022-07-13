@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import pl.touk.nussknacker.engine.TypeDefinitionSet
+import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -62,35 +62,12 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
   }
 
   private def validateMethodParameterTypes(methodInfoes: List[MethodInfo]): Either[Option[String], List[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfoes.flatMap { m =>
-      lazy val allMatching = m.parameters.map(_.refClazz).zip(calledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      if (m.parameters.size == calledParams.size && allMatching) Some(m.refClazz) else checkForVarArgs(m)
-    }
+    val returnTypesForMatchingMethods = methodInfoes.map(_.apply(calledParams)).collect{ case Valid(x) => x }
     returnTypesForMatchingMethods match {
       case Nil =>
-        def toSignature(params: List[TypingResult]) = params.map(_.display).mkString(s"$methodName(", ", ", ")")
-        val methodVariances = methodInfoes.map(_.parameters.map(_.refClazz))
-        Left(Some(s"Mismatch parameter types. Found: ${toSignature(calledParams)}. Required: ${methodVariances.map(toSignature).mkString(" or ")}"))
-      case nonEmpty =>
-        Right(nonEmpty)
+        // FIXME: Better error message.
+        Left(Some(s"Illegal parameter types"))
+      case nonEmpty => Right(nonEmpty)
     }
   }
-
-  private def checkForVarArgs(method: MethodInfo): Option[TypingResult] = {
-    val nonVarArgSize = method.parameters.size - 1
-    if (method.varArgs && calledParams.size >= nonVarArgSize) {
-      val nonVarArgParams = method.parameters.take(nonVarArgSize)
-      val nonVarArgCalledParams = calledParams.take(nonVarArgSize)
-      val nonVarArgMatching = nonVarArgParams.map(_.refClazz).zip(nonVarArgCalledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      //TODO: we do not check var arg parameter types
-      if (nonVarArgMatching) Some(method.refClazz) else None
-    } else {
-      None
-    }
-  }
-
 }
