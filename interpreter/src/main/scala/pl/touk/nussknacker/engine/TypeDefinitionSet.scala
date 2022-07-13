@@ -7,7 +7,8 @@ import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
 import pl.touk.nussknacker.engine.api.Context
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.expression.TypingError
+import pl.touk.nussknacker.engine.api.expression.TypingError.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.spel.TypedNode
@@ -25,7 +26,7 @@ object TypeDefinitionSet {
 
 case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[TypingError], TypedClass] = {
 
     /**
       * getValue mutates TypeReference but is still safe
@@ -37,7 +38,7 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
       case Success(typeReferenceClazz) =>
         typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
           case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
-          case None => Invalid(NonEmptyList.of(ExpressionParseError(s"${typeReferenceClazz} is not allowed to be passed as TypeReference")))
+          case None => Invalid(NonEmptyList.of(ExpressionParseError(s"$typeReferenceClazz is not allowed to be passed as TypeReference")))
         }
       case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(ExpressionParseError(s"Class ${typeReference.toStringAST} does not exist")))
       case Failure(exception) => throw exception
