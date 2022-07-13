@@ -152,7 +152,7 @@ class ProcessUtils {
         return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [{[node.exprVal]: unknown}]
+        return [node.exprVal ? {[node.exprVal]: unknown} : {}]
       }
       default: {
         return []

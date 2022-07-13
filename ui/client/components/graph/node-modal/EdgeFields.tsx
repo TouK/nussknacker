@@ -11,7 +11,7 @@ import {SelectWithFocus} from "../../withFocus"
 import NodeUtils from "../NodeUtils"
 import {uniq} from "lodash"
 import {ExpressionLang} from "./editors/expression/types"
-import {mandatoryValueValidator} from "./editors/Validators"
+import {Validator} from "./editors/Validators"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {useTranslation} from "react-i18next"
 
@@ -23,14 +23,14 @@ interface Props {
   edges: Edge[],
   types?: EdgeTypeOption[],
   variableTypes?: VariableTypes,
+  validators?: Validator[],
 }
 
 export function EdgeFields(props: Props): JSX.Element {
   const {t} = useTranslation()
-  const {readOnly, value, index, onChange, edges, types, variableTypes} = props
+  const {readOnly, value, index, onChange, edges, types, variableTypes, validators = []} = props
   const process = useSelector(getProcessToDisplay)
   const processDefinitionData = useSelector(getProcessDefinitionData)
-
 
   const [edge, setEdge] = useState(value)
 
@@ -83,7 +83,7 @@ export function EdgeFields(props: Props): JSX.Element {
           }}
           readOnly={readOnly}
           onValueChange={onValueChange}
-          validators={[mandatoryValueValidator]}
+          validators={validators}
           showValidation
         />
       )

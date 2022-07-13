@@ -12,7 +12,7 @@ import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty
 import BranchParameters from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field from "./editors/field/Field"
-import {allValid, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {allValid, Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
@@ -24,16 +24,17 @@ import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
 import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
-import {EdgesDndComponent} from "./EdgesDndComponent"
+import {EdgesDndComponent, WithTempId} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
-import {Edge, EdgeKind, NodeType, VariableTypes} from "../../../types"
+import {Edge, EdgeKind, NodeType, NodeValidationError, VariableTypes} from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
+import {ValidationRequest} from "../../../actions/nk"
 
 export interface NodeDetailsContentProps {
   testResults?,
   isEditMode?: boolean,
   dynamicParameterDefinitions?,
-  currentErrors?,
+  currentErrors?: NodeValidationError[],
   processId?,
   additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
   showValidation?,
@@ -45,7 +46,7 @@ export interface NodeDetailsContentProps {
   expressionType?,
   originalNodeId?: NodeType["id"],
   nodeTypingInfo?,
-  updateNodeData?,
+  updateNodeData?: (processId: string, validationRequestData: ValidationRequest) => void,
   findAvailableBranchVariables?,
   processProperties?,
   pathsToMark?: string[],
@@ -62,7 +63,7 @@ interface State {
   originalNode: NodeType,
   unusedParameters,
   codeCompletionEnabled,
-  edges: Edge[],
+  edges: WithTempId<Edge>[],
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -118,7 +119,10 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     this.initalizeWithProps(nextProps)
     const nextPropsNode = nextProps.node
 
-    if (!isEqual(this.props.node, nextPropsNode)) {
+    if (
+      !isEqual(this.props.node, nextPropsNode) ||
+      !isEqual(this.props.edges, nextProps.edges)
+    ) {
       this.updateNodeState(nextPropsNode, [])
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
@@ -136,11 +140,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
 
   updateNodeDataIfNeeded(currentNode) {
     if (this.props.isEditMode) {
-      this.props.updateNodeData(this.props.processId,
-        this.props.findAvailableVariables(this.props.originalNodeId),
-        this.props.findAvailableBranchVariables(this.props.originalNodeId),
-        currentNode,
-        this.props.processProperties)
+      this.props.updateNodeData(this.props.processId, {
+        variableTypes: this.props.findAvailableVariables(this.props.originalNodeId),
+        branchVariableTypes: this.props.findAvailableBranchVariables(this.props.originalNodeId),
+        nodeData: currentNode,
+        processProperties: this.props.processProperties,
+        outgoingEdges: this.state.edges.map(e => ({...e, to: e._id || e.to})),
+      })
     } else {
       this.updateNodeState(currentNode, [])
     }
@@ -150,7 +156,10 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     if (!isEqual(prevProps.node, this.props.node) || !isEqual(prevProps.testResults, this.props.testResults)) {
       this.selectTestResults()
     }
-    if (!isEqual(prevState.editedNode, this.state.editedNode)) {
+    if (
+      !isEqual(prevState.editedNode, this.state.editedNode) ||
+      !isEqual(prevState.edges, this.state.edges)
+    ) {
       this.updateNodeDataIfNeeded(this.state.editedNode)
     }
   }
@@ -179,7 +188,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
 
   idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
 
-  customNode = (fieldErrors) => {
+  customNode = (fieldErrors: Error[]): JSX.Element => {
     const {
       showValidation,
       showSwitch,
@@ -251,23 +260,26 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               fieldErrors
             )}
             {this.createField("checkbox", "Disabled", "isDisabled")}
-            {!isCompareView ? (
-              <EdgesDndComponent
-                label={"Outputs"}
-                nodeId={originalNodeId}
-                value={this.state.edges}
-                onChange={(edges) => {
-                  if (edges !== this.state.edges) {
-                    this.setState({edges}, this.publishNodeChange)
-                  }
-                }}
-                edgeTypes={[
-                  {value: EdgeKind.filterTrue, onlyOne: true},
-                  {value: EdgeKind.filterFalse, onlyOne: true},
-                ]}
-                readOnly={!isEditMode}
-              />
-            ) : null}
+            {!isCompareView ?
+              (
+                <EdgesDndComponent
+                  label={"Outputs"}
+                  nodeId={originalNodeId}
+                  value={this.state.edges}
+                  onChange={(edges) => {
+                    if (edges !== this.state.edges) {
+                      this.setState({edges}, this.publishNodeChange)
+                    }
+                  }}
+                  edgeTypes={[
+                    {value: EdgeKind.filterTrue, onlyOne: true},
+                    {value: EdgeKind.filterFalse, onlyOne: true},
+                  ]}
+                  readOnly={!isEditMode}
+                  fieldErrors={fieldErrors}
+                />
+              ) :
+              null}
             {this.descriptionField()}
           </div>
         )
@@ -424,28 +436,33 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             {nodeDefinition.node["exprVal"] !== this.state.originalNode["exprVal"] ?
               this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
               null}
-            {!isCompareView ? (
-              <EdgesDndComponent
-                label={"Conditions"}
-                nodeId={originalNodeId}
-                value={this.state.edges}
-                onChange={(edges) => {
-                  if (edges !== this.state.edges) {
-                    this.setState({edges}, this.publishNodeChange)
-                  }
-                }}
-                edgeTypes={[
-                  {value: EdgeKind.switchNext},
-                  {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
-                ]}
-                ordered
-                readOnly={!isEditMode}
-                variableTypes={{
-                  ...variableTypes,
-                  [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
-                }}
-              />
-            ) : null}
+            {!isCompareView ?
+              (
+                <EdgesDndComponent
+                  label={"Conditions"}
+                  nodeId={originalNodeId}
+                  value={this.state.edges}
+                  onChange={(edges) => {
+                    if (edges !== this.state.edges) {
+                      this.setState({edges}, this.publishNodeChange)
+                    }
+                  }}
+                  edgeTypes={[
+                    {value: EdgeKind.switchNext},
+                    {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
+                  ]}
+                  ordered
+                  readOnly={!isEditMode}
+                  variableTypes={editedNode["exprVal"] ?
+                    {
+                      ...variableTypes,
+                      [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                    } :
+                    variableTypes}
+                  fieldErrors={fieldErrors}
+                />
+              ) :
+              null}
             {this.descriptionField()}
           </div>
         )
@@ -748,8 +765,14 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     } = this.props
     const editedNode = this.state?.editedNode
 
-    const fieldErrors = currentErrors.filter(error => error.fieldName &&
-      getAvailableFields(editedNode, node, additionalPropertiesConfig, dynamicParameterDefinitions).includes(error.fieldName))
+    const fieldErrors = currentErrors.filter(error => {
+      if (error.fieldName) {
+        const fields = getAvailableFields(editedNode, node, additionalPropertiesConfig, dynamicParameterDefinitions)
+        const edges = this.state.edges.map(e => e._id || e.to)
+        return [...fields, ...edges].includes(error.fieldName)
+      }
+      return false
+    })
 
     const otherErrors = currentErrors.filter(error => !fieldErrors.includes(error))
 
