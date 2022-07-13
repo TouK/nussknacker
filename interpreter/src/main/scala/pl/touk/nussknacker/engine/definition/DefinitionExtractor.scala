@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.expression.TypingError
-import pl.touk.nussknacker.engine.api.expression.TypingError.{ArgumentNumberError, ArgumentTypeError, VarArgumentNumberError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{ArgumentNumberError, ArgumentTypeError, VarArgumentNumberError}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -269,7 +269,7 @@ object TypeInfos {
   }
 
   sealed trait MethodInfo {
-    def apply(arguments: List[TypingResult]): ValidatedNel[TypingError, TypingResult]
+    def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
     def generalParameters: List[Parameter]
 
@@ -291,7 +291,7 @@ object TypeInfos {
 
     override def generalResult: TypingResult = refClazz
 
-    protected def applyNoVarArgs(arguments: List[TypingResult]): ValidatedNel[TypingError, Unit] = {
+    protected def applyNoVarArgs(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, Unit] = {
       if (arguments.length != expectedParameters.length) {
         ArgumentNumberError(expectedParameters.length, arguments.length).invalidNel
       } else {
@@ -307,7 +307,7 @@ object TypeInfos {
                               refClazz: TypingResult,
                               description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[TypingError, TypingResult] =
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       applyNoVarArgs(arguments).map(_ => refClazz)
 
     override def varArgs: Boolean = false
@@ -318,13 +318,13 @@ object TypeInfos {
                                refClazz: TypingResult,
                                description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[TypingError, TypingResult] = {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (arguments.length < expectedParameters.length) {
         VarArgumentNumberError(expectedParameters.length, arguments.length).invalidNel
       } else {
         val (noVarArguments, varArguments) = arguments.splitAt(expectedParameters.length)
-        val checkedNoVarArguments: ValidatedNel[TypingError, Unit] = applyNoVarArgs(noVarArguments)
-        val checkedVarArguments: ValidatedNel[TypingError, Unit] = varArguments.map(arg =>
+        val checkedNoVarArguments: ValidatedNel[ExpressionParseError, Unit] = applyNoVarArgs(noVarArguments)
+        val checkedVarArguments: ValidatedNel[ExpressionParseError, Unit] = varArguments.map(arg =>
           if (arg.canBeSubclassOf(varParameter.refClazz)) ().validNel
           else ArgumentTypeError(varParameter.refClazz, arg, varParameter.name).invalidNel
         ).sequence.map(_ => ())
@@ -335,13 +335,13 @@ object TypeInfos {
     override def varArgs: Boolean = true
   }
 
-  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[TypingError, TypingResult],
+  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
                                   description: Option[String] = None,
                                   varArgs: Boolean = false,
                                   generalParameters: List[Parameter] = Nil,
                                   generalResult: TypingResult = Unknown)
     extends MethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[TypingError, TypingResult] =
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
   }
 

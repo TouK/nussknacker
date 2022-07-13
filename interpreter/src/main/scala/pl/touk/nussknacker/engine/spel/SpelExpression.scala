@@ -12,8 +12,8 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.expression.TypingError.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, TypingError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, ExpressionParseError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -43,7 +43,7 @@ import scala.util.control.NonFatal
   * - unless Expression is marked @volatile multiple threads might parse it on their own,
   * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
-final case class ParsedSpelExpression(original: String, parser: () => Validated[NonEmptyList[ExpressionParseError], Expression], initial: Expression) extends LazyLogging {
+final case class ParsedSpelExpression(original: String, parser: () => Validated[NonEmptyList[OtherError], Expression], initial: Expression) extends LazyLogging {
   @volatile var parsed: Expression = initial
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
@@ -121,7 +121,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   override final val languageId: String = flavour.languageId
 
-  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], api.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[OtherError], api.expression.Expression] = {
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {
@@ -131,7 +131,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
     }
   }
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[TypingError], TypedExpression] = {
+  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
         NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty, typing.Unknown)))
@@ -147,8 +147,8 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   private def shouldUseNullExpression(original: String): Boolean
     = flavour != Template && StringUtils.isBlank(original)
 
-  private def baseParse(original: String): Validated[NonEmptyList[ExpressionParseError], Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionParseError(ex.getMessage)))
+  private def baseParse(original: String): Validated[NonEmptyList[OtherError], Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(OtherError(ex.getMessage)))
   }
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
