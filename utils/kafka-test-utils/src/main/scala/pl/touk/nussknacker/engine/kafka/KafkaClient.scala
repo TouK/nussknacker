@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.admin.{NewTopic, TopicDescription}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
@@ -11,7 +12,7 @@ import java.util.Collections
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class KafkaClient(kafkaAddress: String, id: String) {
+class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] = KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
   val producer: KafkaProducer[String, String] = KafkaTestUtils.createKafkaProducer(kafkaAddress, id)
 
@@ -50,17 +51,17 @@ class KafkaClient(kafkaAddress: String, id: String) {
     promise.future
   }
 
-  def sendMessage(topic: String, content: String, callback: Callback) = {
-    producer.send(new ProducerRecord[String, String](topic, content), callback)
-  }
-
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))
 
   private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = (metadata: RecordMetadata, exception: Exception) => {
     val result =
-      if (exception == null) Success(metadata)
-      else Failure(exception)
+      if (exception == null) {
+        Success(metadata)
+      } else {
+        logger.error("Error while sending kafka message", exception)
+        Failure(exception)
+      }
     callback(result)
   }
 
