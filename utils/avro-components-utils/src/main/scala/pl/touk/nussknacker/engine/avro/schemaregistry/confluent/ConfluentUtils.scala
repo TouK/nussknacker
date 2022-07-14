@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
+import java.util
 
 object ConfluentUtils extends LazyLogging {
 
@@ -70,13 +71,12 @@ object ConfluentUtils extends LazyLogging {
     writeSchemaId(schemaId, output)
 
     data match {
+      case v: ByteBuffer =>
+        output.write(v.array())
       case v: Array[Byte] =>
         output.write(v)
       case v =>
-        val schema = data match {
-          case v: GenericContainer => v.getSchema
-          case _ => AvroSchemaUtils.getSchema(data)
-        }
+        val schema = AvroUtils.getSchema(v)
 
         val writer = data match {
           case _: SpecificRecord =>
@@ -103,9 +103,16 @@ object ConfluentUtils extends LazyLogging {
 
   def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (Int, T) = {
     val schemaId = ConfluentUtils.readId(payload)
-    val decoder = DecoderFactory.get().binaryDecoder(payload, ConfluentUtils.HeaderSize, payload.length - ConfluentUtils.HeaderSize, null)
-    val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
-    (schemaId, reader.read(null.asInstanceOf[T], decoder))
+
+    val data = if (readerWriterSchema.getType.equals(Schema.Type.BYTES)) {
+      util.Arrays.copyOfRange(payload, ConfluentUtils.HeaderSize, payload.length).asInstanceOf[T]
+    } else {
+      val decoder = DecoderFactory.get().binaryDecoder(payload, ConfluentUtils.HeaderSize, payload.length - ConfluentUtils.HeaderSize, null)
+      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
+      reader.read(null.asInstanceOf[T], decoder)
+    }
+
+    (schemaId, data)
   }
 
 }

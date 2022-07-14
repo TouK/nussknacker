@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
 import org.apache.avro.{AvroRuntimeException, LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.avro.LogicalTypesGenericRecordBuilder
+import pl.touk.nussknacker.engine.avro.{AvroUtils, LogicalTypesGenericRecordBuilder}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings.forceUsingStringForStringSchema
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 
@@ -82,9 +82,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         Valid(ByteBuffer.wrap(bytes))
       case (Schema.Type.BYTES, buffer: ByteBuffer) =>
         Valid(buffer)
-      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if AvroUtils.verifyLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(decimal, schema))
-      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if schema.getLogicalType != null && schema.getLogicalType.isInstanceOf[LogicalTypes.Decimal] =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if AvroUtils.verifyLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
       case (Schema.Type.INT, number: Number) =>
         Valid(number.intValue().underlying())

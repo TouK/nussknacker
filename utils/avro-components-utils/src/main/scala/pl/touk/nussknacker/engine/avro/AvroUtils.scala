@@ -1,16 +1,21 @@
 package pl.touk.nussknacker.engine.avro
 
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
+import org.apache.avro.Schema.Type
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericRecord}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
+import java.nio.ByteBuffer
+import java.util
 import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
@@ -105,31 +110,81 @@ object AvroUtils extends LazyLogging {
     }
 
   /**
-    * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
+    * It's a simply mapper scala Any to Avro Proper Data
     */
-  def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
-    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
-      case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
-          createRecord(schema, map)
-      case (l: List[_], Schema.Type.ARRAY) =>
-        l.map(createValue(_, schema)).asJava
-      case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
-        map.mapValues(createValue(_, schema)).asJava
-      case (str: String, Schema.Type.ENUM) =>
-        new GenericData.EnumSymbol(schema, str)
+  def createAvroData(value: Any, schema: Schema): Any =
+    (value, schema.getType) match {
+      case (map: collection.Map[String@unchecked, _], Type.RECORD) =>
+        createRecord(schema, map)
+      case (map: util.Map[String@unchecked, _], Type.RECORD) =>
+        createRecord(schema, map.asScala)
+      case (collection: Traversable[_], Type.ARRAY) =>
+        collection.map(createAvroData(_, schema.getElementType)).toList.asJava
+      case (collection: util.Collection[_], Type.ARRAY) =>
+        createAvroData(collection.asScala, schema)
+      case (map: collection.Map[String@unchecked, _], Type.MAP) =>
+        map.mapValues(createAvroData(_, schema.getValueType)).asJava
+      case (map: util.Map[String@unchecked, _], Type.MAP) =>
+        createAvroData(map.asScala, schema)
+      case (str: String, Type.ENUM) =>
+        new EnumSymbol(schema, str)
+      case (str: String,Type.FIXED) =>
+        new Fixed(schema, str.getBytes("UTF-8"))
+      case (null, Type.UNION) if schema.isNullable => null
+      case (None, Type.UNION) if schema.isNullable => null
+      case (bytes: Array[Byte], Type.BYTES) =>
+        ByteBuffer.wrap(bytes)
+      case (any, Type.UNION) =>
+        schema.getTypes.asScala.filterNot(_.isNullable).map(createAvroData(any, _)).headOption.orNull
       case (_, _) => value
     }
 
+  /**
+    * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
+    */
+  def createRecord(schema: Schema, data: scala.collection.Map[String, Any]): GenericRecord = {
+    val fields = schema.getFields.asScala.map(_.name()).toSet
     val builder = new LogicalTypesGenericRecordBuilder(schema)
-    data.foreach{ case (key, value) =>
 
-      val valueToSet = Option(schema.getField(key))
-        .map(field => createValue(value, field.schema()))
-        .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
+    data
+      .filter{ case (key, _) => fields.contains(key) }
+      .foreach{ case (key, value) =>
+        val field = schema.getField(key)
+        val valueToSet = createAvroData(value, field.schema())
 
-      builder.set(key, valueToSet)
+        builder.set(key, valueToSet)
+      }
+
+    val results = builder.build()
+    results
+  }
+
+  def verifyLogicalType[T: ClassTag](schema: Schema): Boolean = {
+    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    schema.getLogicalType != null && clazz.isAssignableFrom(schema.getLogicalType.getClass)
+  }
+
+  /**
+    * Discovering AvoSchema based on data
+    */
+  def getSchema(data: Any): Schema = {
+    def discoverSchema(data: List[Any]) = data.map(getSchema).distinct match {
+      case head :: Nil => head
+      case list => Schema.createUnion(list.asJava)
     }
-    builder.build()
+
+    data match {
+      case container: GenericContainer =>
+        container.getSchema
+      case map: java.util.Map[_, _] =>
+        val mapValuesSchema = discoverSchema(map.values.asScala.toList)
+        Schema.createMap(mapValuesSchema)
+      case list: java.util.List[_] =>
+        val listValuesSchema = discoverSchema(list.asScala.toList)
+        Schema.createArray(listValuesSchema)
+      case _ =>
+        AvroSchemaUtils.getSchema(data)
+    }
   }
 
 }
