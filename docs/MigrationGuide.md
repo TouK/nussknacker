@@ -1,6 +1,15 @@
+
 # Migration guide
 
 To see the biggest differences please consult the [changelog](Changelog.md).
+
+## In version 1.4.1 (Not released yet)
+
+### Configuration changes
+
+* [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
+  For existing scenarios processing type is migrated to `default`. Set `deploymentManager.processingType` to `default`
+  or update periodic scenarios table with actual processing type value - ideally it should be same value as the periodic engine key in `scenarioTypes`.
 
 ## In version 1.4.0
                  
@@ -20,7 +29,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
-  
 ### Breaking changes
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. Flink state compatibility has been broken.
 * [#3116](https://github.com/TouK/nussknacker/pull/3116) Refactor `SchemaRegistryClientFactory` so it takes dedicated config object instead of KafkaConfig. This change minimizes chance of future Flink state compatibility break. `SchemaIdBasedAvroGenericRecordSerializer` is serialized in Flink state, so we provide it now with as little dependencies as necessary. Flink state compatibility has been broken again.

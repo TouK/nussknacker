@@ -34,7 +34,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
   private val processVersion = ProcessVersion(versionId = VersionId(42L), processName = processName, processId = ProcessId(1), user = "test user", modelVersion = None)
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
-    val repository = new db.InMemPeriodicProcessesRepository
+    val repository = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
     val periodicProcessService = new PeriodicProcessService(
@@ -61,6 +61,15 @@ class PeriodicDeploymentManagerTest extends FunSuite
 
   test("findJobStatus - should return none for no job") {
     val f = new Fixture
+
+    val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
+
+    state shouldBe 'empty
+  }
+
+  test("findJobStatus - should return none for scenario with different processing type") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
 
     val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
 
