@@ -1,5 +1,4 @@
 import React, {useCallback} from "react"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
@@ -73,7 +72,5 @@ const Variable = (props: Props) => {
 Variable.defaultProps = {
   readOnly: false,
 }
-
-Variable.availableFields = ["id", "varName", DEFAULT_EXPRESSION_ID]
 
 export default Variable

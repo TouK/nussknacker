@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {cloneDeep, get, has, isEqual, set, sortBy, startsWith} from "lodash"
+import {cloneDeep, get, has, isEqual, partition, set, sortBy, startsWith} from "lodash"
 import React from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
@@ -23,7 +23,7 @@ import TestErrors from "./tests/TestErrors"
 import TestResultsComponent from "./tests/TestResults"
 import TestResultsSelect from "./tests/TestResultsSelect"
 import Variable from "./Variable"
-import {getAvailableFields, refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
+import {refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {EdgesDndComponent, WithTempId} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {Edge, EdgeKind, NodeType, NodeValidationError, VariableTypes} from "../../../types"
@@ -760,21 +760,9 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       processId,
       node,
       testResults,
-      dynamicParameterDefinitions,
-      additionalPropertiesConfig,
     } = this.props
-    const editedNode = this.state?.editedNode
 
-    const fieldErrors = currentErrors.filter(error => {
-      if (error.fieldName) {
-        const fields = getAvailableFields(editedNode, node, additionalPropertiesConfig, dynamicParameterDefinitions)
-        const edges = this.state.edges.map(e => e._id || e.to)
-        return [...fields, ...edges].includes(error.fieldName)
-      }
-      return false
-    })
-
-    const otherErrors = currentErrors.filter(error => !fieldErrors.includes(error))
+    const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
 
     return (
       <>
