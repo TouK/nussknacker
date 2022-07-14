@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -25,8 +26,8 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
     * @return KafkaDeserializationSchema
     */
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                       keySchemaDataOpt: Option[RuntimeSchemaData],
-                                       valueSchemaDataOpt: Option[RuntimeSchemaData]
+                                       keySchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
+                                       valueSchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]]
                                       ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
 
 }

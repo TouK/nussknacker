@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
@@ -8,7 +9,7 @@ class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryCli
                                          versionOption: SchemaVersionOption,
                                          isKey: Boolean) extends AvroSchemaDeterminer {
 
-  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData] = {
+  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[AvroSchema]] = {
     val version = versionOption match {
       case ExistingSchemaVersion(v) => Some(v)
       case LatestSchemaVersion => None

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schema
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DatumReader, DecoderFactory}
@@ -12,9 +13,9 @@ trait RecordDeserializer {
 
   protected def decoderFactory: DecoderFactory
 
-  protected def deserializeRecord(readerSchemaData: RuntimeSchemaData, reader: DatumReader[AnyRef], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+  protected def deserializeRecord(readerSchemaData: RuntimeSchemaData[AvroSchema], reader: DatumReader[AnyRef], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
     val length = buffer.limit() - bufferDataStart
-    if (readerSchemaData.schema.getType == Type.BYTES) {
+    if (readerSchemaData.schema.rawSchema().getType == Type.BYTES) {
       val bytes = new Array[Byte](length)
       buffer.get(bytes, 0, length)
       bytes
@@ -23,7 +24,7 @@ trait RecordDeserializer {
       val binaryDecoder = decoderFactory.binaryDecoder(buffer.array, start, length, null)
       val result = reader.read(null, binaryDecoder)
       result match {
-        case _ if readerSchemaData.schema.getType == Type.STRING => result.toString
+        case _ if readerSchemaData.schema.rawSchema().getType == Type.STRING => result.toString
         case genericRecord: GenericData.Record if schemaIdSerializationEnabled =>
           val readerSchemaId = readerSchemaData.schemaIdOpt.getOrElse(throw new IllegalStateException("SchemaId serialization enabled but schemaId missed from reader schema data"))
           new GenericRecordWithSchemaId(genericRecord, readerSchemaId, false)

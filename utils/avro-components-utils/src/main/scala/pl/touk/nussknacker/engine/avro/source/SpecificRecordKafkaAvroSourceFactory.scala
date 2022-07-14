@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 
-import scala.reflect._
+import scala.reflect.{ClassTag, classTag}
 
 /**
  * Source factory for specific records - mainly generated from schema.
@@ -27,7 +27,7 @@ class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schema
         val preparedTopic = prepareTopic(topic)
 
         val clazz = classTag[V].runtimeClass.asInstanceOf[Class[V]]
-        val schemaData = RuntimeSchemaData(AvroUtils.extractAvroSpecificSchema(clazz), None)
+        val schemaData = RuntimeSchemaData(schema = AvroUtils.extractAvroSpecificSchema(clazz), schemaIdOpt = None)
 
         prepareSourceFinalResults(preparedTopic, Valid((Some(schemaData), Typed.typedClass(clazz))), context, dependencies, step.parameters, Nil)
 

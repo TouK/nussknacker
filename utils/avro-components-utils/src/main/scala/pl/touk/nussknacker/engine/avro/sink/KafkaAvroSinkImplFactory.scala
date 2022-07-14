@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.sink
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
@@ -16,7 +17,7 @@ trait KafkaAvroSinkImplFactory {
                  kafkaConfig: KafkaConfig,
                  serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
                  clientId: String,
-                 schema: RuntimeSchemaData,
+                 schema: RuntimeSchemaData[AvroSchema],
                  validationMode: ValidationMode): Sink
 
 }

@@ -18,6 +18,7 @@
 
 package org.apache.flink.formats.avro.typeutils;
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.SchemaCompatibility;
 import org.apache.avro.SchemaCompatibility.SchemaPairCompatibility;
@@ -123,10 +124,10 @@ public class LogicalTypesAvroSerializerSnapshot<T> implements TypeSerializerSnap
 		checkNotNull(schema);
 
 		if (runtimeSchema != null) {
-			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema(runtimeSchema), new NkSerializableAvroSchema(schema));
+			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(runtimeSchema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)));
 		}
 		else {
-			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema(schema), new NkSerializableAvroSchema(schema));
+			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(schema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)));
 		}
 	}
 

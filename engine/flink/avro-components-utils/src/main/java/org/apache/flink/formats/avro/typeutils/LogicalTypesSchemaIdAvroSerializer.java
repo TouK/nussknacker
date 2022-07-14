@@ -18,6 +18,7 @@
 
 package org.apache.flink.formats.avro.typeutils;
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericRecord;
@@ -40,6 +41,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.util.Optional;
 
 import static org.apache.flink.util.Preconditions.checkArgument;
 import static org.apache.flink.util.Preconditions.checkNotNull;
@@ -79,8 +81,8 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	// -------- configuration fields, serializable -----------
 
 	@Nonnull private Class<T> type;
-	@Nonnull private NkSerializableAvroSchema schema;
-	@Nonnull private NkSerializableAvroSchema previousSchema;
+	@Nonnull private NkSerializableAvroSchema<AvroSchema> schema;
+	@Nonnull private NkSerializableAvroSchema<AvroSchema> previousSchema;
 	// Schema id must be notnull boxed int (null handled as -1) because of correct handling deserialization of field that is after schemaId (type)
 	@Nonnull private Integer schemaId;
 
@@ -109,7 +111,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	 * For serializing {@link GenericData.Record} use {@link LogicalTypesSchemaIdAvroSerializer#LogicalTypesSchemaIdAvroSerializer(Class, Schema)}
 	 */
 	public LogicalTypesSchemaIdAvroSerializer(Class<T> type) {
-		this(checkNotNull(type), new NkSerializableAvroSchema(), new NkSerializableAvroSchema(), -1);
+		this(checkNotNull(type), new NkSerializableAvroSchema<>(), new NkSerializableAvroSchema<>(), -1);
 		checkArgument(!isGenericRecord(type),
 			"For GenericData.Record use constructor with explicit schema.");
 	}
@@ -122,7 +124,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	 * {@link LogicalTypesSchemaIdAvroSerializer#LogicalTypesSchemaIdAvroSerializer(Class)}
 	 */
 	public LogicalTypesSchemaIdAvroSerializer(Class<T> type, Schema schema, int schemaId) {
-		this(checkNotNull(type), new NkSerializableAvroSchema(checkNotNull(schema)), new NkSerializableAvroSchema(), schemaId);
+		this(checkNotNull(type), new NkSerializableAvroSchema<>(new AvroSchema(checkNotNull(schema))), new NkSerializableAvroSchema<>(), schemaId);
 		checkArgument(isGenericRecord(type),
 				"For classes other than GenericData.Record use constructor without explicit schema.");
 	}
@@ -134,7 +136,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	 * {@link LogicalTypesSchemaIdAvroSerializer#LogicalTypesSchemaIdAvroSerializer(Class)}
 	 */
 	public LogicalTypesSchemaIdAvroSerializer(Class<T> type, Schema schema) {
-		this(checkNotNull(type), new NkSerializableAvroSchema(checkNotNull(schema)), new NkSerializableAvroSchema(), -1);
+		this(checkNotNull(type), new NkSerializableAvroSchema<>(new AvroSchema(checkNotNull(schema))), new NkSerializableAvroSchema<>(), -1);
 		checkArgument(isGenericRecord(type),
 			"For classes other than GenericData.Record use constructor without explicit schema.");
 	}
@@ -143,7 +145,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	 * Creates a new AvroSerializer for the type indicated by the given class.
 	 */
 	@Internal
-    LogicalTypesSchemaIdAvroSerializer(Class<T> type, NkSerializableAvroSchema newSchema, NkSerializableAvroSchema previousSchema, int schemaId) {
+    LogicalTypesSchemaIdAvroSerializer(Class<T> type, NkSerializableAvroSchema<AvroSchema> newSchema, NkSerializableAvroSchema<AvroSchema> previousSchema, int schemaId) {
 		this.type = checkNotNull(type);
 		this.schema = checkNotNull(newSchema);
 		this.previousSchema = checkNotNull(previousSchema);
@@ -304,7 +306,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	@Override
 	public TypeSerializer<T> duplicate() {
 		checkAvroInitialized();
-		return new LogicalTypesSchemaIdAvroSerializer<>(type, new NkSerializableAvroSchema(runtimeSchema), previousSchema, schemaId);
+		return new LogicalTypesSchemaIdAvroSerializer<>(type, new NkSerializableAvroSchema<>(new AvroSchema(runtimeSchema)), previousSchema, schemaId);
 	}
 
 	@Override
@@ -342,7 +344,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	}
 
 	private void initializeAvro() {
-		LogicalTypesAvroFactory<T> factory = LogicalTypesAvroFactory.create(type, schema.getAvroSchema(), previousSchema.getAvroSchema());
+		LogicalTypesAvroFactory<T> factory = LogicalTypesAvroFactory.create(type, schema.getParsedSchema().rawSchema(), Optional.ofNullable(previousSchema.getParsedSchema()).map(AvroSchema::rawSchema).orElse(null)) ;
 		this.runtimeSchema = factory.getSchema();
 		this.writer = factory.getWriter();
 		this.reader = factory.getReader();
@@ -399,6 +401,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 
 	// -------- backwards compatibility with 1.5, 1.6 -----------
 
+	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
 		/*
 		Please see FLINK-11436 for details on why manual deserialization is required.
@@ -448,7 +451,7 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 			read15Layout(type);
 		}
 		else if (firstField instanceof NkSerializableAvroSchema) {
-			readCurrentLayout((NkSerializableAvroSchema) firstField, in);
+			readCurrentLayout((NkSerializableAvroSchema<AvroSchema>) firstField, in);
 		}
 		else {
 			throw new IllegalStateException("Failed to Java-Deserialize an AvroSerializer instance. " +
@@ -458,8 +461,8 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 	}
 
 	private void read15Layout(Class<T> type) {
-		this.previousSchema = new NkSerializableAvroSchema();
-		this.schema = new NkSerializableAvroSchema();
+		this.previousSchema = new NkSerializableAvroSchema<>();
+		this.schema = new NkSerializableAvroSchema<>();
 		this.schemaId = -1;
 		this.type = type;
 	}
@@ -471,17 +474,18 @@ public class LogicalTypesSchemaIdAvroSerializer<T> extends TypeSerializer<T> {
 		Schema schema = LogicalTypesAvroFactory.parseSchemaString(schemaString);
 		Class<T> type = (Class<T>) in.readObject();
 
-		this.previousSchema = new NkSerializableAvroSchema();
-		this.schema = new NkSerializableAvroSchema(schema);
+		this.previousSchema = new NkSerializableAvroSchema<>();
+		this.schema = new NkSerializableAvroSchema<>(new AvroSchema(schema));
 		this.schemaId = -1;
 		this.type = type;
 	}
 
-	private void readCurrentLayout(NkSerializableAvroSchema previousSchema, ObjectInputStream in)
+	@SuppressWarnings("unchecked")
+	private void readCurrentLayout(NkSerializableAvroSchema<AvroSchema> previousSchema, ObjectInputStream in)
 			throws IOException, ClassNotFoundException {
 
 		this.previousSchema = previousSchema;
-		this.schema = (NkSerializableAvroSchema) in.readObject();
+		this.schema = (NkSerializableAvroSchema<AvroSchema>) in.readObject();
 		this.schemaId = (Integer) in.readObject();
 		this.type = (Class<T>) in.readObject();
 	}

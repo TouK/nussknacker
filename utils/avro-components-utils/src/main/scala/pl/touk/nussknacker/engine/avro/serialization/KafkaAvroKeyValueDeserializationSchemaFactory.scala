@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
@@ -16,15 +17,15 @@ import scala.reflect.ClassTag
 abstract class KafkaAvroKeyValueDeserializationSchemaFactory
   extends KafkaAvroDeserializationSchemaFactory {
 
-  protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K]
+  protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[AvroSchema]], kafkaConfig: KafkaConfig): Deserializer[K]
 
-  protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V]
+  protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[AvroSchema]], kafkaConfig: KafkaConfig): Deserializer[V]
 
   protected def createStringKeyDeserializer: Deserializer[_] = new StringDeserializer
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                                keySchemaDataOpt: Option[RuntimeSchemaData],
-                                                valueSchemaDataOpt: Option[RuntimeSchemaData]
+                                                keySchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
+                                                valueSchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]]
                                                ): KafkaDeserializationSchema[ConsumerRecord[K, V]] = {
 
     new KafkaDeserializationSchema[ConsumerRecord[K, V]] {
