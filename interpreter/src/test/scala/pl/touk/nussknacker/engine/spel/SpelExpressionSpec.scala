@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
+import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -11,7 +13,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -246,6 +248,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Long]("null") shouldBe 'valid
     parse[Any]("null") shouldBe 'valid
     parse[Boolean]("null") shouldBe 'valid
+
+    parse[Any]("null").toOption.get.returnType shouldBe TypedNull
+    parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed[String]))
+    parse[java.util.List[Any]]("{5, 't', null}").toOption.get.returnType shouldBe
+      Typed.typedClass(classOf[java.util.List[_]], List(Typed[Any]))
+
+    parse[Int]("true ? 8 : null").toOption.get.returnType shouldBe Typed[Int]
   }
 
   test("invoke list variable reference with different concrete type after compilation") {
