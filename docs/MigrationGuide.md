@@ -33,6 +33,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3288](https://github.com/TouK/nussknacker/pull/3288) `SchemaRegistryProvider` refactoring:
   * rename `SchemaRegistryProvider` to `SchemaBasedMessagesSerdeProvider`
   * decouple `BaseSchemaRegistryProvider` from `SchemaBasedMessagesSerdeProvider`
+* [#3276](https://github.com/TouK/nussknacker/pull/3276) `SchemaBasedMessagesSerdeProvider` abstracts from `ParsedSchema`
 
 ### REST API changes
 

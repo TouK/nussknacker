@@ -40,7 +40,7 @@ import scala.reflect.ClassTag
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
 class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                       val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                                                       val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema],
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory

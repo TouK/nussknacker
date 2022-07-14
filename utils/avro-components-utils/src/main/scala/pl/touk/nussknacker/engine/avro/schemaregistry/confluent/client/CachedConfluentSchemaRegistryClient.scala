@@ -29,7 +29,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
-        SchemaWithMetadata(client.getSchemaMetadata(subject, version))
+        client.getSchemaMetadata(subject, version).toSchemaWithMetadata
       }
     }
 
@@ -54,7 +54,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      SchemaWithMetadata(schemaMetadata)
+      schemaMetadata.toSchemaWithMetadata
     }
   }
 }

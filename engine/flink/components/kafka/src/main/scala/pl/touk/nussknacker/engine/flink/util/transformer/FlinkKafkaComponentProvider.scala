@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
@@ -20,11 +21,11 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
   protected def schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
 
-  protected def createAvroSchemaRegistryProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentAvroSchemaBasedMessagesSerdeProvider.avroPayload(schemaRegistryClientFactory)
+  protected def createAvroSchemaRegistryProvider: SchemaBasedMessagesSerdeProvider[AvroSchema] =
+    ConfluentAvroSchemaBasedMessagesSerdeProvider.avroSchemaAvroPayload(schemaRegistryClientFactory)
 
-  protected def createJsonSchemaRegistryProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(schemaRegistryClientFactory)
+  protected def createJsonSchemaRegistryProvider: SchemaBasedMessagesSerdeProvider[AvroSchema] =
+    ConfluentAvroSchemaBasedMessagesSerdeProvider.avroSchemaJsonPayload(schemaRegistryClientFactory)
 
   override def providerName: String = "kafka"
 

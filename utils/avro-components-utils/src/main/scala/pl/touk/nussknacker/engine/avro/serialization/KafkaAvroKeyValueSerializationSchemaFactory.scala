@@ -16,7 +16,7 @@ import java.lang
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for value - key will be taken from
   * step before serialization
   */
-abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
+abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[AvroSchema] {
 
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
 
@@ -43,7 +43,7 @@ abstract class KafkaAvroValueSerializationSchemaFactory extends KafkaAvroSeriali
   * which uses Kafka's Serializer in returned Flink's KafkaSerializationSchema for both key and value. It ignores key
   * extracted in the step before serialization.
   */
-abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory {
+abstract class KafkaAvroKeyValueSerializationSchemaFactory extends KafkaAvroSerializationSchemaFactory[AvroSchema] {
 
   protected type K
 

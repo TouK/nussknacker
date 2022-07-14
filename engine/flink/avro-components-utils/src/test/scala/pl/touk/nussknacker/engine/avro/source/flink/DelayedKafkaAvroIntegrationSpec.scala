@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.source.flink
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer

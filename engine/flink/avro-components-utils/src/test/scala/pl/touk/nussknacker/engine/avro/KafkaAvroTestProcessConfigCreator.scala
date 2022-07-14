@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
@@ -62,7 +63,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
 
   protected def schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
 
-  protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider = ConfluentAvroSchemaBasedMessagesSerdeProvider(schemaRegistryClientFactory)
+  protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema] = ConfluentAvroSchemaBasedMessagesSerdeProvider(schemaRegistryClientFactory)
 
 }
 

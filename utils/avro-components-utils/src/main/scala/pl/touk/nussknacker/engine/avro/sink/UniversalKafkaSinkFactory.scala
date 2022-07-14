@@ -31,7 +31,7 @@ object UniversalKafkaSinkFactory {
 }
 
 class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                                val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema],
                                 val processObjectDependencies: ProcessObjectDependencies,
                                 implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
@@ -104,5 +104,4 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
-
 }

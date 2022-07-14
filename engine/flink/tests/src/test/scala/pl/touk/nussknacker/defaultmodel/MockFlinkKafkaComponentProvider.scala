@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.defaultmodel
 
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentAvroSchemaBasedMessagesSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProvider
 

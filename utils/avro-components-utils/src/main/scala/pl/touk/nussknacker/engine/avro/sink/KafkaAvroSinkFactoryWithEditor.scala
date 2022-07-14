@@ -28,7 +28,7 @@ object KafkaAvroSinkFactoryWithEditor {
 }
 
 class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                     val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                                     val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema],
                                      val processObjectDependencies: ProcessObjectDependencies,
                                      implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {

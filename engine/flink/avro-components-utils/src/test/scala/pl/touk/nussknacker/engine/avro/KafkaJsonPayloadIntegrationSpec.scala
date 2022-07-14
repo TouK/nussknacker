@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
@@ -17,8 +18,8 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
-      ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(schemaRegistryClientFactory)
+    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema] =
+      ConfluentAvroSchemaBasedMessagesSerdeProvider.avroSchemaJsonPayload(schemaRegistryClientFactory)
 
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
   }
@@ -27,7 +28,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
-  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentAvroSchemaBasedMessagesSerdeProvider = ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(confluentClientFactory)
+  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentAvroSchemaBasedMessagesSerdeProvider = ConfluentAvroSchemaBasedMessagesSerdeProvider.avroSchemaJsonPayload(confluentClientFactory)
 
   override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
 

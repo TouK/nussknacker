@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
@@ -28,7 +29,7 @@ import scala.reflect.ClassTag
   * TODO: Move it to some other module when json schema handling will be available
   */
 class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                            val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                                                            val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider[AvroSchema],
                                                             val processObjectDependencies: ProcessObjectDependencies,
                                                             protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory

@@ -6,6 +6,7 @@ import com.cronutils.parser.CronParser
 import com.typesafe.config.Config
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink

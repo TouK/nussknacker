@@ -3,12 +3,15 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.client.rest.entities.SchemaReference
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import scala.collection.JavaConverters._
+
+import java.util
+import scala.compat.java8.OptionConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
 
@@ -30,6 +33,14 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         logger.error("Unknown error on fetching schema data.", exc)
         invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
+
+    implicit class RichSchemaMetadata(schemaMetadata: SchemaMetadata) {
+      def toSchemaWithMetadata: SchemaWithMetadata = client
+        .parseSchema(schemaMetadata.getSchemaType, schemaMetadata.getSchema, new util.ArrayList[SchemaReference]())
+        .asScala
+        .map(ps => SchemaWithMetadata(ps, schemaMetadata.getId))
+        .getOrElse(throw new IllegalArgumentException(s"Not supported schema type ${schemaMetadata.getSchemaType}"))
+    }
 }
 
 class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient {
@@ -37,15 +48,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
-      val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(schemaMetadata)
+      client.getLatestSchemaMetadata(subject).toSchemaWithMetadata
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
-      val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(schemaMetadata)
+      client
+        .getSchemaMetadata(subject, version).toSchemaWithMetadata
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
