@@ -23,9 +23,10 @@ object HsqlProcessRepository {
 
 }
 
-class HsqlProcessRepository(val db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) {
+class HsqlProcessRepository(val db: jdbc.JdbcBackend.DatabaseDef,
+                            dbProfile: JdbcProfile) {
 
-  def forClock(clock: Clock) = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
+  def createRepository(clock: Clock, processingType: String = "default") = new SlickPeriodicProcessesRepository(db, dbProfile, clock, processingType)
 
 }
 
