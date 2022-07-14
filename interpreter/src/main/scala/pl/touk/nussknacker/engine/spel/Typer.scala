@@ -16,8 +16,8 @@ import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{OtherError, InvalidMethodReference}
-import pl.touk.nussknacker.engine.api.expression.{ExpressionTypingInfo, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{IllegalProjectionSelectionError, InvalidMethodReference, OtherError}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypingInfo}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -388,7 +388,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           }
         }
       case Nil =>
-        InvalidMethodReference(reference).invalidNel
+        InvalidMethodReference(reference.toStringAST).invalidNel
     }
   }
 
@@ -426,7 +426,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         ("value", tc.objType.params.drop(1).headOption.getOrElse(Unknown)))))
     case tc: SingleTypingResult if tc.objType.klass.isArray =>
       Valid(tc.objType.params.headOption.getOrElse(Unknown))
-    case tc: SingleTypingResult => Validated.invalidNel(OtherError(s"Cannot do projection/selection on ${tc.display}"))
+    case tc: SingleTypingResult => Validated.invalidNel(IllegalProjectionSelectionError(tc))
     //FIXME: what if more results are present?
     case _ => Valid(Unknown)
   }

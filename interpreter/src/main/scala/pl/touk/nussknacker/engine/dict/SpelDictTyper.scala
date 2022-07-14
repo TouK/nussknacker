@@ -8,7 +8,7 @@ import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReferenc
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictEntryWithLabelNotExists, DictNotDeclared}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{DictIndexCountError, NoDictError, OtherError}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 import pl.touk.nussknacker.engine.spel.ast
 
@@ -36,7 +36,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
             val key = str.getLiteralValue.getValue.toString
             findKey(dict, key)
           case _ =>
-            Invalid(OtherError(s"Illegal spel construction: ${node.toStringAST}. Dict should be indexed by a single key")).toValidatedNel
+            Invalid(DictIndexCountError(node)).toValidatedNel
         }
       case pf: PropertyOrFieldReference  =>
         findKey(dict, pf.getName)
@@ -49,7 +49,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
       .leftMap {
         case DictNotDeclared(dictId) =>
           // It will happen only if will be used dictionary for which, definition wasn't exposed in ExpressionConfig.dictionaries
-          OtherError(s"Dict with given id: $dictId not exists")
+          NoDictError(dictId)
         case DictEntryWithLabelNotExists(_, label, possibleLabels) =>
           OtherError(s"Illegal label: '$label' for ${dict.display}.${possibleLabels.map(l => " Possible labels are: " + l.map("'" + _ + "'").mkCommaSeparatedStringWithPotentialEllipsis(3) + ".").getOrElse("")}")
         case DictEntryWithKeyNotExists(_, key, possibleKeys) =>

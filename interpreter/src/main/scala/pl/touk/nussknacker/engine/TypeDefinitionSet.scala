@@ -2,17 +2,13 @@ package pl.touk.nussknacker.engine
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
-import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
-import pl.touk.nussknacker.engine.spel.TypedNode
-import pl.touk.nussknacker.engine.spel.ast.SpelAst.RichSpelNode
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{TypeReferenceError, UnknownClassError}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
+import pl.touk.nussknacker.engine.definition.TypeInfos
 
 import scala.util.{Failure, Success, Try}
 
@@ -38,9 +34,9 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
       case Success(typeReferenceClazz) =>
         typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
           case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
-          case None => Invalid(NonEmptyList.of(OtherError(s"$typeReferenceClazz is not allowed to be passed as TypeReference")))
+          case None => Invalid(NonEmptyList.of(TypeReferenceError(typeReferenceClazz.toString)))
         }
-      case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(OtherError(s"Class ${typeReference.toStringAST} does not exist")))
+      case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(UnknownClassError(typeReference.toStringAST)))
       case Failure(exception) => throw exception
     }
 

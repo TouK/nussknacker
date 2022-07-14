@@ -97,8 +97,8 @@ object UIProcessObjectsFactory {
     def toUIBasicParam(p: TypeInfos.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
     // TODO: present all overloaded methods on FE
     def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
-      val m = methods.maxBy(_.generalParameters.size)
-      UIMethodInfo(m.generalParameters.map(toUIBasicParam), m.generalResult, m.description, m.varArgs)
+      val m = methods.maxBy(_.interfaceParameters.size)
+      UIMethodInfo(m.interfaceParameters.map(toUIBasicParam), m.interfaceResult, m.description, m.varArgs)
     }
     val methodsWithHighestArity = definition.methods.mapValues(toUIMethod)
     val staticMethodsWithHighestArity = definition.staticMethods.mapValues(toUIMethod)
