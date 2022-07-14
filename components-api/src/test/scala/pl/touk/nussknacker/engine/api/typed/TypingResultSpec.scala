@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
 
 import scala.collection.immutable.ListMap
 
@@ -171,6 +171,13 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     Typed.typedClass[String].canBeSubclassOf(Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe false
   }
 
+  test("determine if can be subclass for null") {
+    TypedNull.canBeSubclassOf(Typed[Int]) shouldBe true
+    TypedNull.canBeSubclassOf(Typed.fromInstance(Map("a" -> 5, "b" -> 8))) shouldBe true
+    TypedNull.canBeSubclassOf(TypedNull) shouldBe true
+    Typed[String].canBeSubclassOf(TypedNull) shouldBe false
+  }
+
   test("should deeply extract typ parameters") {
     inside(Typed.fromDetailedType[Option[Map[String, Int]]]) {
       case TypedClass(optionClass, mapTypeArg :: Nil) if optionClass == classOf[Option[Any]] =>
@@ -209,6 +216,18 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
     unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
     unionFinder.commonSupertype(Typed.fromInstance("t"), Typed.fromInstance(32)) shouldBe Typed(Set.empty)
+  }
+
+  test("should calculate supertype for null") {
+    val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
+    unionFinder.commonSupertype(TypedNull, TypedNull) shouldBe TypedNull
+    unionFinder.commonSupertype(TypedNull, Typed[String]) shouldBe Typed[String]
+    unionFinder.commonSupertype(Typed[Int], TypedNull) shouldBe Typed[Int]
+
+    // Literal types should have their values discarded. Otherwise expression
+    // "true ? 5 : null" would have type Integer{5}.
+    unionFinder.commonSupertype(TypedNull, Typed.fromInstance(5)) shouldBe Typed[Int]
+    unionFinder.commonSupertype(Typed.fromInstance("t"), TypedNull) shouldBe Typed[String]
   }
 
   test("should not display too long data") {
