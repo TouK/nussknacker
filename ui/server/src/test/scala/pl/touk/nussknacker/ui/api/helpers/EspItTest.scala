@@ -68,6 +68,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val processActivityRepository: DbProcessActivityRepository = newProcessActivityRepository(db)
 
+  protected val processChangeListener = new TestProcessChangeListener()
+
   private implicit val deploymentService: DeploymentService =
     new DeploymentService(fetchingProcessRepository, actionRepository, scenarioResolver)
 
@@ -92,8 +94,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   )
 
   protected lazy val deploymentManager: MockDeploymentManager = createDeploymentManager()
-
-  protected val processChangeListener = new TestProcessChangeListener()
 
   protected val newProcessPreparer: NewProcessPreparer = createNewProcessPreparer()
 
@@ -127,13 +127,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   protected def createManagementActorRef: ActorRef = system.actorOf(ManagementActor.props(
-    mapProcessingTypeDataProvider(Streaming -> deploymentManager),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> deploymentManager),
     fetchingProcessRepository,
-    actionRepository,
     TestFactory.scenarioResolver,
-    processChangeListener,
-    deploymentService), "management"
-  )
+    deploymentService), "management")
 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
     new DBProcessService(managerActor, time.Duration.ofMinutes(1), newProcessPreparer,
