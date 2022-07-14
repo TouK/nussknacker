@@ -20,6 +20,9 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     (left, right) match {
       case (Unknown, _) => Unknown // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown) => Unknown
+      case (TypedNull, TypedObjectWithValue(r, _)) => r
+      case (TypedNull, r) => r
+      case (r, TypedNull) => commonSupertype(TypedNull, r)
       case (l: SingleTypingResult, r: TypedUnion) => Typed(commonSupertype(Set(l), r.possibleTypes))
       case (l: TypedUnion, r: SingleTypingResult) => Typed(commonSupertype(l.possibleTypes, Set(r)))
       case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)

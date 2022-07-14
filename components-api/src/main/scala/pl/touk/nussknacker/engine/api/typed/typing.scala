@@ -96,6 +96,10 @@ object typing {
     }
   }
 
+  case object TypedNull extends TypingResult {
+    override val display = "Null"
+  }
+
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
 
@@ -212,8 +216,7 @@ object typing {
     def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
-          // TODO: add better type for null like Null.type - similar to Unknown but e.g. "foo".canBeSubclassOf(TypedNull) should return false
-          Unknown
+          TypedNull
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
           TypedObjectTypingResult(fieldTypes, typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))

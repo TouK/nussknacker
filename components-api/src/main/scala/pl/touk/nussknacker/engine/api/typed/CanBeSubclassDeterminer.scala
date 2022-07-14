@@ -24,6 +24,8 @@ trait CanBeSubclassDeterminer {
     (givenType, superclassCandidate) match {
       case (_, Unknown) => ().validNel
       case (Unknown, _) => ().validNel
+      case (TypedNull, _) => ().validNel
+      case (_, TypedNull) => "Type cannot be subclass of Null".invalidNel
       case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
       case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
@@ -32,7 +34,6 @@ trait CanBeSubclassDeterminer {
   }
 
   protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): ValidatedNel[String, Unit] = {
-
     val typedObjectRestrictions = (_: Unit) => superclassCandidate match {
       case superclass: TypedObjectTypingResult =>
         val givenTypeFields = givenType match {
