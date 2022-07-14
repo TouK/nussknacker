@@ -83,7 +83,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].right.flatMap {
       case TypingType.Unknown => Right(Unknown)
-      case TypingType.NullLiteral => Right(TypedNull)
+      case TypingType.TypedNull => Right(TypedNull)
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
@@ -157,7 +157,7 @@ object TypingType extends Enumeration {
 
   type TypingType = Value
 
-  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedObjectWithValue, NullLiteral, Unknown = Value
+  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedObjectWithValue, TypedNull, Unknown = Value
 
   def forType(typingResult: TypingResult): TypingType.Value = typingResult match {
     case _: TypedClass => TypedClass
@@ -166,7 +166,7 @@ object TypingType extends Enumeration {
     case _: TypedObjectTypingResult => TypedObjectTypingResult
     case _: TypedTaggedValue => TypedTaggedValue
     case _: TypedObjectWithValue => TypedObjectWithValue
-    case typing.TypedNull => NullLiteral
+    case typing.TypedNull => TypedNull
     case typing.Unknown => Unknown
   }
 }
