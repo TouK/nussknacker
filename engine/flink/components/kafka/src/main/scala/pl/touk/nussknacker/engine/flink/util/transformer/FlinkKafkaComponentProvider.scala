@@ -54,7 +54,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
 
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
-      ComponentDefinition("kafka", new UniversalKafkaSourceFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
+      ComponentDefinition("kafka", new UniversalKafkaSourceFactory(CachedConfluentSchemaRegistryClientFactory, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
       ComponentDefinition("kafka", new UniversalKafkaSinkFactory(avroSerializingSchemaRegistryProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
 
     lowLevelKafkaComponents ::: universalKafkaComponents
