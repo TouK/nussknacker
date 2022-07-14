@@ -28,7 +28,7 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         invalid(SchemaNotFound("Schema doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
-        invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))
+        invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
 }
 

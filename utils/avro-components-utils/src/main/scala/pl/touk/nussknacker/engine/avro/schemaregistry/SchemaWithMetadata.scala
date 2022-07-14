@@ -14,7 +14,7 @@ case class SchemaWithMetadata(schema: ParsedSchema, id: Int)
 object SchemaWithMetadata{
   def apply(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
     schemaMetadata.getSchemaType match {
-      case "avro" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      case "AVRO" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), schemaMetadata.getId)
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     }
   }
