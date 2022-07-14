@@ -5,7 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import org.springframework.expression.Expression
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.ExpressionTypeError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 class SpelExpressionValidator(typer: Typer) {
@@ -14,8 +14,8 @@ class SpelExpressionValidator(typer: Typer) {
     val typedExpression = typer.typeExpression(expr, ctx)
     typedExpression.andThen { collected =>
       collected.finalResult.typingResult match {
-        case a: TypingResult if a.canBeSubclassOf(expectedType) || expectedType == Typed[SpelExpressionRepr] => Valid(collected)
-        case a: TypingResult => Invalid(NonEmptyList.of(OtherError(s"Bad expression type, expected: ${expectedType.display}, found: ${a.display}")))
+        case typ: TypingResult if typ.canBeSubclassOf(expectedType) || expectedType == Typed[SpelExpressionRepr] => Valid(collected)
+        case typ: TypingResult => Invalid(NonEmptyList.of(ExpressionTypeError(expectedType, typ)))
       }
     }
   }

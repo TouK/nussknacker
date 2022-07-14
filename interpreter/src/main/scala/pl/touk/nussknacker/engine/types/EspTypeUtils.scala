@@ -9,18 +9,22 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, Parameter, StaticClazzDefinition, StaticMethodInfo}
 
 object EspTypeUtils {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
   def clazzDefinition(clazz: Class[_])
-                     (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true))
+                     (implicit settings: ClassExtractionSettings): StaticClazzDefinition =
+    StaticClazzDefinition(
+      Typed.typedClass(clazz),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
+    )
 
   private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)
-                                           (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+                                           (implicit settings: ClassExtractionSettings): Map[String, List[StaticMethodInfo]] = {
     val membersPredicate = settings.visibleMembersPredicate(clazz)
     val methods = extractPublicMethods(clazz, membersPredicate, staticMethodsAndFields)
     val fields = extractPublicFields(clazz, membersPredicate, staticMethodsAndFields).mapValuesNow(List(_))
@@ -60,7 +64,7 @@ object EspTypeUtils {
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[StaticMethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: StaticMethodInfo): Boolean = {
-      (methodInfo.expectedParameters.map(_.refClazz) :+ methodInfo.refClazz).forall {
+      (methodInfo.parameters.map(_.refClazz) :+ methodInfo.refClazz).forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -81,7 +85,7 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.expectedParameters))
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -115,7 +119,7 @@ object EspTypeUtils {
   }
 
   private def extractMethod(method: Method)
-    = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method), method.isVarArgs)
+    = MethodInfo(extractParameters(method), extractMethodReturnType(method), method.getName, extractNussknackerDocs(method), method.isVarArgs)
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
                                  (implicit settings: ClassExtractionSettings): Map[String, StaticMethodInfo] = {
@@ -124,7 +128,7 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 

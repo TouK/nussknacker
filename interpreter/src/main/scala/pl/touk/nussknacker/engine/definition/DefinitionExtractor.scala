@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
 import cats.data.ValidatedNel
-import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
+import cats.implicits.catsSyntaxValidatedId
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{ArgumentNumberError, ArgumentTypeError, VarArgumentNumberError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{NoVarArgumentTypeError, VarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -258,22 +258,25 @@ object TypeInfos {
   object MethodInfo {
     def apply(parameters: List[Parameter],
               refClazz: TypingResult,
+              name: String,
               description: Option[String],
               varArgs: Boolean): StaticMethodInfo  =
       if (varArgs && parameters.nonEmpty) {
         val (noVarArgParameters, varArgParameter) = parameters.splitAt(parameters.length - 1)
-        VarArgsMethodInfo(noVarArgParameters, varArgParameter.head, refClazz, description)
+        VarArgsMethodInfo(noVarArgParameters, varArgParameter.head, refClazz, name, description)
       } else {
-        SimpleMethodInfo(parameters, refClazz, description)
+        SimpleMethodInfo(parameters, refClazz, name, description)
       }
   }
 
   sealed trait MethodInfo {
     def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def generalParameters: List[Parameter]
+    def name: String
 
-    def generalResult: TypingResult
+    def interfaceParameters: List[Parameter]
+
+    def interfaceResult: TypingResult
 
     def description: Option[String]
 
@@ -283,71 +286,78 @@ object TypeInfos {
   }
 
   sealed trait StaticMethodInfo extends MethodInfo {
-    def expectedParameters: List[Parameter]
+    def parameters: List[Parameter]
 
     def refClazz: TypingResult
 
-    override def generalParameters: List[Parameter] = expectedParameters
+    override def interfaceParameters: List[Parameter] = parameters
 
-    override def generalResult: TypingResult = refClazz
+    override def interfaceResult: TypingResult = refClazz
 
-    protected def applyNoVarArgs(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, Unit] = {
-      if (arguments.length != expectedParameters.length) {
-        ArgumentNumberError(expectedParameters.length, arguments.length).invalidNel
-      } else {
-        arguments.zip(expectedParameters).map{ case (givenType, expectedType) =>
-          if (givenType.canBeSubclassOf(expectedType.refClazz)) ().validNel
-          else ArgumentTypeError(expectedType.refClazz, givenType, expectedType.name).invalidNel
-        }.sequence.map(_ => ())
-      }
-    }
+    protected def checkNoVarArguments(arguments: List[TypingResult], parameters: List[Parameter]): Boolean =
+      arguments.length == parameters.length &&
+        arguments.zip(parameters).forall{ case(arg, param) => arg.canBeSubclassOf(param.refClazz)}
   }
 
-  case class SimpleMethodInfo(expectedParameters: List[Parameter],
+  case class SimpleMethodInfo(parameters: List[Parameter],
                               refClazz: TypingResult,
+                              name: String,
                               description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      applyNoVarArgs(arguments).map(_ => refClazz)
+    override def interfaceParameters: List[Parameter] = parameters
+
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+      if (checkNoVarArguments(arguments, parameters)) refClazz.validNel
+      else NoVarArgumentTypeError(parameters.map(_.refClazz), arguments, name).invalidNel
+    }
 
     override def varArgs: Boolean = false
   }
 
-  case class VarArgsMethodInfo(expectedParameters: List[Parameter],
+  case class VarArgsMethodInfo(noVarParameters: List[Parameter],
                                varParameter: Parameter,
                                refClazz: TypingResult,
+                               name: String,
                                description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (arguments.length < expectedParameters.length) {
-        VarArgumentNumberError(expectedParameters.length, arguments.length).invalidNel
-      } else {
-        val (noVarArguments, varArguments) = arguments.splitAt(expectedParameters.length)
-        val checkedNoVarArguments: ValidatedNel[ExpressionParseError, Unit] = applyNoVarArgs(noVarArguments)
-        val checkedVarArguments: ValidatedNel[ExpressionParseError, Unit] = varArguments.map(arg =>
-          if (arg.canBeSubclassOf(varParameter.refClazz)) ().validNel
-          else ArgumentTypeError(varParameter.refClazz, arg, varParameter.name).invalidNel
-        ).sequence.map(_ => ())
-        (checkedNoVarArguments combine checkedVarArguments).map(_ => refClazz)
-      }
+    private def checkArgumentsLength(arguments: List[TypingResult]): Boolean =
+      arguments.length >= noVarParameters.length
+
+    private def checkVarArguments(varArguments: List[TypingResult]): Boolean =
+      varArguments.forall(_.canBeSubclassOf(varParameter.refClazz))
+
+    private def checkArguments(arguments: List[TypingResult]): Boolean = {
+      val (noVarArguments, varArguments) = arguments.splitAt(noVarParameters.length)
+      checkNoVarArguments(noVarArguments, noVarParameters) && checkVarArguments(varArguments)
     }
 
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+      if (checkArgumentsLength(arguments) && checkArguments(arguments)) refClazz.validNel
+      else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
+    }
+
+    override def parameters: List[Parameter] = noVarParameters :+ varParameter
+
     override def varArgs: Boolean = true
+
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+                                  name: String,
                                   description: Option[String] = None,
                                   varArgs: Boolean = false,
-                                  generalParameters: List[Parameter] = Nil,
-                                  generalResult: TypingResult = Unknown)
+                                  interfaceParameters: List[Parameter] = Nil,
+                                  interfaceResult: TypingResult = Unknown)
     extends MethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
   }
 
-  case class ClazzDefinition(clazzName: TypedClass,
-                             methods: Map[String, List[MethodInfo]],
-                             staticMethods: Map[String, List[MethodInfo]]) {
+  trait ClazzDefinition {
+    def clazzName: TypedClass
+    def methods: Map[String, List[MethodInfo]]
+    def staticMethods: Map[String, List[MethodInfo]]
+
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       def filterMethods(candidates: Map[String, List[MethodInfo]]): List[TypingResult] =
         candidates.get(methodName).toList.flatMap(_.map(_.asProperty)).collect{ case Some(x) => x }
@@ -360,4 +370,12 @@ object TypeInfos {
       }
     }
   }
+
+  case class StaticClazzDefinition(clazzName: TypedClass,
+                                   methods: Map[String, List[StaticMethodInfo]],
+                                   staticMethods: Map[String, List[StaticMethodInfo]]) extends ClazzDefinition
+
+  case class NonStaticClazzDefinition(clazzName: TypedClass,
+                                       methods: Map[String, List[MethodInfo]],
+                                       staticMethods: Map[String, List[MethodInfo]]) extends ClazzDefinition
 }

@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnUnknown, UnknownMethod}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnUnknownError, UnknownMethodError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -37,7 +37,7 @@ class TypeMethodReference(methodName: String,
       case TypedNull =>
         Left(s"Method invocation on ${TypedNull.display} is not allowed")
       case Unknown =>
-        if(methodExecutionForUnknownAllowed) Unknown.validNel else InvocationOnUnknown.invalidNel
+        if(methodExecutionForUnknownAllowed) Unknown.validNel else InvocationOnUnknownError.invalidNel
     }
 
   private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
@@ -73,7 +73,7 @@ class TypeMethodReference(methodName: String,
 
     NonEmptyList.fromList(clazzMethods).map(_.valid).getOrElse(
       if (isClass) Right(NoDataForEvaluation()).invalid
-      else Left(NonEmptyList.one(UnknownMethod(methodName, displayableType))).invalid
+      else Left(NonEmptyList.one(UnknownMethodError(methodName, displayableType))).invalid
     )
   }
 
