@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated.Valid
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -16,7 +17,7 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * Source factory for specific records - mainly generated from schema.
  */
-class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
+class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                                                                           processObjectDependencies: ProcessObjectDependencies,
                                                                           implProvider: KafkaSourceImplFactory[Any, V])
   extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, implProvider) {

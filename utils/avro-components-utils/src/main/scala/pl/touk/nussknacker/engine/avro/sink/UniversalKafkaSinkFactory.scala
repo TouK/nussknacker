@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
@@ -30,7 +30,7 @@ object UniversalKafkaSinkFactory {
 
 }
 
-class UniversalKafkaSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+class UniversalKafkaSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                                 val processObjectDependencies: ProcessObjectDependencies,
                                 implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
@@ -104,4 +104,5 @@ class UniversalKafkaSinkFactory(val schemaRegistryProvider: SchemaRegistryProvid
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
+  override def schemaRegistryClientFactory: SchemaRegistryClientFactory = schemaRegistryProvider.schemaRegistryClientFactory
 }

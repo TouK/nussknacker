@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -29,7 +29,7 @@ object KafkaAvroSinkFactory {
     ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)))
 }
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                            val processObjectDependencies: ProcessObjectDependencies,
                            implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
@@ -97,4 +97,5 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])
 
+  override def schemaRegistryClientFactory: SchemaRegistryClientFactory = schemaRegistryProvider.schemaRegistryClientFactory
 }

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -12,7 +12,7 @@ import scala.reflect.ClassTag
   * Factory class for Flink's KeyedDeserializationSchema. It is extracted for purpose when for creation
   * of KeyedDeserializationSchema are needed additional avro related information.
   */
-trait KafkaAvroDeserializationSchemaFactory extends Serializable {
+trait KafkaAvroDeserializationSchemaFactory[T<:ParsedSchema] extends Serializable {
 
   /**
     * Prepare Flink's KafkaDeserializationSchema based on provided information.
@@ -26,8 +26,8 @@ trait KafkaAvroDeserializationSchemaFactory extends Serializable {
     * @return KafkaDeserializationSchema
     */
   def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
-                                       keySchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]],
-                                       valueSchemaDataOpt: Option[RuntimeSchemaData[AvroSchema]]
+                                       keySchemaDataOpt: Option[RuntimeSchemaData[T]],
+                                       valueSchemaDataOpt: Option[RuntimeSchemaData[T]]
                                       ): KafkaDeserializationSchema[ConsumerRecord[K, V]]
 
 }

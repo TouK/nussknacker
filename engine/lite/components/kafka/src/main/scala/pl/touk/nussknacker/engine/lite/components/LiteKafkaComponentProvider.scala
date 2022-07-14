@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -37,11 +38,11 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
 
   override def providerName: String = "kafka"
 
-  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.avroPayload(schemaRegistryClientFactory)
+  protected def createAvroSchemaRegistryProvider: SchemaRegistryProvider[AvroSchema] =
+    ConfluentSchemaRegistryProvider.avroSchemaAvroPayload(schemaRegistryClientFactory)
 
-  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.jsonPayload(schemaRegistryClientFactory)
+  protected def createJsonSchemaRegistryProvider: SchemaRegistryProvider[AvroSchema] =
+    ConfluentSchemaRegistryProvider.avroSchemaJsonPayload(schemaRegistryClientFactory)
 
   override def resolveConfigForExecution(config: Config): Config = config
 

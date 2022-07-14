@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClientFactory, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
@@ -27,7 +28,7 @@ import scala.reflect.ClassTag
   * This is universal kafka source - it will handle both avro and json
   * TODO: Move it to some other module when json schema handling will be available
   */
-class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                                                             val processObjectDependencies: ProcessObjectDependencies,
                                                             protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
@@ -124,4 +125,5 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
     TypedNodeDependency[NodeId], OutputVariableNameDependency)
 
+  override def schemaRegistryClientFactory: SchemaRegistryClientFactory = schemaRegistryProvider.schemaRegistryClientFactory
 }

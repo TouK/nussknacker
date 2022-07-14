@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro
 
 import io.circe.generic.JsonCodec
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
@@ -35,7 +36,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   import scala.collection.JavaConverters._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[AvroSchema] =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

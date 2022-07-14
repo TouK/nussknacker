@@ -5,13 +5,14 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
-trait SchemaRegistryProvider extends Serializable with BaseSchemaRegistryProvider {
+//todo: rename and separate from BaseSchemaRegistryProvider
+trait SchemaRegistryProvider[T<:ParsedSchema] extends Serializable with BaseSchemaRegistryProvider {
 
-  def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory
+  def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory[T]
 
-  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory
+  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[T]
 
   def recordFormatterFactory: RecordFormatterFactory
 
-  def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T]
+  def validateSchema(schema: T): ValidatedNel[SchemaRegistryError, T]
 }

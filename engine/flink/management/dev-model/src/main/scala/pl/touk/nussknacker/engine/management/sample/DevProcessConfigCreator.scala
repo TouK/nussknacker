@@ -6,6 +6,7 @@ import com.cronutils.parser.CronParser
 import com.typesafe.config.Config
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
@@ -66,7 +67,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
+    val schemaRegistryProvider = createAvroSchemaRegistryProvider(processObjectDependencies)
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
@@ -79,7 +80,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
+    val schemaRegistryProvider = createAvroSchemaRegistryProvider(processObjectDependencies)
     val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](
@@ -102,7 +103,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
+  private def createAvroSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider[AvroSchema] = {
     val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
     val confluentFactory: ConfluentSchemaRegistryClientFactory =
       if (mockConfluent) {

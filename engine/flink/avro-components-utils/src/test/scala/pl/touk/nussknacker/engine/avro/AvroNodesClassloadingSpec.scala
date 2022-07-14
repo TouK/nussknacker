@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.{FunSuite, Matchers}
@@ -23,7 +24,7 @@ class AvroNodesClassloadingSpec extends FunSuite with Matchers with SchemaRegist
   override protected val schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.getClientForScope("testScope")
 
   private val configCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
+    override protected def createSchemaRegistryProvider: SchemaRegistryProvider[AvroSchema] =
       ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
   }
 

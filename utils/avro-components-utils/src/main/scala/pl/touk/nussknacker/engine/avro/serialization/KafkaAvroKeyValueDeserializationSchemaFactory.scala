@@ -15,7 +15,7 @@ import scala.reflect.ClassTag
   * and wrap it in ConsumerRecord object (transforms raw event represented as ConsumerRecord from Array[Byte] domain to Key-Value-type domain).
   */
 abstract class KafkaAvroKeyValueDeserializationSchemaFactory
-  extends KafkaAvroDeserializationSchemaFactory {
+  extends KafkaAvroDeserializationSchemaFactory[AvroSchema] {
 
   protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[AvroSchema]], kafkaConfig: KafkaConfig): Deserializer[K]
 

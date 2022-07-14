@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -24,12 +25,12 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-        ConfluentSchemaRegistryProvider.avroPayload(MockSchemaRegistry.factory),
+        ConfluentSchemaRegistryProvider.avroSchemaAvroPayload(MockSchemaRegistry.factory),
         new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
         new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false))
 
   lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
-        ConfluentSchemaRegistryProvider.jsonPayload(MockSchemaRegistry.factory),
+        ConfluentSchemaRegistryProvider.avroSchemaJsonPayload(MockSchemaRegistry.factory),
         SimpleKafkaJsonSerializer,
         SimpleKafkaJsonDeserializer)
 
@@ -38,7 +39,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   case class SchemaRegistryProviderSetup(`type`: SchemaRegistryProviderSetupType.Value,
-                                         provider: SchemaRegistryProvider,
+                                         provider: SchemaRegistryProvider[AvroSchema],
                                          override val valueSerializer: Serializer[Any],
                                          valueDeserializer: Deserializer[Any]) extends KafkaWithSchemaRegistryOperations {
 

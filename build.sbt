@@ -260,7 +260,7 @@ val jwtCirceV = "9.0.5"
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
-val everitSchemaV = "1.13.0"
+val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
 val scalaCompatV = "0.9.1"
@@ -738,11 +738,15 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "io.confluent" % "kafka-json-schema-provider" % confluentV excludeAll(
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+        ),
         "tech.allegro.schema.json2avro" % "converter" % "0.2.15",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test")
+  ).dependsOn(componentsUtils % Provided, jsonUtils, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test")
 
 lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
   settings(commonSettings).

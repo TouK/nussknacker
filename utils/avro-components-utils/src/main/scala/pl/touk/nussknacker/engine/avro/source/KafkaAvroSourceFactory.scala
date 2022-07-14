@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariable
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObjectDependencies, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryClientFactory, SchemaRegistryProvider}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
@@ -39,7 +39,7 @@ import scala.reflect.ClassTag
   * @tparam K - type of event's key, used to determine if key object is Specific or Generic (for GenericRecords use Any)
   * @tparam V - type of event's value, used to determine if value object is Specific or Generic (for GenericRecords use Any)
   */
-class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider,
+class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
@@ -135,6 +135,8 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryProvide
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData],
     TypedNodeDependency[NodeId], OutputVariableNameDependency)
+
+  override def schemaRegistryClientFactory: SchemaRegistryClientFactory = schemaRegistryProvider.schemaRegistryClientFactory
 }
 
 object KafkaAvroSourceFactory {

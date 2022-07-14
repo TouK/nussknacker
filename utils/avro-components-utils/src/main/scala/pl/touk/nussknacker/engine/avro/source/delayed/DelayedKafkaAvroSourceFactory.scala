@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.source.delayed
 
 import cats.data.Validated.{Invalid, Valid}
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.Parameter
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
 
 import scala.reflect.ClassTag
 
-class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
+class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider[AvroSchema],
                                                               processObjectDependencies: ProcessObjectDependencies,
                                                               implProvider: KafkaSourceImplFactory[K, V])
   extends KafkaAvroSourceFactory[K, V](schemaRegistryProvider, processObjectDependencies, implProvider) {
