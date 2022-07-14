@@ -97,7 +97,8 @@ trait PeriodicProcessesRepository {
 
 class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
                                        override val profile: JdbcProfile,
-                                       clock: Clock)
+                                       clock: Clock,
+                                       processingType: String)
                                       (implicit ec: ExecutionContext)
   extends PeriodicProcessesRepository
     with PeriodicProcessesTableFactory
@@ -117,6 +118,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
       id = PeriodicProcessId(-1),
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
+      processingType = processingType,
       processJson = deploymentWithJarData.canonicalProcess,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
@@ -252,7 +254,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
 
   private def activePeriodicProcessWithDeploymentQuery = {
     (PeriodicProcesses join PeriodicProcessDeployments on (_.id === _.periodicProcessId))
-      .filter { case (p, _) => p.active === true }
+      .filter { case (p, _) => p.active === true && p.processingType === processingType }
   }
 
   private def createPeriodicProcessDeployment(all: Seq[(PeriodicProcessEntity, PeriodicProcessDeploymentEntity)]): Seq[PeriodicProcessDeployment] =

@@ -42,7 +42,7 @@ object PeriodicDeploymentManager {
     val clock = Clock.systemDefaultZone()
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
-    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
+    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)

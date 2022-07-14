@@ -18,3 +18,16 @@ scenario is scheduled to be run again according to the schedule.
   - Optional `PeriodicProcessListenerFactory` to take some actions on scenario lifecycle.
   - Optional `AdditionalDeploymentDataProvider` to inject additional deployment parameters.
 - Add service provider with your `DeploymentManagerProvider` implementation.
+
+## Configuration
+
+Use `deploymentManager` with the following properties:
+
+- `db` - Nussknacker db configuration.
+- `processingType` - processing type of scenarios to be managed by this instance of the periodic engine.
+- `rescheduleCheckInterval` - frequency of checking finished scenarios to be rescheduled. Optional.
+- `deployInterval` - frequency of checking scenarios to be deployed on Flink cluster. Optional.
+- `deploymentRetry` - failed deployments configuration. By default retrying is disabled.
+  - `deployMaxRetries` - maximum amount of retries for failed deployment.
+  - `deployRetryPenalize` - an amount of time by which the next retry should be delayed.
+- `jarsDir` -  directory for jars storage.
