@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -28,10 +29,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
-        val schemaMetadata = client.getSchemaMetadata(subject, version)
-        // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
-        // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-        SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+        SchemaWithMetadata(client.getSchemaMetadata(subject, version))
       }
     }
 
@@ -56,9 +54,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      // Restrictive approach should be used before schema registration. Here we need to be non-restrictive
-      // because schema is already registered and we must be able to use id. See `AvroUtils.nonRestrictiveParseSchema`
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      SchemaWithMetadata(schemaMetadata)
     }
   }
 }

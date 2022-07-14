@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.util.KeyedValue
@@ -11,6 +12,6 @@ import pl.touk.nussknacker.engine.util.KeyedValue
   */
 trait KafkaAvroSerializationSchemaFactory extends Serializable {
 
-  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]
+  def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableAvroSchema[AvroSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]]
 
 }

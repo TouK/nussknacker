@@ -28,7 +28,7 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
         invalid(SchemaNotFound("Schema doesn't exist."))
       case exc: Throwable =>
         logger.error("Unknown error on fetching schema data.", exc)
-        invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data."))
+        invalid(SchemaRegistryUnknownError("Unknown error on fetching schema data.", exc))
     }
 }
 
@@ -38,14 +38,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      SchemaWithMetadata(schemaMetadata)
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(AvroUtils.nonRestrictiveParseSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      SchemaWithMetadata(schemaMetadata)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =

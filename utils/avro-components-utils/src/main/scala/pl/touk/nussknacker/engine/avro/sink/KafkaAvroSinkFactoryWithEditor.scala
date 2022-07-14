@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -22,7 +23,7 @@ object KafkaAvroSinkFactoryWithEditor {
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
 
-  case class TransformationState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData], sinkValueParameter: SinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData[AvroSchema], runtimeSchema: Option[RuntimeSchemaData[AvroSchema]], sinkValueParameter: SinkValueParameter)
 
 }
 
@@ -55,7 +56,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryProvider: SchemaRegistryP
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
       validatedSchema.andThen { schemaData =>
-        AvroSinkValueParameter(schemaData.schema).map { valueParam =>
+        AvroSinkValueParameter(schemaData.schema.rawSchema()).map { valueParam =>
           val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }

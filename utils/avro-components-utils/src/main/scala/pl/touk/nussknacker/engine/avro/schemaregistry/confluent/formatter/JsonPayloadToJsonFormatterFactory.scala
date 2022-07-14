@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
 import io.circe.Json
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -31,10 +32,10 @@ class JsonPayloadToJsonFormatterFactory extends RecordFormatterFactory {
 
 class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaAvroKeyValueDeserializationSchemaFactory {
 
-  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[K] =
+  override protected def createKeyDeserializer[K: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[AvroSchema]], kafkaConfig: KafkaConfig): Deserializer[K] =
     toJsonDeserializer.asInstanceOf[Deserializer[K]]
 
-  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData], kafkaConfig: KafkaConfig): Deserializer[V] =
+  override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[AvroSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
     toJsonDeserializer.asInstanceOf[Deserializer[V]]
 
   // always deserialize key to valid Json
