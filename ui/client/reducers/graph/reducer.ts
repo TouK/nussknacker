@@ -241,7 +241,13 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          validationResult: action.validationResult,
+          validationResult: {
+            ...action.validationResult,
+            nodeResults: {
+              ...state.processToDisplay.validationResult.nodeResults,
+              ...action.validationResult.nodeResults,
+            },
+          },
         },
       }
     }
