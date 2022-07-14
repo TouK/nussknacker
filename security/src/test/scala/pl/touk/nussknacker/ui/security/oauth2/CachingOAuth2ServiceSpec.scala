@@ -24,7 +24,6 @@ class CachingOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers w
   private val ticker = new Ticker {
     override def read(): Long = {
       if (currentTime != prev) {
-        println(currentTime)
         prev = currentTime
       }
       currentTime.time.toNanos

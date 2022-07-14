@@ -8,7 +8,7 @@ import java.time.{Duration, Instant}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Success, Try}
 
 class CachingOAuth2Service[
   UserInfoData,
@@ -38,14 +38,16 @@ class CachingOAuth2Service[
       case Some(value) =>
         Future.successful(value)
       case None =>
-        val f = delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
-          case (userInfo, expirationInstant) => (userInfo, expirationInstant.getOrElse(Instant.now() plusNanos defaultExpirationDuration.toNanos))
+        delegate.checkAuthorizationAndObtainUserinfo(accessToken).map {
+          case (userInfo, expirationInstant) =>
+            val expiration = expirationInstant.getOrElse(Instant.now() plusNanos defaultExpirationDuration.toNanos)
+            val value = (userInfo, expiration)
+            Try(authorizationsCache.put(accessToken)(value)) match {
+              case Failure(exception) => logger.warn("Failed to populate cache.", exception)
+              case Success(_) => ()
+            }
+            value
         }
-        f.onComplete {
-          case Success(value) => authorizationsCache.put(accessToken)(value)
-          case _ => ()
-        }
-        f
     }
     userInfo.map { case (userInfo, expiration) => (userInfo, Some(expiration)) }
   }

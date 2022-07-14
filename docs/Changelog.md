@@ -37,6 +37,7 @@
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
 * [#3250](https://github.com/TouK/nussknacker/pull/3250) Kafka 2.4 -> 3.2, flink 0.14.4 -> 0.14.5
 * [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
+* [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
 
 1.4.0 (14 Jun 2022)
 ------------------------
