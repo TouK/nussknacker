@@ -18,6 +18,8 @@
 
 package org.apache.flink.formats.avro.typeutils;
 
+import io.confluent.kafka.schemaregistry.ParsedSchema;
+import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
@@ -32,20 +34,20 @@ import java.io.Serializable;
  *
  * A wrapper for Avro {@link Schema}, that is Java serializable.
  */
-public final class NkSerializableAvroSchema implements Serializable {
+public final class NkSerializableAvroSchema<T extends ParsedSchema> implements Serializable {
 
 	private static final long serialVersionUID = 1;
 
-	private transient @Nullable Schema schema;
+	private transient @Nullable T schema;
 
 	public NkSerializableAvroSchema() {
 	}
 
-	public NkSerializableAvroSchema(Schema schema) {
+	public NkSerializableAvroSchema(T schema) {
 		this.schema = schema;
 	}
 
-	public Schema getAvroSchema() {
+	public T getParsedSchema() {
 		return schema;
 	}
 
@@ -55,14 +57,17 @@ public final class NkSerializableAvroSchema implements Serializable {
 		}
 		else {
 			oos.writeBoolean(true);
-			oos.writeUTF(schema.toString(false));
+			//todo: when supporting more schema types, write another byte to distinguish them
+			oos.writeUTF(((AvroSchema) schema).rawSchema().toString(false));
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
 		if (ois.readBoolean()) {
+			//todo: when supporting more schema types, read another byte to distinguish them
 			String schema = ois.readUTF();
-			this.schema = new Parser().parse(schema);
+			this.schema = (T) new AvroSchema(new Parser().parse(schema));
 		}
 		else {
 			this.schema = null;

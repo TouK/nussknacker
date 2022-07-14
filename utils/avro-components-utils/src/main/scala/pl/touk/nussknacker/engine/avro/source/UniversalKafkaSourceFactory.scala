@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -57,15 +58,15 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryPr
   }
 
   protected def determineSchemaAndType(schemaDeterminer: AvroSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
-  Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)] = {
+  Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema))
+      (schemaDeterminer.toRuntimeSchema(schemaData), AvroSchemaTypeDefinitionExtractor.typeDefinition(schemaData.schema.rawSchema()))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
   // Source specific FinalResults
   protected def prepareSourceFinalResults(preparedTopic: PreparedKafkaTopic,
-                                          valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData], TypingResult)],
+                                          valueValidationResult: Validated[ProcessCompilationError, (Option[RuntimeSchemaData[AvroSchema]], TypingResult)],
                                           context: ValidationContext,
                                           dependencies: List[NodeDependencyValue],
                                           parameters: List[(String, DefinedParameter)],

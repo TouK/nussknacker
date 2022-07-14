@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 
 object KafkaAvroSinkFactory {
 
-  case class KafkaAvroSinkFactoryState(schema: RuntimeSchemaData, runtimeSchema: Option[RuntimeSchemaData])
+  case class KafkaAvroSinkFactoryState(schema: RuntimeSchemaData[AvroSchema], runtimeSchema: Option[RuntimeSchemaData[AvroSchema]])
 
   private[sink] val paramsDeterminedAfterSchema = List(
     Parameter[String](KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)
@@ -59,7 +60,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
       }
       val validationResult = validatedSchema
         .andThen { schema =>
-          OutputValidator.validateOutput(value.returnType, schema, extractValidationMode(mode))
+          OutputValidator.validateOutput(value.returnType, schema.rawSchema(), extractValidationMode(mode))
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
       val finalState = determinedSchema.toOption.map(schema => KafkaAvroSinkFactoryState(schema, schemaDeterminer.toRuntimeSchema(schema)))

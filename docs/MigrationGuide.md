@@ -26,6 +26,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
 * [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
+* [#3265](https://github.com/TouK/nussknacker/pull/3265) Initial work on UniversalKafkaSource/Sink:
+  * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
+  * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
 
 ### REST API changes
 
