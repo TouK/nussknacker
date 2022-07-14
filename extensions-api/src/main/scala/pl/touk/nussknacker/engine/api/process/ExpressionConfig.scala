@@ -31,7 +31,7 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
 object ExpressionConfig {
   val empty = ExpressionConfig(Map.empty, Nil)
 
-  val standardClasses: List[Class[_]] = List(classOf[UUID])
+  val standardClasses: List[Class[_]] = List(classOf[UUID], classOf[java.nio.ByteBuffer])
 
   // Those types must be explicitly provided because can be used in dynamic parameters
   val standardEditorClasses: List[Class[_]] = List(classOf[LocalDate], classOf[LocalTime], classOf[LocalDateTime], classOf[Duration], classOf[Period])

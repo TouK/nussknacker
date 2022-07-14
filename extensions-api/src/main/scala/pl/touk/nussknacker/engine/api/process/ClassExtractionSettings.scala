@@ -203,7 +203,7 @@ object ClassExtractionSettings {
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate[CharSequence]),
         Pattern.compile(s"charAt|compareTo.*|concat|contains|endsWith|equalsIgnoreCase|format|indexOf|isBlank|isEmpty|join|lastIndexOf|length|matches|" +
-          s"replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod")),
+          s"replaceAll|replaceFirst|split|startsWith|strip.*|substring|toLowerCase|toUpperCase|trim|$ToStringMethod|getBytes")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate[NumberFormat]),
         Pattern.compile(s"get.*Instance|format|parse")),
@@ -221,7 +221,10 @@ object ClassExtractionSettings {
         Pattern.compile(s"clockSequence|randomUUID|fromString|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
         SuperClassPredicate(ExactClassPredicate(classOf[Traversable[_]], classOf[Option[_]])),
-        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
+        Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff")),
+      ClassMemberPatternPredicate(
+        SuperClassPredicate(ExactClassPredicate[java.nio.ByteBuffer]),
+        Pattern.compile(s"wrap")),
     )
 
   lazy val IncludedSerializableMembers: List[ClassMemberPredicate] =

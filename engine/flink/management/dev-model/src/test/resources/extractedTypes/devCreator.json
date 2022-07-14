@@ -2916,6 +2916,15 @@
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": false
         }
+      ],
+      "getBytes": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Array[java.lang.Byte]"},
+          "varArgs": false
+        }
       ]
     },
     "staticMethods": {
@@ -9545,6 +9554,20 @@
           "parameters": [
           ],
           "refClazz": {"refClazzName": "java.util.UUID"},
+          "varArgs": false
+        }
+      ]
+    }
+  },
+  {
+    "clazzName": {"refClazzName": "java.nio.ByteBuffer"},
+    "staticMethods": {
+      "wrap": [
+        {
+          "parameters": [
+            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Array[java.lang.Byte]"}}
+          ],
+          "refClazz": {"refClazzName": "java.nio.ByteBuffer"},
           "varArgs": false
         }
       ]
