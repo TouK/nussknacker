@@ -47,6 +47,6 @@ class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionVa
 
   test("determine if can be subclass for null") {
     canBeSubclassOf(Typed[String], TypedNull) shouldBe
-      "No type can be subclass of null".invalidNel
+      "No type can be subclass of Null".invalidNel
   }
 }
