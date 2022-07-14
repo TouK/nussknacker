@@ -13,7 +13,7 @@ trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRe
 
   override protected def resolveConfig(config: Config): Config = {
     super.resolveConfig(config)
-      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
       // schema.registry.url have to be defined even for MockSchemaRegistryClient
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
       .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(true))

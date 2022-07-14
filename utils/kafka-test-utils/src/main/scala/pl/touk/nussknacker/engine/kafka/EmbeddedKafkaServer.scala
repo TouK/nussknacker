@@ -1,69 +1,71 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.io.File
-import java.net.InetSocketAddress
-import java.nio.file.Files
-import java.util.{Locale, Properties}
-import kafka.server.KafkaServer
+import kafka.server
+import kafka.server.{KafkaRaftServer, Server}
+import kafka.tools.StorageTool
+import org.apache.commons.io.output.NullOutputStream
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerConfig}
 import org.apache.kafka.clients.producer.KafkaProducer
-import org.apache.kafka.common.IsolationLevel
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
-import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
+import org.apache.kafka.common.{IsolationLevel, Uuid}
 
+import java.io.{File, PrintStream}
+import java.nio.file.Files
+import java.util.{Locale, Properties}
 import scala.language.implicitConversions
 
-object KafkaZookeeperServer {
+object EmbeddedKafkaServer {
   val localhost = "127.0.0.1"
 
-  def run(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaZookeeperServer = {
-    val zk = runZookeeper(zkPort)
-    val kafka = runKafka(zkPort, kafkaPort, kafkaBrokerConfig)
-    KafkaZookeeperServer(zk, kafka, s"$localhost:$zkPort", s"$localhost:$kafkaPort")
+  def run(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): EmbeddedKafkaServer = {
+    val kafka = runKafka(brokerPort, controllerPort, kafkaBrokerConfig)
+    EmbeddedKafkaServer(kafka, s"$localhost:$brokerPort")
   }
 
-  private def runZookeeper(zkPort: Int): NIOServerCnxnFactory = {
-    val factory = new NIOServerCnxnFactory()
-    factory.configure(new InetSocketAddress(localhost, zkPort), 1024)
-    val zkServer = new ZooKeeperServer(tempDir(), tempDir(), ZooKeeperServer.DEFAULT_TICK_TIME)
-    factory.startup(zkServer)
-    factory
+  private def runKafka(brokerPort: Int, controllerPort: Int, kafkaBrokerConfig: Map[String, String]): Server = {
+    val logDir = tempDir()
+    val kafkaConfig = prepareServerConfig(brokerPort, controllerPort, logDir, kafkaBrokerConfig)
+    prepareRaftStorage(logDir, kafkaConfig)
+    val server = new KafkaRaftServer(kafkaConfig, time = Time.SYSTEM, None)
+    server.startup()
+    server
   }
 
-  private def runKafka(zkPort: Int, kafkaPort: Int, kafkaBrokerConfig: Map[String, String]): KafkaServer = {
+  private def prepareServerConfig(brokerPort: Int, controllerPort: Int, logDir: File, kafkaBrokerConfig: Map[String, String]) = {
     val properties = new Properties()
-    properties.setProperty("zookeeper.connect", s"$localhost:$zkPort")
     properties.setProperty("broker.id", "0")
-    properties.setProperty("listeners", s"PLAINTEXT://$localhost:$kafkaPort")
+    properties.setProperty("process.roles", "broker,controller")
+    properties.setProperty("listeners", s"PLAINTEXT://$localhost:$brokerPort,CONTROLLER://$localhost:$controllerPort")
+    properties.setProperty("listener.security.protocol.map", s"PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT")
+    properties.setProperty("controller.listener.names", s"CONTROLLER")
+    properties.setProperty("controller.quorum.voters", s"0@$localhost:$controllerPort")
     properties.setProperty("num.partitions", "1")
     properties.setProperty("offsets.topic.replication.factor", "1")
     properties.setProperty("log.cleaner.dedupe.buffer.size", (2 * 1024 * 1024L).toString) //2MB should be enough for tests
     properties.setProperty("transaction.state.log.replication.factor", "1")
     properties.setProperty("transaction.state.log.min.isr", "1")
-
-    properties.setProperty("log.dir", tempDir().getAbsolutePath)
-
+    properties.setProperty("log.dir", logDir.getAbsolutePath)
     kafkaBrokerConfig.foreach { case (key, value) =>
       properties.setProperty(key, value)
     }
-
-    val server = new KafkaServer(new kafka.server.KafkaConfig(properties), time = Time.SYSTEM)
-    server.startup()
-
-    server
+    new server.KafkaConfig(properties)
   }
 
+  private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig) = {
+    val uuid = Uuid.randomUuid()
+    StorageTool.formatCommand(new PrintStream(new NullOutputStream), Seq(logDir.getAbsolutePath),
+      StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig), ignoreFormatted = false)
+  }
 
   private def tempDir(): File = {
-    Files.createTempDirectory("zkKafka").toFile
+    Files.createTempDirectory("embeddedKafka").toFile
   }
 }
 
-case class KafkaZookeeperServer(zooKeeperServer: NIOServerCnxnFactory, kafkaServer: KafkaServer, zkAddress: String, kafkaAddress: String) {
+case class EmbeddedKafkaServer(kafkaServer: Server, kafkaAddress: String) {
   def shutdown(): Unit = {
     kafkaServer.shutdown()
-    zooKeeperServer.shutdown()
   }
 }
 

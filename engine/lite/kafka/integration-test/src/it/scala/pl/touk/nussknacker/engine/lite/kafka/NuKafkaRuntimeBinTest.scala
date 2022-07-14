@@ -15,7 +15,7 @@ import scala.util.control.NonFatal
 
 class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeTestMixin with Matchers with LazyLogging with VeryPatientScalaFutures {
 
-  override protected def kafkaBoostrapServer: String = kafkaZookeeperServer.kafkaAddress
+  override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress
 
   test("should run scenario and pass data to output ") {
     val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
