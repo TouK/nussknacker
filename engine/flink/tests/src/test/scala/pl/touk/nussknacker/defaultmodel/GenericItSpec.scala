@@ -10,13 +10,14 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, Sc
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import scala.util.control.NonFatal
 
-class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
+class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import KafkaTestUtils._
   import MockSchemaRegistry._
@@ -193,7 +194,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
-    sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo)
+    logger.info(s"Message sent successful: ${sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue}")
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()
@@ -204,8 +205,13 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
       } catch {
         case NonFatal(ex) =>
           // TODO: temporary for flaky tests diagnosis
-          val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
-          logger.info(s"Input messages: $inputMessages")
+          try {
+            val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
+            logger.info(s"Input messages: $inputMessages")
+          } catch {
+            case NonFatal(ex) =>
+              logger.error("No input message", ex)
+          }
           throw ex
       }
     }
