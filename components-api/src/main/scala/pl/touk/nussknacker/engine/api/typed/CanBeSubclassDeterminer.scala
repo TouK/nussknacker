@@ -6,8 +6,6 @@ import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-import javax.lang.model.`type`.NullType
-
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).

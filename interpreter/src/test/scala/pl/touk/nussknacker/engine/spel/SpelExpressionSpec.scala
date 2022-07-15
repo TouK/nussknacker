@@ -2,9 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
-import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
