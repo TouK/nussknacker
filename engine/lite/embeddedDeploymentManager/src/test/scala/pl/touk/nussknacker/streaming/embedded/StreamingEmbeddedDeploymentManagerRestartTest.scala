@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
@@ -23,8 +22,8 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       fixture.deployScenario(scenario)
     }
 
-    kafkaZookeeperServer.kafkaServer.shutdown()
-    kafkaZookeeperServer.kafkaServer.awaitShutdown()
+    kafkaServer.kafkaServer.shutdown()
+    kafkaServer.kafkaServer.awaitShutdown()
 
     eventually {
       val jobStatus = manager.findJobStatus(name).futureValue
@@ -32,7 +31,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       jobStatus.map(_.allowedActions).get should contain only (ProcessActionType.Cancel)
     }
 
-    kafkaZookeeperServer.kafkaServer.startup()
+    kafkaServer.kafkaServer.startup()
 
     eventually {
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)

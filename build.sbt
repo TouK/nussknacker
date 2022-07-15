@@ -784,6 +784,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "commons-io" % "commons-io" % commonsIOV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV
       )
     }
