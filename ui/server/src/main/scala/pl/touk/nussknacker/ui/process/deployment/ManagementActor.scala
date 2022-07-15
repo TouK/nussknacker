@@ -66,7 +66,7 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
         val deployRes: Future[Future[ProcessActionEntityData]] = deploymentService
           .deployProcess(process.id, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
         //we wait for nested Future before we consider Deployment as finished
-        withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
+        handleDeploymentAction(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
         //we reply to the user without waiting for finishing deployment at DeploymentManager
         reply(deployRes)
       }
@@ -78,7 +78,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val cancelRes = deploymentService.cancelProcess(id, deploymentComment, performCancel)
-        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, deploymentComment, cancelRes))
+        handleDeploymentAction(id, user, DeploymentActionType.Cancel, deploymentComment, cancelRes)
+        reply(cancelRes)
       }
     //TODO: should be handled in DeploymentManager
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
@@ -254,14 +255,13 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     }
   }
 
-  private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
-                                 actionFuture: => Future[ProcessActionEntityData]): Future[ProcessActionEntityData] = {
+  private def handleDeploymentAction(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
+                                 actionFuture: Future[ProcessActionEntityData]): Unit = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
       case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, deploymentComment,details.performedAtTime, details.action)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
-    actionFuture
   }
 
   private def reply(action: => Future[_]): Unit = {
