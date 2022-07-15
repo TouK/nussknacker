@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.ui.process.deployment
 
 import akka.actor.ActorSystem
+import akka.pattern.ask
+import akka.util.Timeout
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
-import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
+import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
@@ -20,6 +23,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.time
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
 class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
@@ -31,6 +35,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
   private implicit val ds: ExecutionContextExecutor = system.dispatcher
+  private implicit val timeout: Timeout = Timeout(1 second)
   val processName: ProcessName = ProcessName("proces1")
 
   private val deploymentManager = new MockDeploymentManager
@@ -101,6 +106,24 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     //one for deploy, one for cancel
     activityRepository.findActivity(ProcessIdWithName(id, processName)).futureValue.comments should have length 2
   }
+
+  test("Should finish deployment only after DeploymentManager finishes") {
+    val id: ProcessId = prepareProcess(processName).futureValue
+    val processIdName = ProcessIdWithName(id, processName)
+
+    def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction).map(_.action) shouldBe expectedAction
+      processService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
+    }
+
+    checkStatusAction(deploymentManager.defaultProcessStateStatus, None)
+    deploymentManager.withWaitForDeployFinish {
+      (managementActor ? Deploy(processIdName, user, None, None)).futureValue
+      checkStatusAction(SimpleStateStatus.DuringDeploy, None)
+    }
+    checkStatusAction(deploymentManager.defaultProcessStateStatus, Some(ProcessActionType.Deploy))
+  }
+
 
   test("Should return properly state when state is canceled and process is canceled") {
     val id =  prepareCanceledProcess(processName).futureValue

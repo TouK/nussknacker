@@ -57,7 +57,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     if (canonicalProcess.metaData.additionalFields.flatMap(_.description).contains("fail")) {
-      Future.failed(new IllegalArgumentException("Should fail"))
+      Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
     } else {
       Future.successful(())
     }

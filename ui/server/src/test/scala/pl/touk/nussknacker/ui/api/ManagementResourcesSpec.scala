@@ -219,8 +219,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("return from deploy before deployment manager proceeds") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
 
-    //TODO: check for returning
-    deploymentManager.withFailingDeployment {
+    deploymentManager.withWaitForDeployFinish {
       deployProcess(SampleProcess.process.id) ~> check {
         status shouldBe StatusCodes.OK
       }
