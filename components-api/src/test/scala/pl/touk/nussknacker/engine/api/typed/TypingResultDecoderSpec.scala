@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.typed.typing.{AdditionalDataValue, Typed, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{AdditionalDataValue, Typed, TypedNull, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, Unknown}
 
 import scala.collection.immutable.ListMap
 
@@ -11,6 +11,7 @@ class TypingResultDecoderSpec extends FunSuite with Matchers {
     val decoder = new TypingResultDecoder(getClass.getClassLoader.loadClass)
     List(
       Unknown,
+      TypedNull,
       Typed.fromDetailedType[List[String]],
       Typed.fromDetailedType[Map[String, AnyRef]],
       Typed.tagged(Typed.typedClass[String], "alamakota"),

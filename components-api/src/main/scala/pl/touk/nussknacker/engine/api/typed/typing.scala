@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import cats.data.Validated.{Invalid, Valid}
+import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
@@ -94,6 +95,10 @@ object typing {
         else dataString.take(maxDataDisplaySizeWithDots) ++ "..."
       s"${underlying.display}{$shortenedDataString}"
     }
+  }
+
+  case object TypedNull extends TypingResult {
+    override val display = "Null"
   }
 
   // Unknown is representation of TypedUnion of all possible types
@@ -212,8 +217,7 @@ object typing {
     def fromInstance(obj: Any): TypingResult = {
       obj match {
         case null =>
-          // TODO: add better type for null like Null.type - similar to Unknown but e.g. "foo".canBeSubclassOf(TypedNull) should return false
-          Unknown
+          TypedNull
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
           TypedObjectTypingResult(fieldTypes, typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
@@ -254,24 +258,21 @@ object typing {
 
     // creates Typed representation of sum of possible types
     def apply[T <: TypingResult](possibleTypes: Set[T]): TypingResult = {
-      if (possibleTypes.exists(_ == Unknown)) {
-        Unknown
-      } else {
-        // we are sure know that there is no Unknown type inside
-        flatten(possibleTypes.toList.asInstanceOf[List[KnownTypingResult]]).distinct match {
-          case Nil =>
-            Typed.empty
-          case single :: Nil =>
-            single
-          case moreThanOne =>
-            TypedUnion(moreThanOne.toSet)
-        }
+      // We use local function instead of lambda to get compilation error
+      // when some type is not handled.
+      def flattenType(t: TypingResult): Option[List[SingleTypingResult]] = t match {
+        case Unknown => None
+        case TypedNull => Some(Nil)
+        case TypedUnion(s) => Some(s.toList)
+        case single: SingleTypingResult => Some(List(single))
       }
-    }
 
-    private def flatten(possibleTypes: List[KnownTypingResult]): List[SingleTypingResult] = possibleTypes.flatMap {
-      case TypedUnion(possibleTypes) => possibleTypes
-      case other: SingleTypingResult => List(other)
+      val flattenedTypes = possibleTypes.map(flattenType).toList.sequence.map(_.flatten)
+      flattenedTypes match {
+        case None => Unknown
+        case Some(single :: Nil) => single
+        case Some(list) => TypedUnion(list.toSet)
+      }
     }
 
   }

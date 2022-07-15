@@ -44,4 +44,11 @@ class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionVa
     canBeSubclassOf(Typed.fromInstance(2), Typed.fromInstance(3)) shouldBe
       "Types with value have different values: 2 and 3".invalidNel
   }
+
+  test("determine if can be subclass for null") {
+    canBeSubclassOf(Typed[String], TypedNull) shouldBe
+      "No type can be subclass of Null".invalidNel
+    canBeSubclassOf(TypedNull, Typed.fromInstance(1)) shouldBe
+      "Null cannot be subclass of type with value".invalidNel
+  }
 }

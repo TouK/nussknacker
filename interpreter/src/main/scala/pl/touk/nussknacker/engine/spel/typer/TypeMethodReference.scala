@@ -18,6 +18,8 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
       case TypedUnion(nestedTypes) =>
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
+      case TypedNull =>
+        Left(s"Method invocation on ${TypedNull.display} is not allowed")
       case Unknown =>
         if(methodExecutionForUnknownAllowed) Right(Unknown) else Left("Method invocation on Unknown is not allowed")
     }
