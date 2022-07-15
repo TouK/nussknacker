@@ -1,5 +1,5 @@
 import React, {useCallback} from "react"
-import {Field, NodeType, TypedObjectTypingResult, VariableTypes} from "../../../types"
+import {Field, TypedObjectTypingResult, VariableTypes} from "../../../types"
 import {ExpressionLang} from "./editors/expression/types"
 import Map from "./editors/map/Map"
 import {NodeCommonDetailsDefinition, NodeDetailsProps} from "./NodeCommonDetailsDefinition"
@@ -34,10 +34,6 @@ function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
       />
     </NodeCommonDetailsDefinition>
   )
-}
-
-MapVariable.availableFields = (node: NodeType) => {
-  return ["id", "varName"]
 }
 
 export default MapVariable

@@ -74,7 +74,7 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
         }),
       } :
       null,
-    [performNodeEdit, readOnly, t, theme.colors.accent],
+    [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
   )
 
   const openSubprocessButtonData: WindowButtonProps | null = useMemo(

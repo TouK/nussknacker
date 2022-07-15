@@ -1,5 +1,5 @@
 import React, {useCallback} from "react"
-import {Field, NodeType} from "../../../types"
+import {Field} from "../../../types"
 import {ExpressionLang} from "./editors/expression/types"
 import Map from "./editors/map/Map"
 import {MapVariableProps} from "./MapVariable"
@@ -30,10 +30,6 @@ function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Eleme
       />
     </NodeCommonDetailsDefinition>
   )
-}
-
-SubprocessOutputDefinition.availableFields = (node: NodeType) => {
-  return ["id", "outputName"]
 }
 
 export default SubprocessOutputDefinition
