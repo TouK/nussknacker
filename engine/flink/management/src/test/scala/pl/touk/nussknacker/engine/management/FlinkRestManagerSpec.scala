@@ -167,6 +167,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   }
 
   test("refuse to deploy if slots exceeded") {
+    statuses = Nil
     val manager = createManager(statuses, freeSlots = 0)
 
     val message = "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"

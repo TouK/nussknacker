@@ -116,12 +116,16 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
       processService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
     }
 
-    checkStatusAction(deploymentManager.defaultProcessStateStatus, None)
-    deploymentManager.withWaitForDeployFinish {
-      (managementActor ? Deploy(processIdName, user, None, None)).futureValue
-      checkStatusAction(SimpleStateStatus.DuringDeploy, None)
+    val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
+    deploymentManager.withProcessState(None) {
+
+      checkStatusAction(statusFromDeploymentManager, None)
+      deploymentManager.withWaitForDeployFinish {
+        (managementActor ? Deploy(processIdName, user, None, None)).futureValue
+        checkStatusAction(SimpleStateStatus.DuringDeploy, None)
+      }
     }
-    checkStatusAction(deploymentManager.defaultProcessStateStatus, Some(ProcessActionType.Deploy))
+    checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
   }
 
 

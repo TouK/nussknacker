@@ -63,8 +63,11 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   override def receive: PartialFunction[Any, Unit] = {
     case Deploy(process, user, savepointPath, deploymentComment) =>
       ensureNoDeploymentRunning {
-        val deployRes = deploymentService.deployProcess(process.id, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
+        val deployRes: Future[Future[ProcessActionEntityData]] = deploymentService
+          .deployProcess(process.id, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
+        //we wait for nested Future before we consider Deployment as finished
         withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
+        //we reply to the user without waiting for finishing deployment at DeploymentManager
         reply(deployRes)
       }
     case Snapshot(id, user, savepointDir) =>
