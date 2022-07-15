@@ -173,7 +173,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
 
   test("determine if can be subclass for null") {
     TypedNull.canBeSubclassOf(Typed[Int]) shouldBe true
-    TypedNull.canBeSubclassOf(Typed.fromInstance(Map("a" -> 5, "b" -> 8))) shouldBe true
+    TypedNull.canBeSubclassOf(Typed.fromInstance(4)) shouldBe false
     TypedNull.canBeSubclassOf(TypedNull) shouldBe true
     Typed[String].canBeSubclassOf(TypedNull) shouldBe false
   }

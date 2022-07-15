@@ -6,6 +6,8 @@ import cats.implicits.{catsSyntaxValidatedId, _}
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.typing._
 
+import javax.lang.model.`type`.NullType
+
 /**
   * This class determine if type can be subclass of other type. It basically based on fact that TypingResults are
   * sets of possible supertypes with some additional restrictions (like TypedObjectTypingResult).
@@ -24,13 +26,19 @@ trait CanBeSubclassDeterminer {
     (givenType, superclassCandidate) match {
       case (_, Unknown) => ().validNel
       case (Unknown, _) => ().validNel
-      case (TypedNull, _) => ().validNel
+      case (TypedNull, other) => canNullBeSubclassOf(other)
       case (_, TypedNull) => s"No type can be subclass of ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
       case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
       case (given: TypedUnion, superclass: TypedUnion) => canBeSubclassOf(given.possibleTypes, superclass.possibleTypes)
     }
+  }
+
+  private def canNullBeSubclassOf(result: TypingResult): ValidatedNel[String, Unit] = result match {
+    // TODO: Null should not be subclass of typed map that has all values assigned.
+    case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be subclass of type with value".invalidNel
+    case _ => ().validNel
   }
 
   protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): ValidatedNel[String, Unit] = {
