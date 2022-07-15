@@ -1,3 +1,4 @@
+import {cx} from "@emotion/css"
 import {cloneDeep} from "lodash"
 import React, {useEffect} from "react"
 import {useDrag} from "react-dnd"
@@ -15,15 +16,17 @@ export const DndTypes = {
 type OwnProps = {
   nodeModel: NodeType,
   label: string,
-  highlight?: string,
+  highlights?: string[],
+  disabled?: boolean,
 }
 
 export default function Tool(props: OwnProps): JSX.Element {
-  const {label, nodeModel, highlight} = props
+  const {label, nodeModel, highlights = [], disabled} = props
   const [, drag, preview] = useDrag(() => ({
     type: DndTypes.ELEMENT,
     item: {...cloneDeep(nodeModel), id: label},
     options: {dropEffect: "copy"},
+    canDrag: !disabled,
   }))
 
   useEffect(() => {
@@ -36,16 +39,17 @@ export default function Tool(props: OwnProps): JSX.Element {
   const {theme} = useNkTheme()
 
   return (
-    <div className="tool" ref={drag} data-testid={`component:${label}`}>
+    <div className={cx("tool", {disabled})} ref={drag} data-testid={`component:${label}`}>
       <div className="toolWrapper">
         <ComponentIcon node={nodeModel} className="toolIcon"/>
         <Highlighter
           textToHighlight={label}
-          searchWords={[highlight]}
+          searchWords={highlights}
           highlightTag={`span`}
           highlightStyle={{
             color: theme.colors.warning,
             background: theme.colors.secondaryBackground,
+            fontWeight: "bold",
           }}
         />
       </div>

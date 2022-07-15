@@ -29,14 +29,22 @@ function useStateToggleWithReset(resetCondition: boolean, initialState = false):
   return [flag, toggle]
 }
 
-export function ToolboxComponentGroup({componentGroup, highlight}: {componentGroup: ComponentGroup, highlight?: string}) {
+interface Props {
+  componentGroup: ComponentGroup,
+  highlights?: string[],
+  flatten?: boolean,
+}
+
+export function ToolboxComponentGroup(props: Props): JSX.Element {
+  const {componentGroup, highlights = [], flatten} = props
   const dispatch = useDispatch()
   const openedComponentGroups = useSelector(getOpenedComponentGroups)
   const {name} = componentGroup
 
   const isEmpty = useMemo(() => isEmptyComponentGroup(componentGroup), [componentGroup])
 
-  const [forceCollapsed, toggleForceCollapsed] = useStateToggleWithReset(!highlight)
+  const highlighted = useMemo(() => highlights?.length > 0, [highlights?.length])
+  const [forceCollapsed, toggleForceCollapsed] = useStateToggleWithReset(!highlighted)
   const configId = useSelector(getToolbarsConfigId)
 
   const toggle = useCallback(() => {
@@ -45,26 +53,35 @@ export function ToolboxComponentGroup({componentGroup, highlight}: {componentGro
     }
   }, [dispatch, configId, isEmpty, name])
 
-  const label = <span className={"group-label"} onClick={highlight ? toggleForceCollapsed : toggle}>{name}</span>
+  const label = useMemo(
+    () => <span className={"group-label"} onClick={highlighted ? toggleForceCollapsed : toggle}>{name}</span>,
+    [highlighted, name, toggle, toggleForceCollapsed]
+  )
 
   const elements = useMemo(() => componentGroup.components.map(component => (
     <Tool
       nodeModel={component.node}
       label={component.label}
       key={component.type + component.label}
-      highlight={highlight}
+      highlights={highlights}
     />
-  )), [highlight, componentGroup.components])
+  )), [highlights, componentGroup.components])
 
-  const collapsed = isEmpty || (highlight ? forceCollapsed : !openedComponentGroups[name])
-  return (
-    <TreeView
-      itemClassName={cn(isEmpty && "disabled")}
-      nodeLabel={label}
-      collapsed={collapsed}
-      onClick={highlight ? toggleForceCollapsed : toggle}
-    >
-      {elements}
-    </TreeView>
+  const collapsed = useMemo(
+    () => isEmpty || (highlighted ? forceCollapsed : !openedComponentGroups[name]),
+    [forceCollapsed, highlighted, isEmpty, name, openedComponentGroups]
   )
+
+  return flatten ?
+    <>{elements}</> :
+    (
+      <TreeView
+        itemClassName={cn(isEmpty && "disabled")}
+        nodeLabel={label}
+        collapsed={collapsed}
+        onClick={highlighted ? toggleForceCollapsed : toggle}
+      >
+        {elements}
+      </TreeView>
+    )
 }
