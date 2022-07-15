@@ -180,7 +180,7 @@
     "@types/redux-state-sync": "^3.1.2",
     "@types/uuid": "8.3.4",
     "@types/webpack-env": "1.16.3",
-    "@typescript-eslint/eslint-plugin": "4.31.0",
+    "@typescript-eslint/eslint-plugin": "4.33.0",
     "@typescript-eslint/parser": "4.31.0",
     "@vue/preload-webpack-plugin": "^2.0.0",
     "@wojtekmaj/enzyme-adapter-react-17": "0.6.6",
