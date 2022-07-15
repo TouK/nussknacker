@@ -30,10 +30,7 @@ import pl.touk.nussknacker.test.WithConfig
 
 abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpec with BeforeAndAfterAll with BeforeAndAfter with WithConfig with Matchers {
 
-  private lazy val creator: DefaultConfigCreator = new DefaultConfigCreator {
-    override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-      Seq(LoggingListener)
-  }
+  private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
   protected var registrar: FlinkProcessRegistrar = _
   protected lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
@@ -175,5 +172,12 @@ object MockSchemaRegistry extends Serializable {
   val SecondRecordSchemaV1: Schema = AvroUtils.parseSchema(SecondRecordSchemaStringV1)
 
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
+
+}
+
+class TestDefaultConfigCreator extends DefaultConfigCreator {
+
+  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+    Seq(LoggingListener)
 
 }
