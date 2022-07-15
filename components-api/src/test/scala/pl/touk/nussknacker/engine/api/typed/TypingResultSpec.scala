@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
 import scala.collection.immutable.ListMap
 
@@ -234,6 +234,16 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     Typed.fromInstance("1234.1234.12").display shouldBe "String{1234.1234.12}"
     Typed.fromInstance("1234.1234.1234").display shouldBe "String{1234.1234.1234}"
     Typed.fromInstance("1234.1234.1234.1").display shouldBe "String{1234.1234.12...}"
+  }
+
+  test("should correctly calculate union of types") {
+    Typed(Set(Typed[Int], Typed[String])) shouldBe
+      TypedUnion(Set(Typed.typedClass[Int], Typed.typedClass[String]))
+    Typed(Set(Typed[Long], Typed(Set(Typed[Int], Typed[Long], Typed[String])))) shouldBe
+      TypedUnion(Set(Typed.typedClass[Int], Typed.typedClass[Long], Typed.typedClass[String]))
+    Typed(Set(Typed[Double], Unknown)) shouldBe Unknown
+    Typed(Set(Typed[String])) shouldBe Typed[String]
+    Typed(Set(Typed[Int], TypedNull)) shouldBe Typed[Int]
   }
 
   object ClassHierarchy {
