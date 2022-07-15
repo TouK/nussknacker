@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.spel
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
+import scala.util.control.NonFatal
 
 class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
@@ -196,9 +197,17 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()
-      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-      processedMessage.timestamp shouldBe timeAgo
-      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
+      try {
+        val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
+        processedMessage.timestamp shouldBe timeAgo
+        decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
+      } catch {
+        case NonFatal(ex) =>
+          // TODO: temporary for flaky tests diagnosis
+          val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
+          logger.info(s"Input messages: $inputMessages")
+          throw ex
+      }
     }
   }
 
