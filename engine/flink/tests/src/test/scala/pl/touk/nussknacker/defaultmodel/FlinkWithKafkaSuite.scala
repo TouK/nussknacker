@@ -8,7 +8,8 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
@@ -24,11 +25,12 @@ import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer.{ProcessSettin
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.test.WithConfig
 
 abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpec with BeforeAndAfterAll with BeforeAndAfter with WithConfig with Matchers {
 
-  private lazy val creator: DefaultConfigCreator = new DefaultConfigCreator
+  private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 
   protected var registrar: FlinkProcessRegistrar = _
   protected lazy val valueSerializer = new KafkaAvroSerializer(schemaRegistryMockClient)
@@ -170,5 +172,12 @@ object MockSchemaRegistry extends Serializable {
   val SecondRecordSchemaV1: Schema = AvroUtils.parseSchema(SecondRecordSchemaStringV1)
 
   val schemaRegistryMockClient: MockSchemaRegistryClient = new MockSchemaRegistryClient
+
+}
+
+class TestDefaultConfigCreator extends DefaultConfigCreator {
+
+  override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
+    Seq(LoggingListener)
 
 }
