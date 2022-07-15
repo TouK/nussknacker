@@ -44,6 +44,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
   It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module 
+* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
 
 ## In version 1.4.0
                  
