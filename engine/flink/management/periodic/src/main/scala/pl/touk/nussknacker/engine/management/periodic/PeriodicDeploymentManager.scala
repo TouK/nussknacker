@@ -81,14 +81,18 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    withExtractedSchedule(canonicalProcess) { _ => delegate.validate(processVersion, deploymentData, canonicalProcess) }
+    for {
+      scheduledProperty <- extractScheduleProperty(canonicalProcess)
+      _ <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
+      _ <- delegate.validate(processVersion, deploymentData, canonicalProcess)
+    } yield ()
   }
 
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    withExtractedSchedule(canonicalProcess) { scheduleProperty =>
+    extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
       // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
       // but NK API does, so we need to handle this situation.
@@ -97,10 +101,10 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
-  private def withExtractedSchedule[T](canonicalProcess: CanonicalProcess)(action: ScheduleProperty=>Future[T]): Future[T] = {
+  private def extractScheduleProperty[T](canonicalProcess: CanonicalProcess): Future[ScheduleProperty] = {
     schedulePropertyExtractor(canonicalProcess) match {
       case Right(scheduleProperty) =>
-        action(scheduleProperty)
+        Future.successful(scheduleProperty)
       case Left(error) =>
         Future.failed(new PeriodicProcessException(error))
     }

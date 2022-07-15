@@ -57,6 +57,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
     } yield dataList
   }
 
+  //inner Future in result allows to wait for deployment finish, while outer handles validation
   def deployProcess(processId: ProcessId,
                     savepointPath: Option[String],
                     deploymentComment: Option[DeploymentComment],
