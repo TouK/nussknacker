@@ -2,6 +2,7 @@ import React, {useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {AuthErrorCodes} from "../Auth/AuthErrorCodes"
 import {InitErrorComponentProps} from "../Auth/InitErrorComponent"
+import {ErrorTemplate} from "./ErrorTemplate"
 
 interface ErrorProps {
   message: string,
@@ -51,24 +52,19 @@ export function InitializeError({error, retry}: InitErrorComponentProps): JSX.El
     }
   }, [error, t])
 
+  const {description, button, message} = errorProps
+
   return (
-    <div className="error-template center-block">
-      <h1>{t("InitializeError.title", "Oops!")}</h1>
-      <h2>{errorProps.message}</h2>
-      <div className="error-details">
-        <p>{errorProps.description}</p>
-        {errorProps.button && (
-          <button
-            className="big-blue-button"
-            style={{border: "none"}}
-            onClick={() => retry()}
-          >
-            {errorProps.button}
-          </button>
-        )}
-      </div>
-    </div>
+    <ErrorTemplate message={message} description={description}>
+      {button && (
+        <button
+          className="big-blue-button"
+          style={{border: "none"}}
+          onClick={() => retry()}
+        >
+          {button}
+        </button>
+      )}
+    </ErrorTemplate>
   )
 }
-
-export default InitializeError

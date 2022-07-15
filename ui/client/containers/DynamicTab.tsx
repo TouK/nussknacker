@@ -5,7 +5,7 @@ import ErrorBoundary from "../components/common/ErrorBoundary"
 import {ExternalModule, splitUrl, useExternalLib} from "./ExternalLib"
 import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
-import NotFound from "./errors/NotFound"
+import {NotFound} from "./errors/NotFound"
 import SystemUtils from "../common/SystemUtils"
 
 export type DynamicTabData = {
@@ -38,7 +38,7 @@ export const RemoteModuleTab = <CP extends { basepath?: string }>({
   const props = useMemo(() => ({onNavigate: history.push, ...componentProps}), [componentProps, history.push])
 
   return (
-    <ErrorBoundary FallbackComponent={NotFound}>
+    <ErrorBoundary FallbackComponent={() => <NotFound/>}>
       <MuiThemeProvider>
         <ExternalModule url={urlValue}>
           <RemoteTabComponent scope={scope} componentProps={props}/>
@@ -52,18 +52,23 @@ const IframeTab = ({tab}: { tab: DynamicTabData }) => {
   const iframeQueryParam = {iframe: true}
   const accessTokenQueryParam = tab.addAccessTokenInQueryParam ? {accessToken: SystemUtils.getAccessToken()} : {}
   return (
-      <iframe
-          src={queryString.stringifyUrl({url: tab.url, query: {...iframeQueryParam, ...accessTokenQueryParam}})}
-          width="100%"
-          height="100%"
-          frameBorder="0"
-      />
-  );
+    <iframe
+      src={queryString.stringifyUrl({url: tab.url, query: {...iframeQueryParam, ...accessTokenQueryParam}})}
+      width="100%"
+      height="100%"
+      frameBorder="0"
+    />
+  )
 }
 
-export const DynamicTab = memo(function DynamicComponent<CP extends { basepath?: string }>({tab, componentProps}: { tab: DynamicTabData, componentProps: CP }): JSX.Element {
+export const DynamicTab = memo(function DynamicComponent<CP extends { basepath?: string }>({
+  tab,
+  componentProps,
+}: { tab: DynamicTabData, componentProps: CP }): JSX.Element {
   switch (tab.type) {
-    case "Remote": return <RemoteModuleTab url={tab.url} componentProps={componentProps}/>
-    case "IFrame": return <IframeTab tab={tab}/>
+    case "Remote":
+      return <RemoteModuleTab url={tab.url} componentProps={componentProps}/>
+    case "IFrame":
+      return <IframeTab tab={tab}/>
   }
 })
