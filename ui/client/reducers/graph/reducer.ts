@@ -243,6 +243,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           ...state.processToDisplay,
           validationResult: {
             ...action.validationResult,
+            // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
             nodeResults: {
               ...state.processToDisplay.validationResult.nodeResults,
               ...action.validationResult.nodeResults,
