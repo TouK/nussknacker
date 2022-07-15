@@ -29,6 +29,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3265](https://github.com/TouK/nussknacker/pull/3265) Initial work on UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
 
 ### REST API changes
 
