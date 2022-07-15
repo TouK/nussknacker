@@ -8,9 +8,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
 
-  // TODO: after switch to kafka-raft started failing with "maybeBalancePartitionLeaders: unable to start processing because of TimeoutException"
   // This test is in separate suite to make sure that restarting of kafka server have no influence on other test case scenarios
-  ignore("Set status to restarting when scenario fails and back to running when the problems are fixed") {
+  test("Set status to restarting when scenario fails and back to running when the problems are fixed") {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
 
     val name = ProcessName("testName")
@@ -23,8 +22,6 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       fixture.deployScenario(scenario)
     }
 
-    // wait until error topic created
-    Thread.sleep(5000)
     kafkaServer.kafkaServer.shutdown()
     kafkaServer.kafkaServer.awaitShutdown()
 
