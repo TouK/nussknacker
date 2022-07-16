@@ -3,6 +3,7 @@ package pl.touk.nussknacker.defaultmodel
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.avro.generic.GenericData
+import org.apache.kafka.clients.consumer.KafkaConsumer
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -194,28 +195,41 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
-    logger.info(s"Message sent successful: ${sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue}")
+    sendAsJsonWithEnsuredDelivery(givenMatchingJsonObj, topicConfig.input, timeAgo)
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()
-      try {
+      withInputTopicStateClue(consumer, topicConfig) {
         val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
         processedMessage.timestamp shouldBe timeAgo
         decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
-      } catch {
-        case NonFatal(ex) =>
-          // TODO: temporary for flaky tests diagnosis
-          try {
-            val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
-            logger.info(s"Input messages: $inputMessages")
-          } catch {
-            case NonFatal(ex) =>
-              logger.error("No input message", ex)
-          }
-          throw ex
       }
     }
   }
+
+  // TODO: temporary for flaky tests diagnosis
+  private def sendAsJsonWithEnsuredDelivery(jsonString: String, topic: String, timestamp: java.lang.Long): Unit = {
+    kafkaClient.createTopic(topic, 1)
+    logger.info(s"Topic created: ${kafkaClient.topic(topic)}")
+    logger.info(s"Message sent successful: ${sendAsJson(jsonString, topic, timestamp).futureValue}")
+  }
+
+  private def withInputTopicStateClue[T](consumer: KafkaConsumer[Array[Byte], Array[Byte]], topicConfig: TopicConfig)(run: => T): T = {
+    try {
+      run
+    } catch {
+      case NonFatal(ex) =>
+        try {
+          val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
+          logger.info(s"Input messages: $inputMessages")
+        } catch {
+          case NonFatal(ex) =>
+            logger.error(s"No input message on topic: ${topicConfig.input}", ex)
+        }
+        throw ex
+    }
+  }
+  // END: temporary for flaky tests diagnosis
 
   test("should read avro object from kafka and save new one created from scratch") {
     val topicConfig = createAndRegisterTopicConfig("read-save-scratch", RecordSchemaV1)
