@@ -90,7 +90,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   }
 
   private def deserializeKey[T](topic: String, payload: Array[Byte]) = if (kafkaConfig.useStringForKey) {
-    keyStringDeserializer.deserialize(topic, payload)
+    keyStringDeserializer.deserialize(topic, payload).asInstanceOf[T]
   } else {
     deserialize[T](payload)
   }

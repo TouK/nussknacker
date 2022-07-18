@@ -107,13 +107,13 @@ object AvroUtils extends LazyLogging {
   /**
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
     */
-  def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
+  def createRecord(schema: Schema, data: collection.Map[String, Any]): GenericRecord = {
     def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
-      case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
+      case (map: collection.Map[String@unchecked, _], Schema.Type.RECORD) =>
         createRecord(schema, map)
       case (collection: Traversable[_], Schema.Type.ARRAY) =>
         collection.map(createValue(_, schema)).toList.asJava
-      case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
+      case (map: collection.Map[String@unchecked, _], Schema.Type.MAP) =>
         map.mapValues(createValue(_, schema)).asJava
       case (_, _) => value
     }
