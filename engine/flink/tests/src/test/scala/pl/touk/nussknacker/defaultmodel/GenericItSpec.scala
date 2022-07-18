@@ -151,7 +151,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
 
 
   test("should read json object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     sendAsJson(givenNotMatchingJsonObj, JsonInTopic, timeAgo)
     sendAsJson(givenMatchingJsonObj, JsonInTopic, timeAgo)
@@ -178,7 +178,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-avro", RecordSchemas)
 
@@ -193,7 +193,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
     wrapWithKafkaDebugLogging {
