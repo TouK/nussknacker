@@ -3,13 +3,13 @@ import {JSONTree} from "react-json-tree"
 import {connect} from "react-redux"
 import {withRouter} from "react-router-dom"
 import ActionsUtils from "../actions/ActionsUtils"
-import * as JsonUtils from "../common/JsonUtils"
+import {removeEmptyProperties} from "../common/JsonUtils"
 import ProcessUtils from "../common/ProcessUtils"
 import {ExpressionLang} from "../components/graph/node-modal/editors/expression/types"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
-import _ from "lodash"
+import {find, flatMap, get, isBoolean, isEmpty, isNumber, isObject, map, set, sortBy} from "lodash"
 
 class Services extends React.Component {
 
@@ -47,7 +47,7 @@ class Services extends React.Component {
     const service = this.state.services[idx]
     const cachedParams = this.cachedServiceParams(service.name, service.processingType)
 
-    const initializeParameter = paramName => _.find(cachedParams, cp => cp.name === paramName) || {
+    const initializeParameter = paramName => find(cachedParams, cp => cp.name === paramName) || {
       name: paramName,
       expression: {
         //TODO: is it always fixed?
@@ -56,7 +56,7 @@ class Services extends React.Component {
       },
     }
 
-    const initializeParametersValues = params => _.map(params, p => initializeParameter(p.name))
+    const initializeParametersValues = params => map(params, p => initializeParameter(p.name))
     this.setState(
       {
         processingType: service.processingType,
@@ -83,14 +83,14 @@ class Services extends React.Component {
   parametersList(params) {
     const setParam = paramName => value => {
       const params = this.state.parametersValues
-      _.set(_.find(params, p => p.name === paramName), "expression.expression", value)
+      set(find(params, p => p.name === paramName), "expression.expression", value)
       this.setState({parametersValues: params})
     }
 
     return (
       <span>
-        {_.map(params, (param) => this.formRow(
-          `param_${  param.name}`,
+        {map(params, (param) => this.formRow(
+          `param_${param.name}`,
           <span>{param.name}
             <div className="labelFooter">{ProcessUtils.humanReadableType(param.typ)}</div></span>,
           <span>
@@ -114,7 +114,7 @@ class Services extends React.Component {
       this.cacheServiceParams(this.state.serviceName, this.state.processingType, this.state.parametersValues)
       this.setState({queryResult: {response: response.data, errorMessage: null}})
     }).catch(error => {
-      this.setState({queryResult: {response: {}, errorMessage: _.get(error, "response.data.message")}})
+      this.setState({queryResult: {response: {}, errorMessage: get(error, "response.data.message")}})
     })
   }
 
@@ -135,8 +135,8 @@ class Services extends React.Component {
   }
 
   findParamExpression(name) {
-    const param = _.find(this.state.parametersValues, p => p.name === name)
-    return _.get(param, "expression.expression")
+    const param = find(this.state.parametersValues, p => p.name === name)
+    return get(param, "expression.expression")
   }
 
   formRow(id, label, input) {
@@ -164,11 +164,11 @@ class Services extends React.Component {
         </div>
         <div className="queryServiceResults">
           {
-            !_.isEmpty(this.state.queryResult.response) ?
+            !isEmpty(this.state.queryResult.response) ?
               [
                 this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
                 <hr key="separator"/>,
-                this.prettyPrint("collectedResults", JsonUtils.removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
+                this.prettyPrint("collectedResults", removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
               ] :
               null
           }
@@ -182,7 +182,7 @@ class Services extends React.Component {
 
   prettyPrint(id, json, title) {
     if (this.hasSomeValue(json)) {
-      const data = _.isObject(json) ? json : {result: json}
+      const data = isObject(json) ? json : {result: json}
 
       return (
         <div key={id}>
@@ -202,8 +202,8 @@ class Services extends React.Component {
   }
 
   hasSomeValue = (o) => {
-    //_.isEmpty(123) returns true... more: https://github.com/lodash/lodash/issues/496
-    return _.isNumber(o) || _.isBoolean(o) || !_.isEmpty(o)
+    //isEmpty(123) returns true... more: https://github.com/lodash/lodash/issues/496
+    return isNumber(o) || isBoolean(o) || !isEmpty(o)
   }
 }
 
@@ -211,8 +211,8 @@ Services.header = "Services"
 Services.key = "services"
 
 export function mapProcessDefinitionToServices(services) {
-  return _.sortBy(
-    _.flatMap(services, (typeServices, processingType) => _.map(typeServices, (service, name) => ({
+  return sortBy(
+    flatMap(services, (typeServices, processingType) => map(typeServices, (service, name) => ({
       name: name,
       categories: service.categories,
       parameters: service.parameters,
