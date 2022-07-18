@@ -52,6 +52,7 @@
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
 * [#3287](https://github.com/TouK/nussknacker/pull/3287) Add low level kafka components by feature flag
+* [#3287](https://github.com/TouK/nussknacker/pull/3287) Add low level kafka components by feature flag
 
 1.4.0 (14 Jun 2022)
 ------------------------

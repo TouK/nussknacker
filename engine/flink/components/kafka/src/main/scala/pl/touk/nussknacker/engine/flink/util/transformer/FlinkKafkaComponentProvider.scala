@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import net.ceedubs.ficus.Ficus.{optionValueReader, toFicusConfig}
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, toFicusConfig}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
@@ -37,7 +36,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val jsonPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
     val universalSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
 
-    val lowLevelKafkaComponents = List(
+    lazy val lowLevelKafkaComponents = List(
       ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(overriddenDependencies)).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
@@ -54,7 +53,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
     )
 
-    val shouldAddLowLevelKafkaComponents = config.getAs[Boolean]("addLowLevelKafkaComponents").getOrElse(true)
+    val shouldAddLowLevelKafkaComponents = config.getAs[Boolean]("config.addLowLevelKafkaComponents").getOrElse(true)
     if (shouldAddLowLevelKafkaComponents) {
       lowLevelKafkaComponents ::: universalKafkaComponents
     } else {
