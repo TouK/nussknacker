@@ -8,9 +8,10 @@ import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
-import pl.touk.nussknacker.engine.api.function.ExtendedFunction
+import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName, TypingFunction}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
+
+import java.lang.annotation.Annotation
 
 object EspTypeUtils {
 
@@ -18,7 +19,11 @@ object EspTypeUtils {
 
   def clazzDefinition(clazz: Class[_])
                      (implicit settings: ClassExtractionSettings): ClazzDefinition =
-    ClazzDefinition(Typed.typedClass(clazz), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false), extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true))
+    ClazzDefinition(
+      Typed.typedClass(clazz),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = false),
+      extractPublicMethodsAndFields(clazz, staticMethodsAndFields = true)
+    )
 
   private def extractPublicMethodsAndFields(clazz: Class[_], staticMethodsAndFields: Boolean)
                                            (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
@@ -48,19 +53,25 @@ object EspTypeUtils {
       if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
       else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
 
+    val methodNameAndStaticInfoList: List[(String, StaticMethodInfo)] = filteredMethods.flatMap { method =>
+      val extractedMethod = extractRegularMethod(method)
+      collectMethodNames(method).map(_ -> extractedMethod)
+    }
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
       val extractedMethod = extractMethod(method)
       collectMethodNames(method).map(_ -> extractedMethod)
     }
 
-    deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
+    deduplicateMethodsWithGenericReturnType(methodNameAndStaticInfoList) ++
+      methodNameAndInfoList.groupBy{ case (k, _) => k }.mapValues(_.map{ case (_, v) => v })
   }
 
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
-  private def filterHiddenParameterAndReturnType(infos: Map[String, List[MethodInfo]])(implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
+  private def filterHiddenParameterAndReturnType(infos: Map[String, List[MethodInfo]])
+                                                (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.parameters.map(_.refClazz) :+ methodInfo.refClazz).forall {
+      (methodInfo.interfaceParameters.map(_.refClazz) :+ methodInfo.interfaceResult).forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -80,7 +91,7 @@ object EspTypeUtils {
       LocalDate toLocalDate()
     In our case the second one is correct
    */
-  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
     val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
@@ -90,8 +101,8 @@ object EspTypeUtils {
           class we pick arbitrary one (we sort to avoid randomness)
          */
 
-        methodsForParams.find { case (_, MethodInfo(_, ret, _, _)) =>
-          methodsForParams.forall(mi => ret.canBeSubclassOf(mi._2.refClazz))
+        methodsForParams.find { case (_, methodInfo) =>
+          methodsForParams.forall(mi => methodInfo.refClazz.canBeSubclassOf(mi._2.refClazz))
         }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
     }.toGroupedMap
       //we sort only to avoid randomness
@@ -114,17 +125,35 @@ object EspTypeUtils {
     }
   }
 
-  private def extractMethod(method: Method)
-    = MethodInfo(extractParameters(method), extractMethodReturnType(method), extractNussknackerDocs(method), method.isVarArgs)
+  private def getAnnotationOption[T <: Annotation](method: Method, annotationClass: Class[T]): Option[T] =
+    if (method.isAnnotationPresent(annotationClass)) Some(method.getAnnotation(annotationClass)) else None
+
+  private def extractMethod(method: Method): MethodInfo = getAnnotationOption(method, classOf[GenericType]) match {
+    case Some(value) =>
+      val typeFunctionClass = value.typingFunction()
+      val typeFunctionConstructor = typeFunctionClass.getConstructor()
+      val typeFunctionInstance = typeFunctionConstructor.newInstance().asInstanceOf[TypingFunction]
+      FunctionalMethodInfo.fromStringErrorTypeFunction(x => typeFunctionInstance.apply(x), method.getName, extractNussknackerDocs(method))
+    case None => extractRegularMethod(method)
+  }
+
+  private def extractRegularMethod(method: Method): StaticMethodInfo =
+    MethodInfo(
+      extractParameters(method),
+      extractMethodReturnType(method),
+      method.getName,
+      extractNussknackerDocs(method),
+      method.isVarArgs
+    )
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
-                                 (implicit settings: ClassExtractionSettings): Map[String, MethodInfo] = {
+                                 (implicit settings: ClassExtractionSettings): Map[String, StaticMethodInfo] = {
     val interestingFields = clazz.getFields.filter(membersPredicate.shouldBeVisible)
     val fields =
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 

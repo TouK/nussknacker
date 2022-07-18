@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, StaticClazzDefinition, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, StaticMethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
 import pl.touk.nussknacker.engine.variables.MetaVariables
@@ -71,7 +71,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   private def clazzAndItsChildrenDefinitionIfNotCollectedSoFar(typingResult: TypingResult)
                                                               (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                                              (implicit settings: ClassExtractionSettings): Set[StaticClazzDefinition] = {
+                                                              (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     if (collectedSoFar.contains(typingResult)) {
       Set.empty
     } else {
@@ -82,7 +82,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
 
   private def clazzAndItsChildrenDefinition(typingResult: TypingResult)
                                            (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                           (implicit settings: ClassExtractionSettings): Set[StaticClazzDefinition] = {
+                                           (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     typingResult match {
       case e:TypedClass =>
         val definitionsForClass = if (settings.isHidden(e.klass)) {
@@ -92,29 +92,29 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
           definitionsFromMethods(classDefinition)(collectedSoFar, path) + classDefinition
         }
         definitionsForClass ++ definitionsFromGenericParameters(e)(collectedSoFar, path)
-      case _ => Set.empty[StaticClazzDefinition]
+      case _ => Set.empty[ClazzDefinition]
     }
   }
 
   private def definitionsFromGenericParameters(typedClass: TypedClass)
                                               (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                              (implicit settings: ClassExtractionSettings): Set[StaticClazzDefinition] = {
+                                              (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     typedClass.params.zipWithIndex.flatMap {
       case (k:TypedClass, idx) => clazzAndItsChildrenDefinitionIfNotCollectedSoFar(k)(collectedSoFar, path.pushSegment(GenericParameter(k, idx)))
-      case _ => Set.empty[StaticClazzDefinition]
+      case _ => Set.empty[ClazzDefinition]
     }.toSet
   }
 
-  private def definitionsFromMethods(classDefinition: StaticClazzDefinition)
+  private def definitionsFromMethods(classDefinition: ClazzDefinition)
                                     (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
-                                    (implicit settings: ClassExtractionSettings): Set[StaticClazzDefinition] = {
+                                    (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.interfaceResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
       // TODO verify if parameters are need and if they are not, remove this
 //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
     }.toSet ++
     classDefinition.staticMethods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.refClazz)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.interfaceResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
     }.toSet
   }
 
@@ -151,8 +151,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     override def print: String = s"[$ix]${classNameWithStrippedPackages(cl)}"
   }
 
-  private case class MethodReturnType(m: StaticMethodInfo) extends DiscoverySegment {
-    override def print: String = s"ret(${classNameWithStrippedPackages(m.refClazz)})"
+  private case class MethodReturnType(m: MethodInfo) extends DiscoverySegment {
+    override def print: String = s"ret(${classNameWithStrippedPackages(m.interfaceResult)})"
   }
 
   private case class MethodParameter(p: Parameter) extends DiscoverySegment {

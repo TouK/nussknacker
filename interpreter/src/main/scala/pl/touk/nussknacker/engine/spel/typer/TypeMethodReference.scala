@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnUnknownError, UnknownMethodError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnNullError, InvocationOnUnknownError, UnknownMethodError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -35,7 +35,7 @@ class TypeMethodReference(methodName: String,
       case TypedUnion(nestedTypes) =>
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
       case TypedNull =>
-        Left(s"Method invocation on ${TypedNull.display} is not allowed")
+        InvocationOnNullError.invalidNel
       case Unknown =>
         if(methodExecutionForUnknownAllowed) Unknown.validNel else InvocationOnUnknownError.invalidNel
     }
