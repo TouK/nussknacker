@@ -4,6 +4,7 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericDatumWriter}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
@@ -66,9 +67,14 @@ object ConfluentUtils extends LazyLogging {
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
     */
-  def serializeDataToBytesArray(data: Any, schemaId: Int, maybeSchema: Option[Schema]): Array[Byte] = {
+  def serializeContainerDataToBytesArray(container: GenericContainer, schemaId: Int): Array[Byte] = {
     val output = new ByteArrayOutputStream()
     writeSchemaId(schemaId, output)
+
+    val data = container match {
+      case non: NonRecordContainer => non.getValue
+      case any => any
+    }
 
     data match {
       case v: ByteBuffer =>
@@ -76,13 +82,11 @@ object ConfluentUtils extends LazyLogging {
       case v: Array[Byte] =>
         output.write(v)
       case v =>
-        val schema = maybeSchema.getOrElse(getSchema(v))
-
         val writer = data match {
           case _: SpecificRecord =>
-           new SpecificDatumWriter[Any](schema, AvroUtils.specificData)
+            new SpecificDatumWriter[Any](container.getSchema, AvroUtils.specificData)
           case _ =>
-            new GenericDatumWriter[Any](schema, AvroUtils.genericData)
+            new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
         }
 
         val encoder = EncoderFactory.get().binaryEncoder(output, null)
@@ -93,26 +97,6 @@ object ConfluentUtils extends LazyLogging {
     val bytes = output.toByteArray
     output.close()
     bytes
-  }
-
-  def getSchema(data: Any): Schema = {
-    def discoverSchema(data: List[Any]) = data.map(getSchema).distinct match {
-      case head :: Nil => head
-      case list => Schema.createUnion(list.asJava)
-    }
-
-    data match {
-      case container: GenericContainer =>
-        container.getSchema
-      case map: java.util.Map[_, _] =>
-        val mapValuesSchema = discoverSchema(map.values.asScala.toList)
-        Schema.createMap(mapValuesSchema)
-      case list: java.util.List[_] =>
-        val listValuesSchema = discoverSchema(list.asScala.toList)
-        Schema.createArray(listValuesSchema)
-      case _ =>
-        AvroSchemaUtils.getSchema(data)
-    }
   }
 
   private def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {

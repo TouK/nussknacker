@@ -4,16 +4,19 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.GenericData
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
+import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
+
+  import collection.JavaConverters._
 
   def isSpecificRecord[T: ClassTag]: Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
@@ -100,6 +103,32 @@ object AvroUtils extends LazyLogging {
         logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
         None
     }
+
+  /**
+    * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
+    */
+  def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
+    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
+      case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
+        createRecord(schema, map)
+      case (collection: Traversable[_], Schema.Type.ARRAY) =>
+        collection.map(createValue(_, schema)).toList.asJava
+      case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
+        map.mapValues(createValue(_, schema)).asJava
+      case (_, _) => value
+    }
+
+    val builder = new LogicalTypesGenericRecordBuilder(schema)
+    data.foreach{ case (key, value) =>
+
+      val valueToSet = Option(schema.getField(key))
+        .map(field => createValue(value, field.schema()))
+        .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
+
+      builder.set(key, valueToSet)
+    }
+    builder.build()
+  }
 
   def verifyLogicalType[T: ClassTag](schema: Schema): Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]

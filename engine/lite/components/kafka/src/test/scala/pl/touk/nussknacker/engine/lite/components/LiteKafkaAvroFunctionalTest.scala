@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -20,8 +20,6 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
   import LiteKafkaTestScenarioRunner._
   import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
-
-  private val avroEncoder = BestEffortAvroEncoder(ValidationMode.allowRedundantAndOptional)
 
   private val recordSchema = AvroUtils.parseSchema(
     """{
@@ -54,9 +52,9 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
     runtime.registerAvroSchema(outputTopic, recordSchema)
 
     //When
-    val record = avroEncoder.encodeOrError(Map(
+    val record = AvroUtils.createRecord(recordSchema, Map(
       "first" -> "Jan", "last" -> "Kowalski", "age" -> 18, "sex" -> "MALE", "address" -> Map("city" -> "Warsaw")
-    ), recordSchema)
+    ))
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
     val result = runtime.runWithAvroData(simpleAvroScenario, List(input)).validValue
