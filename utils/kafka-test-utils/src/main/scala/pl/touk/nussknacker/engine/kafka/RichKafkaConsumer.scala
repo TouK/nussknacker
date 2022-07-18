@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
+import org.apache.kafka.common.TopicPartition
+import pl.touk.nussknacker.engine.api.CirceUtil
 
 import java.time.Duration
 import java.util.concurrent.TimeoutException
-import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
-import org.apache.kafka.common.TopicPartition
-import org.scalatest.concurrent.Eventually.{eventually, _}
-import org.scalatest.time.{Millis, Seconds, Span}
-import pl.touk.nussknacker.engine.api.CirceUtil
 
-class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
+class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   import scala.collection.JavaConverters._
 
@@ -27,14 +26,11 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
       .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
-    implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
-
-    val partitionsInfo = eventually {
-      consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
-    }
-
+    val partitionsInfo = consumer.partitionsFor(topic, Duration.ofSeconds(secondsToWait))
     val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
     consumer.assign(partitions.asJava)
+    logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
+    logger.debug(s"Consumer offsets: beginning: ${consumer.beginningOffsets(consumer.assignment())}, end: ${consumer.endOffsets(consumer.assignment())}")
 
     Stream.continually(()).flatMap(new Poller(secondsToWait))
   }

@@ -22,6 +22,7 @@
 
     <!-- TODO: temporary logging for debugging GenericItSpec flaky tests -->
     <logger name="pl.touk.nussknacker.engine.util.LoggingListener.json-schemed-test" level="DEBUG"/>
+    <logger name="pl.touk.nussknacker.engine.kafka.RichKafkaConsumer" level="DEBUG"/>
 
     <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
 <!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
