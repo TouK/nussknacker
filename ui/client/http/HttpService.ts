@@ -94,10 +94,17 @@ export type ComponentUsageType = {
   lastAction: ProcessActionType,
 }
 
+type Notification = {
+    id: string,
+    type: "info" | "warning"
+    message?: string
+}
+
 //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
 class HttpService {
   notificationActions = null
   notificationReload = null
+  processedNotificationIds: string[] = []
 
   setNotificationActions(na) {
     this.notificationActions = na
@@ -109,9 +116,14 @@ class HttpService {
   }
 
   _loadNotifications() {
-    api.get("/notifications").then(response => response.data.forEach(notification => {
-      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
-    }))
+      
+    api.get<Notification[]>("/notifications").then(response => {
+        let allNotifications = response.data;
+        allNotifications
+            .filter(not => !this.processedNotificationIds.includes(not.id))
+            .forEach(notification =>  notification.type === "info" ? this.addInfo(notification.message) : this.addErrorMessage(notification.message, null, false))
+        this.processedNotificationIds = allNotifications.map(not => not.id)
+    })
   }
 
   addInfo(message: string) {
@@ -261,7 +273,6 @@ class HttpService {
 
   deploy(processId, comment?): Promise<{isSuccess: boolean}> {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
-      this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
       if (error?.response?.status != 400) {
@@ -294,7 +305,6 @@ class HttpService {
 
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
       .catch(error => {
         if (error?.response?.status != 400) {
         return this.addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
@@ -424,7 +434,6 @@ class HttpService {
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
     return api.put(`/processes/${encodeURIComponent(processId)}`, data)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioSaved", "Scenario {{processId}} was saved", {processId})))
       .catch(error => {
         this.addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
         return Promise.reject(error)

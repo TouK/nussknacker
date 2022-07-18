@@ -1,23 +1,19 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.actor.{ActorRef, ActorSystem}
+import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.ui.process.deployment._
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.ui.notifications.NotificationService
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
+import java.time.Instant
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
-import akka.pattern.ask
-import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.{Decoder, Encoder}
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 
-class NotificationResources(managementActor: ActorRef)
+class NotificationResources(notificationsService: NotificationService)
                            (implicit ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -29,42 +25,15 @@ class NotificationResources(managementActor: ActorRef)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("notifications") {
-      get {
-        complete {
-          //TODO: add different notifications?
-          prepareDeploymentNotifications()
+      parameter('after.as[Instant].optional) { notificationsAfter =>
+        get {
+          complete {
+            notificationsService.notifications(user, notificationsAfter)
+          }
         }
       }
     }
   }
 
-  private def prepareDeploymentNotifications(): Future[List[Notification]] = {
-    (managementActor ? DeploymentStatus)
-      .mapTo[DeploymentStatusResponse]
-      .map {
-        case DeploymentStatusResponse(deploymentInfos) =>
-          deploymentInfos.map{ case (k, v) => toNotification(k, v) }.toList
-      }
-  }
-
-  //TODO: consider 'personalization' - different message for user who is deploying
-  private def toNotification(processName: ProcessName, deploymentInfo: DeployInfo): Notification = {
-    val actionString = deploymentInfo.action match {
-      case DeploymentActionType.Deployment => "deployed"
-      case DeploymentActionType.Cancel => "cancelled"
-    }
-    Notification(s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", NotificationType.info)
-  }
-
 }
 
-@JsonCodec case class Notification(message: String, `type`: NotificationType.Value)
-
-object NotificationType extends Enumeration {
-
-  implicit val typeEncoder: Encoder[NotificationType.Value] = Encoder.encodeEnumeration(NotificationType)
-  implicit val typeDecoder: Decoder[NotificationType.Value] = Decoder.decodeEnumeration(NotificationType)
-
-  type NotificationType = Value
-  val info, warning = Value
-}

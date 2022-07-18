@@ -9,11 +9,13 @@ import scala.concurrent.ExecutionContext
 
 object ProcessChangeListenerLoader extends LazyLogging {
 
-  def loadListeners(classLoader: ClassLoader, config: Config, services: NussknackerServices): ProcessChangeListener = {
+  def loadListeners(classLoader: ClassLoader,
+                    config: Config,
+                    services: NussknackerServices, predefined: ProcessChangeListener*): ProcessChangeListener = {
     val factories = ScalaServiceLoader.load[ProcessChangeListenerFactory](classLoader)
     logger.info(s"Loading listener factories: ${factories.map(_.getClass.getCanonicalName)}")
     val listeners = factories.map(_.create(config, services))
-    new ProcessChangeListenerAggregate(listeners)
+    new ProcessChangeListenerAggregate(predefined.toList ::: listeners)
   }
 
   class ProcessChangeListenerAggregate(listeners: Seq[ProcessChangeListener]) extends ProcessChangeListener {
