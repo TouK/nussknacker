@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.notifications.{NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -121,6 +122,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
+    val notificationListener = new NotificationsListener
+    val processChangeListener = ProcessChangeListenerLoader
+      .loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
+
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver)
@@ -133,8 +138,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val counter = new ProcessCounter(subprocessRepository)
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
-
-    val processChangeListener = ProcessChangeListenerLoader.loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)))
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
@@ -150,6 +153,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val countsReporter = featureTogglesConfig.counts.flatMap(prepareCountsReporter(environment, _))
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
+
+    val notificationService = new NotificationService(managementActor, notificationListener)
 
     initMetrics(metricsRegistry, processRepository)
 
@@ -173,7 +178,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
-        new NotificationResources(managementActor),
+        new NotificationResources(notificationService),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),
