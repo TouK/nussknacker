@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.ConfigValueFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.apache.avro.generic.GenericData.EnumSymbol
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.AvroUtils
@@ -21,8 +23,10 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
   import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
+  private val enumSchema =  AvroUtils.parseSchema("""{"type": "enum", "name": "Sex", "symbols": ["MALE", "FEMALE"]}""")
+
   private val recordSchema = AvroUtils.parseSchema(
-    """{
+    s"""{
       |  "type": "record",
       |  "namespace": "pl.touk.nussknacker.engine.avro",
       |  "name": "FullName",
@@ -30,7 +34,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
       |    { "name": "first", "type": "string" },
       |    { "name": "last", "type": "string" },
       |    { "name": "age", "type": "int" },
-      |    { "name": "sex", "type": {"type": "enum", "name": "Sex", "symbols": ["MALE", "FEMALE"]}},
+      |    { "name": "sex", "type": $enumSchema},
       |    { "name": "address", "type": {"type":"record", "name": "Address", "fields": [{ "name": "city", "type": "string" }]} }
       |  ]
       |}
@@ -53,11 +57,11 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
 
     //When
     val record = AvroUtils.createRecord(recordSchema, Map(
-      "first" -> "Jan", "last" -> "Kowalski", "age" -> 18, "sex" -> "MALE", "address" -> Map("city" -> "Warsaw")
+      "first" -> "Jan", "last" -> "Kowalski", "age" -> 18, "sex" -> new EnumSymbol(enumSchema, "MALE"), "address" -> Map("city" -> "Warsaw")
     ))
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
-    val result = runtime.runWithAvroData(simpleAvroScenario, List(input)).validValue
+    val result = runtime.runWithAvroData[String, GenericRecord](simpleAvroScenario, List(input)).validValue
     val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then
@@ -74,7 +78,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedV
     val record = "lcl"
 
     val input = KafkaAvroConsumerRecord(inputTopic, record, schemaId)
-    val result = runtime.runWithAvroData(simpleAvroScenario, List(input)).validValue
+    val result = runtime.runWithAvroData[String, String](simpleAvroScenario, List(input)).validValue
     val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then

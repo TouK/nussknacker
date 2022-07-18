@@ -66,6 +66,7 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
       writeHeader(data, avroSchema, schemaId, out)
 
       data match {
+        case buffer: ByteBuffer => out.write(buffer.array())
         case array: Array[Byte] => out.write(array)
         case _ =>
           val encoder = encoderToUse(avroSchema, out)
