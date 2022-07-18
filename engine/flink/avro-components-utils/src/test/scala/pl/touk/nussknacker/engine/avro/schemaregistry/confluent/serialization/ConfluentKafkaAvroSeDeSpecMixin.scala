@@ -6,8 +6,8 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.avro.TestSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.helpers._
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentAvroSchemaBasedMessagesSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 
@@ -24,12 +24,12 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-        ConfluentSchemaRegistryProvider.avroPayload(MockSchemaRegistry.factory),
+        ConfluentAvroSchemaBasedMessagesSerdeProvider.avroPayload(MockSchemaRegistry.factory),
         new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
         new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false))
 
   lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
-        ConfluentSchemaRegistryProvider.jsonPayload(MockSchemaRegistry.factory),
+        ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
         SimpleKafkaJsonSerializer,
         SimpleKafkaJsonDeserializer)
 
@@ -38,7 +38,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   case class SchemaRegistryProviderSetup(`type`: SchemaRegistryProviderSetupType.Value,
-                                         provider: SchemaRegistryProvider,
+                                         provider: SchemaBasedMessagesSerdeProvider,
                                          override val valueSerializer: Serializer[Any],
                                          valueDeserializer: Deserializer[Any]) extends KafkaWithSchemaRegistryOperations {
 

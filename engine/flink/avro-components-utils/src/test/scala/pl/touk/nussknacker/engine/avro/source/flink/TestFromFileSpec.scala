@@ -6,15 +6,14 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.avro.schema.Address
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaRegistryProvider, ConfluentUtils}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.engine.kafka.source.{InputMeta, InputMetaToJson}
 import pl.touk.nussknacker.engine.process.runner.FlinkTestMain
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -30,8 +30,7 @@ import java.util.Collections
 class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
   }
 
   private lazy val config = ConfigFactory.empty()

@@ -9,15 +9,14 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.sc
 import pl.touk.nussknacker.engine.avro.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.LongFieldV1
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.delayed.DelayedKafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.FlinkKafkaDelayedSourceImplFactory
+import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -29,8 +28,7 @@ import java.time.Instant
 class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
   }
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
@@ -109,7 +107,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](createSchemaRegistryProvider,
+      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](schemaRegistryClientFactory, createSchemaBasedMessagesSerdeProvider,
         processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
     )
   }

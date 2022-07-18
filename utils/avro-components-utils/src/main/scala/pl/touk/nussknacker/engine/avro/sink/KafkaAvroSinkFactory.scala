@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedMessagesSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -29,7 +29,8 @@ object KafkaAvroSinkFactory {
     ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)))
 }
 
-class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
+class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
+                           val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
                            val processObjectDependencies: ProcessObjectDependencies,
                            implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
@@ -55,7 +56,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
         .leftMap(NonEmptyList.one)
       val validatedSchema = determinedSchema.andThen { s =>
-        schemaRegistryProvider.validateSchema(s.schema)
+        schemaBasedMessagesSerdeProvider.validateSchema(s.schema)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       val validationResult = validatedSchema
@@ -87,7 +88,7 @@ class KafkaAvroSinkFactory(val schemaRegistryProvider: SchemaRegistryProvider,
     val versionOpt = Option(versionOption).collect {
       case ExistingSchemaVersion(version) => version
     }
-    val serializationSchema = schemaRegistryProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
+    val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
     val validationMode = extractValidationMode(params(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName).asInstanceOf[String])
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
