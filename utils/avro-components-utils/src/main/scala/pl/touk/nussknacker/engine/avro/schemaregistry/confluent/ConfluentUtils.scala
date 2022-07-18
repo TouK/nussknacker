@@ -66,7 +66,7 @@ object ConfluentUtils extends LazyLogging {
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
     */
-  def serializeDataToBytesArray(data: Any, schemaId: Int): Array[Byte] = {
+  def serializeDataToBytesArray(data: Any, schemaId: Int, maybeSchema: Option[Schema]): Array[Byte] = {
     val output = new ByteArrayOutputStream()
     writeSchemaId(schemaId, output)
 
@@ -76,7 +76,7 @@ object ConfluentUtils extends LazyLogging {
       case v: Array[Byte] =>
         output.write(v)
       case v =>
-        val schema = getSchema(v)
+        val schema = maybeSchema.getOrElse(getSchema(v))
 
         val writer = data match {
           case _: SpecificRecord =>
@@ -95,9 +95,6 @@ object ConfluentUtils extends LazyLogging {
     bytes
   }
 
-  /**
-    * Discovering AvoSchema based on data
-    */
   def getSchema(data: Any): Schema = {
     def discoverSchema(data: List[Any]) = data.map(getSchema).distinct match {
       case head :: Nil => head

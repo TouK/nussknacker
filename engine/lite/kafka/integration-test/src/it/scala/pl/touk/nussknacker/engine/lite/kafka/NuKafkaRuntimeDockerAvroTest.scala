@@ -51,7 +51,7 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
   }
 
   test("avro ping-pong should work") {
-    val valueBytes = ConfluentUtils.serializeDataToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
+    val valueBytes = ConfluentUtils.serializeDataToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId, None)
     kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
     try {
       val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1)

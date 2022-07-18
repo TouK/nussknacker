@@ -58,8 +58,14 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   )
 
   private def serialize[K, V](input: AvroInput[K, V]): SerializedInput = {
-    val value = ConfluentUtils.serializeDataToBytesArray(input.value().data, input.value().schemaId)
-    val key = Option(input.key()).map(key => ConfluentUtils.serializeDataToBytesArray(key.data, key.schemaId)).orNull
+    val valueSchema = schemaRegistryClient.getSchemaById(input.value().schemaId).asInstanceOf[AvroSchema].rawSchema()
+    val value = ConfluentUtils.serializeDataToBytesArray(input.value().data, input.value().schemaId, Some(valueSchema))
+
+    val key = Option(input.key()).map { key =>
+      val keySchema = schemaRegistryClient.getSchemaById(key.schemaId).asInstanceOf[AvroSchema].rawSchema()
+      ConfluentUtils.serializeDataToBytesArray(key.data, key.schemaId, Some(keySchema))
+    }.orNull
+
     new ConsumerRecord(input.topic, input.partition, input.offset, key, value)
   }
 
