@@ -21,7 +21,7 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future, Promise}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
   import SimpleStateStatus._
@@ -56,22 +56,35 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    if (canonicalProcess.metaData.additionalFields.flatMap(_.description).contains("fail")) {
+    if (description(canonicalProcess).contains("fail")) {
       Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
     } else {
       Future.successful(())
     }
   }
 
+  private def description(canonicalProcess: CanonicalProcess) = {
+    canonicalProcess.metaData.additionalFields.flatMap(_.description)
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
+    val previous = memory.get(processVersion.processName)
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
     val result = Promise[Option[ExternalDeploymentId]]()
     actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
       override def run(): Unit = {
         logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
-        result.complete(Success(duringDeployStateStatus.deploymentId))
-        asyncChangeState(processVersion.processName, Running)
+        if (description(canonicalProcess).contains("deployFail")) {
+          result.complete(Failure(new RuntimeException("Failed miserably during runtime")))
+          previous match {
+            case Some(state) => memory.update(processVersion.processName, state)
+            case None => changeState(processVersion.processName, NotDeployed)
+          }
+        } else {
+          result.complete(Success(duringDeployStateStatus.deploymentId))
+          asyncChangeState(processVersion.processName, Running)
+        }
       }
     })
     logger.debug(s"Finished preliminary deployment part of scenario: ${processVersion.processName}.")
@@ -139,7 +152,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach{ processState =>
+    memory.get(name).foreach { processState =>
       logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
       actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
         override def run(): Unit =
