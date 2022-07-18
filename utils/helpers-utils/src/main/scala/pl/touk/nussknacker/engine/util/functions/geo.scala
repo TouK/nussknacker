@@ -1,6 +1,11 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
+import pl.touk.nussknacker.engine.api.function.{ExtendedFunction, Parameter, Signature}
+import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName, TypingFunction}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+
 
 object geo {
 
@@ -25,6 +30,28 @@ object geo {
 
   def toPoint(lat: Number, lon: Number): Point = Point(lat.doubleValue(), lon.doubleValue())
 
+  @Documentation(description = "myFunction is a generic function")
+  @GenericType(typingFunction = classOf[MyFunctionHelper])
+  def myFunction(arguments: List[Any]): Any = arguments match {
+    case (_: Int) :: Nil => "OK: Int"
+    case (_: String) :: Nil => "OK: String"
+    case _ => throw new AssertionError("method called with argument that should cause validation error")
+  }
 }
 
 case class Point(lat: Double, lon: Double)
+
+private class MyFunctionHelper extends TypingFunction {
+  private val intParameter = Parameter(Typed[Int], "arg Int", Some("this is Int argument"))
+  private val stringParameter = Parameter(Typed[String], "arg String", Some("this is String argument"))
+  private val intSignature = Signature(List(intParameter), None, Typed.fromInstance("Int"), Some("this checks for int argument"))
+  private val stringSignature = Signature(List(stringParameter), None, Typed.fromInstance("String"), Some("this checks for string argument"))
+
+  def signatures: Some[NonEmptyList[Signature]] = Some(NonEmptyList(intSignature, List(stringSignature)))
+
+  override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+    case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance("OK: Int").validNel
+    case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance("OK: String").validNel
+    case _ => "Error message".invalidNel
+  }
+}
