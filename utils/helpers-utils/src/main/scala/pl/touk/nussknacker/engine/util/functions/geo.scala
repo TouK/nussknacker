@@ -30,20 +30,31 @@ object geo {
   def toPoint(lat: Number, lon: Number): Point = Point(lat.doubleValue(), lon.doubleValue())
 
   private class MyFunctionHelper extends TypingFunction {
+    private val IntOK = "OK: Int"
+    private val StringOK = "OK: String"
+
+    override def expectedParameters(): Option[List[(String, TypingResult)]] =
+      Some(List(("example of desired type", Typed(Typed[Int], Typed[String]))))
+
+    override def expectedResult(): Option[TypingResult] =
+      Some(Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK)))
+
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
-      case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance("OK: Int").validNel
-      case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance("OK: String").validNel
+      case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance(IntOK).validNel
+      case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance(StringOK).validNel
       case _ => "Error message".invalidNel
+    }
+
+    def applyValue(arguments: List[Any]): Any = arguments match {
+      case (_: Int) :: Nil =>
+      case (_: String) :: Nil => "OK: String"
+      case _ => throw new AssertionError("method called with argument that should cause validation error")
     }
   }
 
   @Documentation(description = "myFunction is a generic function")
   @GenericType(typingFunction = classOf[MyFunctionHelper])
-  def myFunction(arguments: List[Any]): Any = arguments match {
-    case (_: Int) :: Nil => "OK: Int"
-    case (_: String) :: Nil => "OK: String"
-    case _ => throw new AssertionError("method called with argument that should cause validation error")
-  }
+  def myFunction(arguments: List[Any]): Any = (new MyFunctionHelper).applyValue(arguments)
 }
 
 case class Point(lat: Double, lon: Double)
