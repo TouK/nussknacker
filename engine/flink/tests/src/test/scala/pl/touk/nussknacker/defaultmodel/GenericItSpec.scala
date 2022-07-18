@@ -15,7 +15,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import scala.util.control.NonFatal
 
 class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
@@ -148,7 +147,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
 
 
   test("should read json object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     sendAsJson(givenNotMatchingJsonObj, JsonInTopic, timeAgo)
     sendAsJson(givenMatchingJsonObj, JsonInTopic, timeAgo)
@@ -175,7 +174,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-avro", RecordSchemas)
 
@@ -190,30 +189,16 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
-
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
     logger.info(s"Message sent successful: ${sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue}")
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()
-      try {
-        val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-        processedMessage.timestamp shouldBe timeAgo
-        decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
-      } catch {
-        case NonFatal(ex) =>
-          // TODO: temporary for flaky tests diagnosis
-          try {
-            val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
-            logger.info(s"Input messages: $inputMessages")
-          } catch {
-            case NonFatal(ex) =>
-              logger.error("No input message", ex)
-          }
-          throw ex
-      }
+      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
+      processedMessage.timestamp shouldBe timeAgo
+      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
   }
 

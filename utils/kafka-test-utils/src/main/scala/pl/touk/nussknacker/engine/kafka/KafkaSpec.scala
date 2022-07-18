@@ -18,10 +18,10 @@ trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     AvailablePortFinder.withAvailablePortsBlocked(2) {
-      case List(kafkaPort, zkPort) =>
+      case List(controllerPort, brokerPort) =>
         kafkaServer = EmbeddedKafkaServer.run(
-          controllerPort = kafkaPort,
-          brokerPort = zkPort,
+          brokerPort = brokerPort,
+          controllerPort = controllerPort,
           kafkaBrokerConfig = kafkaBrokerConfig
         )
     }
