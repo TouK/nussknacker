@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
+import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{InvocationOnNullError, InvocationOnUnknownError, UnknownMethodError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
