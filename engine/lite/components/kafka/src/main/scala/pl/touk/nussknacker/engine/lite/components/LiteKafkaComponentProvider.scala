@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus.toFicusConfig
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -69,11 +71,13 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
       ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
       ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(avro))
 
-    lowLevelKafkaComponents ::: universalKafkaComponents
+    val shouldAddLowLevelKafkaComponents = config.getAs[Boolean]("addLowLevelKafkaComponents").getOrElse(true)
+    if (shouldAddLowLevelKafkaComponents) {
+      lowLevelKafkaComponents ::: universalKafkaComponents
+    } else {
+      universalKafkaComponents
+    }
   }
-
-
-
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 

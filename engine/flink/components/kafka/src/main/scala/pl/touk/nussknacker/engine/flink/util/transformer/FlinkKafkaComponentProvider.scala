@@ -2,6 +2,8 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import net.ceedubs.ficus.Ficus.{optionValueReader, toFicusConfig}
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
@@ -46,13 +48,18 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(schemaRegistryClientFactory, jsonPayloadSerdeProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(schemaRegistryClientFactory, avroPayloadSerdeProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
     )
-
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
       ComponentDefinition("kafka", new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
-      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
+    )
 
-    lowLevelKafkaComponents ::: universalKafkaComponents
+    val shouldAddLowLevelKafkaComponents = config.getAs[Boolean]("addLowLevelKafkaComponents").getOrElse(true)
+    if (shouldAddLowLevelKafkaComponents) {
+      lowLevelKafkaComponents ::: universalKafkaComponents
+    } else {
+      universalKafkaComponents
+    }
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
