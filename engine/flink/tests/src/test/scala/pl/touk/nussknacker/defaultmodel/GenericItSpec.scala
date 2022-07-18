@@ -1,11 +1,8 @@
 package pl.touk.nussknacker.defaultmodel
 
-import ch.qos.logback.classic.Level
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.avro.generic.GenericData
-import org.apache.kafka.clients.consumer.KafkaConsumer
-import org.slf4j.{Logger, LoggerFactory}
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.avro._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
@@ -18,7 +15,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
-import scala.util.control.NonFatal
 
 class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
@@ -196,66 +192,15 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
-    wrapWithKafkaDebugLogging {
-      sendAsJsonWithEnsuredDelivery(givenMatchingJsonObj, topicConfig.input, timeAgo)
+    logger.info(s"Message sent successful: ${sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue}")
 
-      run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
-        val consumer = kafkaClient.createConsumer()
-        withInputTopicStateClue(consumer, topicConfig) {
-          val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-          processedMessage.timestamp shouldBe timeAgo
-          decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
-        }
-      }
+    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+      val consumer = kafkaClient.createConsumer()
+      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
+      processedMessage.timestamp shouldBe timeAgo
+      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
     }
   }
-
-  // TODO: temporary for flaky tests diagnosis
-  private def sendAsJsonWithEnsuredDelivery(jsonString: String, topic: String, timestamp: java.lang.Long): Unit = {
-    kafkaClient.createTopic(topic, 1)
-    logger.info(s"Topic created: ${kafkaClient.topic(topic)}")
-    logger.info(s"Message sent successful: ${sendAsJson(jsonString, topic, timestamp).futureValue}")
-  }
-
-  private def withInputTopicStateClue[T](consumer: KafkaConsumer[Array[Byte], Array[Byte]], topicConfig: TopicConfig)(run: => T): T = {
-    try {
-      run
-    } catch {
-      case NonFatal(ex) =>
-        try {
-          val inputMessages = consumer.consumeWithString(topicConfig.input).take(1).toList
-          logger.info(s"Input messages: $inputMessages")
-        } catch {
-          case NonFatal(ex) =>
-            logger.error(s"No input message on topic: ${topicConfig.input}", ex)
-        }
-        throw ex
-    }
-  }
-
-  private def wrapWithKafkaDebugLogging[T](run: => T): T = {
-    val kafkaServerLevelSetter = new TemporaryLogLevelSetter("kafka").set(Level.DEBUG)
-    val kafkaClientLevelSetter = new TemporaryLogLevelSetter("org.apache.kafka").set(Level.DEBUG)
-    try {
-      run
-    } finally {
-      kafkaServerLevelSetter.rollback()
-      kafkaClientLevelSetter.rollback()
-    }
-  }
-
-  class TemporaryLogLevelSetter(loggerName: String) {
-    private val logbackLogger = LoggerFactory.getLogger("kafka").asInstanceOf[ch.qos.logback.classic.Logger]
-    private val originalLevel: Level = logbackLogger.getLevel
-    def set(level: Level): TemporaryLogLevelSetter = {
-      logbackLogger.setLevel(level)
-      this
-    }
-    def rollback(): Unit = {
-      logbackLogger.setLevel(originalLevel)
-    }
-  }
-  // END: temporary for flaky tests diagnosis
 
   test("should read avro object from kafka and save new one created from scratch") {
     val topicConfig = createAndRegisterTopicConfig("read-save-scratch", RecordSchemaV1)
