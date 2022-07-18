@@ -67,7 +67,7 @@ object ConfluentUtils extends LazyLogging {
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
     */
-  def serializeContainerDataToBytesArray(container: GenericContainer, schemaId: Int): Array[Byte] = {
+  def serializeContainerToBytesArray(container: GenericContainer, schemaId: Int): Array[Byte] = {
     val output = new ByteArrayOutputStream()
     writeSchemaId(schemaId, output)
 
