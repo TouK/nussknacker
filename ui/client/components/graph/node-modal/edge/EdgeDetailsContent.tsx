@@ -17,7 +17,17 @@ interface Props {
 }
 
 export default function EdgeDetailsContent(props: Props): JSX.Element | null {
-  const {edge, edgeErrors, readOnly, changeEdgeTypeCondition, showValidation, showSwitch, changeEdgeTypeValue, variableTypes, pathsToMark} = props
+  const {
+    edge,
+    edgeErrors,
+    readOnly,
+    changeEdgeTypeCondition,
+    showValidation,
+    showSwitch,
+    changeEdgeTypeValue,
+    variableTypes,
+    pathsToMark,
+  } = props
 
   const isMarked = useCallback((path) => includes(pathsToMark, path), [pathsToMark])
   const renderFieldLabel = useCallback((label) => <div className="node-label">{label}</div>, [])

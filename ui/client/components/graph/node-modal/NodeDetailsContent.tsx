@@ -26,21 +26,31 @@ import Variable from "./Variable"
 import {refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {EdgesDndComponent, WithTempId} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
-import {Edge, EdgeKind, NodeType, NodeValidationError, VariableTypes} from "../../../types"
+import {
+  ComponentsConfig,
+  Edge,
+  EdgeKind,
+  NodeType,
+  NodeValidationError,
+  ProcessDefinitionData,
+  ProcessId,
+  UIParameter,
+  VariableTypes
+} from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
 import {ValidationRequest} from "../../../actions/nk"
 
 export interface NodeDetailsContentProps {
   testResults?,
   isEditMode?: boolean,
-  dynamicParameterDefinitions?,
+  dynamicParameterDefinitions?: UIParameter[],
   currentErrors?: NodeValidationError[],
-  processId?,
+  processId?: ProcessId,
   additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
-  showValidation?,
-  showSwitch?,
+  showValidation?: boolean,
+  showSwitch?: boolean,
   findAvailableVariables?,
-  processDefinitionData?,
+  processDefinitionData?: ProcessDefinitionData,
   node: NodeType,
   edges?: Edge[],
   expressionType?,
@@ -68,11 +78,11 @@ interface State {
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
 export class NodeDetailsContent extends React.Component<NodeDetailsContentProps, State> {
-  parameterDefinitions: any
-  componentsConfig: any
-  showOutputVar: any
+  parameterDefinitions: UIParameter[]
+  componentsConfig: ComponentsConfig
+  showOutputVar: boolean
 
-  constructor(props) {
+  constructor(props: NodeDetailsContentProps) {
     super(props)
 
     this.initalizeWithProps(props)
@@ -98,12 +108,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     this.generateUUID("fields", "parameters")
   }
 
-  initalizeWithProps(props) {
-    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(props.node, props.processDefinitionData.processDefinition)
-    this.parameterDefinitions = props.dynamicParameterDefinitions ? props.dynamicParameterDefinitions : nodeObjectDetails?.parameters
-    this.componentsConfig = props.processDefinitionData.componentsConfig
-    const hasNoReturn = nodeObjectDetails == null || nodeObjectDetails.returnType == null
-    this.showOutputVar = hasNoReturn === false || hasNoReturn === true && props.node.outputVar
+  initalizeWithProps(props: NodeDetailsContentProps): void {
+    const {dynamicParameterDefinitions, node, processDefinitionData} = props
+    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
+    this.parameterDefinitions = dynamicParameterDefinitions || nodeObjectDetails?.parameters
+    this.componentsConfig = processDefinitionData.componentsConfig
+    const hasNoReturn = !nodeObjectDetails?.returnType
+    this.showOutputVar = !hasNoReturn || !!node.outputVar
   }
 
   generateUUID(...properties) {

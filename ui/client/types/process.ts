@@ -1,5 +1,5 @@
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
-import {TypingResult} from "./definition"
+import {TypingResult, UIParameter} from "./definition"
 import {Edge} from "./edge"
 import {NodeType} from "./node"
 import {ValidationResult} from "./validation"
@@ -15,7 +15,7 @@ export type Process = {
   processingType?: ProcessingType,
 }
 
-export type ProcessId = string
+export type ProcessId = Process["id"]
 
 export type Category = string
 
@@ -34,19 +34,38 @@ export type CustomActionParameter = {
 export type AdditionalPropertiesConfig = $TodoType
 export type DynamicParameterDefinitions = $TodoType
 
-export type ProcessDefinitionData = {
-  componentsConfig?: Record<string, SingleComponentConfig>,
-  componentGroups?: ComponentGroup[],
-  processDefinition?: $TodoType,
-  customActions?: Array<CustomAction>,
-  defaultAsyncInterpretation?: boolean,
-  additionalPropertiesConfig?: AdditionalPropertiesConfig,
-  edgesForNodes?: $TodoType[],
+export interface NodeObjectTypeDefinition {
+  parameters?: UIParameter[]
+  returnType?: $TodoType
 }
 
-export type ProcessDefinition = {
-  typesInformation: ClassDefinition[],
+export interface ProcessDefinition {
+  services?: Record<string, NodeObjectTypeDefinition>
+  sourceFactories?: Record<string, NodeObjectTypeDefinition>
+  sinkFactories?: Record<string, NodeObjectTypeDefinition>
+  customStreamTransformers?: Record<string, NodeObjectTypeDefinition>
+  signalsWithTransformers?: Record<string, NodeObjectTypeDefinition>
+  subprocessInputs?: Record<string, NodeObjectTypeDefinition>
+  globalVariables?: GlobalVariables,
+  typesInformation?: ClassDefinition[],
 }
+
+export type ComponentsConfig = Record<string, SingleComponentConfig>
+
+export interface ProcessDefinitionData {
+  componentsConfig?: ComponentsConfig,
+  processDefinition?: ProcessDefinition,
+  componentGroups?: ComponentGroup[],
+  additionalPropertiesConfig?: AdditionalPropertiesConfig,
+  edgesForNodes?: $TodoType[],
+  customActions?: Array<CustomAction>,
+  defaultAsyncInterpretation?: boolean,
+}
+
+export type GlobalVariables = Record<string, {
+  returnType: $TodoType | null,
+  categories: string[],
+}>
 
 export type ClassDefinition = {
   clazzName: TypingResult,

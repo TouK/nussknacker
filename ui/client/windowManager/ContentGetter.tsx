@@ -8,9 +8,6 @@ import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
 
 const AddProcessDialog = loadable(() => import("../components/AddProcessDialog"), {fallback: <LoaderSpinner show/>})
-const EdgeDetails = loadable(() => import("../components/graph/node-modal/edge/EdgeDetails"), {
-  fallback: <LoaderSpinner show/>,
-})
 const NodeDetails = loadable(() => import("../components/graph/node-modal/node/NodeDetails"), {
   fallback: <LoaderSpinner show/>,
 })
@@ -59,8 +56,6 @@ export const contentGetter: React.FC<WindowContentProps<WindowKind>> = (props) =
       return <NodeDetails {...props}/>
     case WindowKind.viewNode:
       return <NodeDetails {...props} readOnly/>
-    case WindowKind.editEdge:
-      return <EdgeDetails {...props}/>
     default:
       return (
         <WindowContent {...props}>
