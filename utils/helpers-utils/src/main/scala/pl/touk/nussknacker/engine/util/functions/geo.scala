@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.util.functions
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
 import pl.touk.nussknacker.engine.api.function.{ExtendedFunction, Parameter, Signature}
 import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}

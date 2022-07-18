@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.api.expression
 import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{MethodReference, TypeReference}
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypedNull, TypingResult, Unknown}
 
 trait ExpressionParseError {
   def message: String
@@ -41,7 +41,11 @@ object ExpressionParseError {
   }
 
   object InvocationOnUnknownError extends ExpressionParseError {
-    override def message: String = s"Method invocation on Unknown is not allowed"
+    override def message: String = s"Method invocation on ${Unknown.display} is not allowed"
+  }
+
+  object InvocationOnNullError extends ExpressionParseError {
+    override def message: String = s"Method invocation on ${TypedNull.display} is not allowed"
   }
 
   case class UnknownMethodError(methodName: String, displayableType: String) extends ExpressionParseError {
@@ -96,6 +100,10 @@ object ExpressionParseError {
       val possibilitiesString = optionKeys.map(" Possible keys are: " + _ + ".").getOrElse("")
       s"Illegal key: '$key' for ${dict.display}.$possibilitiesString"
     }
+  }
+
+  case class GenericFunctionError(innerMessage: String) extends ExpressionParseError {
+    override def message: String = s"Failed to calculate types in generic function: $innerMessage"
   }
 
   case class OtherError(message: String) extends ExpressionParseError

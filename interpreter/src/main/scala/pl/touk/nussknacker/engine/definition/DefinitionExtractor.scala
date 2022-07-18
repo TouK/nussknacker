@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{NoVarArgumentTypeError, VarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{GenericFunctionError, NoVarArgumentTypeError, VarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -344,20 +344,31 @@ object TypeInfos {
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
                                   name: String,
-                                  description: Option[String] = None,
-                                  varArgs: Boolean = false,
-                                  interfaceParameters: List[Parameter] = Nil,
-                                  interfaceResult: TypingResult = Unknown)
+                                  description: Option[String],
+                                  varArgs: Boolean,
+                                  interfaceParameters: List[Parameter],
+                                  interfaceResult: TypingResult)
     extends MethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
   }
 
-  trait ClazzDefinition {
-    def clazzName: TypedClass
-    def methods: Map[String, List[MethodInfo]]
-    def staticMethods: Map[String, List[MethodInfo]]
+  object FunctionalMethodInfo {
+    private def toParseErrorValidation[T](v: ValidatedNel[String, T]): ValidatedNel[ExpressionParseError, T] =
+      v.leftMap(_.map(GenericFunctionError))
 
+    def fromStringErrorTypeFunction(typeFunction: List[TypingResult] => ValidatedNel[String, TypingResult],
+                                    name: String,
+                                    description: Option[String] = None,
+                                    varArgs: Boolean = false,
+                                    interfaceParameters: List[Parameter] = Nil,
+                                    interfaceResult: TypingResult = Unknown): FunctionalMethodInfo =
+      FunctionalMethodInfo(x => toParseErrorValidation(typeFunction(x)), name, description, varArgs, interfaceParameters, interfaceResult)
+  }
+
+  case class ClazzDefinition(clazzName: TypedClass,
+                                      methods: Map[String, List[MethodInfo]],
+                                      staticMethods: Map[String, List[MethodInfo]]) {
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       def filterMethods(candidates: Map[String, List[MethodInfo]]): List[TypingResult] =
         candidates.get(methodName).toList.flatMap(_.map(_.asProperty)).collect{ case Some(x) => x }
@@ -370,12 +381,4 @@ object TypeInfos {
       }
     }
   }
-
-  case class StaticClazzDefinition(clazzName: TypedClass,
-                                   methods: Map[String, List[StaticMethodInfo]],
-                                   staticMethods: Map[String, List[StaticMethodInfo]]) extends ClazzDefinition
-
-  case class NonStaticClazzDefinition(clazzName: TypedClass,
-                                       methods: Map[String, List[MethodInfo]],
-                                       staticMethods: Map[String, List[MethodInfo]]) extends ClazzDefinition
 }
