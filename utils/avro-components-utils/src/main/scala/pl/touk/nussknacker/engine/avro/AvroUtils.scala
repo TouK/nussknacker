@@ -110,6 +110,7 @@ object AvroUtils extends LazyLogging {
     def createValue(value: Any, schema: Schema): Any = {
       def schemaContainsType(typ: Schema.Type) = schema.getType == typ ||
         schema.getType == Schema.Type.UNION && schema.getTypes.asScala.map(_.getType).contains(typ)
+
       value match {
         case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.RECORD) =>
           createRecord(schema, map)
@@ -117,7 +118,7 @@ object AvroUtils extends LazyLogging {
           collection.map(createValue(_, schema)).toList.asJava
         case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.MAP) =>
           map.mapValues(createValue(_, schema)).asJava
-        case (_, _) => value
+        case _ => value
       }
     }
 

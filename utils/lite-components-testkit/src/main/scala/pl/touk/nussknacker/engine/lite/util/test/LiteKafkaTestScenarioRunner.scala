@@ -13,16 +13,16 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.kafka.serialization.CharSequenceSerializer
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+
+import java.nio.charset.StandardCharsets
 
 object LiteKafkaTestScenarioRunner {
   val DefaultKafkaConfig: Config =
     ConfigFactory
       .empty()
       .withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
-      .withValue("kafka.useStringForKey", ConfigValueFactory.fromAnyRef(true))
 
   def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
     new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)
@@ -33,11 +33,10 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   type SerializedInput = ConsumerRecord[Array[Byte], Array[Byte]]
   type SerializedOutput = ProducerRecord[Array[Byte], Array[Byte]]
 
-  type AvroInput = ConsumerRecord[KafkaAvroElement, KafkaAvroElement]
+  type AvroInput = ConsumerRecord[Any, KafkaAvroElement]
 
   private val delegate: LiteTestScenarioRunner = LiteTestScenarioRunner(components, config)
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
-  private val keyStringSerializer = new CharSequenceSerializer
   private val keyStringDeserializer = new StringDeserializer
 
   def runWithAvroData[K, V](scenario: EspProcess, data: List[AvroInput]): RunnerResult[ProducerRecord[K, V]] = {
@@ -68,14 +67,14 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
 
   private def serializeInput(input: AvroInput): SerializedInput = {
     val value = serialize(input.value())
-    val key = Option(input.key()).map(serializeKey(input.topic(), _)).orNull
-    new ConsumerRecord(input.topic, input.partition, input.offset, key, value)
-  }
 
-  private def serializeKey(topic: String, keyElement: KafkaAvroElement) = if (kafkaConfig.useStringForKey) {
-    keyStringSerializer.serialize(topic, keyElement.data)
-  } else {
-    serialize(keyElement)
+    val key = Option(input.key()).map {
+      case str: String => str.getBytes(StandardCharsets.UTF_8)
+      case avro: KafkaAvroElement => serialize(avro)
+      case _ => throw new IllegalArgumentException(s"Unexpected key class: ${input.key().getClass}")
+    }.orNull
+
+    new ConsumerRecord(input.topic, input.partition, input.offset, key, value)
   }
 
   private def serialize(element: KafkaAvroElement): Array[Byte] = {
@@ -115,12 +114,17 @@ object KafkaConsumerRecord {
     new ConsumerRecord(topic, DefaultPartition, DefaultOffset, key, value)
 }
 
-case class KafkaAvroElement(data: AnyRef, schemaId: Int)
+case class KafkaAvroElement(data: Any, schemaId: Int)
 
 object KafkaAvroConsumerRecord {
-  def apply(topic: String, value: AnyRef, schemaId: Int): ConsumerRecord[KafkaAvroElement, KafkaAvroElement] =
+
+  def apply(topic: String, value: Any, schemaId: Int): ConsumerRecord[Any, KafkaAvroElement] =
     KafkaConsumerRecord(topic, KafkaAvroElement(value, schemaId))
 
-  def apply(topic: String, key: AnyRef, keySchemaId: Int, value: AnyRef, valueSchemaId: Int): ConsumerRecord[KafkaAvroElement, KafkaAvroElement] =
+  def apply(topic: String, key: Any, keySchemaId: Int, value: Any, valueSchemaId: Int): ConsumerRecord[KafkaAvroElement, KafkaAvroElement] =
     KafkaConsumerRecord(topic, KafkaAvroElement(key, keySchemaId), KafkaAvroElement(value, valueSchemaId))
+
+  def apply(topic: String, key: String, value: Any, valueSchemaId: Int): ConsumerRecord[Any, KafkaAvroElement] =
+    KafkaConsumerRecord(topic, key, KafkaAvroElement(value, valueSchemaId))
+
 }
