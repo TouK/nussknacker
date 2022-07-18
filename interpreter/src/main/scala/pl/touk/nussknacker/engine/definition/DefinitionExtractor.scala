@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.definition
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
 import com.typesafe.scalalogging.LazyLogging

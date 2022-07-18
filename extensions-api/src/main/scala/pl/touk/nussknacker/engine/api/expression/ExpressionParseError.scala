@@ -1,8 +1,6 @@
 package pl.touk.nussknacker.engine.api.expression
 
 import org.springframework.expression.spel.SpelNode
-import org.springframework.expression.spel.ast.{MethodReference, TypeReference}
-import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypedNull, TypingResult, Unknown}
 
 trait ExpressionParseError {
