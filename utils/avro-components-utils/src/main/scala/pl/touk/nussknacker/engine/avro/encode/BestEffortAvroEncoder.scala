@@ -82,9 +82,9 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         Valid(ByteBuffer.wrap(bytes))
       case (Schema.Type.BYTES, buffer: ByteBuffer) =>
         Valid(buffer)
-      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if AvroUtils.verifyLogicalType[LogicalTypes.Decimal](schema) =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, decimal: java.math.BigDecimal) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(decimal, schema))
-      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if AvroUtils.verifyLogicalType[LogicalTypes.Decimal](schema) =>
+      case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
       case (Schema.Type.INT, number: Number) =>
         Valid(number.intValue().underlying())

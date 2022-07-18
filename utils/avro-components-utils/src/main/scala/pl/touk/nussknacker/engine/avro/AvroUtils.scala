@@ -11,7 +11,6 @@ import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
-import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
@@ -108,14 +107,18 @@ object AvroUtils extends LazyLogging {
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
     */
   def createRecord(schema: Schema, data: collection.Map[String, Any]): GenericRecord = {
-    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
-      case (map: collection.Map[String@unchecked, _], Schema.Type.RECORD) =>
-        createRecord(schema, map)
-      case (collection: Traversable[_], Schema.Type.ARRAY) =>
-        collection.map(createValue(_, schema)).toList.asJava
-      case (map: collection.Map[String@unchecked, _], Schema.Type.MAP) =>
-        map.mapValues(createValue(_, schema)).asJava
-      case (_, _) => value
+    def createValue(value: Any, schema: Schema): Any = {
+      def schemaContainsType(typ: Schema.Type) = schema.getType == typ ||
+        schema.getType == Schema.Type.UNION && schema.getTypes.asScala.map(_.getType).contains(typ)
+      value match {
+        case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.RECORD) =>
+          createRecord(schema, map)
+        case collection: Traversable[_] if schemaContainsType(Schema.Type.ARRAY) =>
+          collection.map(createValue(_, schema)).toList.asJava
+        case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.MAP) =>
+          map.mapValues(createValue(_, schema)).asJava
+        case (_, _) => value
+      }
     }
 
     val builder = new LogicalTypesGenericRecordBuilder(schema)
@@ -130,7 +133,7 @@ object AvroUtils extends LazyLogging {
     builder.build()
   }
 
-  def verifyLogicalType[T: ClassTag](schema: Schema): Boolean = {
+  def isLogicalType[T: ClassTag](schema: Schema): Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
     schema.getLogicalType != null && clazz.isAssignableFrom(schema.getLogicalType.getClass)
   }
