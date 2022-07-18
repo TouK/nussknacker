@@ -132,8 +132,15 @@ object EspTypeUtils {
     case Some(value) =>
       val typeFunctionClass = value.typingFunction()
       val typeFunctionConstructor = typeFunctionClass.getConstructor()
-      val typeFunctionInstance = typeFunctionConstructor.newInstance().asInstanceOf[TypingFunction]
-      FunctionalMethodInfo.fromStringErrorTypeFunction(x => typeFunctionInstance.apply(x), method.getName, extractNussknackerDocs(method))
+      val typeFunctionInstance = typeFunctionConstructor.newInstance()
+      FunctionalMethodInfo.fromStringErrorTypeFunction(
+        x => typeFunctionInstance.apply(x),
+        method.getName,
+        extractNussknackerDocs(method),
+        varArgs = false,
+        typeFunctionInstance.expectedParameters().getOrElse(List()).map{ case (name, typ) => Parameter(name, typ) },
+        typeFunctionInstance.expectedResult().getOrElse(Unknown)
+      )
     case None => extractRegularMethod(method)
   }
 
