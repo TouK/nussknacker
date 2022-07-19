@@ -5,7 +5,7 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, GeneratedAvroClassSample, GeneratedAvroClassSampleSchema}
 import pl.touk.nussknacker.engine.avro.schemaregistry.ExistingSchemaVersion
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentAvroSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 
 class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSourceSpecMixin {
@@ -16,7 +16,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
   // Use SchemaRegistryProvider for jsonPayload
-  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentAvroSchemaBasedMessagesSerdeProvider = ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(confluentClientFactory)
+  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentSchemaBasedMessagesSerdeProvider = ConfluentSchemaBasedMessagesSerdeProvider.jsonPayload(confluentClientFactory)
 
   // Use kafka-json serializers
   override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer

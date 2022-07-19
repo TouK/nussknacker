@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.avro.TestSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.helpers._
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentAvroSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 
@@ -24,12 +24,12 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   lazy val avroSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-        ConfluentAvroSchemaBasedMessagesSerdeProvider.avroPayload(MockSchemaRegistry.factory),
+        ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(MockSchemaRegistry.factory),
         new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
         new SimpleKafkaAvroDeserializer(MockSchemaRegistry.schemaRegistryMockClient, _useSpecificAvroReader = false))
 
   lazy val jsonSetup: SchemaRegistryProviderSetup = SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.json,
-        ConfluentAvroSchemaBasedMessagesSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
+        ConfluentSchemaBasedMessagesSerdeProvider.jsonPayload(MockSchemaRegistry.factory),
         SimpleKafkaJsonSerializer,
         SimpleKafkaJsonDeserializer)
 
