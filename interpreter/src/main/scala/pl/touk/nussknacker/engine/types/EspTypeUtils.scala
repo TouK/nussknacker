@@ -136,10 +136,10 @@ object EspTypeUtils {
       val typeFunctionInstance = typeFunctionConstructor.newInstance()
       FunctionalMethodInfo(
         x => typeFunctionInstance.apply(x).leftMap(_.map(OtherError)),
-        extractNussknackerDocs(method),
-        varArgs = false,
         typeFunctionInstance.expectedParameters().map{ case (name, typ) => Parameter(name, typ) },
-        typeFunctionInstance.expectedResult()
+        typeFunctionInstance.expectedResult(),
+        method.getName,
+        extractNussknackerDocs(method)
       )
     case None => extractRegularMethod(method)
   }
@@ -148,6 +148,7 @@ object EspTypeUtils {
     MethodInfo(
       extractParameters(method),
       extractMethodReturnType(method),
+      method.getName,
       extractNussknackerDocs(method),
       method.isVarArgs
     )
@@ -159,7 +160,7 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 

@@ -18,24 +18,24 @@ object ExpressionParseError {
       types.map(_.display).mkString(", ")
 
     override def message: String =
-      s"Mismatch parameter types. Found $functionName(${typesToString(found)}). Required: $functionName($expectedString)"
+      s"Mismatch parameter types. Found: $functionName(${typesToString(found)}). Required: $functionName($expectedString)"
   }
 
   case class NoVarArgumentTypeError(expected: List[TypingResult],
                                     found: List[TypingResult],
-                                    functionName: String = "") extends ArgumentTypeError { // FIXME: Do something with name.
+                                    functionName: String) extends ArgumentTypeError {
     override def expectedString: String = typesToString(expected)
   }
 
   case class VarArgumentTypeError(expected: List[TypingResult],
                                   expectedVarArgument: TypingResult,
                                   found: List[TypingResult],
-                                  functionName: String = "") extends ArgumentTypeError { // FIXME: Do something with name.
+                                  functionName: String) extends ArgumentTypeError {
     override def expectedString: String = typesToString(expected :+ expectedVarArgument) + "..."
   }
 
   case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends ExpressionParseError {
-    override def message: String = s"Invalid type of expression: expected ${expected.display}, found ${found.display}"
+    override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
   }
 
   object InvocationOnUnknownError extends ExpressionParseError {
