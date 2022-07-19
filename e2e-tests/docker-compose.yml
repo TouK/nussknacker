@@ -34,7 +34,7 @@ services:
     - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
     - --advertise-kafka-addr
     - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
-    image: docker.vectorized.io/vectorized/redpanda:v21.9.5
+    image: vectorized/redpanda:v22.1.4
     ports:
       - "3032:3032"
 
