@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedMessagesSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -14,10 +14,11 @@ import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory
 
 import scala.reflect.ClassTag
 
-class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
+class DelayedKafkaAvroSourceFactory[K: ClassTag, V: ClassTag](schemaRegistryClientFactory: SchemaRegistryClientFactory,
+                                                              schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
                                                               processObjectDependencies: ProcessObjectDependencies,
                                                               implProvider: KafkaSourceImplFactory[K, V])
-  extends KafkaAvroSourceFactory[K, V](schemaRegistryProvider, processObjectDependencies, implProvider) {
+  extends KafkaAvroSourceFactory[K, V](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, implProvider) {
 
   override def paramsDeterminedAfterSchema: List[Parameter] = super.paramsDeterminedAfterSchema ++ List(
     TimestampFieldParameter, DelayParameter

@@ -5,7 +5,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
-trait SchemaRegistryProvider extends Serializable with BaseSchemaRegistryProvider {
+trait SchemaBasedMessagesSerdeProvider extends Serializable {
 
   def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory
 

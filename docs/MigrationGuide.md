@@ -30,6 +30,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
+* [#3288](https://github.com/TouK/nussknacker/pull/3288) `SchemaRegistryProvider` refactoring:
+  * rename `SchemaRegistryProvider` to `SchemaBasedMessagesSerdeProvider`
+  * decouple `BaseSchemaRegistryProvider` from `SchemaBasedMessagesSerdeProvider`
 
 ### REST API changes
 
