@@ -213,5 +213,3 @@ case class GenericFunctionError(innerMessage: String) extends ExpressionParseErr
 
 
 case class ExpressionCompilationError(message: String) extends ExpressionParseError
-
-// case class OtherError(message: String) extends ExpressionParseError
