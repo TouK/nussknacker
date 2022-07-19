@@ -23,14 +23,14 @@ object ExpressionParseError {
 
   case class NoVarArgumentTypeError(expected: List[TypingResult],
                                     found: List[TypingResult],
-                                    functionName: String) extends ArgumentTypeError {
+                                    functionName: String = "") extends ArgumentTypeError { // FIXME: Do something with name.
     override def expectedString: String = typesToString(expected)
   }
 
   case class VarArgumentTypeError(expected: List[TypingResult],
                                   expectedVarArgument: TypingResult,
                                   found: List[TypingResult],
-                                  functionName: String) extends ArgumentTypeError {
+                                  functionName: String = "") extends ArgumentTypeError { // FIXME: Do something with name.
     override def expectedString: String = typesToString(expected :+ expectedVarArgument) + "..."
   }
 
@@ -47,7 +47,7 @@ object ExpressionParseError {
   }
 
   case class UnknownMethodError(methodName: String, displayableType: String) extends ExpressionParseError {
-    override def message: String = s"No method named $methodName in type $displayableType"
+    override def message: String = s"Unknown method '$methodName' in $displayableType"
   }
 
   case class UnknownClassError(className: String) extends ExpressionParseError {
@@ -55,7 +55,7 @@ object ExpressionParseError {
   }
 
   case class InvalidMethodReference(methodName: String) extends ExpressionParseError {
-    override def message: String = s"Invalid method reference $methodName"
+    override def message: String = s"Invalid method reference: $methodName."
   }
 
   case class TypeReferenceError(refClass: String) extends ExpressionParseError {

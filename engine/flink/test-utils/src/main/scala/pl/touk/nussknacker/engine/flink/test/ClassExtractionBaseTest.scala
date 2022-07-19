@@ -37,7 +37,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   //use for debugging...
   private def printFoundClasses(types: Set[ClazzDefinition]): String = {
     types.flatMap { cd =>
-      cd.clazzName :: (cd.methods ++ cd.staticMethods).flatMap(_._2).flatMap(mi => mi.refClazz :: mi.parameters.map(_.refClazz)).toList
+      cd.clazzName :: (cd.methods ++ cd.staticMethods).flatMap(_._2).flatMap(mi => mi.expectedResult :: mi.expectedParameters.map(_.refClazz)).toList
     }.collect {
       case e: TypedClass => e.klass.getName
     }.toList.sorted.mkString("\n")
