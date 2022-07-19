@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.types
 
 import java.lang.reflect._
 import java.util.Optional
-import cats.data.StateT
+import cats.data.{StateT, ValidatedNel}
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
@@ -133,13 +134,13 @@ object EspTypeUtils {
       val typeFunctionClass = value.typingFunction()
       val typeFunctionConstructor = typeFunctionClass.getConstructor()
       val typeFunctionInstance = typeFunctionConstructor.newInstance()
-      FunctionalMethodInfo.fromStringErrorTypeFunction(
-        x => typeFunctionInstance.apply(x),
+      FunctionalMethodInfo(
+        x => typeFunctionInstance.apply(x).leftMap(_.map(OtherError)),
         method.getName,
         extractNussknackerDocs(method),
         varArgs = false,
-        typeFunctionInstance.expectedParameters().getOrElse(List()).map{ case (name, typ) => Parameter(name, typ) },
-        typeFunctionInstance.expectedResult().getOrElse(Unknown)
+        typeFunctionInstance.expectedParameters().map{ case (name, typ) => Parameter(name, typ) },
+        typeFunctionInstance.expectedResult()
       )
     case None => extractRegularMethod(method)
   }
