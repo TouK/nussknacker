@@ -266,18 +266,21 @@ object TypeInfos {
   object MethodInfo {
     def apply(parameters: List[Parameter],
               refClazz: TypingResult,
+              name: String,
               description: Option[String],
               varArgs: Boolean): StaticMethodInfo  =
       if (varArgs && parameters.nonEmpty) {
         val (noVarArgParameters, varArgParameter) = parameters.splitAt(parameters.length - 1)
-        VarArgsMethodInfo(noVarArgParameters, varArgParameter.head, refClazz, description)
+        VarArgsMethodInfo(noVarArgParameters, varArgParameter.head, refClazz, name, description)
       } else {
-        SimpleMethodInfo(parameters, refClazz, description)
+        SimpleMethodInfo(parameters, refClazz, name, description)
       }
   }
 
   sealed trait MethodInfo {
     def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
+
+    def name: String
 
     def expectedParameters: List[Parameter]
 
@@ -301,11 +304,12 @@ object TypeInfos {
 
   case class SimpleMethodInfo(expectedParameters: List[Parameter],
                               expectedResult: TypingResult,
+                              name: String,
                               description: Option[String])
     extends StaticMethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, expectedParameters)) expectedResult.validNel
-      else NoVarArgumentTypeError(expectedParameters.map(_.refClazz), arguments).invalidNel
+      else NoVarArgumentTypeError(expectedParameters.map(_.refClazz), arguments, name).invalidNel
     }
 
     override def varArgs: Boolean = false
@@ -314,6 +318,7 @@ object TypeInfos {
   case class VarArgsMethodInfo(noVarParameters: List[Parameter],
                                varParameter: Parameter,
                                expectedResult: TypingResult,
+                               name: String,
                                description: Option[String])
     extends StaticMethodInfo {
     private def checkArgumentsLength(arguments: List[TypingResult]): Boolean =
@@ -329,7 +334,7 @@ object TypeInfos {
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkArgumentsLength(arguments) && checkArguments(arguments)) expectedResult.validNel
-      else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments).invalidNel
+      else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
     }
 
     override def expectedParameters: List[Parameter] = noVarParameters :+ varParameter
@@ -339,13 +344,14 @@ object TypeInfos {
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
-                                  description: Option[String],
-                                  varArgs: Boolean,
                                   expectedParameters: List[Parameter],
-                                  expectedResult: TypingResult)
-    extends MethodInfo {
+                                  expectedResult: TypingResult,
+                                  name: String,
+                                  description: Option[String]) extends MethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
+
+    override def varArgs: Boolean = false
   }
 
   case class ClazzDefinition(clazzName: TypedClass,
