@@ -18,6 +18,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class DeploymentManagerStub extends DeploymentManager {
 
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] =
     Future.successful(None)
 

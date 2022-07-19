@@ -55,23 +55,26 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
                canonicalProcess: CanonicalProcess,
                beforeSchedule: => Future[Unit] = Future.unit
               ): Future[Unit] = {
-    findInitialScheduleDates(schedule) match {
-      case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) =>
-        Future.failed(new PeriodicProcessException(s"No future date determined by $schedule"))
+    prepareInitialScheduleDates(schedule) match {
       case Right(scheduleDates) =>
         beforeSchedule.flatMap(_ => scheduleWithInitialDates(schedule, processVersion, canonicalProcess, scheduleDates))
       case Left(error) =>
-        Future.failed(new PeriodicProcessException(s"Failed to parse periodic property: $error"))
+        Future.failed(error)
     }
   }
 
-  private def findInitialScheduleDates(schedule: ScheduleProperty): Either[String, List[(Option[String], Option[LocalDateTime])]] = {
-    schedule match {
+  def prepareInitialScheduleDates(schedule: ScheduleProperty): Either[PeriodicProcessException, List[(Option[String], Option[LocalDateTime])]] = {
+    val schedules = schedule match {
       case MultipleScheduleProperty(schedules) => schedules.map { case (k, pp) =>
         pp.nextRunAt(clock).map(v => Some(k) -> v)
       }.toList.sequence
       case e: SingleScheduleProperty => e.nextRunAt(clock).right.map(t => List((None, t)))
     }
+    (schedules match {
+      case Left(error) => Left(s"Failed to parse periodic property: $error")
+      case Right(scheduleDates) if scheduleDates.forall(_._2.isEmpty) => Left(s"No future date determined by $schedule")
+      case correctSchedules => correctSchedules
+    }).left.map(new PeriodicProcessException(_))
   }
 
   private def scheduleWithInitialDates(scheduleProperty: ScheduleProperty, processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, scheduleDates: List[(Option[String], Option[LocalDateTime])]): Future[Unit] = {

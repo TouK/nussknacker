@@ -39,7 +39,8 @@
 * [#3270](https://github.com/TouK/nussknacker/pull/3270) Added type representing null
 * [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
 * [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
-
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
+* 
 1.4.0 (14 Jun 2022)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api

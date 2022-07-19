@@ -103,7 +103,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
     kafka.sendToTopic(input, message)
     kafka.readFromTopic(output, 2) shouldBe List(messageForVersion(1), messageForVersion(2))
 
-    cancelAndAssertCleanupUp(manager, version2)
+    cancelAndAssertCleanup(manager, version2)
   }
 
   test("should redeploy during deploy") {
@@ -166,7 +166,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
       manager.findJobStatus(version.processName).futureValue shouldBe None
     }
     //should not fail
-    cancelAndAssertCleanupUp(manager, version)
+    cancelAndAssertCleanup(manager, version)
   }
 
 
@@ -221,7 +221,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
       manager.deploy(version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).futureValue
 
       action(version)
-      cancelAndAssertCleanupUp(manager, version)
+      cancelAndAssertCleanup(manager, version)
     }
 
     val customLogger = "test.passing.logback.conf"
@@ -294,10 +294,10 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
     val f = createFixture()
     k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("1"))))))
 
-    f.manager.deploy(f.version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).failed.futureValue shouldEqual
+    f.manager.validate(f.version, DeploymentData.empty, f.scenario.toCanonicalProcess).failed.futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
 
-    cancelAndAssertCleanupUp(f.manager, f.version)
+    cancelAndAssertCleanup(f.manager, f.version)
     k8s.delete[Resource.Quota]("nu-pods-limit").futureValue
   }
 
@@ -370,7 +370,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
     cleanup()
   }
 
-  private def cancelAndAssertCleanupUp(manager: K8sDeploymentManager, version: ProcessVersion) = {
+  private def cancelAndAssertCleanup(manager: K8sDeploymentManager, version: ProcessVersion) = {
     manager.cancel(version.processName, DeploymentData.systemUser).futureValue
     eventually {
       manager.findJobStatus(version.processName).futureValue shouldBe None
@@ -427,7 +427,7 @@ class K8sDeploymentManagerTest extends FunSuite with Matchers with ExtremelyPati
         manager.findJobStatus(version.processName).futureValue shouldBe None
       }
       //should not fail
-      cancelAndAssertCleanupUp(manager, version)
+      cancelAndAssertCleanup(manager, version)
     }
 
     def withPortForwarded(port:Int)(action: => Unit) = {

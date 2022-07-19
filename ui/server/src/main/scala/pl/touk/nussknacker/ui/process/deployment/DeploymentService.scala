@@ -57,13 +57,16 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
     } yield dataList
   }
 
-  def deployProcess(processId: ProcessId, savepointPath: Option[String], deploymentComment: Option[DeploymentComment],
-                    performDeploy: (ProcessingType, ProcessVersion, DeploymentData, CanonicalProcess, Option[String]) => Future[_])
-                   (implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+  //inner Future in result allows to wait for deployment finish, while outer handles validation
+  def deployProcess(processId: ProcessId,
+                    savepointPath: Option[String],
+                    deploymentComment: Option[DeploymentComment],
+                    deploymentManager: ProcessingType => DeploymentManager)
+                   (implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
     for {
       maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId)
       process <- processDataExistOrFail(maybeProcess, processId.value.toString)
-      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, performDeploy)
+      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager(process.processingType))
     } yield result
   }
 
@@ -77,16 +80,21 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   private def deployAndSaveProcess(process: BaseProcessDetails[CanonicalProcess],
                                    savepointPath: Option[String],
                                    deploymentComment: Option[DeploymentComment],
-                                   performDeploy: (ProcessingType, ProcessVersion, DeploymentData, CanonicalProcess, Option[String]) => Future[_])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
-    for {
+                                   deploymentManager: DeploymentManager)(implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
+    val processVersion = process.toEngineProcessVersion
+    val validatedData = for {
       resolvedCanonicalProces <- Future.fromTry(scenarioResolver.resolveScenario(process.json))
-      processVersion = process.toEngineProcessVersion
       deploymentData = prepareDeploymentData(toManagerUser(user))
-      _ <- performDeploy(process.processingType, processVersion, deploymentData, resolvedCanonicalProces, savepointPath)
-      deployedActionData <- actionRepository.markProcessAsDeployed(
-        process.processId, process.processVersionId, process.processingType, deploymentComment
-      )
-    } yield deployedActionData
+      _ <- deploymentManager.validate(processVersion, deploymentData, resolvedCanonicalProces)
+    } yield (resolvedCanonicalProces, deploymentData)
+
+    validatedData.map { case (resolvedCanonicalProces, deploymentData) =>
+      for {
+        _ <- deploymentManager.deploy(processVersion, deploymentData, resolvedCanonicalProces, savepointPath)
+        deployedActionData <- actionRepository.markProcessAsDeployed(
+          process.processId, process.processVersionId, process.processingType, deploymentComment)
+      } yield deployedActionData
+    }
   }
 
   private def prepareDeploymentData(user: User) = {

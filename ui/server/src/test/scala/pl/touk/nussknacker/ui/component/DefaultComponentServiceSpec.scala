@@ -8,16 +8,15 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{BaseModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockFetchingProcessRepository, TestFactory}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._

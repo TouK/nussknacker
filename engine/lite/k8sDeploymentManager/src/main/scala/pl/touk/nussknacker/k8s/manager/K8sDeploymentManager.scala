@@ -30,7 +30,7 @@ import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
-import java.util.{Base64, Collections}
+import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
@@ -86,15 +86,22 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
   private def logbackConfig: String = config.logbackConfigPath.map(path => Using.resource(Source.fromFile(path))(_.mkString)).getOrElse(defaultLogbackConfig)
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
-                      canonicalProcess: CanonicalProcess,
-                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
     for {
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
       validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
       _ <- Future.fromTry(validationResult.toEither.toTry)
+    } yield ()
+  }
+
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
+                      canonicalProcess: CanonicalProcess,
+                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    val scalingOptions = determineScalingOptions(canonicalProcess)
+    for {
       configMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map(
         "scenario.json" -> canonicalProcess.asJson.noSpaces,
         "deploymentConfig.conf" -> ConfigFactory.empty().withValue("tasksCount", fromAnyRef(scalingOptions.noOfTasksInReplica)).root().render()

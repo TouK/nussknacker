@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
+import pl.touk.nussknacker.ui.api.helpers.MockDeploymentManager
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion

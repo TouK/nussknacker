@@ -32,6 +32,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   const confirmAction = useCallback(
     async () => {
       const deploymentPath = window.location.pathname
+      //FIXME: this should be invoked only after successful deployment action..
       await action(processId, comment).then(() => {
         const currentPath = window.location.pathname
         if (currentPath.startsWith(deploymentPath)) {
