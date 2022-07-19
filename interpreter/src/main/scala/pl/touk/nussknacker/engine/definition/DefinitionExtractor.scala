@@ -2,16 +2,18 @@ package pl.touk.nussknacker.engine.definition
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.{InvocationTargetException, Method}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Encoder
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{GenericFunctionError, NoVarArgumentTypeError, VarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{NoVarArgumentTypeError, VarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -252,7 +254,14 @@ object TypeInfos {
   //a bit sad that it isn't derived automatically, but...
   private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
 
-  case class Parameter(name: String, refClazz: TypingResult)
+  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
+
+  @JsonCodec(encodeOnly = true) case class SerializableMethodInfo(parameters: List[Parameter],
+                                                                  refClazz: TypingResult,
+                                                                  description: Option[String],
+                                                                  varArgs: Boolean)
+
+  implicit val methodInfoEncoder: Encoder[MethodInfo] = Encoder[SerializableMethodInfo].contramap(_.serializable)
 
   object MethodInfo {
     def apply(parameters: List[Parameter],
@@ -281,6 +290,9 @@ object TypeInfos {
 
     def varArgs: Boolean
 
+    def serializable: SerializableMethodInfo =
+      SerializableMethodInfo(interfaceParameters, interfaceResult, description, varArgs)
+
     def asProperty: Option[TypingResult] = apply(List()).toOption
   }
 
@@ -303,8 +315,6 @@ object TypeInfos {
                               name: String,
                               description: Option[String])
     extends StaticMethodInfo {
-    override def interfaceParameters: List[Parameter] = parameters
-
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, parameters)) refClazz.validNel
       else NoVarArgumentTypeError(parameters.map(_.refClazz), arguments, name).invalidNel
@@ -350,19 +360,6 @@ object TypeInfos {
     extends MethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
-  }
-
-  object FunctionalMethodInfo {
-    private def toParseErrorValidation[T](v: ValidatedNel[String, T]): ValidatedNel[ExpressionParseError, T] =
-      v.leftMap(_.map(GenericFunctionError))
-
-    def fromStringErrorTypeFunction(typeFunction: List[TypingResult] => ValidatedNel[String, TypingResult],
-                                    name: String,
-                                    description: Option[String] = None,
-                                    varArgs: Boolean = false,
-                                    interfaceParameters: List[Parameter] = Nil,
-                                    interfaceResult: TypingResult = Unknown): FunctionalMethodInfo =
-      FunctionalMethodInfo(x => toParseErrorValidation(typeFunction(x)), name, description, varArgs, interfaceParameters, interfaceResult)
   }
 
   case class ClazzDefinition(clazzName: TypedClass,
