@@ -108,16 +108,21 @@ object AvroUtils extends LazyLogging {
     */
   def createRecord(schema: Schema, data: collection.Map[String, Any]): GenericRecord = {
     def createValue(value: Any, schema: Schema): Any = {
-      def schemaContainsType(typ: Schema.Type) = schema.getType == typ ||
-        schema.getType == Schema.Type.UNION && schema.getTypes.asScala.map(_.getType).contains(typ)
+      class SchemaContainsType(typ: Schema.Type) {
+        def unapply(schema: Schema): Option[Schema] = Option(schema).filter(_.getType == typ) orElse
+          Option(schema).filter(_.getType == Schema.Type.UNION).flatMap(_.getTypes.asScala.find(_.getType == typ))
+      }
+      val SchemaContainsRecordSchema = new SchemaContainsType(Schema.Type.RECORD)
+      val SchemaContainsArraySchema = new SchemaContainsType(Schema.Type.ARRAY)
+      val SchemaContainsMapSchema = new SchemaContainsType(Schema.Type.MAP)
 
-      value match {
-        case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.RECORD) =>
-          createRecord(schema, map)
-        case collection: Traversable[_] if schemaContainsType(Schema.Type.ARRAY) =>
-          collection.map(createValue(_, schema)).toList.asJava
-        case map: collection.Map[String@unchecked, _] if schemaContainsType(Schema.Type.MAP) =>
-          map.mapValues(createValue(_, schema)).asJava
+      (value, schema) match {
+        case (map: collection.Map[String@unchecked, _], SchemaContainsRecordSchema(recordSchema)) =>
+          createRecord(recordSchema, map)
+        case (collection: Traversable[_], SchemaContainsArraySchema(arraySchema)) =>
+          collection.map(createValue(_, arraySchema.getElementType)).toList.asJava
+        case (map: collection.Map[String@unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
+          map.mapValues(createValue(_, mapSchema.getValueType)).asJava
         case _ => value
       }
     }

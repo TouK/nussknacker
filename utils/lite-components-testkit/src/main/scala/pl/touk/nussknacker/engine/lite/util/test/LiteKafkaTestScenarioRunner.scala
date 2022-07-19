@@ -94,12 +94,15 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     deserialize[T](payload)
   }
 
-  private def deserialize[T](payload: Array[Byte]): T = {
-    val schemaId = ConfluentUtils.readId(payload)
-    val schema = schemaRegistryClient.getSchemaById(schemaId).asInstanceOf[AvroSchema]
-    val (_, data) = ConfluentUtils.deserializeSchemaIdAndData[T](payload, schema.rawSchema())
-    data
-  }
+  private def deserialize[T](payload: Array[Byte]): T =
+    Option(payload)
+      .map{p =>
+        val schemaId = ConfluentUtils.readId(p)
+        val schema = schemaRegistryClient.getSchemaById(schemaId).asInstanceOf[AvroSchema]
+        val (_, data) = ConfluentUtils.deserializeSchemaIdAndData[T](p, schema.rawSchema())
+        data
+      }
+      .getOrElse(null.asInstanceOf[T])
 
 }
 
