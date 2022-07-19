@@ -54,17 +54,12 @@ object EspTypeUtils {
       if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
       else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
 
-    val methodNameAndStaticInfoList: List[(String, StaticMethodInfo)] = filteredMethods.flatMap { method =>
-      val extractedMethod = extractRegularMethod(method)
-      collectMethodNames(method).map(_ -> extractedMethod)
-    }
     val methodNameAndInfoList = filteredMethods.flatMap { method =>
-      val extractedMethod = extractMethod(method)
+      val extractedMethod = extractGenericMethod(method)
       collectMethodNames(method).map(_ -> extractedMethod)
     }
 
-    deduplicateMethodsWithGenericReturnType(methodNameAndStaticInfoList) ++
-      methodNameAndInfoList.groupBy{ case (k, _) => k }.mapValues(_.map{ case (_, v) => v })
+    deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
   }
 
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
@@ -92,7 +87,7 @@ object EspTypeUtils {
       LocalDate toLocalDate()
     In our case the second one is correct
    */
-  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
     val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.expectedParameters))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
@@ -129,7 +124,7 @@ object EspTypeUtils {
   private def getAnnotationOption[T <: Annotation](method: Method, annotationClass: Class[T]): Option[T] =
     if (method.isAnnotationPresent(annotationClass)) Some(method.getAnnotation(annotationClass)) else None
 
-  private def extractMethod(method: Method): MethodInfo = getAnnotationOption(method, classOf[GenericType]) match {
+  private def extractGenericMethod(method: Method): MethodInfo = getAnnotationOption(method, classOf[GenericType]) match {
     case Some(value) =>
       val typeFunctionClass = value.typingFunction()
       val typeFunctionConstructor = typeFunctionClass.getConstructor()

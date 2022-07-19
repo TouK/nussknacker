@@ -263,17 +263,18 @@ object TypeInfos {
   implicit val methodInfoEncoder: Encoder[MethodInfo] = Encoder[SerializableMethodInfo].contramap(_.serializable)
 
   object MethodInfo {
+    private val arrayClass = classOf[Array[Object]]
+
     def apply(parameters: List[Parameter],
               refClazz: TypingResult,
               name: String,
               description: Option[String],
-              varArgs: Boolean): StaticMethodInfo  =
-      if (varArgs && parameters.nonEmpty) {
-        val (noVarArgParameters, varArgParameter) = parameters.splitAt(parameters.length - 1)
-        VarArgsMethodInfo(noVarArgParameters, varArgParameter.head, refClazz, name, description)
-      } else {
+              varArgs: Boolean): StaticMethodInfo = parameters match {
+      case noVarArgParameters :+ Parameter(name, TypedClass(`arrayClass`, List(varArgType))) if varArgs =>
+        VarArgsMethodInfo(noVarArgParameters, Parameter(name, varArgType), refClazz, name, description)
+      case _ =>
         SimpleMethodInfo(parameters, refClazz, name, description)
-      }
+    }
   }
 
   sealed trait MethodInfo {
