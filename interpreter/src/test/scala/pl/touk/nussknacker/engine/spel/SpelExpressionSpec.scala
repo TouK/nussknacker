@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
+import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,11 +12,12 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{ArgumentTypeError, ExpressionTypeError, InvalidMethodReference, TypeReferenceError, UnknownClassError, UnknownMethodError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -203,7 +204,10 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("evaluate call on non-existing static method of validated class String") {
-    parse[Any]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'copyValueOf' in String")))
+    inside(parse[Any]("T(java.lang.String).copyValueOf({'t', 'e', 's', 't'})")) {
+      case Invalid(NonEmptyList(error: UnknownMethodError, Nil)) =>
+        error.message shouldBe "Unknown method 'copyValueOf' in String"
+    }
   }
 
   test("evaluate static method call on validated class Integer") {
@@ -211,11 +215,17 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("evaluate static method call on unvalidated class") {
-    parse[Any]("T(java.lang.System).exit()") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference")))
+    inside(parse[Any]("T(java.lang.System).exit()")) {
+      case Invalid(NonEmptyList(error: TypeReferenceError, Nil)) =>
+        error.message shouldBe "class java.lang.System is not allowed to be passed as TypeReference"
+    }
   }
 
   test("evaluate static method call on non-existing class") {
-    parse[Any]("T(java.lang.NonExistingClass).method()") shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Class T(java.lang.NonExistingClass) does not exist")))
+    inside(parse[Any]("T(java.lang.NonExistingClass).method()")) {
+      case Invalid(NonEmptyList(error: UnknownClassError, Nil)) =>
+        error.message shouldBe "Class T(java.lang.NonExistingClass) does not exist"
+    }
   }
 
   test("invoke simple expression") {
@@ -234,12 +244,17 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("subtraction of non numeric types") {
-    parse[Any]("'' - 1") shouldEqual Invalid(NonEmptyList.of(
-      ExpressionParseError(s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}")))
+    inside(parse[Any]("'' - 1")) {
+      case Invalid(NonEmptyList(error: ArgumentTypeError, Nil)) =>
+        error.message shouldBe s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}"
+    }
   }
 
   test("use not existing method reference") {
-    parse[Any]("notExistingMethod(1)", ctxWithGlobal) shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Invalid method reference: notExistingMethod(1).")))
+    inside(parse[Any]("notExistingMethod(1)", ctxWithGlobal)) {
+      case Invalid(NonEmptyList(error: InvalidMethodReference, Nil)) =>
+        error.message shouldBe "Invalid method reference: notExistingMethod(1)."
+    }
   }
 
   test("null properly") {
@@ -289,11 +304,11 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate MethodReference") {
-    val parsed = parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal)
-    parsed.isValid shouldBe true
-
-    val invalid = parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError("Unknown method 'addT' in SampleGlobalObject")))
+    parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal).isValid shouldBe true
+    inside(parse[Any]("#processHelper.addT(1, 1)", ctxWithGlobal)) {
+      case Invalid(NonEmptyList(error: UnknownMethodError, Nil)) =>
+        error.message shouldBe "Unknown method 'addT' in SampleGlobalObject"
+    }
   }
 
   test("validate MethodReference parameter types") {
@@ -303,9 +318,10 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe 'valid
     parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
 
-    val invalid = parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)
-    invalid shouldEqual Invalid(NonEmptyList.of(ExpressionParseError(
-      s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)")))
+    inside(parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)) {
+      case Invalid(NonEmptyList(error: ArgumentTypeError, Nil)) =>
+        error.message shouldBe s"Mismatch parameter types. Found: add(${Typed.fromInstance("1").display}, ${Typed.fromInstance(1).display}). Required: add(Integer, Integer)"
+    }
   }
 
   test("validate MethodReference for scala varargs") {
@@ -470,24 +486,27 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("not allow access to variables without hash in methods") {
     val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
-    parse[Any]("#processHelper.add(a, 1)", withNum) should matchPattern {
-      case Invalid(l: NonEmptyList[_]) if l.toList.contains(ExpressionParseError("Non reference 'a' occurred. Maybe you missed '#' in front of it?")) =>
+    inside(parse[Any]("#processHelper.add(a, 1)", withNum)) {
+      case Invalid(l: NonEmptyList[ExpressionParseError@unchecked]) if l.toList.exists(error => error.message == "Non reference 'a' occurred. Maybe you missed '#' in front of it?") =>
     }
   }
 
   test("not allow unknown variables in methods") {
-    parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass)) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
+    inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass))) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe "Unresolved reference 'a'" // FIXME
     }
 
-    parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'a'"), Nil)) =>
+    inside(parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx)) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe "Unresolved reference 'a'" // FIXME
     }
   }
 
   test("not allow vars without hashes in equality condition") {
-    parse[Any]("nonexisting == 'ala'", ctx) should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"), Nil)) =>
+    inside(parse[Any]("nonexisting == 'ala'", ctx)) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe "Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"
     }
   }
 
@@ -573,9 +592,10 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("detect bad type of literal or variable") {
 
-    def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) = valid should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(msg), _)) if msg == message =>
-    }
+    def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) =
+      inside(valid) {
+        case Invalid(NonEmptyList(error: ExpressionTypeError, _)) => error.message shouldBe message
+      }
 
     shouldHaveBadType( parse[Int]("'abcd'", ctx),
       s"Bad expression type, expected: Integer, found: ${Typed.fromInstance("abcd").display}" )
@@ -816,13 +836,17 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("should not allow property access on Null") {
-    parse[Any]("null.property") shouldBe
-      ExpressionParseError(s"Property access on ${TypedNull.display} is not allowed").invalidNel
+    inside(parse[Any]("null.property")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Property access on ${TypedNull.display} is not allowed"
+    }
   }
 
   test("should not allow method invocation on Null") {
-    parse[Any]("null.method()") shouldBe
-      ExpressionParseError(s"Method invocation on ${TypedNull.display} is not allowed").invalidNel
+    inside(parse[Any]("null.method()")) {
+      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+        error.message shouldBe s"Method invocation on ${TypedNull.display} is not allowed"
+    }
   }
 
   test("should be able to spel type conversions") {

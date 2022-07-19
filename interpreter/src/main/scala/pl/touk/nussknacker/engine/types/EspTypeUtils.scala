@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.types
 
 import java.lang.reflect._
 import java.util.Optional
-import cats.data.{StateT, ValidatedNel}
+import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName, TypingFunction}
+import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
 
 import java.lang.annotation.Annotation
@@ -72,7 +72,7 @@ object EspTypeUtils {
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.interfaceParameters.map(_.refClazz) :+ methodInfo.interfaceResult).forall {
+      (methodInfo.expectedParameters.map(_.refClazz) :+ methodInfo.expectedResult).forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -93,7 +93,7 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.parameters))
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.expectedParameters))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -103,8 +103,8 @@ object EspTypeUtils {
          */
 
         methodsForParams.find { case (_, methodInfo) =>
-          methodsForParams.forall(mi => methodInfo.refClazz.canBeSubclassOf(mi._2.refClazz))
-        }.getOrElse(methodsForParams.minBy(_._2.refClazz.display))
+          methodsForParams.forall(mi => methodInfo.expectedResult.canBeSubclassOf(mi._2.expectedResult))
+        }.getOrElse(methodsForParams.minBy(_._2.expectedResult.display))
     }.toGroupedMap
       //we sort only to avoid randomness
       .mapValuesNow(_.sortBy(_.toString))
@@ -136,7 +136,6 @@ object EspTypeUtils {
       val typeFunctionInstance = typeFunctionConstructor.newInstance()
       FunctionalMethodInfo(
         x => typeFunctionInstance.apply(x).leftMap(_.map(OtherError)),
-        method.getName,
         extractNussknackerDocs(method),
         varArgs = false,
         typeFunctionInstance.expectedParameters().map{ case (name, typ) => Parameter(name, typ) },
@@ -149,7 +148,6 @@ object EspTypeUtils {
     MethodInfo(
       extractParameters(method),
       extractMethodReturnType(method),
-      method.getName,
       extractNussknackerDocs(method),
       method.isVarArgs
     )
@@ -161,7 +159,7 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
+      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 
