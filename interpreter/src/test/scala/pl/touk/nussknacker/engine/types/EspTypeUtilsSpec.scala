@@ -53,10 +53,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "", None, varArgs = false)),
-      "bar" -> List(MethodInfo(List.empty, Typed[String], "", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
-      "returnContext" -> List(MethodInfo(List(), Typed[Context], "", None, varArgs = false))
+      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false)),
+      "bar" -> List(MethodInfo(List.empty, Typed[String], "bar", None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
+      "returnContext" -> List(MethodInfo(List(), Typed[Context], "returnContext", None, varArgs = false))
     )
   }
 
@@ -64,10 +64,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val classInfo = singleClassDefinition[ClassWithOptions]()
     classInfo.value.methods shouldBe Map(
       // generic type of Java type is properly read
-      "longJavaOption" -> List(MethodInfo(List.empty, Typed[Long], "", None, varArgs = false)),
+      "longJavaOption" -> List(MethodInfo(List.empty, Typed[Long], "longJavaOption", None, varArgs = false)),
       // generic type of Scala type is erased - this case documents that behavior
-      "longScalaOption" -> List(MethodInfo(List.empty, typing.Unknown, "", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
+      "longScalaOption" -> List(MethodInfo(List.empty, typing.Unknown, "longScalaOption", None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
     )
   }
 
@@ -115,8 +115,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
-          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "", None, varArgs = false))
+          "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
+          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false))
         )
       }
     }
@@ -127,10 +127,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
-      "string" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
-      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], "", None, varArgs = false)),
-      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], "", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false))
+      "string" -> List(MethodInfo(List(), Typed[String], "string", None, varArgs = false)),
+      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], "javaList", None, varArgs = false)),
+      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], "javaMap", None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false))
     ), Map.empty))
 
   }
@@ -139,9 +139,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
     typeUtils shouldBe Some(ClazzDefinition(Typed.typedClass[ClassWithHiddenFields], Map(
-      "normalField" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
-      "normalParam" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "", None, varArgs = false))
+      "normalField" -> List(MethodInfo(List(), Typed[String], "normalField", None, varArgs = false)),
+      "normalParam" -> List(MethodInfo(List(), Typed[String], "normalParam", None, varArgs = false)),
+      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false))
     ), Map.empty))
   }
 
@@ -224,12 +224,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val table = Table(
       ("method", "methodInfo"),
-      ("foo", List(MethodInfo(List(param[String]("fooParam1")), Typed[Long], "", None, varArgs = false))),
-      ("bar", List(MethodInfo(List(param[Long]("barparam1")), Typed[String], "", None, varArgs = false))),
-      ("baz", List(MethodInfo(List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], "", Some(ScalaSampleDocumentedClass.bazDocs), varArgs = false))),
-      ("qux", List(MethodInfo(List(param[String]("quxParam1")), Typed[Long], "", Some(ScalaSampleDocumentedClass.quxDocs), varArgs = false))),
-      ("field1", List(MethodInfo(List.empty, Typed[Long], "", None, varArgs = false))),
-      ("field2", List(MethodInfo(List.empty, Typed[Long], "", Some(ScalaSampleDocumentedClass.field2Docs), varArgs = false)))
+      ("foo", List(MethodInfo(List(param[String]("fooParam1")), Typed[Long], "foo", None, varArgs = false))),
+      ("bar", List(MethodInfo(List(param[Long]("barparam1")), Typed[String], "bar", None, varArgs = false))),
+      ("baz", List(MethodInfo(List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], "baz", Some(ScalaSampleDocumentedClass.bazDocs), varArgs = false))),
+      ("qux", List(MethodInfo(List(param[String]("quxParam1")), Typed[Long], "qux", Some(ScalaSampleDocumentedClass.quxDocs), varArgs = false))),
+      ("field1", List(MethodInfo(List.empty, Typed[Long], "field1", None, varArgs = false))),
+      ("field2", List(MethodInfo(List.empty, Typed[Long], "field2", Some(ScalaSampleDocumentedClass.field2Docs), varArgs = false)))
     )
     forAll(table){ case (method, methodInfo) =>
         scalaClazzInfo.methods(method) shouldBe methodInfo

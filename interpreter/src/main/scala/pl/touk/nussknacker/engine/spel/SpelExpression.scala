@@ -12,8 +12,7 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.OtherError
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, OtherError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing

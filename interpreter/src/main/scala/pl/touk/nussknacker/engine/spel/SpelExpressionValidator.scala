@@ -4,8 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import org.springframework.expression.Expression
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 
 class SpelExpressionValidator(typer: Typer) {

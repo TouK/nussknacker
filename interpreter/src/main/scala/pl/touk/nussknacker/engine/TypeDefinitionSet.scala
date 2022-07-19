@@ -5,8 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{TypeReferenceError, UnknownClassError}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypeReferenceError, UnknownClassError}
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.TypeInfos
 
