@@ -7,84 +7,156 @@ trait ExpressionParseError {
   def message: String
 }
 
-object ExpressionParseError {
-  sealed trait ArgumentTypeError extends ExpressionParseError {
-    val found: List[TypingResult]
-    val functionName: String
 
-    def expectedString: String
+trait TypeError extends ExpressionParseError
 
-    protected def typesToString(types: List[TypingResult]): String =
-      types.map(_.display).mkString(", ")
+sealed trait ArgumentTypeError extends TypeError {
+  val found: List[TypingResult]
+  val functionName: String
 
-    override def message: String =
-      s"Mismatch parameter types. Found: $functionName(${typesToString(found)}). Required: $functionName($expectedString)"
-  }
+  def expectedString: String
 
-  case class NoVarArgumentTypeError(expected: List[TypingResult],
-                                    found: List[TypingResult],
-                                    functionName: String) extends ArgumentTypeError {
-    override def expectedString: String = typesToString(expected)
-  }
+  protected def typesToString(types: List[TypingResult]): String =
+    types.map(_.display).mkString(", ")
 
-  case class VarArgumentTypeError(expected: List[TypingResult],
-                                  expectedVarArgument: TypingResult,
+  override def message: String =
+    s"Mismatch parameter types. Found: $functionName(${typesToString(found)}). Required: $functionName($expectedString)"
+}
+
+case class NoVarArgumentTypeError(expected: List[TypingResult],
                                   found: List[TypingResult],
                                   functionName: String) extends ArgumentTypeError {
-    override def expectedString: String = typesToString(expected :+ expectedVarArgument) + "..."
-  }
+  override def expectedString: String = typesToString(expected)
+}
 
-  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends ExpressionParseError {
+case class VarArgumentTypeError(expected: List[TypingResult],
+                                expectedVarArgument: TypingResult,
+                                found: List[TypingResult],
+                                functionName: String) extends ArgumentTypeError {
+  override def expectedString: String = typesToString(expected :+ expectedVarArgument) + "..."
+}
+
+case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends TypeError {
     override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
   }
 
-  object InvocationOnUnknownError extends ExpressionParseError {
-    override def message: String = s"Method invocation on ${Unknown.display} is not allowed"
+
+trait OperatorError extends ExpressionParseError
+
+case class OperatorMismatchTypeError(operator: String, left: TypingResult, right: TypingResult) extends OperatorError {
+  override def message: String = s"Operator '$operator' used with mismatch types: ${left.display} and ${right.display}"
+}
+
+case class OperatorNonNumericError(operator: String, typ: TypingResult) extends OperatorError {
+  override def message: String = s"Operator '$operator' used with non numeric type: ${typ.display}"
+}
+
+case class OperatorNotComparableError(operator: String, left: TypingResult, right: TypingResult) extends OperatorError {
+  override def message: String = s"Operator '$operator' used with not comparable types: ${left.display} and ${right.display}"
+}
+
+case class EmptyOperatorError(operator: String) extends OperatorError {
+  override def message: String = s"Empty $operator"
+}
+
+case class BadOperatorConstructionError(operator: String) extends OperatorError {
+  override def message: String = s"Bad '$operator' operator construction"
+}
+
+
+trait TernaryOperatorError extends OperatorError
+
+case class TernaryOperatorNotBooleanError(computedType: TypingResult) extends TernaryOperatorError {
+  override def message: String = s"Not a boolean expression used in ternary operator (expr ? onTrue : onFalse). Computed expression type: ${computedType.display}"
+}
+
+case class TernaryOperatorMismatchTypesError(left: TypingResult, right: TypingResult) extends TernaryOperatorError {
+  override def message: String = s"Ternary operator (expr ? onTrue : onFalse) used with mismatch result types: ${left.display} and ${right.display}"
+}
+
+case object InvalidTernaryOperator extends TernaryOperatorError {
+  override def message: String = "Invalid ternary operator"
+}
+
+
+trait IllegalOperationError extends ExpressionParseError
+
+case class IllegalPropertyAccessError(typ: TypingResult) extends IllegalOperationError {
+  override def message: String = s"Property access on ${typ.display} is not allowed"
+}
+
+case class IllegalInvocationError(typ: TypingResult) extends IllegalOperationError {
+    override def message: String = s"Method invocation on ${typ.display} is not allowed"
   }
 
-  object InvocationOnNullError extends ExpressionParseError {
-    override def message: String = s"Method invocation on ${TypedNull.display} is not allowed"
-  }
+case class InvalidMethodReference(methodName: String) extends IllegalOperationError {
+  override def message: String = s"Invalid method reference: $methodName."
+} // TODO: Compare with UnknownMethodError
 
-  case class UnknownMethodError(methodName: String, displayableType: String) extends ExpressionParseError {
+case class TypeReferenceError(refClass: String) extends IllegalOperationError {
+  override def message: String = s"$refClass is not allowed to be passed as TypeReference"
+}
+
+case class IllegalProjectionSelectionError(typ: TypingResult) extends IllegalOperationError {
+  override def message: String = s"Cannot do projection/selection on ${typ.display}"
+}
+
+case object DynamicPropertyAccessError extends IllegalOperationError {
+  override def message: String = "Dynamic property access is not allowed"
+}
+
+case object IllegalIndexingOperation extends IllegalOperationError {
+  override def message: String = "Cannot do indexing here"
+}
+
+
+trait MissingObjectError extends ExpressionParseError
+
+case class NoPropertyError(typ: TypingResult, property: String) extends MissingObjectError {
+  override def message: String = s"There is no property '$property' in type: ${typ.display}"
+}
+
+case class UnknownMethodError(methodName: String, displayableType: String) extends MissingObjectError {
     override def message: String = s"Unknown method '$methodName' in $displayableType"
   }
 
-  case class UnknownClassError(className: String) extends ExpressionParseError {
+case class UnknownClassError(className: String) extends MissingObjectError {
     override def message: String = s"Class $className does not exist"
   }
 
-  case class InvalidMethodReference(methodName: String) extends ExpressionParseError {
-    override def message: String = s"Invalid method reference: $methodName."
-  }
+case class ConstructionOfUnknown(clazz: Option[Class[_]]) extends MissingObjectError {
+  override def message: String = s"Cannot create instance of unknown class" ++ clazz.map(" " ++ _.toString).getOrElse("")
+}
 
-  case class TypeReferenceError(refClass: String) extends ExpressionParseError {
-    override def message: String = s"$refClass is not allowed to be passed as TypeReference"
-  }
+case class UnresolvedReferenceError(name: String) extends MissingObjectError {
+  override def message: String = s"Unresolved reference '$name'"
+}
 
-  case class IllegalProjectionSelectionError(typ: TypingResult) extends ExpressionParseError {
-    override def message: String = s"Cannot do projection/selection on ${typ.display}"
-  }
+case class NonReferenceError(text: String) extends MissingObjectError {
+  override def message: String = s"Non reference '$text' occurred. Maybe you missed '#' in front of it?"
+}
 
-  case class DictIndexCountError(node: SpelNode) extends ExpressionParseError {
-    override def message: String = s"Illegal spel construction: ${node.toStringAST}. Dict should be indexed by a single key"
-  }
 
-  case class NoDictError(dictId: String) extends ExpressionParseError {
-    override def message: String = s"Dict with given id: $dictId not exists"
-  }
-
-  private val maxStringListLength = 3
-
-  private def formatStringList(elems: List[String]): String = {
+trait DictError extends ExpressionParseError {
+  protected def formatStringList(elems: List[String]): String = {
+    val maxStringListLength = 3
     val formattedElems = elems.map("'" + _ + "'")
     if (formattedElems.length <= maxStringListLength)
       formattedElems.mkString(", ")
     else
       formattedElems.mkString("", ", ", ", ...")
   }
+}
 
-  case class DictLabelError(label: String, possibleLabels: Option[List[String]], dict: TypedDict) extends ExpressionParseError {
+case class DictIndexCountError(node: SpelNode) extends DictError {
+    override def message: String = s"Illegal spel construction: ${node.toStringAST}. Dict should be indexed by a single key"
+  }
+
+case class NoDictError(dictId: String) extends DictError {
+  override def message: String = s"Dict with given id: $dictId not exists"
+}
+
+case class DictLabelError(label: String, possibleLabels: Option[List[String]], dict: TypedDict) extends DictError {
     override def message: String = {
       val optionLabels = possibleLabels.map(formatStringList)
       val possibilitiesString = optionLabels.map(" Possible labels are: " + _ + ".").getOrElse("")
@@ -92,7 +164,7 @@ object ExpressionParseError {
     }
   }
 
-  case class DictKeyError(key: String, possibleKeys: Option[List[String]], dict: TypedDict) extends ExpressionParseError {
+case class DictKeyError(key: String, possibleKeys: Option[List[String]], dict: TypedDict) extends DictError {
     override def message: String = {
       val optionKeys = possibleKeys.map(formatStringList)
       val possibilitiesString = optionKeys.map(" Possible keys are: " + _ + ".").getOrElse("")
@@ -100,9 +172,40 @@ object ExpressionParseError {
     }
   }
 
-  case class GenericFunctionError(innerMessage: String) extends ExpressionParseError {
+
+trait UnsupportedOperationError extends ExpressionParseError
+
+case object ModificationError extends UnsupportedOperationError {
+  override def message: String = "Value modifications are not supported"
+}
+
+case object BeanReferenceError extends UnsupportedOperationError {
+  override def message: String = "Bean reference is not supported"
+}
+
+case object MapWithExpressionKeysError extends UnsupportedOperationError {
+  override def message: String = "Currently inline maps with not literal keys (e.g. expressions as keys) are not supported"
+}
+
+
+trait SelectionProjectionError extends ExpressionParseError
+
+case object IllegalSelectionError extends SelectionProjectionError {
+  override def message: String = "Cannot do selection here"
+}
+
+case object IllegalProjectionError extends SelectionProjectionError {
+  override def message: String = "Cannot do projection here"
+}
+
+case class IllegalSelectionTypeError(types: List[TypingResult]) extends SelectionProjectionError {
+  override def message: String = s"Wrong selection type: ${types.map(_.display)}"
+}
+
+
+case class GenericFunctionError(innerMessage: String) extends ExpressionParseError {
     override def message: String = s"Failed to calculate types in generic function: $innerMessage"
   }
 
-  case class OtherError(message: String) extends ExpressionParseError
-}
+
+case class OtherError(message: String) extends ExpressionParseError

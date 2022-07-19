@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.api.MethodToInvoke
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.transformation.{GenericNodeTransformation, JoinGenericNodeTransformation, OutputVariableNameValue, TypedNodeDependencyValue, WithLegacyStaticParameters}
 import pl.touk.nussknacker.engine.api.definition.{OutputVariableNameDependency, Parameter, TypedNodeDependency, WithExplicitTypesToExtract}
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{NoVarArgumentTypeError, VarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, NoVarArgumentTypeError, VarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
@@ -324,8 +323,11 @@ object TypeInfos {
     private def checkArgumentsLength(arguments: List[TypingResult]): Boolean =
       arguments.length >= noVarParameters.length
 
-    private def checkVarArguments(varArguments: List[TypingResult]): Boolean =
+    private def checkVarArguments(varArguments: List[TypingResult]): Boolean = {
+      println(varParameter.refClazz.display)
+      varArguments.foreach(x => println(s"$x.display ${x.canBeSubclassOf(varParameter.refClazz)}"))
       varArguments.forall(_.canBeSubclassOf(varParameter.refClazz))
+    }
 
     private def checkArguments(arguments: List[TypingResult]): Boolean = {
       val (noVarArguments, varArguments) = arguments.splitAt(noVarParameters.length)

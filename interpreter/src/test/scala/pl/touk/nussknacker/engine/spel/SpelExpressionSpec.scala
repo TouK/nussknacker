@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{ArgumentTypeError, Expression, ExpressionParseError, ExpressionTypeError, InvalidMethodReference, OperatorMismatchTypeError, OperatorNonNumericError, TypeReferenceError, TypedExpression, UnknownClassError, UnknownMethodError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError.{ArgumentTypeError, ExpressionTypeError, InvalidMethodReference, TypeReferenceError, UnknownClassError, UnknownMethodError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -244,8 +243,15 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("subtraction of non numeric types") {
+    inside(parse[Any]("'a' - 'b'")) {
+      case Invalid(NonEmptyList(error: OperatorNonNumericError, Nil)) =>
+        error.message shouldBe "" // TODO: Define valid message.
+    }
+  }
+
+  test("substraction of mismatched types") {
     inside(parse[Any]("'' - 1")) {
-      case Invalid(NonEmptyList(error: ArgumentTypeError, Nil)) =>
+      case Invalid(NonEmptyList(error: OperatorMismatchTypeError, Nil)) =>
         error.message shouldBe s"Operator '-' used with mismatch types: ${Typed.fromInstance("").display} and ${Typed.fromInstance(1).display}"
     }
   }
@@ -329,7 +335,12 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate MethodReference for java varargs") {
+    inside(parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal)) {
+      case Valid(a) => println(a)
+      case Invalid(lst: NonEmptyList[ExpressionParseError@unchecked]) => lst.toList.foreach(x => println(x.message))
+    }
     parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+
   }
 
   test("skip MethodReference validation without strictMethodsChecking") {
