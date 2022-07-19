@@ -13,13 +13,10 @@ import pl.touk.nussknacker.engine.avro.AvroUtils
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
 import java.time.{Instant, LocalDate, LocalTime}
-import java.util
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 object AvroTestData {
-
-  import collection.JavaConverters._
 
   implicit class LocalTimeOutput(time: LocalTime) {
     //See org.apache.avro.date.TimeConversions.TimeMillisConversion
@@ -74,65 +71,56 @@ object AvroTestData {
 
   val recordStringPriceSchema: Schema = createRecord(createField("price", nullSchema, stringSchema))
 
-  //Union schemas
-  val recordUnionOfStringInteger: Schema = createSimpleRecord(stringSchema, integerSchema)
-
-  val recordMaybeBoolean: Schema = createSimpleRecord(nullSchema, booleanSchema)
-
   //Avro array schemas
-  val arrayOfStrings: Schema = createArray(stringSchema)
+  val arrayOfStringsSchema: Schema = createArray(stringSchema)
 
-  val recordWithArrayOfStrings: Schema = createSimpleRecord(arrayOfStrings)
+  val recordArrayOfStringsSchema: Schema = createSimpleRecord(arrayOfStringsSchema)
 
-  val arrayOfNumbers: Schema = createArray(integerSchema, doubleSchema)
+  val arrayOfNumbersSchema: Schema = createArray(integerSchema, doubleSchema)
 
-  val recordWithArrayOfNumbers: Schema = createSimpleRecord(arrayOfNumbers)
+  val recordArrayOfNumbersSchema: Schema = createSimpleRecord(arrayOfNumbersSchema)
 
-  val recordWithMaybeArrayOfNumbers: Schema = createSimpleRecord(nullSchema, arrayOfNumbers)
+  val recordMaybeArrayOfNumbersSchema: Schema = createSimpleRecord(nullSchema, arrayOfNumbersSchema)
 
-  val recordWithOptionalArrayOfNumbers: Schema = createSimpleRecord(Null, nullSchema, arrayOfNumbers)
+  val recordOptionalArrayOfNumbersSchema: Schema = createSimpleRecord(Null, nullSchema, arrayOfNumbersSchema)
 
-  val recordOptionalArrayOfArraysStrings: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfStrings))
+  val recordOptionalArrayOfArraysStringsSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfStringsSchema))
 
-  val recordOptionalArrayOfArraysNumbers: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfNumbers))
+  val recordOptionalArrayOfArraysNumbersSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, arrayOfNumbersSchema))
 
-  val recordOptionalArrayOfRecords: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, recordPriceSchema))
+  val recordOptionalArrayOfRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createArray(nullSchema, recordPriceSchema))
 
   //Avro map schemas
-  val mapOfStrings: Schema = createMap(nullSchema, stringSchema)
+  val mapOfStringsSchema: Schema = createMap(nullSchema, stringSchema)
 
-  val recordMapOfStrings: Schema = createSimpleRecord(mapOfStrings)
+  val recordMapOfStringsSchema: Schema = createSimpleRecord(mapOfStringsSchema)
 
-  val mapOfInts: Schema = createMap(nullSchema, integerSchema)
+  val mapOfIntsSchema: Schema = createMap(nullSchema, integerSchema)
 
-  val recordMapOfInts: Schema = createRecord(createField(RecordFieldName, mapOfInts))
+  val recordMapOfIntsSchema: Schema = createRecord(createField(RecordFieldName, mapOfIntsSchema))
 
-  val recordMaybeMapOfInts: Schema = createRecord(createField(RecordFieldName, nullSchema, mapOfInts))
+  val recordMaybeMapOfIntsSchema: Schema = createRecord(createField(RecordFieldName, nullSchema, mapOfIntsSchema))
 
-  val recordOptionalMapOfInts: Schema = createSimpleRecord(Null, nullSchema, mapOfInts)
+  val recordOptionalMapOfIntsSchema: Schema = createSimpleRecord(Null, nullSchema, mapOfIntsSchema)
 
-  val recordMapOfMapsStrings: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfStrings))
+  val recordMapOfMapsStringsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfStringsSchema))
 
-  val recordOptionalMapOfMapsInts: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfInts))
+  val recordOptionalMapOfMapsIntsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, mapOfIntsSchema))
 
-  val recordOptionalMapOfStringRecords: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordStringPriceSchema))
+  val recordOptionalMapOfStringRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordStringPriceSchema))
 
-  val recordOptionalMapOfRecords: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
+  val recordOptionalMapOfRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
 
   //Avro record schemas
-  val nestedRecordWithStringPriceSchema: Schema = createSimpleRecord(Null,
-    nullSchema, createRecord(createField("sub", Null,
-      nullSchema, recordStringPriceSchema
-    ))
-  )
+  val baseRecordWithStringPriceSchema: Schema = createRecord(createField("sub", Null, nullSchema, recordStringPriceSchema))
 
-  val nestedRecordSchema: Schema = createSimpleRecord(Null,
-    nullSchema, createRecord(createField("sub", Null,
-      nullSchema, recordPriceSchema
-    ))
-  )
+  val nestedRecordWithStringPriceSchema: Schema = createSimpleRecord(Null, nullSchema, baseRecordWithStringPriceSchema)
 
-  val nestedRecordSchemaV2Fields: Schema = Schema.createUnion(
+  val baseRecordWithPriceSchema: Schema = createRecord(createField("sub", Null, nullSchema, recordPriceSchema))
+
+  val nestedRecordSchema: Schema = createSimpleRecord(Null, nullSchema, baseRecordWithPriceSchema)
+
+  val nestedRecordV2FieldsSchema: Schema = Schema.createUnion(
     nullSchema,
     createRecord(
       createField("sub", Null,
@@ -146,9 +134,16 @@ object AvroTestData {
     )
   )
 
-  val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordSchemaV2Fields)
+  val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordV2FieldsSchema)
+
+  //Union schemas
+  val recordUnionOfStringIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
+
+  val recordMaybeBooleanSchema: Schema = createSimpleRecord(nullSchema, booleanSchema)
 
   //Avro other schemas
+  val recordWithBigUnionSchema: Schema = createSimpleRecord(nullSchema, booleanSchema, baseRecordWithStringPriceSchema, baseRecordWithPriceSchema)
+
   val recordStringSchema: Schema = createSimpleRecord(stringSchema)
 
   val baseEnumSchema: Schema = createEnum("Suit", List("SPADES", "HEARTS", "DIAMONDS", "CLUBS"))
@@ -186,28 +181,18 @@ object AvroTestData {
   val sampleLong: Long = Integer.MAX_VALUE.toLong + 1
   val sampleString: String = "lcl"
   val sampleBoolean: Boolean = true
-  val sampleBytes: Array[Byte] = sampleString.getBytes("UTf-8")
+  val sampleBytes: Array[Byte] = sampleString.getBytes(StandardCharsets.UTF_8)
   val samplePriceRecord: GenericRecord = AvroUtils.createRecord(recordPriceSchema, Map("price" -> sampleDouble))
-  val sampleIntegerArray: util.List[Int] = List(1, 2).asJava
-  val sampleArrayInArray: util.List[util.List[Int]] = List(sampleIntegerArray).asJava
-  val sampleArrayWithRecord: util.List[GenericRecord] = List(samplePriceRecord).asJava
-  val sampleMapInts: util.Map[String, Int] = Map("tax" -> 7).asJava
-  val sampleMapOfMapsInts: util.Map[String, util.Map[String, Int]] = Map("first" -> sampleMapInts).asJava
-  val sampleMapOfRecords: util.Map[String, GenericRecord] = Map("first" -> samplePriceRecord).asJava
 
-  val typeInt: typing.TypingResult = Typed.fromInstance(sampleInteger)
-  val typeLong: typing.TypingResult = Typed.fromInstance(sampleLong)
-  val typeFloat: typing.TypingResult = Typed.fromInstance(sampleFloat)
-  val typeDouble: typing.TypingResult = Typed.fromInstance(sampleDouble)
-  val typeStr: typing.TypingResult = Typed.fromInstance(sampleString)
-  val typeBool: typing.TypingResult = Typed.fromInstance(sampleBoolean)
+  val typedInt: typing.TypingResult = Typed.fromInstance(sampleInteger)
+  val typedLong: typing.TypingResult = Typed.fromInstance(sampleLong)
+  val typedFloat: typing.TypingResult = Typed.fromInstance(sampleFloat)
+  val typedDouble: typing.TypingResult = Typed.fromInstance(sampleDouble)
+  val typedStr: typing.TypingResult = Typed.fromInstance(sampleString)
+  val typedBool: typing.TypingResult = Typed.fromInstance(sampleBoolean)
 
   val sampleNestedRecord: GenericRecord = AvroUtils.createRecord(nestedRecordSchema,
     Map(RecordFieldName -> Map("sub" -> samplePriceRecord))
-  )
-
-  val defaultNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
-    Map(RecordFieldName -> Map("sub" -> samplePriceRecord, "str" -> "sample"))
   )
 
   val sampleNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
@@ -217,16 +202,16 @@ object AvroTestData {
   val sampleEnumString = "SPADES"
   val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
 
-  val sampleEnumV2String = "HEARTS2"
-  val typeEnumV2Str: typing.TypingResult = Typed.fromInstance(sampleEnumV2String)
-  val sampleEnumV2 = new EnumSymbol(enumSchemaV2, sampleEnumV2String)
+  val sampleStrEnumV2 = "HEARTS2"
+  val typedStrEnumV2: typing.TypingResult = Typed.fromInstance(sampleStrEnumV2)
+  val sampleEnumV2 = new EnumSymbol(enumSchemaV2, sampleStrEnumV2)
 
-  val sampleFixedString = "098f6bcd4621d373cade4e832627b4f6"
-  val sampleFixed = new Fixed(baseFixedSchema, sampleFixedString.getBytes(StandardCharsets.UTF_8))
+  val sampleStrFixed = "098f6bcd4621d373cade4e832627b4f6"
+  val sampleFixed = new Fixed(baseFixedSchema, sampleStrFixed.getBytes(StandardCharsets.UTF_8))
 
-  val sampleFixedV2String = "7551140914207932"
-  val typeFixedV2str: typing.TypingResult = Typed.fromInstance(sampleFixedV2String)
-  val sampleFixedV2 = new Fixed(recordFixedSchemaV2, sampleFixedV2String.getBytes(StandardCharsets.UTF_8))
+  val sampleStrFixedV = "7551140914207932"
+  val typeStrFixedV2: typing.TypingResult = Typed.fromInstance(sampleStrFixedV)
+  val sampleFixedV2 = new Fixed(recordFixedSchemaV2, sampleStrFixedV.getBytes(StandardCharsets.UTF_8))
 
   val sampleUUID: UUID = UUID.randomUUID()
   val sampleDecimal: java.math.BigDecimal = new java.math.BigDecimal(1).setScale(2)
