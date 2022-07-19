@@ -2,10 +2,10 @@
 
 **Nussknacker** is published under [Apache License 2.0](http://www.apache.org/licenses/LICENSE-2.0).
 
-The [ML Enricher](./components/MachineLearning.md) is an Enterprise component of Nussknacker and requires a separate licencs; contact info@nussknacker.io for license terms. The ML Enricher uses [JPMML-Evaluator](https://github.com/jpmml/jpmml-evaluator) library to score ML models. 
+The Enterprise components are subject to different license terms. Contact info@nussknacker.io for more info. Additionally, the ML Enricher uses [JPMML-Evaluator](https://github.com/jpmml/jpmml-evaluator) library to score ML models. 
 
 
-The following components are licensed under the BSD 3-Clause License reproduced below:
+The following library is licensed under the BSD 3-Clause License reproduced below:
 - JPMML-Evaluator, Copyright (c) 2013, Villu Ruusmann All rights reserved.
    
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
