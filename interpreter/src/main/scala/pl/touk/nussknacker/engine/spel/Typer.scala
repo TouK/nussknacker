@@ -16,7 +16,7 @@ import org.springframework.expression.spel.{SpelNode, standard}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{BadOperatorConstructionError, BeanReferenceError, ConstructionOfUnknown, DynamicPropertyAccessError, EmptyOperatorError, ExpressionParseError, ExpressionTypingInfo, IllegalIndexingOperation, IllegalProjectionError, IllegalProjectionSelectionError, IllegalPropertyAccessError, IllegalSelectionError, IllegalSelectionTypeError, InvalidMethodReference, InvalidTernaryOperator, MapWithExpressionKeysError, ModificationError, NoPropertyError, NonReferenceError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, OtherError, TernaryOperatorMismatchTypesError, TernaryOperatorNotBooleanError, UnresolvedReferenceError}
+import pl.touk.nussknacker.engine.api.expression._
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -93,7 +93,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
     def withChildrenOfType[Parts: universe.TypeTag](result: TypingResultWithContext) = withTypedChildren {
       case list if list.forall(_.typingResult.canBeSubclassOf(Typed.fromDetailedType[Parts])) => Valid(result)
-      case _ => OtherError("Wrong part types").invalidNel // TODO: Find better error
+      case _ => PartTypeError.invalidNel
     }
 
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
