@@ -40,6 +40,7 @@
 * [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
 * [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
+* [#3294](https://github.com/TouK/nussknacker/pull/3294) Improvements: properly type avro null value
 * 
 1.4.0 (14 Jun 2022)
 ------------------------

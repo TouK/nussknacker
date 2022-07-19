@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.typed
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 
 import java.nio.ByteBuffer
@@ -28,7 +28,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
     */
   def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
     schema.getType match {
-      case Schema.Type.RECORD => {
+      case Schema.Type.RECORD =>
         val fields = schema
           .getFields
           .asScala
@@ -38,7 +38,6 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
           .toList
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
-      }
       case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
         Typed(Set(Typed.typedClass[EnumSymbol], AvroStringSettings.stringTypingResult))
       case Schema.Type.ARRAY =>
@@ -81,7 +80,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
       case Schema.Type.BOOLEAN =>
         Typed[Boolean]
       case Schema.Type.NULL =>
-        Typed.empty
+        TypedNull
     }
   }
 }
