@@ -4,7 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
@@ -12,8 +12,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedMessagesSerdeP
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
-class ConfluentAvroSchemaBasedMessagesSerdeProvider(val schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                                                    val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[AvroSchema],
+class ConfluentAvroSchemaBasedMessagesSerdeProvider(val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[AvroSchema],
                                                     val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory[AvroSchema],
                                                     val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedMessagesSerdeProvider[AvroSchema] {
   override def validateSchema(schema: AvroSchema): ValidatedNel[SchemaRegistryError, AvroSchema] = {
@@ -35,7 +34,6 @@ object ConfluentAvroSchemaBasedMessagesSerdeProvider extends Serializable {
 
   def avroSchemaAvroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentAvroSchemaBasedMessagesSerdeProvider = {
     ConfluentAvroSchemaBasedMessagesSerdeProvider(
-      schemaRegistryClientFactory,
       new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
       new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
@@ -44,19 +42,16 @@ object ConfluentAvroSchemaBasedMessagesSerdeProvider extends Serializable {
 
   def avroSchemaJsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentAvroSchemaBasedMessagesSerdeProvider = {
     ConfluentAvroSchemaBasedMessagesSerdeProvider(
-      schemaRegistryClientFactory,
       new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory),
       new JsonPayloadToJsonFormatterFactory
     )
   }
 
-  private def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory,
-                    serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[AvroSchema],
+  private def apply(serializationSchemaFactory: KafkaAvroSerializationSchemaFactory[AvroSchema],
                     deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory[AvroSchema],
                     recordFormatterFactory: RecordFormatterFactory): ConfluentAvroSchemaBasedMessagesSerdeProvider = {
     new ConfluentAvroSchemaBasedMessagesSerdeProvider(
-      schemaRegistryClientFactory,
       serializationSchemaFactory,
       deserializationSchemaFactory,
       recordFormatterFactory
