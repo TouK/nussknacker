@@ -40,6 +40,10 @@ case class ExpressionTypeError(expected: TypingResult, found: TypingResult) exte
     override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
   }
 
+case object PartTypeError extends TypeError {
+  override def message: String = "Wrong part types"
+}
+
 
 trait OperatorError extends ExpressionParseError
 
@@ -208,4 +212,6 @@ case class GenericFunctionError(innerMessage: String) extends ExpressionParseErr
   }
 
 
-case class OtherError(message: String) extends ExpressionParseError
+case class ExpressionCompilationError(message: String) extends ExpressionParseError
+
+// case class OtherError(message: String) extends ExpressionParseError

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.StringUtils
 import org.springframework.core.convert.ConversionService
@@ -12,7 +12,7 @@ import org.springframework.expression.spel.{SpelCompilerMode, SpelEvaluationExce
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, ExpressionParser, OtherError, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{ExpressionCompilationError, ExpressionParseError, ExpressionParser, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -42,7 +42,9 @@ import scala.util.control.NonFatal
   * - unless Expression is marked @volatile multiple threads might parse it on their own,
   * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
-final case class ParsedSpelExpression(original: String, parser: () => Validated[NonEmptyList[OtherError], Expression], initial: Expression) extends LazyLogging {
+final case class ParsedSpelExpression(original: String,
+                                      parser: () => ValidatedNel[ExpressionParseError, Expression],
+                                      initial: Expression) extends LazyLogging {
   @volatile var parsed: Expression = initial
 
   def getValue[T](context: EvaluationContext, desiredResultType: Class[_]): T = {
@@ -82,7 +84,7 @@ class SpelExpression(parsed: ParsedSpelExpression,
       case r: SingleTypingResult =>
         r.objType.klass
       case _ =>
-        // TOOD: what should happen here?
+        // TODO: what should happen here?
         classOf[Any]
     }
 
@@ -120,7 +122,9 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   override final val languageId: String = flavour.languageId
 
-  override def parseWithoutContextValidation(original: String, expectedType: TypingResult): Validated[NonEmptyList[OtherError], api.expression.Expression] = {
+  override def parseWithoutContextValidation(original: String,
+                                             expectedType: TypingResult):
+    ValidatedNel[ExpressionParseError, api.expression.Expression] = {
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {
@@ -130,7 +134,10 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
     }
   }
 
-  override def parse(original: String, ctx: ValidationContext, expectedType: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypedExpression] = {
+  override def parse(original: String,
+                     ctx: ValidationContext,
+                     expectedType: TypingResult):
+    ValidatedNel[ExpressionParseError, TypedExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
         NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty, typing.Unknown)))
@@ -146,8 +153,8 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   private def shouldUseNullExpression(original: String): Boolean
     = flavour != Template && StringUtils.isBlank(original)
 
-  private def baseParse(original: String): Validated[NonEmptyList[OtherError], Expression] = {
-    Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(OtherError(ex.getMessage)))
+  private def baseParse(original: String): ValidatedNel[ExpressionCompilationError, Expression] = {
+    Validated.catchNonFatal(parser.parseExpression(original, flavour.parserContext.orNull)).leftMap(ex => NonEmptyList.of(ExpressionCompilationError(ex.getMessage)))
   }
 
   private def expression(expression: ParsedSpelExpression, expectedType: TypingResult) = {
