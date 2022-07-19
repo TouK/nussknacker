@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObject
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedMessagesSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, ParsedSchemaDeterminer, RuntimeSchemaData}
@@ -28,7 +28,7 @@ import scala.reflect.ClassTag
   * TODO: Move it to some other module when json schema handling will be available
   */
 class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                                                            val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                                                            val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
                                                             val processObjectDependencies: ProcessObjectDependencies,
                                                             protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory

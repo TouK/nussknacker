@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedMessagesSerdeProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
@@ -51,7 +51,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
   // In default test scenario we use avro payload.
-  protected lazy val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
+  protected lazy val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
     ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =

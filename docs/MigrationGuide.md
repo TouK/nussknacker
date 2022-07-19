@@ -26,13 +26,17 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
 * [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
-* [#3265](https://github.com/TouK/nussknacker/pull/3265) Initial work on UniversalKafkaSource/Sink:
+* [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [3297](https://github.com/TouK/nussknacker/pull/3297) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
+  * `NkSerializableAvroSchema` renamed to `NkSerializableParsedoSchema
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+  * `SchemaRegistryProvider` refactoring:
+    * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
+    * decouple `SchemaRegistryClientFactory` from `SchemaBasedSerdeProvider`
+  * `KafkaAvroKeyValueDeserializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueDeserializationSchemaFactory`
+  * `KafkaAvroValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedValueSerializationSchemaFactory`
+  * `KafkaAvroKeyValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueSerializationSchemaFactory`
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
-* [#3288](https://github.com/TouK/nussknacker/pull/3288) `SchemaRegistryProvider` refactoring:
-  * rename `SchemaRegistryProvider` to `SchemaBasedMessagesSerdeProvider`
-  * decouple `BaseSchemaRegistryProvider` from `SchemaBasedMessagesSerdeProvider`
 
 ### REST API changes
 

@@ -21,7 +21,6 @@ trait ConfluentKafkaAvroDeserializerFactory extends LazyLogging {
     val avroSchemaDataOpt = schemaDataOpt.map { schemaData =>
       schemaData.schema match {
         case _: AvroSchema => schemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
-        // TODO: handle json schema
         case other => throw new IllegalArgumentException(s"Unsupported schema class: ${other.getClass}")
       }
     }

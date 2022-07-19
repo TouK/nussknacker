@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJ
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedMessagesSerdeProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedSerdeProvider}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -17,7 +17,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
+    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
       ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
 
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)

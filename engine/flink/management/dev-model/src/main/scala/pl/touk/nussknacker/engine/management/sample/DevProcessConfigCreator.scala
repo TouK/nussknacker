@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
@@ -67,13 +67,13 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
-    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
+    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(confluentFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(confluentFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory))
     )
   }
 

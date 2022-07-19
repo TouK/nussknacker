@@ -10,13 +10,13 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{Confl
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentKeyValueUniversalKafkaDeserializationFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKeyValueKafkaAvroDeserializationFactory, ConfluentSchemaBasedSerializationSchemaFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedMessagesSerdeProvider, SchemaRegistryError, SchemaRegistryUnsupportedTypeError}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryError, SchemaRegistryUnsupportedTypeError}
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
 class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory,
                                         val deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory,
-                                        val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedMessagesSerdeProvider {
+                                        val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedSerdeProvider {
   override def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T] = {
     schema match {
       case s: AvroSchema => {
@@ -37,6 +37,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
 
   def universal(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedSerdeProvider = {
     ConfluentSchemaBasedSerdeProvider(
+      // TODO: add "switch" in serialization factory
       new ConfluentSchemaBasedSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueUniversalKafkaDeserializationFactory(schemaRegistryClientFactory),
       new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)

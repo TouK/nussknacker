@@ -6,7 +6,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.avro.TestSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.helpers._
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.kafka.KafkaClient
@@ -38,7 +38,7 @@ trait ConfluentKafkaAvroSeDeSpecMixin extends SchemaRegistryMixin with TableDriv
   }
 
   case class SchemaRegistryProviderSetup(`type`: SchemaRegistryProviderSetupType.Value,
-                                         provider: SchemaBasedMessagesSerdeProvider,
+                                         provider: SchemaBasedSerdeProvider,
                                          override val valueSerializer: Serializer[Any],
                                          valueDeserializer: Deserializer[Any]) extends KafkaWithSchemaRegistryOperations {
 
