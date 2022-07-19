@@ -45,6 +45,8 @@ trait SinkOutputSpELConverter {
       case str: String if isField => s""""$str""""
       case str: String if !isField => s"'$str'"
       case long: Long => s"${long}l"
+      case db: Double => s"${db}d"
+      case fl: Float => s"${fl}f"
       case null => "null"
       case v => v.toString
     }

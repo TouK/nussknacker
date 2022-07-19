@@ -5,6 +5,8 @@ import org.apache.avro.data.TimeConversions.TimestampMicrosConversion
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{LogicalTypes, Schema}
+import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.AvroSchemaCreator._
 import pl.touk.nussknacker.engine.avro.AvroUtils
 
@@ -193,6 +195,13 @@ object AvroTestData {
   val sampleMapOfMapsInts: util.Map[String, util.Map[String, Int]] = Map("first" -> sampleMapInts).asJava
   val sampleMapOfRecords: util.Map[String, GenericRecord] = Map("first" -> samplePriceRecord).asJava
 
+  val typeInt: typing.TypingResult = Typed.fromInstance(sampleInteger)
+  val typeLong: typing.TypingResult = Typed.fromInstance(sampleLong)
+  val typeFloat: typing.TypingResult = Typed.fromInstance(sampleFloat)
+  val typeDouble: typing.TypingResult = Typed.fromInstance(sampleDouble)
+  val typeStr: typing.TypingResult = Typed.fromInstance(sampleString)
+  val typeBool: typing.TypingResult = Typed.fromInstance(sampleBoolean)
+
   val sampleNestedRecord: GenericRecord = AvroUtils.createRecord(nestedRecordSchema,
     Map(RecordFieldName -> Map("sub" -> samplePriceRecord))
   )
@@ -209,12 +218,14 @@ object AvroTestData {
   val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
 
   val sampleEnumV2String = "HEARTS2"
+  val typeEnumV2Str: typing.TypingResult = Typed.fromInstance(sampleEnumV2String)
   val sampleEnumV2 = new EnumSymbol(enumSchemaV2, sampleEnumV2String)
 
   val sampleFixedString = "098f6bcd4621d373cade4e832627b4f6"
   val sampleFixed = new Fixed(baseFixedSchema, sampleFixedString.getBytes(StandardCharsets.UTF_8))
 
   val sampleFixedV2String = "7551140914207932"
+  val typeFixedV2str: typing.TypingResult = Typed.fromInstance(sampleFixedV2String)
   val sampleFixedV2 = new Fixed(recordFixedSchemaV2, sampleFixedV2String.getBytes(StandardCharsets.UTF_8))
 
   val sampleUUID: UUID = UUID.randomUUID()
