@@ -62,8 +62,8 @@ object AvroGen {
     case Type.FIXED => stringGen(schema.getFixedSize).map(str => {
       new Fixed(schema, str.getBytes("UTF-8"))
     })
-    case Type.MAP => Gen.oneOf(genOne(Map.empty[String, Any].asJava), genValueForSchema(schema.getValueType).map(value => Map(MapBaseKey -> value).asJava))
-    case Type.ARRAY => Gen.oneOf(genOne(List.empty.asJava), genValueForSchema(schema.getElementType).map(value => List(value).asJava))
+    case Type.MAP => genValueForSchema(schema.getValueType).map(value => Map(MapBaseKey -> value).asJava)
+    case Type.ARRAY => genValueForSchema(schema.getElementType).map(value => List(value).asJava)
     case Type.RECORD => Gen.sequence(schema.getFields.asScala.map(field =>
       genValueForSchema(field.schema()).flatMap(value => field.name() -> value)
     )).map(data => AvroUtils.createRecord(schema, data.asScala.toMap))

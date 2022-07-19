@@ -3,18 +3,7 @@ package pl.touk.nussknacker.engine.util.output
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedUnion, TypingResult}
-
-object OutputValidatorErrorsConverter {
-
-  implicit class DisplayingTypingResult(typingResult: TypingResult) {
-    def displayType: String = typingResult match {
-      case un: TypedUnion if un.isEmptyUnion => "null" //Is it okey? Null is presented as EmptyUnion...
-      case _ => typingResult.display.capitalize
-    }
-  }
-
-}
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 class OutputValidatorErrorsConverter(schemaParamName: String) {
 
@@ -39,10 +28,8 @@ class OutputValidatorErrorsConverter(schemaParamName: String) {
   }
 
   case class OutputValidatorGroupTypeError(field: String, actual: TypingResult, expected: List[OutputValidatorExpected]) {
-    import OutputValidatorErrorsConverter._
-
     def displayExpected: String = expected.map(_.expected).mkString(TypesSeparator)
-    def displayActual: String = actual.displayType
+    def displayActual: String = actual.display
   }
 
 }

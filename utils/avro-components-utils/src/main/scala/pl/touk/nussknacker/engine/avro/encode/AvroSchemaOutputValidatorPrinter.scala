@@ -9,7 +9,6 @@ import scala.collection.JavaConverters
 
 object AvroSchemaOutputValidatorPrinter {
 
-  import OutputValidatorErrorsConverter._
   import OutputValidatorErrorsMessageFormatter._
   import cats._
   import implicits._
@@ -67,9 +66,9 @@ object AvroSchemaOutputValidatorPrinter {
   private def baseDisplayType(schema: Schema) = {
     val typed = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     schema.getType match {
-      case Schema.Type.FIXED => s"${typed.displayType}[${schema.getFixedSize}]"
-      case Schema.Type.ENUM => s"${typed.displayType}[${schema.getEnumSymbols.asScala.toList.printType}]"
-      case _ => typed.displayType
+      case Schema.Type.FIXED => s"${typed.display}[${schema.getFixedSize}]"
+      case Schema.Type.ENUM => s"${typed.display}[${schema.getEnumSymbols.asScala.toList.printType}]"
+      case _ => typed.display
     }
   }
 

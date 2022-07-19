@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.typed
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 
 import java.nio.ByteBuffer
@@ -81,7 +81,7 @@ object AvroSchemaTypeDefinitionExtractor {
       case Schema.Type.BOOLEAN =>
         Typed[Boolean]
       case Schema.Type.NULL =>
-        Typed.empty
+        TypedNull
     }
   }
 }

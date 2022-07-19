@@ -9,7 +9,6 @@ import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectWithValue, _}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
@@ -84,12 +83,9 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateTypedClassToMapSchema(tc, schema, path)
       case (array@TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateArraySchema(array, schema, path)
-// Right now we can't handle null value.. Typing for null is Unknown and canBeSubclassOf returns for it always true..
-//      case (Unknown, _) if !schema.isNullable => //null is converted to Unknown, Unknown is base type and canBeSubclassOf of any Type
-//        invalid(typingResult, schema, path)
-//      case (Unknown, _) => //situation when we pass null as value and schema is null or can be nullable
-//        valid
-      case (union: TypedUnion, _) if union.isEmptyUnion && schema.isNullable => //situation when we pass #input witch null schema as value
+      case (_@TypedNull, _) if !schema.isNullable =>
+        invalid(typingResult, schema, path)
+      case (_@TypedNull, _) if schema.isNullable =>
         valid
       case (typingResult, Type.ENUM) =>
         validateEnum(typingResult, schema, path)
@@ -163,20 +159,20 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateMapSchema(map: TypedObjectTypingResult, schema: Schema, path: Option[String]) = {
-    val schemaFieldsValidation = map.fields.map{ case (key, value) =>
+    val schemaFieldsValidationResult = map.fields.map{ case (key, value) =>
       val fieldPath = buildPath(key, path)
       validateTypingResult(value, schema.getValueType, fieldPath)(isNullable = false)
     }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
 
-    schemaFieldsValidation
+    schemaFieldsValidationResult
   }
 
   private def validateArraySchema(array: TypedClass, schema: Schema, path: Option[String])(implicit isNullable: Boolean) = {
-    def validateListElements(params: List[TypingResult]) = {
-      params
+     val valuesValidationResult = array
+        .params
         .zipWithIndex
         .map { case (el, index) =>
-          val pathKey = params match {
+          val pathKey = array.params match {
             case _ :: Nil => "" //One element list is 'general' object, and we preset it as field[]
             case _ => index.toString
           }
@@ -185,24 +181,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
           validateTypingResult(el, schema.getElementType, elementPath)(isNullable = false)
         }
         .foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
-    }
 
-    //Empty array is presented as List(Unknown) or List()
-    val isEmptyArray = array.params match {
-      case head :: _ => head match {
-        case Unknown => true
-        case _ => false
-      }
-      case Nil => true
-      case _ => false
-    }
-
-    if (isEmptyArray) {
-      canBeSubclassOf(array, schema, path)
-    } else {
-      validateListElements(array.params)
-    }
-
+    valuesValidationResult
   }
 
   private def validateUnionSchema(union: TypingResult, schema: Schema, path: Option[String]) = {
@@ -240,8 +220,10 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def validateFixed(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     def isValueValid(typedWithObject: TypedObjectWithValue, schema: Schema): Boolean = {
       val fixedStringValue = typedWithObject.value match {
-        case fixed: Fixed => Some(new String(fixed.bytes(), StandardCharsets.UTF_8))
-        case str: String => Some(str)
+        case fixed: Fixed => Some(fixed.bytes())
+        case buffer: ByteBuffer => Some(buffer.array())
+        case bytes: Array[Byte] => Some(bytes)
+        case str: String => Some(str.getBytes(StandardCharsets.UTF_8))
         case _ => None
       }
 

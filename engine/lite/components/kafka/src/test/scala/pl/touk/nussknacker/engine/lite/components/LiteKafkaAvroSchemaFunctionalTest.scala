@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroBaseComponentTransformer}
+import pl.touk.nussknacker.engine.avro.{AvroSchemaCreator, AvroUtils, KafkaAvroBaseComponentTransformer}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.components.AvroTestData._
@@ -57,7 +57,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
   }
 
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 5000, minSize = 0, workers = 15)
 
   test("simple 1:1 #input as sink output") {
     val genScenarioConfig = for {
@@ -100,14 +100,14 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleInteger, longSchema, integerSchema, Input), valid(sampleInteger)), //Long -> Int?
       (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleInteger), valid(sampleInteger)), //Long -> Int?
 
-      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'null' expected: 'Integer'")),
+      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
       (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Integer'")),
       (sConfig(sampleString, stringSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Integer'")),
       (sConfig(sampleFloat, floatSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Float' expected: 'Integer'")),
       (sConfig(sampleDouble, doubleSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Integer'")),
       (sConfig(sampleBytes, bytesSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Integer'")),
 
-      //FIXME: null validation (sConfig(sampleInteger, integerSchema, null), invalidTypes("path 'Data' actual: 'null' expected: 'Integer'")),
+        (sConfig(sampleInteger, integerSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
       (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typeStr.display}' expected: 'Integer'")),
       (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typeBool.display}' expected: 'Integer'")),
       (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"path 'Data' actual: '${typeFloat.display}' expected: 'Integer'")),
@@ -117,14 +117,14 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger)), //Int -> Long?
       (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger)), //Int -> Long?
 
-      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'null' expected: 'Long'")),
+      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
       (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Long'")),
       (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Long'")),
       (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Float' expected: 'Long'")),
       (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Long'")),
       (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Long'")),
 
-      //FIXME: null validation (sConfig(sampleLong, longSchema, null), invalidTypes("path 'Data' actual: 'null' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
       (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typeStr.display}' expected: 'Long'")),
       (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typeBool.display}' expected: 'Long'")),
       (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"path 'Data' actual: '${typeFloat.display}' expected: 'Long'")),
@@ -138,12 +138,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong)), //Long -> Float?
       (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong)), //Long -> Float?
 
-      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'null' expected: 'Float'")),
+      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Float'")),
       (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Float'")),
       (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Float'")),
 
-      //FIXME: null validation (sConfig(sampleFloat, floatSchema, null), invalidTypes("path 'Data' actual: 'null' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
       (sConfig(sampleFloat, floatSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typeStr.display}' expected: 'Float'")),
       (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typeBool.display}' expected: 'Float'")),
 
@@ -155,12 +155,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong)), // Long with Double Schema => Long ?
       (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong)), // Long with Double Schema => Long ?
 
-      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'null' expected: 'Double'")),
+      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
       (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Double'")),
       (sConfig(sampleString, stringSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Double'")),
       (sConfig(sampleBytes, bytesSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Double'")),
 
-      //FIXME: null validation (sConfig(sampleDouble, doubleSchema, null), invalidTypes("path 'Data' actual: 'null' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
       (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typeStr.display}' expected: 'Double'")),
       (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typeBool.display}' expected: 'Double'")),
 
@@ -176,73 +176,73 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, s"""{"$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeStr.display}' expected: 'Integer | Double'")),
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'List[Integer | Double]'")),
-      //FIXME: null validation (rConfig(sampleInteger, recordInteger, recordWithArrayOfNumbers, null), invalidTypes("path 'field' actual: 'null' expected: 'List[Integer | Double]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, null), invalidTypes("path 'field' actual: 'Null' expected: 'List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(List("12"), recordWithArrayOfStrings, recordWithMaybeArrayOfNumbers, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, "{1.0, 2.5}"), rValid(List(1, 2), recordWithMaybeArrayOfNumbers)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
       (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{"$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeStr.display}' expected: 'Integer | Double'")),
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | List[Integer | Double]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(List("12"), recordWithArrayOfStrings, recordWithOptionalArrayOfNumbers, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithOptionalArrayOfNumbers, "{1.0, 2.5}"), rValid(List(1, 2), recordWithOptionalArrayOfNumbers)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
       //FIXME: List[Unknown]  (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{"$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeStr.display}' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordWithOptionalArrayOfNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | List[Integer | Double]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordWithOptionalArrayOfNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | List[Integer | Double]'")),
 
       (rConfig(List(List("12")), recordOptionalArrayOfArraysStrings, recordOptionalArrayOfArraysNumbers, Input), invalidTypes("path 'field[][]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, "{{1.0, 2.5}}"), rValid(List(List(1, 2)), recordOptionalArrayOfArraysNumbers)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
       //FIXME: List[Unknown]  (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, s"""{{$sampleBoolean, "$sampleString"}}"""), invalidTypes("path 'field[][]' actual: 'Boolean | String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, s"""{{"$sampleString"}}"""), invalidTypes(s"path 'field[][]' actual: '${typeStr.display}' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, s"{$sampleInteger}"), invalidTypes(s"path 'field[]' actual: '${typeInt.display}' expected: 'null | List[Integer | Double]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | List[null | List[Integer | Double]]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, s"{$sampleInteger}"), invalidTypes(s"path 'field[]' actual: '${typeInt.display}' expected: 'Null | List[Integer | Double]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | List[Null | List[Integer | Double]]'")),
 
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, """{{"price1": "15.5"}}"""), invalid(Nil, List("field[].price"), List("field[].price1"))),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, """{{"price1": "15.5"}}""", Some(allowRedundant)), invalid(Nil, List("field[].price"), Nil)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, s"""{{"price": "$sampleString"}}"""), invalidTypes(s"path 'field[].price' actual: '${typeStr.display}' expected: 'null | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, sampleInteger), invalidTypes(s"""path 'field' actual: '${typeInt.display}' expected: 'null | List[null | {price: null | Double}]'""")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, s"{$sampleInteger}"), invalidTypes(s"""path 'field[]' actual: '${typeInt.display}' expected: 'null | {price: null | Double}'""")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, s"""{{"price": "$sampleString"}}"""), invalidTypes(s"path 'field[].price' actual: '${typeStr.display}' expected: 'Null | Double'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, sampleInteger), invalidTypes(s"""path 'field' actual: '${typeInt.display}' expected: 'Null | List[Null | {price: Null | Double}]'""")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, s"{$sampleInteger}"), invalidTypes(s"""path 'field[]' actual: '${typeInt.display}' expected: 'Null | {price: Null | Double}'""")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecords, EmptyRoot), rValid(null, recordOptionalArrayOfRecords)),
 
       //Map validations
-      (rConfig(Map("tax" -> "7"), recordMapOfStrings, recordMapOfInts, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, """{"tax": 7, "vat": "23"}"""), invalidTypes("path 'field.vat' actual: 'String{23}' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Map[String, null | Integer]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Map[String, null | Integer]'")),
-      //FIXME: null validation (rConfig(sampleInteger, recordInteger, recordMapOfInts, null), invalidTypes("path 'field' actual: 'null' expected: 'Map[String, null | Integer]'")),
+      (rConfig(Map("tax" -> "7"), recordMapOfStrings, recordMapOfInts, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, """{"tax": 7, "vat": "23"}"""), invalidTypes("path 'field.vat' actual: 'String{23}' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Map[String, Null | Integer]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Map[String, Null | Integer]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, null), invalidTypes("path 'field' actual: 'Null' expected: 'Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMapOfInts, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
-      (rConfig(Map("tax" -> "7"), recordMapOfStrings, recordMaybeMapOfInts, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, """{"tax": 7, "vat": "23"}"""), invalidTypes("path 'field.vat' actual: 'String{23}' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | Map[String, null | Integer]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'null | Map[String, null | Integer]'")),
+      (rConfig(Map("tax" -> "7"), recordMapOfStrings, recordMaybeMapOfInts, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, """{"tax": 7, "vat": "23"}"""), invalidTypes("path 'field.vat' actual: 'String{23}' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | Map[String, Null | Integer]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfInts, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
-      (rConfig(Map("first" -> Map("tax" -> "7")), recordMapOfMapsStrings, recordOptionalMapOfMapsInts, Input), invalidTypes("path 'field[*][*]' actual: 'String' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, """{first: {tax: 7, vat: "23"}}"""), invalidTypes("path 'field.first.vat' actual: 'String{23}' expected: 'null | Integer'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | Map[String, null | Map[String, null | Integer]]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typeInt.display}' expected: 'null | Map[String, null | Integer]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'null | Map[String, null | Map[String, null | Integer]]'")),
+      (rConfig(Map("first" -> Map("tax" -> "7")), recordMapOfMapsStrings, recordOptionalMapOfMapsInts, Input), invalidTypes("path 'field[*][*]' actual: 'String' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, """{first: {tax: 7, vat: "23"}}"""), invalidTypes("path 'field.first.vat' actual: 'String{23}' expected: 'Null | Integer'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | Map[String, Null | Map[String, Null | Integer]]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typeInt.display}' expected: 'Null | Map[String, Null | Integer]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | Map[String, Null | Integer]]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsInts, EmptyRoot), rValid(null, recordOptionalMapOfMapsInts)),
 
-      (rConfig(Map("first" -> Map("price" -> "15.5")), recordOptionalMapOfStringRecords, recordOptionalMapOfRecords, Input), invalidTypes("path 'field[*].price' actual: 'String' expected: 'null | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, s"""{"first": {"price": "$sampleString"}}"""), invalidTypes(s"path 'field.first.price' actual: '${typeStr.display}' expected: 'null | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | Map[String, null | {price: null | Double}]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typeInt.display}' expected: 'null | {price: null | Double}'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'null | Map[String, null | {price: null | Double}]'")),
+      (rConfig(Map("first" -> Map("price" -> "15.5")), recordOptionalMapOfStringRecords, recordOptionalMapOfRecords, Input), invalidTypes("path 'field[*].price' actual: 'String' expected: 'Null | Double'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, s"""{"first": {"price": "$sampleString"}}"""), invalidTypes(s"path 'field.first.price' actual: '${typeStr.display}' expected: 'Null | Double'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | Map[String, Null | {price: Null | Double}]'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typeInt.display}' expected: 'Null | {price: Null | Double}'")),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecords, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | {price: Null | Double}]'")),
       (rConfig(sampleMapOfRecords, recordOptionalMapOfRecords, recordOptionalMapOfRecords, EmptyRoot), rValid(null, recordOptionalMapOfRecords)),
 
       //Record validations
-      (rConfig(Map("sub" -> Map("price" -> "15.5")), nestedRecordWithStringPriceSchema, nestedRecordSchema, Input), invalidTypes("path 'field.sub.price' actual: 'String' expected: 'null | Double'")),
+      (rConfig(Map("sub" -> Map("price" -> "15.5")), nestedRecordWithStringPriceSchema, nestedRecordSchema, Input), invalidTypes("path 'field.sub.price' actual: 'String' expected: 'Null | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"{sub: {price2: $sampleDouble}}"), invalid(Nil, List("field.sub.price"), List("field.sub.price2"))),
       (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"{sub: {price2: $sampleDouble}}", Some(allowRedundant)), invalid(Nil, List("field.sub.price"), Nil)),
-      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"""{sub: {price: "$sampleString"}}"""), invalidTypes(s"path 'field.sub.price' actual: '${typeStr.display}' expected: 'null | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'null | {sub: null | {price: null | Double}}'")),
-      (rConfig(sampleNestedRecord, nestedRecordSchema, nestedRecordSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'null | {sub: null | {price: null | Double}}'")),
-      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"{sub: $sampleInteger}"), invalidTypes(s"path 'field.sub' actual: '${typeInt.display}' expected: 'null | {price: null | Double}'")),
-      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'null | {sub: null | {price: null | Double}}'")),
+      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"""{sub: {price: "$sampleString"}}"""), invalidTypes(s"path 'field.sub.price' actual: '${typeStr.display}' expected: 'Null | Double'")),
+      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'Null | {sub: Null | {price: Null | Double}}'")),
+      (rConfig(sampleNestedRecord, nestedRecordSchema, nestedRecordSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typeInt.display}' expected: 'Null | {sub: Null | {price: Null | Double}}'")),
+      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, s"{sub: $sampleInteger}"), invalidTypes(s"path 'field.sub' actual: '${typeInt.display}' expected: 'Null | {price: Null | Double}'")),
+      (rConfig(sampleInteger, recordIntegerSchema, nestedRecordSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | {sub: Null | {price: Null | Double}}'")),
       (rConfig(sampleNestedRecordV2, nestedRecordSchemaV2, nestedRecordSchema, Input), invalid(Nil, Nil, List("field.sub.currency", "field.str"))),
       (rConfig(sampleNestedRecordV2, nestedRecordSchemaV2, nestedRecordSchema, Input, Some(allowRedundant)), valid(sampleNestedRecord)),
       (rConfig(sampleNestedRecord, nestedRecordSchema, nestedRecordSchemaV2, Input), invalid(Nil, List("field.str"), Nil)),
