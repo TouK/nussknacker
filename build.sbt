@@ -260,7 +260,7 @@ val jwtCirceV = "9.0.5"
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
-val everitSchemaV = "1.13.0"
+val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
 val scalaCompatV = "0.9.1"
@@ -883,7 +883,7 @@ lazy val jsonUtils = (project in utils("json-utils")).
     libraryDependencies ++= Seq(
       "com.github.erosb" % "everit-json-schema" % everitSchemaV
     )
-  ).dependsOn(componentsUtils)
+  ).dependsOn(componentsUtils, testUtils % "test")
 
 // Similar to components-utils, this module should be provided in one place - by flinkExecutor
 lazy val flinkComponentsUtils = (project in flink("components-utils")).
