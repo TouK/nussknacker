@@ -34,16 +34,17 @@ import java.io.Serializable;
  *
  * A wrapper for Avro {@link Schema}, that is Java serializable.
  */
-public final class NkSerializableAvroSchema<T extends ParsedSchema> implements Serializable {
+public final class NkSerializableParsedSchema<T extends ParsedSchema> implements Serializable {
 
+	//todo: when supporting more schema types, chang uid
 	private static final long serialVersionUID = 1;
 
 	private transient @Nullable T schema;
 
-	public NkSerializableAvroSchema() {
+	public NkSerializableParsedSchema() {
 	}
 
-	public NkSerializableAvroSchema(T schema) {
+	public NkSerializableParsedSchema(T schema) {
 		this.schema = schema;
 	}
 

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterCo
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
@@ -67,7 +67,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
-    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(confluentFactory)
+    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
@@ -81,7 +81,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
-    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(confluentFactory)
+    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
     val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](confluentFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.ValidatedNel
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
 trait SchemaBasedMessagesSerdeProvider extends Serializable {
 
-  def deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory
+  def deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory
 
-  def serializationSchemaFactory: KafkaAvroSerializationSchemaFactory
+  def serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory
 
   def recordFormatterFactory: RecordFormatterFactory
 

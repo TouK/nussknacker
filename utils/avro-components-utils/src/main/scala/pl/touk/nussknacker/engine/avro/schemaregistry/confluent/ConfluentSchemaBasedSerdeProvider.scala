@@ -8,14 +8,14 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentSchemaBasedSerializationSchemaFactory, ConfluentKeyValueKafkaSchemaBasedDeserializationFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedMessagesSerdeProvider, SchemaRegistryError, SchemaRegistryUnsupportedTypeError}
-import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroDeserializationSchemaFactory, KafkaAvroSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 
-class ConfluentSchemaBasedMessagesSerdeProvider(val serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                                                val deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
-                                                val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedMessagesSerdeProvider {
+class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory,
+                                        val deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory,
+                                        val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedMessagesSerdeProvider {
   override def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T] = {
     schema match {
       case s: AvroSchema => {
@@ -32,28 +32,28 @@ class ConfluentSchemaBasedMessagesSerdeProvider(val serializationSchemaFactory: 
   }
 }
 
-object ConfluentSchemaBasedMessagesSerdeProvider extends Serializable {
+object ConfluentSchemaBasedSerdeProvider extends Serializable {
 
-  def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedMessagesSerdeProvider = {
-    ConfluentSchemaBasedMessagesSerdeProvider(
-      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
-      new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
+  def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedSerdeProvider = {
+    ConfluentSchemaBasedSerdeProvider(
+      new ConfluentSchemaBasedSerializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentKeyValueKafkaSchemaBasedDeserializationFactory(schemaRegistryClientFactory),
       new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
     )
   }
 
-  def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedMessagesSerdeProvider = {
-    ConfluentSchemaBasedMessagesSerdeProvider(
+  def jsonPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedSerdeProvider = {
+    ConfluentSchemaBasedSerdeProvider(
       new ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaJsonDeserializerFactory(schemaRegistryClientFactory),
       new JsonPayloadToJsonFormatterFactory
     )
   }
 
-  private def apply(serializationSchemaFactory: KafkaAvroSerializationSchemaFactory,
-                    deserializationSchemaFactory: KafkaAvroDeserializationSchemaFactory,
-                    recordFormatterFactory: RecordFormatterFactory): ConfluentSchemaBasedMessagesSerdeProvider = {
-    new ConfluentSchemaBasedMessagesSerdeProvider(
+  private def apply(serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory,
+                    deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory,
+                    recordFormatterFactory: RecordFormatterFactory): ConfluentSchemaBasedSerdeProvider = {
+    new ConfluentSchemaBasedSerdeProvider(
       serializationSchemaFactory,
       deserializationSchemaFactory,
       recordFormatterFactory

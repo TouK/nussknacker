@@ -5,7 +5,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentP
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
@@ -38,10 +38,10 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
   override def providerName: String = "kafka"
 
   protected def createAvroSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(schemaRegistryClientFactory)
+    ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
 
   protected def createJsonSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentSchemaBasedMessagesSerdeProvider.jsonPayload(schemaRegistryClientFactory)
+    ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
 
   override def resolveConfigForExecution(config: Config): Config = config
 

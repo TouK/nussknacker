@@ -4,7 +4,7 @@ import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
-import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 
 trait AvroSchemaDeterminer {
 
@@ -21,18 +21,27 @@ trait AvroSchemaDeterminer {
 
 }
 
+trait ParsedSchemaDeterminer {
+
+  def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]]
+
+}
+
 /**
  * This class holds data that will be passed to Flink's tasks for records processing in runtime.
  * @param serializableSchema Serializable Avro schema
  * @param schemaIdOpt optional schema id fetched from schema registry - for further optimizations of record processing in runtime
  */
-case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializableAvroSchema[T], schemaIdOpt: Option[Int]) {
+case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializableParsedSchema[T], schemaIdOpt: Option[Int]) {
   def schema: T = serializableSchema.getParsedSchema
+
+  // Will be better to make T covariant but NkSerializableParsedSchema is java class and it is not supported there
+  def toParsedSchemaData: RuntimeSchemaData[ParsedSchema] = this.asInstanceOf[RuntimeSchemaData[ParsedSchema]]
 }
 
 object RuntimeSchemaData {
   def apply(schema: Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData[AvroSchema] =
-    RuntimeSchemaData(new NkSerializableAvroSchema[AvroSchema](new AvroSchema(schema)), schemaIdOpt)
+    RuntimeSchemaData(new NkSerializableParsedSchema[AvroSchema](new AvroSchema(schema)), schemaIdOpt)
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)

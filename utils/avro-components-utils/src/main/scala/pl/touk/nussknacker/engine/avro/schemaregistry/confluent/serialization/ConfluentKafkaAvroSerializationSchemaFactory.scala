@@ -4,7 +4,7 @@ import org.apache.avro.Schema
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.serialization.{KafkaAvroKeyValueSerializationSchemaFactory, KafkaAvroValueSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.serialization.{KafkaSchemaBasedKeyValueSerializationSchemaFactory, KafkaSchemaBasedValueSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 trait ConfluentAvroSerializerFactory {
@@ -23,15 +23,15 @@ trait ConfluentAvroSerializerFactory {
   }
 }
 
-class ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaAvroValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
+class ConfluentSchemaBasedSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaSchemaBasedValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
   override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] =
     createSerializer[Any](schemaRegistryClientFactory, kafkaConfig, schemaOpt, version, isKey = false)
 }
 
-abstract class ConfluentAvroKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaAvroKeyValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
+abstract class ConfluentSchemaBasedKeyValueSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
+  extends KafkaSchemaBasedKeyValueSerializationSchemaFactory with ConfluentAvroSerializerFactory {
 
   override protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[K] =
     createSerializer[K](schemaRegistryClientFactory, kafkaConfig, None, None, isKey = true)
