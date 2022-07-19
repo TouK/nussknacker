@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.Confluent
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import tech.allegro.schema.json2avro.converter.JsonAvroConverter
 
 import java.lang
 import scala.reflect.ClassTag
