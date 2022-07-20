@@ -19,74 +19,76 @@ function useNuIconCache(src: string) {
     const { getComponentIconSrc } = useContext(NkIconsContext);
     const iconSrc = getComponentIconSrc(src);
     const id = useMemo(() => `x${new Chance(iconSrc).hash({ length: 10 })}`, [iconSrc]);
-    const primaryMaskId = "pm" + id;
-    const secondaryMaskId = "sm" + id;
-
+    const accentMask = `acc${id}`;
+    const mainMask = `m${id}`;
+    const accentFilter = `p${id}`;
+    const shapeFilter = `s${id}`;
     useLayoutEffect(() => {
-        function reverseValues(tableValues: any[]) {
-            return tableValues.map((x) => 1 - x);
-        }
+        const isCached = document.getElementById(id) && process.env.NODE_ENV === "production";
 
-        if (!document.getElementById(id) || process.env.NODE_ENV !== "production") {
-            const primary = "p" + id;
-            const secondary = "s" + id;
-            const tableValues = [0, 0.5, 1, 0.75, 0.5, 0, ...Array(24).fill(0)];
-            const mainPartAlphaTransfer = tableValues.join(" ");
-            const accentTableValues = reverseValues(tableValues);
-            accentTableValues[0] = 0; // remove background after reverse
-            const accentPartAlphaTransfer = accentTableValues.join(" ");
+        if (!isCached) {
             const svgDefs = (
                 <SvgIcon sx={{ position: "absolute", top: -1000, opacity: 0 }}>
                     <defs>
                         <image id={id} width="100%" height="100%" preserveAspectRatio="xMidYMid slice" xlinkHref={iconSrc} />
-                        <filter id={primary}>
-                            <feGaussianBlur in="SourceGraphic" stdDeviation=".1" />
-                            <feMerge>
-                                <feMergeNode />
-                                <feMergeNode in="SourceGraphic" />
-                            </feMerge>
-                            <feColorMatrix type="luminanceToAlpha" />
-                            <feComponentTransfer>
-                                <feFuncA type="discrete" tableValues={mainPartAlphaTransfer} />
-                                <feFuncR type="discrete" tableValues="1" />
-                                <feFuncG type="discrete" tableValues="1" />
-                                <feFuncB type="discrete" tableValues="1" />
-                            </feComponentTransfer>
+                        <filter id={shapeFilter}>
+                            <feColorMatrix
+                                in="SourceGraphic"
+                                result="shape"
+                                type="matrix"
+                                values="
+                                    1 0 0 0 1
+                                    0 1 0 0 1
+                                    0 0 1 0 1
+                                    0 0 0 1 0
+                                "
+                            />
                         </filter>
-                        <filter id={secondary}>
+                        <filter id={accentFilter}>
                             <feColorMatrix type="luminanceToAlpha" />
-                            <feComponentTransfer>
-                                <feFuncA type="discrete" tableValues={accentPartAlphaTransfer} />
-                                <feFuncR type="discrete" tableValues="1" />
-                                <feFuncG type="discrete" tableValues="1" />
-                                <feFuncB type="discrete" tableValues="1" />
-                            </feComponentTransfer>
+                            <feColorMatrix
+                                type="matrix"
+                                values="
+                                    1 0 0 0 1
+                                    0 1 0 0 1
+                                    0 0 1 0 1
+                                    0 0 0 5 -.5
+                                "
+                            />
                         </filter>
-                        <mask id={primaryMaskId}>
-                            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} filter={`url(#${primary})`} />
+                        <mask id={mainMask}>
+                            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} filter={`url(#${shapeFilter})`} />
                         </mask>
-                        <mask id={secondaryMaskId}>
-                            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} filter={`url(#${secondary})`} />
+                        <mask id={accentMask}>
+                            <use
+                                x="0"
+                                y="0"
+                                width="100%"
+                                height="100%"
+                                xlinkHref={`#${id}`}
+                                filter={`url(#${accentFilter})`}
+                                mask={`url(#${mainMask})`}
+                            />
                         </mask>
                     </defs>
                 </SvgIcon>
             );
             render(svgDefs, getOrCreateElement(`svg-preload-${id}`));
         }
-    }, [iconSrc, id, primaryMaskId, secondaryMaskId]);
-    return [id, primaryMaskId, secondaryMaskId];
+    }, [iconSrc, id, accentFilter, accentMask, mainMask]);
+    return [id, accentMask, mainMask];
 }
 
 export function NuIcon({ src, ...props }: SvgIconProps & { src: string }): JSX.Element {
-    const [id, primaryMaskId, secondaryMaskId] = useNuIconCache(src);
+    const [id, accentMask, mainMask] = useNuIconCache(src);
     return (
         <SvgIcon {...props}>
             {/*main icon part*/}
-            <rect x="0" y="0" width="100%" height="100%" className="primary" mask={`url(#${primaryMaskId})`} />
+            <rect x="0" y="0" width="100%" height="100%" className="primary" mask={`url(#${mainMask})`} />
             {/*accented icon part original color*/}
-            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} mask={`url(#${secondaryMaskId})`} />
+            <use x="0" y="0" width="100%" height="100%" xlinkHref={`#${id}`} mask={`url(#${accentMask})`} />
             {/*accented icon part override with classname*/}
-            <rect x="0" y="0" width="100%" height="100%" fill="none" className="secondary" mask={`url(#${secondaryMaskId})`} />
+            <rect x="0" y="0" width="100%" height="100%" fill="none" className="secondary" mask={`url(#${accentMask})`} />
         </SvgIcon>
     );
 }
