@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import java.io.File
 import java.nio.charset.StandardCharsets
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, SimpleMethodInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
@@ -91,10 +92,10 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     }
 
     implicit val parameterD: Encoder[Parameter] = deriveConfiguredEncoder[Parameter]
-    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[MethodInfo]
+    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[SerializableMethodInfo].contramap(_.serializable)
     implicit val typedClassD: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
-
     implicit val clazzDefinitionD: Encoder[ClazzDefinition] = deriveConfiguredEncoder[ClazzDefinition]
+
     val encoded = types.toList.sortBy(_.clazzName.klass.getName).asJson
     val printed = Printer.spaces2SortKeys.copy(colonLeft = "", dropNullValues = true).print(encoded)
     printed
@@ -120,9 +121,11 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     })
 
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
-    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder
+    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
+      case SerializableMethodInfo(parameters, refClazz, description, varArgs) =>
+        SimpleMethodInfo(parameters, refClazz, "", description)
+    }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
-
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
 
     val decoded = json.as[Set[ClazzDefinition]]
