@@ -97,7 +97,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match scenario output - errors:\nType validation: path 'Data' actual: 'String' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | null}'.",
+      "Provided value does not match scenario output - errors:\nType validation: path 'Data' actual: 'String{}' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | Null}'.",
       Some(SinkValueParamName)) :: Nil
   }
 
