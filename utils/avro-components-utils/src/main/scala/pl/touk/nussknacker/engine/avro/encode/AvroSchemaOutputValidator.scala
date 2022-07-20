@@ -128,7 +128,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     map.params match {
       case _ :: value :: Nil =>
         validateTypingResult(value, schema.getValueType, buildPath("*", path, isGeneric = true))
-      case _ =>
+      case _ => //TODO: will be there more then two parameters?
         canBeSubclassOf(map, schema, path)
     }
   }
@@ -190,7 +190,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case UnionNullableSchemaType(_) => //Nullability: union[null, any] it's most common situation, so we want to handle that in special way
         val notNullableResults = createUnionValidationResults(withoutNullability = true)
         notNullableResults.toValidated match {
-          case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to do validation again including nullability
+          case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
             createUnionValidationResults(withoutNullability = false)
           case _ =>
             notNullableResults
@@ -286,4 +286,5 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def buildPath(key: String, path: Option[String], isGeneric: Boolean = false) = Some(
     path.map(p => if(isGeneric) s"$p[$key]" else s"$p.$key").getOrElse(key)
   )
+
 }

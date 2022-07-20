@@ -7,6 +7,7 @@ import org.scalacheck.Gen
 import pl.touk.nussknacker.engine.avro.{AvroSchemaCreator, AvroUtils}
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 
 object AvroGen {
 
@@ -54,13 +55,13 @@ object AvroGen {
     case Type.INT => Gen.choose(Integer.MIN_VALUE, Integer.MAX_VALUE)
     case Type.LONG => Gen.choose(java.lang.Long.MIN_VALUE, java.lang.Long.MAX_VALUE)
     case Type.STRING => stringGen
-    case Type.BYTES => stringGen.map(_.getBytes("UTF-8")).map(ByteBuffer.wrap) //record bytes field can't be presented as array[bytes], value is casted to ByteBuffer, see: GenericDatumWriter.writeBytes
+    case Type.BYTES => stringGen.map(_.getBytes(StandardCharsets.UTF_8)).map(ByteBuffer.wrap) //record bytes field can't be presented as array[bytes], value is casted to ByteBuffer, see: GenericDatumWriter.writeBytes
     case Type.BOOLEAN => Gen.oneOf(true, false)
     case Type.FLOAT => Gen.choose(java.lang.Float.MIN_VALUE, java.lang.Float.MAX_VALUE)
     case Type.DOUBLE => Gen.choose(java.lang.Double.MIN_VALUE, java.lang.Double.MAX_VALUE)
     case Type.ENUM => Gen.oneOf(schema.getEnumSymbols.asScala).map(symbol => new EnumSymbol(schema, symbol))
     case Type.FIXED => stringGen(schema.getFixedSize).map(str => {
-      new Fixed(schema, str.getBytes("UTF-8"))
+      new Fixed(schema, str.getBytes(StandardCharsets.UTF_8))
     })
     case Type.MAP => genValueForSchema(schema.getValueType).map(value => Map(MapBaseKey -> value).asJava)
     case Type.ARRAY => genValueForSchema(schema.getElementType).map(value => List(value).asJava)

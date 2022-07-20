@@ -57,7 +57,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
   }
 
-  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 5000, minSize = 0, workers = 15)
+  implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
 
   test("simple 1:1 #input as sink output") {
     val genScenarioConfig = for {
@@ -74,7 +74,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
   }
 
   test("simple 1:1 SpEL as sink output") {
-    //We can't in easy way put bytes information, because ByteArray is not available at SpEL context
+    //We can't in easy way put bytes information, because ByteArray | ByteBuffer is not available at SpEL context
     val config = ExcludedConfig.Base.withGlobal(Type.BYTES, Type.FIXED)
     val genScenarioConfig = for {
       schema <- AvroGen.genSchema(config)
@@ -177,14 +177,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, null), invalidTypes("path 'field' actual: 'Null' expected: 'List[Integer | Double]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(List("12"), recordArrayOfStringsSchema, recordMaybeArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, "{1.0, 2.5}"), rValid(List(1, 2), recordMaybeArrayOfNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, s"""{"$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(List("12"), recordArrayOfStringsSchema, recordOptionalArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, "{1.0, 2.5}"), rValid(List(1, 2), recordOptionalArrayOfNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
@@ -204,7 +202,6 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, s"""{{"price": "$sampleString"}}"""), invalidTypes(s"path 'field[].price' actual: '${typedStr.display}' expected: 'Null | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, sampleInteger), invalidTypes(s"""path 'field' actual: '${typedInt.display}' expected: 'Null | List[Null | {price: Null | Double}]'""")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, s"{$sampleInteger}"), invalidTypes(s"""path 'field[]' actual: '${typedInt.display}' expected: 'Null | {price: Null | Double}'""")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfRecordsSchema, EmptyRoot), rValid(null, recordOptionalArrayOfRecordsSchema)),
 
       //Map validations
       (rConfig(Map("tax" -> "7"), recordMapOfStringsSchema, recordMapOfIntsSchema, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'Null | Integer'")),
@@ -212,27 +209,23 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, null), invalidTypes("path 'field' actual: 'Null' expected: 'Map[String, Null | Integer]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMapOfIntsSchema, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(Map("tax" -> "7"), recordMapOfStringsSchema, recordMaybeMapOfIntsSchema, Input), invalidTypes("path 'field[*]' actual: 'String' expected: 'Null | Integer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, """{"tax": 7, "vat": "23"}"""), invalidTypes("path 'field.vat' actual: 'String{23}' expected: 'Null | Integer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | Integer]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeMapOfIntsSchema, EmptyRoot), invalid(Nil, List("field"), Nil)),
 
       (rConfig(Map("first" -> Map("tax" -> "7")), recordMapOfMapsStringsSchema, recordOptionalMapOfMapsIntsSchema, Input), invalidTypes("path 'field[*][*]' actual: 'String' expected: 'Null | Integer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, """{first: {tax: 7, vat: "23"}}"""), invalidTypes("path 'field.first.vat' actual: 'String{23}' expected: 'Null | Integer'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | Map[String, Null | Map[String, Null | Integer]]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typedInt.display}' expected: 'Null | Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | Map[String, Null | Integer]]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyRoot), rValid(null, recordOptionalMapOfMapsIntsSchema)),
 
       (rConfig(Map("first" -> Map("price" -> "15.5")), recordOptionalMapOfStringRecordsSchema, recordOptionalMapOfRecordsSchema, Input), invalidTypes("path 'field[*].price' actual: 'String' expected: 'Null | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, s"""{"first": {"price": "$sampleString"}}"""), invalidTypes(s"path 'field.first.price' actual: '${typedStr.display}' expected: 'Null | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | Map[String, Null | {price: Null | Double}]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, s"{first: $sampleInteger}"), invalidTypes(s"path 'field.first' actual: '${typedInt.display}' expected: 'Null | {price: Null | Double}'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyList), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | {price: Null | Double}]'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyRoot), rValid(null, recordOptionalMapOfRecordsSchema)),
 
       //Record validations
       (rConfig(Map("sub" -> Map("price" -> "15.5")), nestedRecordWithStringPriceSchema, nestedRecordSchema, Input), invalidTypes("path 'field.sub.price' actual: 'String' expected: 'Null | Double'")),
@@ -433,7 +426,10 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
 
   //RecordConfig -> config with record as a input
   private def rConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
-    val sinkDefinition = AvroSinkOutputSpELConverter.convertToMap(RecordFieldName, output)
+    val sinkDefinition = output match {
+      case str: String if str == Input => str
+      case any => AvroSinkOutputSpELConverter.convert(Map(RecordFieldName -> any))
+    }
 
     val input = inputData match {
       case record: GenericRecord => record

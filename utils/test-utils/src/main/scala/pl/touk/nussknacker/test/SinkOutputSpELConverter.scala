@@ -7,19 +7,8 @@ trait SinkOutputSpELConverter {
   import collection.JavaConverters._
 
   val Input: String = "#input"
-  val EmptyRecord = "{:}"
-  val EmptyList = "{}"
-  val EmptyRoot = "#:#"
-
-  def convertToMap(field: String, data: Any): String = {
-    def record(value: Any) = s"""{"$field": $value}"""
-
-    data match {
-      case str: String if str == Input => str
-      case str: String if str == EmptyRoot => EmptyRecord
-      case any => record(convert(any, isField = true))
-    }
-  }
+  val EmptyRecord: String = "{:}"
+  val EmptyList: String = "{}"
 
   def convert(data: Any, isField: Boolean = false): String = {
     def convertCollection(data: List[String]) = s"""{${data.mkString(",")}}"""
