@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets
 object AvroGen {
 
   import scala.collection.JavaConverters._
+  import pl.touk.nussknacker.engine.lite.components.ImplicitsSpELWithAvro._
 
   private val AllowedStringLetters = ('a' to 'z') ++ ('A' to 'Z')
 
@@ -70,11 +71,6 @@ object AvroGen {
     )).map(data => AvroUtils.createRecord(schema, data.asScala.toMap))
     case _ => throw new IllegalArgumentException(s"Unsupported schema: $schema")
   }
-
-  def genValueWithSpELForSchema(schema: Schema): Gen[(Any, String)] =
-    genValueForSchema(schema).map( value =>
-      (value, AvroSinkOutputSpELConverter.convert(value))
-    )
 
   def listOfStringsGen(maxSize: Int): Gen[List[String]] = Gen.containerOfN[List, String](randomInt(maxSize), stringGen).suchThat(_.nonEmpty)
 

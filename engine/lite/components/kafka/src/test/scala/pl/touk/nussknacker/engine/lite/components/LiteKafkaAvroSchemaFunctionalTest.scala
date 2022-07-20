@@ -20,13 +20,15 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConf
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroBaseComponentTransformer}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.components.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.AvroTestData._
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.test.{SinkOutputSpELConverter, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.engine.spel.SpELImplicits
 
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -35,10 +37,11 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
-  import SinkOutputSpELConverter._
+  import SpELImplicits._
   import ValidationMode._
   import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
+  import ImplicitsSpELWithAvro._
 
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
@@ -78,14 +81,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     val config = ExcludedConfig.Base.withGlobal(Type.BYTES, Type.FIXED)
     val genScenarioConfig = for {
       schema <- AvroGen.genSchema(config)
-      (value, spel) <- AvroGen.genValueWithSpELForSchema(schema)
-    } yield ScenarioConfig(value, schema, schema, spel, None)
+      value <- genValueForSchema(schema)
+    } yield (value, ScenarioConfig(sampleBytes, bytesSchema, schema, value.toSpEL, None))
 
-    forAll(genScenarioConfig) { config =>
-      //We put at input fake data (bytes) to be sure that at the end of scenario we are putting data converted to SpEL
-      val configWithFakeInput = config.copy(inputData = sampleBytes, sourceSchema = bytesSchema)
-      val resultsInput = runWithValueResults(configWithFakeInput)
-      val expected = valid(config.inputData)
+    forAll(genScenarioConfig) { case (value, config) =>
+      val resultsInput = runWithValueResults(config)
+      val expected = valid(value)
 
       resultsInput shouldBe expected
     }
@@ -428,7 +429,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
   private def rConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
       case str: String if str == Input => str
-      case any => AvroSinkOutputSpELConverter.convert(Map(RecordFieldName -> any))
+      case any => Map(RecordFieldName -> any)
     }
 
     val input = inputData match {
@@ -436,16 +437,14 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       case any => AvroUtils.createRecord(sourceSchema, Map(RecordFieldName -> any))
     }
 
-    ScenarioConfig(input, sourceSchema, sinkSchema, sinkDefinition, validationMode)
+    ScenarioConfig(input, sourceSchema, sinkSchema, sinkDefinition.toSpEL, validationMode)
   }
 
   //StandardConfig -> simple avro type as a input
   private def sConfig(inputData: Any, schema: Schema, output: Any): ScenarioConfig =
     sConfig(inputData, schema, schema, output, None)
 
-  private def sConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
-    val sinkDefinition = AvroSinkOutputSpELConverter.convert(output)
-    ScenarioConfig(inputData, sourceSchema, sinkSchema, sinkDefinition, validationMode)
-  }
+  private def sConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+    ScenarioConfig(inputData, sourceSchema, sinkSchema, output.toSpEL, validationMode)
 
 }

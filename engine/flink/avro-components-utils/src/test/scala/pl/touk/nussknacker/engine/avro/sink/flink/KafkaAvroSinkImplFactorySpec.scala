@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.SinkOutputSpELConverter
 
 class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
@@ -42,10 +41,9 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate specific version") {
-    val input = SinkOutputSpELConverter.convert(FullNameV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> input,
+      SinkValueParamName -> FullNameV1.exampleData.toSpEL,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
@@ -54,10 +52,9 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   }
 
   test("should validate latest version") {
-    val input = SinkOutputSpELConverter.convert(PaymentV1.exampleData)
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> input,
+      SinkValueParamName -> PaymentV1.exampleData.toSpEL,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")

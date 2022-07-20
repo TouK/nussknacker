@@ -143,7 +143,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateArraySchema(array: TypedClass, schema: Schema, path: Option[String]) = {
-     val valuesValidationResult = array
+     val valuesValidationResult: ValidatedNel[OutputValidatorError, Unit] = array
         .params
         .zipWithIndex
         .map { case (el, index) =>
@@ -245,14 +245,16 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateWithValue[T:ClassTag](isValueValid: (TypedObjectWithValue, Schema) => Boolean, typingResult: TypingResult, schema: Schema, path: Option[String]) = {
-    val typeResult = validateClass[T](typingResult, schema, path)
+    val validationResult = validateClass[T](typingResult, schema, path)
 
-    typingResult match {
-      case obj: TypedObjectWithValue if typeResult.isValid && isValueValid(obj, schema) => valid
-      case _: TypedObjectWithValue => invalid(typingResult, schema, path)
-      case _ if typeResult.isValid => valid
-      case _ => typeResult
+    validationResult.andThen{ _ =>
+      typingResult match {
+        case obj: TypedObjectWithValue if isValueValid(obj, schema) => valid
+        case _: TypedObjectWithValue => invalid(typingResult, schema, path)
+        case _ => validationResult
+      }
     }
+
   }
 
   private def validateClass[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
