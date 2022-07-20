@@ -22,5 +22,5 @@ object NotificationAction extends Enumeration {
   implicit val typeDecoder: Decoder[NotificationAction.Value] = Decoder.decodeEnumeration(NotificationAction)
 
   type NotificationAction = Value
-  val deploymentFailed, deploymentFinished = Value
+  val deploymentFailed, deploymentFinished, deploymentInProgress = Value
 }

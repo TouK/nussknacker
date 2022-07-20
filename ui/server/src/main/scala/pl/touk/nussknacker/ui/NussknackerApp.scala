@@ -12,6 +12,7 @@ import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
@@ -29,7 +30,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
-import pl.touk.nussknacker.ui.notifications.{NotificationService, NotificationsListener}
+import pl.touk.nussknacker.ui.notifications.{ManagementActorCurrentDeployments, NotificationConfig, NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -122,7 +123,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
-    val notificationListener = new NotificationsListener
+    val notificationListener = new NotificationsListener(config.as[NotificationConfig]("notifications"))
     val processChangeListener = ProcessChangeListenerLoader
       .loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
 
@@ -154,7 +155,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
-    val notificationService = new NotificationService(managementActor, notificationListener)
+    val notificationService = new NotificationService(new ManagementActorCurrentDeployments(managementActor), notificationListener)
 
     initMetrics(metricsRegistry, processRepository)
 
