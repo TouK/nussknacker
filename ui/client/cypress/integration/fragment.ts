@@ -79,7 +79,6 @@ describe("Fragment", () => {
       cy.wrap(res).its("response.statusCode").should("eq", 200)
     })
     cy.contains(/^ok$/i).should("not.exist")
-    cy.contains(/was saved$/i).should("be.visible")
 
     cy.visitNewProcess(seed, "testProcess")
     cy.contains(/^layout$/i).click()
