@@ -144,10 +144,10 @@ public class LogicalTypesSchemaIdAvroSerializerSnapshot<T> implements TypeSerial
 		checkNotNull(schema);
 
 		if (runtimeSchema != null) {
-			return new LogicalTypesSchemaIdAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(runtimeSchema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)), schemaId);
+			return new LogicalTypesSchemaIdAvroSerializer<>(runtimeType, new NkSerializableParsedSchema<>(new AvroSchema(runtimeSchema)), new NkSerializableParsedSchema<>(new AvroSchema(schema)), schemaId);
 		}
 		else {
-			return new LogicalTypesSchemaIdAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(schema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)), schemaId);
+			return new LogicalTypesSchemaIdAvroSerializer<>(runtimeType, new NkSerializableParsedSchema<>(new AvroSchema(schema)), new NkSerializableParsedSchema<>(new AvroSchema(schema)), schemaId);
 		}
 	}
 

@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
@@ -90,7 +90,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val version = None
 
     val fromRecordSerializer = avroSetup.provider.serializationSchemaFactory.create(fromRecordTopic.output, version, None, kafkaConfig)
-    val fromSubjectVersionSerializer = avroSetup.provider.serializationSchemaFactory.create(fromSubjectVersionTopic.output, version, Some(new NkSerializableAvroSchema[AvroSchema](new AvroSchema(PaymentV1.schema))), kafkaConfig)
+    val fromSubjectVersionSerializer = avroSetup.provider.serializationSchemaFactory.create(fromSubjectVersionTopic.output, version, Some(new NkSerializableParsedSchema[AvroSchema](new AvroSchema(PaymentV1.schema))), kafkaConfig)
 
     pushMessage(fromRecordSerializer, FullNameV1.record, fromRecordTopic.output)
     consumeAndVerifyMessage(fromRecordTopic.output, FullNameV1.record)
@@ -104,7 +104,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     forAll(table) { (providerSetup: SchemaRegistryProviderSetup, schemaForWrite: Option[Schema], givenObj: GenericRecord, expectedObj: Any, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
       val serializer = providerSetup.provider.serializationSchemaFactory.create(topicConfig.output, version,
-        schemaForWrite.map(s => new NkSerializableAvroSchema[AvroSchema](new AvroSchema(s))), kafkaConfig)
+        schemaForWrite.map(s => new NkSerializableParsedSchema[AvroSchema](new AvroSchema(s))), kafkaConfig)
 
       providerSetup.pushMessage(serializer, givenObj, topicConfig.output)
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)

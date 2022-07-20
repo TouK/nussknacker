@@ -4,8 +4,8 @@ import org.apache.avro.specific.SpecificRecord
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
@@ -62,7 +62,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
 
   protected def schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
 
-  protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider = ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(schemaRegistryClientFactory)
+  protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
 
 }
 

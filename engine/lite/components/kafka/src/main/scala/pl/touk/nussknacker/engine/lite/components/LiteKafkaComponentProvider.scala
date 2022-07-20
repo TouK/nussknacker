@@ -4,8 +4,7 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedMessagesSerdeProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedMessagesSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
@@ -37,12 +36,6 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
 
   override def providerName: String = "kafka"
 
-  protected def createAvroSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentSchemaBasedMessagesSerdeProvider.avroPayload(schemaRegistryClientFactory)
-
-  protected def createJsonSchemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider =
-    ConfluentSchemaBasedMessagesSerdeProvider.jsonPayload(schemaRegistryClientFactory)
-
   override def resolveConfigForExecution(config: Config): Config = config
 
   override def create(config: Config, dependencies: ProcessObjectDependencies): List[ComponentDefinition] = {
@@ -52,8 +45,9 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
 
-    val avroPayloadAvroSchemaBasedMessagesSerdeProvider = createAvroSchemaBasedMessagesSerdeProvider
-    val jsonPayloadAvroSchemaBasedMessagesSerdeProvider = createJsonSchemaBasedMessagesSerdeProvider
+    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
+    val jsonPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
+    val universalSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
 
     val lowLevelKafkaComponents = List(
       ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
@@ -63,17 +57,17 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToTypedMap),
         jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory
       ) with BaseGenericTypedJsonSourceFactory).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
-      ComponentDefinition(KafkaAvroName, new KafkaAvroSourceFactory(schemaRegistryClientFactory, avroPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaAvroName, new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, avroPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSourceFactory(schemaRegistryClientFactory, jsonPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, jsonPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, jsonPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
-      ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, avroPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition(KafkaAvroName, new KafkaAvroSourceFactory(schemaRegistryClientFactory, avroPayloadSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
+      ComponentDefinition(KafkaAvroName, new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, avroPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro),
+      ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSourceFactory(schemaRegistryClientFactory, jsonPayloadSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition(KafkaRegistryTypedJsonName, new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, jsonPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition(KafkaSinkRegistryTypedRawJsonName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, jsonPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
+      ComponentDefinition(KafkaSinkRawAvroName, new KafkaAvroSinkFactory(schemaRegistryClientFactory, avroPayloadSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
 
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, avroPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, avroPayloadAvroSchemaBasedMessagesSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
 
     lowLevelKafkaComponents ::: universalKafkaComponents
   }

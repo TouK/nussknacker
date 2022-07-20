@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedMessagesSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -30,7 +30,7 @@ object KafkaAvroSinkFactory {
 }
 
 class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
-                           val schemaBasedMessagesSerdeProvider: SchemaBasedMessagesSerdeProvider,
+                           val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
                            val processObjectDependencies: ProcessObjectDependencies,
                            implProvider: KafkaAvroSinkImplFactory)
   extends KafkaAvroBaseTransformer[Sink] with SinkFactory {

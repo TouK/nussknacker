@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.sink.flink
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
-import org.apache.flink.formats.avro.typeutils.NkSerializableAvroSchema
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.ComponentType
@@ -24,7 +24,7 @@ class FlinkKafkaAvroSink(preparedTopic: PreparedKafkaTopic,
                          serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]],
                          clientId: String,
                          // all below are passed for best effort avro encoder
-                         schema: NkSerializableAvroSchema[AvroSchema],
+                         schema: NkSerializableParsedSchema[AvroSchema],
                          validationMode: ValidationMode)
   extends FlinkSink with Serializable with LazyLogging {
 

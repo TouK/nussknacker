@@ -8,14 +8,14 @@ import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroS
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroSerializer
-import pl.touk.nussknacker.engine.avro.serialization.KafkaAvroValueSerializationSchemaFactory
+import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedValueSerializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import java.io.OutputStream
 
 //TODO: handle situation, where we have both json and avro payloads for one schema registry
 class ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
-  extends KafkaAvroValueSerializationSchemaFactory {
+  extends KafkaSchemaBasedValueSerializationSchemaFactory {
 
   override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] = {
 
