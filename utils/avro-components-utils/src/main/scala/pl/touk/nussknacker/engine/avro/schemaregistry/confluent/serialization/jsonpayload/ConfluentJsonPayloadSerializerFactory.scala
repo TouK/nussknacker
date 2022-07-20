@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload
 
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.{Encoder, NoWrappingJsonEncoder}
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroSerializer
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedValueSerializationSchemaFactory
@@ -17,10 +17,14 @@ import java.io.OutputStream
 class ConfluentJsonPayloadSerializerFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaSchemaBasedValueSerializationSchemaFactory {
 
-  override protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any] = {
+  override protected def createValueSerializer(schemaOpt: Option[ParsedSchema], kafkaConfig: KafkaConfig): Serializer[Any] = {
 
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-    val avroSchemaOpt = schemaOpt.map(ConfluentUtils.convertToAvroSchema(_, version))
+
+    val avroSchemaOpt = schemaOpt.map {
+      case schema: AvroSchema => schema
+      case schema => throw new IllegalArgumentException(s"Not supported schema type: ${schema.schemaType()}")
+    }
 
     new JsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = false)
   }

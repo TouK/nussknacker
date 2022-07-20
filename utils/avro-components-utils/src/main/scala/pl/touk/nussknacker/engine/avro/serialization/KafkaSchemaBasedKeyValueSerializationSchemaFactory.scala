@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.avro.serialization
 
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.Schema
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.Serializer
@@ -20,13 +19,12 @@ abstract class KafkaSchemaBasedValueSerializationSchemaFactory extends KafkaSche
 
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[AnyRef] = new CharSequenceSerializer
 
-  // TODO: ParsedSchema
-  protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[Any]
+  protected def createValueSerializer(schemaOpt: Option[ParsedSchema], kafkaConfig: KafkaConfig): Serializer[Any]
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableParsedSchema[AvroSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+  override def create(topic: String, schemaOpt: Option[NkSerializableParsedSchema[ParsedSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
-      private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getParsedSchema.rawSchema()), version, kafkaConfig)
+      private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getParsedSchema), kafkaConfig)
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         KafkaProducerHelper.createRecord(topic,
@@ -53,16 +51,16 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
   // TODO We currently not support schema evolution for keys
   protected def createKeySerializer(kafkaConfig: KafkaConfig): Serializer[K]
 
-  protected def createValueSerializer(schemaOpt: Option[Schema], version: Option[Int], kafkaConfig: KafkaConfig): Serializer[V]
+  protected def createValueSerializer(schemaOpt: Option[ParsedSchema], kafkaConfig: KafkaConfig): Serializer[V]
 
   protected def extractKey(obj: AnyRef): K
 
   protected def extractValue(obj: AnyRef): V
 
-  override def create(topic: String, version: Option[Int], schemaOpt: Option[NkSerializableParsedSchema[AvroSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
+  override def create(topic: String, schemaOpt: Option[NkSerializableParsedSchema[ParsedSchema]], kafkaConfig: KafkaConfig): serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] = {
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
-      private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getParsedSchema.rawSchema()), version, kafkaConfig)
+      private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getParsedSchema), kafkaConfig)
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = keySerializer.serialize(topic, extractKey(element.value))

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
@@ -87,10 +88,9 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     val schemas = List(PaymentV1.schema)
     val fromRecordTopic = createAndRegisterTopicConfig("wrong.from-record", schemas)
     val fromSubjectVersionTopic = createAndRegisterTopicConfig("wrong.from-subject-version", schemas)
-    val version = None
 
-    val fromRecordSerializer = avroSetup.provider.serializationSchemaFactory.create(fromRecordTopic.output, version, None, kafkaConfig)
-    val fromSubjectVersionSerializer = avroSetup.provider.serializationSchemaFactory.create(fromSubjectVersionTopic.output, version, Some(new NkSerializableParsedSchema[AvroSchema](new AvroSchema(PaymentV1.schema))), kafkaConfig)
+    val fromRecordSerializer = avroSetup.provider.serializationSchemaFactory.create(fromRecordTopic.output, None, kafkaConfig)
+    val fromSubjectVersionSerializer = avroSetup.provider.serializationSchemaFactory.create(fromSubjectVersionTopic.output, Some(new NkSerializableParsedSchema[ParsedSchema](new AvroSchema(PaymentV1.schema))), kafkaConfig)
 
     pushMessage(fromRecordSerializer, FullNameV1.record, fromRecordTopic.output)
     consumeAndVerifyMessage(fromRecordTopic.output, FullNameV1.record)
@@ -103,8 +103,8 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
   private def runSerializationTest(table: TableFor5[SchemaRegistryProviderSetup, Option[Schema], GenericRecord, Any, String], version: Option[Int], schemas: List[Schema]): Assertion =
     forAll(table) { (providerSetup: SchemaRegistryProviderSetup, schemaForWrite: Option[Schema], givenObj: GenericRecord, expectedObj: Any, topic: String) =>
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
-      val serializer = providerSetup.provider.serializationSchemaFactory.create(topicConfig.output, version,
-        schemaForWrite.map(s => new NkSerializableParsedSchema[AvroSchema](new AvroSchema(s))), kafkaConfig)
+      val serializer = providerSetup.provider.serializationSchemaFactory.create(topicConfig.output,
+        schemaForWrite.map(s => new NkSerializableParsedSchema[ParsedSchema](new AvroSchema(s))), kafkaConfig)
 
       providerSetup.pushMessage(serializer, givenObj, topicConfig.output)
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{OutputValidator, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 
@@ -80,15 +80,11 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {
     val preparedTopic = extractPreparedTopic(params)
-    val versionOption = extractVersionOption(params)
     val key = params(KafkaAvroBaseComponentTransformer.SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val value = params(KafkaAvroBaseComponentTransformer.SinkValueParamName).asInstanceOf[LazyParameter[AnyRef]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
 
-    val versionOpt = Option(versionOption).collect {
-      case ExistingSchemaVersion(version) => version
-    }
-    val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, versionOpt, finalState.runtimeSchema.map(_.serializableSchema), kafkaConfig)
+    val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, finalState.runtimeSchema.map(_.toParsedSchemaData).map(_.serializableSchema), kafkaConfig)
     val validationMode = extractValidationMode(params(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName).asInstanceOf[String])
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
