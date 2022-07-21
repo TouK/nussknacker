@@ -27,8 +27,7 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
-import pl.touk.nussknacker.engine.spel.SpELImplicits
+import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -37,11 +36,11 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
-  import SpELImplicits._
   import ValidationMode._
   import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
-  import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
-  import ImplicitsSpELWithAvro._
+  import pl.touk.nussknacker.engine.spel.Implicits._
+  import pl.touk.nussknacker.test.LiteralSpEL._
+  import LiteralSpELWithAvroImplicits._
 
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
@@ -82,7 +81,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     val genScenarioConfig = for {
       schema <- AvroGen.genSchema(config)
       value <- genValueForSchema(schema)
-    } yield (value, ScenarioConfig(sampleBytes, bytesSchema, schema, value.toSpEL, None))
+    } yield (value, ScenarioConfig(sampleBytes, bytesSchema, schema, value.toSpELLiteral, None))
 
     forAll(genScenarioConfig) { case (value, config) =>
       val resultsInput = runWithValueResults(config)
@@ -98,8 +97,9 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       //FIXME: java.nio.ByteBuffer is not available from SpEL (sConfig(sampleString, stringSchema, bytesSchema, """T(java.nio.ByteBuffer).wrap(#input.getBytes("UTF-8"))"""), valid(ByteBuffer.wrap(sampleBytes))),
 
       //Primitive integer validations
-      (sConfig(sampleInteger, longSchema, integerSchema, Input), valid(sampleInteger)), //Long -> Int?
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleInteger), valid(sampleInteger)), //Long -> Int?
+      (sConfig(sampleInteger, longSchema, integerSchema, Input), valid(sampleInteger)), //FIXME: Long -> Int?
+      (sConfig(sampleLong, longSchema, integerSchema, Input), valid(sampleLong.toInt)), //FIXME: Long -> Int?
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), valid(sampleLong.toInt)), //FIXME: Long -> Int?
 
       (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
       (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Integer'")),
@@ -115,8 +115,8 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleInteger, integerSchema, s"T(java.lang.Double).valueOf(1)"), invalidTypes(s"path 'Data' actual: 'Double' expected: 'Integer'")),
 
       //Primitive long validations
-      (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger)), //Int -> Long?
-      (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger)), //Int -> Long?
+      (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger)), //FIXME: Int -> Long
+      (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int -> Long
 
       (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
       (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Long'")),
@@ -132,12 +132,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleLong, longSchema, "T(java.lang.Double).valueOf(1)"), invalidTypes("path 'Data' actual: 'Double' expected: 'Long'")),
 
       //Primitive float validations
-      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), valid(sampleDouble)), //Double -> Float?
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), valid(sampleDouble)), //Double -> Float?
-      (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger)),
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger)),
-      (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong)), //Long -> Float?
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong)), //Long -> Float?
+      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), valid(sampleDouble)), //FIXME: Double -> Float?
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), valid(sampleDouble)), //FIXME: Double -> Float?
+      (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger)), //FIXME: Int -> Float?
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int -> Float?
+      (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong)), //FIXME: Long -> Float?
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong)), //FIXME: Long -> Float?
 
       (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Float'")),
@@ -149,12 +149,12 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Float'")),
 
       //Primitive Double validations
-      (sConfig(sampleFloat, floatSchema, doubleSchema, Input), valid(sampleFloat)), // Float with Double Schema => Float ?
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleFloat), valid(sampleFloat)),
-      (sConfig(sampleInteger, integerSchema, doubleSchema, Input), valid(sampleInteger)), // Int with Double Schema => Int ?
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger)), // Int with Double Schema => Int ?
-      (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong)), // Long with Double Schema => Long ?
-      (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong)), // Long with Double Schema => Long ?
+      (sConfig(sampleFloat, floatSchema, doubleSchema, Input), valid(sampleFloat)), //FIXME: Float with Double Schema => Float ?
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleFloat), valid(sampleFloat)), //FIXME: Float with Double Schema => Float ?
+      (sConfig(sampleInteger, integerSchema, doubleSchema, Input), valid(sampleInteger)), //FIXME: Int with Double Schema => Int ?
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int with Double Schema => Int ?
+      (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong)), //FIXME: Long with Double Schema => Long ?
+      (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong)), //FIXME: Long with Double Schema => Long ?
 
       (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
       (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Double'")),
@@ -168,7 +168,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       //Record with simple union field validations
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionOfStringIntegerSchema, sampleInteger, None), rValid(sampleInteger, recordUnionOfStringIntegerSchema)),
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionOfStringIntegerSchema, sampleString, None), rValid(sampleString, recordUnionOfStringIntegerSchema)),
-      (ScenarioConfig(sampleString, stringSchema, recordUnionOfStringIntegerSchema, Input, None), invalidTypes("path 'Data' actual: 'String' expected: '{field: String | Integer}'")),
+      (ScenarioConfig(sampleString, stringSchema, recordUnionOfStringIntegerSchema, Input.toSpELLiteral, None), invalidTypes("path 'Data' actual: 'String' expected: '{field: String | Integer}'")),
       (rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionOfStringIntegerSchema, Input), invalidTypes("path 'field' actual: 'Boolean' expected: 'String | Integer'")),
 
       //Array validations
@@ -321,27 +321,30 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
 
   test("should catch runtime errors") {
     val testData = Table(
-      ("config", "expectedMessage"),
+      "config",
       //Comparing String -> Enum returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
-      (rConfig(sampleStrFixedV, recordStringSchema, recordEnumSchema, Input), badContainerMessage (recordStringSchema, recordEnumSchema)),
+      rConfig(sampleStrFixedV, recordStringSchema, recordEnumSchema, Input),
 
-      //Comparing EnumV2 -> Enum returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
-      (rConfig(sampleEnumV2, recordEnumSchemaV2, recordEnumSchema, Input), badContainerMessage(recordEnumSchemaV2, recordEnumSchema)),
+      //FIXME: Comparing EnumV2 -> Enum returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      rConfig(sampleEnumV2, recordEnumSchemaV2, recordEnumSchema, Input),
 
       //Comparing String -> Fixed returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Fixed
-      (rConfig(sampleString, recordStringSchema, recordFixedSchema, Input), badContainerMessage (recordStringSchema, recordFixedSchema)),
+      rConfig(sampleString, recordStringSchema, recordFixedSchema, Input),
 
-      //Comparing FixedV2 -> Fixed returns true, but in runtime BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
-      (rConfig(sampleFixedV2, recordFixedSchemaV2, recordFixedSchema, Input), badContainerMessage(recordFixedSchemaV2, recordFixedSchema)),
+      //FIXME: Comparing FixedV2 -> Fixed returns true, but in runtime BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
+      rConfig(sampleFixedV2, recordFixedSchemaV2, recordFixedSchema, Input),
 
       //Situation when we put String -> UUID, where String isn't valid UUID type...
-      (rConfig(sampleString, recordStringSchema, recordUUIDSchema, Input), badContainerMessage(recordStringSchema, recordUUIDSchema)),
+      rConfig(sampleString, recordStringSchema, recordUUIDSchema, Input),
+
+      //FIXME: Schema evolution with Long as input and output as Int
+      rConfig(sampleLong, recordLongSchema, recordIntegerSchema, Input), //Long -> Int?
     )
 
-    forAll(testData) { (config: ScenarioConfig, expectedMessage: String) =>
+    forAll(testData) { config: ScenarioConfig =>
       val results = runWithValueResults(config)
       val message = results.validValue.errors.head.throwable.asInstanceOf[AvroRuntimeException].getMessage
-      message shouldBe expectedMessage
+      message shouldBe s"Not expected container: ${config.sourceSchema} for schema: ${config.sinkSchema}"
     }
 
   }
@@ -373,8 +376,6 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
     runtime.runWithAvroData(avroScenario, List(input))
   }
-
-  private def badContainerMessage(actualSchema: Schema, expected: Schema) = s"Not expected container: $actualSchema for schema: $expected"
 
   private def createScenario(config: ScenarioConfig) =
     ScenarioBuilder
@@ -428,7 +429,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
   //RecordConfig -> config with record as a input
   private def rConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
-      case str: String if str == Input => str
+      case element: SpecialSpELElement => element
       case any => Map(RecordFieldName -> any)
     }
 
@@ -437,7 +438,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
       case any => AvroUtils.createRecord(sourceSchema, Map(RecordFieldName -> any))
     }
 
-    ScenarioConfig(input, sourceSchema, sinkSchema, sinkDefinition.toSpEL, validationMode)
+    ScenarioConfig(input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
   }
 
   //StandardConfig -> simple avro type as a input
@@ -445,6 +446,6 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
     sConfig(inputData, schema, schema, output, None)
 
   private def sConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig =
-    ScenarioConfig(inputData, sourceSchema, sinkSchema, output.toSpEL, validationMode)
+    ScenarioConfig(inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
 
 }

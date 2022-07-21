@@ -31,8 +31,8 @@ object AvroSchemaOutputValidator {
 
 class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
 
+  import cats.implicits.{catsStdInstancesForList, toTraverseOps}
   import AvroSchemaOutputValidator._
-
   import scala.collection.JavaConverters._
 
   private val valid = Validated.Valid(())
@@ -51,14 +51,12 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     (typingResult, schema.getType) match {
       case (tc@TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
         validateSpecificRecord(tc, schema, path)
-      case (record: TypedObjectTypingResult, Type.RECORD) =>
-        validateRecordSchema(record, schema, path)
-      case (map: TypedObjectTypingResult, Type.MAP) =>
-        validateMapSchema(map, schema, path)
-      case (tc@TypedClass(map, _), Type.MAP) if classOf[java.util.Map[_, _]].isAssignableFrom(map)  =>
-        validateTypedClassToMapSchema(tc, schema, path)
-      case (array@TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
-        validateArraySchema(array, schema, path)
+      case (typingResult: TypedObjectTypingResult, Type.RECORD) =>
+        validateRecordSchema(typingResult, schema, path)
+      case (typingResult, Type.MAP) =>
+        validateMapSchema(typingResult, schema, path)
+      case (tc@TypedClass(cl, _), Type.ARRAY) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
+        validateArraySchema(tc, schema, path)
       case (_@TypedNull, _) if !schema.isNullable =>
         invalid(typingResult, schema, path)
       case (_@TypedNull, _) if schema.isNullable =>
@@ -70,23 +68,22 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (_, Type.STRING) if schema.getLogicalType == LogicalTypes.uuid() =>
         validateUUID(typingResult, schema, path)
       case (_, Type.INT) if schema.getLogicalType == LogicalTypes.date() =>
-        validateClass[java.lang.Integer](typingResult, schema, path)
+        validateSchemaWithBaseType[java.lang.Integer](typingResult, schema, path)
       case (_, Type.INT) if schema.getLogicalType == LogicalTypes.timeMillis() =>
-        validateClass[java.lang.Integer](typingResult, schema, path)
+        validateSchemaWithBaseType[java.lang.Integer](typingResult, schema, path)
       case (_, Type.LONG) if longLogicalTypes.contains(schema.getLogicalType) =>
-        validateClass[java.lang.Long](typingResult, schema, path)
-      case (anyTypingResult, Type.UNION) =>
-        val results = validateUnionSchema(anyTypingResult, schema, path)
-        results
+        validateSchemaWithBaseType[java.lang.Long](typingResult, schema, path)
+      case (typingResult, Type.UNION) =>
+        validateUnionSchema(typingResult, schema, path)
       case (_, _) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
-        validateClass[ByteBuffer](typingResult, schema, path)
+        validateSchemaWithBaseType[ByteBuffer](typingResult, schema, path)
       case (_, _) =>
         canBeSubclassOf(typingResult, schema, path)
     }
   }
 
-  private def validateSpecificRecord(tc: TypedClass, schema: Schema, path: Option[String]) = {
-    val valueSchema = AvroUtils.extractAvroSpecificSchema(tc.klass)
+  private def validateSpecificRecord(typedClass: TypedClass, schema: Schema, path: Option[String]) = {
+    val valueSchema = AvroUtils.extractAvroSpecificSchema(typedClass.klass)
     // checkReaderWriterCompatibility is more accurate than our validation with given ValidationMode
     val compatibility = SchemaCompatibility.checkReaderWriterCompatibility(schema, valueSchema)
     if (compatibility.getType == SchemaCompatibilityType.COMPATIBLE) {
@@ -97,15 +94,15 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
   }
 
-  private def validateRecordSchema(record: TypedObjectTypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
+  private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     val schemaFields = schema.getFields.asScala.map(field => field.name() -> field).toMap
     val requiredFieldNames = schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
-    val fieldsToValidate: Map[String, TypingResult] = record.fields.filterKeys(schemaFields.contains)
+    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
 
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
 
     val requiredFieldsValidation = {
-      val missingFields = requiredFieldNames.filterNot(record.fields.contains).toList.sorted.toSet
+      val missingFields = requiredFieldNames.filterNot(typingResult.fields.contains).toList.sorted.toSet
       condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
     }
 
@@ -117,89 +114,76 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
 
     val redundantFieldsValidation = {
-      val redundantFields = record.fields.keySet.diff(schemaFields.keySet)
-      condNel(validationMode.acceptRedundant || redundantFields.isEmpty, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
+      val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
+      condNel(redundantFields.isEmpty || validationMode.acceptRedundant, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
   }
 
-  private def validateTypedClassToMapSchema(map: TypedClass, schema: Schema, path: Option[String]) = {
-    map.params match {
-      case _ :: value :: Nil =>
-        validateTypingResult(value, schema.getValueType, buildPath("*", path, isGeneric = true))
-      case _ => //TODO: will be there more then two parameters?
-        canBeSubclassOf(map, schema, path)
+  private def validateMapSchema(typingResult: TypingResult, schema: Schema, path: Option[String]) = {
+    def isMap(klass: Class[_]) = classOf[java.util.Map[_, _]].isAssignableFrom(klass)
+
+    typingResult match {
+      case _@TypedClass(klass, key :: value :: Nil) if isMap(klass) =>
+        //Map keys are assumed to be strings: https://avro.apache.org/docs/current/spec.html#Maps
+        condNel(key.canBeSubclassOf(Typed.apply[java.lang.String]), (), typeError(typingResult, schema, path)).andThen(_ =>
+          validateTypingResult(value, schema.getValueType, buildPath("*", path, useIndexer = true))
+        )
+      case map@TypedClass(klass, _) if isMap(klass) =>
+        throw new IllegalArgumentException(s"Illegal typing Map: $map.")
+      case _@TypedObjectTypingResult(fields, _, _) =>
+        fields.map{ case (key, value) =>
+          val fieldPath = buildPath(key, path)
+          validateTypingResult(value, schema.getValueType, fieldPath)
+        }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
+      case _ =>
+        invalid(typingResult, schema, path)
     }
   }
 
-  private def validateMapSchema(map: TypedObjectTypingResult, schema: Schema, path: Option[String]) = {
-    val schemaFieldsValidationResult = map.fields.map{ case (key, value) =>
-      val fieldPath = buildPath(key, path)
-      validateTypingResult(value, schema.getValueType, fieldPath)
-    }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
-
-    schemaFieldsValidationResult
-  }
-
-  private def validateArraySchema(array: TypedClass, schema: Schema, path: Option[String]) = {
-     val valuesValidationResult: ValidatedNel[OutputValidatorError, Unit] = array
-        .params
-        .zipWithIndex
-        .map { case (el, index) =>
-          val pathKey = array.params match {
-            case _ :: Nil => "" //One element list is 'general' object, and we preset it as field[]
-            case _ => index.toString
-          }
-
-          val elementPath = buildPath(pathKey, path, isGeneric = true)
-          validateTypingResult(el, schema.getElementType, elementPath)
-        }
-        .foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
-
-    valuesValidationResult
-  }
-
-  private def validateUnionSchema(union: TypingResult, schema: Schema, path: Option[String]) = {
-    implicit class UnionValidationResult(results: List[ValidatedNel[OutputValidatorError, Unit]]) {
-      type ValidatedType = ValidatedNel[OutputValidatorError, Unit]
-      def toValidated: ValidatedNel[OutputValidatorError, Unit] =
-        if (results.exists(_.isValid)) valid else results.foldLeft[ValidatedType](().validNel)((a, b) => a combine b)
+  private def validateArraySchema(typedClass: TypedClass, schema: Schema, path: Option[String]) =
+    typedClass.params match {
+      case head :: Nil =>
+        val elementPath = buildPath("", path, useIndexer = true)
+        validateTypingResult(head, schema.getElementType, elementPath)
+      case _ =>
+        throw new IllegalArgumentException(s"Illegal typing List: $typedClass.")
     }
 
-    object UnionNullableSchemaType {
-      private val MaxSizeUnion = 2
-      def unapply(schema: Schema): Option[Schema] = {
-        Option(schema).filter(_.getTypes.size() == MaxSizeUnion).filter(_.isNullable).flatMap(_.getTypes.asScala.find(!_.isNullable))
-      }
-    }
-
+  private def validateUnionSchema(typingResult: TypingResult, schema: Schema, path: Option[String]) = {
     //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
     def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
       errors.collect{case err: OutputValidatorTypeError => err} match {
-        case head :: Nil => path.exists(_.equals(head.field))
+        case head :: Nil => path.contains(head.field)
         case _ => false
       }
 
-    def createUnionValidationResults(withoutNullability: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
-      val schemas = if(withoutNullability) schema.getTypes.asScala.filterNot(_.isNullable) else schema.getTypes.asScala
-      schemas.map(validateTypingResult(union, _, path)).toList
+    def createUnionValidationResults(checkNullability: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
+      val schemas = if(checkNullability) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
+      schemas.map(validateTypingResult(typingResult, _, path)).toList
     }
 
-    val results = schema match {
-      case UnionNullableSchemaType(_) => //Nullability: union[null, any] it's most common situation, so we want to handle that in special way
-        val notNullableResults = createUnionValidationResults(withoutNullability = true)
-        notNullableResults.toValidated match {
+    def isNullableSchema(schema: Schema): Boolean = schema.getTypes.size() == 2 && schema.isNullable
+
+    def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
+      if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
+
+    val unionValidationResults = schema match {
+      case sch if isNullableSchema(sch) =>
+        val notNullableValidationResults = createUnionValidationResults(checkNullability = false)
+
+        asSingleValidatedResults(notNullableValidationResults) match {
           case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
-            createUnionValidationResults(withoutNullability = false)
+            createUnionValidationResults(checkNullability = true)
           case _ =>
-            notNullableResults
+            notNullableValidationResults
         }
       case _ =>
-        createUnionValidationResults(withoutNullability = false)
+        createUnionValidationResults(checkNullability = true)
     }
 
-    results.toValidated
+    asSingleValidatedResults(unionValidationResults)
   }
 
   private def validateEnum(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
@@ -245,27 +229,27 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateWithValue[T:ClassTag](isValueValid: (TypedObjectWithValue, Schema) => Boolean, typingResult: TypingResult, schema: Schema, path: Option[String]) = {
-    val validationResult = validateClass[T](typingResult, schema, path)
+    val validationTypingResult = validateSchemaWithBaseType[T](typingResult, schema, path)
 
-    validationResult.andThen{ _ =>
+    validationTypingResult.andThen{ _ =>
       typingResult match {
         case obj: TypedObjectWithValue if isValueValid(obj, schema) => valid
         case _: TypedObjectWithValue => invalid(typingResult, schema, path)
-        case _ => validationResult
+        case _ => validationTypingResult
       }
     }
 
   }
 
-  private def validateClass[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
+  private def validateSchemaWithBaseType[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     (schemaAsTypedResult, typingResult) match {
-      case (TypedClass(schemaClass, _), TypedClass(typeClass, _)) if typeClass.equals(schemaClass) => valid
-      case (_, TypedClass(typeClass, _)) if clazz.equals(typeClass) => valid
-      case (_, TypedObjectWithValue(underlying, _)) if underlying.klass.equals(clazz) => valid
-      case _ => invalid(typingResult, schema, path) //we don't use canBeSubclassOf here, because it can return true eg. Integer (Number) vs BigDecimal but Avro doesn't allow for that...
+      case (TypedClass(schemaClass, _), TypedClass(typeClass, _)) if typeClass == schemaClass => valid
+      case (_, TypedClass(typeClass, _)) if clazz == typeClass => valid
+      case (_, TypedObjectWithValue(underlying, _)) if clazz == underlying.klass => valid
+      case _ => invalid(typingResult, schema, path)
     }
   }
 
@@ -275,18 +259,21 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     * * Long.canBeSubclassOf(Integer) => true
     * Should we use strict verification at avro?
     */
-  private def canBeSubclassOf(objTypingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
+  private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
       val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-      condNel(objTypingResult.canBeSubclassOf(schemaAsTypedResult), (),
-        OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), objTypingResult, AvroSchemaExpected(schema))
+      condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
+        OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema))
       )
   }
 
   private def invalid(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
-    Validated.invalidNel(OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema)))
+    Validated.invalidNel(typeError(typingResult, schema, path))
 
-  private def buildPath(key: String, path: Option[String], isGeneric: Boolean = false) = Some(
-    path.map(p => if(isGeneric) s"$p[$key]" else s"$p.$key").getOrElse(key)
+  private def typeError(typingResult: TypingResult, schema: Schema, path: Option[String]) =
+    OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema))
+
+  private def buildPath(key: String, path: Option[String], useIndexer: Boolean = false) = Some(
+    path.map(p => if(useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)
   )
 
 }

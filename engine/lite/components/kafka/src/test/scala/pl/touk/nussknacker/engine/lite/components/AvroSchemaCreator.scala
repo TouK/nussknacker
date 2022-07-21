@@ -1,7 +1,7 @@
-package pl.touk.nussknacker.engine.avro
+package pl.touk.nussknacker.engine.lite.components
 
-import org.apache.avro.{LogicalType, LogicalTypes, Schema}
 import org.apache.avro.Schema.{Field, Type}
+import org.apache.avro.{LogicalType, LogicalTypes, Schema}
 
 import scala.util.Random
 
@@ -12,28 +12,28 @@ object AvroSchemaCreator {
   import scala.collection.JavaConverters._
 
   def createRecord(fields: Field*): Schema =
-    createRecord(s"AvroRecord${Math.abs(Random.nextLong())}", fields:_*)
+    createRecord(s"AvroRecord${Math.abs(Random.nextLong())}", fields: _*)
 
   def createRecord(name: String, fields: Field*): Schema =
     Schema.createRecord(name, null, null, false, fields.toList.asJava)
 
   def createArray(schemas: Schema*): Schema =
-    Schema.createArray(asSchema(schemas:_*))
+    Schema.createArray(asSchema(schemas: _*))
 
   def createMap(schemas: Schema*): Schema =
-    Schema.createMap(asSchema(schemas:_*))
+    Schema.createMap(asSchema(schemas: _*))
 
   def createFixed(name: String, size: Int): Schema =
     Schema.createFixed(name, null, null, size)
 
   def createEnum(name: String, values: List[String]): Schema =
-    Schema.createEnum(name, null,null, values.asJava)
+    Schema.createEnum(name, null, null, values.asJava)
 
   def createField(name: String, default: Any, schemas: Schema*): Field =
-    new Field(name, asSchema(schemas:_*), null, default)
+    new Field(name, asSchema(schemas: _*), null, default)
 
   def createField(name: String, schemas: Schema*): Field =
-    new Field(name, asSchema(schemas:_*), null, null)
+    new Field(name, asSchema(schemas: _*), null, null)
 
   def createLogical(logicalType: LogicalType): Schema = {
     val schema = logicalType match {
@@ -53,7 +53,7 @@ object AvroSchemaCreator {
 
   private def asSchema(schemas: Schema*): Schema = schemas.toList match {
     case head :: Nil => head
-    case list => Schema.createUnion(list:_*)
+    case list => Schema.createUnion(list: _*)
   }
 
 }

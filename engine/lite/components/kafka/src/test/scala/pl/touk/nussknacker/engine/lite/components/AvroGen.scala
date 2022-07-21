@@ -4,7 +4,7 @@ import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.scalacheck.Gen
-import pl.touk.nussknacker.engine.avro.{AvroSchemaCreator, AvroUtils}
+import pl.touk.nussknacker.engine.avro.AvroUtils
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
@@ -12,7 +12,6 @@ import java.nio.charset.StandardCharsets
 object AvroGen {
 
   import scala.collection.JavaConverters._
-  import pl.touk.nussknacker.engine.lite.components.ImplicitsSpELWithAvro._
 
   private val AllowedStringLetters = ('a' to 'z') ++ ('A' to 'Z')
 

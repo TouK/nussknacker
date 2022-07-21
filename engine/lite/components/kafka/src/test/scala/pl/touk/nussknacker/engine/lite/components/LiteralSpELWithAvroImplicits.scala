@@ -2,21 +2,21 @@ package pl.touk.nussknacker.engine.lite.components
 
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericRecord, IndexedRecord}
-import pl.touk.nussknacker.engine.spel.SpELImplicits
+import pl.touk.nussknacker.test.LiteralSpEL
 
-object ImplicitsSpELWithAvro {
+object LiteralSpELWithAvroImplicits {
 
   import collection.JavaConverters._
 
-  implicit class ImplicitsSpELWithAvro(data: Any) extends SpELImplicits {
+  implicit class LiteralSpELWithAvroImplicits(data: Any) extends LiteralSpEL {
 
-    def toSpEL: String = toSpEL(data)
+    def toSpELLiteral: String = toSpELLiteral(data)
 
-    override def toSpEL(data: Any): String = data match {
-      case enum: EnumSymbol => toSpEL(`enum`.toString)
-      case fixed: Fixed => toSpEL(fixed.toString)
-      case record: GenericRecord => toSpEL(convertRecordToMap(record))
-      case any => super.toSpEL(any)
+    override protected def toSpELLiteral(data: Any): String = data match {
+      case enum: EnumSymbol => toSpELLiteral(`enum`.toString)
+      case fixed: Fixed => toSpELLiteral(fixed.toString)
+      case record: GenericRecord => toSpELLiteral(convertRecordToMap(record))
+      case any => super.toSpELLiteral(any)
     }
 
     private def convertRecordToMap(record: IndexedRecord): Map[String, AnyRef] = record.getSchema.getFields.asScala.map { field =>
