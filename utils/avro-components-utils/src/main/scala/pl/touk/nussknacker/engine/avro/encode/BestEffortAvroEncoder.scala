@@ -147,7 +147,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case ((fieldName, value), field) if field != null =>
         val fieldSchema = field.schema()
         encode(value, fieldSchema, Some(fieldName)).map(fieldName -> _)
-      case ((fieldName, _), null) if !validationMode.acceptRedundant =>
+      case ((fieldName, _), null) if !validationMode.strict =>
         error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
       val builder = new LogicalTypesGenericRecordBuilder(schema)

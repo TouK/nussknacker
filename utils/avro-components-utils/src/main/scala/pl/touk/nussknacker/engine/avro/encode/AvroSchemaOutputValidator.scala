@@ -96,7 +96,13 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     val schemaFields = schema.getFields.asScala.map(field => field.name() -> field).toMap
-    val requiredFieldNames = schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
+
+    val requiredFieldNames = if (validationMode.strict) {
+      schemaFields.values.map(_.name())
+    } else {
+      schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
+    }
+
     val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
 
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
@@ -115,7 +121,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
-      condNel(redundantFields.isEmpty || validationMode.acceptRedundant, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
+      condNel(redundantFields.isEmpty || !validationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation

@@ -45,6 +45,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3071](https://github.com/TouK/nussknacker/pull/3071) Improvements: Avro Sink Validation
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.strict`
   * `ValidationMode.allowRedundantAndOptional` was renamed to `ValidationMode.allowRedundant`
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation:
+  * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.loose`
+  * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.loose`
+  * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
 
 ### REST API changes
 
