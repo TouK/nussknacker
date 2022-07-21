@@ -270,8 +270,8 @@ object TypeInfos {
               name: String,
               description: Option[String],
               varArgs: Boolean): StaticMethodInfo = parameters match {
-      case noVarArgParameters :+ Parameter(name, TypedClass(`arrayClass`, List(varArgType))) if varArgs =>
-        VarArgsMethodInfo(noVarArgParameters, Parameter(name, varArgType), refClazz, name, description)
+      case noVarArgParameters :+ Parameter(name, TypedClass(`arrayClass`, varArgTypes)) if varArgs =>
+        VarArgsMethodInfo(noVarArgParameters, Parameter(name, Typed(varArgTypes.toSet)), refClazz, name, description)
       case _ =>
         SimpleMethodInfo(parameters, refClazz, name, description)
     }
@@ -340,7 +340,10 @@ object TypeInfos {
       else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
     }
 
-    override def expectedParameters: List[Parameter] = noVarParameters :+ varParameter
+    override def expectedParameters: List[Parameter] = {
+      val Parameter(varArgName, varArg) = varParameter
+      noVarParameters :+ Parameter(varArgName, TypedClass.applyForArray(List(varArg)))
+    }
 
     override def varArgs: Boolean = true
 

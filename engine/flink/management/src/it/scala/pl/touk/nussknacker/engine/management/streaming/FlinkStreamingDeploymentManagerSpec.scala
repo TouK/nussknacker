@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
+import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, StaticMethodInfo}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader

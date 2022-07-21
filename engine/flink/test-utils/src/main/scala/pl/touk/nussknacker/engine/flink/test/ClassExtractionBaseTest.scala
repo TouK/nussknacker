@@ -8,9 +8,10 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, SimpleMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -22,6 +23,32 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   protected def model: ModelData
 
   protected def outputResource: String
+
+  // We remove names and simplify advanced MethodInfo types because they are
+  // not serialized.
+  protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
+    case x: SimpleMethodInfo => x.copy(name = "")
+    case x: VarArgsMethodInfo => x.copy(name = "")
+    case x => MethodInfo(x.expectedParameters, x.expectedResult, "", x.description, x.varArgs)
+  }
+
+  // We need to sort methods with identical names to make checks ignore order.
+  protected def assertClassEquality(left: ClazzDefinition, right: ClazzDefinition): Unit = {
+    def simplifyMap(m: Map[String, List[MethodInfo]]): Map[String, List[MethodInfo]] =
+      m.mapValues(_.map(simplifyMethodInfo))
+
+    def assertMethodMapEquality(left: Map[String, List[MethodInfo]], right: Map[String, List[MethodInfo]]): Unit = {
+      val processedLeft = simplifyMap(left)
+      val processedRight = simplifyMap(right)
+      processedLeft.keySet shouldBe processedRight.keySet
+      processedLeft.keySet.foreach(k => processedLeft(k) should contain theSameElementsAs processedRight(k))
+    }
+
+    val ClazzDefinition(_, leftMethods, staticLeftMethods) = left
+    val ClazzDefinition(_, rightMethods, staticRightMethods) = right
+    assertMethodMapEquality(leftMethods, rightMethods)
+    assertMethodMapEquality(staticLeftMethods, staticRightMethods)
+  }
 
   test("check extracted class for model") {
     val types = ProcessDefinitionExtractor.extractTypes(model.processWithObjectsDefinition)
@@ -68,13 +95,14 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
           methods.keys shouldBe decodedMethods.keys
           methods.foreach { case (k, v) =>
             withClue(s"$clazz with method: $k does not match, ${v.asJson}, ${decodedMethods(k).asJson}: ") {
-              v shouldBe decodedMethods(k)
+              v.map(simplifyMethodInfo) should contain theSameElementsAs decodedMethods(k)
             }
           }
         }
         checkMethods(_.methods)
         checkMethods(_.staticMethods)
-        clazzDefinition shouldBe decoded
+
+        assertClassEquality(clazzDefinition, decoded)
       }
     }
   }
@@ -92,7 +120,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     }
 
     implicit val parameterD: Encoder[Parameter] = deriveConfiguredEncoder[Parameter]
-    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[SerializableMethodInfo].contramap(_.serializable)
+    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[SerializableMethodInfo].contramap[MethodInfo](_.serializable)
     implicit val typedClassD: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
     implicit val clazzDefinitionD: Encoder[ClazzDefinition] = deriveConfiguredEncoder[ClazzDefinition]
 
@@ -120,9 +148,16 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       }.getOrElse(json)
     })
 
+    val objectClass = classOf[Array[Object]]
+
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
     implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
-      case SerializableMethodInfo(parameters, refClazz, description, varArgs) =>
+      // Name is not serialized so we leave it empty.
+      case SerializableMethodInfo(parameters :+ Parameter(name, TypedClass(`objectClass`, types)), refClazz, description, true) =>
+        VarArgsMethodInfo(parameters, Parameter(name, Typed(types.toSet)), refClazz, "", description)
+      case SerializableMethodInfo(parameters, _, _, true) =>
+        throw new AssertionError(parameters.toString)
+      case SerializableMethodInfo(parameters, refClazz, description, false) =>
         SimpleMethodInfo(parameters, refClazz, "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
@@ -133,6 +168,4 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       case Right(value) => value
     }
   }
-
-
 }
