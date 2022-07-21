@@ -40,8 +40,8 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
       private lazy val valueDeserializer = createValueDeserializer[V](valueSchemaDataOpt, kafkaConfig)
 
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key = keyDeserializer.deserialize(record.topic(), record.key())
-        val value = valueDeserializer.deserialize(record.topic(), record.value())
+        val key = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
+        val value = valueDeserializer.deserialize(record.topic(), record.headers(), record.value())
         new ConsumerRecord[K, V](
           record.topic(),
           record.partition(),

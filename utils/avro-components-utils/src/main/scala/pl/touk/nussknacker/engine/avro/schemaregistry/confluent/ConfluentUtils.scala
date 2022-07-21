@@ -24,6 +24,7 @@ object ConfluentUtils extends LazyLogging {
 
   final val SchemaProvider = new AvroSchemaProvider()
   final val MagicByte = 0
+  final val IdSize = 4
 
   final val HeaderSize = 1 + 4 // magic byte + schemaId (4 bytes int)
 
