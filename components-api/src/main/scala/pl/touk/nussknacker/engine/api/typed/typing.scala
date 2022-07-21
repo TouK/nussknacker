@@ -161,19 +161,20 @@ object typing {
         TypedClass(klass, parameters)
       }
 
+    //to not have separate class for each array, we pass Array of Objects
+    private val KlassForArrays = classOf[Array[Object]]
+
     private def decodeArrayType(klass: Class[_], parameters: List[TypingResult]): TypedClass = {
       val decodedComponentType = Typed(klass.getComponentType)
-      //to not have separate class for each array, we pass Array of Objects
-      if (decodedComponentType == Unknown) {
-        TypedClass(klass, parameters)
-      } else {
-        parameters match {
-          //it may happen that parameter will be decoded via other means, we have to to sanity check if they match
-          case Nil | `decodedComponentType` :: Nil =>
-            Typed.typedClass(classOf[Array[Object]], List(decodedComponentType))
-          case _: List[TypingResult] =>
-            throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")
-        }
+      parameters match {
+        //it may happen that parameter will be decoded via other means, we have to to sanity check if they match
+        case Nil | `decodedComponentType` :: Nil =>
+          TypedClass(KlassForArrays, List(decodedComponentType))
+        // When type is deserialized, in component type will be always Unknown, because w use Array[Object] so we need to use parameters instead
+        case notComponentType :: Nil if decodedComponentType == Unknown =>
+          TypedClass(KlassForArrays, List(notComponentType))
+        case _: List[TypingResult] =>
+          throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")
       }
     }
 
