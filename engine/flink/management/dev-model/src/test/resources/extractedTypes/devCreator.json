@@ -9542,8 +9542,7 @@
       ],
       "randomUUID": [
         {
-          "parameters": [
-          ],
+          "parameters": [],
           "refClazz": {"refClazzName": "java.util.UUID"},
           "varArgs": false
         }
