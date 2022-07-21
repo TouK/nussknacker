@@ -29,8 +29,8 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
       private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
 
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
-        val key = keyDeserializer.deserialize(record.topic(), record.key())
-        val value = valueDeserializer.deserialize(record.topic(), record.value())
+        val key = keyDeserializer.deserialize(record.topic(), record.headers(), record.key())
+        val value = valueDeserializer.deserialize(record.topic(), record.headers(), record.value())
         new ConsumerRecord[K, V](
           record.topic(),
           record.partition(),

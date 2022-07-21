@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
@@ -45,7 +46,10 @@ class KafkaJsonKeyValueDeserializationSchemaFactory extends KafkaSchemaBasedKeyV
   }
 
   private def toJsonDeserializer: Deserializer[Json] = new Deserializer[Json] {
-    override def deserialize(topic: String, data: Array[Byte]): Json =
+    override def deserialize(topic: String, headers: Headers, data: Array[Byte]): Json = {
       CirceUtil.decodeJsonUnsafe[Json](data)
+    }
+    override def deserialize(topic: String, data: Array[Byte]): Json =
+      throw new IllegalAccessException("Operation not permitted. Use 'deserialize' with Headers")
   }
 }

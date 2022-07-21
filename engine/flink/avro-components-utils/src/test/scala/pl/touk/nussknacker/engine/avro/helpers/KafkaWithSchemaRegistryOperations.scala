@@ -4,6 +4,8 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.header.Headers
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{Assertion, Matchers}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
@@ -22,7 +24,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
   import KafkaTestUtils._
 
   def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
-    val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
+    val serializedObj = valueSerializer.serialize(topicToSerialize, new RecordHeaders(), obj)
     kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp).futureValue
   }
 
@@ -39,9 +41,9 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
         case _ => throw new IllegalArgumentException("Expected string or null")
       }
     } else {
-      keySerializer.serialize(topicToSerialize, key)
+      keySerializer.serialize(topicToSerialize, new RecordHeaders(), key)
     }
-    val serializedValue = valueSerializer.serialize(topicToSerialize, value)
+    val serializedValue = valueSerializer.serialize(topicToSerialize, new RecordHeaders(), value)
     kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), serializedKey, serializedValue, None, timestamp).futureValue
   }
 
@@ -72,12 +74,12 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
   private def consumeMessages(topic: String, count: Int, useSpecificAvroReader: Boolean): List[Any] = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic).map { record =>
-      deserialize(useSpecificAvroReader)(topic, record.message())
+      deserialize(useSpecificAvroReader)(topic, record.headers, record.message())
     }.take(count).toList
   }
 
   protected def deserialize(useSpecificAvroReader: Boolean)
-                           (objectTopic: String, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, obj)
+                           (objectTopic: String, headers: Headers, obj: Array[Byte]): Any = prepareValueDeserializer(useSpecificAvroReader).deserialize(objectTopic, headers, obj)
 
   /**
    * Default Confluent Avro serialization components
@@ -154,8 +156,12 @@ class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey:
 
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
 
-  override def deserialize(topic: String, data: Array[Byte]): Any = {
+  override def deserialize(topic: String, headers: Headers, data: Array[Byte]): Any = {
     io.circe.parser.parse(new String(data, StandardCharsets.UTF_8)).right.get
+  }
+
+  override def deserialize(topic: String, data: Array[Byte]): Any = {
+    throw new IllegalAccessException("Operation not permitted. Use 'deserialize' with Headers")
   }
 }
 

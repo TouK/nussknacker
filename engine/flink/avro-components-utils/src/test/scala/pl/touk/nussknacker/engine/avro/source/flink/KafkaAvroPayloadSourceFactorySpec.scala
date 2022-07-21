@@ -5,6 +5,7 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.generic.{GenericData, GenericRecord}
+import org.apache.kafka.common.header.internals.RecordHeaders
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -112,8 +113,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read last generated simple object with expected key schema and valid key") {
     val givenObj = 123123
 
-    val serializedKey = keySerializer.serialize(IntTopicWithKey, -1)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj)
+    val serializedKey = keySerializer.serialize(IntTopicWithKey, new RecordHeaders(), -1)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey, new RecordHeaders(), givenObj)
     kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
 
     readLastMessageAndVerify(avroSourceFactory(useStringForKey = true), IntTopicWithKey, ExistingSchemaVersion(1), new String(serializedKey, StandardCharsets.UTF_8), givenObj)
@@ -130,8 +131,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey = 123
     val givenValue = 456
 
-    val serializedKey = keySerializer.serialize(IntTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenValue)
+    val serializedKey = keySerializer.serialize(IntTopicWithKey, new RecordHeaders(), givenKey)
+    val serializedValue = valueSerializer.serialize(IntTopicWithKey, new RecordHeaders(), givenValue)
     kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(avroSourceFactory, useStringForKey = false, IntTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)
@@ -141,8 +142,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val givenKey = FullNameV1.record
     val givenValue = PaymentV1.record
 
-    val serializedKey = keySerializer.serialize(RecordTopicWithKey, givenKey)
-    val serializedValue = valueSerializer.serialize(RecordTopicWithKey, givenValue)
+    val serializedKey = keySerializer.serialize(RecordTopicWithKey, new RecordHeaders(), givenKey)
+    val serializedValue = valueSerializer.serialize(RecordTopicWithKey, new RecordHeaders(), givenValue)
     kafkaClient.sendRawMessage(RecordTopicWithKey, serializedKey, serializedValue, Some(0))
 
     roundTripKeyValueObject(avroSourceFactory, useStringForKey = false, RecordTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)

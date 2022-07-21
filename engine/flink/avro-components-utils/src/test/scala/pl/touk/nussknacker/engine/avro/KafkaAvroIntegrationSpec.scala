@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro
 import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -411,7 +412,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
     import io.circe.syntax._
     val serializedKey = SimpleJsonRecord("lorem", "ipsum").asJson.noSpaces.getBytes(StandardCharsets.UTF_8)
-    val serializedValue = valueSerializer.serialize(topicConfig.input, Product.record)
+    val serializedValue = valueSerializer.serialize(topicConfig.input, new RecordHeaders(), Product.record)
     kafkaClient.sendRawMessage(topicConfig.input, serializedKey, serializedValue).futureValue
 
     run(process) {

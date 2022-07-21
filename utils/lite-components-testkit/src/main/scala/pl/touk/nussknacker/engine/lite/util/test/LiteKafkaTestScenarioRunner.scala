@@ -8,6 +8,7 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -48,7 +49,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
           .successes
           .map{ output =>
             val value = deserialize[V](output.value())
-            val key = Option(output.key()).map(deserializeKey[K](output.topic(), _)).getOrElse(null.asInstanceOf[K])
+            val key = Option(output.key()).map(deserializeKey[K](output.topic(), output.headers(), _)).getOrElse(null.asInstanceOf[K])
             new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
           }
 
@@ -88,8 +89,8 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     ConfluentUtils.serializeContainerToBytesArray(containerData, element.schemaId)
   }
 
-  private def deserializeKey[T](topic: String, payload: Array[Byte]) = if (kafkaConfig.useStringForKey) {
-    keyStringDeserializer.deserialize(topic, payload).asInstanceOf[T]
+  private def deserializeKey[T](topic: String, headers: Headers, payload: Array[Byte]) = if (kafkaConfig.useStringForKey) {
+    keyStringDeserializer.deserialize(topic, headers, payload).asInstanceOf[T]
   } else {
     deserialize[T](payload)
   }

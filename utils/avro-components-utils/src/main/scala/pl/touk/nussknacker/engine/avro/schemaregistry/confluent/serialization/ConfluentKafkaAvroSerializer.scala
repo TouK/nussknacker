@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -29,8 +30,12 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
     this.isKey = isKey
   }
 
-  override def serialize(topic: String, data: Any): Array[Byte] =
+  override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] =
     serialize(avroSchemaOpt, topic, data, isKey)
+
+  override def serialize(topic: String, data: Any): Array[Byte] =
+    throw new IllegalAccessException("Operation not permitted. Use 'serialize' with Headers")
+
 
   override def close(): Unit = {}
 }

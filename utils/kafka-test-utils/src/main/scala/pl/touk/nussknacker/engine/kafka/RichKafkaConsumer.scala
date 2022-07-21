@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
+import org.apache.kafka.common.header.Headers
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -18,7 +19,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
-      .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
+      .map(record => KeyMessage(record.key(), record.value(), record.timestamp(), record.headers()))
 
   def consumeWithString(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[String] =
     consumeWithConsumerRecord(topic, secondsToWait)
@@ -70,7 +71,7 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
   }
 }
 
-case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {
+case class KeyMessage[K, V](k: K, msg: V, timestamp: Long, headers: Headers) {
   def message(): V = msg
   def key(): K = k
 }

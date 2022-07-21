@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
@@ -33,6 +34,10 @@ class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Op
     GenericRecordSchemaIdSerializationSupport.schemaIdSerializationEnabled(kafkaConfig)
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
+    throw new IllegalAccessException("Operation not permitted. Use 'deserialize' with Headers")
+  }
+
+  override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
     val deserializedData = deserialize(topic, isKey, data, schemaData)
     deserializedData.asInstanceOf[T]
   }

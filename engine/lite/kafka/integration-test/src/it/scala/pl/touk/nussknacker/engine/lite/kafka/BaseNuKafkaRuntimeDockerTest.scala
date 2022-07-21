@@ -77,7 +77,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
 
   protected def errorConsumer(secondsToWait: Int): Stream[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
     .consume(fixture.errorTopic, secondsToWait = secondsToWait)
-    .map(km => KeyMessage(new String(km.key()), CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](km.message()), km.timestamp))
+    .map(km => KeyMessage(new String(km.key()), CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](km.message()), km.timestamp, km.headers))
 
   override protected def afterAll(): Unit = {
     kafkaClient.shutdown()

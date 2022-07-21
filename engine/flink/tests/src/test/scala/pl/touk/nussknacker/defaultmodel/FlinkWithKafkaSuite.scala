@@ -6,6 +6,7 @@ import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerialize
 import org.apache.avro.Schema
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Matchers}
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -81,7 +82,7 @@ abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpe
   }
 
   protected def sendAvro(obj: Any, topic: String, timestamp: java.lang.Long = null) = {
-    val serializedObj = valueSerializer.serialize(topic, obj)
+    val serializedObj = valueSerializer.serialize(topic, new RecordHeaders(), obj.asInstanceOf[Object])
     kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
   }
 

@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
@@ -30,8 +31,8 @@ abstract class KafkaSchemaBasedValueSerializationSchemaFactory extends KafkaSche
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         KafkaProducerHelper.createRecord(topic,
-          keySerializer.serialize(topic, element.key),
-          valueSerializer.serialize(topic, element.value),
+          keySerializer.serialize(topic, new RecordHeaders(), element.key),
+          valueSerializer.serialize(topic, new RecordHeaders(), element.value),
           timestamp)
       }
     }
@@ -65,8 +66,8 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
       private lazy val valueSerializer = createValueSerializer(schemaOpt.map(_.getParsedSchema.rawSchema()), version, kafkaConfig)
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        val key = keySerializer.serialize(topic, extractKey(element.value))
-        val value = valueSerializer.serialize(topic, extractValue(element.value))
+        val key = keySerializer.serialize(topic, new RecordHeaders(), extractKey(element.value))
+        val value = valueSerializer.serialize(topic, new RecordHeaders(), extractValue(element.value))
         //TODO: can we e.g. serialize schemaId to headers?
         KafkaProducerHelper.createRecord(topic, key, value, timestamp)
       }
