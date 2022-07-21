@@ -8,8 +8,8 @@ import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentKeyValueUniversalKafkaDeserializationFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKeyValueKafkaAvroDeserializationFactory, ConfluentSchemaBasedSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.{ConfluentKeyValueUniversalKafkaDeserializationFactory, ConfluentUniversalKafkaSerializationSchemaFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryError, SchemaRegistryUnsupportedTypeError}
 import pl.touk.nussknacker.engine.avro.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
@@ -37,8 +37,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
 
   def universal(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedSerdeProvider = {
     ConfluentSchemaBasedSerdeProvider(
-      // TODO: add "switch" in serialization factory
-      new ConfluentSchemaBasedSerializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentUniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueUniversalKafkaDeserializationFactory(schemaRegistryClientFactory),
       new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
     )
@@ -46,7 +45,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
 
   def avroPayload(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory): ConfluentSchemaBasedSerdeProvider = {
     ConfluentSchemaBasedSerdeProvider(
-      new ConfluentSchemaBasedSerializationSchemaFactory(schemaRegistryClientFactory),
+      new ConfluentAvroSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueKafkaAvroDeserializationFactory(schemaRegistryClientFactory),
       new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
     )

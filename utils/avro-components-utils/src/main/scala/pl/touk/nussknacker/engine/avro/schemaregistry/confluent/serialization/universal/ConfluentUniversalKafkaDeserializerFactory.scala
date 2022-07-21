@@ -6,7 +6,7 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentKafkaAvroDeserializer, ConfluentKafkaAvroDeserializerFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentKafkaAvroDeserializer
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
