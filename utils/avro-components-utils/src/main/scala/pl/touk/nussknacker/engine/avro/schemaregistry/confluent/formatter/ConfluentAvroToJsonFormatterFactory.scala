@@ -54,6 +54,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     */
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
     val deserializedRecord = deserializationSchema.deserialize(record)
+
     val serializableRecord = AvroSerializableConsumerRecord(
       if (kafkaConfig.useStringForKey) None else Option(record.key()).map(ConfluentUtils.readId),
       Option(record.value()).map(ConfluentUtils.readId).getOrElse(throw new IllegalArgumentException("Failed to read value schema id")),
