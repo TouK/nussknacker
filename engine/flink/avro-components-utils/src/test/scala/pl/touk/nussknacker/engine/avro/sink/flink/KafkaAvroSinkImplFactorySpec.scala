@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
+  import pl.touk.nussknacker.test.LiteralSpELImplicits._
   import KafkaAvroSinkMockSchemaRegistry._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
@@ -43,7 +44,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   test("should validate specific version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> FullNameV1.exampleData.toSpEL,
+      SinkValueParamName -> FullNameV1.exampleData.toSpELLiteral,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
@@ -54,7 +55,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   test("should validate latest version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> PaymentV1.exampleData.toSpEL,
+      SinkValueParamName -> PaymentV1.exampleData.toSpELLiteral,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
