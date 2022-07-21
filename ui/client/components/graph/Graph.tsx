@@ -1,11 +1,8 @@
 /* eslint-disable i18next/no-literal-string */
-import {dia} from "jointjs"
-import _, {cloneDeep, debounce, isEqual, sortBy} from "lodash"
-import PropTypes from "prop-types"
+import {dia, shapes} from "jointjs"
+import {cloneDeep, debounce, isEqual, keys, sortBy, without} from "lodash"
 import React from "react"
 import {findDOMNode} from "react-dom"
-import {getProcessCategory, getSelectionState, isPristine} from "../../reducers/selectors/graph"
-import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, getLinkNodes, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
@@ -15,132 +12,51 @@ import styles from "./graphTheme.styl"
 import {Events} from "./joint-events"
 import NodeUtils from "./NodeUtils"
 import {PanZoomPlugin} from "./PanZoomPlugin"
-import {RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
+import {RangeSelectedEventData, RangeSelectPlugin, SelectionMode} from "./RangeSelectPlugin"
 import "./svg-export/export.styl"
 import {prepareSvg} from "./svg-export/prepareSvg"
 import * as GraphUtils from "./GraphUtils"
 import {ComponentDragPreview} from "../ComponentDragPreview"
 import {rafThrottle} from "./rafThrottle"
 import {isEdgeEditable} from "../../common/EdgeUtils"
+import {NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {NodePosition, Position} from "../../actions/nk"
+import {UserSettings} from "../../reducers/userSettings"
+import {GraphProps} from "./GraphWrapped"
+import User from "../../common/models/User"
 
-export class Graph extends React.Component {
+interface Props extends GraphProps {
+  processCategory: string,
+  processDefinitionData: ProcessDefinitionData,
+  loggedUser: Partial<User>,
+  selectionState: NodeId[],
+  userSettings: UserSettings,
+  showModalNodeDetails: (node: NodeType, process: Process, readonly?: boolean) => void,
+  isPristine?: boolean,
+}
 
-  static propTypes = {
-    processToDisplay: PropTypes.object.isRequired,
-    loggedUser: PropTypes.object.isRequired,
-    connectDropTarget: PropTypes.func,
-    isDraggingOver: PropTypes.bool,
-    showModalNodeDetails: PropTypes.func.isRequired,
-    isSubprocess: PropTypes.bool,
-  }
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+interface State {
+}
+
+export class Graph extends React.Component<Props, State> {
+
   redrawing = false
-  espGraphRef = React.createRef()
   directedLayout = directedLayout.bind(this)
   createPaper = createPaper.bind(this)
   drawGraph = drawGraph.bind(this)
-  forceLayout = debounce(() => {
-    this.directedLayout(this.props.selectionState)
-    this.panAndZoom.fitSmallAndLargeGraphs()
-  }, 50)
-
-  constructor(props) {
-    super(props)
-
-    this.graph = new dia.Graph()
-    this.graph.on(Events.REMOVE, (e, f) => {
-      if (e.isLink() && !this.redrawing) {
-        this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
-      }
-    })
-    this.nodesMoving()
-
-  }
-
-  get zoom() {
-    return this.panAndZoom?.zoom || 0
-  }
-
-  setEspGraphRef = (instance => {
+  setEspGraphRef = ((instance: HTMLElement): void => {
     const {connectDropTarget} = this.props
-    this.espGraphRef.current = instance
+    this.instance = instance
     if (connectDropTarget && instance) {
+      // eslint-disable-next-line react/no-find-dom-node
       const node = findDOMNode(instance)
       connectDropTarget(node)
     }
   })
-
-  getEspGraphRef = () => {
-    return this.espGraphRef.current
-  }
-
-  componentWillUnmount() {
-    // force destroy event on model for plugins cleanup
-    this.processGraphPaper.model.destroy()
-    this.unbindEventHandlers()
-  }
-
-  bindEventHandlers() {
-    this.changeNodeDetailsOnClick()
-
-    this.processGraphPaper.on(Events.BLANK_POINTERUP, event => {
-      if (!event.isPropagationStopped()) {
-        if (this.props.fetchedProcessDetails != null) {
-          this.props.actions.resetSelection()
-        }
-      }
-    })
-    this.hooverHandling()
-  }
-
-  unbindEventHandlers() {
-
-  }
-
-  componentDidMount() {
-    this.processGraphPaper = this.createPaper()
-    this.processGraphPaper.freeze()
-    this.drawGraph(
-      this.props.processToDisplay,
-      this.props.layout,
-      this.props.processDefinitionData,
-    )
-    this.processGraphPaper.unfreeze()
-    this._prepareContentForExport()
-
-    // event handlers binding below. order sometimes matters
-    this.panAndZoom = new PanZoomPlugin(this.processGraphPaper)
-    new RangeSelectPlugin(this.processGraphPaper)
-    this.processGraphPaper.on("rangeSelect:selected", ({elements, mode}) => {
-      const nodes = elements
-        .filter(el => isModelElement(el))
-        .map(({id}) => id)
-      if (mode === SelectionMode.toggle) {
-        this.props.actions.toggleSelection(...nodes)
-      } else {
-        this.props.actions.resetSelection(...nodes)
-      }
-    })
-
-    this.bindEventHandlers()
-    this.highlightNodes()
-    this.updateNodesCounts()
-
-    this.graph.on(Events.CHANGE_DRAG_OVER, () => {
-      this.highlightHoveredLink()
-    })
-
-    //we want to inject node during 'Drag and Drop' from toolbox
-    this.graph.on(Events.ADD, (cell) => {
-      if (isModelElement(cell)) {
-        this.handleInjectBetweenNodes(cell)
-        setLinksHovered(cell.graph)
-      }
-    })
-
-    this.panAndZoom.fitSmallAndLargeGraphs()
-  }
-
-  highlightHoveredLink = rafThrottle((forceDisable = false) => {
+  graph: dia.Graph
+  processGraphPaper: dia.Paper
+  highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
     this.processGraphPaper.freeze()
 
     const links = this.graph.getLinks()
@@ -156,20 +72,134 @@ export class Graph extends React.Component {
 
     this.processGraphPaper.unfreeze()
   })
+  private panAndZoom: PanZoomPlugin
+  forceLayout = debounce(() => {
+    this.directedLayout(this.props.selectionState)
+    this.panAndZoom.fitSmallAndLargeGraphs()
+  }, 50)
+  private _exportGraphOptions: Pick<dia.Paper, "options" | "defs">
+  private instance: HTMLElement
 
-  canAddNode(node) {
+  constructor(props: Props) {
+    super(props)
+    this.graph = new dia.Graph()
+    this.bindNodeRemove()
+    this.bindNodesMoving()
+  }
+
+  get zoom(): number {
+    return this.panAndZoom?.zoom || 0
+  }
+
+  getEspGraphRef = (): HTMLElement => this.instance
+
+  componentWillUnmount(): void {
+    // force destroy event on model for plugins cleanup
+    this.processGraphPaper.model.destroy()
+  }
+
+  bindEventHandlers(): void {
+    const showNodeDetails = (cellView: dia.CellView) => {
+      const {processToDisplay, readonly, nodeIdPrefixForSubprocessTests = ""} = this.props
+      const {nodeData, edgeData} = cellView.model.attributes
+      const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null)
+      if (nodeId) {
+        this.props.showModalNodeDetails({
+          ...NodeUtils.getNodeById(nodeId, processToDisplay),
+          id: nodeIdPrefixForSubprocessTests + nodeId,
+        }, processToDisplay, readonly)
+      }
+    }
+    const selectNode = (cellView, evt) => {
+      if (this.props.nodeSelectionEnabled) {
+        const nodeDataId = cellView.model.attributes.nodeData?.id
+        if (!nodeDataId) {
+          return
+        }
+
+        if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
+          this.props.actions.toggleSelection(nodeDataId)
+        } else {
+          this.props.actions.resetSelection(nodeDataId)
+        }
+      }
+    }
+    const deselectNodes = (event: JQuery.Event) => {
+      if (event.isPropagationStopped()) {
+        return
+      }
+      if (this.props.fetchedProcessDetails) {
+        this.props.actions.resetSelection()
+      }
+    }
+
+    this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, showNodeDetails)
+    this.processGraphPaper.on(Events.CELL_POINTERCLICK, selectNode)
+    this.processGraphPaper.on(Events.BLANK_POINTERUP, deselectNodes)
+    this.hooverHandling()
+  }
+
+  componentDidMount(): void {
+    this.processGraphPaper = this.createPaper()
+    this.processGraphPaper.freeze()
+    this.drawGraph(
+      this.props.processToDisplay,
+      this.props.layout,
+      this.props.processDefinitionData,
+    )
+    this.processGraphPaper.unfreeze()
+    this._prepareContentForExport()
+
+    // event handlers binding below. order sometimes matters
+    this.panAndZoom = new PanZoomPlugin(this.processGraphPaper)
+
+    if (this.props.nodeSelectionEnabled) {
+      new RangeSelectPlugin(this.processGraphPaper)
+      this.processGraphPaper.on("rangeSelect:selected", ({elements, mode}: RangeSelectedEventData) => {
+        const nodes = elements
+          .filter(el => isModelElement(el))
+          .map(({id}) => id.toString())
+        if (mode === SelectionMode.toggle) {
+          this.props.actions.toggleSelection(...nodes)
+        } else {
+          this.props.actions.resetSelection(...nodes)
+        }
+      })
+    }
+
+    this.bindEventHandlers()
+    this.highlightNodes()
+    this.updateNodesCounts()
+
+    this.graph.on(Events.CHANGE_DRAG_OVER, () => {
+      this.highlightHoveredLink()
+    })
+
+    //we want to inject node during 'Drag and Drop' from toolbox
+    this.graph.on(Events.ADD, (cell: dia.Element) => {
+      if (isModelElement(cell)) {
+        this.handleInjectBetweenNodes(cell)
+        setLinksHovered(cell.graph)
+      }
+    })
+
+    this.panAndZoom.fitSmallAndLargeGraphs()
+  }
+
+  canAddNode(node: NodeType): boolean {
     return this.props.capabilities.editFrontend &&
       NodeUtils.isNode(node) &&
       NodeUtils.isAvailable(node, this.props.processDefinitionData, this.props.processCategory)
   }
 
-  addNode(node, position) {
+  addNode(node: NodeType, position: Position): void {
     if (this.canAddNode(node)) {
       this.props.actions.nodeAdded(node, position)
     }
   }
 
-  componentWillUpdate(nextProps, nextState) {
+  // eslint-disable-next-line react/no-deprecated
+  componentWillUpdate(nextProps: Props): void {
     const processChanged = !isEqual(this.props.processToDisplay, nextProps.processToDisplay) ||
       !isEqual(this.props.layout, nextProps.layout) ||
       !isEqual(this.props.processDefinitionData, nextProps.processDefinitionData)
@@ -189,7 +219,7 @@ export class Graph extends React.Component {
     }
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps: Props): void {
     const {processCounts} = this.props
     if (!isEqual(processCounts, prevProps.processCounts)) {
       this.updateNodesCounts()
@@ -202,51 +232,43 @@ export class Graph extends React.Component {
     }
   }
 
-  updateNodesCounts() {
-    const {processCounts} = this.props
+  updateNodesCounts(): void {
+    const {processCounts, userSettings} = this.props
     const nodes = this.graph.getElements().filter(isModelElement)
-    nodes.forEach(updateNodeCounts(processCounts))
+    nodes.forEach(updateNodeCounts(processCounts, userSettings))
   }
 
-  zoomIn() {
+  zoomIn(): void {
     this.panAndZoom.zoomIn()
   }
 
-  zoomOut() {
+  zoomOut(): void {
     this.panAndZoom.zoomOut()
   }
 
-  async exportGraph() {
+  async exportGraph(): Promise<string> {
     return await prepareSvg(this._exportGraphOptions)
   }
 
-  /**
-   * @param {dia.CellView} cellViewS
-   * @param {SVGElement} magnetS
-   * @param {dia.CellView} cellViewT
-   * @param {SVGElement} magnetT
-   * @param {dia.LinkEnd} end
-   * @param {dia.LinkView} linkView
-   */
-  validateConnection = (cellViewS, magnetS, cellViewT, magnetT, end, linkView) => {
-    const from = cellViewS.model.id
-    const to = cellViewT.model.id
+  validateConnection = (cellViewS: dia.CellView, magnetS: SVGElement, cellViewT: dia.CellView, magnetT: SVGElement, end: dia.LinkEnd, linkView: dia.LinkView): boolean => {
+    const from = cellViewS.model.id.toString()
+    const to = cellViewT.model.id.toString()
     const previousEdge = linkView.model.attributes.edgeData || {}
     const {processToDisplay, processDefinitionData} = this.props
     return magnetT.getAttribute("port") === "In" && NodeUtils.canMakeLink(from, to, processToDisplay, processDefinitionData, previousEdge)
   }
 
-  disconnectPreviousEdge = (from, to) => {
+  disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
     if (this.graphContainsEdge(from, to)) {
       this.props.actions.nodesDisconnected(from, to)
     }
   }
 
-  graphContainsEdge(from, to) {
+  graphContainsEdge(from: NodeId, to: NodeId): boolean {
     return this.props.processToDisplay.edges.some(edge => edge.from === from && edge.to === to)
   }
 
-  handleInjectBetweenNodes = (middleMan) => {
+  handleInjectBetweenNodes = (middleMan: shapes.devs.Model): void => {
     const {processToDisplay, actions, processDefinitionData} = this.props
     const links = this.graph.getLinks()
     const [linkBelowCell] = filterDragHovered(links)
@@ -274,15 +296,15 @@ export class Graph extends React.Component {
     }
   }
 
-  _prepareContentForExport = () => {
+  _prepareContentForExport = (): void => {
     const {options, defs} = this.processGraphPaper
     this._exportGraphOptions = {
       options: cloneDeep(options),
-      defs: defs.cloneNode(true),
+      defs: defs.cloneNode(true) as SVGDefsElement,
     }
   }
 
-  highlightNodes = (selectedNodeIds = [], data = this.props.processToDisplay) => {
+  highlightNodes = (selectedNodeIds: string[] = [], data = this.props.processToDisplay): void => {
     this.processGraphPaper.freeze()
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, "node-validation-error")
@@ -290,7 +312,7 @@ export class Graph extends React.Component {
       this.unhighlightCell(cell, "node-focused-with-validation-error")
     })
 
-    const invalidNodeIds = _.keys((data.validationResult && data.validationResult.errors || {}).invalidNodes)
+    const invalidNodeIds = keys(data.validationResult?.errors?.invalidNodes)
 
     invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
       this.highlightNode(id, "node-focused-with-validation-error") :
@@ -304,7 +326,7 @@ export class Graph extends React.Component {
     this.processGraphPaper.unfreeze()
   }
 
-  highlightCell(cell, className) {
+  highlightCell(cell: dia.Cell, className: string): void {
     this.processGraphPaper.findViewByModel(cell).highlight(null, {
       highlighter: {
         name: "addClass",
@@ -313,7 +335,7 @@ export class Graph extends React.Component {
     })
   }
 
-  unhighlightCell(cell, className) {
+  unhighlightCell(cell: dia.Cell, className: string): void {
     this.processGraphPaper.findViewByModel(cell).unhighlight(null, {
       highlighter: {
         name: "addClass",
@@ -322,14 +344,14 @@ export class Graph extends React.Component {
     })
   }
 
-  highlightNode = (nodeId, highlightClass) => {
+  highlightNode = (nodeId: NodeId, highlightClass: string): void => {
     const cell = this.graph.getCell(nodeId)
     if (cell) { //prevent `properties` node highlighting
       this.highlightCell(cell, highlightClass)
     }
   }
 
-  changeLayoutIfNeeded = () => {
+  changeLayoutIfNeeded = (): void => {
     const {layout, actions, isSubprocess} = this.props
 
     if (isSubprocess) {
@@ -351,38 +373,8 @@ export class Graph extends React.Component {
     }
   }
 
-  changeNodeDetailsOnClick() {
-    this.processGraphPaper.on(Events.CELL_POINTERDBLCLICK, (cellView) => {
-      const {processToDisplay, readonly, nodeIdPrefixForSubprocessTests = ""} = this.props
-      const {nodeData, edgeData} = cellView.model.attributes
-      const nodeId = nodeData?.id || (isEdgeEditable(edgeData) ? edgeData.from : null)
-      if (nodeId) {
-        this.props.showModalNodeDetails({
-          ...NodeUtils.getNodeById(nodeId, processToDisplay),
-          id: nodeIdPrefixForSubprocessTests + nodeId,
-        }, processToDisplay, readonly)
-      }
-    })
-
-    if (this.props.singleClickNodeDetailsEnabled) {
-      this.processGraphPaper.on(Events.CELL_POINTERCLICK, (cellView, evt) => {
-
-        const nodeDataId = cellView.model.attributes.nodeData?.id
-        if (!nodeDataId) {
-          return
-        }
-
-        if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
-          this.props.actions.toggleSelection(nodeDataId)
-        } else {
-          this.props.actions.resetSelection(nodeDataId)
-        }
-      })
-    }
-  }
-
-  hooverHandling() {
-    this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView) => {
+  hooverHandling(): void {
+    this.processGraphPaper.on(Events.CELL_MOUSEOVER, (cellView: dia.CellView) => {
       const model = cellView.model
       this.showLabelOnHover(model)
       this.showBackgroundIcon(model)
@@ -393,7 +385,7 @@ export class Graph extends React.Component {
   }
 
   //needed for proper switch/filter label handling
-  showLabelOnHover(model) {
+  showLabelOnHover(model: dia.Cell): dia.Cell {
     if (!isBackgroundObject(model)) {
       model.toFront()
     }
@@ -401,47 +393,39 @@ export class Graph extends React.Component {
   }
 
   //background is below normal node, we cannot use normal hover/mouseover/mouseout...
-  showBackgroundIcon(model) {
+  showBackgroundIcon(model: dia.Cell): void {
     if (isBackgroundObject(model)) {
       const el = model.findView(this.processGraphPaper).vel
       el.toggleClass("forced-hover", true)
     }
   }
 
-  hideBackgroundsIcons() {
+  hideBackgroundsIcons(): void {
     this.graph.getElements().filter(isBackgroundObject).forEach(model => {
       const el = model.findView(this.processGraphPaper).vel
       el.toggleClass("forced-hover", false)
     })
   }
 
-  moveSelectedNodesRelatively(element, position) {
+  moveSelectedNodesRelatively(element: shapes.devs.Model, position: Position): void {
     this.redrawing = true
-    const movedNodeId = element.id
-    const nodeIdsToBeMoved = _.without(this.props.selectionState, movedNodeId)
+    const movedNodeId = element.id.toString()
+    const nodeIdsToBeMoved = without(this.props.selectionState, movedNodeId)
     const cellsToBeMoved = nodeIdsToBeMoved.map(nodeId => this.graph.getCell(nodeId))
     const {position: originalPosition} = this.findNodeInLayout(movedNodeId)
     const offset = {x: position.x - originalPosition.x, y: position.y - originalPosition.y}
     cellsToBeMoved.filter(isModelElement).forEach(cell => {
-      const {position: originalPosition} = this.findNodeInLayout(cell.id)
+      const {position: originalPosition} = this.findNodeInLayout(cell.id.toString())
       cell.position(originalPosition.x + offset.x, originalPosition.y + offset.y)
     })
     this.redrawing = false
   }
 
-  findNodeInLayout(nodeId) {
-    return _.find(this.props.layout, n => n.id === nodeId)
+  findNodeInLayout(nodeId: NodeId): NodePosition {
+    return this.props.layout.find(n => n.id === nodeId)
   }
 
-  nodesMoving() {
-    this.graph.on(Events.CHANGE_POSITION, (element, position) => {
-      if (!this.redrawing && this.props.selectionState?.includes(element.id) && isModelElement(element)) {
-        this.moveSelectedNodesRelatively(element, position)
-      }
-    })
-  }
-
-  render() {
+  render(): JSX.Element {
     const {divId, isSubprocess} = this.props
     return (
       <>
@@ -454,15 +438,20 @@ export class Graph extends React.Component {
       </>
     )
   }
-}
 
-export function commonState(state) {
-  return {
-    layout: [],
-    processCategory: getProcessCategory(state),
-    loggedUser: getLoggedUser(state),
-    processDefinitionData: getProcessDefinitionData(state),
-    selectionState: getSelectionState(state),
-    isPristine: isPristine(state),
+  private bindNodeRemove() {
+    this.graph.on(Events.REMOVE, (e) => {
+      if (e.isLink() && !this.redrawing) {
+        this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
+      }
+    })
+  }
+
+  private bindNodesMoving(): void {
+    this.graph.on(Events.CHANGE_POSITION, (element, position) => {
+      if (!this.redrawing && this.props.selectionState?.includes(element.id) && isModelElement(element)) {
+        this.moveSelectedNodesRelatively(element, position)
+      }
+    })
   }
 }

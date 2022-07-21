@@ -1,5 +1,4 @@
-import {isEmpty, mapValues} from "lodash"
-import millify from "millify"
+import {isEmpty} from "lodash"
 import {createSelector} from "reselect"
 import ProcessUtils from "../../common/ProcessUtils"
 import NodeUtils from "../../components/graph/NodeUtils"
@@ -7,7 +6,6 @@ import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
 import {ProcessCounts} from "../graph"
 import {RootState} from "../index"
-import {getUserSettings} from "./userSettings"
 
 export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer
 
@@ -62,10 +60,7 @@ export const isCancelPossible = createSelector(getFetchedProcessState, state => 
 export const isArchivePossible = createSelector(getFetchedProcessState, state => ProcessStateUtils.canArchive(state))
 export const getTestCapabilities = createSelector(getGraph, g => g.testCapabilities || {})
 export const getTestResults = createSelector(getGraph, g => g.testResults)
-export const getProcessCounts = createSelector(getGraph, getUserSettings, (g, s) => {
-  const counts = g.processCounts || {} as ProcessCounts
-  return mapValues(counts, (c) => ({...c, all: s["node.shortCounts"] ? millify(c.all) : c.all.toLocaleString()}))
-})
+export const getProcessCounts = createSelector(getGraph, (g): ProcessCounts => g.processCounts || {} as ProcessCounts)
 export const getShowRunProcessDetails = createSelector(
   [getTestResults, getProcessCounts],
   (testResults, processCounts) => testResults || processCounts,

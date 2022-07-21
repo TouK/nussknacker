@@ -9,10 +9,10 @@ import {
   getLayout,
   getNodeToDisplay,
   getProcessCounts,
-  getProcessToDisplay
+  getProcessToDisplay,
 } from "../../reducers/selectors/graph"
 import {setLinksHovered} from "./dragHelpers"
-import {commonState, Graph} from "./Graph"
+import {Graph} from "./Graph"
 import GraphWrapped from "./GraphWrapped"
 import {RECT_HEIGHT, RECT_WIDTH} from "./EspNode/esp"
 import NodeUtils from "./NodeUtils"
@@ -34,7 +34,7 @@ const spec = {
     if (canInjectNode) {
       const clientOffset = monitor.getClientOffset()
       const point = component.processGraphPaper.clientToLocalPoint(clientOffset)
-      const rect = new g.Rect(point)
+      const rect = new g.Rect({...point, width: 0, height: 0})
         .inflate(RECT_WIDTH / 2, RECT_HEIGHT / 2)
         .offset(RECT_WIDTH / 2, RECT_HEIGHT / 2)
         .offset(RECT_WIDTH * -.8, RECT_HEIGHT * -.5)
@@ -45,23 +45,19 @@ const spec = {
   },
 }
 
-function mapState(state) {
-  return {
-    ...commonState(state),
-    // eslint-disable-next-line i18next/no-literal-string
-    divId: "nk-graph-main",
-    singleClickNodeDetailsEnabled: true,
-    readonly: false,
-    processToDisplay: getProcessToDisplay(state),
-    fetchedProcessDetails: getFetchedProcessDetails(state),
-    nodeToDisplay: getNodeToDisplay(state),
-    processCounts: getProcessCounts(state),
-    layout: getLayout(state),
-  }
-}
+const mapState = state => ({
+  // eslint-disable-next-line i18next/no-literal-string
+  divId: "nk-graph-main",
+  nodeSelectionEnabled: true,
+  readonly: false,
+  processToDisplay: getProcessToDisplay(state),
+  fetchedProcessDetails: getFetchedProcessDetails(state),
+  nodeToDisplay: getNodeToDisplay(state),
+  processCounts: getProcessCounts(state),
+  layout: getLayout(state),
+})
 
 export const ProcessGraph = compose(
-  // eslint-disable-next-line i18next/no-literal-string
   DropTarget(DndTypes.ELEMENT, spec, (connect, monitor) => ({
     connectDropTarget: connect.dropTarget(),
     isDraggingOver: monitor.isOver(),

@@ -3,11 +3,13 @@ import {ProcessStateType, ProcessType} from "../../components/Process/types"
 import {NodeType, Process} from "../../types"
 import {TestResults} from "../../common/TestResultUtils"
 
-export type ProcessCounts = Record<string, {
-  errors: number,
-  all: number,
-  subprocessCounts?: $TodoType,
-}>
+export interface NodeCounts {
+  errors?: number,
+  all?: number,
+  subprocessCounts?: ProcessCounts,
+}
+
+export type ProcessCounts = Record<string, NodeCounts>
 
 export type GraphState = {
   graphLoading: boolean,
