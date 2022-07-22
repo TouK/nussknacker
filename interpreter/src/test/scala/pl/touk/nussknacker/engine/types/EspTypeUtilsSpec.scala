@@ -285,8 +285,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.parameters should have length 1
-    method.parameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+    method.expectedParameters should have length 1
+    method.expectedParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
   class EmptyClass {
