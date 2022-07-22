@@ -9807,8 +9807,7 @@
       ],
       "randomUUID": [
         {
-          "parameters": [
-          ],
+          "parameters": [],
           "refClazz": {"refClazzName": "java.util.UUID"},
           "varArgs": false
         }
@@ -11000,29 +10999,19 @@
           "varArgs": false
         }
       ],
-      "floor": [
-        {
-          "description": "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
-          "varArgs": false
-        }
-      ],
-      "round": [
-        {
-          "description": "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
-          "varArgs": false
-        }
-      ],
       "ceil": [
         {
           "description": "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
+      "floor": [
+        {
+          "description": "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer.",
           "parameters": [
             {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
           ],
@@ -11066,6 +11055,16 @@
           "parameters": [
             {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}},
             {"name": "b", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
+      "round": [
+        {
+          "description": "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
           ],
           "refClazz": {"refClazzName": "java.lang.Double"},
           "varArgs": false

@@ -4,7 +4,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder, Json, Printer}
-import org.apache.commons.io.IOUtils
+import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import java.io.File
+import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
@@ -24,7 +26,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     val types = ProcessDefinitionExtractor.extractTypes(model.processWithObjectsDefinition)
 //    printFoundClasses(types)
     if (Option(System.getProperty("CLASS_EXTRACTION_PRINT")).exists(_.toBoolean)) {
-      println(encode(types))
+      FileUtils.write(new File(s"/tmp/${getClass.getSimpleName}-result.json"), encode(types), StandardCharsets.UTF_8)
     }
 
     val parsed =  parse(IOUtils.toString(getClass.getResourceAsStream(outputResource))).right.get
