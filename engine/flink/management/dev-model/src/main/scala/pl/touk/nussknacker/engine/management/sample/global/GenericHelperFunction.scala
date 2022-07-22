@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
-  @Documentation(description = "myFunction is a generic function")
+  @Documentation(description = "extracts type of given object")
   @GenericType(typingFunction = classOf[ExtractTypeHelper])
   def extractType(arguments: List[Any]): Any = (new ExtractTypeHelper).applyValue(arguments)
 
@@ -36,7 +36,7 @@ object GenericHelperFunction {
   }
 
 
-  @Documentation(description = "other generic function")
+  @Documentation(description = "generic head function")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head(arguments: java.util.List[Any]): Any = arguments.asScala match {
     case x :: _ => x
@@ -60,7 +60,7 @@ object GenericHelperFunction {
     }
   }
 
-  @Documentation(description = "other generic function")
+  @Documentation(description = "combines multiple elements into single map")
   @GenericType(typingFunction = classOf[ZipHelper])
   def zip(arguments: java.util.List[AnyRef]): Map[String, AnyRef] = arguments.asScala match {
     case lst if lst.nonEmpty => lst.zipWithIndex.map{ case (v, i) => i.toString -> v }.toMap
@@ -70,7 +70,7 @@ object GenericHelperFunction {
   private class ZipHelper extends TypingFunction {
 
     override def staticParameters(): List[(String, TypingResult)] =
-      List(("list", Unknown))
+      List(("elements", Unknown))
 
     override def staticResult(): TypingResult = Unknown
 
