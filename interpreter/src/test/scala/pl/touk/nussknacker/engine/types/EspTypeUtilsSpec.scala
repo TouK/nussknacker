@@ -74,7 +74,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("should extract generic field") {
     val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
 
-    sampleClassInfo.value.methods("list").head.expectedResult shouldEqual Typed.fromDetailedType[java.util.List[String]]
+    sampleClassInfo.value.methods("list").head.staticResult shouldEqual Typed.fromDetailedType[java.util.List[String]]
   }
 
   test("should detect java beans and fields in java class") {
@@ -248,7 +248,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.expectedParameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.staticParameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -285,8 +285,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.expectedParameters should have length 1
-    method.expectedParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+    method.staticParameters should have length 1
+    method.staticParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
   class EmptyClass {

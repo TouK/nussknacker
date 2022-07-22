@@ -67,7 +67,7 @@ object EspTypeUtils {
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.expectedParameters.map(_.refClazz) :+ methodInfo.expectedResult).forall {
+      (methodInfo.staticParameters.map(_.refClazz) :+ methodInfo.staticResult).forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -88,7 +88,7 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.expectedParameters))
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.staticParameters))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -98,8 +98,8 @@ object EspTypeUtils {
          */
 
         methodsForParams.find { case (_, methodInfo) =>
-          methodsForParams.forall(mi => methodInfo.expectedResult.canBeSubclassOf(mi._2.expectedResult))
-        }.getOrElse(methodsForParams.minBy(_._2.expectedResult.display))
+          methodsForParams.forall(mi => methodInfo.staticResult.canBeSubclassOf(mi._2.staticResult))
+        }.getOrElse(methodsForParams.minBy(_._2.staticResult.display))
     }.toGroupedMap
       //we sort only to avoid randomness
       .mapValuesNow(_.sortBy(_.toString))
@@ -131,8 +131,8 @@ object EspTypeUtils {
       val typeFunctionInstance = typeFunctionConstructor.newInstance()
       FunctionalMethodInfo(
         x => typeFunctionInstance.apply(x).leftMap(_.map(GenericFunctionError)),
-        typeFunctionInstance.expectedParameters().map{ case (name, typ) => Parameter(name, typ) },
-        typeFunctionInstance.expectedResult(),
+        typeFunctionInstance.staticParameters().map{ case (name, typ) => Parameter(name, typ) },
+        typeFunctionInstance.staticResult(),
         method.getName,
         extractNussknackerDocs(method)
       )

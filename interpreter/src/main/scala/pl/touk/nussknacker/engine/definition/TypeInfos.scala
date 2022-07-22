@@ -41,16 +41,16 @@ object TypeInfos {
 
     def name: String
 
-    def expectedParameters: List[Parameter]
+    def staticParameters: List[Parameter]
 
-    def expectedResult: TypingResult
+    def staticResult: TypingResult
 
     def description: Option[String]
 
     def varArgs: Boolean
 
     def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(expectedParameters, expectedResult, description, varArgs)
+      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
 
     def asProperty: Option[TypingResult] = apply(List()).toOption
   }
@@ -61,14 +61,14 @@ object TypeInfos {
         arguments.zip(parameters).forall{ case(arg, param) => arg.canBeSubclassOf(param.refClazz)}
   }
 
-  case class SimpleMethodInfo(expectedParameters: List[Parameter],
-                              expectedResult: TypingResult,
+  case class SimpleMethodInfo(staticParameters: List[Parameter],
+                              staticResult: TypingResult,
                               name: String,
                               description: Option[String])
     extends StaticMethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (checkNoVarArguments(arguments, expectedParameters)) expectedResult.validNel
-      else NoVarArgumentTypeError(expectedParameters.map(_.refClazz), arguments, name).invalidNel
+      if (checkNoVarArguments(arguments, staticParameters)) staticResult.validNel
+      else NoVarArgumentTypeError(staticParameters.map(_.refClazz), arguments, name).invalidNel
     }
 
     override def varArgs: Boolean = false
@@ -76,7 +76,7 @@ object TypeInfos {
 
   case class VarArgsMethodInfo(noVarParameters: List[Parameter],
                                varParameter: Parameter,
-                               expectedResult: TypingResult,
+                               staticResult: TypingResult,
                                name: String,
                                description: Option[String])
     extends StaticMethodInfo {
@@ -95,11 +95,11 @@ object TypeInfos {
     }
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (checkArgumentsLength(arguments) && checkArguments(arguments)) expectedResult.validNel
+      if (checkArgumentsLength(arguments) && checkArguments(arguments)) staticResult.validNel
       else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
     }
 
-    override def expectedParameters: List[Parameter] = {
+    override def staticParameters: List[Parameter] = {
       val Parameter(varArgName, varArg) = varParameter
       noVarParameters :+ Parameter(varArgName, TypedClass.applyForArray(List(varArg)))
     }
@@ -109,8 +109,8 @@ object TypeInfos {
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
-                                  expectedParameters: List[Parameter],
-                                  expectedResult: TypingResult,
+                                  staticParameters: List[Parameter],
+                                  staticResult: TypingResult,
                                   name: String,
                                   description: Option[String]) extends MethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
