@@ -107,7 +107,7 @@ object TypeInfos {
 
     override def staticParameters: List[Parameter] = {
       val Parameter(varArgName, varArg) = varParameter
-      noVarParameters :+ Parameter(varArgName, TypedClass.applyForArray(List(varArg)))
+      noVarParameters :+ Parameter(varArgName, Typed.typedClass(classOf[Array[Object]], List(varArg)))
     }
 
     override def varArgs: Boolean = true
