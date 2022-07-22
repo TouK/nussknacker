@@ -70,7 +70,7 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
         val strValue = new String(header.value())
         val id = Try(strValue.toInt)
           .fold(e => throw new IllegalArgumentException(s"Got header $headerName, but the value '$strValue' is invalid.", e), x => x)
-        // Even if schemaId is passed through header, it still can be serialized in 'Confluent' way, here we're figuring it out
+        // Even if schemaId is passed through header, it still can be serialized in 'Confluent way', here we're figuring it out
         val buffer = Try(readIdAndGetBuffer(data)).map(_._2).getOrElse(ByteBuffer.wrap(data))
         SchemaIdWithPositionedBuffer(id, buffer)
 

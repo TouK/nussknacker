@@ -11,6 +11,8 @@ import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema.{AvroSchemaEvolutionException, FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -106,7 +108,14 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
       val serializer = providerSetup.provider.serializationSchemaFactory.create(topicConfig.output, schemaForWrite.map(s => toRuntimeSchemaData(topicConfig.output, s)), kafkaConfig)
 
       providerSetup.pushMessage(serializer, givenObj, topicConfig.output)
+
+      if(schemaForWrite.isDefined)
+        kafkaClient.createConsumer()
+          .consumeWithConsumerRecord(topicConfig.output).take(1)
+          .foreach(_.headers().toArray.map(_.key()) should contain oneOf(KeySchemaIdHeaderName, ValueSchemaIdHeaderName))
+
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)
+
     }
 
   private def toRuntimeSchemaData(topic: String, valueSchema: Schema): RuntimeSchemaData[ParsedSchema] =  RuntimeSchemaData(valueSchema, Option(schemaRegistryClient.getId(s"$topic-value", new AvroSchema(valueSchema)))).toParsedSchemaData
