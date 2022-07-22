@@ -31,7 +31,7 @@ class TyperSpec extends FunSuite with Matchers {
 
   test("detect proper selection types") {
     typeExpression("{1,2}.?[(#this==1)]").toOption.get.finalResult.typingResult shouldBe
-      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper first selection types") {
@@ -44,7 +44,7 @@ class TyperSpec extends FunSuite with Matchers {
 
   test("detect proper nested selection types") {
     typeExpression("{{1},{1,2}}.$[(#this.size > 1)]").toOption.get.finalResult.typingResult shouldBe
-      Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int]))
   }
 
   test("detect proper chained selection types") {

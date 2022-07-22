@@ -164,52 +164,63 @@ object typing {
       if (runtimeClass == classOf[Any])
         Unknown
       else
-        typedClass(runtimeClass, typ.typeArgs.map(fromType))
+        genericTypeClass(runtimeClass, typ.typeArgs.map(fromType))
     }
 
-    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
+    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypedClass = genericTypeClass(toRuntime[T], params)
 
-    def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
+    // TODO: validate parameters for some generic standard cases like List or Map
+    def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypedClass = typedClass(klass, Some(params))
 
     // Below are not secure variants of typing factory methods - they are need because of Java's type erasure
 
     def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
 
     def apply(klass: Class[_]): TypingResult = {
-      if (klass == classOf[Any]) Unknown else typedClass(klass, Nil)
+      if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
 
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
+    //TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
+    //      Maybe we should do sth to enforce devs to use genericTypeClass variant with explicit list of params and leave it just
+    //      for very specific cases - e.g. by renaming it to typedClassUnsafeGenericParams?
     def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
+
+    def typedClass(klass: Class[_]): TypedClass = typedClass(klass, None)
 
     private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
-    //TODO: make it more safe??
-    def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass =
+    // parameters - None if you are not in generic aware context, Some - otherwise
+    private def typedClass(klass: Class[_], parametersOpt: Option[List[TypingResult]]): TypedClass =
       if (klass == classOf[Any]) {
         throw new IllegalArgumentException("Cannot have typed class of Any, use Unknown")
       } else if (klass.isPrimitive) {
-        TypedClass(ClassUtils.primitiveToWrapper(klass), parameters)
+        parametersOpt.collect {
+          case parameters if parameters.nonEmpty =>
+            throw new IllegalArgumentException(s"Primitive type: $klass with non empty generic parameters list: $parameters")
+        }
+        TypedClass(ClassUtils.primitiveToWrapper(klass), List.empty)
       } else if (klass.isArray) {
-        decodeArrayType(klass, parameters)
+        determineArrayType(klass, parametersOpt)
       } else {
-        TypedClass(klass, parameters)
+        // TODO: handle some generic standard cases like List or Map
+        TypedClass(klass, parametersOpt.getOrElse(Nil))
       }
 
     //to not have separate class for each array, we pass Array of Objects
     private val KlassForArrays = classOf[Array[Object]]
 
-    private def decodeArrayType(klass: Class[_], parameters: List[TypingResult]): TypedClass = {
-      val decodedComponentType = Typed(klass.getComponentType)
+    private def determineArrayType(klass: Class[_], parameters: Option[List[TypingResult]]): TypedClass = {
+      val determinedComponentType = Typed(klass.getComponentType)
       parameters match {
-        //it may happen that parameter will be decoded via other means, we have to to sanity check if they match
-        case Nil | `decodedComponentType` :: Nil =>
-          TypedClass(KlassForArrays, List(decodedComponentType))
+        // it may happen that parameter will be decoded via other means, we have to to sanity check if they match
+        case None | Some(`determinedComponentType` :: Nil) =>
+          TypedClass(KlassForArrays, List(determinedComponentType))
         // When type is deserialized, in component type will be always Unknown, because w use Array[Object] so we need to use parameters instead
-        case notComponentType :: Nil if decodedComponentType == Unknown =>
+        case Some(notComponentType :: Nil) if determinedComponentType == Unknown =>
           TypedClass(KlassForArrays, List(notComponentType))
-        case _: List[TypingResult] =>
-          throw new IllegalArgumentException(s"Array parameter passed twice, klass component type: ${klass.getComponentType}, type passed from parameters: ${parameters.head.display}")
+        case Some(others) =>
+          throw new IllegalArgumentException(s"Array generic parameters: $others doesn't match parameters from component type: ${klass.getComponentType}")
       }
     }
 
@@ -225,14 +236,14 @@ object typing {
           TypedNull
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+          TypedObjectTypingResult(fieldTypes, genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
         case javaMap: java.util.Map[String@unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          typedClass(list.getClass, List(supertypeOfElementTypes(list)))
+          genericTypeClass(list.getClass, List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          typedClass(javaList.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
+          genericTypeClass(javaList.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other => Typed(other.getClass) match {
           case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {

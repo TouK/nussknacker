@@ -37,6 +37,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaAvroValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedValueSerializationSchemaFactory`
   * `KafkaAvroKeyValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueSerializationSchemaFactory`
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
+* [#3313](https://github.com/TouK/nussknacker/pull/3313) `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead.
 
 ### REST API changes
 
