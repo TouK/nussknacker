@@ -146,8 +146,43 @@ object typing {
 
   object Typed {
 
+    // Below are secure, generic parameters aware variants of typing factory methods
+
+    /*using TypeTag can give better description (with extracted generic parameters), however:
+      - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
+      - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
+     */
+    def fromDetailedType[T: TypeTag: NotNothing]: TypingResult = {
+      val tag = typeTag[T]
+      // is it correct mirror?
+      implicit val mirror: Mirror = tag.mirror
+      fromType(tag.tpe)
+    }
+
+    private def fromType(typ: Type)(implicit mirror: Mirror): TypingResult = {
+      val runtimeClass = mirror.runtimeClass(typ.erasure)
+      if (runtimeClass == classOf[Any])
+        Unknown
+      else
+        typedClass(runtimeClass, typ.typeArgs.map(fromType))
+    }
+
+    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
+
+    def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
+
+    // Below are not secure variants of typing factory methods - they are need because of Java's type erasure
+
+    def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
+
+    def apply(klass: Class[_]): TypingResult = {
+      if (klass == classOf[Any]) Unknown else typedClass(klass, Nil)
+    }
+
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
     def typedClass[T: ClassTag]: TypedClass = typedClass(toRuntime[T])
+
+    private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     //TODO: make it more safe??
     def typedClass(klass: Class[_], parameters: List[TypingResult] = Nil): TypedClass =
@@ -178,38 +213,7 @@ object typing {
       }
     }
 
-    def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypingResult = TypedClass(klass, params)
-
-    def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypingResult = TypedClass(toRuntime[T], params)
-
     def empty: TypedUnion = TypedUnion(Set.empty)
-
-    def apply[T: ClassTag]: TypingResult = apply(toRuntime[T])
-
-    /*using TypeTag can give better description (with extracted generic parameters), however:
-      - in runtime/production we usually don't have TypeTag, as we rely on reflection anyway
-      - one should be *very* careful with TypeTag as it degrades performance significantly when on critical path (e.g. SpelExpression.evaluate)
-     */
-    def fromDetailedType[T: TypeTag: NotNothing]: TypingResult = {
-      val tag = typeTag[T]
-      // is it correct mirror?
-      implicit val mirror: Mirror = tag.mirror
-      fromType(tag.tpe)
-    }
-
-    private def fromType(typ: Type)(implicit mirror: Mirror): TypingResult = {
-      val runtimeClass = mirror.runtimeClass(typ.erasure)
-      if (runtimeClass == classOf[Any])
-        Unknown
-      else
-        typedClass(runtimeClass, typ.typeArgs.map(fromType))
-    }
-
-    private def toRuntime[T:ClassTag]: Class[_] = implicitly[ClassTag[T]].runtimeClass
-
-    def apply(klass: Class[_]): TypingResult = {
-      if (klass == classOf[Any]) Unknown else typedClass(klass, Nil)
-    }
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
 
