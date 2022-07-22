@@ -126,8 +126,6 @@ object typing {
     //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
     private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
 
-    def applyForArray(params: List[TypingResult]): TypedClass = apply(classOf[Array[Object]], params)
-
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
@@ -225,17 +223,13 @@ object typing {
     }
 
     private def determineStandardClassType(klass: Class[_], parametersOpt: Option[List[TypingResult]]): TypedClass =
-      (klass, parametersOpt) match {
-        case (cl, None) if cl.isAssignableFrom(classOf[util.List[_]]) =>
-          TypedClass(cl, List(Unknown))
-        case (cl, Some(params)) if cl.isAssignableFrom(classOf[util.List[_]]) && params.size != 1 =>
-          throw new IllegalArgumentException(s"List type: $klass with non one element generic parameters list: $params")
-        case (cl, None) if cl.isAssignableFrom(classOf[util.Map[_, _]]) =>
-          TypedClass(cl, List(Unknown, Unknown))
-        case (cl, Some(params)) if cl.isAssignableFrom(classOf[util.Map[_, _]]) && params.size != 2 =>
-          throw new IllegalArgumentException(s"Map type: $klass with two elements generic parameters list: $params")
-        case _ =>
-          TypedClass(klass, parametersOpt.getOrElse(Nil))
+      parametersOpt match {
+        case None =>
+          TypedClass(klass, klass.getTypeParameters.map(_ => Unknown).toList)
+        case Some(params) if params.size != klass.getTypeParameters.size =>
+          throw new IllegalArgumentException(s"Passed generic parameters: $params doesn't match declared type parameters: ${klass.getName}${klass.getTypeParameters.mkString("[", ", ", "]")}")
+        case Some(params) =>
+          TypedClass(klass, params)
       }
 
     def empty: TypedUnion = TypedUnion(Set.empty)
