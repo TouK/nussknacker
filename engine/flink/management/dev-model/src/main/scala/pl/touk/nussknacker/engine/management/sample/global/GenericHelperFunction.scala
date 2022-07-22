@@ -3,12 +3,16 @@ package pl.touk.nussknacker.engine.management.sample.global
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.{Documentation, GenericType, TypingFunction}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
 
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
-  private class HelperFun1 extends TypingFunction {
+  @Documentation(description = "myFunction is a generic function")
+  @GenericType(typingFunction = classOf[ExtractTypeHelper])
+  def extractType(arguments: List[Any]): Any = (new ExtractTypeHelper).applyValue(arguments)
+
+  private class ExtractTypeHelper extends TypingFunction {
     private val IntOK = "OK: Int"
     private val StringOK = "OK: String"
 
@@ -31,12 +35,15 @@ object GenericHelperFunction {
     }
   }
 
-  @Documentation(description = "myFunction is a generic function")
-  @GenericType(typingFunction = classOf[HelperFun1])
-  def Fun1(arguments: List[Any]): Any = (new HelperFun1).applyValue(arguments)
 
+  @Documentation(description = "other generic function")
+  @GenericType(typingFunction = classOf[HeadHelper])
+  def head(arguments: java.util.List[Any]): Any = arguments.asScala match {
+    case x :: _ => x
+    case _ => throw new AssertionError("method called with argument that should cause validation error")
+  }
 
-  private class HelperFun2 extends TypingFunction {
+  private class HeadHelper extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
     private val listType = Typed.typedClass(listClass, List(Unknown))
 
@@ -45,19 +52,32 @@ object GenericHelperFunction {
 
     override def staticResult(): TypingResult = Unknown
 
-
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
-      case TypedClass(`listClass`, _) :: Nil => "List must have one parameter".invalidNel
-      case _ :: Nil => "Expected typed class".invalidNel
+      case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
+      case _ :: Nil => "Expected list".invalidNel
       case _ => "Expected one argument".invalidNel
     }
   }
 
   @Documentation(description = "other generic function")
-  @GenericType(typingFunction = classOf[HelperFun2])
-  def Fun2(arguments: java.util.List[Any]): Any = arguments.asScala match {
-      case x :: _ => x
-      case _ => throw new AssertionError("method called with argument that should cause validation error")
+  @GenericType(typingFunction = classOf[ZipHelper])
+  def zip(arguments: java.util.List[AnyRef]): Map[String, AnyRef] = arguments.asScala match {
+    case lst if lst.nonEmpty => lst.zipWithIndex.map{ case (v, i) => i.toString -> v }.toMap
+    case _ => throw new AssertionError("method called with argument that should cause validation error")
+  }
+
+  private class ZipHelper extends TypingFunction {
+
+    override def staticParameters(): List[(String, TypingResult)] =
+      List(("list", Unknown))
+
+    override def staticResult(): TypingResult = Unknown
+
+    override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+      case lst if lst.nonEmpty =>
+        TypedObjectTypingResult(lst.zipWithIndex.map{ case(v, i) => i.toString -> v }).validNel
+      case _ => "Expected at least argument".invalidNel
     }
+  }
 }
