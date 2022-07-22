@@ -192,7 +192,8 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
-    logger.info(s"Message sent successful: ${sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue}")
+    val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
+    logger.info(s"Message sent successful: $sendResult")
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()
