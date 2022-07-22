@@ -29,8 +29,8 @@ object GenericHelperFunction {
     }
 
     def applyValue(arguments: List[Any]): Any = arguments match {
-      case (_: Int) :: Nil =>
-      case (_: String) :: Nil => "OK: String"
+      case (_: Int) :: Nil => IntOK
+      case (_: String) :: Nil => StringOK
       case _ => throw new AssertionError("method called with argument that should cause validation error")
     }
   }
