@@ -252,6 +252,17 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     Typed(classOf[Array[String]]) shouldEqual Typed.fromDetailedType[Array[String]]
   }
 
+  test("should correctly handle standard java collections") {
+    Typed(classOf[java.util.List[_]]) shouldEqual Typed.fromDetailedType[java.util.List[Any]]
+    Typed(classOf[java.util.Map[_, _]]) shouldEqual Typed.fromDetailedType[java.util.Map[Any, Any]]
+    an[IllegalArgumentException] shouldBe thrownBy {
+      Typed.genericTypeClass(classOf[java.util.List[_]], List.empty)
+    }
+    an[IllegalArgumentException] shouldBe thrownBy {
+      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List.empty)
+    }
+  }
+
   object ClassHierarchy {
 
     class Animal extends Serializable

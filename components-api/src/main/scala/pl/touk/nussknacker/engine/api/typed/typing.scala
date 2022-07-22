@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
+import java.util
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
@@ -203,8 +204,7 @@ object typing {
       } else if (klass.isArray) {
         determineArrayType(klass, parametersOpt)
       } else {
-        // TODO: handle some generic standard cases like List or Map
-        TypedClass(klass, parametersOpt.getOrElse(Nil))
+        determineStandardClassType(klass, parametersOpt)
       }
 
     //to not have separate class for each array, we pass Array of Objects
@@ -223,6 +223,20 @@ object typing {
           throw new IllegalArgumentException(s"Array generic parameters: $others doesn't match parameters from component type: ${klass.getComponentType}")
       }
     }
+
+    private def determineStandardClassType(klass: Class[_], parametersOpt: Option[List[TypingResult]]): TypedClass =
+      (klass, parametersOpt) match {
+        case (cl, None) if cl.isAssignableFrom(classOf[util.List[_]]) =>
+          TypedClass(cl, List(Unknown))
+        case (cl, Some(params)) if cl.isAssignableFrom(classOf[util.List[_]]) && params.size != 1 =>
+          throw new IllegalArgumentException(s"List type: $klass with non one element generic parameters list: $params")
+        case (cl, None) if cl.isAssignableFrom(classOf[util.Map[_, _]]) =>
+          TypedClass(cl, List(Unknown, Unknown))
+        case (cl, Some(params)) if cl.isAssignableFrom(classOf[util.Map[_, _]]) && params.size != 2 =>
+          throw new IllegalArgumentException(s"Map type: $klass with two elements generic parameters list: $params")
+        case _ =>
+          TypedClass(klass, parametersOpt.getOrElse(Nil))
+      }
 
     def empty: TypedUnion = TypedUnion(Set.empty)
 
