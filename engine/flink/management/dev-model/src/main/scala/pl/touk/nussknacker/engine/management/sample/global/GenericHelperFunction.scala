@@ -5,6 +5,8 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.{Documentation, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 
+import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
+
 object GenericHelperFunction {
   private class HelperFun1 extends TypingFunction {
     private val IntOK = "OK: Int"
@@ -35,11 +37,14 @@ object GenericHelperFunction {
 
 
   private class HelperFun2 extends TypingFunction {
-    override def expectedParameters(): List[(String, TypingResult)] = List(("list", Typed[List[Object]]))
+    private val listClass = classOf[java.util.List[_]]
+    private val listType = Typed.typedClass(listClass, List(Unknown))
+
+    override def expectedParameters(): List[(String, TypingResult)] =
+      List(("list", listType))
 
     override def expectedResult(): TypingResult = Unknown
 
-    private val listClass = classOf[List[_]]
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
@@ -48,4 +53,11 @@ object GenericHelperFunction {
       case _ => "Expected one argument".invalidNel
     }
   }
+
+  @Documentation(description = "other generic function")
+  @GenericType(typingFunction = classOf[HelperFun2])
+  def Fun2(arguments: java.util.List[Any]): Any = arguments.asScala match {
+      case x :: _ => x
+      case _ => throw new AssertionError("method called with argument that should cause validation error")
+    }
 }
