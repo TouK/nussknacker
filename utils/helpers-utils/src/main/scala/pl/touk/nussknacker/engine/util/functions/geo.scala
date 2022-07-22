@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import cats.data.ValidatedNel
-import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName, TypingFunction}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 
 
 object geo {
