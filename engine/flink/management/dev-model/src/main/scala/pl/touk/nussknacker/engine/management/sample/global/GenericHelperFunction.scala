@@ -12,10 +12,10 @@ object GenericHelperFunction {
     private val IntOK = "OK: Int"
     private val StringOK = "OK: String"
 
-    override def expectedParameters(): List[(String, TypingResult)] =
+    override def staticParameters(): List[(String, TypingResult)] =
       List(("example of desired type", Typed(Typed[Int], Typed[String])))
 
-    override def expectedResult(): TypingResult =
+    override def staticResult(): TypingResult =
       Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK))
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
@@ -40,10 +40,10 @@ object GenericHelperFunction {
     private val listClass = classOf[java.util.List[_]]
     private val listType = Typed.typedClass(listClass, List(Unknown))
 
-    override def expectedParameters(): List[(String, TypingResult)] =
+    override def staticParameters(): List[(String, TypingResult)] =
       List(("list", listType))
 
-    override def expectedResult(): TypingResult = Unknown
+    override def staticResult(): TypingResult = Unknown
 
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {

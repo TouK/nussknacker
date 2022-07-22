@@ -109,12 +109,12 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
                                     (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
     classDefinition.methods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.expectedResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.staticResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
       // TODO verify if parameters are need and if they are not, remove this
 //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
     }.toSet ++
     classDefinition.staticMethods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.expectedResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.staticResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
     }.toSet
   }
 
@@ -152,7 +152,7 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
   }
 
   private case class MethodReturnType(m: MethodInfo) extends DiscoverySegment {
-    override def print: String = s"ret(${classNameWithStrippedPackages(m.expectedResult)})"
+    override def print: String = s"ret(${classNameWithStrippedPackages(m.staticResult)})"
   }
 
   private case class MethodParameter(p: Parameter) extends DiscoverySegment {
