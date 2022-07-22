@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
+import java.util
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
@@ -125,8 +126,6 @@ object typing {
     //it's vital to have private apply/constructor so that we assure that klass is not primitive nor Any/AnyRef/Object
     private[typing] def apply(klass: Class[_], params: List[TypingResult]) = new TypedClass(klass, params)
 
-    def applyForArray(params: List[TypingResult]): TypedClass = apply(classOf[Array[Object]], params)
-
   }
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
@@ -203,8 +202,7 @@ object typing {
       } else if (klass.isArray) {
         determineArrayType(klass, parametersOpt)
       } else {
-        // TODO: handle some generic standard cases like List or Map
-        TypedClass(klass, parametersOpt.getOrElse(Nil))
+        determineStandardClassType(klass, parametersOpt)
       }
 
     //to not have separate class for each array, we pass Array of Objects
@@ -224,6 +222,16 @@ object typing {
       }
     }
 
+    private def determineStandardClassType(klass: Class[_], parametersOpt: Option[List[TypingResult]]): TypedClass =
+      parametersOpt match {
+        case None =>
+          TypedClass(klass, klass.getTypeParameters.map(_ => Unknown).toList)
+        case Some(params) if params.size != klass.getTypeParameters.size =>
+          throw new IllegalArgumentException(s"Passed generic parameters: $params doesn't match declared type parameters: ${klass.getName}${klass.getTypeParameters.mkString("[", ", ", "]")}")
+        case Some(params) =>
+          TypedClass(klass, params)
+      }
+
     def empty: TypedUnion = TypedUnion(Set.empty)
 
     def taggedDictValue(typ: SingleTypingResult, dictId: String): TypedTaggedValue = tagged(typ, s"dictValue:$dictId")
@@ -241,9 +249,9 @@ object typing {
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
         case list: List[_] =>
-          genericTypeClass(list.getClass, List(supertypeOfElementTypes(list)))
+          genericTypeClass(classOf[List[_]], List(supertypeOfElementTypes(list)))
         case javaList: java.util.List[_] =>
-          genericTypeClass(javaList.getClass, List(supertypeOfElementTypes(javaList.asScala.toList)))
+          genericTypeClass(classOf[java.util.List[_]], List(supertypeOfElementTypes(javaList.asScala.toList)))
         case typeFromInstance: TypedFromInstance => typeFromInstance.typingResult
         case other => Typed(other.getClass) match {
           case typedClass: TypedClass => SimpleObjectEncoder.encode(typedClass, other) match {
