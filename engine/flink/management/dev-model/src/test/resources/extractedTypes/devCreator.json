@@ -10190,6 +10190,99 @@
     }
   },
   {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.GenericHelperFunction$"},
+    "methods": {
+      "extractType": [
+        {
+          "description": "extracts type of given object",
+          "parameters": [
+            {
+              "name": "example of desired type",
+              "refClazz": {
+                "type": "TypedUnion",
+                "union": [
+                  {
+                    "display": "Integer",
+                    "params": [],
+                    "refClazzName": "java.lang.Integer",
+                    "type": "TypedClass"
+                  },
+                  {
+                    "display": "String",
+                    "params": [],
+                    "refClazzName": "java.lang.String",
+                    "type": "TypedClass"
+                  }
+                ]
+              }
+            }
+          ],
+          "refClazz": {
+            "type": "TypedUnion",
+            "union": [
+              {
+                "display": "String{OK: Int}",
+                "params": [],
+                "refClazzName": "java.lang.String",
+                "type": "TypedObjectWithValue",
+                "value": "OK: Int"
+              },
+              {
+                "display": "String{OK: String}",
+                "params": [],
+                "refClazzName": "java.lang.String",
+                "type": "TypedObjectWithValue",
+                "value": "OK: String"
+              }
+            ]
+          },
+          "varArgs": false
+        }
+      ],
+      "head": [
+        {
+          "description": "generic head function",
+          "parameters": [
+            {
+              "name": "list",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              }
+            }
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": false
+        }
+      ],
+      "toString": [
+        {
+          "parameters": [],
+          "refClazz": {"refClazzName": "java.lang.String"},
+          "varArgs": false
+        }
+      ],
+      "zip": [
+        {
+          "description": "combines multiple elements into single map",
+          "parameters": [
+            {"name": "elements", "refClazz": {"type": "Unknown"}}
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": false
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper$"},
     "methods": {
       "noDocsMethod": [
