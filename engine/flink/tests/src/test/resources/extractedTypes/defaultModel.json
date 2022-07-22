@@ -1,6 +1,16 @@
 [
   {
-    "clazzName": {"refClazzName": "[Ljava.lang.Object;"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "[Ljava.lang.Object;"
+    },
     "methods": {
       "toString": [
         {
@@ -2481,7 +2491,20 @@
         {
           "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}},
-            {"name": "arg1", "refClazz": {"refClazzName": "[Ljava.lang.Object;"}}
+            {
+              "name": "arg1",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": true
@@ -2490,7 +2513,20 @@
           "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}},
             {"name": "arg1", "refClazz": {"refClazzName": "java.lang.String"}},
-            {"name": "arg2", "refClazz": {"refClazzName": "[Ljava.lang.Object;"}}
+            {
+              "name": "arg2",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": true
