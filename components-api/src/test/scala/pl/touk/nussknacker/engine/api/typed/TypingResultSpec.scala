@@ -246,6 +246,12 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     Typed(Set(Typed[Int], TypedNull)) shouldBe Typed[Int]
   }
 
+  test("should correctly create typed arrays from classes") {
+    Typed(classOf[Array[Object]]) shouldEqual Typed.fromDetailedType[Array[Object]]
+    Typed(classOf[Array[Int]]) shouldEqual Typed.fromDetailedType[Array[Int]]
+    Typed(classOf[Array[String]]) shouldEqual Typed.fromDetailedType[Array[String]]
+  }
+
   object ClassHierarchy {
 
     class Animal extends Serializable
