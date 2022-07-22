@@ -8,10 +8,10 @@ import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils.MagicByte
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils.readIdAndGetBuffer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroPayloadDeserializer
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.SchemaIdHeaderName
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
@@ -20,53 +20,64 @@ import scala.reflect.ClassTag
 import scala.util.Try
 
 object ConfluentUniversalKafkaSerde {
-  val SchemaIdHeaderName = "schema_id"
+  val ValueSchemaIdHeaderName = "value.schemaId"
+  val KeySchemaIdHeaderName = "key.schemaId"
 }
 
-class ConfluentUniversalKafkaDeserializer[T](
-                                schemaRegistryClient: ConfluentSchemaRegistryClient,
-                                readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
-                                isKey: Boolean
-                              ) extends Deserializer[T] {
-  private case class WithShiftingRequiredInfo[A](get: A, shouldShiftMagicByte: Boolean) {
-    def map[B](fn: A => B): WithShiftingRequiredInfo[B] = WithShiftingRequiredInfo(fn(get), shouldShiftMagicByte)
-    def bufferStartPosition: Int = if(shouldShiftMagicByte) 1 + ConfluentUtils.IdSize else 1
+class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with ${actualType} schema type")
+
+
+class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSchemaRegistryClient,
+                                             readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
+                                             isKey: Boolean) extends Deserializer[T] {
+
+  private case class SchemaIdWithPositionedBuffer(value: Int, buffer: ByteBuffer) {
+    def bufferStartPosition: Int = buffer.position()
   }
 
   override def deserialize(topic: String, data: Array[Byte]): T = {
-    throw new IllegalAccessException()
+    throw new IllegalAccessException(s"Operation not supported. ${this.getClass.getSimpleName} requires kafka headers to perform deserialization.")
   }
+
+  private val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
   private lazy val avroPayloadDeserializer = new ConfluentAvroPayloadDeserializer(false, false, false, DecoderFactory.get())
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
-    val writerSchema = getParsedSchema(headers, data)
+    val writerSchemaId = getSchemaId(headers, data)
+    val writerSchema = schemaRegistryClient.client.getSchemaById(writerSchemaId.value)
+
     readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
-      if(readerSchemaType != writerSchema.get.schemaType())
-        throw new IllegalArgumentException(s"Expecting schema of type $readerSchemaType. but got payload with ${writerSchema.get.schemaType()} schema type")
+      if (readerSchemaType != writerSchema.schemaType())
+        throw new MismatchReaderWriterSchemaException(readerSchemaType, writerSchema.schemaType()) //todo: test this case when supporting json schema
     })
 
-    writerSchema.get match {
+    writerSchema match {
       //todo handle JsonSchema
       case schema: AvroSchema =>
-        val writerAvroSchema = RuntimeSchemaData(schema.rawSchema(), Some(schema.version().toInt))
+        val writerAvroSchema = RuntimeSchemaData(schema.rawSchema(), Some(writerSchemaId.value))
         val readerAvroSchema = readerSchemaDataOpt.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
-        avroPayloadDeserializer.deserialize(readerAvroSchema, writerAvroSchema, ByteBuffer.wrap(data), writerSchema.bufferStartPosition).asInstanceOf[T]
+        avroPayloadDeserializer
+          .deserialize(readerAvroSchema, writerAvroSchema, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
+          .asInstanceOf[T]
       case _ => throw new IllegalArgumentException("Not supported schema type")
     }
-
   }
 
-  private def getParsedSchema(headers: Headers, data: Array[Byte]): WithShiftingRequiredInfo[ParsedSchema] = {
-    val schemaId = Option(headers.lastHeader(SchemaIdHeaderName)) match {
+  private def getSchemaId(headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer = {
+    Option(headers.lastHeader(headerName)) match {
       case Some(header) =>
-        val id = Try(new String(header.value()).toInt)
-          .fold(e => throw new IllegalArgumentException(s"Got header $SchemaIdHeaderName, but the value is corrupted.", e), x => x)
-        WithShiftingRequiredInfo(id, ByteBuffer.wrap(data).get() == MagicByte)
+        val strValue = new String(header.value())
+        val id = Try(strValue.toInt)
+          .fold(e => throw new IllegalArgumentException(s"Got header $headerName, but the value '$strValue' is invalid.", e), x => x)
+        // Even if schemaId is passed through header, it still can be serialized in 'Confluent' way, here we're figuring it out
+        val buffer = Try(readIdAndGetBuffer(data)).map(_._2).getOrElse(ByteBuffer.wrap(data))
+        SchemaIdWithPositionedBuffer(id, buffer)
 
-      case None => WithShiftingRequiredInfo(ConfluentUtils.readId(data), shouldShiftMagicByte = true)
+      case None =>
+        val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data)
+        SchemaIdWithPositionedBuffer(idAndBuffer._1, buffer = idAndBuffer._2)
     }
-    schemaId.map(schemaRegistryClient.client.getSchemaById)
   }
 }
 

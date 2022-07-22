@@ -4,13 +4,14 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{Assertion, Matchers}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.kafka.{KafkaClient, KafkaTestUtils, serialization}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaClient, KafkaTestUtils, serialization}
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -21,9 +22,9 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
 
   import KafkaTestUtils._
 
-  def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null): RecordMetadata = {
+  def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
-    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp).futureValue
+    kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp, headers).futureValue
   }
 
   def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {

@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization
 
-import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord

@@ -26,7 +26,7 @@ object ConfluentUtils extends LazyLogging {
   final val MagicByte = 0
   final val IdSize = 4
 
-  final val HeaderSize = 1 + 4 // magic byte + schemaId (4 bytes int)
+  final val HeaderSize = 1 + IdSize // magic byte + schemaId (4 bytes int)
 
   def topicSubject(topic: String, isKey: Boolean): String =
     if (isKey) keySubject(topic) else valueSubject(topic)
@@ -59,11 +59,12 @@ object ConfluentUtils extends LazyLogging {
       Validated.valid(buffer)
   }
 
-  def readId(bytes: Array[Byte]): Int =
-    ConfluentUtils
-      .parsePayloadToByteBuffer(bytes)
-      .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
-      .getInt
+  def readIdAndGetBuffer(bytes: Array[Byte]): (Int, ByteBuffer) = ConfluentUtils
+    .parsePayloadToByteBuffer(bytes)
+    .map(b => (b.getInt(), b))
+    .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
+
+  def readId(bytes: Array[Byte]): Int = readIdAndGetBuffer(bytes)._1
 
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
