@@ -38,7 +38,7 @@ object TypeInfos {
       case (true, Nil) =>
         throw new AssertionError("Method with varArgs must have at least one parameter")
       case (false, _) =>
-        SimpleMethodInfo(parameters, refClazz, name, description)
+        NoVarArgMethodInfo(parameters, refClazz, name, description)
     }
   }
 
@@ -67,10 +67,10 @@ object TypeInfos {
         arguments.zip(parameters).forall{ case(arg, param) => arg.canBeSubclassOf(param.refClazz)}
   }
 
-  case class SimpleMethodInfo(staticParameters: List[Parameter],
-                              staticResult: TypingResult,
-                              name: String,
-                              description: Option[String])
+  case class NoVarArgMethodInfo(staticParameters: List[Parameter],
+                                staticResult: TypingResult,
+                                name: String,
+                                description: Option[String])
     extends StaticMethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, staticParameters)) staticResult.validNel
