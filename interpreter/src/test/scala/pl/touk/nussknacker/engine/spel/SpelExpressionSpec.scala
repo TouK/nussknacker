@@ -250,9 +250,9 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
     parse[Any]("null").toOption.get.returnType shouldBe TypedNull
     parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
-      Typed.typedClass(classOf[java.util.List[_]], List(Typed[String]))
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
     parse[java.util.List[Any]]("{5, 't', null}").toOption.get.returnType shouldBe
-      Typed.typedClass(classOf[java.util.List[_]], List(Typed[Any]))
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[Any]))
 
     parse[Int]("true ? 8 : null").toOption.get.returnType shouldBe Typed[Int]
   }
@@ -582,7 +582,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     shouldHaveBadType( parse[String]("111", ctx),
       s"Bad expression type, expected: String, found: ${Typed.fromInstance(111).display}" )
     shouldHaveBadType( parse[String]("{1, 2, 3}", ctx),
-      s"Bad expression type, expected: String, found: ${Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
+      s"Bad expression type, expected: String, found: ${Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
     shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx),
       s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("alaMa").display}" )
     shouldHaveBadType( parse[Int]("#strVal", ctx),

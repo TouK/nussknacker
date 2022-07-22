@@ -135,7 +135,7 @@ object aggregates {
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.typedClass(classOf[Option[_]], List(input)))
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.genericTypeClass(classOf[Option[_]], List(input)))
   }
 
   object LastAggregator extends Aggregator {
@@ -155,7 +155,7 @@ object aggregates {
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.typedClass(classOf[Option[_]], List(input)))
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.genericTypeClass(classOf[Option[_]], List(input)))
 
   }
 
@@ -211,10 +211,10 @@ object aggregates {
     }
 
     override def computeOutputType(input: TypingResult): Validated[String, TypedObjectTypingResult]
-      = computeTypeByFields(input, Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)), _.computeOutputType(_))
+      = computeTypeByFields(input, Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)), _.computeOutputType(_))
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult]
-      = computeTypeByFields(input, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)), _.computeStoredType(_))
+      = computeTypeByFields(input, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)), _.computeStoredType(_))
 
     private def computeTypeByFields(input: TypingResult,
                                     objType: TypedClass,

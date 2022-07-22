@@ -140,7 +140,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       refClazzName <- obj.downField("refClazzName").as[String].right
       clazz <- tryToLoadClass(refClazzName, obj).right
       params <- obj.downField("params").as[List[TypingResult]].right
-    } yield Typed.typedClass(clazz, params)
+    } yield Typed.genericTypeClass(clazz, params)
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {

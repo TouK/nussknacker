@@ -37,6 +37,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `KafkaAvroValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedValueSerializationSchemaFactory`
   * `KafkaAvroKeyValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueSerializationSchemaFactory`
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
+* [#3313](https://github.com/TouK/nussknacker/pull/3313) Generic types handling changes:
+  * `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead
+  * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
+  * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
 
 ### REST API changes
 

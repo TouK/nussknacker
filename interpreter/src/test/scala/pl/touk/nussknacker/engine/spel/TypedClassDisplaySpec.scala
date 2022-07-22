@@ -16,7 +16,7 @@ class TypedClassDisplaySpec extends FunSuite with Matchers {
   }
 
   test("parsing nested class display") {
-    Typed.typedClass(classOf[util.AbstractMap.SimpleEntry[String, String]], List(Typed(classOf[String]), Typed(classOf[String]))).display should equal("SimpleEntry[String,String]")
+    Typed.genericTypeClass(classOf[util.AbstractMap.SimpleEntry[String, String]], List(Typed(classOf[String]), Typed(classOf[String]))).display should equal("SimpleEntry[String,String]")
   }
 
   test("parsing anonymous class display") {
