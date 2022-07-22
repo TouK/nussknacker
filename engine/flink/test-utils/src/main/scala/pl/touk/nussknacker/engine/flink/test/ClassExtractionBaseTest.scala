@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, SimpleMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import java.io.File
 import java.nio.charset.StandardCharsets
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, SimpleMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
@@ -27,9 +27,9 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   // We remove names and simplify advanced MethodInfo types because they are
   // not serialized.
   protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
-    case x: SimpleMethodInfo => x.copy(name = "")
+    case x: NoVarArgMethodInfo => x.copy(name = "")
     case x: VarArgsMethodInfo => x.copy(name = "")
-    case x => MethodInfo(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
+    case x: FunctionalMethodInfo => MethodInfo(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
   }
 
   // We need to sort methods with identical names to make checks ignore order.
@@ -158,7 +158,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       case SerializableMethodInfo(parameters, _, _, true) =>
         throw new AssertionError(parameters.toString)
       case SerializableMethodInfo(parameters, refClazz, description, false) =>
-        SimpleMethodInfo(parameters, refClazz, "", description)
+        NoVarArgMethodInfo(parameters, refClazz, "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
