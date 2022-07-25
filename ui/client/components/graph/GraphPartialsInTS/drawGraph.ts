@@ -19,7 +19,6 @@ export function drawGraph(
   const _updateLayout = updateLayout(graph, directedLayout)
   const _redraw = redraw(graph)
 
-  performance.mark("redrawing start")
   this.redrawing = true
 
   const nodesWithGroups = NodeUtils.nodesFromProcess(process)
@@ -28,8 +27,6 @@ export function drawGraph(
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
   const indexed = flatMap(groupBy(edgesWithGroups, "from"), edges => edges.map((edge, i) => ({...edge, index: ++i})))
   const edges = indexed.filter(isEdgeConnected).map(value => makeLink(value, [...this.processGraphPaper?.defs?.children].find(def => def.nodeName === "marker")?.id))
-
-  performance.mark("nodes, links & bounding")
 
   const cells = [...nodes, ...edges]
 
@@ -41,14 +38,9 @@ export function drawGraph(
     const old = graph.getCell(cell.id)
     return old && !isEqual(old.get("definitionToCompare"), cell.get("definitionToCompare"))
   })
-  performance.mark("compute")
 
   _redraw(newCells, deletedCells, changedCells)
-  performance.mark("redraw")
-
   _updateLayout(layout)
-  performance.mark("layout")
 
   this.redrawing = false
-  performance.mark("redrawing done")
 }
