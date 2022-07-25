@@ -10,7 +10,7 @@ object JsonToTypedMapConverter {
   def jsonToTypedMap(json: Json): TypedMap =
     jsonObjectToTypedMap(json.asObject.getOrElse(JsonObject.empty))
 
-  private def jsonToAny(json: Json): Any = {
+  def jsonToAny(json: Json): Any = {
     json.fold(
       jsonNull = null,
       jsonBoolean = identity,
