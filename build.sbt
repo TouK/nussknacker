@@ -247,8 +247,9 @@ lazy val commonSettings =
 
 val flinkV = "1.14.5"
 val avroV = "1.11.0"
-//we should use max(version used by confluent, version used by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV = "3.2.0"
+//we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
+//TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
+val kafkaV = "2.8.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.0.8"
@@ -784,6 +785,7 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "commons-io" % "commons-io" % commonsIOV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV
       )
     }

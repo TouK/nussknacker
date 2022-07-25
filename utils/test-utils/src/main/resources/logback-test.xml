@@ -20,12 +20,13 @@
 
     <logger name="pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient" level="OFF"/>
 
+    <logger name="pl.touk.nussknacker.engine.kafka.RichKafkaConsumer" level="DEBUG"/>
+
     <!-- types info extraction can have significant impact on deployment duration - uncomment this log if you want to measure it -->
 <!--    <logger name="pl.touk.nussknacker.engine.types.TypesInformationExtractor" level="TRACE"/>-->
 
     <!-- we are declaring here loggers for libs that not in dependency of this module, but we are doing it for simplicity of logging configurations -->
     <!-- levels below can be sometimes duplicated in root level but let's keep them just in case if we want to change value for root logger -->
-    <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingPullHandler" level="WARN"/>
     <logger name="com.spotify.docker.client.LoggingBuildHandler" level="WARN"/>
 
@@ -46,8 +47,9 @@
     <!-- in tests we frequently encounter "Error while fetching metadata" WARNings when auto-creating topics -->
     <logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
     <logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
-
+    <logger name="org.apache.zookeeper.server.PrepRequestProcessor" level="WARN"/>
     <logger name="org.apache.zookeeper.ClientCnxn" level="ERROR"/>
+
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>

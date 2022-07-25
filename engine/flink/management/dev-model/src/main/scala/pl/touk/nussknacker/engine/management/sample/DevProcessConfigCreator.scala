@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
@@ -66,21 +66,23 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
+    val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
+    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(confluentFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory))
     )
   }
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
-    val schemaRegistryProvider = createSchemaRegistryProvider(processObjectDependencies)
-    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+    val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
+    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
+    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](confluentFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](
         processObjectDependencies,
@@ -102,16 +104,13 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     )
   }
 
-  private def createSchemaRegistryProvider(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryProvider = {
+  private def createSchemaRegistryClientFactory(processObjectDependencies: ProcessObjectDependencies): ConfluentSchemaRegistryClientFactory = {
     val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
-    val confluentFactory: ConfluentSchemaRegistryClientFactory =
-      if (mockConfluent) {
-        new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
-      } else {
-        CachedConfluentSchemaRegistryClientFactory
-      }
-
-    ConfluentSchemaRegistryProvider(confluentFactory)
+    if (mockConfluent) {
+      new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
+    } else {
+      CachedConfluentSchemaRegistryClientFactory
+    }
   }
 
   override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] = Map(

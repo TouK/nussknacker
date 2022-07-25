@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry._
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -35,8 +34,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
   import scala.collection.JavaConverters._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
   }
 
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)

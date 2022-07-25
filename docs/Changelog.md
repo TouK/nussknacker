@@ -33,12 +33,17 @@
 * [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
 * [#3201](https://github.com/TouK/nussknacker/pull/3201) Added literal types
 * [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
-* [#3245](https://github.com/TouK/nussknacker/pull/3245) [#3265](https://github.com/TouK/nussknacker/pull/3265) Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
+* [#3245](https://github.com/TouK/nussknacker/pull/3245) [#3265](https://github.com/TouK/nussknacker/pull/3265)
+  [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
+  [#3299](https://github.com/TouK/nussknacker/pull/3299)
+  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
-* [#3250](https://github.com/TouK/nussknacker/pull/3250) Kafka 2.4 -> 3.2, flink 0.14.4 -> 0.14.5
+* [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, flink 0.14.4 -> 0.14.5
+* [#3270](https://github.com/TouK/nussknacker/pull/3270) Added type representing null
 * [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
 * [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
-
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
+* 
 1.4.0 (14 Jun 2022)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api

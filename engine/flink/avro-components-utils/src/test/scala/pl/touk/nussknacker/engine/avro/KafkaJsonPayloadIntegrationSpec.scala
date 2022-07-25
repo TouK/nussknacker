@@ -4,9 +4,9 @@ import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSampleSchema, PaymentV1}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaRegistryProvider}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaBasedSerdeProvider}
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -17,15 +17,17 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   import KafkaAvroIntegrationMockSchemaRegistry._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def createSchemaRegistryProvider: SchemaRegistryProvider =
-      ConfluentSchemaRegistryProvider.jsonPayload(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+    override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
+      ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
+
+    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
   }
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
-  override protected lazy val schemaRegistryProvider: ConfluentSchemaRegistryProvider = ConfluentSchemaRegistryProvider.jsonPayload(confluentClientFactory)
+  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentSchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(confluentClientFactory)
 
   override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
 

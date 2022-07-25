@@ -26,9 +26,21 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
 * [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
-* [#3265](https://github.com/TouK/nussknacker/pull/3265) Initial work on UniversalKafkaSource/Sink:
+* [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
+  * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+  * `SchemaRegistryProvider` refactoring:
+    * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
+    * decouple `SchemaRegistryClientFactory` from `SchemaBasedSerdeProvider`
+  * `KafkaAvroKeyValueDeserializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueDeserializationSchemaFactory`
+  * `KafkaAvroValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedValueSerializationSchemaFactory`
+  * `KafkaAvroKeyValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueSerializationSchemaFactory`
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
+* [#3313](https://github.com/TouK/nussknacker/pull/3313) Generic types handling changes:
+  * `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead
+  * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
+  * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
 
 ### REST API changes
 
@@ -44,6 +56,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
   It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module 
+* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
 
 ## In version 1.4.0
                  

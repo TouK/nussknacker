@@ -90,6 +90,11 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
+
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    Future.successful(())
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     parseScenario(canonicalProcess).map { parsedResolvedScenario =>
       deployScenarioClosingOldIfNeeded(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately = true)

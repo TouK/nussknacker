@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-
-import java.time.Duration
-import java.util.concurrent.TimeoutException
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.CirceUtil
 
-class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+import scala.collection.mutable
+
+class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   import scala.collection.JavaConverters._
 
@@ -27,16 +29,21 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
       .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
   def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
-    implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
+    val partitions = fetchTopicPartitions(topic, secondsToWait)
+    consumer.assign(partitions.asJava)
+    logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
+    logger.debug(s"Consumer offsets: beginning: ${consumer.beginningOffsets(consumer.assignment())}, end: ${consumer.endOffsets(consumer.assignment())}")
 
+    Stream.continually(()).flatMap(new Poller(secondsToWait))
+  }
+
+  private def fetchTopicPartitions(topic: String, secondsToWait: Int) = {
+    implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
+    // We have to repeat it in eventually - partitionsFor with duration parameter sometimes just returns empty list
     val partitionsInfo = eventually {
       consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
     }
-
-    val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
-    consumer.assign(partitions.asJava)
-
-    Stream.continually(()).flatMap(new Poller(secondsToWait))
+    partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
   }
 
   //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent

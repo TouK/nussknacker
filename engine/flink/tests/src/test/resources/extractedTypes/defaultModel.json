@@ -1,6 +1,16 @@
 [
   {
-    "clazzName": {"refClazzName": "[Ljava.lang.Object;"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "[Ljava.lang.Object;"
+    },
     "methods": {
       "toString": [
         {
@@ -2481,7 +2491,20 @@
         {
           "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.lang.String"}},
-            {"name": "arg1", "refClazz": {"refClazzName": "[Ljava.lang.Object;"}}
+            {
+              "name": "arg1",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": true
@@ -2490,7 +2513,20 @@
           "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}},
             {"name": "arg1", "refClazz": {"refClazzName": "java.lang.String"}},
-            {"name": "arg2", "refClazz": {"refClazzName": "[Ljava.lang.Object;"}}
+            {
+              "name": "arg2",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": true
@@ -3637,7 +3673,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -6039,7 +6088,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -8789,8 +8851,15 @@
               "refClazz": {
                 "params": [
                   {
-                    "display": "TemporalQuery",
-                    "params": [],
+                    "display": "TemporalQuery[Unknown]",
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
                     "refClazzName": "java.time.temporal.TemporalQuery",
                     "type": "TypedClass"
                   }
@@ -9266,7 +9335,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -9378,7 +9460,17 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.util.Collection"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Collection"
+    },
     "methods": {
       "contains": [
         {
@@ -9443,7 +9535,17 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.util.Comparator"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Comparator"
+    },
     "methods": {
       "toString": [
         {
@@ -9456,7 +9558,17 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.util.List"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.List"
+    },
     "methods": {
       "contains": [
         {
@@ -9552,7 +9664,23 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.util.Map"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        },
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Map"
+    },
     "methods": {
       "containsKey": [
         {
@@ -9657,7 +9785,17 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "java.util.Set"},
+    "clazzName": {
+      "params": [
+        {
+          "display": "Unknown",
+          "params": [],
+          "refClazzName": "java.lang.Object",
+          "type": "Unknown"
+        }
+      ],
+      "refClazzName": "java.util.Set"
+    },
     "methods": {
       "contains": [
         {
@@ -9807,8 +9945,7 @@
       ],
       "randomUUID": [
         {
-          "parameters": [
-          ],
+          "parameters": [],
           "refClazz": {"refClazzName": "java.util.UUID"},
           "varArgs": false
         }
@@ -10029,7 +10166,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -10113,7 +10263,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -10204,7 +10367,20 @@
       "compareTo": [
         {
           "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.Enum"}}
+            {
+              "name": "arg0",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.lang.Enum"
+              }
+            }
           ],
           "refClazz": {"refClazzName": "java.lang.Integer"},
           "varArgs": false
@@ -11000,29 +11176,19 @@
           "varArgs": false
         }
       ],
-      "floor": [
-        {
-          "description": "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
-          "varArgs": false
-        }
-      ],
-      "round": [
-        {
-          "description": "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.",
-          "parameters": [
-            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
-          ],
-          "refClazz": {"refClazzName": "java.lang.Double"},
-          "varArgs": false
-        }
-      ],
       "ceil": [
         {
           "description": "Returns the smallest (closest to negative infinity) double value that is greater than or equal to the argument and is equal to a mathematical integer.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
+      "floor": [
+        {
+          "description": "Returns the largest (closest to positive infinity) value that is less than or equal to the argument and is equal to a mathematical integer.",
           "parameters": [
             {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
           ],
@@ -11066,6 +11232,16 @@
           "parameters": [
             {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}},
             {"name": "b", "refClazz": {"refClazzName": "java.lang.Double"}}
+          ],
+          "refClazz": {"refClazzName": "java.lang.Double"},
+          "varArgs": false
+        }
+      ],
+      "round": [
+        {
+          "description": "Returns the closest long to the argument. The result is rounded to an integer by adding 1/2, taking the floor of the result, and casting the result to type long.",
+          "parameters": [
+            {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
           ],
           "refClazz": {"refClazzName": "java.lang.Double"},
           "varArgs": false

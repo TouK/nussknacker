@@ -10,12 +10,13 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, Sc
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
+class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import KafkaTestUtils._
   import MockSchemaRegistry._
@@ -146,7 +147,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
 
 
   test("should read json object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     sendAsJson(givenNotMatchingJsonObj, JsonInTopic, timeAgo)
     sendAsJson(givenMatchingJsonObj, JsonInTopic, timeAgo)
@@ -173,7 +174,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
   }
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-avro", RecordSchemas)
 
@@ -188,11 +189,11 @@ class GenericItSpec extends FlinkWithKafkaSuite with LazyLogging {
   }
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.DAYS).toEpochMilli
-
+    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
     val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
 
-    sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo)
+    val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
+    logger.info(s"Message sent successful: $sendResult")
 
     run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
       val consumer = kafkaClient.createConsumer()

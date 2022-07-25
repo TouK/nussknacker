@@ -11,7 +11,6 @@ import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
 
-import scala.annotation.tailrec
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
@@ -107,17 +106,25 @@ object AvroUtils extends LazyLogging {
   /**
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
     */
-  def createRecord(schema: Schema, data: Map[String, Any]): GenericRecord = {
-    def createValue(value: Any, schema: Schema): Any = (value, schema.getType) match {
-      case (map: Map[String@unchecked, _], Schema.Type.RECORD) =>
-          createRecord(schema, map)
-      case (l: List[_], Schema.Type.ARRAY) =>
-        l.map(createValue(_, schema)).asJava
-      case (map: Map[String@unchecked, _], Schema.Type.MAP) =>
-        map.mapValues(createValue(_, schema)).asJava
-      case (str: String, Schema.Type.ENUM) =>
-        new GenericData.EnumSymbol(schema, str)
-      case (_, _) => value
+  def createRecord(schema: Schema, data: collection.Map[String, Any]): GenericRecord = {
+    def createValue(value: Any, schema: Schema): Any = {
+      class SchemaContainsType(typ: Schema.Type) {
+        def unapply(schema: Schema): Option[Schema] = Option(schema).filter(_.getType == typ) orElse
+          Option(schema).filter(_.getType == Schema.Type.UNION).flatMap(_.getTypes.asScala.find(_.getType == typ))
+      }
+      val SchemaContainsRecordSchema = new SchemaContainsType(Schema.Type.RECORD)
+      val SchemaContainsArraySchema = new SchemaContainsType(Schema.Type.ARRAY)
+      val SchemaContainsMapSchema = new SchemaContainsType(Schema.Type.MAP)
+
+      (value, schema) match {
+        case (map: collection.Map[String@unchecked, _], SchemaContainsRecordSchema(recordSchema)) =>
+          createRecord(recordSchema, map)
+        case (collection: Traversable[_], SchemaContainsArraySchema(arraySchema)) =>
+          collection.map(createValue(_, arraySchema.getElementType)).toList.asJava
+        case (map: collection.Map[String@unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
+          map.mapValues(createValue(_, mapSchema.getValueType)).asJava
+        case _ => value
+      }
     }
 
     val builder = new LogicalTypesGenericRecordBuilder(schema)
@@ -130,6 +137,11 @@ object AvroUtils extends LazyLogging {
       builder.set(key, valueToSet)
     }
     builder.build()
+  }
+
+  def isLogicalType[T: ClassTag](schema: Schema): Boolean = {
+    val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
+    schema.getLogicalType != null && clazz.isAssignableFrom(schema.getLogicalType.getClass)
   }
 
 }

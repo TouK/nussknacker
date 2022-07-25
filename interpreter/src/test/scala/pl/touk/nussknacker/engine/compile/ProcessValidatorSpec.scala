@@ -1260,7 +1260,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     override def parameters: List[Parameter] = List(
       Parameter.optional(
         name = "definition",
-        typ = Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
+        typ = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
       ),
       Parameter.optional(
         name = "inRealTime",

@@ -351,6 +351,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         Valid(Unknown)
       else
         invalid("Property access on Unknown is not allowed")
+    case TypedNull =>
+      invalid(s"Property access on ${TypedNull.display} is not allowed")
     case s: SingleTypingResult =>
       extractSingleProperty(e)(s)
     case TypedUnion(possible) =>

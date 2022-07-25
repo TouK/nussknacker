@@ -28,7 +28,7 @@ class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSp
   import spel.Implicits._
 
   override lazy val config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
     .withValue("namespace", fromAnyRef(namespaceName))
 
   private val namespaceName: String = "ns"

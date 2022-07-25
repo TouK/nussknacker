@@ -54,6 +54,7 @@ class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with 
       0L,
       constTimestamp,
       TimestampType.CREATE_TIME,
+      ConsumerRecord.NULL_CHECKSUM.longValue(),
       ConsumerRecord.NULL_SIZE,
       ConsumerRecord.NULL_SIZE,
       null,

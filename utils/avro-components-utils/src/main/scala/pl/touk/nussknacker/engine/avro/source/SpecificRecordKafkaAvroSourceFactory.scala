@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{AvroUtils, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -16,10 +16,11 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * Source factory for specific records - mainly generated from schema.
  */
-class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryProvider: SchemaRegistryProvider,
+class SpecificRecordKafkaAvroSourceFactory[V <: SpecificRecord: ClassTag](schemaRegistryClientFactory: SchemaRegistryClientFactory,
+                                                                          schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
                                                                           processObjectDependencies: ProcessObjectDependencies,
                                                                           implProvider: KafkaSourceImplFactory[Any, V])
-  extends KafkaAvroSourceFactory[Any, V](schemaRegistryProvider, processObjectDependencies, implProvider) {
+  extends KafkaAvroSourceFactory[Any, V](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, implProvider) {
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition =
     topicParamStep orElse {

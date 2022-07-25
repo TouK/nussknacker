@@ -20,11 +20,20 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     (left, right) match {
       case (Unknown, _) => Unknown // can't be sure intention of user - union is more secure than intersection
       case (_, Unknown) => Unknown
+      case (TypedNull, r) => commonSupertypeWithNull(r)
+      case (r, TypedNull) => commonSupertypeWithNull(r)
       case (l: SingleTypingResult, r: TypedUnion) => Typed(commonSupertype(Set(l), r.possibleTypes))
       case (l: TypedUnion, r: SingleTypingResult) => Typed(commonSupertype(l.possibleTypes, Set(r)))
       case (l: SingleTypingResult, r: SingleTypingResult) => singleCommonSupertype(l, r)
       case (l: TypedUnion, r: TypedUnion) => Typed(commonSupertype(l.possibleTypes, r.possibleTypes))
     }
+
+  private def commonSupertypeWithNull(typ: TypingResult): TypingResult = typ match {
+    // TODO: Handle maps with known value.
+    // Allowing null makes all information about value invalid, so it is removed
+    case TypedObjectWithValue(r, _) => r
+    case r => r
+  }
 
   private def commonSupertype(leftSet: Set[SingleTypingResult], rightSet: Set[SingleTypingResult])
                              (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): Set[TypingResult] =

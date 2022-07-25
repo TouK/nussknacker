@@ -280,6 +280,15 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     classDef.methods.get("normalMethod") shouldBe defined
   }
 
+  test("should extract vaarargs") {
+    val classDef = singleClassDefinition[JavaClassWithVarargs](ClassExtractionSettings.Default).value
+    val methodDef = classDef.methods.get("addAllWithObjects").value
+    methodDef should have length 1
+    val method = methodDef.head
+    method.parameters should have length 1
+    method.parameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+  }
+
   class EmptyClass {
     def invoke(): Unit = ???
   }

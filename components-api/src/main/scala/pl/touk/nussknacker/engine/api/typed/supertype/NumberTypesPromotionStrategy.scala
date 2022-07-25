@@ -38,6 +38,7 @@ trait NumberTypesPromotionStrategy extends Serializable {
     typ match {
       case s: SingleTypingResult => Right(Set(s))
       case u: TypedUnion => Right(u.possibleTypes)
+      case TypedNull => Left(Unknown)
       case Unknown => Left(Unknown)
     }
 

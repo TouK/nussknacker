@@ -67,14 +67,14 @@ The Expression field should contain the SpEL expression for the filtering condit
 Choice is more advanced variant of filter component - instead of one filtering condition, you can define multiple conditions in some defined order.
 It distributes incoming records among output branches in accordance with the filtering conditions configured for those branches.
 
-![choice graph](img/switch_graph.png)
+![choice graph](img/choice_graph.png)
 
 Each record from the `source` is tested against the condition defined for outgoing node. If `#input.color` is `blue` record goes to the `blue sink`.  
 If `#input.color` is `green` record goes to the `green sink`. For every other value record goes to the `sink for others` because condition `true` is always true.
 Order of evaluation of conditions is the same as visible in form. You can modify the order using drag & drop functionality.
 Order is also visible on graph in edges description as a number. Be aware that layout button can change displayed order of nodes, but it has no influence on order of evaluation.
 
-![choice window](img/switch_window.png)
+![choice window](img/choice_window.png)
 
 
 ## Split 

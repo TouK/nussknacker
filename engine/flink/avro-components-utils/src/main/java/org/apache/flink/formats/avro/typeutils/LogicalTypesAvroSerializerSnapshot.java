@@ -124,10 +124,10 @@ public class LogicalTypesAvroSerializerSnapshot<T> implements TypeSerializerSnap
 		checkNotNull(schema);
 
 		if (runtimeSchema != null) {
-			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(runtimeSchema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)));
+			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableParsedSchema<>(new AvroSchema(runtimeSchema)), new NkSerializableParsedSchema<>(new AvroSchema(schema)));
 		}
 		else {
-			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableAvroSchema<>(new AvroSchema(schema)), new NkSerializableAvroSchema<>(new AvroSchema(schema)));
+			return new LogicalTypesAvroSerializer<>(runtimeType, new NkSerializableParsedSchema<>(new AvroSchema(schema)), new NkSerializableParsedSchema<>(new AvroSchema(schema)));
 		}
 	}
 

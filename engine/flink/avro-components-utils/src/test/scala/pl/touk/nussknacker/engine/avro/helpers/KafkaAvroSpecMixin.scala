@@ -17,9 +17,9 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaRegistryProvider, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
 import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
@@ -51,8 +51,8 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
   // In default test scenario we use avro payload.
-  protected lazy val schemaRegistryProvider: SchemaRegistryProvider =
-    ConfluentSchemaRegistryProvider.avroPayload(confluentClientFactory)
+  protected lazy val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
+    ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(
@@ -70,21 +70,21 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
   protected def avroSourceFactory(useStringForKey: Boolean): KafkaAvroSourceFactory[Any, Any] = {
-    new KafkaAvroSourceFactory[Any, Any](schemaRegistryProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    new KafkaAvroSourceFactory[Any, Any](confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
     }
   }
 
   // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
   protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaAvroSourceFactory[Any, Any] = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
     }
     factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
   }
 
   protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
-    new KafkaAvroSinkFactory(schemaRegistryProvider, testProcessObjectDependencies, FlinkKafkaAvroSinkImplFactory)
+    new KafkaAvroSinkFactory(confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, FlinkKafkaAvroSinkImplFactory)
   }
 
   protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"

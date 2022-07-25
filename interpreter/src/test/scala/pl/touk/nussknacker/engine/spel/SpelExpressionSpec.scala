@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
@@ -246,6 +247,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[Long]("null") shouldBe 'valid
     parse[Any]("null") shouldBe 'valid
     parse[Boolean]("null") shouldBe 'valid
+
+    parse[Any]("null").toOption.get.returnType shouldBe TypedNull
+    parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[String]))
+    parse[java.util.List[Any]]("{5, 't', null}").toOption.get.returnType shouldBe
+      Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed[Any]))
+
+    parse[Int]("true ? 8 : null").toOption.get.returnType shouldBe Typed[Int]
   }
 
   test("invoke list variable reference with different concrete type after compilation") {
@@ -573,7 +582,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     shouldHaveBadType( parse[String]("111", ctx),
       s"Bad expression type, expected: String, found: ${Typed.fromInstance(111).display}" )
     shouldHaveBadType( parse[String]("{1, 2, 3}", ctx),
-      s"Bad expression type, expected: String, found: ${Typed.typedClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
+      s"Bad expression type, expected: String, found: ${Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.typedClass[Int])).display}" )
     shouldHaveBadType( parse[java.util.Map[_, _]]("'alaMa'", ctx),
       s"Bad expression type, expected: Map[Unknown,Unknown], found: ${Typed.fromInstance("alaMa").display}" )
     shouldHaveBadType( parse[Int]("#strVal", ctx),
@@ -801,8 +810,19 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parseOrFail[Double]("new java.math.BigDecimal(\"1.2345\", new java.math.MathContext(2)).doubleValue", ctx)
       .evaluateSync[Double](ctx) shouldBe 1.2
   }
+
   test("should not validate constructor of unknown type") {
     parse[Any]("new unknown.className(233)", ctx) shouldBe 'invalid
+  }
+
+  test("should not allow property access on Null") {
+    parse[Any]("null.property") shouldBe
+      ExpressionParseError(s"Property access on ${TypedNull.display} is not allowed").invalidNel
+  }
+
+  test("should not allow method invocation on Null") {
+    parse[Any]("null.method()") shouldBe
+      ExpressionParseError(s"Method invocation on ${TypedNull.display} is not allowed").invalidNel
   }
 
   test("should be able to spel type conversions") {

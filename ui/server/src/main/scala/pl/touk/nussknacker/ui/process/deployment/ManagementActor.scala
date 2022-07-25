@@ -3,7 +3,6 @@ package pl.touk.nussknacker.ui.process.deployment
 import akka.actor.{ActorRefFactory, Props, Status}
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User => ManagerUser}
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
@@ -64,8 +63,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
   override def receive: PartialFunction[Any, Unit] = {
     case Deploy(process, user, savepointPath, deploymentComment) =>
       ensureNoDeploymentRunning {
-        val deployRes = deploymentService.deployProcess(process.id, savepointPath, deploymentComment, performDeploy)(user)
-        reply(withDeploymentInfo(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes))
+        val deployRes: Future[Future[ProcessActionEntityData]] = deploymentService
+          .deployProcess(process.id, savepointPath, deploymentComment, managers.forTypeUnsafe)(user)
+        //we wait for nested Future before we consider Deployment as finished
+        handleDeploymentAction(process, user, DeploymentActionType.Deployment, deploymentComment, deployRes.flatten)
+        //we reply to the user without waiting for finishing deployment at DeploymentManager
+        reply(deployRes)
       }
     case Snapshot(id, user, savepointDir) =>
       reply(deploymentManager(id.id)(ec, user).flatMap(_.savepoint(id.name, savepointDir)))
@@ -75,7 +78,8 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val cancelRes = deploymentService.cancelProcess(id, deploymentComment, performCancel)
-        reply(withDeploymentInfo(id, user, DeploymentActionType.Cancel, deploymentComment, cancelRes))
+        handleDeploymentAction(id, user, DeploymentActionType.Cancel, deploymentComment, cancelRes)
+        reply(cancelRes)
       }
     //TODO: should be handled in DeploymentManager
     case CheckStatus(id, user) if isBeingDeployed(id.name) =>
@@ -251,14 +255,13 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     }
   }
 
-  private def withDeploymentInfo(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
-                                 actionFuture: => Future[ProcessActionEntityData]): Future[ProcessActionEntityData] = {
+  private def handleDeploymentAction(id: ProcessIdWithName, user: LoggedUser, action: DeploymentActionType, deploymentComment: Option[DeploymentComment],
+                                 actionFuture: Future[ProcessActionEntityData]): Unit = {
     beingDeployed += id.name -> DeployInfo(user.username, System.currentTimeMillis(), action)
     actionFuture.onComplete {
       case Success(details) => self ! DeploymentActionFinished(id, user, Right(DeploymentDetails(details.processVersionId, deploymentComment,details.performedAtTime, details.action)))
       case Failure(ex) => self ! DeploymentActionFinished(id, user, Left(ex))
     }
-    actionFuture
   }
 
   private def reply(action: => Future[_]): Unit = {
@@ -280,11 +283,6 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     process <- processRepository.fetchLatestProcessDetailsForProcessId[Unit](processId.id)
     lastAction = process.flatMap(_.lastDeployedAction)
   } yield lastAction.map(la => la.processVersionId)
-
-
-  private def performDeploy(processingType: ProcessingType, processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    managers.forTypeUnsafe(processingType).deploy(processVersion, deploymentData, canonicalProcess, savepointPath)
-  }
 
   private def deploymentManager(processId: ProcessId)(implicit ec: ExecutionContext, user: LoggedUser): Future[DeploymentManager] = {
     processRepository.fetchProcessingType(processId).map(managers.forTypeUnsafe)

@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroIntegrationMockSchemaRegistry.sc
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaRegistryProvider
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
 import pl.touk.nussknacker.engine.build.GraphBuilder
@@ -33,10 +33,11 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
     val configCreator = new EmptyProcessConfigCreator {
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-        val provider = ConfluentSchemaRegistryProvider(new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient))
+        val schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+        val provider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
         Map(
-          "kafka-avro" -> WithCategories(new KafkaAvroSinkFactoryWithEditor(provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
-          "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
+          "kafka-avro" -> WithCategories(new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
+          "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(schemaRegistryClientFactory, provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
         )
       }
     }

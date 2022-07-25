@@ -12,10 +12,10 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import spel.Implicits.asSpelExpression
+
 import java.util.Date
 
 class MetricsSpec extends fixture.FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
@@ -49,8 +49,10 @@ class MetricsSpec extends fixture.FunSuite with Matchers with VeryPatientScalaFu
     processInvoker.invokeWithSampleData(process, data)
 
     MockService.data shouldNot be('empty)
-    val histogram = reporter.testMetrics[Histogram]("service.OK.serviceName.mockService.histogram").loneElement
-    histogram.getCount shouldBe 1
+    withClue(reporter.namedMetricsForScenario) {
+      val histogram = reporter.testMetrics[Histogram]("service.OK.serviceName.mockService.histogram").loneElement
+      histogram.getCount shouldBe 1
+    }
 
   }
 
