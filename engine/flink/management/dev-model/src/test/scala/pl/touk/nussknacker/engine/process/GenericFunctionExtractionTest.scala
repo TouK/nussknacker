@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.process
 
 import cats.implicits.catsSyntaxValidatedId
 import com.typesafe.config.ConfigFactory
-import pl.touk.nussknacker.engine.api.expression.GenericFunctionError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.flink.test.ClassExtractionBaseTest
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -61,9 +60,17 @@ class GenericFunctionExtractionTest extends ClassExtractionBaseTest {
     headFunction.apply(List(Typed.genericTypeClass[java.util.List[_]](List(typedMap)))) shouldBe typedMap.validNel
   }
 
-  // FIXME: Create this test.
-//  test("should correctly handle illegal input types") {
-//    extractTypeFunction.apply(List(Typed[Double])) shouldBe GenericFunctionError()
-//    headFunction.apply(List(Typed.genericTypeClass[java.util.Set[_]](List(Typed[Int])))) shouldBe ""
-//  }
+  // FIXME: Add expected results to this test.
+  ignore("should correctly handle illegal input types") {
+    extractTypeFunction.apply(List(Typed[Double])) shouldBe ""
+    extractTypeFunction.apply(List(Typed[Map[_, _]])) shouldBe ""
+    extractTypeFunction.apply(List()) shouldBe ""
+    extractTypeFunction.apply(List(Typed[Int], Typed[Double])) shouldBe ""
+
+    headFunction.apply(List(Typed[Int])) shouldBe ""
+    headFunction.apply(List(Typed[Set[_]])) shouldBe ""
+    headFunction.apply(List(Typed[Map[_, _]])) shouldBe ""
+    headFunction.apply(List()) shouldBe ""
+    headFunction.apply(List(Typed[List[_]], Typed[Int])) shouldBe ""
+  }
 }
