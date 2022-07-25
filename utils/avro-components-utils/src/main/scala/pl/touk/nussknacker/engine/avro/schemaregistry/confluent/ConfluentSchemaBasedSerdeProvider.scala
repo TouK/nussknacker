@@ -6,7 +6,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory, UniversalToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.{ConfluentKeyValueUniversalKafkaDeserializationFactory, ConfluentUniversalKafkaSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroSerializationSchemaFactory, ConfluentKeyValueKafkaAvroDeserializationFactory}
@@ -39,7 +39,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
     ConfluentSchemaBasedSerdeProvider(
       new ConfluentUniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory),
       new ConfluentKeyValueUniversalKafkaDeserializationFactory(schemaRegistryClientFactory),
-      new ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory)
+      new UniversalToJsonFormatterFactory(schemaRegistryClientFactory)
     )
   }
 
