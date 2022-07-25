@@ -90,5 +90,4 @@ class ConfluentKeyValueUniversalKafkaDeserializationFactory(schemaRegistryClient
 
   override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
     createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
-
 }
