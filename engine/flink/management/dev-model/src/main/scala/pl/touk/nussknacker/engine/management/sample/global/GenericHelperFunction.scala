@@ -3,54 +3,43 @@ package pl.touk.nussknacker.engine.management.sample.global
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.{Documentation, GenericType, TypingFunction}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
   @Documentation(description = "extracts type of given object")
   @GenericType(typingFunction = classOf[ExtractTypeHelper])
-  def extractType(arguments: List[Any]): Any = (new ExtractTypeHelper).applyValue(arguments)
+  def extractType(argument: AnyRef): AnyRef = argument match {
+    case _: Integer => (new ExtractTypeHelper).IntOK
+    case _: String => (new ExtractTypeHelper).StringOK
+    case _ => throw new AssertionError("method called with argument that should cause validation error")
+  }
 
   private class ExtractTypeHelper extends TypingFunction {
-    private val IntOK = "OK: Int"
-    private val StringOK = "OK: String"
+    val IntOK = "OK: Int"
+    val StringOK = "OK: String"
 
-    override def staticParameters(): List[(String, TypingResult)] =
-      List(("example of desired type", Typed(Typed[Int], Typed[String])))
+    override def staticParameters(): Option[List[(String, TypingResult)]] =
+      Some(List(("example of desired type", Typed(Typed[Int], Typed[String]))))
 
-    override def staticResult(): TypingResult =
-      Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK))
+    override def staticResult(): Option[TypingResult] =
+      Some(Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK)))
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
       case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance(IntOK).validNel
       case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance(StringOK).validNel
       case _ => "Expected Int or String".invalidNel
     }
-
-    def applyValue(arguments: List[Any]): Any = arguments match {
-      case (_: Int) :: Nil => IntOK
-      case (_: String) :: Nil => StringOK
-      case _ => throw new AssertionError("method called with argument that should cause validation error")
-    }
   }
-
 
   @Documentation(description = "generic head function")
   @GenericType(typingFunction = classOf[HeadHelper])
-  def head(arguments: java.util.List[Any]): Any = arguments.asScala match {
-    case x :: _ => x
-    case _ => throw new AssertionError("method called with argument that should cause validation error")
-  }
+  def head[T >: Null](list: java.util.List[T]): T =
+    list.asScala.headOption.orNull
 
   private class HeadHelper extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
-    private val listType = Typed.genericTypeClass(listClass, List(Unknown))
-
-    override def staticParameters(): List[(String, TypingResult)] =
-      List(("list", listType))
-
-    override def staticResult(): TypingResult = Unknown
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
