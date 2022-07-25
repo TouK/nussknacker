@@ -730,6 +730,10 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
     name := "nussknacker-avro-components-utils",
     libraryDependencies ++= {
       Seq(
+        "io.confluent" % "kafka-json-schema-provider" % confluentV excludeAll(
+          ExclusionRule("log4j", "log4j"),
+          ExclusionRule("org.slf4j", "slf4j-log4j12"),
+        ),
         "io.confluent" % "kafka-avro-serializer" % confluentV excludeAll(
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
@@ -743,7 +747,7 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
-  ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test")
+  ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test", jsonUtils)
 
 lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
   settings(commonSettings).

@@ -4,12 +4,14 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericContainer, GenericDatumWriter}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import org.apache.kafka.common.errors.SerializationException
+import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 
@@ -43,6 +45,9 @@ object ConfluentUtils extends LazyLogging {
 
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
     version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
+
+  def convertToJsonSchema(schema: EveritSchema, version: Option[Int] = None): JsonSchema =
+    version.map(new JsonSchema(schema, _)).getOrElse(new JsonSchema(schema))
 
   def extractSchema(parsedSchema: ParsedSchema): Schema =
     parsedSchema.rawSchema().asInstanceOf[Schema]
