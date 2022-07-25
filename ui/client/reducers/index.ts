@@ -25,8 +25,8 @@ export const reducer = combineReducers<RootState>({
 })
 
 export type RootState = {
-  httpErrorHandler: unknown,
-  graphReducer: GraphState & {history: StateWithHistory<GraphState> },
+  httpErrorHandler: ReturnType<typeof httpErrorHandler>,
+  graphReducer: GraphState & { history: StateWithHistory<GraphState> },
   settings: SettingsState,
   ui: UiState,
   processActivity: ProcessActivityState,

@@ -102,7 +102,7 @@ function addStyles(svg: SVGElement, height: number, width: number) {
   svg.setAttribute("class", "graph-export")
 }
 
-export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, a, maxSize = 15000) {
+export async function prepareSvg(options: Pick<dia.Paper, "options" | "defs">, maxSize = 15000) {
   const placeholder = createPlaceholder()
   const {svg, width, height} = createPaper(placeholder, maxSize, options)
 

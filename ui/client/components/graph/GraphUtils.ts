@@ -1,6 +1,6 @@
 import NodeUtils from "./NodeUtils"
 import {cloneDeep, isEqual, map, reject} from "lodash"
-import {Edge, NodeType, Process, ProcessDefinitionData} from "../../types"
+import {Edge, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {enrichNodeWithProcessDependentData, removeBranchParameter} from "../../reducers/graph/utils"
 
 export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
@@ -23,7 +23,7 @@ export function mapProcessWithNewNode(process: Process, before: NodeType, after:
 }
 
 //we do mapping here, because we validate changed process before closing modal, and before applying state change in reducer.
-function mapBranchParametersWithNewNode(beforeId, afterId, node) {
+function mapBranchParametersWithNewNode(beforeId: NodeId, afterId: NodeId, node: NodeType): NodeType {
   if (beforeId !== afterId && node.branchParameters?.find(bp => bp.branchId === beforeId)) {
     const newNode = cloneDeep(node)
     const branchParameter = newNode.branchParameters.find(bp => bp.branchId === beforeId)
@@ -71,13 +71,13 @@ export function replaceNodeOutputEdges(process: Process, processDefinitionData: 
   }
 }
 
-export function deleteNode(process, id) {
+export function deleteNode(process: Process, id: NodeId): Process {
   const edges = process.edges.filter((e) => e.from !== id).map((e) => e.to === id ? {...e, to: ""} : e)
   const nodes = process.nodes.filter((n) => n.id !== id)
   return {...process, edges, nodes}
 }
 
-export function canInjectNode(process, sourceId, middleManId, targetId, processDefinitionData) {
+export function canInjectNode(process: Process, sourceId: NodeId, middleManId: NodeId, targetId: NodeId, processDefinitionData: ProcessDefinitionData): boolean {
   const processAfterDisconnection = deleteEdge(process, sourceId, targetId)
   const canConnectSourceToMiddleMan = NodeUtils.canMakeLink(sourceId, middleManId, processAfterDisconnection, processDefinitionData)
   const processWithConnectedSourceAndMiddleMan = addEdge(processAfterDisconnection, sourceId, middleManId)
@@ -85,14 +85,14 @@ export function canInjectNode(process, sourceId, middleManId, targetId, processD
   return canConnectSourceToMiddleMan && canConnectMiddleManToTarget
 }
 
-function deleteEdge(process, fromId, toId) {
+function deleteEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
   return {
     ...process,
     edges: reject(process.edges, (e) => e.from === fromId && e.to === toId),
   }
 }
 
-function addEdge(process, fromId, toId) {
+function addEdge(process: Process, fromId: NodeId, toId: NodeId): Process {
   return {
     ...process,
     edges: process.edges.concat({from: fromId, to: toId}),

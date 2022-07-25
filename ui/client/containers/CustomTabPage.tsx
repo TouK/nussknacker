@@ -5,7 +5,7 @@ import {useRouteMatch} from "react-router"
 import {darkTheme} from "./darkTheme"
 import {getTabs} from "../reducers/selectors/settings"
 import {DynamicTab} from "./DynamicTab"
-import NotFound from "./errors/NotFound"
+import {NotFound} from "./errors/NotFound"
 import {NkThemeProvider} from "./theme"
 import "../stylesheets/visualization.styl"
 

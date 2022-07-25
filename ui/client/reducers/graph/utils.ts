@@ -69,7 +69,10 @@ export function prepareNewNodesWithLayout(
   }
 }
 
-export function addNodesWithLayout(state: GraphState, {nodes, layout}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
+export function addNodesWithLayout(state: GraphState, {
+  nodes,
+  layout
+}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
   return {
     ...state,
     processToDisplay: {
@@ -120,32 +123,33 @@ export function enrichNodeWithProcessDependentData(originalNode: NodeType, proce
       const {parameters} = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
       const declaredBranchParameters = parameters.filter(p => p.branchParam)
       const incomingEdges = edges.filter(e => e.to === node.id)
-
-      return {
-        ...node,
-        branchParameters: incomingEdges.map((edge) => {
-          const branchId = edge.from
-          const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-          const newBranchParams = declaredBranchParameters.map((branchParamDef) => {
-            const existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-            const templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-            return existingParamValue || cloneDeep(templateParamValue) ||
+      const branchParameters = incomingEdges.map((edge) => {
+        const branchId = edge.from
+        const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
+        const parameters = declaredBranchParameters.map((branchParamDef) => {
+          const existingParamValue = existingBranchParams?.parameters?.find(p => p.name === branchParamDef.name)
+          if (!existingParamValue) {
+            const templateParamValue = node.branchParametersTemplate?.find(p => p.name === branchParamDef.name)
+            if (!templateParamValue) {
               // We need to have this fallback to some template for situation when it is existing node and it has't got
               // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-              cloneDeep({
+              return {
                 name: branchParamDef.name,
                 expression: {
                   expression: `#${branchParamDef.name}`,
                   language: ExpressionLang.SpEL,
                 },
-              })
-          })
-          return {
-            branchId: branchId,
-            parameters: newBranchParams,
+              }
+            }
+            return cloneDeep(templateParamValue)
           }
-        }),
-      }
+          return existingParamValue
+        })
+
+        return {branchId, parameters}
+      })
+
+      return {...node, branchParameters}
   }
 
   return node

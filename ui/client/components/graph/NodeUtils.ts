@@ -132,7 +132,7 @@ class NodeUtils {
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
   //TODO remove type (Source, Sink) comparisons
-  canMakeLink = (fromId: string, toId: string, process: Process, processDefinitionData: ProcessDefinitionData, previousEdge?: Edge): boolean => {
+  canMakeLink = (fromId: NodeId, toId: NodeId, process: Process, processDefinitionData: ProcessDefinitionData, previousEdge?: Edge): boolean => {
     const nodeInputs = this._nodeInputs(toId, process)
     //we do not want to include currently edited edge
     const nodeOutputs = this._nodeOutputs(fromId, process)

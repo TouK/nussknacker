@@ -13,15 +13,15 @@ import ProcessBackButton from "../components/Process/ProcessBackButton"
 import {VersionInfo} from "../components/versionInfo"
 import {getFeatureSettings, getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {UnknownRecord} from "../types/common"
-import Services from "./Services";
-import ErrorHandler from "./ErrorHandler"
-import NotFound from "./errors/NotFound"
+import Services from "./Services"
+import {ErrorHandler} from "./ErrorHandler"
 import Metrics from "./Metrics"
 import Signals from "./Signals"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
 import * as Paths from "./paths"
+import {NotFound} from "./errors/NotFound"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord

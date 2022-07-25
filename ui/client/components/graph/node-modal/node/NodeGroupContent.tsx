@@ -7,8 +7,9 @@ import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsContent from "../NodeDetailsContent/NodeDetailsContentConnected"
 import {ContentSize} from "./ContentSize"
-import {getErrors} from "./selectors"
 import {SubprocessContent} from "./SubprocessContent"
+import {getErrors} from "./selectors"
+import {RootState} from "../../../../reducers"
 
 interface Props {
   editedNode: NodeType,
@@ -21,7 +22,7 @@ interface Props {
 
 export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
   const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
-  const nodeErrors = useSelector(getErrors)
+  const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
   const testResults = useSelector(getTestResults)
   const nodeTestResults = (id: NodeId) => TestResultUtils.resultsForNode(testResults, id)
 

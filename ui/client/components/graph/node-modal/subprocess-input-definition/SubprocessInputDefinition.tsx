@@ -15,7 +15,7 @@ export default function SubprocessInputDefinition<F extends Field>(props: Props<
   const {isMarked, node, onChange, readOnly, showValidation} = passProps
 
   const definitionData = useSelector(getProcessDefinitionData)
-  const typeOptions = useMemo(() => (definitionData?.processDefinition?.typesInformation || []).map(type => ({
+  const typeOptions = useMemo(() => definitionData?.processDefinition?.typesInformation?.map(type => ({
     value: type.clazzName.refClazzName,
     label: ProcessUtils.humanReadableType(type.clazzName),
   })), [definitionData?.processDefinition?.typesInformation])

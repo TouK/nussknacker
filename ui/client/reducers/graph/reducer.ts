@@ -24,7 +24,6 @@ const emptyGraphState: GraphState = {
   graphLoading: false,
   processToDisplay: null,
   fetchedProcessDetails: null,
-  nodeToDisplay: null,
   layout: [],
   testCapabilities: {},
   selectionState: [],
@@ -77,7 +76,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         processToDisplay,
         fetchedProcessDetails,
         graphLoading: false,
-        nodeToDisplay: processToDisplay.properties,
         layout: LayoutUtils.fromMeta(processToDisplay),
       }
     }
@@ -92,7 +90,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: null,
         fetchedProcessDetails: null,
-        nodeToDisplay: null,
         testResults: null,
       }
     }
@@ -122,7 +119,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
           ...stateAfterNodeRename.processToDisplay,
           validationResult: action.validationResult,
         },
-        nodeToDisplay: action.after,
       }
     }
     case "PROCESS_RENAME": {
@@ -132,20 +128,14 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "DELETE_NODES": {
-      const stateAfterDelete = action.ids.reduce((state, idToDelete) => {
+      return action.ids.reduce((state, idToDelete) => {
         const stateAfterNodeDelete = updateAfterNodeDelete(state, idToDelete)
         const processToDisplay = GraphUtils.deleteNode(stateAfterNodeDelete.processToDisplay, idToDelete)
         return {
           ...stateAfterNodeDelete,
-          processToDisplay: {
-            ...processToDisplay,
-          },
+          processToDisplay,
         }
       }, state)
-      return {
-        ...stateAfterDelete,
-        nodeToDisplay: stateAfterDelete.processToDisplay.properties,
-      }
     }
     case "URL_CHANGED": {
       return {

@@ -1,4 +1,4 @@
-export {drawGraph} from "./drawGraph"
-export {directedLayout} from "./directedLayout"
+export {applyCellChanges} from "./applyCellChanges"
+export {calcLayout} from "./calcLayout"
 export {createPaper} from "./createPaper"
 export * from "./cellUtils"

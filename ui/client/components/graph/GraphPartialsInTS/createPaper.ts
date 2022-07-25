@@ -1,34 +1,17 @@
 import {dia, V} from "jointjs"
 import {defaults} from "lodash"
 import {defaultLink} from "../EspNode/link"
-import {Events} from "../joint-events"
-import {isBackgroundObject} from "./cellUtils"
 import {arrowMarker} from "../arrowMarker"
 
-function getPaper(opts: dia.Paper.Options, canEditFrontend: boolean) {
+export function createPaper(options: dia.Paper.Options): dia.Paper {
   const uniqueArrowMarker = arrowMarker.clone()
   const paper = new dia.Paper({
-    ...opts,
     height: "100%",
     width: "100%",
     gridSize: 1,
     clickThreshold: 2,
     async: false,
     snapLinks: {radius: 75},
-    interactive: (cellView: dia.CellView) => {
-      const {model} = cellView
-      if (!canEditFrontend) {
-        return false
-      } else if (model instanceof dia.Link) {
-        // Disable the default vertex add and label move functionality on pointerdown.
-        return {vertexAdd: false, labelMove: false}
-      } else if (isBackgroundObject(model)) {
-        //Disable moving group rect
-        return false
-      } else {
-        return true
-      }
-    },
     linkPinning: false,
     defaultLink: defaultLink(uniqueArrowMarker.attr("id")),
     linkView: dia.LinkView.extend({
@@ -40,54 +23,25 @@ function getPaper(opts: dia.Paper.Options, canEditFrontend: boolean) {
         doubleLinkTools: true,
       }, dia.LinkView.prototype.options),
     }),
+    defaultRouter: {
+      name: `manhattan`,
+      args: {
+        startDirections: [`bottom`],
+        endDirections: [`top`],
+        excludeTypes: [`basic.Rect`],
+        step: 10,
+        padding: 20,
+      },
+    },
+    defaultConnector: {
+      name: `rounded`,
+      args: {
+        radius: 60,
+      },
+    },
+    ...options,
   })
   V(paper.defs).append(uniqueArrowMarker)
-  paper.options.defaultRouter = {
-    name: `manhattan`,
-    args: {
-      startDirections: [`bottom`],
-      endDirections: [`top`],
-      excludeTypes: [`basic.Rect`],
-      step: 10,
-      padding: 20,
-    },
-  }
-  paper.options.defaultConnector = {
-    name: `rounded`,
-    args: {
-      radius: 60,
-    },
-  }
   return paper
 }
 
-export function createPaper(): dia.Paper {
-  const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly
-  const paper = getPaper(
-    {
-      async: true,
-      model: this.graph,
-      el: this.getEspGraphRef(),
-      validateConnection: this.validateConnection,
-    },
-    canEditFrontend,
-  )
-
-  return paper
-    //we want to inject node during 'Drag and Drop' from graph paper
-    .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
-      this.changeLayoutIfNeeded()
-      this.handleInjectBetweenNodes(cell.model)
-    })
-    .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
-      const from = sourceView?.model.attributes.nodeData
-      const to = targetView?.model.attributes.nodeData
-      if (from && to) {
-        const type = model.attributes.edgeData?.edgeType
-        this.props.actions.nodesConnected(from, to, type)
-      }
-    })
-    .on(Events.LINK_DISCONNECT, ({model}) => {
-      this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
-    })
-}
