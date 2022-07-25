@@ -23,7 +23,6 @@ class GenericFunctionExtractionTest extends ClassExtractionBaseTest {
 
   private val extractTypeFunction = extractMethod("extractType")
   private val headFunction = extractMethod("head")
-  private val zipFunction = extractMethod("zip")
 
   private def extractMethod(methodName: String): MethodInfo = {
     val headList = genericFunctions
@@ -36,7 +35,7 @@ class GenericFunctionExtractionTest extends ClassExtractionBaseTest {
 
   test("should extract correct number of functions") {
     // Includes "toString"
-    genericFunctions.methods should have size 4
+    genericFunctions.methods should have size 3
   }
 
   test("should extract function information") {
@@ -49,11 +48,6 @@ class GenericFunctionExtractionTest extends ClassExtractionBaseTest {
     headFunction.staticResult shouldBe Unknown
     headFunction.varArgs shouldBe false
     headFunction.description shouldBe Some("generic head function")
-
-    zipFunction.staticParameters shouldBe List(Parameter("elements", Unknown)) // FIXME: make a proper result
-    zipFunction.staticResult shouldBe Unknown
-    zipFunction.varArgs shouldBe false
-    zipFunction.description shouldBe Some("combines multiple elements into single map")
   }
 
   test("should correctly calculate result types on correct inputs") {
@@ -65,11 +59,6 @@ class GenericFunctionExtractionTest extends ClassExtractionBaseTest {
     headFunction.apply(List(Typed.genericTypeClass[java.util.List[_]](List(typedList)))) shouldBe typedList.validNel
     val typedMap = TypedObjectTypingResult(List("a" -> Typed[Int], "b" -> Typed[String]))
     headFunction.apply(List(Typed.genericTypeClass[java.util.List[_]](List(typedMap)))) shouldBe typedMap.validNel
-
-    zipFunction.apply(List(Typed[Int], Typed[String])) shouldBe
-      TypedObjectTypingResult(List("0" -> Typed[Int], "1" -> Typed[String])).validNel
-    zipFunction.apply(List(Typed[Long], Typed[Int], Typed[String])) shouldBe
-      TypedObjectTypingResult(List("0" -> Typed[Long], "1" -> Typed[Int], "2" -> Typed[String])).validNel
   }
 
   // FIXME: Create this test.

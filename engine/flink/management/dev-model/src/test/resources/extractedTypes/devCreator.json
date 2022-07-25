@@ -10268,16 +10268,6 @@
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": false
         }
-      ],
-      "zip": [
-        {
-          "description": "combines multiple elements into single map",
-          "parameters": [
-            {"name": "elements", "refClazz": {"type": "Unknown"}}
-          ],
-          "refClazz": {"type": "Unknown"},
-          "varArgs": false
-        }
       ]
     },
     "staticMethods": {}

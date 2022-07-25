@@ -59,25 +59,4 @@ object GenericHelperFunction {
       case _ => "Expected one argument".invalidNel
     }
   }
-
-  @Documentation(description = "combines multiple elements into single map")
-  @GenericType(typingFunction = classOf[ZipHelper])
-  def zip(arguments: java.util.List[AnyRef]): Map[String, AnyRef] = arguments.asScala match {
-    case lst if lst.nonEmpty => lst.zipWithIndex.map{ case (v, i) => i.toString -> v }.toMap
-    case _ => throw new AssertionError("method called with argument that should cause validation error")
-  }
-
-  private class ZipHelper extends TypingFunction {
-
-    override def staticParameters(): List[(String, TypingResult)] =
-      List(("elements", Unknown))
-
-    override def staticResult(): TypingResult = Unknown
-
-    override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
-      case lst if lst.nonEmpty =>
-        TypedObjectTypingResult(lst.zipWithIndex.map{ case(v, i) => i.toString -> v }).validNel
-      case _ => "Expected at least argument".invalidNel
-    }
-  }
 }
