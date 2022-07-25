@@ -17,10 +17,11 @@ import {NodeGroupContent} from "./NodeGroupContent"
 import {getReadOnly} from "./selectors"
 import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
+import {RootState} from "../../../../reducers"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeType, process: Process }> & { readOnly?: boolean }): JSX.Element {
   const process = useSelector(getProcessToDisplay)
-  const readOnly = useSelector(s => getReadOnly(s, props.readOnly))
+  const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
   const {data: {meta}} = props
   const {node: nodeToDisplay, process: processToDisplay = process} = meta

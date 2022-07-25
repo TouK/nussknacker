@@ -3,11 +3,9 @@ import {mapValues} from "lodash"
 import {DropTarget} from "react-dnd"
 import {connect} from "react-redux"
 import {compose} from "redux"
-import ActionsUtils from "../../actions/ActionsUtils"
 import {
   getFetchedProcessDetails,
   getLayout,
-  getNodeToDisplay,
   getProcessCounts,
   getProcessToDisplay,
 } from "../../reducers/selectors/graph"
@@ -17,6 +15,15 @@ import GraphWrapped from "./GraphWrapped"
 import {RECT_HEIGHT, RECT_WIDTH} from "./EspNode/esp"
 import NodeUtils from "./NodeUtils"
 import {DndTypes} from "../toolbars/creator/Tool"
+import {
+  injectNode,
+  layoutChanged,
+  nodeAdded,
+  nodesConnected,
+  nodesDisconnected,
+  resetSelection,
+  toggleSelection,
+} from "../../actions/nk"
 
 const spec = {
   drop: (props, monitor, component: Graph) => {
@@ -52,7 +59,6 @@ const mapState = state => ({
   readonly: false,
   processToDisplay: getProcessToDisplay(state),
   fetchedProcessDetails: getFetchedProcessDetails(state),
-  nodeToDisplay: getNodeToDisplay(state),
   processCounts: getProcessCounts(state),
   layout: getLayout(state),
 })
@@ -63,5 +69,13 @@ export const ProcessGraph = compose(
     isDraggingOver: monitor.isOver(),
   })),
   //withRef is here so that parent can access methods in graph
-  connect(mapState, ActionsUtils.mapDispatchWithEspActions, null, {forwardRef: true}),
+  connect(mapState, {
+    nodesConnected,
+    nodesDisconnected,
+    layoutChanged,
+    injectNode,
+    nodeAdded,
+    resetSelection,
+    toggleSelection,
+  }, null, {forwardRef: true}),
 )(GraphWrapped)

@@ -1,23 +1,38 @@
 import React, {forwardRef} from "react"
-import {NodeType, Process} from "../../types"
+import {Process} from "../../types"
 import {useWindows} from "../../windowManager"
 import {Graph} from "./Graph"
 import {useSelector} from "react-redux"
 import {getUserSettings} from "../../reducers/selectors/userSettings"
-import {mapDispatchWithEspActions} from "../../actions/ActionsUtils"
 import {ProcessCounts} from "../../reducers/graph"
-import {Layout} from "../../actions/nk"
+import {
+  injectNode,
+  Layout,
+  layoutChanged,
+  nodeAdded,
+  nodesConnected,
+  nodesDisconnected,
+  resetSelection,
+  toggleSelection,
+} from "../../actions/nk"
 import {Capabilities} from "../../reducers/selectors/other"
 import {ProcessType} from "../Process/types"
 import {getProcessCategory, getSelectionState, isPristine} from "../../reducers/selectors/graph"
 import {getLoggedUser, getProcessDefinitionData} from "../../reducers/selectors/settings"
 
-export interface GraphProps extends ReturnType<typeof mapDispatchWithEspActions> {
+export interface GraphProps {
+  nodesConnected: typeof nodesConnected,
+  nodesDisconnected: typeof nodesDisconnected,
+  layoutChanged: typeof layoutChanged,
+  injectNode: typeof injectNode,
+  nodeAdded: typeof nodeAdded,
+  resetSelection: typeof resetSelection,
+  toggleSelection: typeof toggleSelection,
+
   processToDisplay: Process,
   divId: string,
   nodeIdPrefixForSubprocessTests: string,
   processCounts: ProcessCounts,
-  nodeToDisplay: NodeType,
   capabilities: Capabilities,
   fetchedProcessDetails: ProcessType,
   layout: Layout,

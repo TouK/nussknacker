@@ -35,16 +35,58 @@ interface Props extends GraphProps {
   isPristine?: boolean,
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-interface
-interface State {
-}
-
-export class Graph extends React.Component<Props, State> {
+export class Graph extends React.Component<Props> {
 
   redrawing = false
+
   directedLayout = directedLayout.bind(this)
-  createPaper = createPaper.bind(this)
+
+  createPaper = (): dia.Paper => {
+    const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly
+    const paper = createPaper({
+      model: this.graph,
+      el: this.getEspGraphRef(),
+      validateConnection: this.validateConnection,
+      interactive: (cellView: dia.CellView) => {
+        const {model} = cellView
+        if (!canEditFrontend) {
+          return false
+        }
+        if (model instanceof dia.Link) {
+          // Disable the default vertex add and label move functionality on pointerdown.
+          return {vertexAdd: false, labelMove: false}
+        }
+        if (isBackgroundObject(model)) {
+          //Disable moving group rect
+          return false
+        }
+        return true
+      },
+    })
+
+    return paper
+      //we want to inject node during 'Drag and Drop' from graph paper
+      .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
+        this.changeLayoutIfNeeded()
+        if (isModelElement(cell.model)) {
+          this.handleInjectBetweenNodes(cell.model)
+        }
+      })
+      .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
+        const from = sourceView?.model.attributes.nodeData
+        const to = targetView?.model.attributes.nodeData
+        if (from && to) {
+          const type = model.attributes.edgeData?.edgeType
+          this.props.nodesConnected(from, to, type)
+        }
+      })
+      .on(Events.LINK_DISCONNECT, ({model}) => {
+        this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
+      })
+  }
+
   drawGraph = drawGraph.bind(this)
+
   setEspGraphRef = ((instance: HTMLElement): void => {
     const {connectDropTarget} = this.props
     this.instance = instance
@@ -118,9 +160,9 @@ export class Graph extends React.Component<Props, State> {
         }
 
         if (evt.shiftKey || evt.ctrlKey || evt.metaKey) {
-          this.props.actions.toggleSelection(nodeDataId)
+          this.props.toggleSelection(nodeDataId)
         } else {
-          this.props.actions.resetSelection(nodeDataId)
+          this.props.resetSelection(nodeDataId)
         }
       }
     }
@@ -129,7 +171,7 @@ export class Graph extends React.Component<Props, State> {
         return
       }
       if (this.props.fetchedProcessDetails) {
-        this.props.actions.resetSelection()
+        this.props.resetSelection()
       }
     }
 
@@ -160,9 +202,9 @@ export class Graph extends React.Component<Props, State> {
           .filter(el => isModelElement(el))
           .map(({id}) => id.toString())
         if (mode === SelectionMode.toggle) {
-          this.props.actions.toggleSelection(...nodes)
+          this.props.toggleSelection(...nodes)
         } else {
-          this.props.actions.resetSelection(...nodes)
+          this.props.resetSelection(...nodes)
         }
       })
     }
@@ -194,7 +236,7 @@ export class Graph extends React.Component<Props, State> {
 
   addNode(node: NodeType, position: Position): void {
     if (this.canAddNode(node)) {
-      this.props.actions.nodeAdded(node, position)
+      this.props.nodeAdded(node, position)
     }
   }
 
@@ -212,9 +254,8 @@ export class Graph extends React.Component<Props, State> {
     }
 
     //when e.g. layout changed we have to remember to highlight nodes
-    const nodeToDisplayChanged = !isEqual(this.props.nodeToDisplay, nextProps.nodeToDisplay)
     const selectedNodesChanged = !isEqual(this.props.selectionState, nextProps.selectionState)
-    if (processChanged || nodeToDisplayChanged || selectedNodesChanged) {
+    if (processChanged || selectedNodesChanged) {
       this.highlightNodes(nextProps.selectionState, nextProps.processToDisplay)
     }
   }
@@ -260,7 +301,7 @@ export class Graph extends React.Component<Props, State> {
 
   disconnectPreviousEdge = (from: NodeId, to: NodeId): void => {
     if (this.graphContainsEdge(from, to)) {
-      this.props.actions.nodesDisconnected(from, to)
+      this.props.nodesDisconnected(from, to)
     }
   }
 
@@ -269,7 +310,7 @@ export class Graph extends React.Component<Props, State> {
   }
 
   handleInjectBetweenNodes = (middleMan: shapes.devs.Model): void => {
-    const {processToDisplay, actions, processDefinitionData} = this.props
+    const {processToDisplay, injectNode, processDefinitionData} = this.props
     const links = this.graph.getLinks()
     const [linkBelowCell] = filterDragHovered(links)
 
@@ -286,7 +327,7 @@ export class Graph extends React.Component<Props, State> {
       )
 
       if (canInjectNode) {
-        actions.injectNode(
+        injectNode(
           sourceNode,
           middleManNode,
           targetNode,
@@ -352,7 +393,7 @@ export class Graph extends React.Component<Props, State> {
   }
 
   changeLayoutIfNeeded = (): void => {
-    const {layout, actions, isSubprocess} = this.props
+    const {layout, layoutChanged, isSubprocess} = this.props
 
     if (isSubprocess) {
       return
@@ -369,7 +410,7 @@ export class Graph extends React.Component<Props, State> {
     const oldLayout = sortBy(layout, iteratee)
 
     if (!isEqual(oldLayout, newLayout)) {
-      actions?.layoutChanged(newLayout)
+      layoutChanged(newLayout)
     }
   }
 
@@ -440,16 +481,16 @@ export class Graph extends React.Component<Props, State> {
   }
 
   private bindNodeRemove() {
-    this.graph.on(Events.REMOVE, (e) => {
+    this.graph.on(Events.REMOVE, (e: dia.Cell) => {
       if (e.isLink() && !this.redrawing) {
-        this.props.actions.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
+        this.props.nodesDisconnected(e.attributes.source.id, e.attributes.target.id)
       }
     })
   }
 
   private bindNodesMoving(): void {
-    this.graph.on(Events.CHANGE_POSITION, (element, position) => {
-      if (!this.redrawing && this.props.selectionState?.includes(element.id) && isModelElement(element)) {
+    this.graph.on(Events.CHANGE_POSITION, (element: dia.Cell, position: Position) => {
+      if (!this.redrawing && this.props.selectionState?.includes(element.id.toString()) && isModelElement(element)) {
         this.moveSelectedNodesRelatively(element, position)
       }
     })

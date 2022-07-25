@@ -25,7 +25,6 @@ export const isPristine = (state: RootState): boolean => ProcessUtils.nothingToS
 export const hasError = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoErrors(p))
 export const hasWarnings = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoWarnings(p))
 export const hasPropertiesErrors = createSelector(getProcessToDisplay, p => !ProcessUtils.hasNoPropertiesErrors(p))
-export const getNodeToDisplay = createSelector(getGraph, g => g.nodeToDisplay)
 export const getSelectionState = createSelector(getGraph, g => g.selectionState)
 export const getSelection = createSelector(getSelectionState, getProcessToDisplay, (s, p) => NodeUtils.getAllNodesByIdWithEdges(s, p))
 export const canModifySelectedNodes = createSelector(getSelectionState, (s) => !isEmpty(s))
@@ -71,4 +70,3 @@ export const hasOneVersion = createSelector(getVersions, h => h.length <= 1)
 export const getAdditionalFields = createSelector(getProcessToDisplay, p => p.properties?.additionalFields)
 
 export const getLayout = createSelector(getGraph, state => state.layout || [])
-export const getNodeId = createSelector(getNodeToDisplay, node => node?.id)
