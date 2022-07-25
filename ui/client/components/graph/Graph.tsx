@@ -1,13 +1,13 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia, shapes} from "jointjs"
-import {cloneDeep, debounce, isEqual, keys, sortBy, without} from "lodash"
+import {cloneDeep, debounce, isEmpty, isEqual, keys, sortBy, without} from "lodash"
 import React from "react"
 import {findDOMNode} from "react-dom"
 import "../../stylesheets/graph.styl"
 import {filterDragHovered, getLinkNodes, setLinksHovered} from "./dragHelpers"
 import {updateNodeCounts} from "./EspNode/element"
 import {GraphPaperContainer} from "./focusable"
-import {createPaper, directedLayout, drawGraph, isBackgroundObject, isModelElement} from "./GraphPartialsInTS"
+import {applyCellChanges, calcLayout, createPaper, isBackgroundObject, isModelElement} from "./GraphPartialsInTS"
 import styles from "./graphTheme.styl"
 import {Events} from "./joint-events"
 import NodeUtils from "./NodeUtils"
@@ -20,10 +20,11 @@ import {ComponentDragPreview} from "../ComponentDragPreview"
 import {rafThrottle} from "./rafThrottle"
 import {isEdgeEditable} from "../../common/EdgeUtils"
 import {NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
-import {NodePosition, Position} from "../../actions/nk"
+import {Layout, NodePosition, Position} from "../../actions/nk"
 import {UserSettings} from "../../reducers/userSettings"
 import {GraphProps} from "./GraphWrapped"
 import User from "../../common/models/User"
+import {updateLayout} from "./GraphPartialsInTS/updateLayout"
 
 interface Props extends GraphProps {
   processCategory: string,
@@ -39,7 +40,12 @@ export class Graph extends React.Component<Props> {
 
   redrawing = false
 
-  directedLayout = directedLayout.bind(this)
+  directedLayout = (selectedItems: string[] = []): void => {
+    this.redrawing = true
+    calcLayout(this.graph, selectedItems)
+    this.redrawing = false
+    this.changeLayoutIfNeeded()
+  }
 
   createPaper = (): dia.Paper => {
     const canEditFrontend = this.props.loggedUser.canEditFrontend(this.props.processCategory) && !this.props.readonly
@@ -85,7 +91,19 @@ export class Graph extends React.Component<Props> {
       })
   }
 
-  drawGraph = drawGraph.bind(this)
+  drawGraph = (process: Process, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
+    this.redrawing = true
+
+    applyCellChanges(this.processGraphPaper, process, processDefinitionData)
+
+    if (isEmpty(layout)) {
+      this.directedLayout()
+    } else {
+      updateLayout(this.graph, layout)
+      this.redrawing = false
+    }
+
+  }
 
   setEspGraphRef = ((instance: HTMLElement): void => {
     const {connectDropTarget} = this.props

@@ -1,32 +1,21 @@
 /* eslint-disable i18next/no-literal-string */
 import {dia} from "jointjs"
 import {flatMap, groupBy, isEqual} from "lodash"
-import {Layout} from "../../../actions/nk"
 import {Process, ProcessDefinitionData} from "../../../types"
 import {makeElement, makeLink} from "../EspNode"
 import NodeUtils from "../NodeUtils"
-import {redraw} from "./redraw"
-import {updateLayout} from "./updateLayout"
 import {isEdgeConnected} from "./EdgeUtils"
+import {updateChangedCells} from "./updateChangedCells"
 
-export function drawGraph(
-  process: Process,
-  layout: Layout,
-  processDefinitionData: ProcessDefinitionData,
-): void {
-  const graph: dia.Graph = this.graph
-  const directedLayout = this.directedLayout
-  const _updateLayout = updateLayout(graph, directedLayout)
-  const _redraw = redraw(graph)
-
-  this.redrawing = true
-
+export function applyCellChanges(paper: dia.Paper, process: Process, processDefinitionData: ProcessDefinitionData): void {
+  const graph = paper.model
   const nodesWithGroups = NodeUtils.nodesFromProcess(process)
   const edgesWithGroups = NodeUtils.edgesFromProcess(process)
 
   const nodes = nodesWithGroups.map(makeElement(processDefinitionData))
   const indexed = flatMap(groupBy(edgesWithGroups, "from"), edges => edges.map((edge, i) => ({...edge, index: ++i})))
-  const edges = indexed.filter(isEdgeConnected).map(value => makeLink(value, [...this.processGraphPaper?.defs?.children].find(def => def.nodeName === "marker")?.id))
+  const defs = Array.from(paper?.defs?.children)
+  const edges = indexed.filter(isEdgeConnected).map(value => makeLink(value, defs.find(def => def.nodeName === "marker")?.id))
 
   const cells = [...nodes, ...edges]
 
@@ -39,8 +28,8 @@ export function drawGraph(
     return old && !isEqual(old.get("definitionToCompare"), cell.get("definitionToCompare"))
   })
 
-  _redraw(newCells, deletedCells, changedCells)
-  _updateLayout(layout)
-
-  this.redrawing = false
+  graph.removeCells(deletedCells)
+  updateChangedCells(graph, changedCells)
+  graph.addCells(newCells)
 }
+
