@@ -14,18 +14,13 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.Co
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import ConfluentUniversalKafkaSerde._
 
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 import scala.util.Try
 
-object ConfluentUniversalKafkaSerde {
-  val ValueSchemaIdHeaderName = "value.schemaId"
-  val KeySchemaIdHeaderName = "key.schemaId"
-}
-
-class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with ${actualType} schema type")
-
+class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with $actualType schema type")
 
 class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSchemaRegistryClient,
                                              readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
@@ -64,21 +59,14 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
     }
   }
 
-  private def getSchemaId(headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer = {
-    Option(headers.lastHeader(headerName)) match {
-      case Some(header) =>
-        val strValue = new String(header.value())
-        val id = Try(strValue.toInt)
-          .fold(e => throw new IllegalArgumentException(s"Got header $headerName, but the value '$strValue' is invalid.", e), x => x)
-        // Even if schemaId is passed through header, it still can be serialized in 'Confluent' way, here we're figuring it out
+  private def getSchemaId(headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer =
+    headers.getSchemaId(headerName) match {
+      case Some(idFromHeader) => // Even if schemaId is passed through header, it still can be serialized in 'Confluent way', here we're figuring it out
         val buffer = Try(readIdAndGetBuffer(data)).map(_._2).getOrElse(ByteBuffer.wrap(data))
-        SchemaIdWithPositionedBuffer(id, buffer)
-
-      case None =>
-        val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data)
+        SchemaIdWithPositionedBuffer(idFromHeader, buffer)
+      case None => val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data)
         SchemaIdWithPositionedBuffer(idAndBuffer._1, buffer = idAndBuffer._2)
     }
-  }
 }
 
 trait ConfluentUniversalKafkaDeserializerFactory extends LazyLogging {
@@ -102,5 +90,4 @@ class ConfluentKeyValueUniversalKafkaDeserializationFactory(schemaRegistryClient
 
   override protected def createValueDeserializer[V: ClassTag](schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Deserializer[V] =
     createDeserializer[V](schemaRegistryClientFactory, kafkaConfig, schemaDataOpt, isKey = false)
-
 }

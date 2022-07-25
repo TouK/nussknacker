@@ -29,7 +29,7 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
 
   def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
     val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
-    kafkaClient.sendRawMessage(topic, record.key(), record.value()).futureValue
+    kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
   }
 
   def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, useStringForKey: Boolean = false): RecordMetadata = {

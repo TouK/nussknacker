@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObject
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionParsedSchemaDeterminer, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, ParsedSchemaDeterminer, RuntimeSchemaData}
@@ -104,14 +104,12 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
   }
 
   private def prepareUniversalValueSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): ParsedSchemaDeterminer = {
-    ???
-    //    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
+    new BasedOnVersionParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
   }
 
   //TODO: add schema versioning for key schemas
   private def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): ParsedSchemaDeterminer = {
-    ???
-    //    new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
+    new BasedOnVersionParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   // Overwrite this for dynamic type definitions.
