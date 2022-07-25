@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, ParsedSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
                                          topic: String,
@@ -26,3 +28,18 @@ class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryCli
 
 }
 
+class BasedOnVersionParsedSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
+                                           topic: String,
+                                           versionOption: SchemaVersionOption,
+                                           isKey: Boolean) extends ParsedSchemaDeterminer {
+  override def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]] = {
+      val version = versionOption match {
+        case ExistingSchemaVersion(v) => Some(v)
+        case LatestSchemaVersion => None
+      }
+      schemaRegistryClient
+        .getFreshSchema(topic, version, isKey = isKey)
+        .leftMap(err => new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err))
+        .map(withMetadata => RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](withMetadata.schema), Some(withMetadata.id)))
+  }
+}
