@@ -133,10 +133,17 @@ object EspTypeUtils {
     val typeFunctionClass = genericType.typingFunction()
     val typeFunctionConstructor = typeFunctionClass.getConstructor()
     val typeFunctionInstance = typeFunctionConstructor.newInstance()
+
+    val parameterInfo = typeFunctionInstance.staticParameters()
+      .map(_.map{ case (name, typ) => Parameter(name, typ) })
+      .getOrElse(extractParameters(method))
+    val resultInfo = typeFunctionInstance.staticResult()
+      .getOrElse(extractMethodReturnType(method))
+
     FunctionalMethodInfo(
       x => typeFunctionInstance.apply(x).leftMap(_.map(GenericFunctionError)),
-      typeFunctionInstance.staticParameters().map{ case (name, typ) => Parameter(name, typ) },
-      typeFunctionInstance.staticResult(),
+      parameterInfo,
+      resultInfo,
       method.getName,
       extractNussknackerDocs(method)
     )
