@@ -45,7 +45,7 @@ object GenericHelperFunction {
 
   private class HeadHelper extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
-    private val listType = Typed.typedClass(listClass, List(Unknown))
+    private val listType = Typed.genericTypeClass(listClass, List(Unknown))
 
     override def staticParameters(): List[(String, TypingResult)] =
       List(("list", listType))
