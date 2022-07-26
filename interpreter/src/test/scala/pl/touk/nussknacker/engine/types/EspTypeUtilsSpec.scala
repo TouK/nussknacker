@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
@@ -222,19 +222,34 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
     val javaClazzInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
 
-    val table = Table(
-      ("method", "methodInfo"),
-      ("foo", List(MethodInfo(List(param[String]("fooParam1")), Typed[Long], "foo", None, varArgs = false))),
-      ("bar", List(MethodInfo(List(param[Long]("barparam1")), Typed[String], "bar", None, varArgs = false))),
-      ("baz", List(MethodInfo(List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], "baz", Some(ScalaSampleDocumentedClass.bazDocs), varArgs = false))),
-      ("qux", List(MethodInfo(List(param[String]("quxParam1")), Typed[Long], "qux", Some(ScalaSampleDocumentedClass.quxDocs), varArgs = false))),
-      ("field1", List(MethodInfo(List.empty, Typed[Long], "field1", None, varArgs = false))),
-      ("field2", List(MethodInfo(List.empty, Typed[Long], "field2", Some(ScalaSampleDocumentedClass.field2Docs), varArgs = false)))
-    )
-    forAll(table){ case (method, methodInfo) =>
-        scalaClazzInfo.methods(method) shouldBe methodInfo
-        javaClazzInfo.methods(method) shouldBe methodInfo
+    def checkMethodInfo(name: String,
+                        params: List[Parameter],
+                        result: TypingResult,
+                        desc: Option[String],
+                        varArgs: Boolean): Unit = {
+      val scalaInfo :: Nil = scalaClazzInfo.methods(name)
+      val javaInfo :: Nil = javaClazzInfo.methods(name)
+      List(scalaInfo, javaInfo).foreach(info => {
+          info.staticParameters shouldBe params
+          info.staticResult shouldBe result
+          info.name shouldBe name
+          info.description shouldBe desc
+          info.varArgs shouldBe varArgs
+        }
+      )
     }
+
+    val table = Table(
+      ("methodName", "params", "result", "desc", "varArgs"),
+      ("foo", List(param[String]("fooParam1")), Typed[Long], None, false),
+      ("bar", List(param[Long]("barparam1")), Typed[String], None, false),
+      ("baz", List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], Some(ScalaSampleDocumentedClass.bazDocs), false),
+      ("qux", List(param[String]("quxParam1")), Typed[Long], Some(ScalaSampleDocumentedClass.quxDocs), false),
+      ("field1", List.empty, Typed[Long], None, false),
+      ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false)
+    )
+
+    forAll(table)(checkMethodInfo)
   }
 
   test("enabled by default classes") {
