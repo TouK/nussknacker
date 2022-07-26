@@ -7,7 +7,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentUtils, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, _}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
@@ -24,14 +24,9 @@ import scala.reflect.ClassTag
 class UniversalToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
-
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-    val messageFormatter = new UniversalMessageFormatter(schemaRegistryClient.client)
-    val messageReader = new UniversalMessageReader(schemaRegistryClient.client)
-
-    new UniversalToJsonFormatter(kafkaConfig, schemaRegistryClient.client, messageFormatter, messageReader, kafkaSourceDeserializationSchema)
+    new UniversalToJsonFormatter(kafkaConfig, schemaRegistryClient.client, kafkaSourceDeserializationSchema)
   }
-
 }
 
 /**
@@ -43,10 +38,11 @@ class UniversalToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSche
  */
 class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                          schemaRegistryClient: SchemaRegistryClient,
-                                                         messageFormatter: UniversalMessageFormatter,
-                                                         messageReader: UniversalMessageReader,
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                         ) extends RecordFormatter {
+
+  private lazy val messageFormatter: UniversalMessageFormatter = UniversalSchemaSupport.createMessageFormatter(schemaRegistryClient)
+  private lazy val messageReader: UniversalMessageReader = UniversalSchemaSupport.createMessageReader(schemaRegistryClient)
 
   /**
    * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.
@@ -99,19 +95,20 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
-  protected def createKeyEncoder(messageFormatter: UniversalMessageFormatter, schemaOpt: Option[ParsedSchema]): Encoder[K] = {
+
+  protected def createKeyEncoder(schemaOpt: Option[ParsedSchema]): Encoder[K] = {
     case str: String => Json.fromString(str)
     case key => messageFormatter.asJson(key, schemaOpt.get)
   }
 
-  protected def createValueEncoder(messageFormatter: UniversalMessageFormatter, schema: ParsedSchema): Encoder[V] = (value: V) => messageFormatter.asJson(value, schema)
+  protected def createValueEncoder(schema: ParsedSchema): Encoder[V] = (value: V) => messageFormatter.asJson(value, schema)
 
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[UniversalSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
 
   protected def consumerRecordEncoder(keySchemaOpt: Option[ParsedSchema], valueSchema: ParsedSchema): Encoder[UniversalSerializableConsumerRecord[K, V]] = {
-    implicit val kE: Encoder[K] = createKeyEncoder(messageFormatter, keySchemaOpt)
-    implicit val vE: Encoder[V] = createValueEncoder(messageFormatter, valueSchema)
+    implicit val kE: Encoder[K] = createKeyEncoder(keySchemaOpt)
+    implicit val vE: Encoder[V] = createValueEncoder(valueSchema)
     implicit val srE: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
     deriveConfiguredEncoder
   }
@@ -124,3 +121,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[Int],
                                                      valueSchemaId: Int,
                                                      consumerRecord: SerializableConsumerRecord[K, V])
+
+private[confluent] trait UniversalMessageFormatter {
+  def asJson(obj: Any, parsedSchema: ParsedSchema): Json
+}
+
+private[confluent] trait UniversalMessageReader {
+  def readJson(jsonObj: Json, parsedSchema: ParsedSchema, subject: String): Array[Byte]
+}

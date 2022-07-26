@@ -3,8 +3,6 @@ package pl.touk.nussknacker.engine.avro.source
 import cats.data.Validated
 import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -14,11 +12,10 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObject
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ParsedSchemaDeterminer, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
-import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData}
-import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -63,13 +60,7 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
   protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
   Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      // TODO: reduce switches distinguishing on schema type
-      val typingResult = schemaData.schema match {
-        case avro: AvroSchema => AvroSchemaTypeDefinitionExtractor.typeDefinition(avro.rawSchema())
-        case jsonSchema: JsonSchema => JsonSchemaTypeDefinitionExtractor.typeDefinition(jsonSchema.rawSchema())
-        case other => throw new IllegalArgumentException(s"Unsupported schema class: ${other.getClass}")
-      }
-      (Some(schemaData), typingResult)
+      (Some(schemaData), UniversalSchemaSupport.typeDefinition(schemaData.schema))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 
