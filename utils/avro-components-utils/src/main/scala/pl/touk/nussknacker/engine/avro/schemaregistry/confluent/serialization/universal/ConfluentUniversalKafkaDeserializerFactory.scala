@@ -2,19 +2,16 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.u
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.io.DecoderFactory
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils.readIdAndGetBuffer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroPayloadDeserializer
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentUtils, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import ConfluentUniversalKafkaSerde._
 
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
@@ -36,8 +33,6 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
 
   private val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
-  private lazy val avroPayloadDeserializer = new ConfluentAvroPayloadDeserializer(false, false, false, DecoderFactory.get())
-
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
     val writerSchemaId = getSchemaId(headers, data)
     val writerSchema = schemaRegistryClient.client.getSchemaById(writerSchemaId.value)
@@ -47,16 +42,12 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
         throw new MismatchReaderWriterSchemaException(readerSchemaType, writerSchema.schemaType()) //todo: test this case when supporting json schema
     })
 
-    writerSchema match {
-      //todo handle JsonSchema
-      case schema: AvroSchema =>
-        val writerAvroSchema = RuntimeSchemaData(schema.rawSchema(), Some(writerSchemaId.value))
-        val readerAvroSchema = readerSchemaDataOpt.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
-        avroPayloadDeserializer
-          .deserialize(readerAvroSchema, writerAvroSchema, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
-          .asInstanceOf[T]
-      case _ => throw new IllegalArgumentException("Not supported schema type")
-    }
+    val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
+
+    UniversalSchemaSupport
+      .createPayloadDeserializer(writerSchema)
+      .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
+      .asInstanceOf[T]
   }
 
   private def getSchemaId(headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer =

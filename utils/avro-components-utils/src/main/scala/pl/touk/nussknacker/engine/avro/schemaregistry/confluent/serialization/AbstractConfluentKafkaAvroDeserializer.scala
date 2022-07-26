@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
-import org.apache.avro.io.{DatumReader, DecoderFactory}
+import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
@@ -19,6 +19,7 @@ import java.nio.ByteBuffer
 abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroDeserializer {
 
   protected def schemaIdSerializationEnabled: Boolean
+
   protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get()
   private lazy val confluentAvroPayloadDeserializer = new ConfluentAvroPayloadDeserializer(useSchemaReflection, useSpecificAvroReader, schemaIdSerializationEnabled, decoderFactory)
 
@@ -35,7 +36,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
       val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
-      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData, writerSchemaData, buffer, bufferDataStart)
+      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer, bufferDataStart)
     } catch {
       case exc: RestClientException =>
         throw new SerializationException(s"Error retrieving Avro schema for id : $schemaId", exc)
@@ -44,9 +45,6 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
         throw new SerializationException(s"Error deserializing Avro message for id: $schemaId", exc)
     }
   }
-
-
-
 }
 
 class ConfluentAvroPayloadDeserializer(
@@ -54,11 +52,17 @@ class ConfluentAvroPayloadDeserializer(
                                         useSpecificAvroReader: Boolean,
                                         override val schemaIdSerializationEnabled: Boolean,
                                         override val decoderFactory: DecoderFactory
-                                      ) extends DatumReaderWriterMixin with RecordDeserializer{
+                                      ) extends DatumReaderWriterMixin with RecordDeserializer with UniversalSchemaPayloadDeserializer {
 
-  def deserialize(expectedSchemaData: Option[RuntimeSchemaData[AvroSchema]], writerSchemaData: RuntimeSchemaData[AvroSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
-    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData)
-    val reader = createDatumReader(writerSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema(), useSchemaReflection, useSpecificAvroReader)
+  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+    val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
+    val avroWriterSchemaData = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
+    val readerSchemaData = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
+    val reader = createDatumReader(avroWriterSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema(), useSchemaReflection, useSpecificAvroReader)
     deserializeRecord(readerSchemaData, reader, buffer, bufferDataStart)
   }
+}
+
+trait UniversalSchemaPayloadDeserializer {
+  def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef
 }

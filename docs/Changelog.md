@@ -36,6 +36,7 @@
 * [#3245](https://github.com/TouK/nussknacker/pull/3245) [#3265](https://github.com/TouK/nussknacker/pull/3265)
   [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
   [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
+  [#3321](https://github.com/TouK/nussknacker/pull/3321)
   Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
 * [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, flink 0.14.4 -> 0.14.5
