@@ -8,7 +8,7 @@ import ErrorBoundary from "./components/common/ErrorBoundary"
 import DragArea from "./components/DragArea"
 import LoaderSpinner from "./components/Spinner"
 import {darkTheme} from "./containers/darkTheme"
-import Notifications from "./containers/Notifications"
+import {NuNotifications} from "./containers/Notifications"
 import {NkApp} from "./containers/NussknackerApp"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
 import {SettingsProvider} from "./containers/SettingsInitializer"
@@ -30,7 +30,7 @@ const Root = () => (
           <Router history={history}>
             <SettingsProvider>
               <NussknackerInitializer>
-                <Notifications/>
+                <NuNotifications/>
                 <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
                   <WindowManagerProvider theme={darkTheme} contentGetter={contentGetter} className={css({flex: 1, display: "flex"})}>
                     <NkThemeProvider>

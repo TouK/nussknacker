@@ -17,6 +17,7 @@ import {ToolbarActions} from "./nk/toolbars"
 import {RootState} from "../reducers"
 import {UndoRedoActions} from "./undoRedoActions"
 import {NodeDetailsActions} from "./nk/nodeDetails"
+import {NotificationActions} from "./nk/notifications";
 
 type TypedAction =
   | HandleHTTPErrorAction
@@ -31,6 +32,7 @@ type TypedAction =
   | FeatureFlagsActions
   | UserSettingsActions
   | SelectionActions
+  | NotificationActions
 
 interface UntypedAction extends AnyAction {
   type: Exclude<ActionTypes, TypedAction["type"]>,
