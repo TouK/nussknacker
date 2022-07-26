@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._

@@ -10,11 +10,12 @@ import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils.readIdAndGetBuffer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.ConfluentAvroPayloadDeserializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroPayloadDeserializer, ConfluentJsonSchemaPayloadDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.avro.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import ConfluentUniversalKafkaSerde._
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
@@ -36,6 +37,7 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
 
   private val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
+  private lazy val jsonSchemaPayloadDeserializer = new ConfluentJsonSchemaPayloadDeserializer()
   private lazy val avroPayloadDeserializer = new ConfluentAvroPayloadDeserializer(false, false, false, DecoderFactory.get())
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
@@ -48,7 +50,12 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
     })
 
     writerSchema match {
-      //todo handle JsonSchema
+      case schema: JsonSchema =>
+        val writerJsonSchema = RuntimeSchemaData(schema.rawSchema(), Some(writerSchemaId.value))
+        val readerJsonSchema = readerSchemaDataOpt.asInstanceOf[Option[RuntimeSchemaData[JsonSchema]]]
+        jsonSchemaPayloadDeserializer
+          .deserialize(readerJsonSchema, writerJsonSchema, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
+          .asInstanceOf[T]
       case schema: AvroSchema =>
         val writerAvroSchema = RuntimeSchemaData(schema.rawSchema(), Some(writerSchemaId.value))
         val readerAvroSchema = readerSchemaDataOpt.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]

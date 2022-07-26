@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.avro
 import cats.data.Validated
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
+import org.everit.json
 
 trait AvroSchemaDeterminer {
 
@@ -36,6 +38,8 @@ case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializab
 object RuntimeSchemaData {
   def apply(schema: Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData[AvroSchema] =
     RuntimeSchemaData(new NkSerializableParsedSchema[AvroSchema](new AvroSchema(schema)), schemaIdOpt)
+  def apply(schema: json.schema.Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData[JsonSchema] =
+    RuntimeSchemaData(new NkSerializableParsedSchema[JsonSchema](new JsonSchema(schema)), schemaIdOpt)
 }
 
 class SchemaDeterminerError(message: String, cause: Throwable) extends RuntimeException(message, cause)

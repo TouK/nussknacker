@@ -4,6 +4,7 @@ import cats.data.Validated
 import cats.data.Validated.Valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.{ParsedSchemaDeterminer, L
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -64,7 +66,7 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
       // TODO: reduce switches distinguishing on schema type
       val typingResult = schemaData.schema match {
         case avro: AvroSchema => AvroSchemaTypeDefinitionExtractor.typeDefinition(avro.rawSchema())
-        // TODO: handle json schema
+        case jsonSchema: JsonSchema => JsonSchemaTypeDefinitionExtractor.typeDefinition(jsonSchema.rawSchema())
         case other => throw new IllegalArgumentException(s"Unsupported schema class: ${other.getClass}")
       }
       (Some(schemaData), typingResult)

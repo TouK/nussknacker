@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import org.everit.json.schema.{Schema => EveritSchema}
 
 import java.nio.charset.StandardCharsets
 
@@ -43,10 +44,10 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     val serializedData = data.map(serializeInput)
 
     runWithRawData(scenario, serializedData)
-      .map{ result =>
+      .map { result =>
         val successes = result
           .successes
-          .map{ output =>
+          .map { output =>
             val value = deserialize[V](output.value())
             val key = Option(output.key()).map(deserializeKey[K](output.topic(), _)).getOrElse(null.asInstanceOf[K])
             new ProducerRecord(output.topic(), output.partition(), output.timestamp(), key, value)
@@ -59,6 +60,11 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
+
+  def registerJsonSchema(topic: String, schema: EveritSchema): Int = schemaRegistryClient.register(
+    ConfluentUtils.topicSubject(topic, false),
+    ConfluentUtils.convertToJsonSchema(schema)
+  )
 
   def registerAvroSchema(topic: String, schema: Schema): Int = schemaRegistryClient.register(
     ConfluentUtils.topicSubject(topic, false),
@@ -96,7 +102,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
 
   private def deserialize[T](payload: Array[Byte]): T =
     Option(payload)
-      .map{p =>
+      .map { p =>
         val schemaId = ConfluentUtils.readId(p)
         val schema = schemaRegistryClient.getSchemaById(schemaId).asInstanceOf[AvroSchema]
         val (_, data) = ConfluentUtils.deserializeSchemaIdAndData[T](p, schema.rawSchema())

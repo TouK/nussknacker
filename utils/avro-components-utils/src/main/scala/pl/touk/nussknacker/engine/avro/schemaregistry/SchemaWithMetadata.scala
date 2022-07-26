@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 
 /**
  * This class holds information that are stored next to schema in registry.
@@ -15,6 +16,7 @@ object SchemaWithMetadata{
   def apply(schemaMetadata: SchemaMetadata): SchemaWithMetadata = {
     schemaMetadata.getSchemaType match {
       case "AVRO" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      case "JSON" => SchemaWithMetadata(new JsonSchema(schemaMetadata.getSchema), schemaMetadata.getId)
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     }
   }
