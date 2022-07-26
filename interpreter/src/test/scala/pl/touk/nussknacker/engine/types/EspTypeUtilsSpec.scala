@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.types
 
+import cats.data.ValidatedNel
+import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.{Context, Documentation, GenericType, Hidden, HideToString, ParamName, TypingFunction}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
@@ -16,6 +18,7 @@ import java.util
 import java.util.regex.Pattern
 import scala.annotation.meta.getter
 import scala.concurrent.Future
+import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.reflect.runtime.universe._
 
 class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
@@ -190,6 +193,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     def qux(quxParam1: String): Long = {
       0L
     }
+
+    @Documentation(description = ScalaSampleDocumentedClass.headDocs)
+    @GenericType(typingFunction = classOf[HeadHelper])
+    def head[T >: Null](list: java.util.List[T]): T =
+      list.asScala.headOption.orNull
   }
 
   case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String], javaMap: java.util.Map[String, String])
@@ -215,6 +223,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     final val field2Docs = "This is sample documentation for field2 field"
     final val bazDocs = "This is sample documentation for baz method"
     final val quxDocs = "This is sample documentation for qux method"
+    final val headDocs = "This is sample documentation for head method"
   }
 
   test("should extract description and params from method") {
@@ -246,7 +255,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("baz", List(param[String]("bazparam1"), param[Int]("bazparam2")), Typed[Long], Some(ScalaSampleDocumentedClass.bazDocs), false),
       ("qux", List(param[String]("quxParam1")), Typed[Long], Some(ScalaSampleDocumentedClass.quxDocs), false),
       ("field1", List.empty, Typed[Long], None, false),
-      ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false)
+      ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false),
+      ("head", List(param[java.util.List[_]]("list")), Typed[Object], Some(ScalaSampleDocumentedClass.headDocs), false)
     )
 
     forAll(table)(checkMethodInfo)
@@ -304,6 +314,71 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     method.staticParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
+  private def checkApplyFunction(classes: List[ClazzDefinition],
+                                 name: String,
+                                 arguments: List[TypingResult],
+                                 expected: ValidatedNel[String, TypingResult]): Unit =
+    classes.map(clazz => {
+      val info :: Nil = clazz.methods(name)
+      info.apply(arguments) shouldBe expected
+    })
+
+  test("should correctly calculate result types on correct inputs") {
+    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
+
+    def checkApplyFunctionValid(name: String, arguments: List[TypingResult], result: TypingResult): Unit =
+      checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, result.validNel)
+
+    val typedList = Typed.genericTypeClass[java.util.List[_]](List(Typed[String]))
+    val typedMap = TypedObjectTypingResult(List("a" -> Typed[Int], "b" -> Typed[String]))
+
+    val table = Table(
+      ("name", "arguments", "result"),
+      ("foo", List(Typed[String]), Typed[Long]),
+      ("bar", List(Typed[Long]), Typed[String]),
+      ("baz", List(Typed[String], Typed[Int]), Typed[Long]),
+      ("qux", List(Typed[String]), Typed[Long]),
+      ("field1", List(), Typed[Long]),
+      ("field2", List(), Typed[Long]),
+      ("head", List(Typed.genericTypeClass[java.util.List[_]](List(Typed[Int]))), Typed[Int]),
+      ("head", List(Typed.genericTypeClass[java.util.List[_]](List(typedList))), typedList),
+      ("head", List(Typed.genericTypeClass[java.util.List[_]](List(typedMap))), typedMap)
+    )
+
+    forAll(table)(checkApplyFunctionValid)
+  }
+
+  // FIXME: Add expected results to this test.
+  ignore("should correctly handle illegal input types in generic functions") {
+    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
+
+    def checkApplyFunctionInvalid(name: String, arguments: List[TypingResult], error: String): Unit =
+      checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, error.invalidNel)
+
+    val table = Table(
+      ("name", "arguments", "error"),
+      ("foo", List(), ""),
+      ("foo", List(Typed[Int]), ""),
+      ("foo", List(Typed[Object]), ""),
+      ("foo", List(Typed[String], Typed[Int]), ""),
+      ("baz", List(), ""),
+      ("baz", List(Typed[Int]), ""),
+      ("baz", List(Typed[String]), ""),
+      ("baz", List(Typed[String], Typed[Int], Typed[Double]), ""),
+      ("baz", List(Typed[String], Typed[Object]), ""),
+      ("field1", List(Typed[Int]), ""),
+      ("head", List(Typed[Int]), ""),
+      ("head", List(Typed[Set[_]]), ""),
+      ("head", List(Typed[Map[_, _]]), ""),
+      ("head", List(), ""),
+      ("head", List(Typed[List[_]], Typed[Int]), "")
+    )
+
+    forAll(table)(checkApplyFunctionInvalid)
+  }
+
   class EmptyClass {
     def invoke(): Unit = ???
   }
@@ -339,4 +414,17 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     clazzAndItsChildrenDefinition(List(Typed(ref)))(settings)
   }
 
+}
+
+// This class cannot be declared inside non-static class because it needs to
+// constructable without instances of other classes.
+private class HeadHelper extends TypingFunction {
+  private val listClass = classOf[java.util.List[_]]
+
+  override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+    case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
+    case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
+    case _ :: Nil => "Expected List".invalidNel
+    case _ => "Expected one argument".invalidNel
+  }
 }
