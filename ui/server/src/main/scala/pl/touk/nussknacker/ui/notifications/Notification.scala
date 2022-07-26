@@ -2,9 +2,14 @@ package pl.touk.nussknacker.ui.notifications
 
 import io.circe.generic.JsonCodec
 import io.circe.{Decoder, Encoder}
-import pl.touk.nussknacker.ui.notifications.NotificationAction.NotificationAction
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 
-@JsonCodec case class Notification(id: String, message: String, `type`: NotificationType.Value, action: Option[NotificationAction])
+@JsonCodec case class Notification(id: String,
+                                   scenarioName: Option[ProcessName],
+                                   message: String,
+                                   `type`: NotificationType.Value,
+                                   toRefresh: List[DataToRefresh])
 
 object NotificationType extends Enumeration {
 
@@ -12,15 +17,15 @@ object NotificationType extends Enumeration {
   implicit val typeDecoder: Decoder[NotificationType.Value] = Decoder.decodeEnumeration(NotificationType)
 
   type NotificationType = Value
-  val info, warning = Value
+  val info, success, error = Value
 }
 
 
-object NotificationAction extends Enumeration {
+object DataToRefresh extends Enumeration {
 
-  implicit val typeEncoder: Encoder[NotificationAction.Value] = Encoder.encodeEnumeration(NotificationAction)
-  implicit val typeDecoder: Decoder[NotificationAction.Value] = Decoder.decodeEnumeration(NotificationAction)
+  implicit val typeEncoder: Encoder[DataToRefresh.Value] = Encoder.encodeEnumeration(DataToRefresh)
+  implicit val typeDecoder: Decoder[DataToRefresh.Value] = Decoder.decodeEnumeration(DataToRefresh)
 
-  type NotificationAction = Value
-  val deploymentFailed, deploymentFinished, deploymentInProgress = Value
+  type DataToRefresh = Value
+  val versions, activity = Value
 }

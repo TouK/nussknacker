@@ -8,7 +8,6 @@ export const mapDispatchWithEspActions = function (dispatch: Dispatch<Action>) {
   return {
     actions: bindActionCreators(EspActions, dispatch),
     undoRedoActions: bindActionCreators(UndoRedoActions, dispatch),
-    notificationActions: bindActionCreators(NotificationActions, dispatch),
   }
 }
 

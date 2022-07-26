@@ -3,38 +3,48 @@ package pl.touk.nussknacker.ui.notifications
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import pl.touk.nussknacker.engine.api.process.ProcessName
+import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
-import pl.touk.nussknacker.ui.notifications.NotificationAction._
 import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentActionType, DeploymentStatus, DeploymentStatusResponse}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.time.{Clock, Instant}
 import java.time.temporal.ChronoUnit
+import java.time.{Clock, Instant}
 import java.util.UUID
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 case class NotificationConfig(duration: FiniteDuration)
 
-class NotificationsListener(config: NotificationConfig, clock: Clock = Clock.systemUTC()) extends ProcessChangeListener {
+class NotificationsListener(config: NotificationConfig,
+                            fetchName: ProcessId => Future[Option[ProcessName]],
+                            clock: Clock = Clock.systemUTC()) extends ProcessChangeListener with LazyLogging {
 
   //not too efficient, but we don't expect too much data...
   private val data: ArrayBuffer[NotificationEvent] = ArrayBuffer()
 
-  override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = synchronized {
+  override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
     val now = Instant.now(clock)
-    data.append(NotificationEvent(UUID.randomUUID().toString, event, now, user))
+    fetchName(event.processId).onComplete {
+      case Failure(NonFatal(e)) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}", e)
+      case Success(None) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}")
+      case Success(Some(scenarioName)) => synchronized {
+        data.append(NotificationEvent(UUID.randomUUID().toString, event, now, user, scenarioName))
+      }
+    }
     filterOldNotifications(now)
   }
 
-  private def filterOldNotifications(now: Instant): Unit = {
+  private def filterOldNotifications(now: Instant): Unit = synchronized {
     data.zipWithIndex.filter(_._1.date.isBefore(now.minus(config.duration.toMillis, ChronoUnit.MILLIS))).foreach(i => data.remove(i._2))
   }
 
-  private[notifications] def dataFor(user: LoggedUser, notificationsAfter: Option[Instant]): List[NotificationEvent] = synchronized {
+  private[notifications] def dataFor(user: LoggedUser, notificationsAfter: Option[Instant]): List[NotificationEvent] = {
     filterOldNotifications(Instant.now(clock))
     data.filter(event => event.user.id == user.id && !notificationsAfter.exists(_.isAfter(event.date))).toList
   }
@@ -62,10 +72,11 @@ class NotificationService(currentDeployments: CurrentDeployments,
 
   private def userDeployments(user: LoggedUser, notificationsAfter: Option[Instant]): Seq[Notification] = {
     store.dataFor(user, notificationsAfter).collect {
-      case NotificationEvent(id, OnDeployActionFailed(scenarioId, reason), _, _) =>
-        Notification(id, s"Deployment failed with ${reason.getMessage}", NotificationType.warning, Some(deploymentFailed))
-      case NotificationEvent(id, e: OnDeployActionSuccess, _, _) =>
-        Notification(id, "Deployment finished", NotificationType.info, Some(deploymentFinished))
+      case NotificationEvent(id, OnDeployActionFailed(_, reason), _, _, name) =>
+        Notification(id, Some(name), s"Deployment of ${name.value} failed with ${reason.getMessage}", NotificationType.error,
+          List(DataToRefresh.versions, DataToRefresh.activity))
+      case NotificationEvent(id, _: OnDeployActionSuccess, _, _, name) =>
+        Notification(id, Some(name), s"Deployment finished", NotificationType.success, List(DataToRefresh.versions, DataToRefresh.activity))
     }
   }
 
@@ -84,10 +95,10 @@ class NotificationService(currentDeployments: CurrentDeployments,
       case DeploymentActionType.Cancel => "cancelled"
     }
     //TODO: should it be displayed only once?
-    Notification(UUID.randomUUID().toString, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", NotificationType.info, Some(deploymentInProgress))
+    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", NotificationType.info, Nil)
   }
 
 }
 
-private[notifications] case class NotificationEvent(id: String, event: ProcessChangeEvent, date: Instant, user: User)
+private[notifications] case class NotificationEvent(id: String, event: ProcessChangeEvent, date: Instant, user: User, scenarioName: ProcessName)
 
