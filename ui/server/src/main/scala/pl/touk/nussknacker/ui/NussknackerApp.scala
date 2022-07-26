@@ -123,7 +123,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
-    val notificationListener = new NotificationsListener(config.as[NotificationConfig]("notifications"))
+    val notificationListener = new NotificationsListener(config.as[NotificationConfig]("notifications"), processRepository.fetchProcessName(_))
     val processChangeListener = ProcessChangeListenerLoader
       .loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
 

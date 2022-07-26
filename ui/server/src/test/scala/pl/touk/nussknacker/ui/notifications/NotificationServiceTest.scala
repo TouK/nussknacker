@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionFailed
-import pl.touk.nussknacker.ui.notifications.NotificationAction.{deploymentFailed, deploymentInProgress}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentActionType.Deployment
 import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentStatusResponse}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -30,24 +29,26 @@ class NotificationServiceTest extends FunSuite with Matchers with PatientScalaFu
       override def retrieve(implicit timeout: Timeout): Future[DeploymentStatusResponse] = Future.successful(DeploymentStatusResponse(
         Map(ProcessName("id1") -> DeployInfo("deployingUser", clock.millis(), Deployment))))
     }
-    val listener = new NotificationsListener(NotificationConfig(20 minutes), clock)
+    val listener = new NotificationsListener(NotificationConfig(20 minutes), (id: ProcessId) => Future.successful(Some(ProcessName(id.value + "-name"))), clock)
     val notificationService = new NotificationService(currentDeployments, listener)
     def notificationsFor(user: String, after: Option[Instant] = None) = notificationService.notifications(LoggedUser(user, ""), after).futureValue
 
 
+    val refreshAll = List(DataToRefresh.versions, DataToRefresh.activity)
+
     notificationsFor("deployingUser") shouldBe 'empty
-    notificationsFor("randomUser").map(_.action) shouldBe List(Some(deploymentInProgress))
+    notificationsFor("randomUser").map(_.toRefresh) shouldBe List(Nil)
 
     val userId = "user1"
     listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(global, ListenerApiUser(LoggedUser(userId, "")))
-    notificationsFor(userId).map(_.action) shouldBe List(Some(deploymentInProgress), Some(deploymentFailed))
-    notificationsFor("user2").map(_.action) shouldBe List(Some(deploymentInProgress))
+    notificationsFor(userId).map(_.toRefresh) shouldBe List(Nil, refreshAll)
+    notificationsFor("user2").map(_.toRefresh) shouldBe List(Nil)
 
-    notificationsFor(userId, Some(currentInstant.minusSeconds(20))).map(_.action) shouldBe  List(Some(deploymentInProgress), Some(deploymentFailed))
-    notificationsFor(userId, Some(currentInstant.plusSeconds(20))).map(_.action) shouldBe List(Some(deploymentInProgress))
+    notificationsFor(userId, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe  List(Nil, refreshAll)
+    notificationsFor(userId, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe List(Nil)
 
     currentInstant = currentInstant.plus(1, ChronoUnit.HOURS)
-    notificationsFor(userId).map(_.action) shouldBe List(Some(deploymentInProgress))
+    notificationsFor(userId).map(_.toRefresh) shouldBe List(Nil)
   }
 
   private def clockForInstant(currentInstant: () => Instant): Clock = {
