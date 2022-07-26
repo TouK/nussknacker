@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.avro.schema.DatumReaderWriterMixin
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
-import scala.reflect.ClassTag
 
 /**
   * @param schemaRegistryClient schema registry client
@@ -22,7 +21,7 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
 
   schemaRegistry = schemaRegistryClient
 
-  def asJson[T: ClassTag](obj: T): Json = {
+  def asJson(obj: Any): Json = {
     val schema = AvroSchemaUtils.getSchema(obj)
     val bos = new ByteArrayOutputStream()
     val output = new PrintStream(bos, true, StandardCharsets.UTF_8.toString)

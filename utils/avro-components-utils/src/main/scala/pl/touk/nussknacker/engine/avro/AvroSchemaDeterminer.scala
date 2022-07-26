@@ -21,12 +21,6 @@ trait AvroSchemaDeterminer {
 
 }
 
-trait ParsedSchemaDeterminer {
-
-  def determineSchemaUsedInTyping: Validated[SchemaDeterminerError, RuntimeSchemaData[ParsedSchema]]
-
-}
-
 /**
  * This class holds data that will be passed to Flink's tasks for records processing in runtime.
  * @param serializableSchema Serializable Avro schema

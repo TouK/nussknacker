@@ -95,7 +95,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     new Encoder[K] {
       override def apply(key: K): Json = key match {
         case str: String => Json.fromString(str)
-        case _ => messageFormatter.asJson[K](key) // generic or specific record
+        case _ => messageFormatter.asJson(key) // generic or specific record
       }
     }
   }
@@ -103,7 +103,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
   protected def createValueEncoder(messageFormatter: ConfluentAvroMessageFormatter): Encoder[V] = {
     new Encoder[V] {
       override def apply(value: V): Json = {
-        messageFormatter.asJson[V](value)
+        messageFormatter.asJson(value)
       }
     }
   }

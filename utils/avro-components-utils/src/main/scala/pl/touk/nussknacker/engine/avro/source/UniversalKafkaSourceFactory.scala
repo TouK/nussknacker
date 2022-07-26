@@ -13,10 +13,10 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObject
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.{BasedOnVersionParsedSchemaDeterminer, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
+import pl.touk.nussknacker.engine.avro.schemaregistry.{ParsedSchemaDeterminer, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaRegistryClientFactory, SchemaVersionOption}
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, ParsedSchemaDeterminer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -104,12 +104,12 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
   }
 
   private def prepareUniversalValueSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): ParsedSchemaDeterminer = {
-    new BasedOnVersionParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
+    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
   }
 
   //TODO: add schema versioning for key schemas
   private def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): ParsedSchemaDeterminer = {
-    new BasedOnVersionParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
+    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   // Overwrite this for dynamic type definitions.
