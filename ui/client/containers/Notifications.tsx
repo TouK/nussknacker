@@ -10,11 +10,11 @@ import Notification from "../components/notifications/Notification";
 import InlinedSvgs from "../assets/icons/InlinedSvgs";
 import {v4 as uuid4} from "uuid";
 import {markBackendNotificationRead, updateBackendNotifications} from "../actions/nk/notifications";
-import {displayCurrentProcessVersion, displayProcessActivity, loadProcessState} from "../actions/nk";
+import {displayCurrentProcessVersion, displayProcessActivity} from "../actions/nk";
 import {getProcessId} from "../reducers/selectors/graph";
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
-    const autoDismiss = backendNotification.type == "error" ? 0 : null
+    const autoDismiss = backendNotification.type == "error" ? 0 : 10
     const icon = backendNotification.type == "error" ? InlinedSvgs.tipsError : InlinedSvgs.tipsSuccess
     return ReactNotifications.show({
         autoDismiss: autoDismiss,
