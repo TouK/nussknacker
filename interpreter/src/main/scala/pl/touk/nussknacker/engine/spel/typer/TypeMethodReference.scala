@@ -6,7 +6,7 @@ import cats.implicits.catsSyntaxValidatedId
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, IllegalInvocationError, UnknownMethodError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference.NoDataForEvaluation
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 

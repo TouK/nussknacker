@@ -12,7 +12,7 @@ object ProcessDefinitionExtractor {
 
   // Extracts details of types (e.g. field definitions for variable suggestions) of extracted objects definitions (see extractObjectWithMethods).
   // We don't do it inside extractObjectWithMethods because this is needed only on FE, and can be a bit costly
-  def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] = {
+  def extractTypes(definition: ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfo.ClazzDefinition] = {
     TypesInformation.extract(definition.services.values ++
       definition.sourceFactories.values ++
       definition.customStreamTransformers.values.map(_._1) ++

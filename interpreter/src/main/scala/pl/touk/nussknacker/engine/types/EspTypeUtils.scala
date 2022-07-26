@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
 
 import java.lang.annotation.Annotation
 
