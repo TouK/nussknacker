@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
 
-trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {
+trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {
 
   // Initially we don't want to select concrete topic by user so we add null topic on the beginning of select box.
   // TODO: add addNullOption feature flag to FixedValuesParameterEditor
@@ -90,6 +90,15 @@ trait KafkaAvroBaseTransformer[T] extends SingleInputGenericNodeTransformation[T
   //TODO: add schema versioning for key schemas
   protected def prepareKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): AvroSchemaDeterminer = {
     new BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
+  }
+
+  protected def prepareUniversalValueSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): ParsedSchemaDeterminer = {
+    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
+  }
+
+  //TODO: add schema versioning for key schemas
+  protected def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): ParsedSchemaDeterminer = {
+    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   protected def topicParamStep(implicit nodeId: NodeId): NodeTransformationDefinition = {

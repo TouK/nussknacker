@@ -67,7 +67,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
       ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaAvroSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(avro))
 
     lowLevelKafkaComponents ::: universalKafkaComponents
   }

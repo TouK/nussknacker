@@ -85,7 +85,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
         }
       } else {
         val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))
-        keyOpt.map(keyJson => messageReader.readJson(keyJson, keySchema, ConfluentUtils.keySubject(topic))).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid avro key"))
+        keyOpt.map(keyJson => messageReader.readJson(keyJson, keySchema, ConfluentUtils.keySubject(topic))).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
       val valueSchema = getParsedSchemaById(record.valueSchemaId)
       val valueBytes = messageReader.readJson(value, valueSchema, ConfluentUtils.valueSubject(topic))

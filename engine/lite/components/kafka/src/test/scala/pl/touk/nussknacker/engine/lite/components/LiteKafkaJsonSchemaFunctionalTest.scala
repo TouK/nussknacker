@@ -49,9 +49,10 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
 
   private val scenario = ScenarioBuilder.streamingLite("check json serialization")
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink("end", "dead-end")
+//    .emptySink("end", "dead-end")
 // todo when universal sink will be ready
-//      .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
+      .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "",
+        "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
 
   test("should read data on json schema based universal source when schemaId in header") {
     //Given
@@ -76,8 +77,9 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
 
     //Then
 // todo when universal sink will be ready
-//    resultWithValue shouldBe RunResult.success(input.value().data)
-    resultWithValue shouldBe RunResult.successes(List())
+    import io.circe.parser._
+    parse(new String(input.value())) shouldBe parse(new String(result.successes.head.value()))
+//    resultWithValue shouldBe RunResult.successes(List())
   }
 
   test("should read data on json schema based universal source when schemaId in wire-format") {
@@ -87,12 +89,13 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
     runtime.registerJsonSchema(outputTopic, schema)
 
     //When
-    val record =
+    val stringRecord =
       """{
         |  "first": "John",
         |  "last": "Doe",
         |  "age": 21
-        |}""".stripMargin.getBytes()
+        |}""".stripMargin
+    val record = stringRecord.getBytes()
 
     val recordWithWireFormatSchemaId = new ByteArrayOutputStream
     ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
@@ -106,8 +109,9 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
 
     //Then
     // todo when universal sink will be ready
-    //    resultWithValue shouldBe RunResult.success(input.value().data)
-    resultWithValue shouldBe RunResult.successes(List())
+    import io.circe.parser._
+    parse(stringRecord) shouldBe parse(new String(result.successes.head.value()))
+    //resultWithValue shouldBe RunResult.successes(List())
   }
 
 
