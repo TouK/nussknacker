@@ -1,14 +1,16 @@
 package pl.touk.nussknacker.engine.definition
 
 import cats.data.ValidatedNel
+import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.TypeInfo.{FunctionalMethodInfo, MethodInfo, NoVarArgMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{FunctionalMethodInfo, MethodInfo, NoVarArgsMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
 
 class TypeInfoSpec extends FunSuite with Matchers {
   test("should create methodInfos without varArgs") {
-    MethodInfo(List(), Unknown, "", None, varArgs = false) shouldBe NoVarArgMethodInfo(List(), Unknown, "", None)
+    MethodInfo(List(), Unknown, "", None, varArgs = false) shouldBe
+      NoVarArgsMethodInfo(List(), Unknown, "", None)
   }
 
   test("should create methodInfos with varArgs") {
@@ -25,9 +27,9 @@ class TypeInfoSpec extends FunSuite with Matchers {
     val paramX = Parameter("x", Typed[Int])
     val paramY = Parameter("y", Typed[String])
     val paramYArray = Parameter("y", Typed.genericTypeClass[Array[Object]](List(Typed[String])))
-    def f(x: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = ???
+    def f(x: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = Unknown.validNel
 
-    NoVarArgMethodInfo(List(paramX), Typed[Double], "b", Some("c")).serializable shouldBe
+    NoVarArgsMethodInfo(List(paramX), Typed[Double], "b", Some("c")).serializable shouldBe
       SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)
     VarArgsMethodInfo(List(paramX), paramY, Typed[Long], "d", Some("e")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramYArray), Typed[Long], Some("e"), varArgs = true)

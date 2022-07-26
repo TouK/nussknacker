@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgsMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
 import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter}
 import java.io.File
 import java.nio.charset.StandardCharsets
-import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgsMethodInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
@@ -27,7 +27,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   // We remove names and simplify advanced MethodInfo types because they are
   // not serialized.
   protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
-    case x: NoVarArgMethodInfo => x.copy(name = "")
+    case x: NoVarArgsMethodInfo => x.copy(name = "")
     case x: VarArgsMethodInfo => x.copy(name = "")
     case x: FunctionalMethodInfo => MethodInfo(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
   }
@@ -158,7 +158,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       case SerializableMethodInfo(parameters, _, _, true) =>
         throw new AssertionError(parameters.toString)
       case SerializableMethodInfo(parameters, refClazz, description, false) =>
-        NoVarArgMethodInfo(parameters, refClazz, "", description)
+        NoVarArgsMethodInfo(parameters, refClazz, "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
