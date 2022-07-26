@@ -203,8 +203,6 @@ class ProcessUtils {
         //todo remove when VariableBuilder will be removed
         return "mapVariable"
       }
-      case "Switch":
-        return "choice"
       default: {
         return null
       }
