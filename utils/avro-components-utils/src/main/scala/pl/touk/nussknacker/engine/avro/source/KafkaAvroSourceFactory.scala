@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaV
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory.KafkaAvroSourceFactoryState
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -44,7 +44,7 @@ class KafkaAvroSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryClientF
                                                        val processObjectDependencies: ProcessObjectDependencies,
                                                        protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
-    with KafkaAvroBaseTransformer[Source] {
+    with KafkaUniversalComponentTransformer[Source] {
 
   override type State = KafkaAvroSourceFactoryState[K, V]
 
