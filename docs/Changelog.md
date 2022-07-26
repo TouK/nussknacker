@@ -40,13 +40,14 @@
   Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
   * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
-* [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, flink 0.14.4 -> 0.14.5
+* [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, Flink 1.14.4 -> 1.14.5
 * [#3270](https://github.com/TouK/nussknacker/pull/3270) Added type representing null
 * [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
 * [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
 * [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation: include optional fields validation, reduce number of validation modes.
+* [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 
 1.4.0 (14 Jun 2022)
 ------------------------

@@ -26,6 +26,10 @@ import scala.util.{Failure, Success}
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
   import SimpleStateStatus._
 
+  //Use these "magic" description values to simulate deployment/validation failure
+  private val descriptionForValidationFail = "validateFail"
+  private val descriptionForDeploymentFail = "deployFail"
+
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
 
@@ -56,7 +60,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
   }
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    if (description(canonicalProcess).contains("fail")) {
+    if (description(canonicalProcess).contains(descriptionForValidationFail)) {
       Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
     } else {
       Future.successful(())
@@ -75,7 +79,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
       override def run(): Unit = {
         logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
-        if (description(canonicalProcess).contains("deployFail")) {
+        if (description(canonicalProcess).contains(descriptionForDeploymentFail)) {
           result.complete(Failure(new RuntimeException("Failed miserably during runtime")))
           previous match {
             case Some(state) => memory.update(processVersion.processName, state)

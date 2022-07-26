@@ -12,7 +12,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant, ZoneId}
-import scala.concurrent.ExecutionContext.Implicits.global
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -40,7 +40,7 @@ class NotificationServiceTest extends FunSuite with Matchers with PatientScalaFu
     notificationsFor("randomUser").map(_.toRefresh) shouldBe List(Nil)
 
     val userId = "user1"
-    listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(global, ListenerApiUser(LoggedUser(userId, "")))
+    listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(ctx, ListenerApiUser(LoggedUser(userId, "")))
     notificationsFor(userId).map(_.toRefresh) shouldBe List(Nil, refreshAll)
     notificationsFor("user2").map(_.toRefresh) shouldBe List(Nil)
 
