@@ -54,10 +54,9 @@ object EspTypeUtils {
       if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
       else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
 
-    val methodNameAndInfoList = filteredMethods.flatMap { method =>
-      val extractedMethod = extractMethod(method)
-      collectMethodNames(method).map(_ -> extractedMethod)
-    }
+    val methodNameAndInfoList = filteredMethods
+      .flatMap(extractMethod(_))
+      .map(method => method.name -> method)
 
     deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
   }
@@ -124,12 +123,15 @@ object EspTypeUtils {
   private def getAnnotationOption[T <: Annotation](method: Method, annotationClass: Class[T]): Option[T] =
     if (method.isAnnotationPresent(annotationClass)) Some(method.getAnnotation(annotationClass)) else None
 
-  private def extractMethod(method: Method): MethodInfo = getAnnotationOption(method, classOf[GenericType]) match {
-    case Some(value) => extractGenericMethod(method, value)
-    case None => extractRegularMethod(method)
-  }
+  private def extractMethod(method: Method)
+                           (implicit settings: ClassExtractionSettings): List[MethodInfo] =
+    getAnnotationOption(method, classOf[GenericType]) match {
+      case Some(value) => extractGenericMethod(method, value)
+      case None => extractRegularMethod(method)
+    }
 
-  private def extractGenericMethod(method: Method, genericType: GenericType): MethodInfo = {
+  private def extractGenericMethod(method: Method, genericType: GenericType)
+                                  (implicit settings: ClassExtractionSettings): List[MethodInfo] = {
     val typeFunctionClass = genericType.typingFunction()
     val typeFunctionConstructor = typeFunctionClass.getDeclaredConstructor()
     val typeFunctionInstance = typeFunctionConstructor.newInstance()
@@ -140,23 +142,24 @@ object EspTypeUtils {
     val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
-    FunctionalMethodInfo(
+    collectMethodNames(method).map(FunctionalMethodInfo(
       x => typeFunctionInstance.apply(x).leftMap(_.map(GenericFunctionError)),
       parameterInfo,
       resultInfo,
-      method.getName,
+      _,
       extractNussknackerDocs(method)
-    )
+    ))
   }
 
-  private def extractRegularMethod(method: Method): StaticMethodInfo =
-    MethodInfo(
+  private def extractRegularMethod(method: Method)
+                                  (implicit settings: ClassExtractionSettings): List[StaticMethodInfo] =
+    collectMethodNames(method).map(MethodInfo(
       extractParameters(method),
       extractMethodReturnType(method),
-      method.getName,
+      _,
       extractNussknackerDocs(method),
       method.isVarArgs
-    )
+    ))
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
                                  (implicit settings: ClassExtractionSettings): Map[String, StaticMethodInfo] = {
