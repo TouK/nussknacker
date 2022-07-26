@@ -71,7 +71,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     ConfluentUtils.convertToAvroSchema(schema)
   )
 
-  def serializeInput(input: AvroInput): SerializedInput = {
+  private def serializeInput(input: AvroInput): SerializedInput = {
     val value = serialize(input.value())
 
     val key = Option(input.key()).map {
@@ -83,7 +83,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     new ConsumerRecord(input.topic, input.partition, input.offset, key, value)
   }
 
-  def serialize(element: KafkaAvroElement): Array[Byte] = {
+  private def serialize(element: KafkaAvroElement): Array[Byte] = {
     val containerData = element.data match {
       case container: GenericContainer => container
       case any =>
@@ -94,7 +94,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     ConfluentUtils.serializeContainerToBytesArray(containerData, element.schemaId)
   }
 
-  def deserializeKey[T](topic: String, payload: Array[Byte]) = if (kafkaConfig.useStringForKey) {
+  private def deserializeKey[T](topic: String, payload: Array[Byte]) = if (kafkaConfig.useStringForKey) {
     keyStringDeserializer.deserialize(topic, payload).asInstanceOf[T]
   } else {
     deserialize[T](payload)
@@ -124,8 +124,6 @@ object KafkaConsumerRecord {
 }
 
 case class KafkaAvroElement(data: Any, schemaId: Int)
-
-case class KafkaJsonSchemaElement(data: Array[Byte], schemaId: Int)
 
 object KafkaAvroConsumerRecord {
 
