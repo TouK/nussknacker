@@ -46,7 +46,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Vali
   private val outputTopic = "output"
 
   private val simpleAvroScenario = ScenarioBuilder.streamingLite("check avro serialization")
-    .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
+    .source("my-source", KafkaAvroName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
     .emptySink("my-sink", KafkaSinkRawAvroName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
 
   test("should test end to end kafka avro record data at sink / source") {

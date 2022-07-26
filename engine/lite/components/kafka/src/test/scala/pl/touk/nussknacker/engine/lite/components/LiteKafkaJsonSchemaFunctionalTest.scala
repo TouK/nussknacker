@@ -9,17 +9,15 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.lite.util.test.{KafkaJsonSchemaElement, LiteJsonSchemaKafkaTestScenarioRunner, LiteKafkaTestScenarioRunner}
+import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class LiteKafkaJsonSchemaAvroFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
@@ -49,10 +47,10 @@ class LiteKafkaJsonSchemaAvroFunctionalTest extends FunSuite with Matchers with 
   private val scenario = ScenarioBuilder.streamingLite("check json serialization")
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
     .emptySink("end", "dead-end")
-
+// todo when universal sink will be ready
 //      .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
 
-  test("should test end to end kafka avro record data at sink / source") {
+  test("should read data on json schema based universal source") {
     //Given
     val runtime = createRuntime
     val schemaId = runtime.registerJsonSchemaSchema(inputTopic, schema)
@@ -66,13 +64,15 @@ class LiteKafkaJsonSchemaAvroFunctionalTest extends FunSuite with Matchers with 
         |  "age": 21
         |}""".stripMargin.getBytes()
 
-    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Any], KafkaJsonSchemaElement(record, schemaId), new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes())))
+    val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
+    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], record, headers)
 
-    val list: List[ConsumerRecord[Any, KafkaJsonSchemaElement]] = List(input)
-    val result = runtime.runWithAvroData[String, KafkaJsonSchemaElement](scenario, list).validValue
+    val list: List[ConsumerRecord[Array[Byte],Array[Byte]]] = List(input)
+    val result = runtime.runWithRawData(scenario, list).validValue
     val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then
+// todo when universal sink will be ready
 //    resultWithValue shouldBe RunResult.success(input.value().data)
     resultWithValue shouldBe RunResult.successes(List())
   }
@@ -88,6 +88,6 @@ class LiteKafkaJsonSchemaAvroFunctionalTest extends FunSuite with Matchers with 
     val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
     val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
 
-    new LiteJsonSchemaKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
+    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
   }
 }

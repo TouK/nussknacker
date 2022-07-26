@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import org.everit.json.schema.{Schema => EveritSchema}
 
 import java.nio.charset.StandardCharsets
 
@@ -59,6 +60,11 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
+
+  def registerJsonSchemaSchema(topic: String, schema: EveritSchema): Int = schemaRegistryClient.register(
+    ConfluentUtils.topicSubject(topic, false),
+    ConfluentUtils.convertToJsonSchema(schema)
+  )
 
   def registerAvroSchema(topic: String, schema: Schema): Int = schemaRegistryClient.register(
     ConfluentUtils.topicSubject(topic, false),
@@ -118,6 +124,7 @@ object KafkaConsumerRecord {
 }
 
 case class KafkaAvroElement(data: Any, schemaId: Int)
+
 case class KafkaJsonSchemaElement(data: Array[Byte], schemaId: Int)
 
 object KafkaAvroConsumerRecord {
