@@ -5,9 +5,11 @@ import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypeReferenceError, UnknownClassError}
+import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.TypeInfo
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
 
 import scala.util.{Failure, Success, Try}
 
