@@ -29,8 +29,8 @@ object TypeInfos {
               name: String,
               description: Option[String],
               varArgs: Boolean): StaticMethodInfo = (varArgs, parameters) match {
-      case (true, noVarArgParameters :+ Parameter(name, TypedClass(`arrayClass`, varArgType :: Nil))) =>
-        VarArgsMethodInfo(noVarArgParameters, Parameter(name, varArgType), refClazz, name, description)
+      case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`arrayClass`, varArgType :: Nil))) =>
+        VarArgsMethodInfo(noVarArgParameters, Parameter(paramName, varArgType), refClazz, name, description)
       case (true, _ :+ Parameter(_, TypedClass(`arrayClass`, _))) =>
         throw new AssertionError("Array must have one type parameter")
       case (true, _ :+ Parameter(_, _)) =>
