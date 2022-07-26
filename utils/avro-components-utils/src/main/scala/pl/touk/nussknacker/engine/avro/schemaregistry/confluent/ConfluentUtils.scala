@@ -106,7 +106,7 @@ object ConfluentUtils extends LazyLogging {
     bytes
   }
 
-  private def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {
+  def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {
     val dos = new DataOutputStream(stream)
     dos.write(MagicByte)
     dos.writeInt(schemaId)

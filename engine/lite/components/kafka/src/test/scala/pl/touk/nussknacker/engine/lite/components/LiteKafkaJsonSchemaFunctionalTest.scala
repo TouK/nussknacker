@@ -10,12 +10,15 @@ import org.json.JSONObject
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+
+import java.io.ByteArrayOutputStream
 
 class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -50,7 +53,7 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
 // todo when universal sink will be ready
 //      .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'",  SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkValueParamName -> s"#input", SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'")
 
-  test("should read data on json schema based universal source") {
+  test("should read data on json schema based universal source when schemaId in header") {
     //Given
     val runtime = createRuntime
     val schemaId = runtime.registerJsonSchemaSchema(inputTopic, schema)
@@ -76,6 +79,37 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
 //    resultWithValue shouldBe RunResult.success(input.value().data)
     resultWithValue shouldBe RunResult.successes(List())
   }
+
+  test("should read data on json schema based universal source when schemaId in wire-format") {
+    //Given
+    val runtime = createRuntime
+    val schemaId = runtime.registerJsonSchemaSchema(inputTopic, schema)
+    runtime.registerJsonSchemaSchema(outputTopic, schema)
+
+    //When
+    val record =
+      """{
+        |  "first": "John",
+        |  "last": "Doe",
+        |  "age": 21
+        |}""".stripMargin.getBytes()
+
+    val recordWithWireFormatSchemaId = new ByteArrayOutputStream
+    ConfluentUtils.writeSchemaId(schemaId, recordWithWireFormatSchemaId)
+    recordWithWireFormatSchemaId.write(record)
+
+    val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
+
+    val list: List[ConsumerRecord[Array[Byte],Array[Byte]]] = List(input)
+    val result = runtime.runWithRawData(scenario, list).validValue
+    val resultWithValue = result.copy(successes = result.successes.map(_.value()))
+
+    //Then
+    // todo when universal sink will be ready
+    //    resultWithValue shouldBe RunResult.success(input.value().data)
+    resultWithValue shouldBe RunResult.successes(List())
+  }
+
 
   private def createRuntime = {
     val config = DefaultKafkaConfig

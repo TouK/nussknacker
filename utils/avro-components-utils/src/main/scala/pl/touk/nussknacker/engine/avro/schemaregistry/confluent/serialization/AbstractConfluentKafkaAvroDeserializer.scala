@@ -67,6 +67,8 @@ class ConfluentJsonSchemaPayloadDeserializer {
 
   def deserialize(expectedSchemaData: Option[RuntimeSchemaData[JsonSchema]], writerSchemaData: RuntimeSchemaData[JsonSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
     val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData)
+    buffer.position(bufferDataStart)
+    buffer.compact()
     new CirceJsonDeserializer(readerSchemaData.schema.rawSchema()).deserialize(buffer.array())
   }
 }
