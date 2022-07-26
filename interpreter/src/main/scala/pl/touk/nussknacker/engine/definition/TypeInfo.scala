@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, NoVarArg
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
-object TypeInfos {
+object TypeInfo {
   //a bit sad that it isn't derived automatically, but...
   private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
 

@@ -11,11 +11,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter}
 import java.io.File
 import java.nio.charset.StandardCharsets
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgMethodInfo}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
