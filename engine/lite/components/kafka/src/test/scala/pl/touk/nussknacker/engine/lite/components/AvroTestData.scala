@@ -111,6 +111,8 @@ object AvroTestData {
 
   val recordOptionalMapOfRecordsSchema: Schema = createSimpleRecord(Null, nullSchema, createMap(nullSchema, recordPriceSchema))
 
+  val fakeMapRecordWithStringPrice: Schema = createSimpleRecord(recordStringPriceSchema)
+
   //Avro record schemas
   val baseRecordWithStringPriceSchema: Schema = createRecord(createField("sub", Null, nullSchema, recordStringPriceSchema))
 

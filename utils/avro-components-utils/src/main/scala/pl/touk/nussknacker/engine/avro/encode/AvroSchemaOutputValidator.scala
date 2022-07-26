@@ -97,7 +97,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     val schemaFields = schema.getFields.asScala.map(field => field.name() -> field).toMap
 
-    val requiredFieldNames = if (validationMode.strict) {
+    val requiredFieldNames = if (validationMode == ValidationMode.strict) {
       schemaFields.values.map(_.name())
     } else {
       schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
@@ -121,7 +121,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
-      condNel(redundantFields.isEmpty || !validationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
+      condNel(redundantFields.isEmpty || validationMode != ValidationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
@@ -138,7 +138,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         )
       case map@TypedClass(klass, _) if isMap(klass) =>
         throw new IllegalArgumentException(s"Illegal typing Map: $map.")
-      case _@TypedObjectTypingResult(fields, _, _) =>
+      case _@TypedObjectTypingResult(fields, TypedClass(klass, _), _) if isMap(klass) =>
         fields.map{ case (key, value) =>
           val fieldPath = buildPath(key, path)
           validateTypingResult(value, schema.getValueType, fieldPath)
@@ -165,28 +165,26 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         case _ => false
       }
 
-    def createUnionValidationResults(checkNullability: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
-      val schemas = if(checkNullability) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
+    def createUnionValidationResults(checkNullSchemaType: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
+      val schemas = if(checkNullSchemaType) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
       schemas.map(validateTypingResult(typingResult, _, path)).toList
     }
-
-    def isNullableSchema(schema: Schema): Boolean = schema.getTypes.size() == 2 && schema.isNullable
 
     def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
       if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
 
     val unionValidationResults = schema match {
-      case sch if isNullableSchema(sch) =>
-        val notNullableValidationResults = createUnionValidationResults(checkNullability = false)
+      case sch if sch.getTypes.size() == 2 && sch.isNullable =>
+        val notNullableValidationResults = createUnionValidationResults(checkNullSchemaType = false)
 
         asSingleValidatedResults(notNullableValidationResults) match {
           case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
-            createUnionValidationResults(checkNullability = true)
+            createUnionValidationResults(checkNullSchemaType = true)
           case _ =>
             notNullableValidationResults
         }
       case _ =>
-        createUnionValidationResults(checkNullability = true)
+        createUnionValidationResults(checkNullSchemaType = true)
     }
 
     asSingleValidatedResults(unionValidationResults)

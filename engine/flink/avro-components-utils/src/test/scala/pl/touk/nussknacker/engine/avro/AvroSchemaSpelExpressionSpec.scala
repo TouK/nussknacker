@@ -138,6 +138,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
   it("should recognize record with enum") {
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None).toOption.get
+    parse[CharSequence]("#input.currency.toString", ctx) should be ('valid)
     parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
   }
 

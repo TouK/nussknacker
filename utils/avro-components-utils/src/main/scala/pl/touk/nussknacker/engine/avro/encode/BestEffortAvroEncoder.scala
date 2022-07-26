@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.encode
 
 import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericContainer, GenericData}
@@ -147,7 +147,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case ((fieldName, value), field) if field != null =>
         val fieldSchema = field.schema()
         encode(value, fieldSchema, Some(fieldName)).map(fieldName -> _)
-      case ((fieldName, _), null) if !validationMode.strict =>
+      case ((fieldName, _), null) if validationMode != ValidationMode.loose =>
         error(s"Not expected field with name: $fieldName for schema: $schema and policy $validationMode does not allow redundant")
     }.toList.sequence.map { values =>
       val builder = new LogicalTypesGenericRecordBuilder(schema)

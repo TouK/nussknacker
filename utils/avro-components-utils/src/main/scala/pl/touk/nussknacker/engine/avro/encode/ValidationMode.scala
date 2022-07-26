@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.avro.encode
 
-case class ValidationMode private(name: String, label: String, strict: Boolean)
+final case class ValidationMode private(name: String, label: String)
 
 object ValidationMode {
 
-  val strict: ValidationMode = ValidationMode("strict", "Strict mode", strict = true)
+  val strict: ValidationMode = ValidationMode("strict", "Strict mode")
 
-  val loose: ValidationMode = ValidationMode("flexible", "Loose mode", strict = false)
+  val loose: ValidationMode = ValidationMode("loose", "Loose mode")
 
   val values: List[ValidationMode] = List(strict, loose)
 
