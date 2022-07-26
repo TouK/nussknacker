@@ -131,7 +131,7 @@ object EspTypeUtils {
 
   private def extractGenericMethod(method: Method, genericType: GenericType): MethodInfo = {
     val typeFunctionClass = genericType.typingFunction()
-    val typeFunctionConstructor = typeFunctionClass.getConstructor()
+    val typeFunctionConstructor = typeFunctionClass.getDeclaredConstructor()
     val typeFunctionInstance = typeFunctionConstructor.newInstance()
 
     val parameterInfo = typeFunctionInstance.staticParameters()
