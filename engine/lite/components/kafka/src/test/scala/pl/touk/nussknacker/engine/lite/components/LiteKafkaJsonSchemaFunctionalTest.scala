@@ -56,8 +56,8 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
   test("should read data on json schema based universal source when schemaId in header") {
     //Given
     val runtime = createRuntime
-    val schemaId = runtime.registerJsonSchemaSchema(inputTopic, schema)
-    runtime.registerJsonSchemaSchema(outputTopic, schema)
+    val schemaId = runtime.registerJsonSchema(inputTopic, schema)
+    runtime.registerJsonSchema(outputTopic, schema)
 
     //When
     val record =
@@ -83,8 +83,8 @@ class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with Vali
   test("should read data on json schema based universal source when schemaId in wire-format") {
     //Given
     val runtime = createRuntime
-    val schemaId = runtime.registerJsonSchemaSchema(inputTopic, schema)
-    runtime.registerJsonSchemaSchema(outputTopic, schema)
+    val schemaId = runtime.registerJsonSchema(inputTopic, schema)
+    runtime.registerJsonSchema(outputTopic, schema)
 
     //When
     val record =

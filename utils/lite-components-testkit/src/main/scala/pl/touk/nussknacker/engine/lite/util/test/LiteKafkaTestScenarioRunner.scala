@@ -61,7 +61,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 
-  def registerJsonSchemaSchema(topic: String, schema: EveritSchema): Int = schemaRegistryClient.register(
+  def registerJsonSchema(topic: String, schema: EveritSchema): Int = schemaRegistryClient.register(
     ConfluentUtils.topicSubject(topic, false),
     ConfluentUtils.convertToJsonSchema(schema)
   )
