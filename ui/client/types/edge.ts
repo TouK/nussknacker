@@ -10,7 +10,7 @@ export enum EdgeKind {
 }
 
 export type EdgeType = {
-  type: EdgeKind | string,
+  type: EdgeKind,
   name?: string,
   condition?: ExpressionObj,
 }

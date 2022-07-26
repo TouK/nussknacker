@@ -9,6 +9,7 @@ import {ExpressionLang} from "./editors/expression/types"
 import NodeUtils from "../NodeUtils"
 import {EdgeTypeOption} from "./EdgeTypeSelect"
 import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {defaultsDeep} from "lodash"
 
 interface EdgeType extends Partial<EdgeTypeOption> {
   value: EdgeKind,
@@ -30,6 +31,7 @@ interface Props {
 
 export type WithTempId<T> = T & { _id?: string }
 
+//mutate to avoid unnecessary renders
 function withFakeId(edge: WithTempId<Edge>): WithTempId<Edge> {
   if (edge.to?.length > 0) {
     delete edge._id
@@ -37,6 +39,29 @@ function withFakeId(edge: WithTempId<Edge>): WithTempId<Edge> {
     edge._id = `id${Math.random()}`
   }
   return edge
+}
+
+function getDefaultEdgeType(kind: EdgeKind): Edge["edgeType"] {
+  switch (kind) {
+    case EdgeKind.switchNext:
+      return {
+        type: kind,
+        condition: {
+          expression: "true",
+          language: ExpressionLang.SpEL,
+        },
+      }
+    default:
+      return {type: kind}
+  }
+}
+
+function getDefaultEdge(kind: EdgeKind): Edge {
+  return {from: "", to: "", edgeType: getDefaultEdgeType(kind)}
+}
+
+function withDefaults<T extends Edge>(edge: Partial<T>): T {
+  return defaultsDeep(edge, getDefaultEdge(edge.edgeType.type))
 }
 
 export function EdgesDndComponent(props: Props): JSX.Element {
@@ -56,28 +81,15 @@ export function EdgesDndComponent(props: Props): JSX.Element {
 
   const replaceEdge = useCallback((current: WithTempId<Edge>) => (next: WithTempId<Edge>) => {
     if (current !== next) {
-      withFakeId(next)
-      setEdges(edges => edges.map(e => e === current ? next : e))
+      setEdges(edges => edges.map(e => e === current ? withFakeId(withDefaults(next)) : e))
     }
   }, [])
 
   const removeEdge = useCallback((n, index) => setEdges(edges => edges.filter((e, i) => i !== index)), [])
 
   const addEdge = useCallback(() => {
-    const [{value}] = availableTypes
-    const item: Edge = {
-      from: nodeId,
-      to: "",
-      edgeType: value === EdgeKind.switchNext ?
-        {
-          type: value, condition: {
-            expression: "true",
-            language: ExpressionLang.SpEL,
-          },
-        } :
-        {type: value},
-    }
-    setEdges(edges => edges.concat(withFakeId(item)))
+    const [{value: type}] = availableTypes
+    setEdges(edges => edges.concat(withFakeId(withDefaults({from: nodeId, edgeType: {type}}))))
   }, [availableTypes, nodeId])
 
   useEffect(() => {
