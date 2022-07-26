@@ -27,11 +27,12 @@ import {refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
 import {EdgesDndComponent, WithTempId} from "./EdgesDndComponent"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {
-  ComponentsConfig,
   Edge,
   EdgeKind,
+  NodeId,
   NodeType,
   NodeValidationError,
+  ParameterConfig,
   ProcessDefinitionData,
   ProcessId,
   UIParameter,
@@ -49,7 +50,7 @@ export interface NodeDetailsContentProps {
   additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
   showValidation?: boolean,
   showSwitch?: boolean,
-  findAvailableVariables?,
+  findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   processDefinitionData?: ProcessDefinitionData,
   node: NodeType,
   edges?: Edge[],
@@ -76,45 +77,60 @@ interface State {
   edges: WithTempId<Edge>[],
 }
 
+function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
+  return definitions?.find((param) => param.name === paramName)
+}
+
+function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: NodeId): Record<string, ParameterConfig> {
+  return processDefinitionData.componentsConfig[nodeId]?.params
+}
+
+function getParameterDefinitions(processDefinitionData: ProcessDefinitionData, node: NodeType, dynamicParameterDefinitions?: UIParameter[]): UIParameter[] {
+  return dynamicParameterDefinitions || ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.parameters
+}
+
+function hasOutputVar(node: NodeType, processDefinitionData: ProcessDefinitionData): boolean {
+  const returnType = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.returnType
+  return !!returnType || !!node.outputVar
+}
+
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
 export class NodeDetailsContent extends React.Component<NodeDetailsContentProps, State> {
   parameterDefinitions: UIParameter[]
-  componentsConfig: ComponentsConfig
-  showOutputVar: boolean
 
   constructor(props: NodeDetailsContentProps) {
     super(props)
 
     this.initalizeWithProps(props)
-    const nodeToAdjust = props.node
-    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.parameterDefinitions)
+    const {edges, testResults, node, isEditMode, dynamicParameterDefinitions, processDefinitionData} = props
+    const {
+      node: editedNode,
+      unusedParameters
+    } = adjustParameters(node, getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions))
 
-    const stateForSelectTestResults = TestResultUtils.stateForSelectTestResults(null, this.props.testResults)
+    const stateForSelectTestResults = TestResultUtils.stateForSelectTestResults(null, testResults)
+
     this.state = {
       ...stateForSelectTestResults,
-      editedNode: node,
-      originalNode: nodeToAdjust,
-      unusedParameters: unusedParameters,
+      editedNode,
+      originalNode: node,
+      unusedParameters,
       codeCompletionEnabled: true,
       testResultsToHide: new Set(),
-      edges: props.edges,
+      edges,
     }
 
     //In most cases this is not needed, as parameter definitions should be present in validation response
     //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
-    if (this.props.isEditMode) {
-      this.updateNodeDataIfNeeded(node)
+    if (isEditMode) {
+      this.updateNodeDataIfNeeded(editedNode)
     }
     this.generateUUID("fields", "parameters")
   }
 
   initalizeWithProps(props: NodeDetailsContentProps): void {
     const {dynamicParameterDefinitions, node, processDefinitionData} = props
-    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
-    this.parameterDefinitions = dynamicParameterDefinitions || nodeObjectDetails?.parameters
-    this.componentsConfig = processDefinitionData.componentsConfig
-    const hasNoReturn = !nodeObjectDetails?.returnType
-    this.showOutputVar = !hasNoReturn || !!node.outputVar
+    this.parameterDefinitions = getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions)
   }
 
   generateUUID(...properties) {
@@ -175,10 +191,6 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     }
   }
 
-  findParamDefinitionByName(paramName) {
-    return (this.parameterDefinitions || []).find((param) => param.name === paramName)
-  }
-
   removeElement = (property, index) => {
     if (has(this.state.editedNode, property)) {
       const node = cloneDeep(this.state.editedNode)
@@ -200,23 +212,23 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
   idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
 
   customNode = (fieldErrors: Error[]): JSX.Element => {
+    const {edges, editedNode, originalNode, testResultsToHide, testResultsToShow} = this.state
     const {
-      showValidation,
-      showSwitch,
-      isEditMode,
       findAvailableVariables,
-      additionalPropertiesConfig,
-      processDefinitionData,
-      node,
-      expressionType,
       originalNodeId,
+      node,
+      isEditMode,
+      showValidation,
+      expressionType,
       nodeTypingInfo,
+      processDefinitionData,
+      showSwitch,
+      additionalPropertiesConfig,
+      pathsToMark,
     } = this.props
-
     const variableTypes = findAvailableVariables(originalNodeId)
-    const editedNode = this.state.editedNode
     //compare window uses legacy egde component
-    const isCompareView = this.props.pathsToMark !== undefined
+    const isCompareView = pathsToMark !== undefined
 
     switch (NodeUtils.nodeType(node)) {
       case "Source":
@@ -363,7 +375,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           <div className="node-table-body">
             {this.idField()}
             {
-              this.showOutputVar && this.createField(
+              hasOutputVar(node, processDefinitionData) && this.createField(
                 "input",
                 "Output variable name",
                 "outputVar",
@@ -384,8 +396,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 errors={fieldErrors}
                 parameterDefinitions={this.parameterDefinitions}
                 setNodeDataAt={this.setNodeDataAt}
-                testResultsToShow={this.state.testResultsToShow}
-                testResultsToHide={this.state.testResultsToHide}
+                testResultsToShow={testResultsToShow}
+                testResultsToHide={testResultsToHide}
                 toggleTestResult={this.toggleTestResult}
                 findAvailableVariables={findAvailableVariables}
               />
@@ -457,9 +469,9 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 <EdgesDndComponent
                   label={"Conditions"}
                   nodeId={originalNodeId}
-                  value={this.state.edges}
+                  value={edges}
                   onChange={(edges) => {
-                    if (edges !== this.state.edges) {
+                    if (edges !== edges) {
                       this.setState({edges}, this.publishNodeChange)
                     }
                   }}
@@ -635,7 +647,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     )
   }
 
-  createField = (fieldType, fieldLabel, fieldProperty, autofocus = false, validators = [], fieldName?, readonly?, defaultValue?, key?) => {
+  createField = (fieldType: string, fieldLabel: string, fieldProperty: string, autofocus = false, validators = [], fieldName?: string, readonly?: boolean, defaultValue?: boolean, key?: string) => {
     return this.doCreateField(
       fieldType,
       fieldLabel,
@@ -674,7 +686,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         isMarked={this.isMarked}
         showValidation={showValidation}
         showSwitch={showSwitch}
-        parameterDefinition={this.findParamDefinitionByName(fieldName)}
+        parameterDefinition={findParamDefinitionByName(this.parameterDefinitions, fieldName)}
         setNodeDataAt={this.setNodeDataAt}
         testResultsToShow={this.state.testResultsToShow}
         testResultsToHide={this.state.testResultsToHide}
@@ -697,14 +709,14 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
   }
 
   doCreateField = (
-    fieldType,
-    fieldLabel,
-    fieldName,
-    fieldValue,
-    handleChange,
-    forceReadonly,
-    isMarked,
-    key,
+    fieldType: string,
+    fieldLabel: string,
+    fieldName: string,
+    fieldValue: string,
+    handleChange: (newValue: any) => void,
+    forceReadonly: boolean,
+    isMarked: boolean,
+    key: string,
     autofocus = false,
     validators = [],
   ) => {
@@ -757,10 +769,11 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     }
   }
 
-  renderFieldLabel = (paramName) => {
-    const parameter = this.findParamDefinitionByName(paramName)
-    const params = this.componentsConfig[this.props.node.id]?.params
-    const label = (params && params[paramName]?.label) ?? paramName
+  renderFieldLabel = (paramName: string) => {
+    const {processDefinitionData, node} = this.props
+    const parameter = findParamDefinitionByName(this.parameterDefinitions, paramName)
+    const params = getNodeParams(processDefinitionData, node.id)
+    const label = params?.[paramName]?.label ?? paramName
     return (
       <div className="node-label" title={paramName}>{label}:
         {parameter ?

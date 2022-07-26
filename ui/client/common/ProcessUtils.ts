@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {flatten, get, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, reduce, transform} from "lodash"
+import {flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform} from "lodash"
 import {
   GlobalVariables,
   NodeId,
@@ -8,8 +8,10 @@ import {
   NodeType,
   Process,
   ProcessDefinition,
+  ReturnedType,
   TypingResult,
   UIParameter,
+  VariableTypes,
 } from "../types"
 
 class ProcessUtils {
@@ -74,7 +76,7 @@ class ProcessUtils {
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
-  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition: UIParameter) => {
+  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
     const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
@@ -92,7 +94,7 @@ class ProcessUtils {
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
-  _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const filteredGlobalVariables = pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
     const globalVariables = mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
@@ -104,7 +106,7 @@ class ProcessUtils {
     }
   }
 
-  _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const previousNodes = this._findPreviousNodes(nodeId, process)
     const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
@@ -112,17 +114,17 @@ class ProcessUtils {
     return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
   }
 
-  _listOfObjectsToObject = (list) => {
-    return reduce(list, (memo, current) => {
+  _listOfObjectsToObject = <T>(list: Record<string, T>[]): Record<string, T> => {
+    return list.reduce((memo, current) => {
       return {...memo, ...current}
     }, {})
   }
 
-  _findVariablesDefinedInProcess = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  _findVariablesDefinedInProcess = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): Record<string, ReturnedType>[] => {
     const node = process.nodes.find((node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
-    const clazzName = get(nodeObjectTypeDefinition, "returnType")
-    const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
+    const clazzName = nodeObjectTypeDefinition?.returnType
+    const unknown: ReturnedType = {display: "Unknown", type: "Unknown", refClazzName: "java.lang.Object", params: []}
     switch (node.type) {
       case "Source": {
         return isEmpty(clazzName) ? [] : [{input: clazzName}]
@@ -135,9 +137,7 @@ class ProcessUtils {
       }
       case "CustomNode":
       case "Join": {
-        const outputVariableName = node.outputVar
-        const outputClazz = clazzName
-        return isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
+        return isEmpty(clazzName) ? [] : [{[node.outputVar]: clazzName}]
       }
       case "VariableBuilder": {
         return [{[node.varName]: unknown}]
@@ -146,7 +146,7 @@ class ProcessUtils {
         return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [node.exprVal ? {[node.exprVal]: unknown} : {}]
+        return node.exprVal ? [{[node.exprVal]: unknown}] : []
       }
       default: {
         return []
@@ -178,7 +178,10 @@ class ProcessUtils {
         }
       }
     }
-    return {}
+    return {
+      parameters: [],
+      returnType: null,
+    }
   }
 
   //TODO: this should be done without these switches..

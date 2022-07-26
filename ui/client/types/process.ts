@@ -34,18 +34,26 @@ export type CustomActionParameter = {
 export type AdditionalPropertiesConfig = $TodoType
 export type DynamicParameterDefinitions = $TodoType
 
+//"ReturnType" is builtin type alias
+export interface ReturnedType {
+  display: string,
+  type: string,
+  refClazzName: string,
+  params: [],
+}
+
 export interface NodeObjectTypeDefinition {
-  parameters?: UIParameter[]
-  returnType?: $TodoType
+  parameters: UIParameter[],
+  returnType: ReturnedType | null,
 }
 
 export interface ProcessDefinition {
-  services?: Record<string, NodeObjectTypeDefinition>
-  sourceFactories?: Record<string, NodeObjectTypeDefinition>
-  sinkFactories?: Record<string, NodeObjectTypeDefinition>
-  customStreamTransformers?: Record<string, NodeObjectTypeDefinition>
-  signalsWithTransformers?: Record<string, NodeObjectTypeDefinition>
-  subprocessInputs?: Record<string, NodeObjectTypeDefinition>
+  services?: Record<string, NodeObjectTypeDefinition>,
+  sourceFactories?: Record<string, NodeObjectTypeDefinition>,
+  sinkFactories?: Record<string, NodeObjectTypeDefinition>,
+  customStreamTransformers?: Record<string, NodeObjectTypeDefinition>,
+  signalsWithTransformers?: Record<string, NodeObjectTypeDefinition>,
+  subprocessInputs?: Record<string, NodeObjectTypeDefinition>,
   globalVariables?: GlobalVariables,
   typesInformation?: ClassDefinition[],
 }
@@ -62,10 +70,14 @@ export interface ProcessDefinitionData {
   defaultAsyncInterpretation?: boolean,
 }
 
-export type GlobalVariables = Record<string, {
-  returnType: $TodoType | null,
+export interface GlobalVariable {
+  returnType: ReturnedType | null,
   categories: string[],
-}>
+  parameters: [],
+  componentConfig: Record<string, any>,
+}
+
+export type GlobalVariables = Record<string, GlobalVariable>
 
 export type ClassDefinition = {
   clazzName: TypingResult,
