@@ -35,7 +35,7 @@ import {
   ProcessDefinitionData,
   ProcessId,
   UIParameter,
-  VariableTypes
+  VariableTypes,
 } from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
 import {ValidationRequest} from "../../../actions/nk"
@@ -437,16 +437,22 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           />
         )
       case "Switch":
-        const nodeDefinition = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
+        const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
+        const currentExpression = this.state.originalNode["expression"]
+        const currentExprVal = this.state.originalNode["exprVal"]
         return (
           <div className="node-table-body">
             {this.idField()}
-            {!isEqual(nodeDefinition.node["expression"], this.state.originalNode["expression"]) ?
-              this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors) :
-              null}
-            {nodeDefinition.node["exprVal"] !== this.state.originalNode["exprVal"] ?
-              this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
-              null}
+            {definition["expression"] ?
+              !isEqual(definition["expression"], currentExpression) :
+              currentExpression?.expression ?
+                this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors) :
+                null}
+            {definition["exprVal"] ?
+              definition["exprVal"] !== currentExprVal :
+              currentExprVal ?
+                this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
+                null}
             {!isCompareView ?
               (
                 <EdgesDndComponent
