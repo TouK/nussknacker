@@ -446,12 +446,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             {definition["expression"] ?
               !isEqual(definition["expression"], currentExpression) :
               currentExpression?.expression ?
-                this.createStaticExpressionField("expression", "Expression", "expression", fieldErrors) :
+                this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
                 null}
             {definition["exprVal"] ?
               definition["exprVal"] !== currentExprVal :
               currentExprVal ?
-                this.createField("input", "exprVal", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
+                this.createField("input", "exprVal (deprecated)", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
                 null}
             {!isCompareView ?
               (
