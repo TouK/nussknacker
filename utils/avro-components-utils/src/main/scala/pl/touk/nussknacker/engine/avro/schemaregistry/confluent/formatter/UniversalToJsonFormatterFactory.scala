@@ -1,25 +1,20 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter
 
-import io.circe.generic.extras.encoding.ConfiguredAsObjectEncoder
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.{Decoder, Encoder, Json}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.KeySchemaIdHeaderName
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, _}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
-import scala.util.Try
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde._
-import shapeless.Lazy
 
 /**
  * RecordFormatter factory for kafka avro sources with avro payload.
@@ -106,20 +101,17 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
   protected def createKeyEncoder(messageFormatter: UniversalMessageFormatter, schemaOpt: Option[ParsedSchema]): Encoder[K] = {
     case str: String => Json.fromString(str)
-    case key => messageFormatter.asJson[K](key, schemaOpt.get)
+    case key => messageFormatter.asJson(key, schemaOpt.get)
   }
 
-  protected def createValueEncoder(messageFormatter: UniversalMessageFormatter, schema: ParsedSchema): Encoder[V] = (value: V) => messageFormatter.asJson[V](value, schema)
+  protected def createValueEncoder(messageFormatter: UniversalMessageFormatter, schema: ParsedSchema): Encoder[V] = (value: V) => messageFormatter.asJson(value, schema)
 
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[UniversalSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
 
-  protected def keyEncoder(schemaOpt: Option[ParsedSchema]): Encoder[K] = createKeyEncoder(messageFormatter, schemaOpt)
-  protected def valueEncoder(schema: ParsedSchema): Encoder[V] = createValueEncoder(messageFormatter, schema)
-
   protected def consumerRecordEncoder(keySchemaOpt: Option[ParsedSchema], valueSchema: ParsedSchema): Encoder[UniversalSerializableConsumerRecord[K, V]] = {
-    implicit val kE: Encoder[K] = keyEncoder(keySchemaOpt)
-    implicit val vE: Encoder[V] = valueEncoder(valueSchema)
+    implicit val kE: Encoder[K] = createKeyEncoder(messageFormatter, keySchemaOpt)
+    implicit val vE: Encoder[V] = createValueEncoder(messageFormatter, valueSchema)
     implicit val srE: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
     deriveConfiguredEncoder
   }
