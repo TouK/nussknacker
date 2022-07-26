@@ -36,4 +36,39 @@ class TypeInfoSpec extends FunSuite with Matchers {
     FunctionalMethodInfo(f, List(paramX, paramY), Typed[String], "f", Some("g")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramY), Typed[String], Some("g"), varArgs = false)
   }
+
+  private val noVarArgsMethodInfo =
+    NoVarArgsMethodInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), Typed[Double], "", None)
+  private val varArgsMethodInfo =
+    VarArgsMethodInfo(List(Parameter("", Typed[String])), Parameter("", Typed[Int]), Typed[Float], "", None)
+
+  // FIXME: Add expected result for other types.
+  test("should generate type functions for methods without varArgs") {
+    noVarArgsMethodInfo.apply(List(Typed[Int], Typed[String])) shouldBe Typed[Double].validNel
+
+    noVarArgsMethodInfo.apply(List()) shouldBe ()
+    noVarArgsMethodInfo.apply(List(Typed[Int], Typed[Double])) shouldBe ()
+    noVarArgsMethodInfo.apply(List(Typed[String], Typed[Double])) shouldBe ()
+    noVarArgsMethodInfo.apply(List(Typed[Int], Typed[String], Typed[Double])) shouldBe ()
+
+    noVarArgsMethodInfo.apply(List(Typed[Number], Typed[String])) shouldBe Typed[Double].validNel
+    noVarArgsMethodInfo.apply(List(Typed[Int], Unknown)) shouldBe Typed[Double].validNel
+  }
+
+  test("should generate type functions for methods with varArgs") {
+    varArgsMethodInfo.apply(List(Typed[String])) shouldBe Typed[Float].validNel
+    varArgsMethodInfo.apply(List(Typed[String], Typed[Int])) shouldBe Typed[Float].validNel
+    varArgsMethodInfo.apply(List(Typed[String], Typed[Int], Typed[Int], Typed[Int])) shouldBe Typed[Float].validNel
+
+    varArgsMethodInfo.apply(List()) shouldBe ()
+    varArgsMethodInfo.apply(List(Typed[Int])) shouldBe ()
+    varArgsMethodInfo.apply(List(Typed[String], Typed[String])) shouldBe ()
+    varArgsMethodInfo.apply(List(Typed[String], Typed[Int], Typed[Double])) shouldBe ()
+    varArgsMethodInfo.apply(List(Typed[Int], Typed[Int])) shouldBe ()
+
+    varArgsMethodInfo.apply(List(Unknown)) shouldBe Typed[Float].validNel
+    varArgsMethodInfo.apply(List(Typed[String], Typed[Number])) shouldBe Typed[Float].validNel
+    varArgsMethodInfo.apply(List(Typed[String], Typed[Int], Typed[Number])) shouldBe Typed[Float].validNel
+    varArgsMethodInfo.apply(List(Typed[String], Unknown, Typed[Number])) shouldBe Typed[Float].validNel
+  }
 }

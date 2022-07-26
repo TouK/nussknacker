@@ -89,11 +89,8 @@ object TypeInfo {
     private def checkArgumentsLength(arguments: List[TypingResult]): Boolean =
       arguments.length >= noVarParameters.length
 
-    private def checkVarArguments(varArguments: List[TypingResult]): Boolean = {
-      println(varParameter.refClazz.display)
-      varArguments.foreach(x => println(s"$x.display ${x.canBeSubclassOf(varParameter.refClazz)}"))
+    private def checkVarArguments(varArguments: List[TypingResult]): Boolean =
       varArguments.forall(_.canBeSubclassOf(varParameter.refClazz))
-    }
 
     private def checkArguments(arguments: List[TypingResult]): Boolean = {
       val (noVarArguments, varArguments) = arguments.splitAt(noVarParameters.length)
