@@ -1528,7 +1528,6 @@ lazy val root = (project in file("."))
       releaseStepCommandAndRemaining("+publishSigned"),
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommand("liteEngineKafkaRuntime/Universal/packageZipTarball"),
-      releaseStepCommand("dist/Docker/stage"),
       releaseStepCommand("dist/Docker/publish"),
       releaseStepCommand("requestResponseApp/Docker/publish"),
       releaseStepCommand("liteEngineKafkaRuntime/Docker/publish"),
