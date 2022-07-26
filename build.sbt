@@ -300,6 +300,13 @@ lazy val commonDockerSettings = {
     dockerBaseImage := "openjdk:11-jre-slim",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
+    dockerBuildCommand := {
+      if (sys.props("os.arch") != "amd64") {
+        // use buildx with platform to build supported amd64 images on other CPU architectures
+        // this may require that you have first run 'docker buildx create' to set docker buildx up
+        dockerExecCommand.value ++ Seq("buildx", "build", "--platform=linux/amd64", "--load") ++ dockerBuildOptions.value :+ "."
+      } else dockerBuildCommand.value
+    },
     dockerAliases := {
       //https://docs.docker.com/engine/reference/commandline/tag/#extended-description
       def sanitize(str: String) = str.replaceAll("[^a-zA-Z0-9._-]", "_")

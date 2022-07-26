@@ -316,7 +316,7 @@ jobs:
         shell: bash
         run: docker pull rancher/k3d-tools:5.3.0
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
-      - uses: AbsaOSS/k3d-action@v2.1.0
+      - uses: AbsaOSS/k3d-action@v2.3.0
         with:
           cluster-name: "k3s-default"
           k3d-version: "v5.3.0"
