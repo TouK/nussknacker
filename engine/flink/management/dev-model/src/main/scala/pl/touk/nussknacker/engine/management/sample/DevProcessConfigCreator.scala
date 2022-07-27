@@ -74,7 +74,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
       "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(confluentFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
-      "kafka-universal" -> all(new UniversalKafkaSinkFactory(confluentFactory, universalPayloadSerdeProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory))
+      "kafka" -> all(new UniversalKafkaSinkFactory(confluentFactory, universalPayloadSerdeProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory))
     )
   }
 
@@ -96,7 +96,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
         new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)
       )),
       "real-kafka-avro" -> all(avroSourceFactory),
-      "kafka-universal" -> all(universalSourceFactory),
+      "kafka" -> all(universalSourceFactory),
       "kafka-transaction" -> all(SourceFactory.noParam[String](new NoEndingSource)),
       "boundedSource" -> categories(BoundedSource),
       "oneSource" -> categories(SourceFactory.noParam[String](new OneSource)),
