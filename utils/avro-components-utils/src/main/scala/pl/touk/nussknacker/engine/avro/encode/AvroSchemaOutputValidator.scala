@@ -267,6 +267,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     (schemaAsTypedResult, typingResult) match {
       case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
       case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
+      case (_, Unknown) => valid //Unknown is proper for each of type
       case _ => invalid(typingResult, schema, path)
     }
   }
