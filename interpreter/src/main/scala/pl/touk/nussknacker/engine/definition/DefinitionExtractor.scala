@@ -207,7 +207,7 @@ object DefinitionExtractor {
     }
 
     def extractFromClassList(objectToExtractClassesFromCollection: Iterable[Class[_]])
-                       (implicit settings: ClassExtractionSettings): Set[TypeInfo.ClazzDefinition] = {
+                            (implicit settings: ClassExtractionSettings): Set[TypeInfo.ClazzDefinition] = {
       val ref = objectToExtractClassesFromCollection.map(Typed.apply)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(ref)
     }

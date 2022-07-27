@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.util.functions
 
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 
-
 object geo {
 
   @Documentation(description = "Calculate distance in km between two points (with decimal coordinates), using haversine algorithm")

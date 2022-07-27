@@ -57,8 +57,6 @@ object TypeInfo {
 
     def serializable: SerializableMethodInfo =
       SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
-
-    def asProperty: Option[TypingResult] = apply(List()).toOption
   }
 
   sealed trait StaticMethodInfo extends MethodInfo {
@@ -138,9 +136,11 @@ object TypeInfo {
   case class ClazzDefinition(clazzName: TypedClass,
                              methods: Map[String, List[MethodInfo]],
                              staticMethods: Map[String, List[MethodInfo]]) {
+    private def asProperty(info: MethodInfo): Option[TypingResult] = info.apply(List()).toOption
+
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       def filterMethods(candidates: Map[String, List[MethodInfo]]): List[TypingResult] =
-        candidates.get(methodName).toList.flatMap(_.map(_.asProperty)).collect{ case Some(x) => x }
+        candidates.get(methodName).toList.flatMap(_.map(asProperty)).collect{ case Some(x) => x }
       val filteredMethods = filterMethods(methods)
       val filteredStaticMethods = filterMethods(staticMethods)
       val filtered = filteredMethods ++ filteredStaticMethods

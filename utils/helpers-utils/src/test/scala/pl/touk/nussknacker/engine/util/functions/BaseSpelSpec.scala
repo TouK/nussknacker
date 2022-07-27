@@ -39,7 +39,7 @@ trait BaseSpelSpec {
     parser.parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  protected implicit class ValidatedValue[E, A](validated: ValidatedNel[SpelParseError, A]) {
+  protected implicit class ValidatedValue[_, A](validated: ValidatedNel[SpelParseError, A]) {
     def value: A = validated.valueOr(err => throw new ParseException(err.map(_.message).toList.mkString, -1))
   }
 

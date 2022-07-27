@@ -7,7 +7,6 @@ import cats.data.Validated.Valid;
 import pl.touk.nussknacker.engine.api.Documentation;
 import pl.touk.nussknacker.engine.api.generics.*;
 import pl.touk.nussknacker.engine.api.ParamName;
-import pl.touk.nussknacker.engine.api.typed.typing;
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult;
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass;
 import scala.collection.JavaConverters;
