@@ -7,7 +7,6 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
-import java.util
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
@@ -178,8 +177,6 @@ object typing {
     def apply(klass: Class[_]): TypingResult = {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
-
-    def unknown: Unknown.type = Unknown
 
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
     //TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
