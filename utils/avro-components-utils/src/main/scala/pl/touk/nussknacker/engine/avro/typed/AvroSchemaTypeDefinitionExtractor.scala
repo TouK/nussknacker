@@ -3,28 +3,30 @@ package pl.touk.nussknacker.engine.avro.typed
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{LogicalTypes, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.avro.schema.AvroStringSettings
 
 import java.nio.ByteBuffer
 import java.time.{Instant, LocalDate, LocalTime}
 import java.util.UUID
 
-/**
-  * Right now we're doing approximate type generation to avoid false positives in validation,
-  * so now we add option to skip nullable fields.
-  *
-  * @TODO In future should do it in another way
-  *
-  * @param skipOptionalFields
-  */
-class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
+object AvroSchemaTypeDefinitionExtractor {
 
   import collection.JavaConverters._
 
+  val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
+
+  val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
+
+  val dictIdProperty = "nkDictId"
+
+  def typeDefinition(schema: Schema): TypingResult = typeDefinition(schema, DefaultPossibleTypes)
+
   /**
-    * see BestEffortAvroEncoder for underlying avro types
-    * !when applying changes keep in mind that this Schema.Type pattern matching is duplicated in {@link pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer}
+    * See {@link pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder} for underlying avro types
+    *
+    * !When applying changes keep in mind that this Schema.Type pattern matching is duplicated in {@link pl.touk.nussknacker.engine.avro.AvroDefaultExpressionDeterminer},
+    * and is used at {@link  pl.touk.nussknacker.engine.avro.encode.AvroSchemaOutputValidator}
     */
   def typeDefinition(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult = {
     schema.getType match {
@@ -32,15 +34,13 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
         val fields = schema
           .getFields
           .asScala
-          //Field is marked as optional when field has default value
-          .filterNot(field => skipOptionalFields && field.hasDefaultValue)
           .map(field => field.name() -> typeDefinition(field.schema(), possibleTypes))
           .toList
 
         Typed(possibleTypes.map(pt => TypedObjectTypingResult(fields, pt)))
       }
-      case Schema.Type.ENUM =>  //It's should by Union, because output can store map with string for ENUM
-        Typed(Set(Typed.typedClass[EnumSymbol], AvroStringSettings.stringTypingResult))
+      case Schema.Type.ENUM =>
+        Typed.typedClass[EnumSymbol]
       case Schema.Type.ARRAY =>
         Typed.genericTypeClass[java.util.List[_]](List(typeDefinition(schema.getElementType, possibleTypes)))
       case Schema.Type.MAP =>
@@ -81,26 +81,7 @@ class AvroSchemaTypeDefinitionExtractor(skipOptionalFields: Boolean) {
       case Schema.Type.BOOLEAN =>
         Typed[Boolean]
       case Schema.Type.NULL =>
-        Typed.empty
+        TypedNull
     }
   }
-}
-
-object AvroSchemaTypeDefinitionExtractor {
-
-  val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
-
-  val ExtendedPossibleTypes: Set[TypedClass] = DefaultPossibleTypes ++ Set(Typed.typedClass[java.util.Map[String, Any]])
-
-  val dictIdProperty = "nkDictId"
-
-  private lazy val withoutOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = true)
-
-  private lazy val withOptionallyFieldsExtractor = new AvroSchemaTypeDefinitionExtractor(skipOptionalFields = false)
-
-  def typeDefinitionWithoutNullableFields(schema: Schema, possibleTypes: Set[TypedClass]): TypingResult =
-    withoutOptionallyFieldsExtractor.typeDefinition(schema, possibleTypes)
-
-  def typeDefinition(schema: Schema): TypingResult =
-    withOptionallyFieldsExtractor.typeDefinition(schema, DefaultPossibleTypes)
 }

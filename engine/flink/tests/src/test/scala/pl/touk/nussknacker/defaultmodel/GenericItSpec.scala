@@ -181,7 +181,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     sendAvro(givenNotMatchingAvroObj, topicConfig.input)
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
       val processed = consumeOneRawAvroMessage(topicConfig.output)
       processed.timestamp shouldBe timeAgo
       valueDeserializer.deserialize(topicConfig.output, processed.message()) shouldEqual givenMatchingAvroObjConvertedToV2
@@ -195,7 +195,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
     logger.info(s"Message sent successful: $sendResult")
 
-    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
       val consumer = kafkaClient.createConsumer()
       val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
       processedMessage.timestamp shouldBe timeAgo
@@ -235,7 +235,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
     converted.put("middle", null)
 
-    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.allowOptional)) {
+    run(avroProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
       val processed = consumeOneAvroMessage(topicConfig.output)
       processed shouldEqual converted
     }

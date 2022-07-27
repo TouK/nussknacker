@@ -18,7 +18,6 @@ import pl.touk.nussknacker.engine.avro.schema.StringForcingDatumReaderProvider
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
 import java.util
-import collection.JavaConverters._
 
 object ConfluentUtils extends LazyLogging {
 
