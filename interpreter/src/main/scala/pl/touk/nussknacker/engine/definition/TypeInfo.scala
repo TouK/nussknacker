@@ -73,8 +73,14 @@ object TypeInfo {
                                  description: Option[String])
     extends StaticMethodInfo {
     override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
-      if (checkNoVarArguments(arguments, staticParameters)) staticResult.validNel
-      else new NoVarArgumentTypeError(staticParameters.map(_.refClazz), arguments, name).invalidNel
+      if (checkNoVarArguments(arguments, staticParameters))
+        staticResult.validNel
+      else
+        new NoVarArgumentTypeError(
+          staticParameters.map(_.refClazz.display),
+          arguments.map(_.display),
+          name
+        ).invalidNel
     }
 
     override def varArgs: Boolean = false
@@ -98,8 +104,15 @@ object TypeInfo {
     }
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
-      if (checkArgumentsLength(arguments) && checkArguments(arguments)) staticResult.validNel
-      else new VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
+      if (checkArgumentsLength(arguments) && checkArguments(arguments))
+        staticResult.validNel
+      else
+        new VarArgumentTypeError(
+          noVarParameters.map(_.refClazz.display),
+          varParameter.refClazz.display,
+          arguments.map(_.display),
+          name
+        ).invalidNel
     }
 
     override def staticParameters: List[Parameter] = {
