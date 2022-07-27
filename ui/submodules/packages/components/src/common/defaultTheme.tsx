@@ -66,7 +66,7 @@ export const useDefaultTheme = (parent = {}): Theme => {
                             },
                             overlay: {
                                 backgroundColor: alpha(root.palette.common.black, root.palette.action.hoverOpacity * 3),
-                                zIndex: root.zIndex.fab,
+                                zIndex: root.zIndex.mobileStepper-1,
                             },
                             columnHeadersInner: {
                                 backgroundColor: root.palette.augmentColor({ color: { main: root.palette.background.paper } })[
