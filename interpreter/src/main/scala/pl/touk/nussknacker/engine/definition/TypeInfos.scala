@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, SpelParseError, VarArgSignature}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, ExpressionParseError, VarArgSignature}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -43,7 +43,7 @@ object TypeInfos {
   }
 
   sealed trait MethodInfo {
-    def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult]
+    def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
     def name: String
 
@@ -70,7 +70,7 @@ object TypeInfos {
                                  name: String,
                                  description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, staticParameters))
         staticResult.validNel
       else
@@ -100,7 +100,7 @@ object TypeInfos {
       checkNoVarArguments(noVarArguments, noVarParameters) && checkVarArguments(varArguments)
     }
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkArgumentsLength(arguments) && checkArguments(arguments))
         staticResult.validNel
       else
@@ -119,12 +119,12 @@ object TypeInfos {
 
   }
 
-  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[SpelParseError, TypingResult],
+  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
                                   staticParameters: List[Parameter],
                                   staticResult: TypingResult,
                                   name: String,
                                   description: Option[String]) extends MethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] =
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
 
     override def varArgs: Boolean = false

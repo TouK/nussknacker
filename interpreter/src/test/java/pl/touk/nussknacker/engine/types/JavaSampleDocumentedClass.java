@@ -59,13 +59,13 @@ public class JavaSampleDocumentedClass {
             return String.join(", ", strings);
         }
 
-        private SpelParseError error(List<TypingResult> arguments) {
+        private ExpressionParseError error(List<TypingResult> arguments) {
             String expectedString = "head(List[Unknown])";
             String foundString = "head(" + argumentsToString(arguments) + ")";
             return new GenericFunctionError("Mismatch parameter types. Found: " + foundString + ". Required: " + expectedString);
         }
 
-        public Validated<NonEmptyList<SpelParseError>, TypingResult> apply(List<TypingResult> arguments) {
+        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> apply(List<TypingResult> arguments) {
             if (arguments.length() != 1) {
                 return Invalid.invalid(NonEmptyList.one(error(arguments)));
             }

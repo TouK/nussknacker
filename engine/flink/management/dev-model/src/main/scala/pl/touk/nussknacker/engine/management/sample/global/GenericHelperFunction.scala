@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, SpelParseError, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, ExpressionParseError, TypingFunction}
 import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -21,7 +21,7 @@ object GenericHelperFunction {
     val IntOK = "OK: Int"
     val StringOK = "OK: String"
 
-    private def error(arguments: List[TypingResult]): SpelParseError =
+    private def error(arguments: List[TypingResult]): ExpressionParseError =
       new ArgumentTypeError(
         new NoVarArgSignature("extractType", arguments),
         List(new NoVarArgSignature("extractType", List(Typed(Typed[Int], Typed[String]))))
@@ -33,7 +33,7 @@ object GenericHelperFunction {
     override def staticResult(): Option[TypingResult] =
       Some(Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK)))
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
       case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance(IntOK).validNel
       case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance(StringOK).validNel
       case _ => error(arguments).invalidNel
@@ -55,7 +55,7 @@ object GenericHelperFunction {
       )
     }
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
       case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
       case _ => error(arguments).invalidNel

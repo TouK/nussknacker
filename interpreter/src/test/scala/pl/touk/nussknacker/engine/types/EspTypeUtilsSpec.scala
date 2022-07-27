@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, SpelParseError, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, ExpressionParseError, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -428,13 +428,13 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 private class HeadHelper extends TypingFunction {
   private val listClass = classOf[java.util.List[_]]
 
-  private def error(arguments: List[TypingResult]): SpelParseError =
+  private def error(arguments: List[TypingResult]): ExpressionParseError =
     new ArgumentTypeError(
       new NoVarArgSignature("head", arguments),
       List(new NoVarArgSignature("head", List(Typed.fromDetailedType[List[Object]])))
     )
 
-  override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
+  override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
     case _ => error(arguments).invalidNel

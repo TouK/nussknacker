@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, SpelParseError}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, ExpressionParseError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -15,7 +15,7 @@ object TypeMethodReference {
             params: List[TypingResult],
             isStatic: Boolean,
             methodExecutionForUnknownAllowed: Boolean)
-           (implicit settings: ClassExtractionSettings): Either[SpelParseError, TypingResult] =
+           (implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
     new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 }
 
@@ -24,7 +24,7 @@ class TypeMethodReference(methodName: String,
                           calledParams: List[TypingResult],
                           isStatic: Boolean,
                           methodExecutionForUnknownAllowed: Boolean) {
-  def call(implicit settings: ClassExtractionSettings): Either[SpelParseError, TypingResult] =
+  def call(implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
     invocationTarget match {
       case tc: SingleTypingResult =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
@@ -42,7 +42,7 @@ class TypeMethodReference(methodName: String,
       EspTypeUtils.clazzDefinition(typedClass.objType.klass)
     ).toList
 
-  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[SpelParseError, TypingResult] = {
+  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[ExpressionParseError, TypingResult] = {
     val validatedType = for {
       nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions).right
       nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions).right
@@ -56,10 +56,10 @@ class TypeMethodReference(methodName: String,
     }
   }
 
-  private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[SpelParseError], List[ClazzDefinition]] =
+  private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[ClazzDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
 
-  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[SpelParseError], List[MethodInfo]] = {
+  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
 
@@ -74,7 +74,7 @@ class TypeMethodReference(methodName: String,
     }
   }
 
-  private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[SpelParseError], List[TypingResult]] = {
+  private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
     val returnTypesForMatchingMethods = methodInfos.map(_.apply(calledParams))
     val combinedReturnTypes = returnTypesForMatchingMethods.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
       case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)

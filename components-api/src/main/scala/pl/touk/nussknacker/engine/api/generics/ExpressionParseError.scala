@@ -2,16 +2,16 @@ package pl.touk.nussknacker.engine.api.generics
 
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-trait SpelParseError {
+trait ExpressionParseError {
   def message: String
 }
 
-class ArgumentTypeError(found: Signature, possibleSignatures: List[Signature]) extends SpelParseError {
+class ArgumentTypeError(found: Signature, possibleSignatures: List[Signature]) extends ExpressionParseError {
   override def message: String =
     s"Mismatch parameter types. Found: ${found.display}. Required: ${possibleSignatures.map(_.display).mkString(" or ")}"
 }
 
-class GenericFunctionError(messageInner: String) extends SpelParseError {
+class GenericFunctionError(messageInner: String) extends ExpressionParseError {
   override def message: String = messageInner
 }
 

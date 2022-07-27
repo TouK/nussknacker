@@ -6,7 +6,7 @@ import org.scalatest.{FunSuite, Matchers}
 import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.generics.SpelParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -69,13 +69,13 @@ class TyperSpec extends FunSuite with Matchers {
     TypeDefinitionSet.empty, evaluationContextPreparer = null, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed)(ClassExtractionSettings.Default)
   private val parser = new org.springframework.expression.spel.standard.SpelExpressionParser()
 
-  private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[SpelParseError, CollectedTypingResult] = {
+  private def typeExpression(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed = parser.parseExpression(expr)
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
     typer.typeExpression(parsed, validationCtx)
   }
 
-  private def typeTemplate(expr: String, variables: (String, Any)*): ValidatedNel[SpelParseError, CollectedTypingResult] = {
+  private def typeTemplate(expr: String, variables: (String, Any)*): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     val parsed = parser.parseExpression(expr, new TemplateParserContext())
     val validationCtx = ValidationContext(variables.toMap.mapValuesNow(Typed.fromInstance))
     typer.typeExpression(parsed, validationCtx)

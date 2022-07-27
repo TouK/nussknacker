@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.expression.{ExpressionParser, TypedExpression}
-import pl.touk.nussknacker.engine.api.generics.SpelParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -45,7 +45,7 @@ import scala.util.control.NonFatal
   * - performance problem might occur if the ClassCastException is thrown often (e. g. for consecutive calls to getValue)
   */
 final case class ParsedSpelExpression(original: String,
-                                      parser: () => ValidatedNel[SpelParseError, Expression],
+                                      parser: () => ValidatedNel[ExpressionParseError, Expression],
                                       initial: Expression) extends LazyLogging {
   @volatile var parsed: Expression = initial
 
@@ -126,7 +126,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
 
   override def parseWithoutContextValidation(original: String,
                                              expectedType: TypingResult):
-    ValidatedNel[SpelParseError, api.expression.Expression] = {
+    ValidatedNel[ExpressionParseError, api.expression.Expression] = {
     if (shouldUseNullExpression(original)) {
       Valid(NullExpression(original, flavour))
     } else {
@@ -139,7 +139,7 @@ class SpelExpressionParser(parser: org.springframework.expression.spel.standard.
   override def parse(original: String,
                      ctx: ValidationContext,
                      expectedType: TypingResult):
-    ValidatedNel[SpelParseError, TypedExpression] = {
+    ValidatedNel[ExpressionParseError, TypedExpression] = {
     if (shouldUseNullExpression(original)) {
       Valid(TypedExpression(
         NullExpression(original, flavour), expectedType, SpelExpressionTypingInfo(Map.empty, typing.Unknown)))

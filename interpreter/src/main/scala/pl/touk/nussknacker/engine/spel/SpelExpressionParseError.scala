@@ -1,12 +1,12 @@
 package pl.touk.nussknacker.engine.spel
 
 import org.springframework.expression.spel.SpelNode
-import pl.touk.nussknacker.engine.api.generics.SpelParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError
 
 object SpelExpressionParseError {
-  trait SelectionProjectionError extends SpelParseError
+  trait SelectionProjectionError extends ExpressionParseError
 
   object SelectionProjectionError {
     case object IllegalSelectionError extends SelectionProjectionError {
@@ -23,7 +23,7 @@ object SpelExpressionParseError {
   }
 
 
-  trait UnsupportedOperationError extends SpelParseError
+  trait UnsupportedOperationError extends ExpressionParseError
 
   object UnsupportedOperationError {
     case object ModificationError extends UnsupportedOperationError {
@@ -40,7 +40,7 @@ object SpelExpressionParseError {
   }
 
 
-  trait DictError extends SpelParseError {
+  trait DictError extends ExpressionParseError {
     protected def formatStringList(elems: List[String]): String = {
       val maxStringListLength = 3
       val formattedElems = elems.map("'" + _ + "'")
@@ -78,7 +78,7 @@ object SpelExpressionParseError {
   }
 
 
-  trait MissingObjectError extends SpelParseError
+  trait MissingObjectError extends ExpressionParseError
 
   object MissingObjectError {
     case class NoPropertyError(typ: TypingResult, property: String) extends MissingObjectError {
@@ -107,7 +107,7 @@ object SpelExpressionParseError {
   }
 
 
-  trait IllegalOperationError extends SpelParseError
+  trait IllegalOperationError extends ExpressionParseError
 
   object IllegalOperationError {
     case class IllegalPropertyAccessError(typ: TypingResult) extends IllegalOperationError {
@@ -157,7 +157,7 @@ object SpelExpressionParseError {
   }
 
 
-  trait OperatorError extends SpelParseError
+  trait OperatorError extends ExpressionParseError
 
   object OperatorError {
     case class OperatorMismatchTypeError(operator: String, left: TypingResult, right: TypingResult) extends OperatorError {
@@ -182,14 +182,14 @@ object SpelExpressionParseError {
   }
 
 
-  case object PartTypeError extends SpelParseError {
+  case object PartTypeError extends ExpressionParseError {
     override def message: String = "Wrong part types"
   }
 
-  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends SpelParseError {
+  case class ExpressionTypeError(expected: TypingResult, found: TypingResult) extends ExpressionParseError {
     override def message: String = s"Bad expression type, expected: ${expected.display}, found: ${found.display}"
   }
 
-  case class ExpressionCompilationError(message: String) extends SpelParseError
+  case class ExpressionCompilationError(message: String) extends ExpressionParseError
 
 }
