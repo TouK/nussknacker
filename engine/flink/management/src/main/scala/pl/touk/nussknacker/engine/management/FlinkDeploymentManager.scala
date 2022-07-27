@@ -32,6 +32,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
     } yield ()
     validateProcessName(processVersion).map(_ => ())
+    checkOldJobStatus(processVersion).map(_ => ())
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -77,7 +78,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     if (flinkProcessNameValidationPattern.pattern.matcher(processName).matches()) {
       Future.successful(Some(()))
     } else {
-      Future.failed(new IllegalArgumentException(s"Illegal characters in process name: $processName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces"))
+      Future.failed(new IllegalStateException(s"Illegal characters in process name: $processName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces"))
     }
   }
 
