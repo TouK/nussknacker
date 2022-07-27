@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{GenericType, SpelParseError, TypingFunction, NoVarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, SpelParseError, TypingFunction}
 import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -22,7 +22,10 @@ object GenericHelperFunction {
     val StringOK = "OK: String"
 
     private def error(arguments: List[TypingResult]): SpelParseError =
-      new NoVarArgumentTypeError(List(Typed(Typed[Int], Typed[String])), arguments, "extractType")
+      new ArgumentTypeError(
+        new NoVarArgSignature("extractType", arguments),
+        List(new NoVarArgSignature("extractType", List(Typed(Typed[Int], Typed[String]))))
+      )
 
     override def staticParameters(): Option[List[(String, TypingResult)]] =
       Some(List(("example of desired type", Typed(Typed[Int], Typed[String]))))
@@ -45,8 +48,12 @@ object GenericHelperFunction {
   private class HeadHelper extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
 
-    private def error(arguments: List[TypingResult]) =
-      new NoVarArgumentTypeError(List(Typed.fromDetailedType[List[Object]]), arguments, "head")
+    private def error(arguments: List[TypingResult]) = {
+      new ArgumentTypeError(
+        new NoVarArgSignature("head", arguments),
+        List(new NoVarArgSignature("head", List(Typed.fromDetailedType[java.util.List[Object]])))
+      )
+    }
 
     override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel

@@ -398,9 +398,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
             isStatic,
             methodExecutionForUnknownAllowed
           ).map(TypingResultWithContext(_)) match {
-            case a@Valid(_) => a
-            case a@Invalid(_) if strictMethodsChecking => a
-            case Invalid(_) => TypingResultWithContext(Unknown).validNel
+            case Right(x) => x.validNel
+            case Left(x) if strictMethodsChecking => x.invalidNel
+            case Left(_) => TypingResultWithContext(Unknown).validNel
           }
         }
       case Nil =>
