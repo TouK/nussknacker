@@ -17,12 +17,13 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
 
+  import pl.touk.nussknacker.test.LiteralSpELImplicits._
   import KafkaAvroSinkMockSchemaRegistry._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
@@ -43,7 +44,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   test("should validate specific version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
+      SinkValueParamName -> FullNameV1.exampleData.toSpELLiteral,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
@@ -54,7 +55,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
   test("should validate latest version") {
     val result = validate(
       SinkKeyParamName -> "",
-      SinkValueParamName -> "null",
+      SinkValueParamName -> PaymentV1.exampleData.toSpELLiteral,
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
@@ -94,7 +95,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      s"Provided value does not match selected Avro schema - errors:\nNone of the following types:\n - ${Typed.fromInstance("").display}\ncan be a subclass of any of:\n - {id: String, amount: Double, currency: EnumSymbol | String, company: {name: String, address: {street: String, city: String} | {street: String, city: String}} | {name: String, address: {street: String, city: String} | {street: String, city: String}}, products: List[{id: String, name: String, price: Double} | {id: String, name: String, price: Double}], vat: Integer}",
+      "Provided value does not match scenario output - errors:\nType validation: path 'Data' actual: 'String{}' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | Null}'.",
       Some(SinkValueParamName)) :: Nil
   }
 

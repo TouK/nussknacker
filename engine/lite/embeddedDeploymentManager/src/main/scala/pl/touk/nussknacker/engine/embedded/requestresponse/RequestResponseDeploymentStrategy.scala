@@ -49,7 +49,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
   private val pathToRequestHandler = TrieMap[String, RequestResponseAkkaHttpHandler]()
 
   private var server: ServerBinding = _
-  
+
   override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
@@ -59,9 +59,9 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
       Http().newServerAt(
-      interface = config.interface,
-      port = config.port
-    ).bind(route.route), akkaHttpSetupTimeout)
+        interface = config.interface,
+        port = config.port
+      ).bind(route.route), akkaHttpSetupTimeout)
   }
 
   override def close(): Unit = {
@@ -92,8 +92,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner
 
-  class RequestResponseDeployment(path: String,
-                                  interpreter: FutureBasedRequestResponseScenarioInterpreter.InterpreterType) extends Deployment {
+  class RequestResponseDeployment(path: String, interpreter: FutureBasedRequestResponseScenarioInterpreter.InterpreterType) extends Deployment {
 
     override def status(): StateStatus = SimpleStateStatus.Running
 

@@ -10,6 +10,8 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.spel.Implicits._
 import io.circe.syntax._
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -55,7 +57,14 @@ object NuKafkaRuntimeTestSamples {
   def avroPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = ScenarioBuilder
     .streamingLite("avro-ping-pong")
     .source("source", "kafka-avro", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-    .emptySink("sink", "kafka-avro-raw", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Value validation mode" -> "'strict'", "Key" -> "", "Value" -> "#input")
+    .emptySink("sink",
+      "kafka-avro-raw",
+      TopicParamName -> s"'$outputTopic'",
+      SchemaVersionParamName -> "'latest'",
+      SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
+      SinkKeyParamName -> "",
+      SinkValueParamName -> "#input"
+    )
 
   val jsonPingMessage: String =
     """{"foo":"ping"}""".stripMargin

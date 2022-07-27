@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.avro.encode
 
-case class ValidationMode private(name: String, label: String, acceptUnfilledOptional: Boolean, acceptRedundant: Boolean)
+final case class ValidationMode private(name: String, label: String)
 
 object ValidationMode {
 
-  val strict: ValidationMode = ValidationMode("strict", "Strict mode", acceptUnfilledOptional = false, acceptRedundant = false)
+  //Requires providing all fields, including optional fields, without redundant fields
+  val strict: ValidationMode = ValidationMode("strict", "Strict mode")
 
-  val allowOptional: ValidationMode = ValidationMode("allowOptional", "Allow missing optional parameters", acceptUnfilledOptional = true, acceptRedundant = false)
+  //Requires providing only required fields, without optional fields, with redundant fields
+  val lax: ValidationMode = ValidationMode("lax", "Lax mode")
 
-  val allowRedundantAndOptional: ValidationMode =  ValidationMode("allowRedundantAndOptional", "Allow missing optional and redundant parameters", acceptUnfilledOptional = true, acceptRedundant = true)
-
-  val values: List[ValidationMode] = List(strict, allowOptional, allowRedundantAndOptional)
+  val values: List[ValidationMode] = List(strict, lax)
 
   def byName(name: String): Option[ValidationMode] = values.find(_.name == name)
 

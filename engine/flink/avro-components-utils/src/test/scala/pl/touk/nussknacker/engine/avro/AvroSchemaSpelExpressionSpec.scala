@@ -138,24 +138,15 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
 
   it("should recognize record with enum") {
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None).toOption.get
-
-    parse[CharSequence]("#input.currency", ctx) should be ('valid)
+    parse[CharSequence]("#input.currency.toString", ctx) should be ('valid)
     parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
   }
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
+    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
     val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
     parse[Int]("#input.vat", ctx) should be ('valid)
-  }
-
-  it("should skipp optional fields from schema PaymentV2 when skippNullableFields is set") {
-    val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinitionWithoutNullableFields(PaymentV2.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
-    val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
-
-    parse[Int]("#input.cnt", ctx) should be ('invalid)
-    parse[Map[String, Any]]("#input.attributes", ctx) should be ('invalid)
   }
 
   it("should add dictionaryId if annotated") {
@@ -179,14 +170,12 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     val schema = wrapWithRecordSchema(
       """[
         |  { "name": "stringField", "type": "string" },
-        |  { "name": "mapField", "type": { "type": "map", "values": "string" } },
-        |  { "name": "enumField", "type": { "type": "enum", "name": "sampleEnum", "symbols": ["One", "Two"] } }
+        |  { "name": "mapField", "type": { "type": "map", "values": "string" } }
         |]""".stripMargin)
 
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
     parse[String]("#input.stringField", ctx) should be('valid)
-    parse[String]("#input.enumField", ctx) should be('valid)
     parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(Typed.fromDetailedType[java.util.Map[String, String]])
 
   }

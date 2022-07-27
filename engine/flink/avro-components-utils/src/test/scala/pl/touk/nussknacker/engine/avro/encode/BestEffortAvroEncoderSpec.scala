@@ -194,7 +194,7 @@ class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesD
         |]""".stripMargin)
 
     BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
-    BestEffortAvroEncoder(ValidationMode.allowRedundantAndOptional).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
+    BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
   }
 
   it("should create record with logical type for timestamp-millis") {

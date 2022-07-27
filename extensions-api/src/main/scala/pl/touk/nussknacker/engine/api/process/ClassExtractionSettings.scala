@@ -18,13 +18,13 @@ import java.util.{Calendar, Date, Optional, UUID}
 
 /**
   * Settings for class extraction which is done to handle e.g. syntax suggestions in UI
- *
- * One-liner that will help to find list of interesting methods in class:
- * {{{
- * classOf[CLASS_NAME].getMethods.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers)).map(_.getName)
- *   .filterNot(Set("wait", "notify", "notifyAll", "equals", "hashCode", "getClass").contains).distinct.sorted.mkString("|")
- * }}}
- *
+  *
+  * One-liner that will help to find list of interesting methods in class:
+  * {{{
+  * classOf[CLASS_NAME].getMethods.filterNot(m => java.lang.reflect.Modifier.isStatic(m.getModifiers)).map(_.getName)
+  *   .filterNot(Set("wait", "notify", "notifyAll", "equals", "hashCode", "getClass").contains).distinct.sorted.mkString("|")
+  * }}}
+  *
   * @param excludeClassPredicates - sequence of predicates to determine hidden classes
   * @param excludeClassMemberPredicates - sequence of predicates to determine excluded class members - will be
   *                                       used all predicates that matches given class
@@ -81,7 +81,7 @@ object ClassExtractionSettings {
 
   lazy val DefaultExcludedClasses: List[ClassPredicate] = ExcludedStdClasses ++ ExcludedExtraClasses
 
-  lazy val ExcludedStdClasses: List[ClassPredicate] = ExcludedVoidClasses ++ ExcludedCollectionFunctionalClasses ++ ExcludedTimeClasses ++ 
+  lazy val ExcludedStdClasses: List[ClassPredicate] = ExcludedVoidClasses ++ ExcludedCollectionFunctionalClasses ++ ExcludedTimeClasses ++
     List(
       // In case if someone use it for kind of meta programming
       ExactClassPredicate[Class[_]],
