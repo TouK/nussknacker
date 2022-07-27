@@ -27,7 +27,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Valid is representation of positive and negative scenario running result
 * [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
 * [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299)[#3309](https://github.com/TouK/nussknacker/pull/3309) 
-  [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) Changes related with UniversalKafkaSource/Sink:
+  [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
   * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.

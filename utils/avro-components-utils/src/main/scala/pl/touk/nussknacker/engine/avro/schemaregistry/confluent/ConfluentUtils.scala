@@ -63,12 +63,14 @@ object ConfluentUtils extends LazyLogging {
       Validated.valid(buffer)
   }
 
-  def readIdAndGetBuffer(bytes: Array[Byte]): (Int, ByteBuffer) = ConfluentUtils
+  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (Int, ByteBuffer)] = ConfluentUtils
     .parsePayloadToByteBuffer(bytes)
     .map(b => (b.getInt(), b))
+
+  def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (Int, ByteBuffer) = readIdAndGetBuffer(bytes)
     .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
 
-  def readId(bytes: Array[Byte]): Int = readIdAndGetBuffer(bytes)._1
+  def readId(bytes: Array[Byte]): Int = readIdAndGetBufferUnsafe(bytes)._1
 
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
