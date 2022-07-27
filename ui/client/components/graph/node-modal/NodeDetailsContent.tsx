@@ -440,19 +440,18 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
         const currentExpression = this.state.originalNode["expression"]
         const currentExprVal = this.state.originalNode["exprVal"]
+        const exprValValidator = errorValidator(fieldErrors, "exprVal")
+        const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
+        const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
         return (
           <div className="node-table-body">
             {this.idField()}
-            {definition["expression"] ?
-              !isEqual(definition["expression"], currentExpression) :
-              currentExpression?.expression ?
-                this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
-                null}
-            {definition["exprVal"] ?
-              definition["exprVal"] !== currentExprVal :
-              currentExprVal ?
-                this.createField("input", "exprVal (deprecated)", "exprVal", false, [mandatoryValueValidator, errorValidator(fieldErrors, "exprVal")]) :
-                null}
+            {showExpression ?
+              this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
+              null}
+            {showExprVal ?
+              this.createField("input", "exprVal (deprecated)", "exprVal", false, [mandatoryValueValidator, exprValValidator]) :
+              null}
             {!isCompareView ?
               (
                 <EdgesDndComponent
