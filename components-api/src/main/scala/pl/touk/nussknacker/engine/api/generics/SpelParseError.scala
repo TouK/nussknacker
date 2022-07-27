@@ -8,7 +8,7 @@ trait SpelParseError {
 
 class ArgumentTypeError(found: Signature, possibleSignatures: List[Signature]) extends SpelParseError {
   override def message: String =
-    s"Mismatch parameter types. Found: $found. Required: ${possibleSignatures.mkString(" or ")}"
+    s"Mismatch parameter types. Found: ${found.display}. Required: ${possibleSignatures.map(_.display).mkString(" or ")}"
 }
 
 class GenericFunctionError(messageInner: String) extends SpelParseError {

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.generics.{NoVarArgumentTypeError, SpelParseError, VarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, SpelParseError, VarArgSignature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfo.{FunctionalMethodInfo, MethodInfo, NoVarArgsMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
 
@@ -63,7 +63,10 @@ class TypeInfoSpec extends FunSuite with Matchers {
     def noVarArgsCheckValid(args: List[TypingResult]): Unit =
       checkApplyValid(noVarArgsMethodInfo, args, Typed[Double])
     def noVarArgsCheckInvalid(args: List[TypingResult]): Unit =
-      checkApplyInvalid(noVarArgsMethodInfo, args, new NoVarArgumentTypeError(List(Typed[Int], Typed[String]), args, "f"))
+      checkApplyInvalid(noVarArgsMethodInfo, args, new ArgumentTypeError(
+        new NoVarArgSignature(noVarArgsMethodInfo.name, args),
+        List(new NoVarArgSignature(noVarArgsMethodInfo.name, noVarArgsMethodInfo.staticParameters.map(_.refClazz)))
+      ))
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
 
@@ -77,7 +80,10 @@ class TypeInfoSpec extends FunSuite with Matchers {
     def varArgsCheckValid(args: List[TypingResult]): Unit =
       checkApplyValid(varArgsMethodInfo, args, Typed[Float])
     def varArgsCheckInvalid(args: List[TypingResult]): Unit =
-      checkApplyInvalid(varArgsMethodInfo, args, new VarArgumentTypeError(List(Typed[String]), Typed[Integer], args, "f"))
+      checkApplyInvalid(varArgsMethodInfo, args, new ArgumentTypeError(
+        new NoVarArgSignature(varArgsMethodInfo.name, args),
+        List(new VarArgSignature(varArgsMethodInfo.name, varArgsMethodInfo.noVarParameters.map(_.refClazz), varArgsMethodInfo.varParameter.refClazz))
+      ))
 
     varArgsCheckValid(List(Typed[String]))
     varArgsCheckValid(List(Typed[String], Typed[Int]))
