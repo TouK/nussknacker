@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine
 
 import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import org.apache.commons.lang3.ClassUtils
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference

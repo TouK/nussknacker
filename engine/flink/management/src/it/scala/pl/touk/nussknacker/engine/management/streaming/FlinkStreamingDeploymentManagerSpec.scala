@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
+import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
