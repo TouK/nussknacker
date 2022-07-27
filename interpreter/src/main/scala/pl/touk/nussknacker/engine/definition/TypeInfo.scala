@@ -77,8 +77,8 @@ object TypeInfo {
         staticResult.validNel
       else
         new NoVarArgumentTypeError(
-          staticParameters.map(_.refClazz.display),
-          arguments.map(_.display),
+          staticParameters.map(_.refClazz),
+          arguments,
           name
         ).invalidNel
     }
@@ -108,9 +108,9 @@ object TypeInfo {
         staticResult.validNel
       else
         new VarArgumentTypeError(
-          noVarParameters.map(_.refClazz.display),
-          varParameter.refClazz.display,
-          arguments.map(_.display),
+          noVarParameters.map(_.refClazz),
+          varParameter.refClazz,
+          arguments,
           name
         ).invalidNel
     }

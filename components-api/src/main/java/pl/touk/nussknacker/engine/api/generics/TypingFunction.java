@@ -16,5 +16,5 @@ public abstract class TypingFunction {
         return Option.apply(null);
     }
 
-    public abstract Validated<NonEmptyList<String>, TypingResult> apply(List<TypingResult> arguments);
+    public abstract Validated<NonEmptyList<SpelParseError>, TypingResult> apply(List<TypingResult> arguments);
 }
