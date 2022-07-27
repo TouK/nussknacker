@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api;
+package pl.touk.nussknacker.engine.api.generics;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

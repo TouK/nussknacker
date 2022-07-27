@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, NoVarArgumentTypeError, VarArgumentTypeError}
+import pl.touk.nussknacker.engine.api.generics.{NoVarArgumentTypeError, SpelParseError, VarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -43,7 +43,7 @@ object TypeInfo {
   }
 
   sealed trait MethodInfo {
-    def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
+    def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult]
 
     def name: String
 
@@ -72,9 +72,9 @@ object TypeInfo {
                                  name: String,
                                  description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, staticParameters)) staticResult.validNel
-      else NoVarArgumentTypeError(staticParameters.map(_.refClazz), arguments, name).invalidNel
+      else new NoVarArgumentTypeError(staticParameters.map(_.refClazz), arguments, name).invalidNel
     }
 
     override def varArgs: Boolean = false
@@ -97,9 +97,9 @@ object TypeInfo {
       checkNoVarArguments(noVarArguments, noVarParameters) && checkVarArguments(varArguments)
     }
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = {
       if (checkArgumentsLength(arguments) && checkArguments(arguments)) staticResult.validNel
-      else VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
+      else new VarArgumentTypeError(noVarParameters.map(_.refClazz), varParameter.refClazz, arguments, name).invalidNel
     }
 
     override def staticParameters: List[Parameter] = {
@@ -111,12 +111,12 @@ object TypeInfo {
 
   }
 
-  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[SpelParseError, TypingResult],
                                   staticParameters: List[Parameter],
                                   staticResult: TypingResult,
                                   name: String,
                                   description: Option[String]) extends MethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] =
       typeFunction(arguments)
 
     override def varArgs: Boolean = false

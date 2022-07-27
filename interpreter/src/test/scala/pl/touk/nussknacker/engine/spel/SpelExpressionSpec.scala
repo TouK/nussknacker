@@ -4,12 +4,12 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.avro.generic.GenericData
 import org.scalatest.Inside.inside
-import org.scalatest.{FunSuite, Ignore, Matchers}
+import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
-import pl.touk.nussknacker.engine.api.expression.{ArgumentTypeError, Expression, ExpressionParseError, ExpressionTypeError, InvalidMethodReference, OperatorMismatchTypeError, OperatorNonNumericError, TypeReferenceError, TypedExpression, UnknownClassError, UnknownMethodError}
+import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
@@ -17,6 +17,11 @@ import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfo.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, SpelParseError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.OperatorMismatchTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -84,41 +89,41 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithDicts[T: TypeTag](expr: String, context: Context = ctx, dictionaries: Map[String, DictDefinition]): ValidatedNel[SpelParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, dictionaries, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
-  private def parseWithMethodExecutionForUnknown[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithMethodExecutionForUnknown[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[SpelParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = true,
         dynamicPropertyAccessAllowed = true)
   }
 
-  private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parseWithoutStrictMethodsChecking[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard): ValidatedNel[SpelParseError, TypedExpression] = {
     val validationCtx = ValidationContext(context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = false, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
-  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard, staticMethodInvocationsChecking: Boolean = true, methodExecutionForUnknownAllowed: Boolean = false): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, context: Context = ctx, flavour: Flavour = Standard, staticMethodInvocationsChecking: Boolean = true, methodExecutionForUnknownAllowed: Boolean = false): ValidatedNel[SpelParseError, TypedExpression] = {
     val validationCtx = ValidationContext(
       context.variables.mapValuesNow(Typed.fromInstance))
     parse(expr, validationCtx, Map.empty, flavour, strictMethodsChecking = true, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed,
       dynamicPropertyAccessAllowed = true)
   }
 
-  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[SpelParseError, TypedExpression] = {
     parse(expr, validationCtx, Map.empty, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false)
   }
 
   private def parse[T: TypeTag](expr: String, validationCtx: ValidationContext, dictionaries: Map[String, DictDefinition],
                                 flavour: Flavour, strictMethodsChecking: Boolean, staticMethodInvocationsChecking: Boolean, methodExecutionForUnknownAllowed: Boolean,
-                                dynamicPropertyAccessAllowed: Boolean): ValidatedNel[ExpressionParseError, TypedExpression] = {
+                                dynamicPropertyAccessAllowed: Boolean): ValidatedNel[SpelParseError, TypedExpression] = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
@@ -337,7 +342,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   test("validate MethodReference for java varargs") {
     inside(parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal)) {
       case Valid(a) => println(a)
-      case Invalid(lst: NonEmptyList[ExpressionParseError@unchecked]) => lst.toList.foreach(x => println(x.message))
+      case Invalid(lst: NonEmptyList[SpelParseError@unchecked]) => lst.toList.foreach(x => println(x.message))
     }
     parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
 
@@ -498,25 +503,25 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   test("not allow access to variables without hash in methods") {
     val withNum = ctx.withVariable("a", 5).withVariable("processHelper", SampleGlobalObject)
     inside(parse[Any]("#processHelper.add(a, 1)", withNum)) {
-      case Invalid(l: NonEmptyList[ExpressionParseError@unchecked]) if l.toList.exists(error => error.message == "Non reference 'a' occurred. Maybe you missed '#' in front of it?") =>
+      case Invalid(l: NonEmptyList[SpelParseError@unchecked]) if l.toList.exists(error => error.message == "Non reference 'a' occurred. Maybe you missed '#' in front of it?") =>
     }
   }
 
   test("not allow unknown variables in methods") {
     inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass))) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: SpelParseError, Nil)) =>
         error.message shouldBe "Unresolved reference 'a'" // FIXME
     }
 
     inside(parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx)) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: SpelParseError, Nil)) =>
         error.message shouldBe "Unresolved reference 'a'" // FIXME
     }
   }
 
   test("not allow vars without hashes in equality condition") {
     inside(parse[Any]("nonexisting == 'ala'", ctx)) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: SpelParseError, Nil)) =>
         error.message shouldBe "Non reference 'nonexisting' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -603,7 +608,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("detect bad type of literal or variable") {
 
-    def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) =
+    def shouldHaveBadType(valid: Validated[NonEmptyList[SpelParseError], _], message: String) =
       inside(valid) {
         case Invalid(NonEmptyList(error: ExpressionTypeError, _)) => error.message shouldBe message
       }
@@ -848,14 +853,14 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("should not allow property access on Null") {
     inside(parse[Any]("null.property")) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: SpelParseError, Nil)) =>
         error.message shouldBe s"Property access on ${TypedNull.display} is not allowed"
     }
   }
 
   test("should not allow method invocation on Null") {
     inside(parse[Any]("null.method()")) {
-      case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
+      case Invalid(NonEmptyList(error: SpelParseError, Nil)) =>
         error.message shouldBe s"Method invocation on ${TypedNull.display} is not allowed"
     }
   }

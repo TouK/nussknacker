@@ -7,7 +7,7 @@ import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictEntryWithLabelNotExists, DictNotDeclared}
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.DictError.{DictIndexCountError, DictKeyError, DictLabelError, NoDictError}
 import pl.touk.nussknacker.engine.spel.ast
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.ast
   */
 trait SpelDictTyper {
 
-  def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, TypingResult]
+  def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[SpelParseError, TypingResult]
 
 }
 
@@ -27,7 +27,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
 
   protected def dictRegistry: DictRegistry
 
-  override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[ExpressionParseError, dict.ValueType]  = {
+  override def typeDictValue(dict: TypedDict, node: SpelNode): ValidatedNel[SpelParseError, dict.ValueType]  = {
     node match {
       case _: Indexer =>
         node.children match {

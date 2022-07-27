@@ -5,11 +5,11 @@ import java.util.Optional
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.expression.GenericFunctionError
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionError, GenericType}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{Documentation, GenericType, ParamName}
+import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
 
 import java.lang.annotation.Annotation
@@ -143,7 +143,7 @@ object EspTypeUtils {
       .getOrElse(extractMethodReturnType(method))
 
     collectMethodNames(method).map(FunctionalMethodInfo(
-      x => typeFunctionInstance.apply(x).leftMap(_.map(GenericFunctionError)),
+      x => typeFunctionInstance.apply(x).leftMap(_.map(new GenericFunctionError(_))),
       parameterInfo,
       resultInfo,
       _,

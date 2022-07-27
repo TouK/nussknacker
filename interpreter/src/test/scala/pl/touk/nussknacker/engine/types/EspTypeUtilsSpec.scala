@@ -5,11 +5,12 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, Documentation, GenericType, Hidden, HideToString, ParamName, TypingFunction}
+import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._

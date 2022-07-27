@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.api;
+package pl.touk.nussknacker.engine.api.generics;
 
 import cats.data.NonEmptyList;
 import cats.data.Validated;

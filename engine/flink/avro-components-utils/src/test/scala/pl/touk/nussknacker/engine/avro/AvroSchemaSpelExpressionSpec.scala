@@ -10,13 +10,14 @@ import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
-import pl.touk.nussknacker.engine.api.expression.{ExpressionParseError, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.TypedExpression
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedDict}
 import pl.touk.nussknacker.engine.avro.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Standard
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
@@ -218,7 +219,7 @@ class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
     checkTypeForExpr[Instant]("#input.timestampMicros")
   }
 
-  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[ExpressionParseError, TypedExpression] = {
+  private def parse[T:TypeTag](expr: String, validationCtx: ValidationContext) : ValidatedNel[SpelParseError, TypedExpression] = {
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map(dictId -> EmbeddedDictDefinition(Map("key1" -> "value1")))), enableSpelForceCompile = true,
       strictTypeChecking = true, Nil, Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = false, TypeDefinitionSet.empty, methodExecutionForUnknownAllowed = false,
       dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default, DefaultSpelConversionsProvider.getConversionService

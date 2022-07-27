@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import org.springframework.expression.{EvaluationContext, EvaluationException}
 import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
 import pl.touk.nussknacker.engine.definition.TypeInfo
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
@@ -23,7 +23,7 @@ object TypeDefinitionSet {
 
 case class TypeDefinitionSet(typeDefinitions: Set[TypeInfo.ClazzDefinition]) {
 
-  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[ExpressionParseError], TypedClass] = {
+  def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[SpelParseError], TypedClass] = {
 
     /**
       * getValue mutates TypeReference but is still safe
