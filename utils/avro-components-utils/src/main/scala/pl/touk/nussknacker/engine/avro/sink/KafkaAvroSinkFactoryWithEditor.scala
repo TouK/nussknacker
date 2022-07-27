@@ -57,7 +57,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
       validatedSchema.andThen { schemaData =>
-        new AvroSinkValueParameterExtractor().extract(schemaData.schema.rawSchema()).map { valueParam =>
+        AvroSinkValueParameter(schemaData.schema.rawSchema()).map { valueParam =>
           val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }

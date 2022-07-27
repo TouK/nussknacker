@@ -11,14 +11,15 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader, UniversalMessageFormatter, UniversalMessageReader}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroPayloadDeserializer, ConfluentJsonSchemaPayloadDeserializer, ConfluentKafkaAvroSerializer, UniversalSchemaPayloadDeserializer}
-import pl.touk.nussknacker.engine.avro.sink.{AvroSinkValueParameterExtractor, JsonSinkValueParameterExtractor}
+import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonSerializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -60,7 +61,7 @@ object UniversalSchemaSupport {
 
   def createMessageReader(schemaRegistryClient: SchemaRegistryClient): UniversalMessageReader = (jsonObj: Json, schema: ParsedSchema, subject: String) => schema match {
     case schema: AvroSchema => new ConfluentAvroMessageReader(schemaRegistryClient).readJson(jsonObj, schema.rawSchema(), subject)
-    case schema: JsonSchema => jsonObj match {
+    case _: JsonSchema => jsonObj match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
       case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
       case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
@@ -75,8 +76,8 @@ object UniversalSchemaSupport {
   }
 
   def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = schema match {
-    case schema: AvroSchema => new AvroSinkValueParameterExtractor().extract(schema.rawSchema())
-    case schema: JsonSchema => new JsonSinkValueParameterExtractor().extract(schema.rawSchema())
+    case schema: AvroSchema => AvroSinkValueParameter(schema.rawSchema())
+    case schema: JsonSchema => JsonSinkValueParameter(schema.rawSchema(), defaultParamName = SinkValueParamName)
     case _ => throw new UnsupportedSchemaType(schema)
   }
 
