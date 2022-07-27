@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.spel.typer
 
+import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, SpelParseError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -74,35 +75,17 @@ class TypeMethodReference(methodName: String,
   }
 
   private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[SpelParseError], List[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfos.flatMap { m =>
-      lazy val allMatching = m.staticParameters.map(_.refClazz).zip(calledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      if (m.staticParameters.size == calledParams.size && allMatching) Some(m.staticResult) else checkForVarArgs(m)
-    }
-    returnTypesForMatchingMethods match {
-      case Nil =>
-        def toSignature(params: List[TypingResult]) = new NoVarArgSignature(methodName, params)
-        val methodVariances = methodInfos.map(info => toSignature(info.staticParameters.map(_.refClazz)))
-        Left(Some(new ArgumentTypeError(toSignature(calledParams), methodVariances)))
-      case nonEmpty =>
-        Right(nonEmpty)
+    val returnTypesForMatchingMethods = methodInfos.map(_.apply(calledParams))
+    val combinedReturnTypes = returnTypesForMatchingMethods.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
+      case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
+      case (Valid(xs), Invalid(_)) => Valid(xs)
+      case (Invalid(_), Valid(ys)) => Valid(ys)
+      case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
+    })
+    combinedReturnTypes match {
+      case Valid(Nil) => Left(None)
+      case Valid(xs) => Right(xs)
+      case Invalid(xs) => Left(Some(xs.head)) // FIXME: Display all errors.
     }
   }
-
-  private def checkForVarArgs(method: MethodInfo): Option[TypingResult] = {
-    val nonVarArgSize = method.staticParameters.size - 1
-    if (method.varArgs && calledParams.size >= nonVarArgSize) {
-      val nonVarArgParams = method.staticParameters.take(nonVarArgSize)
-      val nonVarArgCalledParams = calledParams.take(nonVarArgSize)
-      val nonVarArgMatching = nonVarArgParams.map(_.refClazz).zip(nonVarArgCalledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      //TODO: we do not check var arg parameter types
-      if (nonVarArgMatching) Some(method.staticResult) else None
-    } else {
-      None
-    }
-  }
-
 }
