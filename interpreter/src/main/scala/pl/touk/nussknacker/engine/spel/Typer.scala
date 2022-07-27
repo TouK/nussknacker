@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.expression._
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -51,9 +52,9 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   import ast.SpelAst._
 
-  type NodeTypingResult = ValidatedNel[ExpressionParseError, CollectedTypingResult]
+  type NodeTypingResult = ValidatedNel[SpelParseError, CollectedTypingResult]
 
-  def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  def typeExpression(expr: Expression, ctx: ValidationContext): ValidatedNel[SpelParseError, CollectedTypingResult] = {
     expr match {
       case e: standard.SpelExpression =>
         typeExpression(e, ctx)
@@ -71,7 +72,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
   }
 
-  private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def typeExpression(spelExpression: standard.SpelExpression, ctx: ValidationContext): ValidatedNel[SpelParseError, CollectedTypingResult] = {
     val ast = spelExpression.getAST
     val result = typeNode(ctx, ast, TypingContext(List.empty, Map.empty))
     logger.whenTraceEnabled {
@@ -320,7 +321,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def checkEqualityLikeOperation(validationContext: ValidationContext,
                                          node: Operator,
                                          current: TypingContext,
-                                         isEquality: Boolean): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                         isEquality: Boolean): ValidatedNel[SpelParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(TypedObjectWithValue(leftVariable, leftValue), _) ::
         TypingResultWithContext(TypedObjectWithValue(rightVariable, rightValue), _) :: Nil =>
@@ -334,7 +335,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
   }
 
-  private def checkEqualityComparableTypes(left: TypingResult, right: TypingResult, node: Operator): ValidatedNel[ExpressionParseError, TypingResult] = {
+  private def checkEqualityComparableTypes(left: TypingResult, right: TypingResult, node: Operator): ValidatedNel[SpelParseError, TypingResult] = {
     if (commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ToSupertype) != Typed.empty) {
       Valid(Typed[Boolean])
     } else
@@ -342,7 +343,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
-                                                 (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                                 (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[SpelParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
         Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)))
@@ -352,7 +353,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
   }
 
-  private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[SpelParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
         Valid(TypingResultWithContext(left))
@@ -362,7 +363,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
   }
 
-  private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[ExpressionParseError, TypingResult] = t match {
+  private def extractProperty(e: PropertyOrFieldReference, t: TypingResult): ValidatedNel[SpelParseError, TypingResult] = t match {
     case Unknown =>
       if (methodExecutionForUnknownAllowed)
         Valid(Unknown)
@@ -384,7 +385,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                      validationContext: ValidationContext,
                                      node: SpelNode,
                                      context: TypingContext,
-                                     disableMethodExecutionForUnknown: Boolean): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                     disableMethodExecutionForUnknown: Boolean): ValidatedNel[SpelParseError, CollectedTypingResult] = {
 
     context.stack match {
       case head :: tail =>
@@ -409,7 +410,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   @tailrec
   private def extractSingleProperty(e: PropertyOrFieldReference)
-                                   (t: SingleTypingResult): ValidatedNel[ExpressionParseError, TypingResult] = {
+                                   (t: SingleTypingResult): ValidatedNel[SpelParseError, TypingResult] = {
     t match {
       case typedObjectWithData: TypedObjectWithData =>
         extractSingleProperty(e)(typedObjectWithData.objType)
@@ -432,7 +433,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     clazzDefinition.getPropertyOrFieldType(e.getName)
   }
 
-  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[ExpressionParseError], TypingResult] = parent match {
+  private def extractIterativeType(parent: TypingResult): Validated[NonEmptyList[SpelParseError], TypingResult] = parent match {
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Collection[_]]) =>
       Valid(tc.objType.params.headOption.getOrElse(Unknown))
     case tc: SingleTypingResult if tc.objType.canBeSubclassOf(Typed[java.util.Map[_, _]]) =>
@@ -447,13 +448,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def typeChildrenAndReturnFixed(validationContext: ValidationContext, node: SpelNode, current: TypingContext)(result: TypingResultWithContext)
-  : Validated[NonEmptyList[ExpressionParseError], CollectedTypingResult] = {
+  : Validated[NonEmptyList[SpelParseError], CollectedTypingResult] = {
     typeChildren(validationContext, node, current)(_ => Valid(result))
   }
 
   private def typeChildren(validationContext: ValidationContext, node: SpelNode, current: TypingContext)
-                          (result: List[TypingResultWithContext] => ValidatedNel[ExpressionParseError, TypingResultWithContext])
-  : ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                          (result: List[TypingResultWithContext] => ValidatedNel[SpelParseError, TypingResultWithContext])
+  : ValidatedNel[SpelParseError, CollectedTypingResult] = {
     val data = node.children.map(child => typeNode(validationContext, child, current.withoutIntermediateResults)).sequence
     data.andThen { collectedChildrenResults =>
       withCombinedIntermediate(collectedChildrenResults, current) { childrenResults =>
@@ -463,8 +464,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def withCombinedIntermediate(intermediate: List[CollectedTypingResult], current: TypingContext)
-                                      (result: List[TypingResultWithContext] => ValidatedNel[ExpressionParseError, TypedNode])
-  : ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+                                      (result: List[TypingResultWithContext] => ValidatedNel[SpelParseError, TypedNode])
+  : ValidatedNel[SpelParseError, CollectedTypingResult] = {
     val intermediateResultsCombination = Monoid.combineAll(current.intermediateResults :: intermediate.map(_.intermediateResults))
     val intermediateTypes = intermediate.map(_.finalResult)
     result(intermediateTypes).map(CollectedTypingResult.withIntermediateAndFinal(intermediateResultsCombination, _))

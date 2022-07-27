@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.util.functions
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
@@ -30,7 +31,7 @@ trait BaseSpelSpec {
     parse(expr, validationCtx).value.expression.evaluate[T](evaluationCtx, globalVariables)
   }
 
-  protected def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[ExpressionParseError, TypedExpression] = {
+  protected def parse[T: TypeTag](expr: String, validationCtx: ValidationContext): ValidatedNel[SpelParseError, TypedExpression] = {
     val parser = SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(Map.empty), enableSpelForceCompile = false, strictTypeChecking = true,
       List.empty, SpelExpressionParser.Standard, strictMethodsChecking = true, staticMethodInvocationsChecking = true, TypeDefinitionSet.empty,
       methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, SpelExpressionExcludeList.default,
@@ -38,7 +39,7 @@ trait BaseSpelSpec {
     parser.parse(expr, validationCtx, Typed.fromDetailedType[T])
   }
 
-  protected implicit class ValidatedValue[E, A](validated: ValidatedNel[ExpressionParseError, A]) {
+  protected implicit class ValidatedValue[E, A](validated: ValidatedNel[SpelParseError, A]) {
     def value: A = validated.valueOr(err => throw new ParseException(err.map(_.message).toList.mkString, -1))
   }
 

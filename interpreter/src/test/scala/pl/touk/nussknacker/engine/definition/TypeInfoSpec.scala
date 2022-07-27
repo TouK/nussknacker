@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfo.{FunctionalMethodInfo, MethodInfo, NoVarArgsMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
 
@@ -27,7 +27,7 @@ class TypeInfoSpec extends FunSuite with Matchers {
     val paramX = Parameter("x", Typed[Int])
     val paramY = Parameter("y", Typed[String])
     val paramYArray = Parameter("y", Typed.genericTypeClass[Array[Object]](List(Typed[String])))
-    def f(x: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = Unknown.validNel
+    def f(x: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = Unknown.validNel
 
     NoVarArgsMethodInfo(List(paramX), Typed[Double], "b", Some("c")).serializable shouldBe
       SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)

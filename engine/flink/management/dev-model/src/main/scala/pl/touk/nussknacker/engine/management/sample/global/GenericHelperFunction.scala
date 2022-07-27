@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.{Documentation, GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
