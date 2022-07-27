@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.avro.sink
 
 import cats.data.NonEmptyList
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue}
@@ -10,9 +10,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SchemaVersionParamName, SinkKeyParamName}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.TransformationState
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
@@ -26,15 +27,15 @@ object UniversalKafkaSinkFactory {
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true)
   )
 
-  case class TransformationState(schema: RuntimeSchemaData[AvroSchema], runtimeSchema: Option[RuntimeSchemaData[AvroSchema]], sinkValueParameter: SinkValueParameter)
+  case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], sinkValueParameter: SinkValueParameter)
 
 }
 
 class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
                                 val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
                                 val processObjectDependencies: ProcessObjectDependencies,
-                                implProvider: KafkaAvroSinkImplFactory)
-  extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
+                                implProvider: UniversalKafkaSinkImplFactory)
+  extends KafkaUniversalComponentTransformer[Sink] with SinkFactory {
 
   override type State = TransformationState
 
@@ -49,7 +50,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       ) =>
       val preparedTopic = prepareTopic(topic)
       val versionOption = parseVersionOption(version)
-      val schemaDeterminer = prepareValueSchemaDeterminer(preparedTopic, versionOption)
+      val schemaDeterminer = prepareUniversalValueSchemaDeterminer(preparedTopic, versionOption)
       val determinedSchema = schemaDeterminer
         .determineSchemaUsedInTyping
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
@@ -60,8 +61,8 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }
       validatedSchema.andThen { schemaData =>
-        AvroSinkValueParameter(schemaData.schema.rawSchema()).map { valueParam =>
-          val state = TransformationState(schemaData, schemaDeterminer.toRuntimeSchema(schemaData), valueParam)
+        UniversalSchemaSupport.extractSinkValueParameter(schemaData.schema).map { valueParam =>
+          val state = TransformationState(schemaData, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
@@ -93,7 +94,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
 
-    val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, finalState.runtimeSchema.map(_.toParsedSchemaData), kafkaConfig)
+    val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, Option(finalState.schema), kafkaConfig)
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
 
     implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)

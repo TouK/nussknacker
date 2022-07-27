@@ -58,8 +58,8 @@ object AvroSinkValueParameter {
   }
 
   private def getDefaultValue(fieldSchema: Schema.Field, paramName: Option[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Option[Expression]] =
-      new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
-        .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
+    new AvroDefaultExpressionDeterminer(handleNotSupported = true).determine(fieldSchema)
+      .leftMap(_.map(err => CustomNodeError(err.getMessage, paramName)))
 
   private def containsRestrictedNames(fields: List[Schema.Field]): Boolean = {
     val fieldNames = fields.map(_.name()).toSet
@@ -75,7 +75,7 @@ object AvroSinkSingleValueParameter {
     val name = paramName.getOrElse(SinkValueParamName)
     val parameter = (
       if (schema.isNullable) Parameter.optional(name, typing) else Parameter(name, typing)
-    ).copy(
+      ).copy(
       isLazyParameter = true,
       defaultValue = defaultValue.map(_.expression)
     )

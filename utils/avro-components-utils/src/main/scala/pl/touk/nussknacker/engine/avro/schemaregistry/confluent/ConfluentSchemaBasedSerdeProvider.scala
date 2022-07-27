@@ -4,6 +4,7 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory, UniversalToJsonFormatterFactory}
@@ -17,6 +18,7 @@ import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
 class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory,
                                         val deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory,
                                         val recordFormatterFactory: RecordFormatterFactory) extends SchemaBasedSerdeProvider {
+  //todo: move validation to different place
   override def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T] = {
     schema match {
       case s: AvroSchema => {
@@ -28,6 +30,7 @@ class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSch
         else
           Valid(schema)
       }
+      case s: JsonSchema => Valid(schema)
       case _ => throw new IllegalArgumentException("Unsupported schema type")
     }
   }

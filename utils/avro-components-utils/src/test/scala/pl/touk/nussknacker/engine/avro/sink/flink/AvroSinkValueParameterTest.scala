@@ -4,14 +4,14 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{SinkKeyParamName, SinkValueParamName}
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter}
 
@@ -33,7 +33,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
         .name("e").`type`().unionOf().nullType().and().longType().endUnion().nullDefault()
       .endRecord()
 
-    val result =  AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkRecordParameter]
+    val result = AvroSinkValueParameter(recordSchema).valueOr(e => fail(e.toString)).asInstanceOf[SinkRecordParameter]
     StandardParameterEnrichment.enrichParameterDefinitions(result.toParameters, SingleComponentConfig.zero) shouldBe List(
       Parameter(name = "a", typ = typing.Typed[String]).copy(isLazyParameter = true, editor = Some(DualParameterEditor(StringParameterEditor, DualEditorMode.RAW)), defaultValue = Some("''")),
       Parameter(name = "b.c", typ = typing.Typed[Long]).copy(isLazyParameter = true, defaultValue = Some("0")),
@@ -58,7 +58,7 @@ class AvroSinkValueParameterTest extends FunSuite with Matchers {
         .name(SinkKeyParamName).`type`().stringType().noDefault()
         .name("b").`type`().longType().noDefault()
       .endRecord()
-    val result =  AvroSinkValueParameter(recordSchema)
+    val result = AvroSinkValueParameter(recordSchema)
     result shouldBe Invalid(NonEmptyList.one(CustomNodeError(nodeId.id, s"""Record field name is restricted. Restricted names are Schema version, Key, Value validation mode, Topic""", None)))
   }
 }

@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.SchemaProvider
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
+import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
@@ -68,6 +69,7 @@ private[client] object CachedSchemaRegistryClient {
     val urls = config.getSchemaRegistryUrls
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
-    new CCachedSchemaRegistryClient(urls, maxSchemaObject, originals)
+    val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
+    new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
   }
 }

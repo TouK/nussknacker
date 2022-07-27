@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaV
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseTransformer, RuntimeSchemaData}
+import pl.touk.nussknacker.engine.avro.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
 import pl.touk.nussknacker.engine.kafka.source.KafkaContextInitializer
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
@@ -31,7 +31,7 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
                                                             val processObjectDependencies: ProcessObjectDependencies,
                                                             protected val implProvider: KafkaSourceImplFactory[K, V])
   extends SourceFactory
-    with KafkaAvroBaseTransformer[Source] {
+    with KafkaUniversalComponentTransformer[Source] {
 
   override type State = UniversalKafkaSourceFactoryState[K, V]
 
@@ -94,15 +94,6 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
                                          errors: List[ProcessCompilationError])(implicit nodeId: NodeId): FinalResults = {
     val initializerWithUnknown = prepareContextInitializer(dependencies, parameters, Unknown, Unknown)
     FinalResults.forValidation(context, errors)(initializerWithUnknown.validationContext)
-  }
-
-  private def prepareUniversalValueSchemaDeterminer(preparedTopic: PreparedKafkaTopic, version: SchemaVersionOption): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, version, isKey = false)
-  }
-
-  //TODO: add schema versioning for key schemas
-  private def prepareUniversalKeySchemaDeterminer(preparedTopic: PreparedKafkaTopic): ParsedSchemaDeterminer = {
-    new ParsedSchemaDeterminer(schemaRegistryClient, preparedTopic.prepared, LatestSchemaVersion, isKey = true)
   }
 
   // Overwrite this for dynamic type definitions.

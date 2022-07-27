@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks
+package pl.touk.nussknacker.engine.json
 
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
@@ -7,8 +7,6 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.json.{JsonDefaultExpressionDeterminer, JsonSchemaTypeDefinitionExtractor}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
@@ -20,16 +18,16 @@ object JsonSinkValueParameter {
   type FieldName = String
 
   //Extract editor form from JSON schema
-  def apply(schema: Schema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
-    toSinkValueParameter(schema, paramName = None, defaultValue = None, isRequired = None)
+  def apply(schema: Schema, defaultParamName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
+    toSinkValueParameter(schema, paramName = None, defaultParamName = defaultParamName, defaultValue = None, isRequired = None)
 
-  private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultValue: Option[Expression], isRequired: Option[Boolean])
+  private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultParamName: String, defaultValue: Option[Expression], isRequired: Option[Boolean])
                                   (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     schema match {
       case objectSchema: ObjectSchema =>
-        objectSchemaToSinkValueParameter(objectSchema, paramName, isRequired = None) //ObjectSchema doesn't use property required
+        objectSchemaToSinkValueParameter(objectSchema, paramName, defaultParamName = defaultParamName, isRequired = None) //ObjectSchema doesn't use property required
       case _ =>
-        Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(SinkValueParamName), defaultValue, isRequired))
+        Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(defaultParamName), defaultValue, isRequired))
     }
   }
 
@@ -47,7 +45,7 @@ object JsonSinkValueParameter {
     SinkSingleValueParameter(parameter)
   }
 
-  private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean])
+  private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], defaultParamName: String, isRequired: Option[Boolean])
                                               (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
@@ -57,7 +55,7 @@ object JsonSinkValueParameter {
         val concatName = paramName.fold(fieldName)(pn => s"$pn.$fieldName")
         val isRequired = Option(schema.getRequiredProperties.contains(fieldName))
         val sinkValueValidated = getDefaultValue(fieldSchema, paramName).andThen { defaultValue =>
-          toSinkValueParameter(schema = fieldSchema, paramName = Option(concatName), defaultValue, isRequired)
+          toSinkValueParameter(schema = fieldSchema, paramName = Option(concatName), defaultParamName = defaultParamName, defaultValue = defaultValue, isRequired = isRequired)
         }
         sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
     }.toList

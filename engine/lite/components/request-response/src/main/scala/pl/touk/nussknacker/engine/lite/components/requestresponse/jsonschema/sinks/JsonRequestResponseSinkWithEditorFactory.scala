@@ -6,7 +6,8 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.JsonSchemaExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
@@ -24,7 +25,7 @@ class JsonRequestResponseSinkWithEditorFactory(implProvider: ResponseRequestSink
   protected def schemaParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
-        .andThen { schema => JsonSinkValueParameter(schema).map { valueParam =>
+        .andThen { schema => JsonSinkValueParameter(schema, SinkValueParamName).map { valueParam =>
           val state = EditorTransformationState(schema, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
