@@ -101,9 +101,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       //FIXME: java.nio.ByteBuffer is not available from SpEL (sConfig(sampleString, stringSchema, bytesSchema, """T(java.nio.ByteBuffer).wrap(#input.getBytes("UTF-8"))"""), valid(ByteBuffer.wrap(sampleBytes))),
 
       //Primitive integer validations
-      (sConfig(sampleInteger, longSchema, integerSchema, Input), valid(sampleInteger)), //FIXME: Long -> Int?
-      (sConfig(sampleLong, longSchema, integerSchema, Input), valid(sampleLong.toInt)), //FIXME: Long -> Int?
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), valid(sampleLong.toInt)), //FIXME: Long -> Int?
+      (sConfig(sampleInteger, longSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Long' expected: 'Integer'")),
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), invalidTypes(s"path 'Data' actual: '${typedLong.display}' expected: 'Integer'")),
 
       (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
       (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Integer'")),
@@ -119,8 +118,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"path 'Data' actual: 'Double' expected: 'Integer'")),
 
       //Primitive long validations
-      (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger)), //FIXME: Int -> Long
-      (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int -> Long
+      (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger.toLong)),
+      (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger.toLong)),
 
       (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
       (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Long'")),
@@ -136,12 +135,12 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (sConfig(sampleLong, longSchema, double(1)), invalidTypes("path 'Data' actual: 'Double' expected: 'Long'")),
 
       //Primitive float validations
-      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), valid(sampleDouble)), //FIXME: Double -> Float?
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), valid(sampleDouble)), //FIXME: Double -> Float?
-      (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger)), //FIXME: Int -> Float?
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int -> Float?
-      (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong)), //FIXME: Long -> Float?
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong)), //FIXME: Long -> Float?
+      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Float'")),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), invalidTypes(s"path 'Data' actual: '${typedDouble.display}' expected: 'Float'")),
+      (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger.toFloat)),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger.toFloat)),
+      (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong.toFloat)),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong.toFloat)),
 
       (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Float'")),
@@ -153,12 +152,12 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Float'")),
 
       //Primitive Double validations
-      (sConfig(sampleFloat, floatSchema, doubleSchema, Input), valid(sampleFloat)), //FIXME: Float with Double Schema => Float ?
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleFloat), valid(sampleFloat)), //FIXME: Float with Double Schema => Float ?
-      (sConfig(sampleInteger, integerSchema, doubleSchema, Input), valid(sampleInteger)), //FIXME: Int with Double Schema => Int ?
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger)), //FIXME: Int with Double Schema => Int ?
-      (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong)), //FIXME: Long with Double Schema => Long ?
-      (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong)), //FIXME: Long with Double Schema => Long ?
+      (sConfig(sampleFloat, floatSchema, doubleSchema, Input), valid(sampleFloat.toDouble)),
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleFloat), valid(sampleFloat.toDouble)),
+      (sConfig(sampleInteger, integerSchema, doubleSchema, Input), valid(sampleInteger.toDouble)),
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger.toDouble)),
+      (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong.toDouble)),
+      (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong.toDouble)),
 
       (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
       (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Double'")),
@@ -175,23 +174,40 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (ScenarioConfig(sampleString, stringSchema, recordUnionOfStringIntegerSchema, Input.toSpELLiteral, None), invalidTypes("path 'Data' actual: 'String' expected: '{field: String | Integer}'")),
       (rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionOfStringIntegerSchema, Input), invalidTypes("path 'field' actual: 'Boolean' expected: 'String | Integer'")),
 
+      //#input as output with conversion - schema evolution..
+      (rConfig(sampleLong, recordLongSchema, recordIntegerSchema, Input), invalidTypes(s"path 'field' actual: 'Long' expected: 'Integer'")),
+      (rConfig(sampleFloat, recordFloatSchema, recordIntegerSchema, Input), invalidTypes(s"path 'field' actual: 'Float' expected: 'Integer'")),
+      (rConfig(sampleDouble, recordDoubleSchema, recordIntegerSchema, Input), invalidTypes(s"path 'field' actual: 'Double' expected: 'Integer'")),
+
+      (rConfig(sampleInteger, recordIntegerSchema, recordLongSchema, Input), rValid(sampleInteger.toLong, recordLongSchema)), //avro allows to pass Integer as Long
+      (rConfig(sampleFloat, recordFloatSchema, recordLongSchema, Input), invalidTypes(s"path 'field' actual: 'Float' expected: 'Long'")),
+      (rConfig(sampleDouble, recordDoubleSchema, recordLongSchema, Input), invalidTypes(s"path 'field' actual: 'Double' expected: 'Long'")),
+
+      (rConfig(sampleInteger, recordIntegerSchema, recordFloatSchema, Input), rValid(sampleInteger.toFloat, recordFloatSchema)), //avro allows to pass Integer as Float
+      (rConfig(sampleLong, recordLongSchema, recordFloatSchema, Input), rValid(sampleLong.toFloat, recordFloatSchema)), //avro allows to pass Long as Float
+      (rConfig(sampleDouble, recordDoubleSchema, recordFloatSchema, Input), invalidTypes(s"path 'field' actual: 'Double' expected: 'Float'")),
+
+      (rConfig(sampleInteger, recordIntegerSchema, recordDoubleSchema, Input), rValid(sampleInteger.toDouble, recordDoubleSchema)), //avro allows to pass Integer as Double
+      (rConfig(sampleLong, recordLongSchema, recordDoubleSchema, Input), rValid(sampleLong.toDouble, recordDoubleSchema)), //avro allows to pass Long as Double
+      (rConfig(sampleFloat, recordFloatSchema, recordDoubleSchema, Input), rValid(sampleFloat.toDouble, recordDoubleSchema)), //avro allows to pass Float as Double
+
       //Array validations
       (rConfig(List("12"), recordArrayOfStringsSchema, recordArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1, 2), recordArrayOfNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
+      (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1.0, 2.5), recordArrayOfNumbersSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema,  List(sampleString)), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes(s"path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, null), invalidTypes("path 'field' actual: 'Null' expected: 'List[Integer | Double]'")),
 
       (rConfig(List("12"), recordArrayOfStringsSchema, recordMaybeArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1, 2), recordMaybeArrayOfNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
+      (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1.0, 2.5), recordMaybeArrayOfNumbersSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(sampleString)), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       //FIXME: List[Unknown] (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, null), rValid(null, recordMaybeArrayOfNumbersSchema)),
 
       (rConfig(List("12"), recordArrayOfStringsSchema, recordOptionalArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1, 2), recordOptionalArrayOfNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1.0, 2.5), recordOptionalArrayOfNumbersSchema)),
       //FIXME: List[Unknown]  (rConfig(sampleInteger, recordIntegerSchema, recordWithMaybeArrayOfNumbers, s"""{$sampleBoolean, "$sampleString"}"""), invalidTypes("path 'field[]' actual: '${typeBool.display} | ${typeStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(sampleString)), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")),
@@ -200,7 +216,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, EmptyBaseObject, Some(lax)), rValid(null, recordOptionalArrayOfNumbersSchema)),
 
       (rConfig(List(List("12")), recordOptionalArrayOfArraysStringsSchema, recordOptionalArrayOfArraysNumbersSchema, Input), invalidTypes("path 'field[][]' actual: 'String' expected: 'Integer | Double'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(List(1.0, 2.5))), rValid(List(List(1, 2)), recordOptionalArrayOfArraysNumbersSchema)), //bug with serialization / deserialization union?? There should be List(1.0, 2.5) - casting to first schema: there first is int
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(List(1.0, 2.5))), rValid(List(List(1.0, 2.5)), recordOptionalArrayOfArraysNumbersSchema)),
       //FIXME: List[Unknown]  (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbers, s"""{{$sampleBoolean, "$sampleString"}}"""), invalidTypes("path 'field[][]' actual: 'Boolean | String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(List(sampleString))), invalidTypes(s"path 'field[][]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(sampleInteger)), invalidTypes(s"path 'field[]' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")),
@@ -300,31 +316,31 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleMillisLocalTime.toMillis, recordIntegerSchema, recordTimeMillisSchema, Input), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, sampleMillisLocalTime.toMillis), rValid(sampleMillisLocalTime, recordTimeMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'LocalTime | Integer'")),
-      (rConfig(sampleString, recordStringSchema, recordTimeMillisSchema, sampleString), invalidTypes(s"path 'field' actual: '${typedStr.display}' expected: 'LocalTime | Integer'")),
+      (rConfig(sampleBoolean, recordBooleanSchema, recordTimeMillisSchema, sampleString), invalidTypes(s"path 'field' actual: '${typedStr.display}' expected: 'LocalTime | Integer'")),
 
       //Logical: Time Micros -> LocalTime
       (rConfig(sampleMicrosLocalTime, recordTimeMicrosSchema, recordTimeMicrosSchema, Input), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, localTime(sampleMicrosLocalTime)), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleMicrosLocalTime.toMicros, recordLongSchema, recordTimeMicrosSchema, Input), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, sampleMicrosLocalTime.toMicros), rValid(sampleMicrosLocalTime, recordTimeMicrosSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimeMicrosSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'LocalTime | Long'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimeMicrosSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'LocalTime | Long'")),
+      (rConfig(sampleString, recordStringSchema, recordTimeMicrosSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'LocalTime | Long'")),
+      (rConfig(sampleBoolean, recordBooleanSchema, recordTimeMicrosSchema, sampleString), invalidTypes(s"path 'field' actual: '${typedStr.display}' expected: 'LocalTime | Long'")),
 
       //Logical: Timestamp Millis -> Instant
       (rConfig(sampleMillisInstant, recordTimestampMillisSchema, recordTimestampMillisSchema, Input), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, instant(sampleMillisInstant)), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleMillisInstant.toEpochMilli, recordLongSchema, recordTimestampMillisSchema, Input), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, sampleMillisInstant.toEpochMilli), rValid(sampleMillisInstant, recordTimestampMillisSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimestampMillisSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'Instant | Long'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimestampMillisSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Instant | Long'")),
+      (rConfig(sampleString, recordStringSchema, recordTimestampMillisSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'Instant | Long'")),
+      (rConfig(sampleBoolean, recordBooleanSchema, recordTimestampMillisSchema, sampleString), invalidTypes(s"path 'field' actual: '${typedStr.display}' expected: 'Instant | Long'")),
 
       //Logical: Timestamp Micros -> Instant
       (rConfig(sampleMicrosInstant, recordTimestampMicrosSchema, recordTimestampMicrosSchema, Input), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, instant(sampleMicrosInstant.toMicrosFromEpoch, sampleMicrosInstant.toNanoAdjustment)), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleMicrosInstant.toMicros, recordLongSchema, recordTimestampMicrosSchema, Input), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
       (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, sampleMicrosInstant.toMicros), rValid(sampleMicrosInstant, recordTimestampMicrosSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimestampMicrosSchema, Input), invalidTypes("path 'field' actual: 'Integer' expected: 'Instant | Long'")),
-      (rConfig(sampleInteger, recordIntegerSchema, recordTimestampMicrosSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Instant | Long'")),
+      (rConfig(sampleString, recordStringSchema, recordTimestampMicrosSchema, Input), invalidTypes("path 'field' actual: 'String' expected: 'Instant | Long'")),
+      (rConfig(sampleBoolean, recordBooleanSchema, recordTimestampMicrosSchema, sampleString), invalidTypes(s"path 'field' actual: '${typedStr.display}' expected: 'Instant | Long'")),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -351,9 +367,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
 
       //Situation when we put String -> UUID, where String isn't valid UUID type...
       rConfig(sampleString, recordStringSchema, recordUUIDSchema, Input),
-
-      //FIXME: Schema evolution with Long as input and output as Int
-      rConfig(sampleLong, recordLongSchema, recordIntegerSchema, Input), //Long -> Int?
     )
 
     forAll(testData) { config: ScenarioConfig =>

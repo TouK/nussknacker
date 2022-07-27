@@ -86,14 +86,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         Valid(alignDecimalScale(decimal, schema))
       case (Schema.Type.FIXED | Schema.Type.BYTES, number: Number) if AvroUtils.isLogicalType[LogicalTypes.Decimal](schema) =>
         Valid(alignDecimalScale(new java.math.BigDecimal(number.toString), schema))
-      case (Schema.Type.INT, number: Number) =>
-        Valid(number.intValue().underlying())
       case (Schema.Type.INT, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMillis() =>
         Valid(time)
       case (Schema.Type.INT, time: LocalDate) if schema.getLogicalType == LogicalTypes.date() =>
         Valid(time)
-      case (Schema.Type.LONG, number: Number) =>
-        Valid(number.longValue().underlying())
       case (Schema.Type.LONG, instant: Instant) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
         Valid(instant)
       case (Schema.Type.LONG, zoned: ChronoZonedDateTime[_]) if schema.getLogicalType == LogicalTypes.timestampMillis() || schema.getLogicalType == LogicalTypes.timestampMicros() =>
@@ -102,8 +98,18 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         Valid(offset.toInstant)
       case (Schema.Type.LONG, time: LocalTime) if schema.getLogicalType == LogicalTypes.timeMicros() =>
         Valid(time)
-      case (Schema.Type.FLOAT, number: Number) =>
+      case (Schema.Type.INT, number: java.lang.Integer) =>
+        Valid(number)
+      case (Schema.Type.LONG, number: java.lang.Integer) =>
+        Valid(number.longValue().underlying())
+      case (Schema.Type.LONG, number: java.lang.Long) =>
+        Valid(number)
+      case (Schema.Type.FLOAT, number: java.lang.Integer) =>
         Valid(number.floatValue().underlying())
+      case (Schema.Type.FLOAT, number: java.lang.Long) =>
+        Valid(number.floatValue().underlying())
+      case (Schema.Type.FLOAT, number: java.lang.Float) =>
+        Valid(number)
       case (Schema.Type.DOUBLE, number: Number) =>
         Valid(number.doubleValue().underlying())
       case (Schema.Type.BOOLEAN, boolean: java.lang.Boolean) =>

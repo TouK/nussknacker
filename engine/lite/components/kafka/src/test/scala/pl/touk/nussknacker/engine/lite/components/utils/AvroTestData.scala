@@ -67,6 +67,10 @@ object AvroTestData {
 
   val recordLongSchema: Schema = createSimpleRecord(longSchema)
 
+  val recordFloatSchema: Schema = createSimpleRecord(floatSchema)
+
+  val recordDoubleSchema: Schema = createSimpleRecord(doubleSchema)
+
   val recordPriceSchema: Schema = createRecord(createField("price", nullSchema, doubleSchema))
 
   val recordStringPriceSchema: Schema = createRecord(createField("price", nullSchema, stringSchema))
