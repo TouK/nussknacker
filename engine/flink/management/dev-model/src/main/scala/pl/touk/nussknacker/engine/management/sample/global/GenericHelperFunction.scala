@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, SpelParseError, TypingFunction, NoVarArgumentTypeError}
 import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -21,16 +21,19 @@ object GenericHelperFunction {
     val IntOK = "OK: Int"
     val StringOK = "OK: String"
 
+    private def error(arguments: List[TypingResult]): SpelParseError =
+      new NoVarArgumentTypeError(List(Typed(Typed[Int], Typed[String])), arguments, "extractType")
+
     override def staticParameters(): Option[List[(String, TypingResult)]] =
       Some(List(("example of desired type", Typed(Typed[Int], Typed[String]))))
 
     override def staticResult(): Option[TypingResult] =
       Some(Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK)))
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
       case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance(IntOK).validNel
       case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance(StringOK).validNel
-      case _ => "Expected Int or String".invalidNel
+      case _ => error(arguments).invalidNel
     }
   }
 
@@ -42,11 +45,13 @@ object GenericHelperFunction {
   private class HeadHelper extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+    private def error(arguments: List[TypingResult]) =
+      new NoVarArgumentTypeError(List(Typed.fromDetailedType[List[Object]]), arguments, "head")
+
+    override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
       case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-      case _ :: Nil => "Expected List".invalidNel
-      case _ => "Expected one argument".invalidNel
+      case _ => error(arguments).invalidNel
     }
   }
 }

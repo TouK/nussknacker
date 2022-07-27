@@ -179,6 +179,8 @@ object typing {
       if (klass == classOf[Any]) Unknown else typedClass(klass, None)
     }
 
+    def unknown: Unknown.type = Unknown
+
     //TODO: how to assert in compile time that T != Any, AnyRef, Object?
     //TODO: Those two methods below are very danger - dev can forgot to pass generic parameters which can cause man complications.
     //      Maybe we should do sth to enforce devs to use genericTypeClass variant with explicit list of params and leave it just

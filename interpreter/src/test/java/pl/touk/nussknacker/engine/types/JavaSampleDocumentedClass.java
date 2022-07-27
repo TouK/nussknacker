@@ -5,12 +5,15 @@ import cats.data.Validated;
 import cats.data.Validated.Invalid;
 import cats.data.Validated.Valid;
 import pl.touk.nussknacker.engine.api.Documentation;
-import pl.touk.nussknacker.engine.api.generics.GenericType;
+import pl.touk.nussknacker.engine.api.generics.*;
 import pl.touk.nussknacker.engine.api.ParamName;
-import pl.touk.nussknacker.engine.api.generics.TypingFunction;
+import pl.touk.nussknacker.engine.api.typed.typing;
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult;
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass;
+import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
+
+import java.util.stream.Collectors;
 
 public class JavaSampleDocumentedClass {
     static final String bazDocs = "This is sample documentation for baz method";
@@ -52,13 +55,32 @@ public class JavaSampleDocumentedClass {
     static class HeadHelper extends TypingFunction {
         private final Class<?> listClass = java.util.List.class;
 
-        public Validated<NonEmptyList<String>, TypingResult> apply(List<TypingResult> arguments) {
-            if (arguments.length() != 1) return Invalid.invalid(NonEmptyList.one("Expected one argument"));
-            if (!(arguments.head() instanceof TypedClass)) return Invalid.invalid(NonEmptyList.one("Expected List"));
+        private String argumentsToString(List<TypingResult> arguments) {
+            Iterable<String> strings = JavaConverters.asJavaCollection(arguments).stream().map(TypingResult::display).collect(Collectors.toList());
+            return String.join(", ", strings);
+        }
+
+        private SpelParseError error(List<TypingResult> arguments) {
+            String expectedString = "head(List[Unknown])";
+            String foundString = "head(" + argumentsToString(arguments) + ")";
+            return new GenericFunctionError("Mismatch parameter types. Found: " + foundString + ". Required: " + expectedString);
+        }
+
+        public Validated<NonEmptyList<SpelParseError>, TypingResult> apply(List<TypingResult> arguments) {
+            if (arguments.length() != 1) {
+                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+            }
+            if (!(arguments.head() instanceof TypedClass)) {
+                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+            }
 
             TypedClass arg = (TypedClass) arguments.head();
-            if (arg.klass() != listClass) return Invalid.invalid(NonEmptyList.one("Expected List"));
-            if (arg.params().length() != 1) throw new AssertionError("Lists must have one parameter");
+            if (arg.klass() != listClass) {
+                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+            }
+            if (arg.params().length() != 1) {
+                throw new AssertionError("Lists must have one parameter");
+            }
             return Valid.valid(arg.params().head());
         }
     }

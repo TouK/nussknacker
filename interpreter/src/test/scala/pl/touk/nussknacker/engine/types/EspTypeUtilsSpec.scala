@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, NoVarArgumentTypeError, SpelParseError, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -321,7 +321,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
                                  expected: ValidatedNel[String, TypingResult]): Unit =
     classes.map(clazz => {
       val info :: Nil = clazz.methods(name)
-      info.apply(arguments) shouldBe expected
+      info.apply(arguments).leftMap(_.map(_.message)) shouldBe expected
     })
 
   test("should correctly calculate result types on correct inputs") {
@@ -351,30 +351,33 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   }
 
   // FIXME: Add expected results to this test.
-  ignore("should correctly handle illegal input types in generic functions") {
+  test("should correctly handle illegal input types in generic functions") {
     val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
-    def checkApplyFunctionInvalid(name: String, arguments: List[TypingResult], error: String): Unit =
-      checkApplyFunction(List(scalaClassInfo, javaClassInfo), name, arguments, error.invalidNel)
+    def checkApplyFunctionInvalid(name: String, arguments: List[TypingResult], expected: List[TypingResult]): Unit =
+      checkApplyFunction(
+        List(scalaClassInfo, javaClassInfo),
+        name,
+        arguments,
+        new NoVarArgumentTypeError(expected, arguments, name).message.invalidNel
+      )
 
     val table = Table(
-      ("name", "arguments", "error"),
-      ("foo", List(), ""),
-      ("foo", List(Typed[Int]), ""),
-      ("foo", List(Typed[Object]), ""),
-      ("foo", List(Typed[String], Typed[Int]), ""),
-      ("baz", List(), ""),
-      ("baz", List(Typed[Int]), ""),
-      ("baz", List(Typed[String]), ""),
-      ("baz", List(Typed[String], Typed[Int], Typed[Double]), ""),
-      ("baz", List(Typed[String], Typed[Object]), ""),
-      ("field1", List(Typed[Int]), ""),
-      ("head", List(Typed[Int]), ""),
-      ("head", List(Typed[Set[_]]), ""),
-      ("head", List(Typed[Map[_, _]]), ""),
-      ("head", List(), ""),
-      ("head", List(Typed[List[_]], Typed[Int]), "")
+      ("name", "arguments", "expected"),
+      ("foo", List(), List(Typed[String])),
+      ("foo", List(Typed[Int]), List(Typed[String])),
+      ("foo", List(Typed[String], Typed[Int]), List(Typed[String])),
+      ("baz", List(), List(Typed[String], Typed[Int])),
+      ("baz", List(Typed[Int]), List(Typed[String], Typed[Int])),
+      ("baz", List(Typed[String]), List(Typed[String], Typed[Int])),
+      ("baz", List(Typed[String], Typed[Int], Typed[Double]), List(Typed[String], Typed[Int])),
+      ("field1", List(Typed[Int]), List()),
+      ("head", List(Typed[Int]), List(Typed[List[Object]])),
+      ("head", List(Typed[Set[_]]), List(Typed[List[Object]])),
+      ("head", List(Typed[Map[_, _]]), List(Typed[List[Object]])),
+      ("head", List(), List(Typed[List[Object]])),
+      ("head", List(Typed[List[_]], Typed[Int]), List(Typed[List[Object]]))
     )
 
     forAll(table)(checkApplyFunctionInvalid)
@@ -418,14 +421,16 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 }
 
 // This class cannot be declared inside non-static class because it needs to
-// constructable without instances of other classes.
+// be constructable without instances of other classes.
 private class HeadHelper extends TypingFunction {
   private val listClass = classOf[java.util.List[_]]
 
-  override def apply(arguments: List[TypingResult]): ValidatedNel[String, TypingResult] = arguments match {
+  private def error(arguments: List[TypingResult]): SpelParseError =
+    new NoVarArgumentTypeError(List(Typed.fromDetailedType[List[Object]]), arguments, "head")
+
+  override def apply(arguments: List[TypingResult]): ValidatedNel[SpelParseError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-    case _ :: Nil => "Expected List".invalidNel
-    case _ => "Expected one argument".invalidNel
+    case _ => error(arguments).invalidNel
   }
 }
