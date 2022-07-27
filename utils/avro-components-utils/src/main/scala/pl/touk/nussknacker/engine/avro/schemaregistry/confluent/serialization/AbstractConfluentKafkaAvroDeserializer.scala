@@ -5,11 +5,13 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
+import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 
 import java.io.IOException
@@ -62,6 +64,18 @@ class ConfluentAvroPayloadDeserializer(
     val readerSchemaData = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
     val reader = createDatumReader(avroWriterSchemaData.schema.rawSchema(), readerSchemaData.schema.rawSchema(), useSchemaReflection, useSpecificAvroReader)
     deserializeRecord(readerSchemaData, reader, buffer, bufferDataStart)
+  }
+}
+
+object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+
+  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+    //todo refactor
+    val converter = new JsonPayloadToAvroConverter(None)
+    buffer.position(bufferDataStart)
+    buffer.compact()
+    val schema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
+    converter.convert(buffer.array(), schema)
   }
 }
 

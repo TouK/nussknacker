@@ -20,4 +20,5 @@ object SchemaWithMetadata{
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     }
   }
+
 }

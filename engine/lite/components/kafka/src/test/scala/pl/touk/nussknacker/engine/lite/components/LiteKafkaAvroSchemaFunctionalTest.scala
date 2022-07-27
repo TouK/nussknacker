@@ -20,8 +20,9 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConf
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroBaseComponentTransformer}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.components.AvroGen.genValueForSchema
-import pl.touk.nussknacker.engine.lite.components.AvroTestData._
+import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
+import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
+import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
@@ -32,7 +33,7 @@ import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMess
 import java.nio.ByteBuffer
 import java.util.UUID
 
-class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
+class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
@@ -40,7 +41,7 @@ class LiteKafkaAvroFunctionalTest extends FunSuite with Matchers with ScalaCheck
   import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
   import pl.touk.nussknacker.test.LiteralSpEL._
-  import LiteralSpELWithAvroImplicits._
+  import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import SpecialSpELElement._
 
   private val EmptyBaseObject: SpecialSpELElement = SpecialSpELElement("{:}")

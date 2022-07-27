@@ -3,11 +3,14 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.AvroUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+
 import scala.collection.JavaConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
@@ -32,20 +35,20 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
     }
 }
 
-class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient) extends ConfluentSchemaRegistryClient {
+class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient, config: SchemaRegistryClientKafkaConfig) extends ConfluentSchemaRegistryClient {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(schemaMetadata)
+      wrapWithConfiguration(SchemaWithMetadata(schemaMetadata))
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(schemaMetadata)
+      wrapWithConfiguration(SchemaWithMetadata(schemaMetadata))
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
@@ -59,6 +62,22 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
       client.getAllVersions(subject).asScala.toList
     }
 
+  override def getSchemaById(id: Int): SchemaWithMetadata = {
+    //todo schemaCache is subject-version keyed, how to get it by id
+    val rawSchema = client.getSchemaById(id)
+    wrapWithConfiguration(id, rawSchema)
+  }
+
+  private def wrapWithConfiguration(id: Int, rawSchema: ParsedSchema) = {
+    (rawSchema.schemaType(), config.avroPlainTextSerialization) match {
+      case ("AVRO", Some(true)) => SchemaWithMetadata(AvroWithJsonPayloadSchema(rawSchema.asInstanceOf[AvroSchema]), id)
+      case _ => SchemaWithMetadata(rawSchema, id)
+    }
+  }
+
+  private def wrapWithConfiguration(schemaMetadata: SchemaWithMetadata): SchemaWithMetadata = {
+    wrapWithConfiguration(schemaMetadata.id, schemaMetadata.schema)
+  }
 }
 
 object ConfluentSchemaRegistryClient {

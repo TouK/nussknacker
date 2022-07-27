@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components
+package pl.touk.nussknacker.engine.lite.components.utils
 
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericRecord, IndexedRecord}
@@ -30,4 +30,3 @@ object LiteralSpELWithAvroImplicits {
   }
 
 }
-
