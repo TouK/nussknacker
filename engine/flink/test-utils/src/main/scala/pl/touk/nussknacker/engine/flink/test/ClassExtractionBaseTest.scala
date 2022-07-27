@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgsMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
 import java.io.File
 import java.nio.charset.StandardCharsets
+import pl.touk.nussknacker.engine.api.CirceUtil._
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
