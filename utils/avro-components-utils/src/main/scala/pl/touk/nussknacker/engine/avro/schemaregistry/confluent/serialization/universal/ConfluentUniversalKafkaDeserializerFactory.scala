@@ -57,15 +57,13 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
   private def getSchemaId(topic: String, headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer =
     headers.getSchemaId(headerName) match {
       case Some(idFromHeader) => // Even if schemaId is passed through header, it still can be serialized in 'Confluent way', here we're figuring it out
-        val buffer = Try(readIdAndGetBuffer(data)).map(_._2).getOrElse(ByteBuffer.wrap(data))
+        val buffer = readIdAndGetBuffer(data).toOption.map(_._2).getOrElse(ByteBuffer.wrap(data))
         SchemaIdWithPositionedBuffer(idFromHeader, buffer)
       case None =>
-        val idAndBuffer = Try(ConfluentUtils.readIdAndGetBuffer(data))
-          .getOrElse(
-            schemaRegistryClient
-              .getFreshSchema(topic, None, isKey = isKey).map(_.id).map((_, ByteBuffer.wrap(data)))
-              .valueOr(e => throw new RuntimeException("Missing schemaId in kafka header and in payload. Trying to fetch latest schema for this topic but it failed", e))
-          )
+        val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data).toOption
+          .getOrElse(schemaRegistryClient
+            .getFreshSchema(topic, None, isKey = isKey).map(_.id).map((_, ByteBuffer.wrap(data)))
+            .valueOr(e => throw new RuntimeException("Missing schemaId in kafka header and in payload. Trying to fetch latest schema for this topic but it failed", e)))
         SchemaIdWithPositionedBuffer(idAndBuffer._1, buffer = idAndBuffer._2)
     }
 }
