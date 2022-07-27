@@ -21,6 +21,8 @@ object TypeMethodReference {
            (implicit settings: ClassExtractionSettings): ValidatedNel[SpelParseError, TypingResult] =
     new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 
+  // Custom type used to signal that there is not enough information and
+  // we should stop computations and return Unknown.
   private case class NoDataForEvaluation()
 }
 
@@ -78,17 +80,17 @@ class TypeMethodReference(methodName: String,
     )
   }
 
-  private def validateMethodParameterTypes(methodInfoes: NonEmptyList[MethodInfo]):
+  private def validateMethodParameterTypes(methodInfos: NonEmptyList[MethodInfo]):
     Validated[Either[NonEmptyList[SpelParseError], NoDataForEvaluation], NonEmptyList[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfoes.map(_.apply(calledParams))
-    val validReturnTypesForMatchingMethods = returnTypesForMatchingMethods.collect{ case Valid(x) => x }
-    validReturnTypesForMatchingMethods match {
-      case Nil =>
-        val collectedErrors = returnTypesForMatchingMethods
-          .collect{ case Invalid(lst) => lst }
-          .reduce((x, y) => x ::: y)
-        Left(collectedErrors).invalid
-      case x :: xs => NonEmptyList(x, xs).valid
-    }
+    val returnTypesForMatchingMethods = methodInfos.map(_.apply(calledParams))
+    val validatedReturnTypesForMatchingMethods = returnTypesForMatchingMethods
+      .map(_.map(NonEmptyList.of(_)))
+      .reduce((x, y) => (x, y) match {
+        case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
+        case (left: Valid[_], _) => left
+        case (_, right: Valid[_]) => right
+        case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
+      })
+    validatedReturnTypesForMatchingMethods.leftMap(Left(_))
   }
 }
