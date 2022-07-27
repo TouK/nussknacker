@@ -201,13 +201,13 @@ object DefinitionExtractor {
 
   object TypesInformation {
     def extract(objectToExtractClassesFrom: Iterable[ObjectWithMethodDef])
-               (implicit settings: ClassExtractionSettings): Set[TypeInfo.ClazzDefinition] = {
+               (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
       val classesToExtractDefinitions = objectToExtractClassesFrom.flatMap(extractTypesFromObjectDefinition)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(classesToExtractDefinitions)
     }
 
     def extractFromClassList(objectToExtractClassesFromCollection: Iterable[Class[_]])
-                            (implicit settings: ClassExtractionSettings): Set[TypeInfo.ClazzDefinition] = {
+                            (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
       val ref = objectToExtractClassesFromCollection.map(Typed.apply)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(ref)
     }

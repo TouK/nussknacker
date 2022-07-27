@@ -7,7 +7,7 @@ import org.springframework.expression.spel.ExpressionState
 import org.springframework.expression.spel.ast.TypeReference
 import pl.touk.nussknacker.engine.api.generics.SpelParseError
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass
-import pl.touk.nussknacker.engine.definition.TypeInfo
+import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.TypeReferenceError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownClassError
 
@@ -21,7 +21,7 @@ object TypeDefinitionSet {
 
 }
 
-case class TypeDefinitionSet(typeDefinitions: Set[TypeInfo.ClazzDefinition]) {
+case class TypeDefinitionSet(typeDefinitions: Set[TypeInfos.ClazzDefinition]) {
 
   def validateTypeReference(typeReference: TypeReference, evaluationContext: EvaluationContext): Validated[NonEmptyList[SpelParseError], TypedClass] = {
 
@@ -34,7 +34,7 @@ case class TypeDefinitionSet(typeDefinitions: Set[TypeInfo.ClazzDefinition]) {
     typeReferenceClazz match {
       case Success(typeReferenceClazz) =>
         typeDefinitions.find(typeDefinition => typeDefinition.clazzName.klass.equals(typeReferenceClazz)) match {
-          case Some(clazzDefinition: TypeInfo.ClazzDefinition) => Valid(clazzDefinition.clazzName)
+          case Some(clazzDefinition: TypeInfos.ClazzDefinition) => Valid(clazzDefinition.clazzName)
           case None => Invalid(NonEmptyList.of(TypeReferenceError(typeReferenceClazz.toString)))
         }
       case Failure(_: EvaluationException) => Invalid(NonEmptyList.of(UnknownClassError(typeReference.toStringAST)))

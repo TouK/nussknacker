@@ -5,9 +5,9 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, SpelParseError, VarArgSignature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.TypeInfo.{FunctionalMethodInfo, MethodInfo, NoVarArgsMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, NoVarArgsMethodInfo, Parameter, SerializableMethodInfo, VarArgsMethodInfo}
 
-class TypeInfoSpec extends FunSuite with Matchers {
+class TypeInfosSpec extends FunSuite with Matchers {
   test("should create methodInfos without varArgs") {
     MethodInfo(List(), Unknown, "", None, varArgs = false) shouldBe
       NoVarArgsMethodInfo(List(), Unknown, "", None)

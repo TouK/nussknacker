@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
-import pl.touk.nussknacker.engine.definition.TypeInfo.ClazzDefinition
+import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, SpelParseError}

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
-import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfo}
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -36,7 +36,7 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     ProcessDefinitionExtractor.extractObjectWithMethods(creator,
       process.ProcessObjectDependencies(config, ObjectNamingProvider(getClass.getClassLoader)))
 
-  protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfo.ClazzDefinition] =
+  protected def extractTypes(definition: ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef]): Set[TypeInfos.ClazzDefinition] =
     ProcessDefinitionExtractor.extractTypes(definition)
 
   protected override def beforeAll(): Unit = {

@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfo
-import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
@@ -94,7 +94,7 @@ object UIProcessObjectsFactory {
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
-    def toUIBasicParam(p: TypeInfo.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
+    def toUIBasicParam(p: TypeInfos.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
     // TODO: present all overloaded methods on FE
     def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
       val m = methods.maxBy(_.staticParameters.size)

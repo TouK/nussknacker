@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.definition.TypeInfo.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import KafkaSourceFactoryMixin.{SampleKey, SampleValue}
 
 class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProcessMixin {
