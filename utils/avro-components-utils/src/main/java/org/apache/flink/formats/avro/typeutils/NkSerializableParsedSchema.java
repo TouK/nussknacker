@@ -20,6 +20,7 @@ package org.apache.flink.formats.avro.typeutils;
 
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
+import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
@@ -36,42 +37,58 @@ import java.io.Serializable;
  */
 public final class NkSerializableParsedSchema<T extends ParsedSchema> implements Serializable {
 
-	//todo: when supporting more schema types, chang uid
-	private static final long serialVersionUID = 1;
+    private static final long serialVersionUID = 2;
+    private static final byte avroSchemaType = 1;
+    private static final byte jsonSchemaType = 2;
 
-	private transient @Nullable T schema;
+    private transient @Nullable T schema;
 
-	public NkSerializableParsedSchema() {
-	}
+    public NkSerializableParsedSchema() {
+    }
 
-	public NkSerializableParsedSchema(T schema) {
-		this.schema = schema;
-	}
+    public NkSerializableParsedSchema(T schema) {
+        this.schema = schema;
+    }
 
-	public T getParsedSchema() {
-		return schema;
-	}
+    public T getParsedSchema() {
+        return schema;
+    }
 
-	private void writeObject(ObjectOutputStream oos) throws IOException {
-		if (schema == null) {
-			oos.writeBoolean(false);
-		}
-		else {
-			oos.writeBoolean(true);
-			//todo: when supporting more schema types, write another byte to distinguish them
-			oos.writeUTF(((AvroSchema) schema).rawSchema().toString(false));
-		}
-	}
+    private void writeObject(ObjectOutputStream oos) throws IOException {
+        if (schema == null) {
+            oos.writeBoolean(false);
+        } else {
+            oos.writeBoolean(true);
+            if (schema instanceof AvroSchema) {
+                oos.writeByte(avroSchemaType);
+                oos.writeUTF(((AvroSchema) schema).rawSchema().toString(false));
+            } else if (schema instanceof JsonSchema) {
+                oos.writeByte(jsonSchemaType);
+                oos.writeUTF(((JsonSchema) schema).rawSchema().toString());
+            } else {
+                throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schema.schemaType());
+            }
+        }
+    }
 
-	@SuppressWarnings("unchecked")
-	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
-		if (ois.readBoolean()) {
-			//todo: when supporting more schema types, read another byte to distinguish them
-			String schema = ois.readUTF();
-			this.schema = (T) new AvroSchema(new Parser().parse(schema));
-		}
-		else {
-			this.schema = null;
-		}
-	}
+    @SuppressWarnings("unchecked")
+    private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+        if (ois.readBoolean()) {
+            byte schemaType = ois.readByte();
+            switch (schemaType) {
+                case avroSchemaType:
+                    String avroSchemaStr = ois.readUTF();
+                    this.schema = (T) new AvroSchema(new Parser().parse(avroSchemaStr));
+                    break;
+                case jsonSchemaType:
+                    String jsonSchemaStr = ois.readUTF();
+                    this.schema = (T) new JsonSchema(jsonSchemaStr);
+                    break;
+                default:
+                    throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schemaType);
+            }
+        } else {
+            this.schema = null;
+        }
+    }
 }
