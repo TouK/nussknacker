@@ -50,7 +50,6 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             onChange={value => onChange(`${path}.name`, value)}
             value={item.name}
             validators={validators}
-            autofocus={false}
           />
           <TypeSelect
             readOnly={readOnly}

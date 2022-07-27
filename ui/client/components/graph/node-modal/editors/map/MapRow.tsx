@@ -22,7 +22,6 @@ export default function MapRow<F extends TypedField>({field, path, ...props}: Ma
         onChange={(value) => onChange(`${path}.name`, value)}
         value={field.name}
         validators={validators}
-        autofocus={false}
       />
       <MapValue
         readOnly={readOnly}

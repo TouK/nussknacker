@@ -19,7 +19,10 @@ interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChi
   outputField?: string,
 }
 
-export function NodeCommonDetailsDefinition<F extends Field>({children, ...props}: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
+export function NodeCommonDetailsDefinition<F extends Field>({
+  children,
+  ...props
+}: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
   const {
     isMarked, node, onChange, readOnly,
     showValidation, renderFieldLabel, errors,
@@ -27,7 +30,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({children, ...props
     outputName,
   } = props
 
-  const onInputChange = useCallback((path: string, event: React.ChangeEvent<HTMLInputElement>) => {
+  const onInputChange = useCallback((path: string, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(path, event.target.value)
   }, [onChange])
 

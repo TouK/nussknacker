@@ -11,8 +11,8 @@ import MapVariable from "./../node-modal/MapVariable"
 import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty"
 import BranchParameters from "./BranchParameters"
 import ExpressionField from "./editors/expression/ExpressionField"
-import Field from "./editors/field/Field"
-import {allValid, Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import Field, {FieldType} from "./editors/field/Field"
+import {allValid, Error, errorValidator, mandatoryValueValidator, Validator} from "./editors/Validators"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import NodeErrors from "./NodeErrors"
 import ParameterList from "./ParameterList"
@@ -105,7 +105,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     const {edges, testResults, node, isEditMode, dynamicParameterDefinitions, processDefinitionData} = props
     const {
       node: editedNode,
-      unusedParameters
+      unusedParameters,
     } = adjustParameters(node, getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions))
 
     const stateForSelectTestResults = TestResultUtils.stateForSelectTestResults(null, testResults)
@@ -209,10 +209,16 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     }
   }
 
-  idField = () => this.createField("input", "Name", "id", true, [mandatoryValueValidator])
+  idField = () => this.createField({
+    fieldType: FieldType.input,
+    fieldLabel: "Name",
+    fieldProperty: "id",
+    autoFocus: true,
+    validators: [mandatoryValueValidator],
+  })
 
   customNode = (fieldErrors: Error[]): JSX.Element => {
-    const {edges, editedNode, originalNode, testResultsToHide, testResultsToShow} = this.state
+    const {editedNode, testResultsToHide, testResultsToShow} = this.state
     const {
       findAvailableVariables,
       originalNodeId,
@@ -230,13 +236,18 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     //compare window uses legacy egde component
     const isCompareView = pathsToMark !== undefined
 
+    const {edges, originalNode} = this.state
     switch (NodeUtils.nodeType(node)) {
       case "Source":
         return this.sourceSinkCommon(null, fieldErrors)
       case "Sink":
         const toAppend = (
           <div>
-            {this.createField("checkbox", "Disabled", "isDisabled")}
+            {this.createField({
+              fieldType: FieldType.checkbox,
+              fieldLabel: "Disabled",
+              fieldProperty: "isDisabled",
+            })}
           </div>
         )
         return this.sourceSinkCommon(toAppend, fieldErrors)
@@ -282,16 +293,20 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               "expression",
               fieldErrors
             )}
-            {this.createField("checkbox", "Disabled", "isDisabled")}
+            {this.createField({
+              fieldType: FieldType.checkbox,
+              fieldLabel: "Disabled",
+              fieldProperty: "isDisabled",
+            })}
             {!isCompareView ?
               (
                 <EdgesDndComponent
                   label={"Outputs"}
                   nodeId={originalNodeId}
-                  value={this.state.edges}
-                  onChange={(edges) => {
-                    if (edges !== this.state.edges) {
-                      this.setState({edges}, this.publishNodeChange)
+                  value={edges}
+                  onChange={(nextEdges) => {
+                    if (nextEdges !== edges) {
+                      this.setState({edges: nextEdges}, this.publishNodeChange)
                     }
                   }}
                   edgeTypes={[
@@ -324,15 +339,20 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               )
             })}
             {node.type === "Enricher" ?
-              this.createField(
-                "input",
-                "Output",
-                "output",
-                false,
-                [errorValidator(fieldErrors, "output")],
-              ) :
+              this.createField({
+                fieldType: FieldType.input,
+                fieldLabel: "Output",
+                fieldProperty: "output",
+                validators: [errorValidator(fieldErrors, "output")],
+              }) :
               null}
-            {node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
+            {node.type === "Processor" ?
+              this.createField({
+                fieldType: FieldType.checkbox,
+                fieldLabel: "Disabled",
+                fieldProperty: "isDisabled",
+              }) :
+              null}
             {this.descriptionField()}
           </div>
         )
@@ -340,7 +360,11 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         return (
           <div className="node-table-body">
             {this.idField()}
-            {this.createField("checkbox", "Disabled", "isDisabled")}
+            {this.createField({
+              fieldType: FieldType.checkbox,
+              fieldLabel: "Disabled",
+              fieldProperty: "isDisabled",
+            })}
             <ParameterList
               processDefinitionData={processDefinitionData}
               editedNode={editedNode}
@@ -375,16 +399,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           <div className="node-table-body">
             {this.idField()}
             {
-              hasOutputVar(node, processDefinitionData) && this.createField(
-                "input",
-                "Output variable name",
-                "outputVar",
-                false,
-                [errorValidator(fieldErrors, "outputVar")],
-                "outputVar",
-                false,
-                null,
-              )
+              hasOutputVar(node, processDefinitionData) && this.createField({
+                fieldType: FieldType.input,
+                fieldLabel: "Output variable name",
+                fieldProperty: "outputVar",
+                validators: [errorValidator(fieldErrors, "outputVar")],
+              })
             }
             {NodeUtils.nodeIsJoin(editedNode) && (
               <BranchParameters
@@ -450,8 +470,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         )
       case "Switch":
         const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
-        const currentExpression = this.state.originalNode["expression"]
-        const currentExprVal = this.state.originalNode["exprVal"]
+        const currentExpression = originalNode["expression"]
+        const currentExprVal = originalNode["exprVal"]
         const exprValValidator = errorValidator(fieldErrors, "exprVal")
         const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
         const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
@@ -462,7 +482,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
               null}
             {showExprVal ?
-              this.createField("input", "exprVal (deprecated)", "exprVal", false, [exprValValidator]) :
+              this.createField({
+                fieldType: FieldType.input,
+                fieldLabel: "exprVal (deprecated)",
+                fieldProperty: "exprVal",
+                validators: [errorValidator(fieldErrors, "exprVal")],
+              }) :
               null}
             {!isCompareView ?
               (
@@ -470,11 +495,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                   label={"Conditions"}
                   nodeId={originalNodeId}
                   value={edges}
-                  onChange={(edges) => {
-                    if (edges !== edges) {
-                      this.setState({edges}, this.publishNodeChange)
+                  onChange={(nextEdges) => {
+                    if (nextEdges !== edges) {
+                      this.setState({edges: nextEdges}, this.publishNodeChange)
                     }
-                  }}
+                  }
+                  }
                   edgeTypes={[
                     {value: EdgeKind.switchNext},
                     {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
@@ -507,90 +533,59 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         const fields =
           node.isSubprocess ?
             [
-              this.createField(
-                "input",
-                "Documentation url",
-                "typeSpecificProperties.docsUrl",
-                true,
-                [errorValidator(fieldErrors, "docsUrl")],
-                "docsUrl",
-                null,
-                null,
-                "docsUrl",
-              ),
+              this.createField({
+                fieldType: FieldType.input,
+                fieldLabel: "Documentation url",
+                fieldProperty: "typeSpecificProperties.docsUrl",
+                autoFocus: true,
+                validators: [errorValidator(fieldErrors, "docsUrl")],
+              }),
             ] :
             type === "StreamMetaData" ?
               [
-                this.createField(
-                  "input",
-                  "Parallelism",
-                  "typeSpecificProperties.parallelism",
-                  true,
-                  [errorValidator(fieldErrors, "parallelism")],
-                  "parallelism",
-                  null,
-                  null,
-                  "parallelism",
-                ),
-                this.createField(
-                  "input",
-                  "Checkpoint interval in seconds",
-                  "typeSpecificProperties.checkpointIntervalInSeconds",
-                  false,
-                  [errorValidator(fieldErrors, "checkpointIntervalInSeconds")],
-                  "checkpointIntervalInSeconds",
-                  null,
-                  null,
-                  "interval-seconds",
-                ),
-                this.createField(
-                  "checkbox",
-                  "Spill state to disk",
-                  "typeSpecificProperties.spillStateToDisk",
-                  false,
-                  [errorValidator(fieldErrors, "spillStateToDisk")],
-                  "spillStateToDisk",
-                  false,
-                  false,
-                  "split-state-disk",
-                ),
-                this.createField(
-                  "checkbox",
-                  "Should use async interpretation",
-                  "typeSpecificProperties.useAsyncInterpretation",
-                  false,
-                  [errorValidator(fieldErrors, "useAsyncInterpretation")],
-                  "useAsyncInterpretation",
-                  false,
-                  processDefinitionData.defaultAsyncInterpretation,
-                  "use-async",
-                ),
+                this.createField({
+                  fieldType: FieldType.input,
+                  fieldLabel: "Parallelism",
+                  fieldProperty: "typeSpecificProperties.parallelism",
+                  autoFocus: true,
+                  validators: [errorValidator(fieldErrors, "parallelism")],
+                }),
+                this.createField({
+                  fieldType: FieldType.input,
+                  fieldLabel: "Checkpoint interval in seconds",
+                  fieldProperty: "typeSpecificProperties.checkpointIntervalInSeconds",
+                  validators: [errorValidator(fieldErrors, "checkpointIntervalInSeconds")],
+                }),
+                this.createField({
+                  fieldType: FieldType.checkbox,
+                  fieldLabel: "Spill state to disk",
+                  fieldProperty: "typeSpecificProperties.spillStateToDisk",
+                  validators: [errorValidator(fieldErrors, "spillStateToDisk")],
+                }),
+                this.createField({
+                  fieldType: FieldType.checkbox,
+                  fieldLabel: "Should use async interpretation",
+                  fieldProperty: "typeSpecificProperties.useAsyncInterpretation",
+                  validators: [errorValidator(fieldErrors, "useAsyncInterpretation")],
+                  defaultValue: processDefinitionData.defaultAsyncInterpretation,
+                }),
               ] :
               type === "LiteStreamMetaData" ?
                 [
-                  this.createField(
-                    "input",
-                    "Parallelism",
-                    "typeSpecificProperties.parallelism",
-                    true,
-                    [errorValidator(fieldErrors, "parallelism")],
-                    "parallelism",
-                    null,
-                    null,
-                    "parallelism",
-                  ),
+                  this.createField({
+                    fieldType: FieldType.input,
+                    fieldLabel: "Parallelism",
+                    fieldProperty: "typeSpecificProperties.parallelism",
+                    autoFocus: true,
+                    validators: [errorValidator(fieldErrors, "parallelism")],
+                  }),
                 ] :
-                [this.createField(
-                  "input",
-                  "Query path",
-                  "typeSpecificProperties.path",
-                  false,
-                  [errorValidator(fieldErrors, "path")],
-                  "path",
-                  null,
-                  null,
-                  "query-path",
-                )]
+                [this.createField({
+                  fieldType: FieldType.input,
+                  fieldLabel: "Query path",
+                  fieldProperty: "typeSpecificProperties.path",
+                  validators: [errorValidator(fieldErrors, "path")],
+                })]
         //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
         const additionalFields = sortBy(Object.entries(additionalPropertiesConfig), e => e[0]).map(
           ([propName, propConfig]) => (
@@ -647,18 +642,45 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     )
   }
 
-  createField = (fieldType: string, fieldLabel: string, fieldProperty: string, autofocus = false, validators = [], fieldName?: string, readonly?: boolean, defaultValue?: boolean, key?: string) => {
-    return this.doCreateField(
-      fieldType,
-      fieldLabel,
-      fieldName,
-      get(this.state.editedNode, fieldProperty, null) ?? defaultValue,
-      (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue),
-      readonly,
-      this.isMarked(fieldProperty),
-      key || fieldProperty || fieldLabel,
-      autofocus,
-      validators,
+  createField<K extends keyof State["editedNode"] & string, T extends State["editedNode"][K]>({
+    fieldType,
+    fieldLabel,
+    fieldProperty,
+    autoFocus = false,
+    validators = [],
+    readonly,
+    defaultValue,
+  }: {
+    fieldType: FieldType,
+    fieldLabel: string,
+    fieldProperty: K,
+    autoFocus?: boolean,
+    validators?: Validator[],
+    readonly?: boolean,
+    defaultValue?: T,
+  }): JSX.Element {
+    const {isEditMode, showValidation} = this.props
+    const {editedNode} = this.state
+
+    const isMarked = this.isMarked(fieldProperty)
+    const readOnly = !isEditMode || readonly
+    const value: T = get(editedNode, fieldProperty, null) ?? defaultValue
+    const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
+    const renderFieldLabel = () => this.renderFieldLabel(fieldLabel)
+    const onChange = (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)
+    return (
+      <Field
+        type={fieldType}
+        isMarked={isMarked}
+        readOnly={readOnly}
+        showValidation={showValidation}
+        autoFocus={autoFocus}
+        className={className}
+        renderFieldLabel={renderFieldLabel}
+        validators={validators}
+        value={value}
+        onChange={onChange}
+      />
     )
   }
 
@@ -698,7 +720,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     )
   }
 
-  isMarked = (path) => {
+  isMarked = (path: string): boolean => {
     return this.props.pathsToMark?.some(toMark => startsWith(toMark, path))
   }
 
@@ -706,38 +728,6 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     const newTestResultsToHide = cloneDeep(this.state.testResultsToHide)
     newTestResultsToHide.has(fieldName) ? newTestResultsToHide.delete(fieldName) : newTestResultsToHide.add(fieldName)
     this.setState({testResultsToHide: newTestResultsToHide})
-  }
-
-  doCreateField = (
-    fieldType: string,
-    fieldLabel: string,
-    fieldName: string,
-    fieldValue: string,
-    handleChange: (newValue: any) => void,
-    forceReadonly: boolean,
-    isMarked: boolean,
-    key: string,
-    autofocus = false,
-    validators = [],
-  ) => {
-    const readOnly = !this.props.isEditMode || forceReadonly
-    const showValidation = this.props.showValidation
-
-    return (
-      <Field
-        fieldType={fieldType}
-        renderFieldLabel={() => this.renderFieldLabel(fieldLabel)}
-        isMarked={isMarked}
-        readOnly={readOnly}
-        value={fieldValue || ""}
-        autofocus={autofocus}
-        showValidation={showValidation}
-        validators={validators}
-        onChange={handleChange}
-        key={key}
-        className={!showValidation || allValid(validators, [fieldValue]) ? "node-input" : "node-input node-input-with-error"}
-      />
-    )
   }
 
   publishNodeChange = (): void => {
@@ -759,7 +749,11 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
   }
 
   descriptionField = () => {
-    return this.createField("plain-textarea", "Description", "additionalFields.description")
+    return this.createField({
+      fieldType: FieldType.plainTextarea,
+      fieldLabel: "Description",
+      fieldProperty: "additionalFields.description",
+    })
   }
 
   selectTestResults = (id?, testResults?: TestResults) => {

@@ -61,7 +61,6 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
             onChange={value => onChange(`${path}.name`, value)}
             value={item.name}
             validators={validators}
-            autofocus={false}
           />
           <MapValue
             readOnly={readOnly}
