@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Ior
+import cats.implicits.toTraverseOps
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -76,16 +77,11 @@ class TypeMethodReference(methodName: String,
 
   private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
     val returnTypesForMatchingMethods = methodInfos.map(_.computeResultType(calledParams))
-    val combinedReturnTypes = returnTypesForMatchingMethods.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
-      case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
-      case (Valid(xs), Invalid(_)) => Valid(xs)
-      case (Invalid(_), Valid(ys)) => Valid(ys)
-      case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
-    })
-    combinedReturnTypes match {
-      case Valid(Nil) => Left(None)
-      case Valid(xs) => Right(xs)
-      case Invalid(xs) => Left(Some(xs.head)) // TODO: Display all errors.
+    val combinedReturnTypes = returnTypesForMatchingMethods.map(x => Ior.fromEither(x.toEither)).sequence
+    // TODO: Return more than one error.
+    combinedReturnTypes.leftMap(x => Some(x.head)).toEither.flatMap{
+      case Nil => Left(None)
+      case x => Right(x)
     }
   }
 }
