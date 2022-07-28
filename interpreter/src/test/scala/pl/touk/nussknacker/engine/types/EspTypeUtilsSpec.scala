@@ -434,7 +434,7 @@ private class HeadHelper extends TypingFunction {
       List(new NoVarArgSignature("head", List(Typed.fromDetailedType[List[Object]])))
     )
 
-  override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
+  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
     case _ => error(arguments).invalidNel

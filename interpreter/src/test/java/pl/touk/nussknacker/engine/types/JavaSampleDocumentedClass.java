@@ -65,7 +65,7 @@ public class JavaSampleDocumentedClass {
             return new GenericFunctionError("Mismatch parameter types. Found: " + foundString + ". Required: " + expectedString);
         }
 
-        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> apply(List<TypingResult> arguments) {
+        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> computeResultType(List<TypingResult> arguments) {
             if (arguments.length() != 1) {
                 return Invalid.invalid(NonEmptyList.one(error(arguments)));
             }

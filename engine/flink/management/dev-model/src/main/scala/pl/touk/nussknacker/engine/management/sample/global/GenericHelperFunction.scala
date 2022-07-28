@@ -33,7 +33,7 @@ object GenericHelperFunction {
     override def staticResult(): Option[TypingResult] =
       Some(Typed(Typed.fromInstance(IntOK), Typed.fromInstance(StringOK)))
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
       case x :: Nil if x.canBeSubclassOf(Typed[Int]) => Typed.fromInstance(IntOK).validNel
       case x :: Nil if x.canBeSubclassOf(Typed[String]) => Typed.fromInstance(StringOK).validNel
       case _ => error(arguments).invalidNel
@@ -55,7 +55,7 @@ object GenericHelperFunction {
       )
     }
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
       case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
       case _ => error(arguments).invalidNel

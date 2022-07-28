@@ -143,7 +143,7 @@ object EspTypeUtils {
       .getOrElse(extractMethodReturnType(method))
 
     collectMethodNames(method).map(FunctionalMethodInfo(
-      x => typeFunctionInstance.apply(x),
+      x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,
       _,
