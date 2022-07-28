@@ -37,37 +37,40 @@ export function NodeCommonDetailsDefinition<F extends Field>({
   return (
     <div className="node-table-body node-variable-builder-body">
       <LabeledInput
-        renderFieldLabel={() => renderFieldLabel("Name")}
         value={node.id}
         onChange={(event) => onInputChange("id", event)}
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
         validators={[mandatoryValueValidator]}
-      />
+      >
+        {renderFieldLabel("Name")}
+      </LabeledInput>
 
       {outputField && outputName && (
         <LabeledInput
-          renderFieldLabel={() => renderFieldLabel(outputName)}
           value={node[outputField]}
           onChange={(event) => onInputChange(outputField, event)}
           isMarked={isMarked(outputField)}
           readOnly={readOnly}
           showValidation={showValidation}
           validators={[mandatoryValueValidator, errorValidator(errors, outputField)]}
-        />
+        >
+          {renderFieldLabel(outputName)}
+        </LabeledInput>
       )}
 
       {children}
 
       <LabeledTextarea
-        renderFieldLabel={() => renderFieldLabel("Description")}
         value={node.additionalFields?.description || ""}
         onChange={(event) => onInputChange("additionalFields.description", event)}
         isMarked={isMarked("additionalFields.description")}
         readOnly={readOnly}
         className={"node-input"}
-      />
+      >
+        {renderFieldLabel("Description")}
+      </LabeledTextarea>
     </div>
   )
 }

@@ -4,7 +4,7 @@ import ValidationLabels from "../../../../modals/ValidationLabels"
 import {TextAreaWithFocus, TextAreaWithFocusProps} from "../../../../withFocus"
 import {LabeledInputProps} from "./LabeledInput"
 
-export interface LabeledTextareaProps extends Pick<LabeledInputProps, "value" | "isMarked" | "renderFieldLabel" | "showValidation" | "validators">,
+export interface LabeledTextareaProps extends Pick<LabeledInputProps, "value" | "isMarked" | "children" | "showValidation" | "validators">,
   Pick<TextAreaWithFocusProps, "className" | "autoFocus" | "onChange" | "readOnly" | "cols" | "rows"> {
 }
 
@@ -15,7 +15,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
     isMarked,
     rows = 1,
     cols = 50,
-    renderFieldLabel,
+    children,
     showValidation,
     validators,
     ...passProps
@@ -25,7 +25,7 @@ export default function LabeledTextarea(props: LabeledTextareaProps): JSX.Elemen
 
   return (
     <div className="node-row">
-      {renderFieldLabel()}
+      {children}
       <div className={`node-value${isMarked ? " marked" : ""}`}>
         <TextAreaWithFocus
           {...passProps}

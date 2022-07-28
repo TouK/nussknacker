@@ -18,32 +18,43 @@ type Props = {
   errors?: Error[],
 }
 
-const Variable = (props: Props) => {
-
-  const {node, onChange, isMarked, readOnly, showValidation, errors, variableTypes, renderFieldLabel, inferredVariableType} = props
+export default function Variable(props: Props): JSX.Element {
+  const {
+    node,
+    onChange,
+    isMarked,
+    readOnly,
+    showValidation,
+    errors,
+    variableTypes,
+    renderFieldLabel,
+    inferredVariableType,
+  } = props
 
   const onExpressionChange = useCallback((value: string) => onChange("value.expression", value), [onChange])
 
   return (
     <div className="node-table-body node-variable-builder-body">
       <LabeledInput
-        renderFieldLabel={() => renderFieldLabel("Name")}
         value={node.id}
         onChange={(event) => onChange("id", event.target.value)}
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
         validators={[mandatoryValueValidator]}
-      />
+      >
+        {renderFieldLabel("Name")}
+      </LabeledInput>
       <LabeledInput
-        renderFieldLabel={() => renderFieldLabel("Variable Name")}
         value={node.varName}
         onChange={(event) => onChange("varName", event.target.value)}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         showValidation={showValidation}
         validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}
-      />
+      >
+        {renderFieldLabel("Variable Name")}
+      </LabeledInput>
       <EditableEditor
         fieldName="expression"
         fieldLabel={"Expression"}
@@ -58,19 +69,14 @@ const Variable = (props: Props) => {
         validationLabelInfo={inferredVariableType}
       />
       <LabeledTextarea
-        renderFieldLabel={() => renderFieldLabel("Description")}
         value={node?.additionalFields?.description || ""}
         onChange={(event) => onChange("additionalFields.description", event.target.value)}
         isMarked={isMarked("additionalFields.description")}
         readOnly={readOnly}
         className={"node-input"}
-      />
+      >
+        {renderFieldLabel("Description")}
+      </LabeledTextarea>
     </div>
   )
 }
-
-Variable.defaultProps = {
-  readOnly: false,
-}
-
-export default Variable

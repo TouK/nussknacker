@@ -29,11 +29,9 @@ import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 import {
   Edge,
   EdgeKind,
-  NodeId,
   NodeType,
   NodeValidationError,
   Parameter,
-  ParameterConfig,
   ProcessDefinitionData,
   ProcessId,
   UIParameter,
@@ -41,6 +39,7 @@ import {
 } from "../../../types"
 import {UserSettings} from "../../../reducers/userSettings"
 import {ValidationRequest} from "../../../actions/nk"
+import {FieldLabel, findParamDefinitionByName} from "./FieldLabel"
 
 export interface NodeDetailsContentProps {
   testResults?,
@@ -76,14 +75,6 @@ interface State {
   unusedParameters,
   codeCompletionEnabled,
   edges: WithTempId<Edge>[],
-}
-
-function findParamDefinitionByName(definitions: UIParameter[], paramName: string): UIParameter {
-  return definitions?.find((param) => param.name === paramName)
-}
-
-function getNodeParams(processDefinitionData: ProcessDefinitionData, nodeId: NodeId): Record<string, ParameterConfig> {
-  return processDefinitionData.componentsConfig[nodeId]?.params
 }
 
 function getParameterDefinitions(processDefinitionData: ProcessDefinitionData, node: NodeType, dynamicParameterDefinitions?: UIParameter[]): UIParameter[] {
@@ -384,7 +375,8 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 }
               )}
               createReadOnlyField={params => (
-                <div className="node-row">{this.renderFieldLabel(params.name)}
+                <div className="node-row">
+                  {this.renderFieldLabel(params.name)}
                   <div className="node-value">
                     <InputWithFocus
                       type="text"
@@ -682,7 +674,6 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     const readOnly = !isEditMode || readonly
     const value: T = get(editedNode, fieldProperty, null) ?? defaultValue
     const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
-    const renderFieldLabel = () => this.renderFieldLabel(fieldLabel)
     const onChange = (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)
     return (
       <Field
@@ -692,11 +683,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         showValidation={showValidation}
         autoFocus={autoFocus}
         className={className}
-        renderFieldLabel={renderFieldLabel}
         validators={validators}
         value={value}
         onChange={onChange}
-      />
+      >
+        {this.renderFieldLabel(fieldLabel)}
+      </Field>
     )
   }
 
@@ -807,19 +799,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     }
   }
 
-  renderFieldLabel = (paramName: string) => {
-    const {processDefinitionData, node} = this.props
-    const parameter = findParamDefinitionByName(this.parameterDefinitions, paramName)
-    const params = getNodeParams(processDefinitionData, node.id)
-    const label = params?.[paramName]?.label ?? paramName
-    return (
-      <div className="node-label" title={paramName}>{label}:
-        {parameter ?
-          <div className="labelFooter">{ProcessUtils.humanReadableType(parameter.typ)}</div> :
-          null}
-      </div>
-    )
-  }
+  renderFieldLabel = (paramName: string): JSX.Element => (
+    <FieldLabel
+      nodeId={this.props.originalNodeId}
+      parameterDefinitions={this.parameterDefinitions}
+      paramName={paramName}
+    />
+  )
 
   render() {
     const {

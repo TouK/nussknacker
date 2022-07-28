@@ -1,14 +1,12 @@
-import React from "react"
+import React, {PropsWithChildren} from "react"
 import Input, {InputProps} from "./Input"
 
-export interface LabeledInputProps extends Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "validators" | "onChange"> {
-  renderFieldLabel: () => React.ReactNode,
-}
+export type LabeledInputProps = PropsWithChildren<Pick<InputProps, "placeholder" | "isMarked" | "readOnly" | "value" | "autoFocus" | "showValidation" | "validators" | "onChange">>
 
-export default function LabeledInput({renderFieldLabel, ...props}: LabeledInputProps): JSX.Element {
+export default function LabeledInput({children, ...props}: LabeledInputProps): JSX.Element {
   return (
     <div className="node-row">
-      {renderFieldLabel()}
+      {children}
       <Input
         {...props}
         className={"node-value"}

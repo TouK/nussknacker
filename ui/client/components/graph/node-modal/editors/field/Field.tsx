@@ -1,4 +1,4 @@
-import React from "react"
+import React, {PropsWithChildren} from "react"
 import Checkbox from "./Checkbox"
 import Input from "./Input"
 import LabeledInput from "./LabeledInput"
@@ -19,14 +19,13 @@ interface FieldProps {
   showValidation: boolean,
   autoFocus: boolean,
   className: string,
-  renderFieldLabel: () => JSX.Element,
   validators: Validator[],
   type: FieldType,
   value: string | boolean,
   onChange: (value: string | boolean) => void,
 }
 
-export default function Field({type, ...props}: FieldProps): JSX.Element {
+export default function Field({type, children, ...props}: PropsWithChildren<FieldProps>): JSX.Element {
   switch (type) {
     case FieldType.input:
       return (
@@ -34,7 +33,9 @@ export default function Field({type, ...props}: FieldProps): JSX.Element {
           {...props}
           value={props.value?.toString() || ""}
           onChange={({target}) => props.onChange(target.value)}
-        />
+        >
+          {children}
+        </LabeledInput>
       )
     case FieldType.unlabeledInput:
       return (
@@ -50,7 +51,9 @@ export default function Field({type, ...props}: FieldProps): JSX.Element {
           {...props}
           value={!!props.value}
           onChange={({target}) => props.onChange(target.checked)}
-        />
+        >
+          {children}
+        </Checkbox>
       )
     case FieldType.plainTextarea:
       return (
@@ -58,7 +61,9 @@ export default function Field({type, ...props}: FieldProps): JSX.Element {
           {...props}
           value={props.value?.toString() || ""}
           onChange={({target}) => props.onChange(target.value)}
-        />
+        >
+          {children}
+        </LabeledTextarea>
       )
     default:
       return (<UnknownField/>)
