@@ -5,7 +5,6 @@ import cats.data.Validated.{Invalid, Valid}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.AvroSchemaWithJsonPayload
 import pl.touk.nussknacker.engine.avro.{AvroSchemaDeterminer, RuntimeSchemaData, SchemaDeterminerError}
 
 class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryClient,
@@ -23,7 +22,6 @@ class BasedOnVersionAvroSchemaDeterminer(schemaRegistryClient: SchemaRegistryCli
       .leftMap(err => new SchemaDeterminerError(s"Fetching schema error for topic: $topic, version: $versionOption", err))
       .andThen(withMetadata => withMetadata.schema match {
         case s: AvroSchema => Valid(RuntimeSchemaData(s.rawSchema(), Some(withMetadata.id)))
-        case s: AvroSchemaWithJsonPayload => Valid(RuntimeSchemaData(s.rawSchema(), Some(withMetadata.id)))
         case s => Invalid(new SchemaDeterminerError(s"Avro schema is required, but got ${s.schemaType()}", new IllegalArgumentException("")))
       })
   }
