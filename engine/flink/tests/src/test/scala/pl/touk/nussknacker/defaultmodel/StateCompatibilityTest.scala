@@ -108,7 +108,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     val streamGraph = env.getStreamGraph
     val allowNonRestoredState = false
     streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState))
-    // Send one artificial message to mimic offsets saved in savepoint from the obove test because kafka commit cannot be performed.
+    // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
     sendAvro(givenMatchingAvroObj, topicConfig.input)
 
     val jobExecutionResult = env.execute(streamGraph)

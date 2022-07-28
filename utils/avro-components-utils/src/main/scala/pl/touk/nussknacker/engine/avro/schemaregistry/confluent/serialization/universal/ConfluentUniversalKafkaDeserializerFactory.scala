@@ -35,7 +35,7 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
     val writerSchemaId = getSchemaId(topic, headers, data)
-    val writerSchema = schemaRegistryClient.client.getSchemaById(writerSchemaId.value)
+    val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
 
     readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
       if (readerSchemaType != writerSchema.schemaType())

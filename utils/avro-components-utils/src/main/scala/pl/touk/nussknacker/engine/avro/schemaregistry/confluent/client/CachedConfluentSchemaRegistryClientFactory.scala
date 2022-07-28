@@ -17,12 +17,12 @@ class CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistry
 
   override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
     val client = confluentClient(config)
-    val c = synchronized {
+    val cache = synchronized {
       caches.getOrElseUpdate(config, {
         new SchemaRegistryCaches(config.cacheConfig)
       })
     }
-    new CachedConfluentSchemaRegistryClient(client, c)
+    new CachedConfluentSchemaRegistryClient(client, cache, config)
   }
 
   protected def confluentClient(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClient = CachedSchemaRegistryClient(config)
