@@ -32,9 +32,9 @@ interface NodeTestResults {
   errors: unknown,
 }
 
-interface StateForSelectTestResults {
-  testResultsToShow: unknown,
-  testResultsIdToShow: unknown,
+export interface StateForSelectTestResults {
+  testResultsToShow,
+  testResultsIdToShow: number,
 }
 
 //TODO move it to backend

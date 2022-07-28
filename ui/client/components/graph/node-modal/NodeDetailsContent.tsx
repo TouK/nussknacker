@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {cloneDeep, get, has, isEqual, partition, set, sortBy, startsWith} from "lodash"
-import React from "react"
+import React, {PropsWithChildren} from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -84,6 +84,43 @@ function getParameterDefinitions(processDefinitionData: ProcessDefinitionData, n
 function hasOutputVar(node: NodeType, processDefinitionData: ProcessDefinitionData): boolean {
   const returnType = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.returnType
   return !!returnType || !!node.outputVar
+}
+
+function Wrapper({
+  otherErrors,
+  testResults,
+  testResultsIdToShow,
+  selectResults,
+  testResultsToShow,
+  children,
+  node,
+  editedNode,
+  processId,
+}: PropsWithChildren<{
+  node: NodeType,
+  editedNode: NodeType,
+  processId: ProcessId,
+  otherErrors: NodeValidationError[],
+  testResults: TestResults,
+  testResultsIdToShow: any,
+  selectResults: (id?, testResults?: TestResults) => void,
+  testResultsToShow: any,
+}>): JSX.Element {
+  return (
+    <>
+      <NodeErrors errors={otherErrors} message={"Node has errors"}/>
+      <TestResultsSelect
+        results={testResults}
+        resultsIdToShow={testResultsIdToShow}
+        selectResults={selectResults}
+      />
+      <TestErrors resultsToShow={testResultsToShow}/>
+      {children}
+      <TestResultsComponent nodeId={node.id} resultsToShow={testResultsToShow}/>
+
+      <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
+    </>
+  )
 }
 
 // here `componentDidUpdate` is complicated to clear unsaved changes in modal
@@ -210,7 +247,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
   })
 
   customNode = (fieldErrors: Error[]): JSX.Element => {
-    const {editedNode, testResultsToHide, testResultsToShow} = this.state
+    const {
+      editedNode,
+      testResultsToHide,
+      testResultsToShow,
+      edges,
+      originalNode,
+    } = this.state
     const {
       findAvailableVariables,
       originalNodeId,
@@ -224,16 +267,16 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       additionalPropertiesConfig,
       pathsToMark,
     } = this.props
+
     const variableTypes = findAvailableVariables(originalNodeId)
     //compare window uses legacy egde component
     const isCompareView = pathsToMark !== undefined
 
-    const {edges, originalNode} = this.state
     switch (NodeUtils.nodeType(node)) {
       case "Source":
-        return this.sourceSinkCommon(null, fieldErrors)
+        return this.sourceSinkCommon({fieldErrors: fieldErrors})
       case "Sink":
-        const toAppend = (
+        const toAppend: JSX.Element = (
           <div>
             {this.createField({
               fieldType: FieldType.checkbox,
@@ -242,7 +285,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             })}
           </div>
         )
-        return this.sourceSinkCommon(toAppend, fieldErrors)
+        return this.sourceSinkCommon({fieldErrors: fieldErrors, toAppend: toAppend})
       case "SubprocessInputDefinition":
         return (
           <SubprocessInputDefinition
@@ -625,14 +668,15 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     }
   }
 
-  sourceSinkCommon(toAppend, fieldErrors) {
-    const editedNode = this.state?.editedNode
+  sourceSinkCommon({fieldErrors, toAppend}: { fieldErrors: Error[], toAppend?: JSX.Element }): JSX.Element {
+    const {editedNode} = this.state
+    const {node} = this.props
     return (
       <div className="node-table-body">
         {this.idField()}
         {refParameters(editedNode).map((param, index) => {
           return (
-            <div className="node-block" key={this.props.node.id + param.name + index}>
+            <div className="node-block" key={node.id + param.name + index}>
               {this.createParameterExpressionField(
                 {
                   parameter: param,
@@ -814,24 +858,31 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       node,
       testResults,
     } = this.props
-    const {editedNode, testResultsIdToShow, testResultsToShow} = this.state
+    const {editedNode} = this.state
 
     const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
 
+    const {testResultsIdToShow, testResultsToShow} = this.state
+    const selectResults = (id?, testResults?: TestResults) => {
+      const stateForSelect = TestResultUtils.stateForSelectTestResults(id, testResults)
+      if (stateForSelect) {
+        this.setState(stateForSelect)
+      }
+    }
     return (
-      <>
-        <NodeErrors errors={otherErrors} message={"Node has errors"}/>
-        <TestResultsSelect
-          results={testResults}
-          resultsIdToShow={testResultsIdToShow}
-          selectResults={this.selectTestResults}
-        />
-        <TestErrors resultsToShow={testResultsToShow}/>
-        {this.customNode(fieldErrors)}
-        <TestResultsComponent nodeId={node.id} resultsToShow={testResultsToShow}/>
+      <Wrapper
+        node={node}
+        otherErrors={otherErrors}
+        testResults={testResults}
+        editedNode={editedNode}
+        processId={processId}
 
-        <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
-      </>
+        testResultsToShow={testResultsToShow}
+        testResultsIdToShow={testResultsIdToShow}
+        selectResults={selectResults}
+      >
+        {this.customNode(fieldErrors)}
+      </Wrapper>
     )
   }
 }
