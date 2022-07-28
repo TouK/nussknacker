@@ -120,14 +120,11 @@ object EspTypeUtils {
     }
   }
 
-  private def getAnnotationOption[T <: Annotation](method: Method, annotationClass: Class[T]): Option[T] =
-    if (method.isAnnotationPresent(annotationClass)) Some(method.getAnnotation(annotationClass)) else None
-
   private def extractMethod(method: Method)
                            (implicit settings: ClassExtractionSettings): List[MethodInfo] =
-    getAnnotationOption(method, classOf[GenericType]) match {
-      case Some(value) => extractGenericMethod(method, value)
-      case None => extractRegularMethod(method)
+    method.getAnnotation(classOf[GenericType]) match {
+      case null => extractRegularMethod(method)
+      case annotation => extractGenericMethod(method, annotation)
     }
 
   private def extractGenericMethod(method: Method, genericType: GenericType)
