@@ -58,7 +58,7 @@ class ConfluentAvroPayloadDeserializer(
                                         override val decoderFactory: DecoderFactory
                                       ) extends DatumReaderWriterMixin with RecordDeserializer with UniversalSchemaPayloadDeserializer {
 
-  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
+  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
     val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
     val avroWriterSchemaData = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
@@ -92,6 +92,5 @@ object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDese
 }
 
 trait UniversalSchemaPayloadDeserializer {
-  //todo: should return Any or AnyRef?
   def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any
 }
