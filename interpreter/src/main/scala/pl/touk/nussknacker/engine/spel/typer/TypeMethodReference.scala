@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.spel.typer
 
+import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -85,7 +86,18 @@ class TypeMethodReference(methodName: String,
     combinedReturnTypes match {
       case Valid(Nil) => Left(None)
       case Valid(xs) => Right(xs)
-      case Invalid(xs) => Left(Some(xs.head)) // TODO: Display all errors.
+      case Invalid(xs) => Left(Some(combineErrors(xs)))
     }
+  }
+
+  // We try to combine ArgumentTypeErrors into one error. If we fail
+  // then we return only first error. All regular functions return
+  // only ArgumentTypeError, so we will lose information only when
+  // there are two
+  private def combineErrors(errors: NonEmptyList[ExpressionParseError]): ExpressionParseError = errors match {
+    case xs if xs.forall(_.isInstanceOf[ArgumentTypeError]) =>
+      xs.map(_.asInstanceOf[ArgumentTypeError]).toList.reduce(_.combine(_))
+    case NonEmptyList(head, _) =>
+      head
   }
 }
