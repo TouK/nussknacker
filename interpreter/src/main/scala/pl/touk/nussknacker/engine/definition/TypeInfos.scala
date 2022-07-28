@@ -120,7 +120,6 @@ object TypeInfos {
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
                                   staticParameters: List[Parameter],
                                   staticResult: TypingResult,
-                                  name: String,
                                   description: Option[String]) extends MethodInfo {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)

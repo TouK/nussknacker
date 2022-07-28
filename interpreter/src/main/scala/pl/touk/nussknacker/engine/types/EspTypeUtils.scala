@@ -154,7 +154,6 @@ object EspTypeUtils {
       x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,
-      methodName,
       extractNussknackerDocs(method)
     ))
   }

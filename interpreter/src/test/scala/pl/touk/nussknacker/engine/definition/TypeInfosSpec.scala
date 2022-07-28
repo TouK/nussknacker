@@ -33,7 +33,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
       SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)
     VarArgsMethodInfo(List(paramX), paramY, Typed[Long], "d", Some("e")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramYArray), Typed[Long], Some("e"), varArgs = true)
-    FunctionalMethodInfo(f, List(paramX, paramY), Typed[String], "f", Some("g")).serializable shouldBe
+    FunctionalMethodInfo(f, List(paramX, paramY), Typed[String], Some("g")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramY), Typed[String], Some("g"), varArgs = false)
   }
 
