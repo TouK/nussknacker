@@ -340,12 +340,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate MethodReference for java varargs") {
-    inside(parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal)) {
-      case Valid(a) => println(a)
-      case Invalid(lst: NonEmptyList[ExpressionParseError@unchecked]) => lst.toList.foreach(x => println(x.message))
-    }
     parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
-
   }
 
   test("skip MethodReference validation without strictMethodsChecking") {
