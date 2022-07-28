@@ -197,7 +197,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
     lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
 
-    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParseError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
 
 

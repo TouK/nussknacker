@@ -45,7 +45,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should startWith("Compilation errors: ExpressionParseError(There is no property 'invalid'")
+    }.getMessage should startWith("Compilation errors: ExpressionParserCompilationError(There is no property 'invalid'")
   }
 
   test("should raise exception when we provide wrong meta variable") {
@@ -55,7 +55,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should startWith("Compilation errors: ExpressionParseError(There is no property 'invalid'")
+    }.getMessage should startWith("Compilation errors: ExpressionParserCompilationError(There is no property 'invalid'")
   }
 
   test("should raise exception when we provide wrong key variable") {
@@ -65,7 +65,7 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
 
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
-    }.getMessage should startWith("Compilation errors: ExpressionParseError(There is no property 'invalid'")
+    }.getMessage should startWith("Compilation errors: ExpressionParserCompilationError(There is no property 'invalid'")
   }
 
   test("should fail when expected key is null") {
