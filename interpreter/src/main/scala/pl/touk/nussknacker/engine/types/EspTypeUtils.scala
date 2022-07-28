@@ -12,8 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, T
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
 
-import java.lang.annotation.Annotation
-
 object EspTypeUtils {
 
   import pl.touk.nussknacker.engine.util.Implicits._
@@ -56,7 +54,6 @@ object EspTypeUtils {
 
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(_))
-      .map(method => method.name -> method)
 
     deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
   }
@@ -121,7 +118,7 @@ object EspTypeUtils {
   }
 
   private def extractMethod(method: Method)
-                           (implicit settings: ClassExtractionSettings): List[MethodInfo] =
+                           (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] =
     method.getAnnotation(classOf[GenericType]) match {
       case null => extractRegularMethod(method)
       case annotation =>
@@ -140,7 +137,7 @@ object EspTypeUtils {
     }
 
   private def extractGenericMethod(method: Method, genericType: GenericType)
-                                  (implicit settings: ClassExtractionSettings): List[MethodInfo] = {
+                                  (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
     val typeFunctionClass = genericType.typingFunction()
     val typeFunctionConstructor = typeFunctionClass.getDeclaredConstructor()
     val typeFunctionInstance = typeFunctionConstructor.newInstance()
@@ -151,21 +148,21 @@ object EspTypeUtils {
     val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
-    collectMethodNames(method).map(FunctionalMethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
       x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,
-      _,
+      methodName,
       extractNussknackerDocs(method)
     ))
   }
 
   private def extractRegularMethod(method: Method)
-                                  (implicit settings: ClassExtractionSettings): List[StaticMethodInfo] =
-    collectMethodNames(method).map(MethodInfo(
+                                  (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
+    collectMethodNames(method).map(methodName => methodName -> MethodInfo(
       extractParameters(method),
       extractMethodReturnType(method),
-      _,
+      methodName,
       extractNussknackerDocs(method),
       method.isVarArgs
     ))

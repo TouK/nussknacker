@@ -45,8 +45,6 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def name: String
-
     def staticParameters: List[Parameter]
 
     def staticResult: TypingResult
