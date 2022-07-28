@@ -1,17 +1,27 @@
 package pl.touk.nussknacker.ui.process
 
 import org.scalatest.{FlatSpec, Matchers}
+import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.compile.NodeTypingInfo
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
+import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, ProcessTestData, TestFactory}
+import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.time.Duration
+import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
@@ -19,6 +29,7 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+  import io.circe.syntax._
 
   //These users were created based on categoriesConfig at ui.conf
   private val adminUser = TestFactory.adminUser()
@@ -98,8 +109,41 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
     }
   }
 
+  it should "import process" in {
+    val dBProcessService = createDbProcessService(processes)
+
+    val categoryDisplayable = ProcessTestData.sampleDisplayableProcess.copy(id = category1Process.name)
+    val categoryStringData = ProcessConverter.fromDisplayable(categoryDisplayable).asJson.spaces2
+    val baseProcessData = ProcessConverter.fromDisplayable(ProcessTestData.sampleDisplayableProcess).asJson.spaces2
+
+    val testingData = Table(
+      ("processId", "data", "expected"),
+      (category1Process.idWithName, categoryStringData, importSuccess(categoryDisplayable)), //importing data with the same id
+      (category1Process.idWithName, baseProcessData, importSuccess(categoryDisplayable)), //importing data with different id
+      (category2ArchivedProcess.idWithName, baseProcessData, Left(ProcessIllegalAction("Import is not allowed for archived process."))),
+      (category1Process.idWithName, "bad-string", Left(UnmarshallError("expected json value got 'bad-st...' (line 1, column 1)"))),
+    )
+
+    forAll(testingData) { (idWithName: ProcessIdWithName, data: String, expected: XError[ValidatedDisplayableProcess]) =>
+      val result = dBProcessService.importProcess(idWithName, data)(adminUser).futureValue
+
+      result shouldBe expected
+    }
+  }
+
   private def convertBasicProcessToSubprocessDetails(process: ProcessWithJson) =
     SubprocessDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
+
+  private def importSuccess(data: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
+    val meta = TypedObjectTypingResult(ListMap("processName" -> Typed[String], "properties" -> TypedObjectTypingResult(Nil)))
+
+    val nodeResults = Map(
+      "sinkId" -> NodeTypingData(Map("input" -> Unknown, "meta" -> meta), None, Map.empty),
+      "sourceId" -> NodeTypingData(Map("meta" -> meta), None, Map.empty)
+    )
+
+    Right(new ValidatedDisplayableProcess(data, ValidationResult.success.copy(nodeResults = nodeResults)))
+  }
 
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(
@@ -111,6 +155,7 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
+      processValidation = TestFactory.processValidation,
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 }

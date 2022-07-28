@@ -514,6 +514,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
+      processValidation = TestFactory.processValidation,
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
