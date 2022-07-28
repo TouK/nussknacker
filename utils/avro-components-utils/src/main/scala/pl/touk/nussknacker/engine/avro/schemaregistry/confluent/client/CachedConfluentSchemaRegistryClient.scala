@@ -4,12 +4,10 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.SchemaProvider
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
-import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
@@ -34,7 +32,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
-        withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
+        SchemaWithMetadata(schemaMetadata, config)
       }
     }
 
@@ -59,26 +57,13 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
+      SchemaWithMetadata(schemaMetadata, config)
     }
   }
 
   override def getSchemaById(id: Int): SchemaWithMetadata = {
-    //todo schemaCache is subject-version keyed, how to get it by id
     val rawSchema = client.getSchemaById(id)
-    withExtraSchemaTypes(id, rawSchema)
-  }
-
-  private def withExtraSchemaTypes(id: Int, rawSchema: ParsedSchema) = {
-    (rawSchema, config.avroPlainTextSerialization) match {
-      case (schema: AvroSchema, Some(true)) => SchemaWithMetadata(AvroSchemaWithJsonPayload(schema), id)
-      case _ => SchemaWithMetadata(rawSchema, id)
-
-    }
-  }
-
-  private def withExtraSchemaTypes(schemaMetadata: SchemaWithMetadata): SchemaWithMetadata = {
-    withExtraSchemaTypes(schemaMetadata.id, schemaMetadata.schema)
+    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
   }
 }
 

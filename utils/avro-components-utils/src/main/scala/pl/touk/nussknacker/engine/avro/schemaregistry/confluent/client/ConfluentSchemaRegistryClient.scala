@@ -3,10 +3,9 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
@@ -41,14 +40,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
+      SchemaWithMetadata(schemaMetadata, config)
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
+      SchemaWithMetadata(schemaMetadata, config)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
@@ -63,21 +62,10 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     }
 
   override def getSchemaById(id: Int): SchemaWithMetadata = {
-    //todo schemaCache is subject-version keyed, how to get it by id
     val rawSchema = client.getSchemaById(id)
-    withExtraSchemaTypes(id, rawSchema)
+    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
   }
 
-  private def withExtraSchemaTypes(id: Int, rawSchema: ParsedSchema) = {
-    (rawSchema, config.avroPlainTextSerialization) match {
-      case (schema: AvroSchema, Some(true)) => SchemaWithMetadata(AvroSchemaWithJsonPayload(schema), id)
-      case _ => SchemaWithMetadata(rawSchema, id)
-    }
-  }
-
-  private def withExtraSchemaTypes(schemaMetadata: SchemaWithMetadata): SchemaWithMetadata = {
-    withExtraSchemaTypes(schemaMetadata.id, schemaMetadata.schema)
-  }
 }
 
 object ConfluentSchemaRegistryClient {

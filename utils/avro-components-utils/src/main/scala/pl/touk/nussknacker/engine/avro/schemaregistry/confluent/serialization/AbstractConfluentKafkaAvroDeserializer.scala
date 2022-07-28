@@ -69,11 +69,12 @@ class ConfluentAvroPayloadDeserializer(
 
 object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 
+  val converter = new JsonPayloadToAvroConverter(None)
+
   override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
-    //todo refactor
-    val converter = new JsonPayloadToAvroConverter(None)
-    buffer.position(bufferDataStart)
-    buffer.compact()
+    val length = buffer.limit() - bufferDataStart
+    val bytes = new Array[Byte](length)
+    buffer.get(bytes, 0, length)
     val schema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
     converter.convert(buffer.array(), schema)
   }
