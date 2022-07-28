@@ -41,14 +41,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      wrapWithConfiguration(SchemaWithMetadata(schemaMetadata))
+      withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      wrapWithConfiguration(SchemaWithMetadata(schemaMetadata))
+      withExtraSchemaTypes(SchemaWithMetadata(schemaMetadata))
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
@@ -65,18 +65,18 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
   override def getSchemaById(id: Int): SchemaWithMetadata = {
     //todo schemaCache is subject-version keyed, how to get it by id
     val rawSchema = client.getSchemaById(id)
-    wrapWithConfiguration(id, rawSchema)
+    withExtraSchemaTypes(id, rawSchema)
   }
 
-  private def wrapWithConfiguration(id: Int, rawSchema: ParsedSchema) = {
-    (rawSchema.schemaType(), config.avroPlainTextSerialization) match {
-      case ("AVRO", Some(true)) => SchemaWithMetadata(AvroWithJsonPayloadSchema(rawSchema.asInstanceOf[AvroSchema]), id)
+  private def withExtraSchemaTypes(id: Int, rawSchema: ParsedSchema) = {
+    (rawSchema, config.avroPlainTextSerialization) match {
+      case (schema: AvroSchema, Some(true)) => SchemaWithMetadata(AvroSchemaWithJsonPayload(schema), id)
       case _ => SchemaWithMetadata(rawSchema, id)
     }
   }
 
-  private def wrapWithConfiguration(schemaMetadata: SchemaWithMetadata): SchemaWithMetadata = {
-    wrapWithConfiguration(schemaMetadata.id, schemaMetadata.schema)
+  private def withExtraSchemaTypes(schemaMetadata: SchemaWithMetadata): SchemaWithMetadata = {
+    withExtraSchemaTypes(schemaMetadata.id, schemaMetadata.schema)
   }
 }
 

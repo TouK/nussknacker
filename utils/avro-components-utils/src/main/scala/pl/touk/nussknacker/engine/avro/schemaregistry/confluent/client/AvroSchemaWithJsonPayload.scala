@@ -7,7 +7,7 @@ import org.apache.avro.Schema
 
 import java.util
 
-case class AvroWithJsonPayloadSchema(avroSchema: AvroSchema) extends ParsedSchema {
+case class AvroSchemaWithJsonPayload(avroSchema: AvroSchema) extends ParsedSchema {
   override def schemaType(): String = "AVRO_JSON_PAYLOAD"
 
   override def name(): String = avroSchema.name()

@@ -70,8 +70,8 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   }
 
   private def withExtraSchemaTypes(id: Int, rawSchema: ParsedSchema) = {
-    (rawSchema.schemaType(), config.avroPlainTextSerialization) match {
-      case ("AVRO", Some(true)) => SchemaWithMetadata(AvroWithJsonPayloadSchema(rawSchema.asInstanceOf[AvroSchema]), id)
+    (rawSchema, config.avroPlainTextSerialization) match {
+      case (schema: AvroSchema, Some(true)) => SchemaWithMetadata(AvroSchemaWithJsonPayload(schema), id)
       case _ => SchemaWithMetadata(rawSchema, id)
 
     }
