@@ -23,7 +23,7 @@ export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
     ...state,
     processToDisplay: {
       ...state.processToDisplay,
-      nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete)
+      nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete),
     },
     layout: state.layout.filter(n => n.id !== idToDelete),
   }
@@ -71,7 +71,7 @@ export function prepareNewNodesWithLayout(
 
 export function addNodesWithLayout(state: GraphState, {
   nodes,
-  layout
+  layout,
 }: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
   return {
     ...state,
@@ -103,16 +103,21 @@ export function removeBranchParameter(node: NodeType, branchId: NodeId) {
   }
 }
 
-export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdgeFrom: NodeId, removedEdgeTo: NodeId): NodeType[] {
-  const node = nodes.find(n => n.id === removedEdgeTo)
-  if (node && NodeUtils.nodeIsJoin(node)) {
-    const newToNode = removeBranchParameter(node, removedEdgeFrom)
-    return nodes.map((n) => {
-      return n.id === removedEdgeTo ? newToNode : n
-    })
-  } else {
-    return nodes
-  }
+export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdges: Pick<Edge, "from" | "to">[]): NodeType[] {
+  return removedEdges.reduce(
+    (resultNodes, {from, to}) => {
+      const node = resultNodes.find(n => n.id === to)
+      if (node && NodeUtils.nodeIsJoin(node)) {
+        const newToNode = removeBranchParameter(node, from)
+        return resultNodes.map((n) => {
+          return n.id === to ? newToNode : n
+        })
+      } else {
+        return resultNodes
+      }
+    },
+    nodes
+  )
 }
 
 export function enrichNodeWithProcessDependentData(originalNode: NodeType, processDefinitionData: ProcessDefinitionData, edges: Edge[]): NodeType {
