@@ -7,6 +7,20 @@ import scala.Option;
 import scala.Tuple2;
 import scala.collection.immutable.List;
 
+/**
+ * Base for creating custom classes that extend methods signature.
+ *
+ * <p>
+ * Deriving classes must be declared as non-anonymous class or case class,
+ * they have to be static or declared at top level, and they must have
+ * parameterless constructor. More precisely, they must be instantiable
+ * using:
+ * {@code typeFunctionClass.getDeclaredConstructor().newInstance()}
+ *
+ * <p>
+ * Constructor of deriving class will be called every time appropriate
+ * method is validated, so it should not do any unnecessary computations.
+ */
 public abstract class TypingFunction {
     /**
      * Approximation of types of parameters that can be accepted
