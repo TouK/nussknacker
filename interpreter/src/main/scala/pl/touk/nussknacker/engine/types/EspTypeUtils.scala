@@ -5,7 +5,7 @@ import java.util.Optional
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.generics.GenericType
+import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
@@ -121,27 +121,29 @@ object EspTypeUtils {
                            (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] =
     method.getAnnotation(classOf[GenericType]) match {
       case null => extractRegularMethod(method)
-      case annotation =>
-        try {
-          extractGenericMethod(method, annotation)
-        } catch {
-          case e: InstantiationException =>
-            throw new IllegalArgumentException(s"TypingFunction for ${method.getName} cannot be abstract class.", e)
-          case e: InvocationTargetException =>
-            throw new IllegalArgumentException(s"TypingFunction's constructor for ${method.getName} failed.", e)
-          case e: NoSuchMethodException =>
-            throw new IllegalArgumentException(s"Could not find parameterless constructor for method ${method.getName} or its TypingFunction was declared inside non-static class.", e)
-          case e: Exception =>
-            throw new IllegalArgumentException(s"Could not extract information about generic method ${method.getName}. It might be incorrectly defined.", e)
-        }
+      case annotation => extractGenericMethod(method, annotation)
     }
+
+  private def getTypeFunctionInstanceFromAnnotation(method: Method, genericType: GenericType): TypingFunction = {
+    val typeFunctionClass = genericType.typingFunction()
+    try {
+      val typeFunctionConstructor = typeFunctionClass.getDeclaredConstructor()
+      typeFunctionConstructor.newInstance()
+    } catch {
+      case e: InstantiationException =>
+        throw new IllegalArgumentException(s"TypingFunction for ${method.getName} cannot be abstract class.", e)
+      case e: InvocationTargetException =>
+        throw new IllegalArgumentException(s"TypingFunction's constructor for ${method.getName} failed.", e)
+      case e: NoSuchMethodException =>
+        throw new IllegalArgumentException(s"Could not find parameterless constructor for method ${method.getName} or its TypingFunction was declared inside non-static class.", e)
+      case e: Exception =>
+        throw new IllegalArgumentException(s"Could not extract information about generic method ${method.getName}.", e)
+    }
+  }
 
   private def extractGenericMethod(method: Method, genericType: GenericType)
                                   (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
-    val typeFunctionClass = genericType.typingFunction()
-    val typeFunctionConstructor = typeFunctionClass.getDeclaredConstructor()
-    val typeFunctionInstance = typeFunctionConstructor.newInstance()
-
+    val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
     val parameterInfo = typeFunctionInstance.staticParameters()
       .map(_.map{ case (name, typ) => Parameter(name, typ) })
       .getOrElse(extractParameters(method))
