@@ -321,7 +321,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
                                  expected: ValidatedNel[String, TypingResult]): Unit =
     classes.map(clazz => {
       val info :: Nil = clazz.methods(name)
-      info.apply(arguments).leftMap(_.map(_.message)) shouldBe expected
+      info.computeResultType(arguments).leftMap(_.map(_.message)) shouldBe expected
     })
 
   test("should correctly calculate result types on correct inputs") {

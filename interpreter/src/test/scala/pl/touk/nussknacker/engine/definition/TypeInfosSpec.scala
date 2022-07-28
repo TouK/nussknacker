@@ -47,7 +47,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
   private def checkApply(info: MethodInfo,
                          args: List[TypingResult],
                          expected: ValidatedNel[String, TypingResult]): Unit =
-    info.apply(args).leftMap(_.map(_.message)) shouldBe expected
+    info.computeResultType(args).leftMap(_.map(_.message)) shouldBe expected
 
   private def checkApplyValid(info: MethodInfo,
                               args: List[TypingResult],

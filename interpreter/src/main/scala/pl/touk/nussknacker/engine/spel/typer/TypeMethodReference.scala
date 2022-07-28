@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
@@ -75,7 +75,7 @@ class TypeMethodReference(methodName: String,
   }
 
   private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfos.map(_.apply(calledParams))
+    val returnTypesForMatchingMethods = methodInfos.map(_.computeResultType(calledParams))
     val combinedReturnTypes = returnTypesForMatchingMethods.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
       case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
       case (Valid(xs), Invalid(_)) => Valid(xs)
@@ -85,7 +85,7 @@ class TypeMethodReference(methodName: String,
     combinedReturnTypes match {
       case Valid(Nil) => Left(None)
       case Valid(xs) => Right(xs)
-      case Invalid(xs) => Left(Some(xs.head)) // FIXME: Display all errors.
+      case Invalid(xs) => Left(Some(xs.head)) // TODO: Display all errors.
     }
   }
 }

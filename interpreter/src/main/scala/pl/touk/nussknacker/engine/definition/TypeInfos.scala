@@ -43,7 +43,7 @@ object TypeInfos {
   }
 
   sealed trait MethodInfo {
-    def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
+    def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
     def name: String
 
@@ -70,7 +70,7 @@ object TypeInfos {
                                  name: String,
                                  description: Option[String])
     extends StaticMethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkNoVarArguments(arguments, staticParameters))
         staticResult.validNel
       else
@@ -100,7 +100,7 @@ object TypeInfos {
       checkNoVarArguments(noVarArguments, noVarParameters) && checkVarArguments(varArguments)
     }
 
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       if (checkArgumentsLength(arguments) && checkArguments(arguments))
         staticResult.validNel
       else
@@ -124,7 +124,7 @@ object TypeInfos {
                                   staticResult: TypingResult,
                                   name: String,
                                   description: Option[String]) extends MethodInfo {
-    override def apply(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
 
     override def varArgs: Boolean = false
@@ -133,7 +133,7 @@ object TypeInfos {
   case class ClazzDefinition(clazzName: TypedClass,
                              methods: Map[String, List[MethodInfo]],
                              staticMethods: Map[String, List[MethodInfo]]) {
-    private def asProperty(info: MethodInfo): Option[TypingResult] = info.apply(List()).toOption
+    private def asProperty(info: MethodInfo): Option[TypingResult] = info.computeResultType(List()).toOption
 
     def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
       def filterMethods(candidates: Map[String, List[MethodInfo]]): List[TypingResult] =
