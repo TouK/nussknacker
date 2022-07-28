@@ -10192,26 +10192,45 @@
   {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.GenericHelperFunction$"},
     "methods": {
-      "extractType": [
+      "addFieldA": [
         {
-          "description": "extracts type of given object",
+          "description": "adds field 'a' to given object",
+          "parameters": [
+            {"name": "obj", "refClazz": {"type": "Unknown"}}
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": false
+        }
+      ],
+      "exampleOfType": [
+        {
+          "description": "returns example of given type",
           "parameters": [
             {
-              "name": "example of desired type",
+              "name": "typeName",
               "refClazz": {
                 "type": "TypedUnion",
                 "union": [
                   {
-                    "display": "Integer",
-                    "params": [],
-                    "refClazzName": "java.lang.Integer",
-                    "type": "TypedClass"
-                  },
-                  {
-                    "display": "String",
+                    "display": "String{String}",
                     "params": [],
                     "refClazzName": "java.lang.String",
-                    "type": "TypedClass"
+                    "type": "TypedObjectWithValue",
+                    "value": "String"
+                  },
+                  {
+                    "display": "String{Double}",
+                    "params": [],
+                    "refClazzName": "java.lang.String",
+                    "type": "TypedObjectWithValue",
+                    "value": "Double"
+                  },
+                  {
+                    "display": "String{Int}",
+                    "params": [],
+                    "refClazzName": "java.lang.String",
+                    "type": "TypedObjectWithValue",
+                    "value": "Int"
                   }
                 ]
               }
@@ -10221,27 +10240,41 @@
             "type": "TypedUnion",
             "union": [
               {
-                "display": "String{OK: Int}",
+                "display": "String",
                 "params": [],
                 "refClazzName": "java.lang.String",
-                "type": "TypedObjectWithValue",
-                "value": "OK: Int"
+                "type": "TypedClass"
               },
               {
-                "display": "String{OK: String}",
+                "display": "Double",
                 "params": [],
-                "refClazzName": "java.lang.String",
-                "type": "TypedObjectWithValue",
-                "value": "OK: String"
+                "refClazzName": "java.lang.Double",
+                "type": "TypedClass"
+              },
+              {
+                "display": "Integer",
+                "params": [],
+                "refClazzName": "java.lang.Integer",
+                "type": "TypedClass"
               }
             ]
           },
           "varArgs": false
         }
       ],
+      "getFieldA": [
+        {
+          "description": "fails to compile when given object without field 'a'",
+          "parameters": [
+            {"name": "obj", "refClazz": {"type": "Unknown"}}
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": false
+        }
+      ],
       "head": [
         {
-          "description": "generic head function",
+          "description": "returns first element of list",
           "parameters": [
             {
               "name": "list",
