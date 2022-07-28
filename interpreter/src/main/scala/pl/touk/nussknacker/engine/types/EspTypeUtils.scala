@@ -124,7 +124,19 @@ object EspTypeUtils {
                            (implicit settings: ClassExtractionSettings): List[MethodInfo] =
     method.getAnnotation(classOf[GenericType]) match {
       case null => extractRegularMethod(method)
-      case annotation => extractGenericMethod(method, annotation)
+      case annotation =>
+        try {
+          extractGenericMethod(method, annotation)
+        } catch {
+          case e: InstantiationException =>
+            throw new IllegalArgumentException(s"TypingFunction for ${method.getName} cannot be abstract class.", e)
+          case e: InvocationTargetException =>
+            throw new IllegalArgumentException(s"TypingFunction's constructor for ${method.getName} failed.", e)
+          case e: NoSuchMethodException =>
+            throw new IllegalArgumentException(s"Could not find parameterless constructor for method ${method.getName} or its TypingFunction was declared inside non-static class.", e)
+          case e: Exception =>
+            throw new IllegalArgumentException(s"Could not extract information about generic method ${method.getName}. It might be incorrectly defined.", e)
+        }
     }
 
   private def extractGenericMethod(method: Method, genericType: GenericType)
