@@ -60,7 +60,9 @@ export function Notifications(): JSX.Element {
         HttpService.loadBackendNotifications().then(notifications => {
             dispatch(updateBackendNotifications(notifications.map(n => n.id)))
             notifications.filter(onlyUnreadPredicate).forEach(beNotification => {
-                dispatch(prepareNotification(beNotification, dispatch))
+                if (beNotification.type) {
+                    dispatch(prepareNotification(beNotification, dispatch))
+                }
                 handleRefresh(beNotification, currentScenarioName, dispatch);
             })
         })
@@ -74,7 +76,7 @@ export function Notifications(): JSX.Element {
 
 export type BackendNotification = {
     id: string,
-    type: "info" | "error"
+    type?: "info" | "error" | "success"
     message?: string
     toRefresh: DataToRefresh[]
     scenarioName?: string

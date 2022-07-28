@@ -46,7 +46,9 @@ class NotificationsListener(config: NotificationConfig,
 
   private[notifications] def dataFor(user: LoggedUser, notificationsAfter: Option[Instant]): List[NotificationEvent] = {
     filterOldNotifications(Instant.now(clock))
-    data.filter(event => event.user.id == user.id && !notificationsAfter.exists(_.isAfter(event.date))).toList
+    synchronized {
+      data.filter(event => event.user.id == user.id && !notificationsAfter.exists(_.isAfter(event.date))).toList
+    }
   }
 
 
@@ -73,10 +75,12 @@ class NotificationService(currentDeployments: CurrentDeployments,
   private def userDeployments(user: LoggedUser, notificationsAfter: Option[Instant]): Seq[Notification] = {
     store.dataFor(user, notificationsAfter).collect {
       case NotificationEvent(id, OnDeployActionFailed(_, reason), _, _, name) =>
-        Notification(id, Some(name), s"Deployment of ${name.value} failed with ${reason.getMessage}", NotificationType.error,
+        Notification(id, Some(name), s"Deployment of ${name.value} failed with ${reason.getMessage}", Some(NotificationType.error),
           List(DataToRefresh.versions, DataToRefresh.activity))
       case NotificationEvent(id, _: OnDeployActionSuccess, _, _, name) =>
-        Notification(id, Some(name), s"Deployment finished", NotificationType.success, List(DataToRefresh.versions, DataToRefresh.activity))
+        //We don't want to display this notification, not to confuse user, as
+        //deployment may proceed asynchronously (e.g. in streaming-lite)
+        Notification(id, Some(name), s"Deployment finished", None, List(DataToRefresh.versions, DataToRefresh.activity))
     }
   }
 
@@ -95,7 +99,7 @@ class NotificationService(currentDeployments: CurrentDeployments,
       case DeploymentActionType.Cancel => "cancelled"
     }
     //TODO: should it be displayed only once?
-    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", NotificationType.info, Nil)
+    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", Some(NotificationType.info), Nil)
   }
 
 }

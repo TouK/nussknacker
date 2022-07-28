@@ -8,7 +8,8 @@ import pl.touk.nussknacker.ui.notifications.DataToRefresh.DataToRefresh
 @JsonCodec case class Notification(id: String,
                                    scenarioName: Option[ProcessName],
                                    message: String,
-                                   `type`: NotificationType.Value,
+                                   //none is marker notification, just to refresh the data
+                                   `type`: Option[NotificationType.Value],
                                    toRefresh: List[DataToRefresh])
 
 object NotificationType extends Enumeration {
