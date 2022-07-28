@@ -89,7 +89,6 @@ class DBProcessService(managerActor: ActorRef,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
-                       processValidation: ProcessValidation,
                        processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
   import cats.instances.future._
@@ -264,7 +263,8 @@ class DBProcessService(managerActor: ActorRef,
         jsonCanonical <- ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
         canonical = jsonCanonical.withProcessId(processId.name)
         displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
-      } yield new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
+        validationResult = processResolving.validateBeforeUiResolving(displayable)
+      } yield new ValidatedDisplayableProcess(displayable, validationResult)
 
       Future.apply(result)
     }

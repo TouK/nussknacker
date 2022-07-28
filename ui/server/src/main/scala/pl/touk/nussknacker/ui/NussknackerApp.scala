@@ -146,7 +146,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, scenarioResolver, processChangeListener, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
-      processValidation, writeProcessRepository
+      writeProcessRepository
     )
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)

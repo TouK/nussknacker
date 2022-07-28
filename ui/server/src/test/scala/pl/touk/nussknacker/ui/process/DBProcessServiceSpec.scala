@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
+import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
@@ -134,15 +135,15 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
   private def convertBasicProcessToSubprocessDetails(process: ProcessWithJson) =
     SubprocessDetails(ProcessConverter.fromDisplayable(process.json), process.processCategory)
 
-  private def importSuccess(data: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
-    val meta = TypedObjectTypingResult(ListMap("processName" -> Typed[String], "properties" -> TypedObjectTypingResult(Nil)))
+  private def importSuccess(displayableProcess: DisplayableProcess): Right[EspError, ValidatedDisplayableProcess] = {
+    val meta = MetaVariables.typingResult(displayableProcess.metaData)
 
     val nodeResults = Map(
       "sinkId" -> NodeTypingData(Map("input" -> Unknown, "meta" -> meta), None, Map.empty),
       "sourceId" -> NodeTypingData(Map("meta" -> meta), None, Map.empty)
     )
 
-    Right(new ValidatedDisplayableProcess(data, ValidationResult.success.copy(nodeResults = nodeResults)))
+    Right(new ValidatedDisplayableProcess(displayableProcess, ValidationResult.success.copy(nodeResults = nodeResults)))
   }
 
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
@@ -155,7 +156,6 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processValidation = TestFactory.processValidation,
       processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 }

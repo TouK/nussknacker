@@ -141,7 +141,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
     new DBProcessService(managerActor, time.Duration.ofMinutes(1), newProcessPreparer,
       processCategoryService, processResolving, repositoryManager, fetchingProcessRepository,
-      actionRepository, processValidation, writeProcessRepository
+      actionRepository, writeProcessRepository
     )
 
   def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
