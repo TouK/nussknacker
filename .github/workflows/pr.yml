@@ -1,4 +1,4 @@
-name: CI
+name: NU CI
 on:
   pull_request:
     branches:
