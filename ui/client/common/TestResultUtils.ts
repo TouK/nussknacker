@@ -3,7 +3,7 @@ import {get, head, uniq, values} from "lodash"
 import {NodeId} from "../types"
 
 interface Context {
-  id: unknown,
+  id: number,
   variables: Record<string, { original?: string }>,
 }
 
@@ -69,21 +69,15 @@ class TestResultUtils {
     return (exceptions || []).filter((ex) => ex.nodeId == nodeId)
   }
 
-  private nodeResultsForContext = (nodeTestResults: TestResults, contextId: number) => {
-    const context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
-    const expressionResults = Object.fromEntries(nodeTestResults
-      .invocationResults
-      .filter(result => result.contextId == contextId)
-      .map(result => [result.name, result.value]))
-    const mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
-    const mockedResultsForEveryContext = nodeTestResults.mockedResults
-    const error = ((nodeTestResults.errors || []).find((error) => error.context.id === contextId) || {}).throwable
-    return {
-      context: context,
-      expressionResults: expressionResults,
-      mockedResultsForCurrentContext: mockedResultsForCurrentContext,
-      mockedResultsForEveryContext: mockedResultsForEveryContext,
-      error: error,
+  stateForSelectTestResults = (id: number, testResults: TestResults): StateForSelectTestResults | null => {
+    if (this.hasTestResults(testResults)) {
+      const chosenId = id || get(head(this.availableContexts(testResults)), "id")
+      return {
+        testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
+        testResultsIdToShow: chosenId,
+      }
+    } else {
+      return null
     }
   }
 
@@ -99,15 +93,21 @@ class TestResultUtils {
     return (varToInclude.original || "").toString().substring(0, 50)
   }
 
-  stateForSelectTestResults = (id, testResults: TestResults): StateForSelectTestResults | null => {
-    if (this.hasTestResults(testResults)) {
-      const chosenId = id || get(head(this.availableContexts(testResults)), "id")
-      return {
-        testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
-        testResultsIdToShow: chosenId,
-      }
-    } else {
-      return null
+  private nodeResultsForContext = (nodeTestResults: TestResults, contextId: number) => {
+    const context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
+    const expressionResults = Object.fromEntries(nodeTestResults
+      .invocationResults
+      .filter(result => result.contextId == contextId)
+      .map(result => [result.name, result.value]))
+    const mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
+    const mockedResultsForEveryContext = nodeTestResults.mockedResults
+    const error = ((nodeTestResults.errors || []).find((error) => error.context.id === contextId) || {}).throwable
+    return {
+      context,
+      expressionResults,
+      mockedResultsForCurrentContext,
+      mockedResultsForEveryContext,
+      error,
     }
   }
 

@@ -32,6 +32,7 @@ import {
   NodeId,
   NodeType,
   NodeValidationError,
+  Parameter,
   ParameterConfig,
   ProcessDefinitionData,
   ProcessId,
@@ -288,10 +289,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           <div className="node-table-body">
             {this.idField()}
             {this.createStaticExpressionField(
-              "expression",
-              "Expression",
-              "expression",
-              fieldErrors
+              {
+                fieldName: "expression",
+                fieldLabel: "Expression",
+                expressionProperty: "expression",
+                fieldErrors: fieldErrors,
+              }
             )}
             {this.createField({
               fieldType: FieldType.checkbox,
@@ -304,11 +307,11 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                   label={"Outputs"}
                   nodeId={originalNodeId}
                   value={edges}
-                  onChange={(nextEdges) => {
+                  onChange={(nextEdges) => this.setState(({edges}) => {
                     if (nextEdges !== edges) {
-                      this.setState({edges: nextEdges}, this.publishNodeChange)
+                      return {edges: nextEdges}
                     }
-                  }}
+                  }, this.publishNodeChange)}
                   edgeTypes={[
                     {value: EdgeKind.filterTrue, onlyOne: true},
                     {value: EdgeKind.filterFalse, onlyOne: true},
@@ -330,10 +333,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               return (
                 <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
-                    param,
-                    "expression",
-                    `service.parameters[${index}]`,
-                    fieldErrors
+                    {
+                      parameter: param,
+                      expressionProperty: "expression",
+                      listFieldPath: `service.parameters[${index}]`,
+                      fieldErrors: fieldErrors,
+                    }
                   )}
                 </div>
               )
@@ -371,10 +376,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               savedNode={editedNode}
               setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
               createListField={(param, index) => this.createParameterExpressionField(
-                param,
-                "expression",
-                `ref.parameters[${index}]`,
-                fieldErrors
+                {
+                  parameter: param,
+                  expressionProperty: "expression",
+                  listFieldPath: `ref.parameters[${index}]`,
+                  fieldErrors: fieldErrors,
+                }
               )}
               createReadOnlyField={params => (
                 <div className="node-row">{this.renderFieldLabel(params.name)}
@@ -426,10 +433,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               return (
                 <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
-                    param,
-                    "expression",
-                    `parameters[${index}]`,
-                    fieldErrors
+                    {
+                      parameter: param,
+                      expressionProperty: "expression",
+                      listFieldPath: `parameters[${index}]`,
+                      fieldErrors: fieldErrors,
+                    }
                   )}
                 </div>
               )
@@ -479,7 +488,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           <div className="node-table-body">
             {this.idField()}
             {showExpression ?
-              this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
+              this.createStaticExpressionField({
+                fieldName: "expression",
+                fieldLabel: "Expression (deprecated)",
+                expressionProperty: "expression",
+                fieldErrors: fieldErrors,
+              }) :
               null}
             {showExprVal ?
               this.createField({
@@ -495,11 +509,11 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                   label={"Conditions"}
                   nodeId={originalNodeId}
                   value={edges}
-                  onChange={(nextEdges) => {
+                  onChange={(nextEdges) => this.setState(({edges}) => {
                     if (nextEdges !== edges) {
-                      this.setState({edges: nextEdges}, this.publishNodeChange)
+                      return {edges: nextEdges}
                     }
-                  }
+                  }, this.publishNodeChange)
                   }
                   edgeTypes={[
                     {value: EdgeKind.switchNext},
@@ -628,10 +642,12 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
           return (
             <div className="node-block" key={this.props.node.id + param.name + index}>
               {this.createParameterExpressionField(
-                param,
-                "expression",
-                `ref.parameters[${index}]`,
-                fieldErrors
+                {
+                  parameter: param,
+                  expressionProperty: "expression",
+                  listFieldPath: `ref.parameters[${index}]`,
+                  fieldErrors: fieldErrors,
+                }
               )}
             </div>
           )
@@ -685,43 +701,71 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
   }
 
   //this is for "static" fields like expressions in filters, switches etc.
-  createStaticExpressionField = (fieldName, fieldLabel, expressionProperty, fieldErrors) => {
-    return this.doCreateExpressionField(fieldName, fieldLabel, `${expressionProperty}`, fieldErrors)
+  createStaticExpressionField = ({
+    fieldName,
+    fieldLabel,
+    expressionProperty,
+    fieldErrors,
+  }: { fieldName: string, fieldLabel: string, expressionProperty: string, fieldErrors: Error[] }): JSX.Element => {
+    return this.doCreateExpressionField({
+      fieldName,
+      fieldLabel,
+      fieldErrors,
+      exprPath: `${expressionProperty}`,
+    })
   }
 
   //this is for "dynamic" parameters in sources, sinks, services etc.
-  createParameterExpressionField = (parameter, expressionProperty, listFieldPath, fieldErrors) => {
-    const paramDefinition = this.parameterDefinitions?.find(p => p.name === parameter.name)
-    return this.doCreateExpressionField(parameter.name, parameter.name, `${listFieldPath}.${expressionProperty}`, fieldErrors, paramDefinition)
+  createParameterExpressionField = ({
+    parameter,
+    expressionProperty,
+    listFieldPath,
+    fieldErrors,
+  }: { parameter: Parameter, expressionProperty: string, listFieldPath: string, fieldErrors: Error[] }): JSX.Element => {
+    return this.doCreateExpressionField({
+      fieldName: parameter.name,
+      fieldLabel: parameter.name,
+      exprPath: `${listFieldPath}.${expressionProperty}`,
+      fieldErrors,
+      parameter: this.parameterDefinitions?.find(p => p.name === parameter.name),
+    })
   }
 
-  doCreateExpressionField = (fieldName, fieldLabel, exprPath, fieldErrors, parameter?) => {
-    const {showValidation, showSwitch, isEditMode, node, findAvailableVariables} = this.props
-    const variableTypes = findAvailableVariables(this.props.originalNodeId, parameter)
+  doCreateExpressionField = ({
+    fieldName,
+    fieldLabel,
+    exprPath,
+    fieldErrors,
+    parameter,
+  }: { fieldName: string, fieldLabel: string, exprPath: string, fieldErrors: Error[], parameter?: UIParameter }): JSX.Element => {
+    const {showValidation, showSwitch, isEditMode, findAvailableVariables, originalNodeId} = this.props
+    const {editedNode, testResultsToShow, testResultsToHide} = this.state
+
     return (
       <ExpressionField
         fieldName={fieldName}
         fieldLabel={fieldLabel}
         exprPath={exprPath}
         isEditMode={isEditMode}
-        editedNode={this.state.editedNode}
+        editedNode={editedNode}
         isMarked={this.isMarked}
         showValidation={showValidation}
         showSwitch={showSwitch}
         parameterDefinition={findParamDefinitionByName(this.parameterDefinitions, fieldName)}
         setNodeDataAt={this.setNodeDataAt}
-        testResultsToShow={this.state.testResultsToShow}
-        testResultsToHide={this.state.testResultsToHide}
+        testResultsToShow={testResultsToShow}
+        testResultsToHide={testResultsToHide}
         toggleTestResult={this.toggleTestResult}
         renderFieldLabel={this.renderFieldLabel}
-        variableTypes={variableTypes}
+        variableTypes={findAvailableVariables(originalNodeId, parameter)}
         errors={fieldErrors}
       />
     )
   }
 
   isMarked = (path: string): boolean => {
-    return this.props.pathsToMark?.some(toMark => startsWith(toMark, path))
+    const {pathsToMark} = this.props
+    return pathsToMark?.some(toMark => startsWith(toMark, path))
   }
 
   toggleTestResult = (fieldName) => {
@@ -784,6 +828,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
       node,
       testResults,
     } = this.props
+    const {editedNode, testResultsIdToShow, testResultsToShow} = this.state
 
     const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
 
@@ -792,14 +837,14 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
         <NodeErrors errors={otherErrors} message={"Node has errors"}/>
         <TestResultsSelect
           results={testResults}
-          resultsIdToShow={this.state.testResultsIdToShow}
+          resultsIdToShow={testResultsIdToShow}
           selectResults={this.selectTestResults}
         />
-        <TestErrors resultsToShow={this.state.testResultsToShow}/>
+        <TestErrors resultsToShow={testResultsToShow}/>
         {this.customNode(fieldErrors)}
-        <TestResultsComponent nodeId={node.id} resultsToShow={this.state.testResultsToShow}/>
+        <TestResultsComponent nodeId={node.id} resultsToShow={testResultsToShow}/>
 
-        <NodeAdditionalInfoBox node={this.state.editedNode} processId={processId}/>
+        <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
       </>
     )
   }
