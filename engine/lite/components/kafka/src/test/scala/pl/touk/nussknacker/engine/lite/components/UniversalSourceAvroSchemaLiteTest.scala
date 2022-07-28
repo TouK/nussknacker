@@ -72,7 +72,7 @@ class UniversalSourceAvroSchemaLiteTest extends FunSuite with Matchers with Vali
       // we disable default kafka components to replace them by mocked
       .withValue("components.kafka.disabled", fromAnyRef(true))
       .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
-      .withValue("kafka.avroPlainTextSerialization", fromAnyRef(true))
+      .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
 
     val mockSchemaRegistryClient = new MockSchemaRegistryClient
     val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))

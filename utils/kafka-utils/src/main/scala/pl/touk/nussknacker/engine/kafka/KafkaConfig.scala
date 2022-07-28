@@ -25,10 +25,10 @@ case class KafkaConfig(kafkaAddress: String,
                        // and all topics related to this config require both key and value schema definitions.
                        useStringForKey: Boolean = true,
                        schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
-                       avroPlainTextSerialization: Option[Boolean] = None
+                       avroAsJsonSerialization: Option[Boolean] = None
                       ) {
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroPlainTextSerialization)
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroAsJsonSerialization)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
