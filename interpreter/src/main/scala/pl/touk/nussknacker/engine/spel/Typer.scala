@@ -222,11 +222,20 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMinus => withTypedChildren {
-        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) => Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)))
-        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil => OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
-        case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) => Valid(TypingResultWithContext(left))
-        case TypingResultWithContext(left, _) :: Nil => OperatorNonNumericError(e.getOperatorName, left).invalidNel
-        case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
+        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
+          if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
+          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)))
+        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
+          if left == right =>
+          OperatorNonNumericError(e.getOperatorName, left).invalidNel
+        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
+          OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
+        case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
+          Valid(TypingResultWithContext(left))
+        case TypingResultWithContext(left, _) :: Nil =>
+          OperatorNonNumericError(e.getOperatorName, left).invalidNel
+        case Nil =>
+          EmptyOperatorError(e.getOperatorName).invalidNel
       }
       case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)

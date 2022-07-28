@@ -242,7 +242,6 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       List(scalaInfo, javaInfo).foreach(info => {
           info.staticParameters shouldBe params
           info.staticResult shouldBe result
-          info.name shouldBe name
           info.description shouldBe desc
           info.varArgs shouldBe varArgs
         }

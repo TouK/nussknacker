@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionPar
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.OperatorMismatchTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{OperatorMismatchTypeError, OperatorNonNumericError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -247,12 +247,12 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parse[String]("4 + ''") shouldBe 'valid
   }
 
-//  test("subtraction of non numeric types") {
-//    inside(parse[Any]("'a' - 'a'")) {
-//      case Invalid(NonEmptyList(error: OperatorNonNumericError, Nil)) =>
-//        error.message shouldBe "" // TODO: Define valid message.
-//    }
-//  }
+  test("subtraction of non numeric types") {
+    inside(parse[Any]("'a' - 'a'")) {
+      case Invalid(NonEmptyList(error: OperatorNonNumericError, Nil)) =>
+        error.message shouldBe s"Operator '-' used with non numeric type: ${Typed.fromInstance("a").display}"
+    }
+  }
 
   test("substraction of mismatched types") {
     inside(parse[Any]("'' - 1")) {
