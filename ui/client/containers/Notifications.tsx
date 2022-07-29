@@ -65,6 +65,9 @@ export function Notifications(): JSX.Element {
             notifications.filter(onlyUnreadPredicate).forEach(beNotification => {
                 if (beNotification.type) {
                     dispatch(prepareNotification(beNotification, dispatch))
+                } else {
+                    //if we don't display notification, we assume that it's already processes
+                    dispatch(markBackendNotificationRead(beNotification.id))
                 }
                 handleRefresh(beNotification, currentScenarioName, dispatch);
             })
