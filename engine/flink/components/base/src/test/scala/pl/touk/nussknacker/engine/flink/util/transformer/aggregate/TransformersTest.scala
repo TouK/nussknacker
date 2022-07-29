@@ -6,7 +6,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
 import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
@@ -135,7 +135,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     val result = validator.validate(testProcess)
 
     inside(result.result) {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
     }
   }
 
@@ -197,7 +197,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
     lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
 
-    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParseError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
 
 

@@ -7,8 +7,9 @@ import org.springframework.expression.spel.SpelNode
 import org.springframework.expression.spel.ast.{Indexer, PropertyOrFieldReference, StringLiteral}
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.dict.DictRegistry.{DictEntryWithKeyNotExists, DictEntryWithLabelNotExists, DictNotDeclared}
-import pl.touk.nussknacker.engine.api.expression.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.DictError.{DictIndexCountError, DictKeyError, DictLabelError, NoDictError}
 import pl.touk.nussknacker.engine.spel.ast
 
 /**
@@ -23,7 +24,6 @@ trait SpelDictTyper {
 trait BaseDictTyper extends SpelDictTyper with LazyLogging {
 
   import ast.SpelAst._
-  import pl.touk.nussknacker.engine.util.Implicits._
 
   protected def dictRegistry: DictRegistry
 
@@ -35,7 +35,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
             val key = str.getLiteralValue.getValue.toString
             findKey(dict, key)
           case _ =>
-            Invalid(ExpressionParseError(s"Illegal spel construction: ${node.toStringAST}. Dict should be indexed by a single key")).toValidatedNel
+            Invalid(DictIndexCountError(node)).toValidatedNel
         }
       case pf: PropertyOrFieldReference  =>
         findKey(dict, pf.getName)
@@ -48,11 +48,11 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
       .leftMap {
         case DictNotDeclared(dictId) =>
           // It will happen only if will be used dictionary for which, definition wasn't exposed in ExpressionConfig.dictionaries
-          ExpressionParseError(s"Dict with given id: $dictId not exists")
+          NoDictError(dictId)
         case DictEntryWithLabelNotExists(_, label, possibleLabels) =>
-          ExpressionParseError(s"Illegal label: '$label' for ${dict.display}.${possibleLabels.map(l => " Possible labels are: " + l.map("'" + _ + "'").mkCommaSeparatedStringWithPotentialEllipsis(3) + ".").getOrElse("")}")
+          DictLabelError(label, possibleLabels, dict)
         case DictEntryWithKeyNotExists(_, key, possibleKeys) =>
-          ExpressionParseError(s"Illegal key: '$key' for ${dict.display}.${possibleKeys.map(l => " Possible keys are: " + l.map("'" + _ + "'").mkCommaSeparatedStringWithPotentialEllipsis(3) + ".").getOrElse("")}")
+          DictKeyError(key, possibleKeys, dict)
       }.toValidatedNel
   }
 

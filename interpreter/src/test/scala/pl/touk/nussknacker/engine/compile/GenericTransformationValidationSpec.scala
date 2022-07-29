@@ -4,10 +4,10 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
@@ -191,7 +191,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParserCompilationError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
@@ -238,7 +238,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParserCompilationError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
