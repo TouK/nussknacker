@@ -349,7 +349,6 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     forAll(table)(checkApplyFunctionValid)
   }
 
-  // FIXME: Add expected results to this test.
   test("should correctly handle illegal input types in generic functions") {
     val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
