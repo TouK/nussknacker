@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, BestEffort
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader, UniversalMessageFormatter, UniversalMessageReader}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
+import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
@@ -79,7 +79,7 @@ object UniversalSchemaSupport {
   def typeDefinition(schema: ParsedSchema): TypingResult = schema match {
     case schema: AvroSchemaWithJsonPayload => AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
     case schema: AvroSchema => AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
-    case schema: JsonSchema => JsonSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
+    case schema: JsonSchema => SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
     case _ => throw new UnsupportedSchemaType(schema)
   }
 

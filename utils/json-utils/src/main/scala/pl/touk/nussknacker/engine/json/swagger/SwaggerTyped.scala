@@ -1,12 +1,11 @@
-package pl.touk.nussknacker.openapi
+package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
+import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
 import java.time.LocalDateTime
-import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedClass, TypedObjectTypingResult}
-import pl.touk.nussknacker.openapi.parser.SwaggerRefSchemas
-
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -22,6 +21,8 @@ case object SwaggerBool extends SwaggerTyped
 case object SwaggerLong extends SwaggerTyped
 
 case object SwaggerDouble extends SwaggerTyped
+
+case object SwaggerNull extends SwaggerTyped
 
 case object SwaggerBigDecimal extends SwaggerTyped
 
@@ -54,6 +55,7 @@ object SwaggerTyped {
         case ("number", None) => SwaggerBigDecimal
         case ("number", Some("double")) => SwaggerDouble
         case ("number", Some("float")) => SwaggerDouble
+        case (null, None) => SwaggerNull
         case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
       }
     }
@@ -79,6 +81,8 @@ object SwaggerTyped {
       Typed.typedClass[java.math.BigDecimal]
     case SwaggerDateTime =>
       Typed.typedClass[LocalDateTime]
+    case SwaggerNull =>
+      Typed.typedClass[Null]
   }
 }
 

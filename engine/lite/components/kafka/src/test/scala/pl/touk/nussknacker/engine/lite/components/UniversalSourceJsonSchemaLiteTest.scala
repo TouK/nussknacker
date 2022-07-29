@@ -52,6 +52,7 @@ class UniversalSourceJsonSchemaLiteTest extends FunSuite with Matchers with Vali
     .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "",
       "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
 
+
   test("should read data on json schema based universal source when schemaId in header") {
     //Given
     val runtime = createRuntime

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.json
 
-import org.everit.json.schema.{ArraySchema, BooleanSchema, FalseSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema, TrueSchema}
+import org.everit.json.schema._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.collection.JavaConverters._
+import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
 class JsonSchemaTypeDefinitionExtractor {
 
@@ -26,10 +27,12 @@ class JsonSchemaTypeDefinitionExtractor {
     TypedObjectTypingResult(namedSchema.mapValues(resolveJsonTypingResult).toList)
   }
 
-  private [json] def resolveJsonTypingResult(schema: Schema): TypingResult = {
+  private[json] def resolveJsonTypingResult(schema: Schema): TypingResult = {
     schema match {
-      case s:ArraySchema => getArrayTypingResult(s)
-      case s:ObjectSchema => parseObjectSchema(s)
+      case s: ArraySchema => getArrayTypingResult(s)
+      case s: ObjectSchema => parseObjectSchema(s)
+      case s: ReferenceSchema => parseReference(s)
+      case s: CombinedSchema => parseCombinedSchema(s)
       case s => resolveSimpleTypingResult(s)
     }
   }
@@ -43,6 +46,18 @@ class JsonSchemaTypeDefinitionExtractor {
     }
   }
 
+  def parseCombinedSchema(combined: CombinedSchema): TypingResult = combined.getSubschemas.toList match {
+    case Nil => Typed.typedClass[Null]
+    case s :: Nil => typeDefinition(s)
+    case List(a: StringSchema, _: EnumSchema) => typeDefinition(a)
+    case List(_: EnumSchema, b: StringSchema) => typeDefinition(b)
+    case _ => throw new IllegalArgumentException(s"Schema '$combined' is not supported yet.")
+  }
+
+  def parseReference(s: ReferenceSchema): TypingResult = {
+    typeDefinition(s.getReferredSchema)
+  }
+
   private def resolveSimpleTypingResult(schema: Schema): TypingResult = {
     schema match {
       case s: NumberSchema => if (s.requiresInteger()) Typed.typedClass[java.lang.Long] else Typed.typedClass[java.math.BigDecimal]
@@ -51,8 +66,8 @@ class JsonSchemaTypeDefinitionExtractor {
       case _: FalseSchema => Typed.typedClass[Boolean]
       case _: NullSchema => Typed.typedClass[Null]
       case s: StringSchema => resolveStringWithFormat(s)
-      //TODO: Add support for union type
-      case s => throw new IllegalArgumentException(s"Schema '${s.toString}' is not supported yet.")
+      case _: EnumSchema => Typed.typedClass[String]
+      case s => throw new IllegalArgumentException(s"Schema '$s' is not supported yet.")
     }
   }
 
