@@ -259,14 +259,15 @@ class DBProcessService(managerActor: ActorRef,
 
   def importProcess(processId: ProcessIdWithName, jsonString: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]] = {
     withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
-      val result = for {
-        jsonCanonical <- ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
-        canonical = jsonCanonical.withProcessId(processId.name)
-        displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
-        validationResult = processResolving.validateBeforeUiResolving(displayable)
-      } yield new ValidatedDisplayableProcess(displayable, validationResult)
+      val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
+        .map{ jsonCanonicalProcess =>
+          val canonical = jsonCanonicalProcess.withProcessId(processId.name)
+          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
+          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType)
+          new ValidatedDisplayableProcess(displayable, validationResult)
+        }
 
-      Future.apply(result)
+      Future.successful(result)
     }
   }
 
