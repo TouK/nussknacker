@@ -10,7 +10,7 @@ import Notification from "../components/notifications/Notification";
 import InlinedSvgs from "../assets/icons/InlinedSvgs";
 import {v4 as uuid4} from "uuid";
 import {markBackendNotificationRead, updateBackendNotifications} from "../actions/nk/notifications";
-import {displayCurrentProcessVersion, displayProcessActivity} from "../actions/nk";
+import {displayCurrentProcessVersion, displayProcessActivity, loadProcessState} from "../actions/nk";
 import {getProcessId} from "../reducers/selectors/graph";
 
 function prepareNotification(backendNotification: BackendNotification, dispatch: Dispatch<any>) {
@@ -38,6 +38,9 @@ function handleRefresh(beNotification: BackendNotification, currentScenarioName,
                     break;
                 case "activity":
                     dispatch(displayProcessActivity(beNotification.scenarioName))
+                    break;
+                case "state":
+                    dispatch(loadProcessState(beNotification.scenarioName))
             }
         })
 
@@ -82,4 +85,4 @@ export type BackendNotification = {
     scenarioName?: string
 }
 
-export type DataToRefresh = "versions" | "activity"
+export type DataToRefresh = "versions" | "activity" | "state"
