@@ -28,5 +28,5 @@ object DataToRefresh extends Enumeration {
   implicit val typeDecoder: Decoder[DataToRefresh.Value] = Decoder.decodeEnumeration(DataToRefresh)
 
   type DataToRefresh = Value
-  val versions, activity = Value
+  val versions, activity, state = Value
 }

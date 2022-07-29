@@ -13,7 +13,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.time.temporal.ChronoUnit
 import java.time.{Clock, Instant}
 import java.util.UUID
-import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -26,7 +25,7 @@ class NotificationsListener(config: NotificationConfig,
                             clock: Clock = Clock.systemUTC()) extends ProcessChangeListener with LazyLogging {
 
   //not too efficient, but we don't expect too much data...
-  private val data: ArrayBuffer[NotificationEvent] = ArrayBuffer()
+  @volatile private var data: List[NotificationEvent] = Nil
 
   override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
     val now = Instant.now(clock)
@@ -34,21 +33,19 @@ class NotificationsListener(config: NotificationConfig,
       case Failure(NonFatal(e)) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}", e)
       case Success(None) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}")
       case Success(Some(scenarioName)) => synchronized {
-        data.append(NotificationEvent(UUID.randomUUID().toString, event, now, user, scenarioName))
+        data = NotificationEvent(UUID.randomUUID().toString, event, now, user, scenarioName) :: data
       }
     }
     filterOldNotifications(now)
   }
 
   private def filterOldNotifications(now: Instant): Unit = synchronized {
-    data.zipWithIndex.filter(_._1.date.isBefore(now.minus(config.duration.toMillis, ChronoUnit.MILLIS))).foreach(i => data.remove(i._2))
+    data = data.filter(_.date.isAfter(now.minus(config.duration.toMillis, ChronoUnit.MILLIS)))
   }
 
   private[notifications] def dataFor(user: LoggedUser, notificationsAfter: Option[Instant]): List[NotificationEvent] = {
     filterOldNotifications(Instant.now(clock))
-    synchronized {
-      data.filter(event => event.user.id == user.id && !notificationsAfter.exists(_.isAfter(event.date))).toList
-    }
+    data.filter(event => event.user.id == user.id && !notificationsAfter.exists(_.isAfter(event.date)))
   }
 
 
@@ -76,7 +73,7 @@ class NotificationService(currentDeployments: CurrentDeployments,
     store.dataFor(user, notificationsAfter).collect {
       case NotificationEvent(id, OnDeployActionFailed(_, reason), _, _, name) =>
         Notification(id, Some(name), s"Deployment of ${name.value} failed with ${reason.getMessage}", Some(NotificationType.error),
-          List(DataToRefresh.versions, DataToRefresh.activity))
+          List(DataToRefresh.state))
       case NotificationEvent(id, _: OnDeployActionSuccess, _, _, name) =>
         //We don't want to display this notification, not to confuse user, as
         //deployment may proceed asynchronously (e.g. in streaming-lite)
