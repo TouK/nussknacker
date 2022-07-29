@@ -863,12 +863,13 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
     const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
 
     const {testResultsIdToShow, testResultsToShow} = this.state
-    const selectResults = (id?, testResults?: TestResults) => {
+    const selectResults = (id?: number, testResults?: TestResults) => {
       const stateForSelect = TestResultUtils.stateForSelectTestResults(id, testResults)
       if (stateForSelect) {
         this.setState(stateForSelect)
       }
     }
+
     return (
       <Wrapper
         node={node}
