@@ -49,7 +49,7 @@ trait BaseDictTyper extends SpelDictTyper with LazyLogging {
         case DictNotDeclared(dictId) =>
           // It will happen only if will be used dictionary for which, definition wasn't exposed in ExpressionConfig.dictionaries
           NoDictError(dictId)
-        case DictEntryWithLabelNotExists(_, label, possibleLabels) => // FIXME: Use other error type.
+        case DictEntryWithLabelNotExists(_, label, possibleLabels) =>
           DictLabelError(label, possibleLabels, dict)
         case DictEntryWithKeyNotExists(_, key, possibleKeys) =>
           DictKeyError(key, possibleKeys, dict)

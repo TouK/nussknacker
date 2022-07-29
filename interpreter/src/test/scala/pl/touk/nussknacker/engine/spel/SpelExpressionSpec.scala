@@ -505,12 +505,12 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   test("not allow unknown variables in methods") {
     inside(parse[Any]("#processHelper.add(#a, 1)", ctx.withVariable("processHelper", SampleGlobalObject.getClass))) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
-        error.message shouldBe "Unresolved reference 'a'" // FIXME
+        error.message shouldBe "Unresolved reference 'a'"
     }
 
     inside(parse[Any]("T(pl.touk.nussknacker.engine.spel.SampleGlobalObject).add(#a, 1)", ctx)) {
       case Invalid(NonEmptyList(error: ExpressionParseError, Nil)) =>
-        error.message shouldBe "Unresolved reference 'a'" // FIXME
+        error.message shouldBe "Unresolved reference 'a'"
     }
   }
 

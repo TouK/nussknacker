@@ -120,7 +120,7 @@ object SpelExpressionParseError {
 
     case class InvalidMethodReference(methodName: String) extends IllegalOperationError {
       override def message: String = s"Invalid method reference: $methodName."
-    } // TODO: Compare with UnknownMethodError
+    }
 
     case class TypeReferenceError(refClass: String) extends IllegalOperationError {
       override def message: String = s"$refClass is not allowed to be passed as TypeReference"
