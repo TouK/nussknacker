@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import cats.data.EitherT
+import cats.data.{EitherT, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
@@ -11,22 +11,25 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager, UpdateProcessComment}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.FatalValidationError
+import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}
@@ -70,6 +73,8 @@ trait ProcessService {
   def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
   def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
+
+  def importProcess(processId: ProcessIdWithName, processData: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]]
 }
 
 /**
@@ -250,6 +255,20 @@ class DBProcessService(managerActor: ActorRef,
       .map(processes => processes.map(sub => {
         SubprocessDetails(sub.json, sub.processCategory)
       }).toSet)
+  }
+
+  def importProcess(processId: ProcessIdWithName, jsonString: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]] = {
+    withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
+      val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
+        .map{ jsonCanonicalProcess =>
+          val canonical = jsonCanonicalProcess.withProcessId(processId.name)
+          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
+          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType)
+          new ValidatedDisplayableProcess(displayable, validationResult)
+        }
+
+      Future.successful(result)
+    }
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

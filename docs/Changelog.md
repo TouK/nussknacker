@@ -50,6 +50,7 @@
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
 * [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation: include optional fields validation, reduce number of validation modes.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
+* [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
 
 1.4.0 (14 Jun 2022)
 ------------------------
