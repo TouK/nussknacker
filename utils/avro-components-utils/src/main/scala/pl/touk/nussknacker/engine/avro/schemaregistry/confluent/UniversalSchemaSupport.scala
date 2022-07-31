@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, BestEffortJsonSchemaEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, BestEffortAvroEncoder, BestEffortJsonSchemaEncoder, JsonSchemaOutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader, UniversalMessageFormatter, UniversalMessageReader}
@@ -25,6 +25,7 @@ import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 import java.nio.charset.StandardCharsets
@@ -93,10 +94,19 @@ object UniversalSchemaSupport {
   def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = schema match {
     case schema: AvroSchema => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
     case schema: AvroSchemaWithJsonPayload => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
-    case schema: JsonSchema => (value: Any) => new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
-      .encodeOrError(value, schema.rawSchema())
+    case schema: JsonSchema => (value: Any) =>
+      new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+        .encodeOrError(value, schema.rawSchema())
     case _ => throw new UnsupportedSchemaType(schema)
   }
+
+  def rawOutputValidator(schema: ParsedSchema)(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit] = (t: TypingResult, validationMode: ValidationMode) =>
+    schema match {
+      case schema: AvroSchema => new AvroSchemaOutputValidator(validationMode).validateTypingResultToSchema(t, schema.rawSchema())
+      case AvroSchemaWithJsonPayload(avroSchema) => new AvroSchemaOutputValidator(validationMode).validateTypingResultToSchema(t, avroSchema.rawSchema())
+      case schema: JsonSchema => new JsonSchemaOutputValidator(validationMode).validateTypingResultToSchema(t, schema.rawSchema())
+      case _ => throw new UnsupportedSchemaType(schema)
+    }
 }
 
 class UnsupportedSchemaType(parsedSchema: ParsedSchema) extends IllegalArgumentException(s"Unsupported schema type: ${parsedSchema.schemaType()}")
