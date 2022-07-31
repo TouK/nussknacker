@@ -317,7 +317,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 "Output",
                 "output",
                 false,
-                [mandatoryValueValidator, errorValidator(fieldErrors, "output")],
+                [errorValidator(fieldErrors, "output")],
               ) :
               null}
             {node.type === "Processor" ? this.createField("checkbox", "Disabled", "isDisabled") : null}
@@ -368,7 +368,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 "Output variable name",
                 "outputVar",
                 false,
-                [mandatoryValueValidator, errorValidator(fieldErrors, "outputVar")],
+                [errorValidator(fieldErrors, "outputVar")],
                 "outputVar",
                 false,
                 null,
@@ -450,7 +450,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
               this.createStaticExpressionField("expression", "Expression (deprecated)", "expression", fieldErrors) :
               null}
             {showExprVal ?
-              this.createField("input", "exprVal (deprecated)", "exprVal", false, [mandatoryValueValidator, exprValValidator]) :
+              this.createField("input", "exprVal (deprecated)", "exprVal", false, [exprValValidator]) :
               null}
             {!isCompareView ?
               (

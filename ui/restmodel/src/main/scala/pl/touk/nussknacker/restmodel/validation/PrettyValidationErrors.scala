@@ -45,7 +45,7 @@ object PrettyValidationErrors {
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(s"Wrong parameters", s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}")
       case OverwrittenVariable(varName, _, paramName) => node(s"Variable output name '$varName' is already defined.", "You cannot overwrite variables", fieldName = paramName)
-      case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' contains unsupported chars.", "Please use only letters, numbers or '_'.", fieldName = paramName)
+      case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)", "Please use only letters, numbers or '_', also identifier cannot be empty.", fieldName = paramName)
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
