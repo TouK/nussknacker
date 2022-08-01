@@ -153,8 +153,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   }
 
   //expression is deprecated, will be removed in the future
-  def compileSwitch(expression: Option[(String, Expression)], choices: List[(String, Expression)], ctx: ValidationContext)
+  def compileSwitch(expressionRaw: Option[(String, Expression)], choices: List[(String, Expression)], ctx: ValidationContext)
                    (implicit nodeId: NodeId): NodeCompilationResult[(Option[api.expression.Expression], List[api.expression.Expression])] = {
+
+    //the frontend uses empty string to delete deprecated expression.
+    val expression = expressionRaw.filterNot(_._1.isEmpty)
 
     val expressionCompilation = expression.map { case (output, expression) =>
       compileExpression(expression, ctx, Unknown, NodeExpressionId.DefaultExpressionId, Some(OutputVar.switch(output)))
