@@ -18,35 +18,23 @@ import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 object UniversalSchemaSupport {
-
-  implicit class RichParsedSchema(parsedSchema: ParsedSchema) extends UniversalSchemaSupport {
-    private lazy val support: ParsedSchemaSupport[ParsedSchema] = parsedSchema match {
-      case schema: AvroSchema => AvroSchemaSupport(schema)
-      case schema: AvroSchemaWithJsonPayload => AvroSchemaWithJsonPayloadSupport(schema)
-      case schema: JsonSchema => JsonSchemaSupport(schema)
-      case _ => throw new UnsupportedSchemaType(parsedSchema)
-    }
-
-    override val payloadDeserializer: UniversalSchemaPayloadDeserializer = support.payloadDeserializer
-    override def serializerFactory[T]: (ConfluentSchemaRegistryClient, KafkaConfig, Boolean) => Serializer[T] = support.serializerFactory
-    override def messageFormatterFactory: SchemaRegistryClient => Any => Json = support.messageFormatterFactory
-    override def messageReaderFactory: SchemaRegistryClient => (Json, String) => Array[Byte] = support.messageReaderFactory
-    override def typeDefinition: TypingResult = support.typeDefinition
-    override def extractSinkValueParameter(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = support.extractSinkValueParameter
-    override def sinkValueEncoderFactory: ValidationMode => Any => AnyRef = support.sinkValueEncoderFactory
-    override def rawOutputValidatorFactory(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit] = support.rawOutputValidatorFactory
+  def apply(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
+    case _: AvroSchema => AvroSchemaSupport
+    case _: AvroSchemaWithJsonPayload => AvroSchemaWithJsonPayloadSupport
+    case _: JsonSchema => JsonSchemaSupport
+    case _ => throw new UnsupportedSchemaType(parsedSchema)
   }
 }
 
 trait UniversalSchemaSupport {
   val payloadDeserializer: UniversalSchemaPayloadDeserializer
-  def serializerFactory[T]: (ConfluentSchemaRegistryClient, KafkaConfig, Boolean) => Serializer[T]
-  def messageFormatterFactory: SchemaRegistryClient => Any => Json
-  def messageReaderFactory: SchemaRegistryClient => (Json, String) => Array[Byte]
-  def typeDefinition: TypingResult
-  def extractSinkValueParameter(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
-  def sinkValueEncoderFactory: ValidationMode => Any => AnyRef
-  def rawOutputValidatorFactory(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit]
+  def serializer[T](schema: ParsedSchema, c: ConfluentSchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[T]
+  def messageFormatter(c: SchemaRegistryClient): Any => Json
+  def messageReader(schema: ParsedSchema, c: SchemaRegistryClient): (Json, String) => Array[Byte]
+  def typeDefinition(schema: ParsedSchema): TypingResult
+  def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
+  def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
+  def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit]
 }
 
 class UnsupportedSchemaType(parsedSchema: ParsedSchema) extends IllegalArgumentException(s"Unsupported schema type: ${parsedSchema.schemaType()}")

@@ -6,19 +6,18 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, BestEffortAvroEncoder, BestEffortJsonSchemaEncoder, JsonSchemaOutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode._
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.{ConfluentAvroPayloadDeserializer, ConfluentJsonPayloadDeserializer, ConfluentJsonSchemaPayloadDeserializer, ConfluentKafkaAvroSerializer, UniversalSchemaPayloadDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
@@ -30,90 +29,90 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParamete
 import java.nio.charset.StandardCharsets
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
-  val schema: S
+  protected implicit class RichParsedSchema(p: ParsedSchema){
+    def cast(): S = p.asInstanceOf[S]
+  }
 }
 
-case class AvroSchemaSupport(schema: AvroSchema) extends ParsedSchemaSupport[AvroSchema] {
+object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentAvroPayloadDeserializer.default
 
-  override def serializerFactory[T]: (ConfluentSchemaRegistryClient, KafkaConfig, Boolean) => Serializer[T] =
-    (client, kafkaConfig, isKey) => ConfluentKafkaAvroSerializer(kafkaConfig, client, Some(schema), isKey = isKey).asInstanceOf[Serializer[T]]
+  override def serializer[T](schema: ParsedSchema, client: ConfluentSchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[T] =
+    ConfluentKafkaAvroSerializer(kafkaConfig, client, Some(schema.cast()), isKey = isKey).asInstanceOf[Serializer[T]]
 
-  override def messageFormatterFactory: SchemaRegistryClient => Any => Json =
-    (client: SchemaRegistryClient) => (obj: Any) => new ConfluentAvroMessageFormatter(client).asJson(obj)
+  override def messageFormatter(client: SchemaRegistryClient): Any => Json =
+     (obj: Any) => new ConfluentAvroMessageFormatter(client).asJson(obj)
 
-  override def messageReaderFactory: SchemaRegistryClient => (Json, String) => Array[Byte] =
-    client => (jsonObj, subject) => new ConfluentAvroMessageReader(client).readJson(jsonObj, schema.rawSchema(), subject)
+  override def messageReader(schema: ParsedSchema, client: SchemaRegistryClient): (Json, String) => Array[Byte] =
+    (jsonObj, subject) => new ConfluentAvroMessageReader(client).readJson(jsonObj, schema.cast().rawSchema(), subject)
 
+  override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def typeDefinition: TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
+  override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = AvroSinkValueParameter(schema.cast().rawSchema())
 
-  override def extractSinkValueParameter(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = AvroSinkValueParameter(schema.rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef =
+    (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.cast().rawSchema())
 
-  override def sinkValueEncoderFactory: ValidationMode => Any => AnyRef = validationMode => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
-
-  override def rawOutputValidatorFactory(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit] =
-    (t, mode: ValidationMode) => new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.rawSchema())
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
+    new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 }
 
 
-
-case class JsonSchemaSupport(schema: JsonSchema) extends ParsedSchemaSupport[JsonSchema] {
+object JsonSchemaSupport extends ParsedSchemaSupport[JsonSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonSchemaPayloadDeserializer
 
-  override def serializerFactory[T]: (ConfluentSchemaRegistryClient, KafkaConfig, Boolean) => Serializer[T] = (_, _, _) =>
-    (topic: String, data: T) => data match {
-      case j: Json => j.noSpaces.getBytes()
-      case _ => throw new SerializationException(s"Expecting json but got: $data")
-    }
+  override def serializer[T](schema: ParsedSchema, c: ConfluentSchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[T] = (topic: String, data: T) => data match {
+    case j: Json => j.noSpaces.getBytes()
+    case _ => throw new SerializationException(s"Expecting json but got: $data")
+  }
 
-  override def messageFormatterFactory: SchemaRegistryClient => Any => Json =
-    _ => (obj: Any) => BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(obj)
+  override def messageFormatter(c: SchemaRegistryClient): Any => Json =
+    (obj: Any) => BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(obj)
 
-  override def messageReaderFactory: SchemaRegistryClient => (Json, String) => Array[Byte] =
-    _ => (jsonObj, _) => jsonObj match {
-      // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
-      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
-    }
+  override def messageReader(schema: ParsedSchema, c: SchemaRegistryClient): (Json, String) => Array[Byte] = (jsonObj, _) => jsonObj match {
+    // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
+    case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
+    case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
+  }
 
-  override def typeDefinition: TypingResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractSinkValueParameter(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = JsonSinkValueParameter(schema.rawSchema(), defaultParamName = SinkValueParamName)
+  override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
+    JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
 
-  override def sinkValueEncoderFactory: ValidationMode => Any => AnyRef =
-    validationMode => (value: Any) => new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
-      .encodeOrError(value, schema.rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
+    (value: Any) => new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+    .encodeOrError(value, schema.cast().rawSchema())
 
-  override def rawOutputValidatorFactory(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit] =
-    (t, mode: ValidationMode) => new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.rawSchema())
-
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
+    new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 }
 
 
+object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWithJsonPayload] {
 
-case class AvroSchemaWithJsonPayloadSupport(schema: AvroSchemaWithJsonPayload) extends ParsedSchemaSupport[AvroSchemaWithJsonPayload] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonPayloadDeserializer
 
-  override def serializerFactory[T]: (ConfluentSchemaRegistryClient, KafkaConfig, Boolean) => Serializer[T] =
-    (client, kafkaConfig, isKey) => new JsonPayloadKafkaSerializer(kafkaConfig, client, new DefaultAvroSchemaEvolution, Some(schema.avroSchema), isKey = isKey).asInstanceOf[Serializer[T]]
+  override def serializer[T](schema: ParsedSchema, client: ConfluentSchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[T] =
+    new JsonPayloadKafkaSerializer(kafkaConfig, client, new DefaultAvroSchemaEvolution, Some(schema.cast().avroSchema), isKey = isKey).asInstanceOf[Serializer[T]]
 
-  override def messageFormatterFactory: SchemaRegistryClient => Any => Json =
-    _ => (obj: Any) => BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(obj)
+  override def messageFormatter(c: SchemaRegistryClient): Any => Json =
+    (obj: Any) => BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(obj)
 
-  override def messageReaderFactory: SchemaRegistryClient => (Json, String) => Array[Byte] =
-    _ => (jsonObj, _) => jsonObj match {
+  override def messageReader(schema: ParsedSchema, c: SchemaRegistryClient): (Json, String) => Array[Byte] =
+    (jsonObj, _) => jsonObj match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
       case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
       case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
     }
 
-  override def typeDefinition: TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
-  override def extractSinkValueParameter(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = AvroSinkValueParameter(schema.rawSchema())
+  override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =  AvroSinkValueParameter(schema.cast().rawSchema())
 
-  override def sinkValueEncoderFactory: ValidationMode => Any => AnyRef = validationMode => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
+    (value: Any) => BestEffortAvroEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
 
-  override def rawOutputValidatorFactory(implicit nodeId: NodeId): (TypingResult, ValidationMode) => ValidatedNel[OutputValidatorError, Unit] =
-    (t, mode: ValidationMode) => new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.rawSchema())
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
+    new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 }

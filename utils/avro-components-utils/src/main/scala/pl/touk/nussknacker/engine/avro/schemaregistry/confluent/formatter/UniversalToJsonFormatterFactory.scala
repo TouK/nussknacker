@@ -7,8 +7,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentUtils, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, _}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
@@ -41,6 +40,9 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
                                                          schemaRegistryClient: SchemaRegistryClient,
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                         ) extends RecordFormatter {
+
+  private def formatter(schema: ParsedSchema) = UniversalSchemaSupport(schema).messageFormatter(schemaRegistryClient)
+  private def reader(schema: ParsedSchema) = UniversalSchemaSupport(schema).messageReader(schema, schemaRegistryClient)
 
   /**
    * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.
@@ -83,11 +85,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
         }
       } else {
         val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))
-        keyOpt.map(keyJson => keySchema.messageReaderFactory(schemaRegistryClient)(keyJson, ConfluentUtils.keySubject(topic))
+        keyOpt.map(keyJson => reader(keySchema)(keyJson, ConfluentUtils.keySubject(topic))
           ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
       val valueSchema = getParsedSchemaById(record.valueSchemaId)
-      val valueBytes = valueSchema.messageReaderFactory(schemaRegistryClient)(value, ConfluentUtils.valueSubject(topic))
+      val valueBytes = reader(valueSchema)(value, ConfluentUtils.valueSubject(topic))
       (keyBytes, valueBytes)
     }
 
@@ -97,10 +99,10 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
   protected def createKeyEncoder(schemaOpt: Option[ParsedSchema]): Encoder[K] = {
     case str: String => Json.fromString(str)
-    case key => schemaOpt.get.messageFormatterFactory(schemaRegistryClient)(key)
+    case key => formatter(schemaOpt.get)(key)
   }
 
-  protected def createValueEncoder(schema: ParsedSchema): Encoder[V] = (value: V) => schema.messageFormatterFactory(schemaRegistryClient)(value)
+  protected def createValueEncoder(schema: ParsedSchema): Encoder[V] = (value: V) => formatter(schema)(value)
 
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[UniversalSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
