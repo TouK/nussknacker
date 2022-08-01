@@ -36,7 +36,7 @@
 * [#3245](https://github.com/TouK/nussknacker/pull/3245) [#3265](https://github.com/TouK/nussknacker/pull/3265)
   [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
   [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
-  [#3322](https://github.com/TouK/nussknacker/pull/3322)
+  [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3337](https://github.com/TouK/nussknacker/pull/3337)
   Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema 
   * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
   * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
