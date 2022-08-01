@@ -135,6 +135,8 @@ describe("Process", () => {
     })
 
     it("should not have \"latest deploy\" button by default", () => {
+      //FIXME: temporary fix for notifications race (?)
+      cy.reload()
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
