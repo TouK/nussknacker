@@ -22,7 +22,7 @@ object PrettyValidationErrors {
       node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
-      case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
+      case ExpressionParserCompilationError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))

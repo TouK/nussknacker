@@ -113,7 +113,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     subprocessRepository = subprocessRepository,
     processService = processService,
     processToolbarService = configProcessToolbarService,
-    processValidation = processValidation,
     processResolving = processResolving,
     processAuthorizer = processAuthorizer,
     processChangeListener = processChangeListener,
@@ -140,9 +139,9 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   val settingsRouteWithoutPermissions: Route = withoutPermissions(settingsRoute)
 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
-    new DBProcessService(
-      managerActor, time.Duration.ofMinutes(1), newProcessPreparer, processCategoryService, processResolving,
-      repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
+    new DBProcessService(managerActor, time.Duration.ofMinutes(1), newProcessPreparer,
+      processCategoryService, processResolving, repositoryManager, fetchingProcessRepository,
+      actionRepository, writeProcessRepository
     )
 
   def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(

@@ -34,8 +34,8 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
   private val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
-    val writerSchemaId = getSchemaId(headers, data)
-    val writerSchema = schemaRegistryClient.client.getSchemaById(writerSchemaId.value)
+    val writerSchemaId = getSchemaId(topic, headers, data)
+    val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
 
     readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
       if (readerSchemaType != writerSchema.schemaType())
@@ -50,12 +50,20 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
       .asInstanceOf[T]
   }
 
-  private def getSchemaId(headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer =
+  // SchemaId can be obtain in several ways. Precedent:
+  // * from kafka header
+  // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])
+  // * latest schema for topic
+  private def getSchemaId(topic: String, headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer =
     headers.getSchemaId(headerName) match {
       case Some(idFromHeader) => // Even if schemaId is passed through header, it still can be serialized in 'Confluent way', here we're figuring it out
-        val buffer = Try(readIdAndGetBuffer(data)).map(_._2).getOrElse(ByteBuffer.wrap(data))
+        val buffer = readIdAndGetBuffer(data).toOption.map(_._2).getOrElse(ByteBuffer.wrap(data))
         SchemaIdWithPositionedBuffer(idFromHeader, buffer)
-      case None => val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data)
+      case None =>
+        val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data).toOption
+          .getOrElse(schemaRegistryClient
+            .getFreshSchema(topic, None, isKey = isKey).map(_.id).map((_, ByteBuffer.wrap(data)))
+            .valueOr(e => throw new RuntimeException("Missing schemaId in kafka header and in payload. Trying to fetch latest schema for this topic but it failed", e)))
         SchemaIdWithPositionedBuffer(idAndBuffer._1, buffer = idAndBuffer._2)
     }
 }

@@ -13,10 +13,7 @@ class KafkaConfigSpec extends FunSuite with Matchers {
         |    "auto.offset.reset": latest
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(
-      "localhost:9092",
-      Some(Map("auto.offset.reset" -> "latest")),
-      None, None)
+    val expectedConfig = KafkaConfig("localhost:9092", Some(Map("auto.offset.reset" -> "latest")), None, None)
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
@@ -31,11 +28,7 @@ class KafkaConfigSpec extends FunSuite with Matchers {
         |     enabled: true
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(
-      "localhost:9092",
-      Some(Map("auto.offset.reset" -> "latest")),
-      None, None, None,
-      TopicsExistenceValidationConfig(enabled = true))
+    val expectedConfig = KafkaConfig("localhost:9092", Some(Map("auto.offset.reset" -> "latest")), None, None, None, TopicsExistenceValidationConfig(enabled = true))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 

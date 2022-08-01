@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.DefaultCo
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaDeserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaBasedSerdeProvider, ConfluentUtils}
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 
 import java.io.OutputStream
 
@@ -23,7 +23,7 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient)
+  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient, SchemaRegistryClientKafkaConfig(Map(), SchemaRegistryCacheConfig(), None))
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 
@@ -43,6 +43,7 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic", "shouldSendHeaders"),
       (payloadWithoutSchemaIdSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject.headers", true),
       (payloadWithoutSchemaIdSetup, false, PaymentV1.record, PaymentV1.record, "simple.from-record.headers", true),
+      (payloadWithoutSchemaIdSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject.no-schema-id", false),
       (payloadWithSchemaIdSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject.payload", false),
       (payloadWithSchemaIdSetup, false, PaymentV1.record, PaymentV1.record, "simple.from-record.payload", false),
       (payloadWithSchemaIdSetup, true, PaymentV1.record, PaymentV1.record, "simple.from-subject.headersAndPayload", true),
@@ -71,6 +72,7 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
     val table = Table[CreateSetup, Boolean, GenericRecord, GenericRecord, String, Boolean](
       ("setup", "schemaEvolution", "givenObj", "expectedObj", "topic", "shouldSendHeaders"),
       (payloadWithoutSchemaIdSetup, true, PaymentV2.record, PaymentV1.record, "backwards.headers", true),
+      (payloadWithoutSchemaIdSetup, true, PaymentV2.record, PaymentV1.record, "backwards.no-schema-id", false),
       (payloadWithSchemaIdSetup, true, PaymentV2.record, PaymentV1.record, "backwards.payload", false),
       (payloadWithSchemaIdSetup, true, PaymentV2.record, PaymentV1.record, "backwards.headersAndPayload", true),
     )

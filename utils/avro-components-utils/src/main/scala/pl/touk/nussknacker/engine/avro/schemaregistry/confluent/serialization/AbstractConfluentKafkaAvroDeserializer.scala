@@ -5,11 +5,13 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
+import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 
 import java.io.IOException
@@ -38,7 +40,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
       val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
-      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer, bufferDataStart)
+      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer, bufferDataStart).asInstanceOf[AnyRef]
     } catch {
       case exc: RestClientException =>
         throw new SerializationException(s"Error retrieving Avro schema for id : $schemaId", exc)
@@ -56,7 +58,7 @@ class ConfluentAvroPayloadDeserializer(
                                         override val decoderFactory: DecoderFactory
                                       ) extends DatumReaderWriterMixin with RecordDeserializer with UniversalSchemaPayloadDeserializer {
 
-  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
     val avroExpectedSchemaData = expectedSchemaData.asInstanceOf[Option[RuntimeSchemaData[AvroSchema]]]
     val avroWriterSchemaData = writerSchemaData.asInstanceOf[RuntimeSchemaData[AvroSchema]]
     val readerSchemaData = avroExpectedSchemaData.getOrElse(avroWriterSchemaData)
@@ -65,16 +67,31 @@ class ConfluentAvroPayloadDeserializer(
   }
 }
 
-object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+
+  private val converter = new JsonPayloadToAvroConverter(None)
 
   override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef = {
+    val length = buffer.limit() - bufferDataStart
+    val bytes = new Array[Byte](length)
+    buffer.get(bytes, 0, length)
+    val schema = writerSchemaData.schema.rawSchema().asInstanceOf[Schema]
+    converter.convert(buffer.array(), schema)
+  }
+}
+
+object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
+
+  override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
     val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[JsonSchema]]
-    buffer.position(bufferDataStart)
-    buffer.compact()
-    new CirceJsonDeserializer(readerSchemaData.schema.rawSchema()).deserialize(buffer.array())
+    val length = buffer.limit() - bufferDataStart
+    val bytes = new Array[Byte](length)
+    buffer.get(bytes, 0, length)
+    new CirceJsonDeserializer(readerSchemaData.schema.rawSchema()).deserialize(bytes).valueOr(e => throw new RuntimeException("Deserialization error", e)) //todo: maybe better exception
   }
 }
 
 trait UniversalSchemaPayloadDeserializer {
-  def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): AnyRef
+  //todo: should return Any or AnyRef?
+  def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any
 }

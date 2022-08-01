@@ -91,8 +91,7 @@ function postFormData(url: string, auth: {username: string, password: string}, b
 function importTestProcess(name: string, fixture = "testProcess") {
   return cy.fixture(fixture).then(json => {
     const formData = new FormData()
-    const blob = jsonToBlob({...json, metaData: {...json.metaData, id: name}})
-    formData.set("process", blob, "data.json")
+    formData.set("process", jsonToBlob(json), "data.json")
     const auth = {
       username: Cypress.env("testUserUsername"),
       password: Cypress.env("testUserPassword"),

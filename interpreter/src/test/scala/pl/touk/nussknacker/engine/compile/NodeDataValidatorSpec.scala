@@ -70,7 +70,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
@@ -93,7 +93,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext())) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, _, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, _, _) =>
         error.message shouldBe s"Bad expression type, expected: Long, found: ${Typed.fromInstance("").display}"
     }
 
@@ -105,7 +105,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
     }
   }
@@ -113,7 +113,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   test("should validate service") {
     inside(validate(node.Enricher("stringService", ServiceRef("stringService", List(par("stringParam", "#a.length + 33"))), "out"),
       ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Bad expression type, expected: String, found: Integer"
     }
 
@@ -128,7 +128,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''"))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
@@ -178,7 +178,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -207,7 +207,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -243,7 +243,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
     ) {
-      case ValidationPerformed(List(ExpressionParseError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
+      case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
     }
   }
 
@@ -252,8 +252,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
      validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
    ) {
      case ValidationPerformed(List(
-      ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
-      ExpressionParseError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
+      ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
+      ExpressionParserCompilationError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
      ), None, Some(Unknown)) =>
    }
   }

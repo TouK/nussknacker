@@ -12,6 +12,7 @@ import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings
 import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
 import io.dropwizard.metrics5.MetricRegistry
 import io.dropwizard.metrics5.jmx.JmxReporter
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
@@ -29,6 +30,7 @@ import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
 import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.notifications.{ManagementActorCurrentDeployments, NotificationConfig, NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -121,6 +123,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
+    val notificationListener = new NotificationsListener(config.as[NotificationConfig]("notifications"), processRepository.fetchProcessName(_))
+    val processChangeListener = ProcessChangeListenerLoader
+      .loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
+
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
     deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver)
@@ -134,13 +140,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
-    val processChangeListener = ProcessChangeListenerLoader.loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)))
-
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, scenarioResolver, processChangeListener, deploymentService), "management")
-    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
+    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
+      processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
+      writeProcessRepository
+    )
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -151,6 +158,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
 
+    val notificationService = new NotificationService(new ManagementActorCurrentDeployments(managementActor), notificationListener)
+
     initMetrics(metricsRegistry, processRepository)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
@@ -160,7 +169,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
-          processValidation = processValidation,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
@@ -173,7 +181,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
-        new NotificationResources(managementActor),
+        new NotificationResources(notificationService),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),

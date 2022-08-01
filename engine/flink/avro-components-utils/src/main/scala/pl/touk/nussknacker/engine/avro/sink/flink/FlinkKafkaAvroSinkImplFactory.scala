@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.avro.sink.flink
 
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
@@ -20,7 +22,7 @@ object FlinkKafkaAvroSinkImplFactory extends KafkaAvroSinkImplFactory {
                  clientId: String,
                  schema: RuntimeSchemaData[AvroSchema],
                  validationMode: ValidationMode): Sink = {
-    new FlinkKafkaAvroSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema, validationMode)
+    new FlinkKafkaUniversalSink(preparedTopic, key, value, kafkaConfig, serializationSchema, clientId, schema.serializableSchema.asInstanceOf[NkSerializableParsedSchema[ParsedSchema]], validationMode)
   }
 
 }

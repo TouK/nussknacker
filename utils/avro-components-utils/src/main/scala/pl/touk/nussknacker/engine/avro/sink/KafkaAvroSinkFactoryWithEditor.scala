@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.{Schema
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactoryWithEditor.TransformationState
-import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaAvroBaseTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
@@ -31,7 +31,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
                                      val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider,
                                      val processObjectDependencies: ProcessObjectDependencies,
                                      implProvider: KafkaAvroSinkImplFactory)
-  extends KafkaAvroBaseTransformer[Sink] with SinkFactory {
+  extends KafkaUniversalComponentTransformer[Sink] with SinkFactory {
 
   override type State = TransformationState
 

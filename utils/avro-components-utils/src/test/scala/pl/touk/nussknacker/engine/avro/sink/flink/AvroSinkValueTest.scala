@@ -2,11 +2,10 @@ package pl.touk.nussknacker.engine.avro.sink.flink
 
 import org.apache.avro.SchemaBuilder
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.LazyParameter
+import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}

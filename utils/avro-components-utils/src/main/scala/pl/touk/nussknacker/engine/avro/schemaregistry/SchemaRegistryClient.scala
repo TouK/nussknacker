@@ -4,6 +4,8 @@ import cats.data.Validated
 
 trait SchemaRegistryClient extends Serializable {
 
+  def getSchemaById(id: Int): SchemaWithMetadata
+
   protected def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
   /**

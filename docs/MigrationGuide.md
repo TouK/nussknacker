@@ -26,9 +26,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
     * Invalid is representation of process compilation errors
     * Valid is representation of positive and negative scenario running result
 * [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
-* [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299)[#3309](https://github.com/TouK/nussknacker/pull/3309) 
-  [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) Changes related with UniversalKafkaSource/Sink:
-  * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (but only AvroSchema is supported for now).
+* [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299)[#3309](https://github.com/TouK/nussknacker/pull/3309) 
+  [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
+  * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
   * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
   * `SchemaRegistryProvider` refactoring:
@@ -56,6 +56,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Choice component replaces Switch component. "Default" choice edge type, exprVal and expression are now deprecated. 
   For existing usages, you don't need to change anything. For new usages, if you want extract value e.g. to simplify choice conditions, you need to define new local variable before choice using variable component.
   "Default" choice edge type can be replaced by adding "true" condition at the end of list of conditions
+
+### Breaking changes
+* [#3328](https://github.com/TouK/nussknacker/pull/3328) Due to addition of support for different schema type (AvroSchema and JsonSchema for now) serialization format of `NkSerializableParsedSchema` has changed. Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
 
 ### Other changes
 

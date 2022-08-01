@@ -83,12 +83,12 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       status shouldEqual StatusCodes.OK
       val invalidNodes = extractInvalidNodes
       invalidNodes.asObject.value should have size 1
-      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
     }
 
     val invalidNodesAfterSave = saveProcessAndExtractValidationResult(processRootResource, process)
     invalidNodesAfterSave.asObject.value should have size 1
-    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
@@ -96,7 +96,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
       val invalidNodesAfterGet = extractInvalidNodesFromValidationResult
       invalidNodesAfterGet.asObject.value should have size 1
-      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
     }
   }
 

@@ -9,7 +9,7 @@ class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => Mock
   extends ConfluentSchemaRegistryClientFactory {
 
   override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
-    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient)
+    new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient, config)
   }
 
 }

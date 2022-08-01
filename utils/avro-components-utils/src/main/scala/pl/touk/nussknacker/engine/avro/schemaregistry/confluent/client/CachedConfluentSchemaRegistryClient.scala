@@ -2,10 +2,12 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.SchemaProvider
+import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
 import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
@@ -13,9 +15,9 @@ import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import scala.collection.JavaConverters._
 
 /**
-  * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
-  */
-class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches)
+ * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
+ */
+class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, caches: SchemaRegistryCaches, val config: SchemaRegistryClientKafkaConfig)
   extends ConfluentSchemaRegistryClient with LazyLogging {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
@@ -29,7 +31,8 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
-        SchemaWithMetadata(client.getSchemaMetadata(subject, version))
+        val schemaMetadata = client.getSchemaMetadata(subject, version)
+        SchemaWithMetadata(schemaMetadata, config)
       }
     }
 
@@ -54,8 +57,13 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      SchemaWithMetadata(schemaMetadata)
+      SchemaWithMetadata(schemaMetadata, config)
     }
+  }
+
+  override def getSchemaById(id: Int): SchemaWithMetadata = {
+    val rawSchema = client.getSchemaById(id)
+    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
   }
 }
 
@@ -68,6 +76,7 @@ private[client] object CachedSchemaRegistryClient {
     val urls = config.getSchemaRegistryUrls
     val maxSchemaObject = config.getMaxSchemasPerSubject
     val originals = config.originalsWithPrefix("")
-    new CCachedSchemaRegistryClient(urls, maxSchemaObject, originals)
+    val schemaProviders: List[SchemaProvider] = List(new JsonSchemaProvider(), new AvroSchemaProvider())
+    new CCachedSchemaRegistryClient(urls, maxSchemaObject, schemaProviders.asJava, originals)
   }
 }
