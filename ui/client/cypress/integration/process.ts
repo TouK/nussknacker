@@ -135,12 +135,14 @@ describe("Process", () => {
     })
 
     it("should not have \"latest deploy\" button by default", () => {
+      //FIXME: temporary fix for notifications race (?)
+      cy.reload()
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
       cy.get("[data-testid=window] textarea").click().type("issues/123")
       cy.contains(/^ok$/i).should("be.enabled").click()
-      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000, log: true}).each(res => {
         cy.wrap(res).its("response.statusCode").should("eq", 200)
       })
       cy.contains(/^counts$/i).click()
