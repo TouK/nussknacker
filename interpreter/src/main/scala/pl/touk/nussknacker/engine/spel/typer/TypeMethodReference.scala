@@ -94,7 +94,7 @@ class TypeMethodReference(methodName: String,
   }
 
   // We try to combine ArgumentTypeErrors into one error. If we fail
-  // then we return only first error. All regular functions return
+  // then we only one first error. All regular functions return
   // only ArgumentTypeError, so we will lose information only when
   // there are two
   private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError = errors match {
