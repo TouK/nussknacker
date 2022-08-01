@@ -6,12 +6,13 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.Json._
 import org.scalatest._
-import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
 class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with EspItTest with PatientScalaFutures {
+
+  private val usersRoute = new UserResources(processCategoryService)
 
   test("fetch user info") {
     getUser(isAdmin = false) ~> check {
@@ -51,4 +52,8 @@ class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastC
       )
     }
   }
+
+  private def getUser(isAdmin: Boolean): RouteTestResult =
+    Get("/user") ~> routeWithPermissions(usersRoute, isAdmin)
+
 }

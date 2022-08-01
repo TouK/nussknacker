@@ -13,9 +13,9 @@ import java.util.UUID
 class ConfigurationTest extends FunSuite with Matchers {
 
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
-  private def globalConfig = ConfigWithScalaVersion.config
+  private def globalConfig = ConfigWithScalaVersion.TestsConfig
 
-  private def modelData: ModelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig))
+  private def modelData: ModelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig))
 
   private lazy val modelDataConfig = modelData.processConfig
 

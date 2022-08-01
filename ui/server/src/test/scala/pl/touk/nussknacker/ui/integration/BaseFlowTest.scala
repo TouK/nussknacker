@@ -45,7 +45,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
 
   import io.circe.syntax._
 
-  override def testConfig: Config = ConfigWithScalaVersion.config
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

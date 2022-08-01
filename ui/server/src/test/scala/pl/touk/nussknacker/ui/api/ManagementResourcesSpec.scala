@@ -32,9 +32,11 @@ import java.time.LocalDateTime
 class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
+  import TestCategories._
 
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
+  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
   private val fixedTime = LocalDateTime.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
@@ -47,11 +49,11 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getSampleProcess ~> check {
+      getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
-          getSampleProcess ~> check {
+          getProcess(processName) ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
         }
@@ -60,7 +62,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("process during deploy can be deployed again") {
-    createDeployedProcess(processName, testCategoryName, isSubprocess = false)
+    createDeployedProcess(processName, TestCat)
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
@@ -70,7 +72,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledProcess(processName, testCategoryName, isSubprocess = false)
+    createDeployedCanceledProcess(processName, TestCat)
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
@@ -92,7 +94,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't deploy fragment") {
-    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val id = createProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -102,7 +104,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't cancel fragment") {
-    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val id = createProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -146,7 +148,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    createProcess(processName, testCategoryName, false)
+    createProcess(processName, TestCat, false)
 
     deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
 
@@ -161,10 +163,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getSampleProcess ~> check {
+      getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
-          getSampleProcess ~> check {
+          getProcess(processName) ~> check {
             decodeDetails.lastAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
@@ -177,16 +179,17 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getProcesses ~> check {
-        val process = findJsonProcess(responseAs[String])
-        process.value.lastActionVersionId shouldBe Some(2L)
-        process.value.isDeployed shouldBe true
+
+      withProcesses(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.name == SampleProcess.process.id).head
+        process.lastActionVersionId shouldBe Some(2L)
+        process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          getProcesses ~> check {
-            val reprocess = findJsonProcess(responseAs[String])
-            reprocess.value.lastActionVersionId shouldBe Some(2L)
-            reprocess.value.isCanceled shouldBe true
+          withProcesses(ProcessesQuery.empty) { processes =>
+            val process = processes.find(_.name == SampleProcess.process.id).head
+            process.lastActionVersionId shouldBe Some(2L)
+            process.isCanceled shouldBe true
           }
         }
       }

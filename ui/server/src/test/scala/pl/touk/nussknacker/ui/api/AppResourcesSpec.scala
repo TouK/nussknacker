@@ -66,8 +66,8 @@ class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers wi
     val statusCheck = TestProbe()
     val resources = prepareBasicAppResources(statusCheck)
 
-    createDeployedCanceledProcess(ProcessName("id1"),  isSubprocess = false)
-    createDeployedProcess(ProcessName("id2"),  isSubprocess = false)
+    createDeployedCanceledProcess(ProcessName("id1"))
+    createDeployedProcess(ProcessName("id2"))
 
     val result = Get("/app/healthCheck/process/deployment") ~> withPermissions(resources, testPermissionRead)
 

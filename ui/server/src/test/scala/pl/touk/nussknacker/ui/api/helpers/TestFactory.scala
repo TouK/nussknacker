@@ -33,13 +33,10 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
 
-  val testCategoryName: String = TestPermissions.testCategoryName
-  val secondTestCategoryName: String = TestPermissions.secondTestCategoryName
-
   //FIIXME: remove testCategory dummy implementation
   val testCategory:CategorizedPermission= Map(
-    testCategoryName -> Permission.ALL_PERMISSIONS,
-    secondTestCategoryName -> Permission.ALL_PERMISSIONS
+    TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
+    TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
   )
 
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
@@ -111,8 +108,8 @@ object TestFactory extends TestPermissions{
     route.securedRoute(adminUser())
 
   def createNewProcessPreparer(): NewProcessPreparer = new NewProcessPreparer(
-    mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
-    mapProcessingTypeDataProvider("streaming" -> Map.empty)
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.streamingTypeSpecificInitialData),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map.empty)
   )
 
   def withPermissions(route: RouteWithUser, permissions: TestPermissions.CategorizedPermission): Route =
@@ -140,7 +137,7 @@ object TestFactory extends TestPermissions{
 
   object StubSubprocessRepository {
     def apply(subprocesses: Set[CanonicalProcess]): StubSubprocessRepository =
-      new StubSubprocessRepository(subprocesses.map(c => SubprocessDetails(c, testCategoryName)))
+      new StubSubprocessRepository(subprocesses.map(c => SubprocessDetails(c, TestCategories.TestCat)))
   }
 
   class StubSubprocessRepository(subprocesses: Set[SubprocessDetails]) extends SubprocessRepository {

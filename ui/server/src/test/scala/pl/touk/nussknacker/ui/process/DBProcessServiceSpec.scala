@@ -34,13 +34,13 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
 
   //These users were created based on categoriesConfig at ui.conf
   private val adminUser = TestFactory.adminUser()
-  private val categoriesUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = catCategories)
-  private val testUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = testCategories)
-  private val testReqRespUser = TestFactory.userWithCategoriesReadPermission(username = "testReqRespUser", categories = testCategories ++ reqResCategories)
+  private val categoriesUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = CategoryCategories)
+  private val testUser = TestFactory.userWithCategoriesReadPermission(username = "categoriesUser", categories = TestCategories)
+  private val testReqRespUser = TestFactory.userWithCategoriesReadPermission(username = "testReqRespUser", categories = TestCategories ++ ReqResCategories)
 
   private val category1Process = createBasicProcess("category1Process", category = Category1, lastAction = Some(Deploy))
   private val category2ArchivedProcess = createBasicProcess("category2ArchivedProcess", isArchived = true, category = Category2)
-  private val testSubProcess = createSubProcess("testSubProcess", category = TESTCAT)
+  private val testSubProcess = createSubProcess("testSubProcess", category = TestCat)
   private val reqRespArchivedSubProcess = createBasicProcess("reqRespArchivedSubProcess", isArchived = true, category = ReqRes)
 
   private val processes: List[ProcessWithJson] = List(
@@ -49,14 +49,14 @@ class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutur
 
   private val subprocessCategory1 = createSubProcess("subprocessCategory1", category = Category1)
   private val subprocessCategory2 = createSubProcess("subprocessCategory2", category = Category2)
-  private val subprocessTest = createSubProcess("subprocessTest", category = TESTCAT)
+  private val subprocessTest = createSubProcess("subprocessTest", category = TestCat)
   private val subprocessReqResp = createSubProcess("subprocessReqResp", category = ReqRes)
 
   private val subprocesses = Set(
     subprocessCategory1, subprocessCategory2, subprocessTest, subprocessReqResp
   )
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   it should "return user processes" in {
     val dBProcessService = createDbProcessService(processes)
