@@ -107,4 +107,8 @@ object GenericHelperFunction {
         new GenericFunctionError("Expected one argument").invalidNel
     }
   }
+
+  def generic(a: java.util.List[Boolean], x: Int*): Int = {
+    a.asScala.count(x => x) + x.map(_ + 1).sum
+  }
 }

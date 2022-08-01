@@ -21,7 +21,44 @@ object TypeInfos {
 
   implicit val methodInfoEncoder: Encoder[MethodInfo] = Encoder[SerializableMethodInfo].contramap(_.serializable)
 
-  object MethodInfo {
+  sealed trait MethodInfo {
+    def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
+
+    def staticParameters: List[Parameter]
+
+    def staticResult: TypingResult
+
+    def description: Option[String]
+
+    def varArgs: Boolean
+
+    def serializable: SerializableMethodInfo
+  }
+
+  sealed trait NoVarArgMethodInfo extends MethodInfo {
+    override def varArgs: Boolean = false
+
+    override def serializable: SerializableMethodInfo =
+      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
+  }
+
+  sealed trait VarArgMethodInfo extends MethodInfo {
+    def staticNoVarArgParameters: List[Parameter]
+
+    def staticVarArgParameter: Parameter
+
+    override def staticParameters: List[Parameter] = {
+      val Parameter(varArgName, varArg) = staticVarArgParameter
+      staticNoVarArgParameters :+ Parameter(varArgName, Typed.genericTypeClass(classOf[Array[Object]], List(varArg)))
+    }
+
+    override def varArgs: Boolean = true
+
+    override def serializable: SerializableMethodInfo =
+      SerializableMethodInfo(staticNoVarArgParameters :+ staticVarArgParameter, staticResult, description, varArgs)
+  }
+
+  object StaticMethodInfo {
     private val arrayClass = classOf[Array[Object]]
 
     def apply(parameters: List[Parameter],
@@ -38,38 +75,23 @@ object TypeInfos {
       case (true, Nil) =>
         throw new AssertionError("Method with varArgs must have at least one parameter")
       case (false, _) =>
-        NoVarArgsMethodInfo(parameters, refClazz, name, description)
+        StaticNoVarArgMethodInfo(parameters, refClazz, name, description)
     }
   }
 
-  sealed trait MethodInfo {
-    def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
-
-    def staticParameters: List[Parameter]
-
-    def staticResult: TypingResult
-
-    def description: Option[String]
-
-    def varArgs: Boolean
-
-    def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
-  }
-
   sealed trait StaticMethodInfo extends MethodInfo {
-    protected def checkNoVarArguments(arguments: List[TypingResult], parameters: List[Parameter]): Boolean =
+    protected def checkArgumentsHelper(arguments: List[TypingResult], parameters: List[Parameter]): Boolean =
       arguments.length == parameters.length &&
         arguments.zip(parameters).forall{ case(arg, param) => arg.canBeSubclassOf(param.refClazz)}
   }
 
-  case class NoVarArgsMethodInfo(staticParameters: List[Parameter],
-                                 staticResult: TypingResult,
-                                 name: String,
-                                 description: Option[String])
-    extends StaticMethodInfo {
+  case class StaticNoVarArgMethodInfo(staticParameters: List[Parameter],
+                                      staticResult: TypingResult,
+                                      name: String,
+                                      description: Option[String])
+    extends StaticMethodInfo with NoVarArgMethodInfo {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (checkNoVarArguments(arguments, staticParameters))
+      if (checkArgumentsHelper(arguments, staticParameters))
         staticResult.validNel
       else
         new ArgumentTypeError(
@@ -81,21 +103,21 @@ object TypeInfos {
     override def varArgs: Boolean = false
   }
 
-  case class VarArgsMethodInfo(noVarParameters: List[Parameter],
-                               varParameter: Parameter,
-                               staticResult: TypingResult,
-                               name: String,
-                               description: Option[String])
-    extends StaticMethodInfo {
+  case class StaticVarArgMethodInfo(staticNoVarArgParameters: List[Parameter],
+                                     staticVarArgParameter: Parameter,
+                                     staticResult: TypingResult,
+                                     name: String,
+                                     description: Option[String])
+    extends StaticMethodInfo with VarArgMethodInfo {
     private def checkArgumentsLength(arguments: List[TypingResult]): Boolean =
-      arguments.length >= noVarParameters.length
+      arguments.length >= staticNoVarArgParameters.length
 
     private def checkVarArguments(varArguments: List[TypingResult]): Boolean =
-      varArguments.forall(_.canBeSubclassOf(varParameter.refClazz))
+      varArguments.forall(_.canBeSubclassOf(staticVarArgParameter.refClazz))
 
     private def checkArguments(arguments: List[TypingResult]): Boolean = {
-      val (noVarArguments, varArguments) = arguments.splitAt(noVarParameters.length)
-      checkNoVarArguments(noVarArguments, noVarParameters) && checkVarArguments(varArguments)
+      val (noVarArguments, varArguments) = arguments.splitAt(staticNoVarArgParameters.length)
+      checkArgumentsHelper(noVarArguments, staticNoVarArgParameters) && checkVarArguments(varArguments)
     }
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
@@ -107,25 +129,34 @@ object TypeInfos {
           List(new Signature(name, noVarParameters.map(_.refClazz), Some(varParameter.refClazz)))
         ).invalidNel
     }
+  }
 
-    override def staticParameters: List[Parameter] = {
-      val Parameter(varArgName, varArg) = varParameter
-      noVarParameters :+ Parameter(varArgName, Typed.genericTypeClass(classOf[Array[Object]], List(varArg)))
-    }
-
-    override def varArgs: Boolean = true
-
+  object FunctionalMethodInfo {
+    def apply(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+              parameters: List[Parameter],
+              refClazz: TypingResult,
+              name: String,
+              description: Option[String],
+              varArgs: Boolean): FunctionalMethodInfo =
+      FunctionalMethodInfo(typeFunction, StaticMethodInfo(parameters, refClazz, name, description, varArgs))
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
-                                  staticParameters: List[Parameter],
-                                  staticResult: TypingResult,
-                                  description: Option[String]) extends MethodInfo {
+                                  staticInfo: StaticMethodInfo) extends MethodInfo {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       typeFunction(arguments)
 
-    override def varArgs: Boolean = false
+    override def staticParameters: List[Parameter] = staticInfo.staticParameters
+
+    override def staticResult: TypingResult = staticInfo.staticResult
+
+    override def description: Option[String] = staticInfo.description
+
+    override def varArgs: Boolean = staticInfo.varArgs
+
+    override def serializable: SerializableMethodInfo = staticInfo.serializable
   }
+
 
   case class ClazzDefinition(clazzName: TypedClass,
                              methods: Map[String, List[MethodInfo]],

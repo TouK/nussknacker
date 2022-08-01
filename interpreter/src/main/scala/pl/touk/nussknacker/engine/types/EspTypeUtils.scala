@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, NoVarArgMethodInfo, Parameter, StaticMethodInfo, StaticNoVarArgMethodInfo}
 
 object EspTypeUtils {
 
@@ -152,20 +152,24 @@ object EspTypeUtils {
 
     collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
       x => typeFunctionInstance.computeResultType(x),
-      parameterInfo,
-      resultInfo,
-      extractNussknackerDocs(method)
+      StaticMethodInfo(
+        extractParameters(method),
+        extractMethodReturnType(method),
+        methodName,
+        extractNussknackerDocs(method),
+        extractMethodIsVarArg(method)
+      )
     ))
   }
 
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
-    collectMethodNames(method).map(methodName => methodName -> MethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
       extractParameters(method),
       extractMethodReturnType(method),
       methodName,
       extractNussknackerDocs(method),
-      method.isVarArgs
+      extractMethodIsVarArg(method)
     ))
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
@@ -175,7 +179,7 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
+      field.getName -> StaticMethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
     }.toMap
   }
 
@@ -247,6 +251,10 @@ object EspTypeUtils {
 
   private def extractGenericParams(paramsType: ParameterizedType, paramsRawType: Class[_]): TypingResult = {
     Typed.genericTypeClass(paramsRawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
+  }
+
+  private def extractMethodIsVarArg(method: Method): Boolean = {
+    method.isVarArgs || extractParameters(method).lastOption.exists(_.refClazz == Typed.typedClass(classOf[Seq[_]]))
   }
 
   def companionObject[T](klazz: Class[T]): T = {

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, NoVarArgsMethodInfo, FunctionalMethodInfo, StaticMethodInfo, VarArgsMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, StaticNoVarArgMethodInfo, FunctionalMethodInfo, StaticMethodInfo, StaticVarArgMethodInfo}
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
@@ -25,9 +25,9 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   // We remove names and simplify advanced MethodInfo types because they are
   // not serialized.
   protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
-    case x: NoVarArgsMethodInfo => x.copy(name = "")
-    case x: VarArgsMethodInfo => x.copy(name = "")
-    case x: FunctionalMethodInfo => MethodInfo(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
+    case x: StaticNoVarArgMethodInfo => x.copy(name = "")
+    case x: StaticVarArgMethodInfo => x.copy(name = "")
+    case x: FunctionalMethodInfo => StaticMethodInfo(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
   }
 
   // We need to sort methods with identical names to make checks ignore order.
@@ -152,11 +152,11 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
       // Name is not serialized so we leave it empty.
       case SerializableMethodInfo(parameters :+ Parameter(name, TypedClass(`objectClass`, types)), refClazz, description, true) =>
-        VarArgsMethodInfo(parameters, Parameter(name, Typed(types.toSet)), refClazz, "", description)
+        StaticVarArgMethodInfo(parameters, Parameter(name, Typed(types.toSet)), refClazz, "", description)
       case SerializableMethodInfo(parameters, _, _, true) =>
         throw new AssertionError(parameters.toString)
       case SerializableMethodInfo(parameters, refClazz, description, false) =>
-        NoVarArgsMethodInfo(parameters, refClazz, "", description)
+        StaticNoVarArgMethodInfo(parameters, refClazz, "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
