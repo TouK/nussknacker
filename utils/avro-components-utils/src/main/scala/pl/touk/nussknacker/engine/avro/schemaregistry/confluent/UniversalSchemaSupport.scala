@@ -22,7 +22,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.js
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.json.serde.CirceJsonSerializer
 import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -48,11 +47,10 @@ object UniversalSchemaSupport {
     val serializer = schemaOpt.map(_.schema) match {
       case Some(schema: AvroSchema) => ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, Some(schema), isKey = isKey)
       case Some(schema: AvroSchemaWithJsonPayload) => new JsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, Some(schema.avroSchema), isKey = isKey)
-      case Some(schema: JsonSchema) =>
-        lazy val circeSerializer = new CirceJsonSerializer(schema.rawSchema())
+      case Some(_: JsonSchema) =>
         new Serializer[T] {
           override def serialize(topic: String, data: T): Array[Byte] = data match {
-            case j: Json => circeSerializer.serialize(j)
+            case j: Json => j.noSpaces.getBytes()
             case _ => throw new SerializationException(s"Expecting json but got: $data")
           }
         }
