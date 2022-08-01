@@ -7,13 +7,14 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.io.DecoderFactory
+import org.apache.kafka.common.errors.SerializationException
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, BestEffortJsonSchemaEncoder, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader, UniversalMessageFormatter, UniversalMessageReader}
@@ -21,7 +22,6 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.js
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.json.serde.CirceJsonSerializer
 import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -47,33 +47,28 @@ object UniversalSchemaSupport {
     val serializer = schemaOpt.map(_.schema) match {
       case Some(schema: AvroSchema) => ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, Some(schema), isKey = isKey)
       case Some(schema: AvroSchemaWithJsonPayload) => new JsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, Some(schema.avroSchema), isKey = isKey)
-      case Some(schema: JsonSchema) =>
-        val circeSerializer = new CirceJsonSerializer(schema.rawSchema())
+      case Some(_: JsonSchema) =>
         new Serializer[T] {
-          override def serialize(topic: String, data: T): Array[Byte] = circeSerializer.serialize(data.asInstanceOf[Json])
+          override def serialize(topic: String, data: T): Array[Byte] = data match {
+            case j: Json => j.noSpaces.getBytes()
+            case _ => throw new SerializationException(s"Expecting json but got: $data")
+          }
         }
-      case _ => throw new IllegalArgumentException("SchemaData should be defined for universal serializer")
+      case Some(schema) => throw new UnsupportedSchemaType(schema)
+      case None => throw new IllegalArgumentException("SchemaData should be defined for universal serializer")
     }
     serializer.asInstanceOf[Serializer[T]]
   }
 
   def createMessageFormatter(schemaRegistryClient: SchemaRegistryClient): UniversalMessageFormatter = (obj: Any, schema: ParsedSchema) => schema match {
     case _: AvroSchema => new ConfluentAvroMessageFormatter(schemaRegistryClient).asJson(obj)
-    // todo is this correct ?
-    case _: AvroSchemaWithJsonPayload => BestEffortJsonEncoder.defaultForTests.encode(obj)
-    case _: JsonSchema => BestEffortJsonEncoder.defaultForTests.encode(obj) //todo
+    case _: JsonSchema | _: AvroSchemaWithJsonPayload => BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(obj)
     case _ => throw new UnsupportedSchemaType(schema)
   }
 
   def createMessageReader(schemaRegistryClient: SchemaRegistryClient): UniversalMessageReader = (jsonObj: Json, schema: ParsedSchema, subject: String) => schema match {
     case schema: AvroSchema => new ConfluentAvroMessageReader(schemaRegistryClient).readJson(jsonObj, schema.rawSchema(), subject)
-    // todo is this correct ?, remove duplication
-    case schema: AvroSchemaWithJsonPayload => jsonObj match {
-      // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
-      case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
-      case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
-    }
-    case _: JsonSchema => jsonObj match {
+    case _: JsonSchema | _: AvroSchemaWithJsonPayload => jsonObj match {
       // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
       case j if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
       case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
@@ -98,7 +93,8 @@ object UniversalSchemaSupport {
   def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = schema match {
     case schema: AvroSchema => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
     case schema: AvroSchemaWithJsonPayload => (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.rawSchema())
-    case _: JsonSchema => (value: Any) => BestEffortJsonEncoder.defaultForTests.encode(value) //todo
+    case schema: JsonSchema => (value: Any) => new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+      .encodeOrError(value, schema.rawSchema())
     case _ => throw new UnsupportedSchemaType(schema)
   }
 }
