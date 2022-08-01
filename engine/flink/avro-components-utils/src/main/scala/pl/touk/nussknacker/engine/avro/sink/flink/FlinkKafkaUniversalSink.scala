@@ -9,7 +9,7 @@ import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport._
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
@@ -55,7 +55,8 @@ class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler.handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
-          UniversalSchemaSupport.sinkValueEncoder(schema.getParsedSchema, validationMode)(data)
+          val encode = schema.getParsedSchema.sinkValueEncoderFactory(validationMode)
+          encode(data)
         }.orNull
       }
     }

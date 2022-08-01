@@ -5,9 +5,9 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter}
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.encode.{BestEffortAvroEncoder, ValidationMode}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkImplFactory, UniversalKafkaSinkImplFactory}
+import pl.touk.nussknacker.engine.avro.encode.ValidationMode
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport._
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
@@ -17,7 +17,7 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
   override def createSink(preparedTopic: PreparedKafkaTopic, keyParam: LazyParameter[AnyRef], valueParam: LazyParameter[AnyRef],
                           kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], clientId: String,
                           schema: RuntimeSchemaData[ParsedSchema], validationMode: ValidationMode): Sink = {
-    lazy val encode = UniversalSchemaSupport.sinkValueEncoder(schema.schema, validationMode)
+    lazy val encode = schema.schema.sinkValueEncoderFactory(validationMode)
 
     new LazyParamSink[ProducerRecord[Array[Byte], Array[Byte]]] {
       override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[ProducerRecord[Array[Byte], Array[Byte]]] = {
