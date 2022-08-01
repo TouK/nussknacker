@@ -128,6 +128,26 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
   }
 
+  test("Should skip notifications and deployment on validation errors") {
+    val id: ProcessId = prepareProcess(processName).futureValue
+    val processIdName = ProcessIdWithName(id, processName)
+
+    def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction).map(_.action) shouldBe expectedAction
+      processService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
+    }
+
+    val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
+    deploymentManager.withProcessState(None) {
+
+      checkStatusAction(statusFromDeploymentManager, None)
+      deploymentManager.withWaitForDeployFinish {
+        (managementActor ? Deploy(processIdName, user, None, None)).futureValue
+        checkStatusAction(SimpleStateStatus.DuringDeploy, None)
+      }
+    }
+    checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
+  }
 
   test("Should return properly state when state is canceled and process is canceled") {
     val id =  prepareCanceledProcess(processName).futureValue
