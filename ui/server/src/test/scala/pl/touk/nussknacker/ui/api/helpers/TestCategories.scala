@@ -4,13 +4,13 @@ package pl.touk.nussknacker.ui.api.helpers
 object TestCategories {
   val Category1 = "Category1"
   val Category2 = "Category2"
-  val TESTCAT = "TESTCAT"
-  val TESTCAT2 = "TESTCAT2"
+  val TestCat = "TESTCAT"
+  val TestCat2 = "TESTCAT2"
   val ReqRes = "ReqRes"
 
-  val catCategories = List(Category1, Category2)
-  val testCategories = List(TESTCAT, TESTCAT2)
-  val reqResCategories = List(ReqRes)
+  val CategoryCategories: List[String] = List(Category1, Category2)
+  val TestCategories: List[String] = List(TestCat, TestCat2)
+  val ReqResCategories: List[String] = List(ReqRes)
 
-  val allCategories: List[String] = catCategories ++ testCategories ++ reqResCategories
+  val AllCategories: List[String] = CategoryCategories ++ TestCategories ++ ReqResCategories
 }

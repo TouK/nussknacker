@@ -36,7 +36,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
 
-  override def testConfig: Config = ConfigWithScalaVersion.config
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private val DictId = "dict"
   private val VariableNodeId = "variableCheck"

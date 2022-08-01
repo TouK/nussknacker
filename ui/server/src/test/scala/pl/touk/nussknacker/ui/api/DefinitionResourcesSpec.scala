@@ -9,6 +9,7 @@ import org.scalatest._
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
@@ -16,6 +17,13 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
   with Matchers with PatientScalaFutures with EitherValuesDetailedMessage with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
+  private val definitionResources = new DefinitionResources(
+    modelDataProvider = testModelDataProvider,
+    processingTypeDataProvider = testProcessingTypeDataProvider,
+    subprocessRepository,
+    processCategoryService
+  )
 
   it("should handle missing scenario type") {
     getProcessDefinitionData("foo") ~> check {
@@ -415,4 +423,13 @@ class DefinitionResourcesSpec extends FunSpec with ScalatestRouteTest with FailF
       .downField("validators")
       .focus.get
   }
+
+  private def getProcessDefinitionData(processingType: String): RouteTestResult = {
+    Get(s"/processDefinitionData/$processingType?isSubprocess=false") ~> withPermissions(definitionResources, testPermissionRead)
+  }
+
+  private def getProcessDefinitionServices: RouteTestResult = {
+    Get("/processDefinitionData/services") ~> withPermissions(definitionResources, testPermissionRead)
+  }
+
 }

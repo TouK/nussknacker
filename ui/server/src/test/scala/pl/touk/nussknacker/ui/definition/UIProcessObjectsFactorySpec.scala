@@ -64,7 +64,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
   private val mockDeploymentManager = new MockDeploymentManager
 
   test("should read editor from annotations") {
-    val model: ModelData = LocalModelData(ConfigWithScalaVersion.streamingProcessTypeConfig.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
+    val model: ModelData = LocalModelData(ConfigWithScalaVersion.StreamingProcessTypeConfig.getConfig("modelConfig"), new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map("enricher" -> WithCategories(TestService))
     })
@@ -75,7 +75,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
       TestFactory.user("userId"),
       Set(),
       false,
-      new ConfigProcessCategoryService(ConfigWithScalaVersion.config),
+      new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
       TestProcessingTypes.Streaming
     )
 
@@ -91,7 +91,7 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
   test("should hide node in hidden category") {
 
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
       override def services(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[Service]] =
         Map(
@@ -102,13 +102,13 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
 
   test("should be able to assign generic node to some category") {
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator() {
       override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
         Map(
@@ -118,21 +118,21 @@ class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
   }
 
   test("should override fragment's docsUrl from config with value from 'properties'") {
-    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig)
+    val typeConfig = ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)
     val model : ModelData = LocalModelData(typeConfig.modelConfig, new EmptyProcessConfigCreator())
     val fragment = ProcessTestData.sampleSubprocessOneOut
     val docsUrl = "https://nussknacker.io/documentation/"
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"),
-        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.config), TestProcessingTypes.Streaming)
+        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }

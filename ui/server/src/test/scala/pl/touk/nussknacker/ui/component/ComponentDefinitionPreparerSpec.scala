@@ -19,7 +19,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
     val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")), ComponentGroupName("sinks") -> Some(ComponentGroupName("BAR"))))
