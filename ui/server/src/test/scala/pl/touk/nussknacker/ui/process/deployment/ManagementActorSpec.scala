@@ -4,18 +4,18 @@ import akka.actor.ActorSystem
 import akka.pattern.ask
 import akka.util.Timeout
 import org.scalatest._
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers._
-import pl.touk.nussknacker.ui.listener.ProcessChangeListener
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionSuccess
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, NewProcessPreparer}
@@ -28,10 +28,9 @@ import scala.concurrent.{ExecutionContextExecutor, Future}
 
 class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with WithHsqlDbTesting {
 
-  import TestProcessUtil._
+  import TestFactory._
   import TestProcessingTypes._
   import VersionId._
-  import TestFactory._
   import TestCategories._
 
   private implicit val system: ActorSystem = ActorSystem()
@@ -48,7 +47,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val activityRepository = newProcessActivityRepository(db)
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
-  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, ProcessChangeListener.noop)
+  private val listener = new TestProcessChangeListener
+  private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver, listener)
 
   val newProcessPreparer = new NewProcessPreparer(
     mapProcessingTypeDataProvider("streaming" -> ProcessTestData.streamingTypeSpecificInitialData),
@@ -68,6 +68,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     processCategoryService, processResolving, repositoryManager, fetchingProcessRepository, actionRepository,
     writeProcessRepository
   )
+
+
 
   test("should return state correctly when state is deployed") {
     val id: ProcessId =  prepareProcess(processName).futureValue
@@ -123,30 +125,25 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
       deploymentManager.withWaitForDeployFinish {
         (managementActor ? Deploy(processIdName, user, None, None)).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
+        listener.events shouldBe 'empty
       }
     }
     checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
+    listener.events.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
   }
 
   test("Should skip notifications and deployment on validation errors") {
-    val id: ProcessId = prepareProcess(processName).futureValue
+    val id: ProcessId = prepareProcess(processName, Some(MockDeploymentManager.maxParallelism + 1)).futureValue
     val processIdName = ProcessIdWithName(id, processName)
 
-    def checkStatusAction(expectedStatus: StateStatus, expectedAction: Option[ProcessActionType]) = {
-      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction).map(_.action) shouldBe expectedAction
-      processService.getProcessState(processIdName).futureValue.status shouldBe expectedStatus
-    }
-
-    val statusFromDeploymentManager = SimpleStateStatus.NotDeployed
     deploymentManager.withProcessState(None) {
-
-      checkStatusAction(statusFromDeploymentManager, None)
-      deploymentManager.withWaitForDeployFinish {
-        (managementActor ? Deploy(processIdName, user, None, None)).futureValue
-        checkStatusAction(SimpleStateStatus.DuringDeploy, None)
-      }
+      val result = (managementActor ? Deploy(processIdName, user, None, None)).failed.futureValue
+      result.getMessage shouldBe "Parallelism too large"
+      deploymentManager.deploys shouldBe 'empty
+      fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction) shouldBe None
+      processService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+      listener.events shouldBe 'empty
     }
-    checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
   }
 
   test("Should return properly state when state is canceled and process is canceled") {
@@ -420,6 +417,12 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     }
   }
 
+  override protected def beforeEach(): Unit = {
+    super.beforeEach()
+    listener.clear()
+    deploymentManager.deploys.clear()
+  }
+
   private def isFollowingDeploy(state: ProcessState): Boolean = state.isDeployed
 
   private def prepareDeployedProcess(processName: ProcessName): Future[ProcessId] =
@@ -434,8 +437,8 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
       _ <- actionRepository.markProcessAsCancelled(id, initialVersionId, Some(DeploymentComment.unsafe("Canceled")))
     } yield id
 
-  private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
-    val canonicalProcess = createEmptyStreamingGraph(processName.value)
+  private def prepareProcess(processName: ProcessName, parallelism: Option[Int] = None): Future[ProcessId] = {
+    val canonicalProcess = CanonicalProcess(MetaData(processName.value, StreamMetaData(parallelism)), Nil)
     val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false)
 
     for {
