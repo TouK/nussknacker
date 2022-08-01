@@ -35,13 +35,11 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite 
   }
 
   test("should not validate not existing topic when validation disabled") {
-    val v = new CachedTopicsExistenceValidator(kafkaConfig.copy(
-      kafkaAddress = "broken address",
-      topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)))
+    val v = new CachedTopicsExistenceValidator(kafkaConfig.copy(kafkaAddress = "broken address", topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)))
     v.validateTopic("not.existing") shouldBe 'valid
   }
 
-  test("should fetch topics every time when not valid using cache"){
+  test("should fetch topics every time when not valid using cache") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
     v.validateTopic("test.topic.2") shouldBe 'invalid
 
@@ -55,6 +53,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends FunSuite 
 
 class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest extends FunSuite with ForEachTestContainer with Matchers {
   override val container: KafkaContainer = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "TRUE"))
+
   private def kafkaConfig = KafkaConfig(container.bootstrapServers, None, None, None, None, TopicsExistenceValidationConfigForTest.config)
 
   test("should validate not existing topic") {

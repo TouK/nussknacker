@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.{FlinkProcessStateDefinitionManager, FlinkStateStatus}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, newActionProcessRepository, newDBRepositoryManager, newFetchingProcessRepository, newProcessActivityRepository, newWriteProcessRepository, processResolving, testCategoryName}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.listener.ProcessChangeListener
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
@@ -31,6 +31,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   import TestProcessUtil._
   import TestProcessingTypes._
   import VersionId._
+  import TestFactory._
 
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
@@ -64,9 +65,9 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
     "management"
   )
 
-  private val processService = new DBProcessService(
-    managementActor, time.Duration.ofMinutes(1), newProcessPreparer, processCategoryService, processResolving,
-    repositoryManager, fetchingProcessRepository, actionRepository, writeProcessRepository
+  private val processService = new DBProcessService(managementActor, time.Duration.ofMinutes(1), newProcessPreparer,
+    processCategoryService, processResolving, repositoryManager, fetchingProcessRepository, actionRepository,
+    writeProcessRepository
   )
 
   test("should return state correctly when state is deployed") {

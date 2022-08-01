@@ -77,7 +77,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
       """.stripMargin)
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
-      entityAs[JsonThrowable].message shouldEqual Some("ExpressionParseError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',,Some(param),not valid spell expression)")
+      entityAs[JsonThrowable].message shouldEqual Some("ExpressionParserCompilationError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',,Some(param),not valid spell expression)")
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
     }
   }

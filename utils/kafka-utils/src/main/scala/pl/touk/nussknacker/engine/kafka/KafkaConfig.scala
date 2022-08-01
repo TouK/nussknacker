@@ -7,7 +7,8 @@ import scala.concurrent.duration._
 
 case class SchemaRegistryClientKafkaConfig(
                                             kafkaProperties: Map[String, String],
-                                            cacheConfig: SchemaRegistryCacheConfig
+                                            cacheConfig: SchemaRegistryCacheConfig,
+                                            avroAsJsonSerialization: Option[Boolean]
                                           )
 
 case class KafkaConfig(kafkaAddress: String,
@@ -23,15 +24,16 @@ case class KafkaConfig(kafkaAddress: String,
                        // when complex key with its own schema is provided, this flag is false
                        // and all topics related to this config require both key and value schema definitions.
                        useStringForKey: Boolean = true,
-                       schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig()
+                       schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
+                       avroAsJsonSerialization: Option[Boolean] = None
                       ) {
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig)
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroAsJsonSerialization)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
   def defaultMaxOutOfOrdernessMillis: Option[Long]
-    = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
+  = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
@@ -61,8 +63,10 @@ object KafkaConfig {
 case class TopicsExistenceValidationConfig(enabled: Boolean, validatorConfig: CachedTopicsExistenceValidatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig)
 
 object TopicsExistenceValidationConfig {
+
   import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
   // scala 2.11 needs it
   implicit val valueReader: ValueReader[Option[TopicsExistenceValidationConfig]] = new ValueReader[Option[TopicsExistenceValidationConfig]] {
     override def read(config: Config, path: String): Option[TopicsExistenceValidationConfig] = OptionReader.optionValueReader[TopicsExistenceValidationConfig].read(config, path)

@@ -6,7 +6,7 @@ import io.circe.Decoder
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.scalatest._
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -66,7 +66,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = Some(typing.Unknown),
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
           validationPerformed = true)
       }
     }
@@ -85,7 +85,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
             data.id, Some("value"), "notvalidspelexpression"))),
           validationPerformed = true)
       }

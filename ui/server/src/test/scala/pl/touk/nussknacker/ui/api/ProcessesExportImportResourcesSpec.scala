@@ -104,25 +104,6 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
   }
 
-  test("fail to import process with different id") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
-      val response = responseAs[String]
-      val canonicalProcess = ProcessMarshaller.fromJson(response).toOption.get
-      val modified = canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(id = "SOMEVERYFAKEID"))
-
-      val multipartForm = FileUploadUtils.prepareMultiPart(modified.asJson.spaces2, "process")
-
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
-    }
-  }
-
   test("export pdf") {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     saveProcess(processToSave) {

@@ -83,7 +83,7 @@ object ProcessTestData {
     .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
       manyInputs = false, canBeEnding = true))
 
-  val validator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
+  val validator: ProcessValidator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
 
   val validation = new ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator),

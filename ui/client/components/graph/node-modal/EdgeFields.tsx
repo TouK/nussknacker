@@ -110,13 +110,9 @@ export function EdgeFields(props: Props): JSX.Element {
             <EdgeTypeSelect
               readOnly={readOnly || types.length < 2}
               edge={edge}
-              onChange={type => setEdge(({edgeType, ...edge}) => ({
+              onChange={type => setEdge(({edgeType: {condition, ...edgeType}, ...edge}) => ({
                 ...edge,
-                edgeType: {
-                  ...edgeType,
-                  type,
-                  condition: type === EdgeKind.switchNext ? edgeType.condition : null,
-                },
+                edgeType: type === EdgeKind.switchNext ? {...edgeType, type, condition} : {...edgeType, type},
               }))}
               options={types}
             />

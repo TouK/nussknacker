@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.util.functions
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.expression.{Expression, ExpressionParseError, TypedExpression}
+import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}

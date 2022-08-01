@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.MetaData
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
@@ -82,6 +83,9 @@ case class CanonicalProcess(metaData: MetaData,
     val NonEmptyList(head, tail) = nodes
     copy(nodes = head, additionalBranches = tail)
   }
+
+  def withProcessId(processName: ProcessName): CanonicalProcess =
+    copy(metaData = metaData.copy(id = processName.value))
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 

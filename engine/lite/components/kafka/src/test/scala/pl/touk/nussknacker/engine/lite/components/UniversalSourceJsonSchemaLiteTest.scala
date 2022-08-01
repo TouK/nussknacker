@@ -19,7 +19,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.io.ByteArrayOutputStream
 
-class LiteKafkaJsonSchemaFunctionalTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class UniversalSourceJsonSchemaLiteTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._

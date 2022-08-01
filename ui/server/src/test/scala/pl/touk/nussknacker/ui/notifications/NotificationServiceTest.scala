@@ -2,17 +2,18 @@ package pl.touk.nussknacker.ui.notifications
 
 import akka.util.Timeout
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
+import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.ListenerApiUser
-import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.OnDeployActionFailed
+import pl.touk.nussknacker.ui.listener.ProcessChangeEvent.{OnDeployActionFailed, OnDeployActionSuccess}
 import pl.touk.nussknacker.ui.process.deployment.DeploymentActionType.Deployment
 import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentStatusResponse}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, ZoneId}
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
+import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -34,21 +35,27 @@ class NotificationServiceTest extends FunSuite with Matchers with PatientScalaFu
     def notificationsFor(user: String, after: Option[Instant] = None) = notificationService.notifications(LoggedUser(user, ""), after).futureValue
 
 
-    val refreshAll = List(DataToRefresh.versions, DataToRefresh.activity)
+    val refreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity)
+    val refreshAfterFail = List(DataToRefresh.state)
+    val refreshDeployInProgress = Nil
 
     notificationsFor("deployingUser") shouldBe 'empty
     notificationsFor("randomUser").map(_.toRefresh) shouldBe List(Nil)
 
-    val userId = "user1"
-    listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(ctx, ListenerApiUser(LoggedUser(userId, "")))
-    notificationsFor(userId).map(_.toRefresh) shouldBe List(Nil, refreshAll)
-    notificationsFor("user2").map(_.toRefresh) shouldBe List(Nil)
+    val userIdForFail = "user1"
+    val userIdForSuccess = "user2"
 
-    notificationsFor(userId, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe  List(Nil, refreshAll)
-    notificationsFor(userId, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe List(Nil)
+    listener.handle(OnDeployActionSuccess(ProcessId(1), VersionId(1), None, LocalDateTime.now(), ProcessActionType.Cancel))(ctx, ListenerApiUser(LoggedUser(userIdForSuccess, "")))
+    notificationsFor(userIdForSuccess).map(_.toRefresh) shouldBe List(refreshDeployInProgress, refreshAfterSuccess)
+
+    listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(ctx, ListenerApiUser(LoggedUser(userIdForFail, "")))
+    notificationsFor(userIdForFail).map(_.toRefresh) shouldBe List(refreshDeployInProgress, refreshAfterFail)
+
+    notificationsFor(userIdForFail, Some(currentInstant.minusSeconds(20))).map(_.toRefresh) shouldBe  List(refreshDeployInProgress, refreshAfterFail)
+    notificationsFor(userIdForFail, Some(currentInstant.plusSeconds(20))).map(_.toRefresh) shouldBe List(refreshDeployInProgress)
 
     currentInstant = currentInstant.plus(1, ChronoUnit.HOURS)
-    notificationsFor(userId).map(_.toRefresh) shouldBe List(Nil)
+    notificationsFor(userIdForFail).map(_.toRefresh) shouldBe List(refreshDeployInProgress)
   }
 
   private def clockForInstant(currentInstant: () => Instant): Clock = {

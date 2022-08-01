@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components
+package pl.touk.nussknacker.engine.lite.components.utils
 
 import org.apache.avro.Schema.Type
 import org.apache.avro.data.TimeConversions.TimestampMicrosConversion
@@ -7,8 +7,8 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import AvroSchemaCreator._
 import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.lite.components.utils.AvroSchemaCreator.{Null, createArray, createEnum, createField, createFixed, createLogical, createMap, createRecord}
 
 import java.nio.charset.StandardCharsets
 import java.time.temporal.ChronoUnit
@@ -223,7 +223,7 @@ object AvroTestData {
   val sampleMillisInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MILLIS)
   val sampleMicrosInstant: Instant = Instant.now().truncatedTo(ChronoUnit.MICROS)
 
-  private def createSimpleRecord(schema: Schema*) = createRecord(createField(RecordFieldName, schema:_*))
+  private def createSimpleRecord(schema: Schema*) = createRecord(createField(RecordFieldName, schema: _*))
 
-  private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(createField(RecordFieldName, default, schema:_*))
+  private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(createField(RecordFieldName, default, schema: _*))
 }

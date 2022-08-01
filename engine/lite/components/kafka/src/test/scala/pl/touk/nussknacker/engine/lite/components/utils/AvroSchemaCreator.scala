@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.components
+package pl.touk.nussknacker.engine.lite.components.utils
 
 import org.apache.avro.Schema.{Field, Type}
 import org.apache.avro.{LogicalType, LogicalTypes, Schema}

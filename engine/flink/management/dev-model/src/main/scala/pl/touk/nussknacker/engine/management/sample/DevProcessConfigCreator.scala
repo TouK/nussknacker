@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactoryWithEditor, Uni
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -30,7 +31,7 @@ import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.management.sample.dict.{BusinessConfigDictionary, RGBDictionary, TestDictionary}
 import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecord, SampleProduct}
-import pl.touk.nussknacker.engine.management.sample.global.ConfigTypedGlobalVariable
+import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
 import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
@@ -187,7 +188,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       "DICT" -> categories(TestDictionary.instance),
       "RGB" -> all(RGBDictionary.instance),
       "BusinessConfig" -> features(BusinessConfigDictionary.instance),
-      "TypedConfig" -> all(ConfigTypedGlobalVariable)
+      "TypedConfig" -> all(ConfigTypedGlobalVariable),
+      "HelperFunction" -> all(GenericHelperFunction)
     )
 
     val additionalClasses = ExpressionConfig.defaultAdditionalClasses ++ List(

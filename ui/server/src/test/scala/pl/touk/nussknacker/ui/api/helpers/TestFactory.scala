@@ -50,6 +50,7 @@ object TestFactory extends TestPermissions{
   def scenarioResolver = new ScenarioResolver(sampleResolver)
 
   val possibleValues = List(FixedExpressionValue("a", "a"))
+
   val processValidation = new ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),

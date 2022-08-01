@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.DefaultCo
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaDeserializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.{ConfluentSchemaBasedSerdeProvider, ConfluentUtils}
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 
 import java.io.OutputStream
 
@@ -23,7 +23,7 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient)
+  private val confluentSchemaRegistryClient = new DefaultConfluentSchemaRegistryClient(MockSchemaRegistry.schemaRegistryMockClient, SchemaRegistryClientKafkaConfig(Map(), SchemaRegistryCacheConfig(), None))
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 

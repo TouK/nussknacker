@@ -21,6 +21,7 @@ object TestScenarioRunner {
 trait TestScenarioRunner
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
+  //todo add generate test data support
   def runWithData[T:ClassTag, R](scenario: EspProcess, data: List[T]): RunnerResult[R]
 }
 
