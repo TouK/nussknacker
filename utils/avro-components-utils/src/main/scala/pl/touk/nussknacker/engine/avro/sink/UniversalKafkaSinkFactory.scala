@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueP
  */
 object UniversalKafkaSinkFactory {
 
-  private val RawEditorParamName = "Raw editor"
+  val RawEditorParamName = "Raw editor"
 
   private val paramsDeterminedAfterSchema = List(
     Parameter.optional[CharSequence](SinkKeyParamName).copy(isLazyParameter = true, defaultValue = Some("null")),
