@@ -23,7 +23,7 @@ class LiteKafkaComponentProviderTest extends FunSuite {
     val provider = new LiteKafkaComponentProvider
     val config: Config = ConfigFactory.load()
       .withValue("kafka.kafkaAddress", fromAnyRef("not_used"))
-      .withValue("kafka.addLowLevelComponents", fromAnyRef(false))
+      .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 

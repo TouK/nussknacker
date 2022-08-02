@@ -72,8 +72,8 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     )
 
     //TODO: for now we add this feature flag inside kafka, when this provider can handle multiple kafka brokers move to provider config
-    val addLowLevelComponents = dependencies.config.getAs[Boolean]("kafka.addLowLevelComponents").getOrElse(true)
-    if (addLowLevelComponents) {
+    val lowLevelComponentsEnabled = dependencies.config.getAs[Boolean]("kafka.lowLevelComponentsEnabled").getOrElse(true)
+    if (lowLevelComponentsEnabled) {
       lowLevelKafkaComponents ::: universalKafkaComponents
     } else {
       universalKafkaComponents

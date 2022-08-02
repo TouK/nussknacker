@@ -8,7 +8,7 @@ class KafkaConfigSpec extends FunSuite with Matchers {
   test("parse config") {
     val typesafeConfig = ConfigFactory.parseString(
       """kafka {
-        |  addLowLevelComponents: false
+        |  lowLevelComponentsEnabled: false
         |  kafkaAddress: "localhost:9092"
         |  kafkaProperties {
         |    "auto.offset.reset": latest
