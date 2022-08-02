@@ -50,7 +50,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaFields = schema.getPropertySchemas.asScala
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
 
-    def validateRequiredFields = {
+    val requiredFieldsValidation = {
       val requiredFieldNames = if (validationMode == ValidationMode.strict) {
         schemaFields.keys
       } else {
@@ -61,19 +61,19 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
       }
     }
-    def validateSchemaFields = {
+    val schemaFieldsValidation = {
       val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
       fieldsToValidate.flatMap { case (key, value) =>
         val fieldPath = buildPath(key, path)
         schemaFields.get(key).map(f => validateTypingResult(value, f, fieldPath))
       }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
     }
-    def validateRedundantFields = {
+    val redundantFieldsVadlidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
       condNel(redundantFields.isEmpty || validationMode != ValidationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
-    validateRequiredFields combine validateSchemaFields combine validateRedundantFields
+    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsVadlidation
   }
 
   /**
