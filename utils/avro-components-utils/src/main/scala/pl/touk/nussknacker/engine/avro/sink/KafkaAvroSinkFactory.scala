@@ -7,12 +7,12 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
 import pl.touk.nussknacker.engine.avro.encode.{AvroSchemaOutputValidator, ValidationMode}
 import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.extractValidationMode
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 
 object KafkaAvroSinkFactory {
@@ -25,9 +25,6 @@ object KafkaAvroSinkFactory {
     Parameter.optional[CharSequence](KafkaAvroBaseComponentTransformer.SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[AnyRef](KafkaAvroBaseComponentTransformer.SinkValueParamName).copy(isLazyParameter = true)
   )
-
-  private[sink] def extractValidationMode(value: String): ValidationMode =
-    ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName)))
 }
 
 class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
