@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
-import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
+import io.swagger.v3.oas.models.media.{ArraySchema, JsonSchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
@@ -9,7 +9,8 @@ import java.time.LocalDateTime
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
-@JsonCodec sealed trait SwaggerTyped { self =>
+@JsonCodec sealed trait SwaggerTyped {
+  self =>
   def typingResult: SingleTypingResult =
     SwaggerTyped.typingResult(self)
 }
@@ -34,6 +35,8 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
 case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
 
+case class SwaggerJson(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
+
 object SwaggerTyped {
 
   @tailrec
@@ -41,10 +44,11 @@ object SwaggerTyped {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas)
     case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas)
+    case objectSchema: JsonSchema if Option(objectSchema.getTypes).exists(_.contains("object")) => SwaggerObject(objectSchema, swaggerRefSchemas)
     case _ => Option(schema.get$ref()) match {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
-      case None => (schema.getType, Option(schema.getFormat)) match {
+      case None => (Option(schema.getType).getOrElse(schema.getTypes.asScala.head), Option(schema.getFormat)) match {
         case ("boolean", _) => SwaggerBool
         case ("string", Some("date-time")) => SwaggerDateTime
         case ("string", _) => Option(schema.getEnum) match {
@@ -63,6 +67,9 @@ object SwaggerTyped {
 
   def typingResult(swaggerTyped: SwaggerTyped): SingleTypingResult = swaggerTyped match {
     case SwaggerObject(elementType, _) =>
+      import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+      TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
+    case SwaggerJson(elementType, required) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
@@ -94,6 +101,15 @@ object SwaggerArray {
 object SwaggerObject {
   def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerObject = {
     SwaggerObject(
+      elementType = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
+      required = Option(schema.getRequired).map(_.asScala.toSet).getOrElse(Set.empty)
+    )
+  }
+}
+
+object SwaggerJson {
+  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerJson = {
+    SwaggerJson(
       elementType = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
       required = Option(schema.getRequired).map(_.asScala.toSet).getOrElse(Set.empty)
     )

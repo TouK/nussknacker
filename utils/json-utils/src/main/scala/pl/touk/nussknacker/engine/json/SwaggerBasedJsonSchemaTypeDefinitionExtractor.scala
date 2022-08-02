@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.json
 
 import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.ParseOptions
 import org.everit.json.schema._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
@@ -12,33 +13,15 @@ import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractor {
 
-  def schemaWrapped(schema: Schema) = {
-    val schemaRef = "\"$ref\": \"#/components/schemas/FakeSchema\""
+  private val fakeSchema = """FakeSchema"""
+
+  private def schemaWrapped(schema: Schema) = {
     s"""{
-       |  "paths": {
-       |    "/fakepath": {
-       |      "get": {
-       |        "responses": {
-       |          "200": {
-       |            "content": {
-       |              "application/json": {
-       |                "schema": { $schemaRef
-       |                }
-       |              }
-       |            }
-       |          }
-       |        },
-       |        "operationId": "getFakeSchema"
-       |      }
-       |    }
-       |  },
-       |  "openapi": "3.0.2",
+       |  "openapi": "3.1.0",
        |  "components": {
        |    "schemas": {
-       |      "FakeSchema": ${schema.toString}
-       |      }
-       |    },
-       |    "responses": {}
+       |      "$fakeSchema": ${schema.toString}
+       |    }
        |  }
        |}""".stripMargin
   }
@@ -52,13 +35,10 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractor {
     val rawSwagger = schemaWrapped(schema)
     val swagger30 = new OpenAPIV3Parser().readContents(rawSwagger)
     val openapi = swagger30.getOpenAPI
-    val endpoint = openapi.getPaths.asScala.toList.head._2
-    val operation = endpoint.readOperationsMap().asScala.toList.head._2
-    val responseDefinition = operation.getResponses.get("200")
-    val openApiSchema = responseDefinition.getContent.get("application/json").getSchema
-    SwaggerTyped(openApiSchema, ParseSwaggerRefSchemas(openapi))
+    val refSchemas = ParseSwaggerRefSchemas(openapi)
+    val openApiSchema = openapi.getComponents.getSchemas.get(fakeSchema)
+    SwaggerTyped(openApiSchema, refSchemas)
   }
-
 }
 
 object SwaggerBasedJsonSchemaTypeDefinitionExtractor {

@@ -107,28 +107,5 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends FunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
-  test("should support swagger") {
-    val schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "profession": {
-        |      "type": "array",
-        |      "items": {
-        |        "type": "string",
-        |        "enum": ["one", "two", "three"]
-        |      }
-        |    },
-        |  }
-        |}""".stripMargin))
-
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
-
-    val results = List(
-      "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(Typed[String])),
-    )
-    result shouldBe TypedObjectTypingResult.apply(results)
-  }
 
 }
