@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
 import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroBaseComponentTransformer}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -101,55 +102,55 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       //FIXME: java.nio.ByteBuffer is not available from SpEL (sConfig(sampleString, stringSchema, bytesSchema, """T(java.nio.ByteBuffer).wrap(#input.getBytes("UTF-8"))"""), valid(ByteBuffer.wrap(sampleBytes))),
 
       //Primitive integer validations
-      (sConfig(sampleInteger, longSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Long' expected: 'Integer'")),
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), invalidTypes(s"path 'Data' actual: '${typedLong.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, longSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), invalidTypes(s"path 'Value' actual: '${typedLong.display}' expected: 'Integer'")),
 
-      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Integer'")),
-      (sConfig(sampleString, stringSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Integer'")),
-      (sConfig(sampleFloat, floatSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Float' expected: 'Integer'")),
-      (sConfig(sampleDouble, doubleSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Integer'")),
-      (sConfig(sampleBytes, bytesSchema, integerSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Integer'")),
+      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Integer'")),
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Integer'")),
+      (sConfig(sampleString, stringSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Integer'")),
+      (sConfig(sampleFloat, floatSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Float' expected: 'Integer'")),
+      (sConfig(sampleDouble, doubleSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Integer'")),
+      (sConfig(sampleBytes, bytesSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Integer'")),
 
-      (sConfig(sampleInteger, integerSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typedStr.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"path 'Data' actual: '${typedFloat.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"path 'Data' actual: 'Double' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"path 'Value' actual: '${typedFloat.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"path 'Value' actual: 'Double' expected: 'Integer'")),
 
       //Primitive long validations
       (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger.toLong)),
       (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger.toLong)),
 
-      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
-      (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Long'")),
-      (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Long'")),
-      (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Float' expected: 'Long'")),
-      (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Long'")),
-      (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Long'")),
+      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Long'")),
+      (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Long'")),
+      (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Long'")),
+      (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Float' expected: 'Long'")),
+      (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Long'")),
+      (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Long'")),
 
-      (sConfig(sampleLong, longSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typedStr.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"path 'Data' actual: '${typedFloat.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, double(1)), invalidTypes("path 'Data' actual: 'Double' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"path 'Value' actual: '${typedFloat.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, double(1)), invalidTypes("path 'Value' actual: 'Double' expected: 'Long'")),
 
       //Primitive float validations
-      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Double' expected: 'Float'")),
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), invalidTypes(s"path 'Data' actual: '${typedDouble.display}' expected: 'Float'")),
+      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Float'")),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), invalidTypes(s"path 'Value' actual: '${typedDouble.display}' expected: 'Float'")),
       (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger.toFloat)),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger.toFloat)),
       (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong.toFloat)),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong.toFloat)),
 
-      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Float'")),
-      (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Float'")),
-      (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Float'")),
+      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Float'")),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Float'")),
+      (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Float'")),
+      (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Float'")),
 
-      (sConfig(sampleFloat, floatSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Float'")),
-      (sConfig(sampleFloat, floatSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typedStr.display}' expected: 'Float'")),
-      (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Float'")),
 
       //Primitive Double validations
       (sConfig(sampleFloat, floatSchema, doubleSchema, Input), valid(sampleFloat.toDouble)),
@@ -159,19 +160,19 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong.toDouble)),
       (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong.toDouble)),
 
-      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'Boolean' expected: 'Double'")),
-      (sConfig(sampleString, stringSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'String' expected: 'Double'")),
-      (sConfig(sampleBytes, bytesSchema, doubleSchema, Input), invalidTypes("path 'Data' actual: 'ByteBuffer' expected: 'Double'")),
+      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Double'")),
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Double'")),
+      (sConfig(sampleString, stringSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Double'")),
+      (sConfig(sampleBytes, bytesSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Double'")),
 
-      (sConfig(sampleDouble, doubleSchema, null), invalidTypes("path 'Data' actual: 'Null' expected: 'Double'")),
-      (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"path 'Data' actual: '${typedStr.display}' expected: 'Double'")),
-      (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"path 'Data' actual: '${typedBool.display}' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Double'")),
 
       //Record with simple union field validations
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionOfStringIntegerSchema, sampleInteger, None), rValid(sampleInteger, recordUnionOfStringIntegerSchema)),
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionOfStringIntegerSchema, sampleString, None), rValid(sampleString, recordUnionOfStringIntegerSchema)),
-      (ScenarioConfig(sampleString, stringSchema, recordUnionOfStringIntegerSchema, Input.toSpELLiteral, None), invalidTypes("path 'Data' actual: 'String' expected: '{field: String | Integer}'")),
+      (ScenarioConfig(sampleString, stringSchema, recordUnionOfStringIntegerSchema, Input.toSpELLiteral, None), invalidTypes("path 'Value' actual: 'String' expected: '{field: String | Integer}'")),
       (rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionOfStringIntegerSchema, Input), invalidTypes("path 'field' actual: 'Boolean' expected: 'String | Integer'")),
 
       //#input as output with conversion - schema evolution..
@@ -408,15 +409,16 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
   private def createScenario(config: ScenarioConfig) =
     ScenarioBuilder
       .streamingLite("check avro validation")
-      .source(sourceName, KafkaAvroName,
+      .source(sourceName, KafkaUniversalName,
         TopicParamName -> s"'${config.sourceTopic}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       )
-      .emptySink(sinkName, KafkaSinkRawAvroName,
+      .emptySink(sinkName, KafkaUniversalName,
         TopicParamName -> s"'${config.sinkTopic}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
         SinkValueParamName -> s"${config.sinkDefinition}",
+        RawEditorParamName -> "true",
         SinkValidationModeParameterName -> s"'${config.validationModeName}'"
       )
 
