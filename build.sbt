@@ -101,6 +101,7 @@ def modelMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
+  case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -973,12 +974,12 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
     },
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
   ).dependsOn(
-    liteEngineKafkaComponentsApi % Provided,
-    liteComponentsApi % Provided,
-    componentsUtils % Provided,
-    avroComponentsUtils,
-    liteComponentsTestkit % Test
-  )
+  liteEngineKafkaComponentsApi % Provided,
+  liteComponentsApi % Provided,
+  componentsUtils % Provided,
+  avroComponentsUtils,
+  liteComponentsTestkit % Test
+)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
