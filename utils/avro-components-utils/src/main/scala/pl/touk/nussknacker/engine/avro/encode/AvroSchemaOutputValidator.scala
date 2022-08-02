@@ -55,6 +55,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
+      case (Unknown, _) => valid //TODO: It's should be probably removed - it can blow up in runtime, but we want to allow pass result of SpEL with Generics
       case (tc@TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
         validateSpecificRecord(tc, schema, path)
       case (typingResult: TypedObjectTypingResult, Type.RECORD) =>
@@ -267,7 +268,6 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     (schemaAsTypedResult, typingResult) match {
       case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
       case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
-      case (_, Unknown) => valid //Unknown is proper for each of type
       case _ => invalid(typingResult, schema, path)
     }
   }
