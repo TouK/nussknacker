@@ -180,13 +180,13 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
 
-      withProcesses(ProcessesQuery.empty) { processes =>
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
         val process = processes.find(_.name == SampleProcess.process.id).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          withProcesses(ProcessesQuery.empty) { processes =>
+          forScenariosReturned(ProcessesQuery.empty) { processes =>
             val process = processes.find(_.name == SampleProcess.process.id).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true

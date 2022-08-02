@@ -234,17 +234,27 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def getActivity(processName: ProcessName): RouteTestResult =
     Get(s"/processes/${processName.value}/activity") ~> processActivityRouteWithAllPermissions
 
-  protected def withProcess(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessJson => Unit): Unit =
-    tryProcess(processName, isAdmin) { (status, response) =>
+  protected def forScenarioReturned(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessJson => Unit): Unit =
+    tryForScenarioReturned(processName, isAdmin) { (status, response) =>
       status shouldEqual StatusCodes.OK
       val process = decodeJsonProcess(response)
       callback(process)
     }
 
-  protected def tryProcess(processName: ProcessName, isAdmin: Boolean = false)(callback: (StatusCode, String) => Unit): Unit =
+  protected def tryForScenarioReturned(processName: ProcessName, isAdmin: Boolean = false)(callback: (StatusCode, String) => Unit): Unit =
     Get(s"/processes/${processName.value}") ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       callback(status, responseAs[String])
     }
+
+  protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
+    val url = ProcessesQuery.createQueryParamsUrl(query)
+
+    Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+      status shouldEqual StatusCodes.OK
+      val processes = parseResponseToListJsonProcess(responseAs[String])
+      callback(processes)
+    }
+  }
 
   object ProcessesQuery {
     def empty: ProcessesQuery =
@@ -286,19 +296,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
       url
     }
+
   }
 
   case class ProcessesQuery(categories: List[String], isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean])
-
-  protected def withProcesses(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
-    val url = ProcessesQuery.createQueryParamsUrl(query)
-
-    Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
-      status shouldEqual StatusCodes.OK
-      val processes = parseResponseToListJsonProcess(responseAs[String])
-      callback(processes)
-    }
-  }
 
   protected def routeWithPermissions(route: RouteWithUser, isAdmin: Boolean = false): Route =
     if (isAdmin) withAdminPermissions(route) else withAllPermissions(route)

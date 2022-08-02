@@ -60,7 +60,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("return list of process") {
     val processId = createProcess(processName)
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.exists(_.processId == processId.value) shouldBe true
     }
   }
@@ -68,7 +68,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("return single process") {
     val processId = createDeployedProcess(processName)
 
-    withProcess(processName) { process =>
+    forScenarioReturned(processName) { process =>
       process.processId shouldBe processId.value
       process.name shouldBe processName.value
       process.stateStatus shouldBe Some(SimpleStateStatus.Running.name)
@@ -197,7 +197,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       responseAs[String] should not include sampleSubprocess.id
     }
 
-    withProcesses(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
+    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
       processes.find(_.name == sampleSubprocess.id) shouldBe None
     }
   }
@@ -214,7 +214,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("return list of process without archived process") {
     createArchivedProcess(processName)
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.find(_.name == processName.value) shouldBe None
     }
   }
@@ -234,7 +234,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       responseAs[String] should include(processName.value)
     }
 
-    withProcesses(ProcessesQuery.archived()) { processes =>
+    forScenariosReturned(ProcessesQuery.archived()) { processes =>
       processes.find(_.name == processName.value).map(_.name) shouldBe Some(processName.value)
     }
   }
@@ -282,7 +282,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val processId = createProcess(processName)
     updateCategory(processId, TestCat2)
 
-    withProcess(processName) { process =>
+    forScenarioReturned(processName) { process =>
       process.processCategory shouldBe TestCat2
       process.processId shouldBe processId.value
     }
@@ -294,11 +294,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     updateCategory(processId, category)
 
-    tryProcess(processName) { (status, _) =>
+    tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
     }
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.isEmpty shouldBe true
     }
   }
@@ -309,11 +309,11 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
     updateCategory(processId, category)
 
-    withProcess(processName, isAdmin = true) { process =>
+    forScenarioReturned(processName, isAdmin = true) { process =>
       process.processCategory shouldEqual category
     }
 
-    withProcesses(ProcessesQuery.empty, isAdmin = true) { processes =>
+    forScenariosReturned(ProcessesQuery.empty, isAdmin = true) { processes =>
       processes.exists(_.processId == processId.value) shouldBe true
     }
   }
@@ -322,19 +322,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     createProcess(ProcessName("Processor1"), TestCat)
     createProcess(ProcessName("Processor2"), TestCat2)
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.size shouldBe 2
     }
 
-    withProcesses(ProcessesQuery.categories(List(TestCat))) { processes =>
+    forScenariosReturned(ProcessesQuery.categories(List(TestCat))) { processes =>
       processes.size shouldBe 1
     }
 
-    withProcesses(ProcessesQuery.categories(List(TestCat2))) { processes =>
+    forScenariosReturned(ProcessesQuery.categories(List(TestCat2))) { processes =>
       processes.size shouldBe 1
     }
 
-    withProcesses(ProcessesQuery.categories(List(TestCat, TestCat2))) { processes =>
+    forScenariosReturned(ProcessesQuery.categories(List(TestCat, TestCat2))) { processes =>
       processes.size shouldBe 2
     }
   }
@@ -348,19 +348,19 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     createDeployedCanceledProcess(secondProcessor)
     createDeployedProcess(thirdProcessor)
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.size shouldBe 3
       val status = processes.find(_.name == firstProcessor.value).flatMap(_.stateStatus)
       status shouldBe Some(SimpleStateStatus.NotDeployed.name)
     }
 
-    withProcesses(ProcessesQuery.deployed()) { processes =>
+    forScenariosReturned(ProcessesQuery.deployed()) { processes =>
       processes.size shouldBe 1
       val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
       status shouldBe Some(SimpleStateStatus.Running.name)
     }
 
-    withProcesses(ProcessesQuery.notDeployed()) { processes =>
+    forScenariosReturned(ProcessesQuery.notDeployed()) { processes =>
       processes.size shouldBe 2
 
       val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
@@ -372,7 +372,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return 404 when no process") {
-    tryProcess(ProcessName("nont-exists")) { (status, _) =>
+    tryForScenarioReturned(ProcessName("nont-exists")) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
     }
   }
@@ -380,7 +380,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   test("return sample process details") {
     createProcess(processName)
 
-    withProcess(processName) { process =>
+    forScenarioReturned(processName) { process =>
       process.name shouldBe processName.value
     }
   }
@@ -400,7 +400,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       code shouldBe StatusCodes.Created
 
       updateProcess(command) {
-        withProcess(processName) { process =>
+        forScenarioReturned(processName) { process =>
           process.history.map(_.size) shouldBe Some(1)
         }
         status shouldEqual StatusCodes.OK
@@ -413,14 +413,14 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val comment = "Update the same version"
 
     saveProcess(processName, process) {
-      withProcess(processName) { process =>
+      forScenarioReturned(processName) { process =>
         process.history.map(_.size) shouldBe Some(2)
       }
       status shouldEqual StatusCodes.OK
     }
 
     updateProcess(processName, process, comment) {
-      withProcess(processName) { process =>
+      forScenarioReturned(processName) { process =>
         process.history.map(_.size) shouldBe Some(2)
       }
       status shouldEqual StatusCodes.OK
@@ -458,7 +458,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
       status shouldEqual StatusCodes.OK
     }
 
-    withProcesses(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
       val process = processes.find(_.name == SampleProcess.process.id)
 
       withClue(process) {
@@ -543,7 +543,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
 
-      withProcess(processName) { process =>
+      forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.Archive.toString)
         process.stateStatus shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe true
@@ -557,7 +557,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     unArchiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
 
-      withProcess(processName) { process =>
+      forScenarioReturned(processName) { process =>
         process.lastActionType shouldBe Some(ProcessActionType.UnArchive.toString)
         process.stateStatus shouldBe Some(SimpleStateStatus.NotDeployed.name)
         process.isArchived shouldBe false
@@ -592,7 +592,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
 
-      tryProcess(processName) { (status, _) =>
+      tryForScenarioReturned(processName) { (status, _) =>
         status shouldEqual StatusCodes.NotFound
       }
     }
@@ -608,7 +608,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.Conflict
 
-      withProcess(processName) { process =>
+      forScenarioReturned(processName) { process =>
         process.isDeployed shouldBe true
       }
     }
