@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrate
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, NoVarArgMethodInfo, Parameter, StaticMethodInfo, StaticNoVarArgMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
 
 object EspTypeUtils {
 
@@ -157,7 +157,7 @@ object EspTypeUtils {
         resultInfo,
         methodName,
         extractNussknackerDocs(method),
-        extractMethodIsVarArg(method)
+        method.isVarArgs
       )
     ))
   }
@@ -169,7 +169,7 @@ object EspTypeUtils {
       extractMethodReturnType(method),
       methodName,
       extractNussknackerDocs(method),
-      extractMethodIsVarArg(method)
+      method.isVarArgs
     ))
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
@@ -251,10 +251,6 @@ object EspTypeUtils {
 
   private def extractGenericParams(paramsType: ParameterizedType, paramsRawType: Class[_]): TypingResult = {
     Typed.genericTypeClass(paramsRawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
-  }
-
-  private def extractMethodIsVarArg(method: Method): Boolean = {
-    method.isVarArgs || extractParameters(method).lastOption.exists(_.refClazz == Typed.typedClass(classOf[Seq[_]]))
   }
 
   def companionObject[T](klazz: Class[T]): T = {
