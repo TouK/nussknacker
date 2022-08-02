@@ -4,7 +4,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, NoVarArgSignature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
@@ -63,8 +63,8 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List(Typed[String]))) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new NoVarArgSignature(name, List(Typed[String])),
-        List(new NoVarArgSignature(name, expectedTypes))
+        new Signature(name, List(Typed[String]), None),
+        new Signature(name, expectedTypes, None) :: Nil
       ))
     }
   }
@@ -81,11 +81,11 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new NoVarArgSignature(name, List()),
+        new Signature(name, List(), None),
         List(
-          new NoVarArgSignature(name, expectedTypesA),
-          new NoVarArgSignature(name, expectedTypesB),
-          new NoVarArgSignature(name, expectedTypesC)
+          new Signature(name, expectedTypesA, None),
+          new Signature(name, expectedTypesB, None),
+          new Signature(name, expectedTypesC, None)
         )
       ))
     }
@@ -114,8 +114,8 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod("overloadedGenericFunction", List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new NoVarArgSignature(name, List()),
-        List(new NoVarArgSignature(name, expectedTypesC))
+        new Signature(name, List(), None),
+        new Signature(name, expectedTypesC, None) :: Nil
       ))
     }
   }
