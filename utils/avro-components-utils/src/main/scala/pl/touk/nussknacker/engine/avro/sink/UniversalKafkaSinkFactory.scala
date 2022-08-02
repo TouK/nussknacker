@@ -31,7 +31,7 @@ object UniversalKafkaSinkFactory {
     Parameter[Boolean](RawEditorParamName).copy(defaultValue = Some("false"), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   )
 
-  case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], sinkValueParameter: Option[SinkValueParameter])
+  case class TransformationState(schema: RuntimeSchemaData[ParsedSchema], sinkValueParameter: SinkValueParameter)
 }
 
 class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClientFactory,
@@ -70,7 +70,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
-      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema, None))
+      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema, SinkSingleValueParameter(rawValueParam)))
       FinalResults(context, validationResult, finalState)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (RawEditorParamName, _) ::
@@ -93,7 +93,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       }
       validatedSchema.andThen { schemaData =>
         UniversalSchemaSupport.extractSinkValueParameter(schemaData.schema).map { valueParam =>
-          val state = TransformationState(schemaData, Some(valueParam))
+          val state = TransformationState(schemaData, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }
       }.valueOr(e => FinalResults(context, e.toList))
@@ -122,7 +122,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     val key = params(SinkKeyParamName).asInstanceOf[LazyParameter[CharSequence]]
     val finalState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
 
-    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter.getOrElse(SinkSingleValueParameter(rawValueParam)), parameterValues = params)
+    val sinkValue = SinkValue.applyUnsafe(finalState.sinkValueParameter, parameterValues = params)
     val valueLazyParam = sinkValue.toLazyParameter
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, Option(finalState.schema), kafkaConfig)
