@@ -48,6 +48,7 @@ object KafkaConfig {
   import net.ceedubs.ficus.readers.EnumerationReader._
   import TopicsExistenceValidationConfig._
 
+  val lowLevelComponentsEnabled: Boolean = true
   val defaultGlobalKafkaConfigPath = "kafka"
 
   def parseConfigOpt(config: Config, path: String = defaultGlobalKafkaConfigPath): Option[KafkaConfig] = {

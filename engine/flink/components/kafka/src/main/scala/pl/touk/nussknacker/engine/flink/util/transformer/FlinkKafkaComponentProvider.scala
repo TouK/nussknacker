@@ -53,7 +53,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
     )
 
-    val lowLevelComponentsEnabled = config.getAs[Boolean]("config.lowLevelComponentsEnabled").getOrElse(true)
+    val lowLevelComponentsEnabled = config.getAs[Boolean]("config.lowLevelComponentsEnabled").getOrElse(KafkaConfig.lowLevelComponentsEnabled)
     if (lowLevelComponentsEnabled) {
       lowLevelKafkaComponents ::: universalKafkaComponents
     } else {
