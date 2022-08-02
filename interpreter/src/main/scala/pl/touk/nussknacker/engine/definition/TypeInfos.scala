@@ -24,12 +24,10 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def staticParametersWithFullVarArg: List[Parameter] =
+    def staticParameters: List[Parameter] =
       staticNoVarArgParameters ::: staticVarArgParameter.map{ case Parameter(name, refClazz) =>
         Parameter(name, Typed.genericTypeClass(classOf[Array[Object]], List(refClazz)))
       }.toList
-
-    def staticParametersWithSimpleVarArg: List[Parameter] = staticNoVarArgParameters ::: staticVarArgParameter.toList
 
     def staticNoVarArgParameters: List[Parameter]
 
@@ -42,7 +40,7 @@ object TypeInfos {
     def varArgs: Boolean = staticVarArgParameter.isDefined
 
     def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParametersWithFullVarArg, staticResult, description, varArgs)
+      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
   }
 
   object StaticMethodInfo {
