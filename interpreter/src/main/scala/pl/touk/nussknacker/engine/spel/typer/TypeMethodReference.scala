@@ -96,7 +96,7 @@ class TypeMethodReference(methodName: String,
   // We try to combine ArgumentTypeErrors into one error. If we fail
   // then we only one first error. All regular functions return
   // only ArgumentTypeError, so we will lose information only when
-  // there are two
+  // there is more than one generic function.
   private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError = errors match {
     case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
       xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(_.combine(_))
