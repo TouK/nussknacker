@@ -43,13 +43,14 @@ class AsyncExecutionTimeMeasurement(context: EngineRuntimeContext,
 
   def measuring[T](tags: Map[String, String])(actionFun: => Future[T])(implicit ec: ExecutionContext) : Future[T] = {
     val start = System.nanoTime()
-    val action = actionFun
-    action.onComplete { result =>
+    //we use transform instead of onComplete, so we don't e.g. measure wrong value when onComplete waits due to contention...)
+    //(also tests are difficult to get right then)
+    actionFun.transform { result =>
       detectMeterName(result).foreach { meterName =>
         getOrCreateTimer(tags, meterName).update(start)
       }
+      result
     }
-    action
   }
 
   protected def detectMeterName(result: Try[Any]) : Option[String] = result match {
