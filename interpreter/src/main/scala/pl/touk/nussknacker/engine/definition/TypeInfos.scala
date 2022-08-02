@@ -47,15 +47,20 @@ object TypeInfos {
 
     def staticVarArgParameter: Parameter
 
+    private def toArray(t: TypingResult): TypedClass =
+      Typed.genericTypeClass(classOf[Array[Object]], List(t))
+
     override def staticParameters: List[Parameter] = {
       val Parameter(varArgName, varArg) = staticVarArgParameter
-      staticNoVarArgParameters :+ Parameter(varArgName, Typed.genericTypeClass(classOf[Array[Object]], List(varArg)))
+      staticNoVarArgParameters :+ Parameter(varArgName, toArray(varArg))
     }
 
     override def varArgs: Boolean = true
 
-    override def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticNoVarArgParameters :+ staticVarArgParameter, staticResult, description, varArgs)
+    override def serializable: SerializableMethodInfo = {
+      val Parameter(varArgName, varArg) = staticVarArgParameter
+      SerializableMethodInfo(staticNoVarArgParameters :+ Parameter(varArgName, toArray(varArg)), staticResult, description, varArgs)
+    }
   }
 
   object StaticMethodInfo {
