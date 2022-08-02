@@ -153,8 +153,8 @@ object EspTypeUtils {
     collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
       x => typeFunctionInstance.computeResultType(x),
       StaticMethodInfo(
-        extractParameters(method),
-        extractMethodReturnType(method),
+        parameterInfo,
+        resultInfo,
         methodName,
         extractNussknackerDocs(method),
         extractMethodIsVarArg(method)
