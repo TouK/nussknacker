@@ -43,7 +43,7 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
 
     val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    UniversalSchemaSupport(writerSchema)
+    UniversalSchemaSupport.forSchemaType(writerSchema.schemaType())
       .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
       .asInstanceOf[T]

@@ -61,7 +61,7 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
   Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
       val schema = schemaData.schema
-      (Some(schemaData), UniversalSchemaSupport(schema).typeDefinition(schema))
+      (Some(schemaData), UniversalSchemaSupport.forSchemaType(schema.schemaType()).typeDefinition(schema))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 

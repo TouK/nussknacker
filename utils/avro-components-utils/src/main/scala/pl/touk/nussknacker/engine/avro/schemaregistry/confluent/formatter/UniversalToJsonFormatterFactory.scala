@@ -41,8 +41,8 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                         ) extends RecordFormatter {
 
-  private def formatter(schema: ParsedSchema) = UniversalSchemaSupport(schema).messageFormatter(schemaRegistryClient)
-  private def reader(schema: ParsedSchema) = UniversalSchemaSupport(schema).messageReader(schema, schemaRegistryClient)
+  private def formatter(schema: ParsedSchema) = UniversalSchemaSupport.forSchemaType(schema.schemaType()).messageFormatter(schemaRegistryClient)
+  private def reader(schema: ParsedSchema) = UniversalSchemaSupport.forSchemaType(schema.schemaType()).messageReader(schema, schemaRegistryClient)
 
   /**
    * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.

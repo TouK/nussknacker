@@ -18,11 +18,11 @@ import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 object UniversalSchemaSupport {
-  def apply(parsedSchema: ParsedSchema): UniversalSchemaSupport = parsedSchema match {
-    case _: AvroSchema => AvroSchemaSupport
-    case _: AvroSchemaWithJsonPayload => AvroSchemaWithJsonPayloadSupport
-    case _: JsonSchema => JsonSchemaSupport
-    case _ => throw new UnsupportedSchemaType(parsedSchema)
+  def forSchemaType(schemaType: String): UniversalSchemaSupport = schemaType match {
+    case AvroSchema.TYPE => AvroSchemaSupport
+    case AvroSchemaWithJsonPayload.TYPE => AvroSchemaWithJsonPayloadSupport
+    case JsonSchema.TYPE => JsonSchemaSupport
+    case _ => throw new UnsupportedSchemaType(schemaType)
   }
 }
 
@@ -37,4 +37,4 @@ trait UniversalSchemaSupport {
   def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit]
 }
 
-class UnsupportedSchemaType(parsedSchema: ParsedSchema) extends IllegalArgumentException(s"Unsupported schema type: ${parsedSchema.schemaType()}")
+class UnsupportedSchemaType(schemaType: String) extends IllegalArgumentException(s"Unsupported schema type: $schemaType")

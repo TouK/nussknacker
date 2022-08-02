@@ -14,7 +14,7 @@ class ConfluentUniversalKafkaSerializationSchemaFactory(schemaRegistryClientFact
   override protected def createValueSerializer(schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Serializer[Any] = {
     val schema: ParsedSchema = schemaOpt.map(_.schema).getOrElse(throw new IllegalArgumentException("SchemaData should be defined for universal serializer"))
     val client = schemaRegistryClientFactory.create(kafkaConfig)
-    UniversalSchemaSupport(schema)
+    UniversalSchemaSupport.forSchemaType(schema.schemaType())
       .serializer[Any](schema, client, kafkaConfig, isKey = false)
   }
 }
