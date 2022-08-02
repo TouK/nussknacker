@@ -87,6 +87,7 @@ object DefinitionExtractor {
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
     def hasNoReturn: Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
+    def availableForCategory(category: String): Boolean = categories.isEmpty || categories.exists(_.isEmpty) || categories.exists(_.contains(category))
   }
 
   case class ObjectWithType(obj: Any, typ: TypingResult)
@@ -181,7 +182,6 @@ object DefinitionExtractor {
                               returnType: TypingResult,
                               categories: Option[List[String]],
                               componentConfig: SingleComponentConfig) extends ObjectMetadata
-
 
   object ObjectWithMethodDef {
 

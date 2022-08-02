@@ -310,7 +310,7 @@ class ProcessesResources(
   private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess]): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
-      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType)
+      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
       processResolving.reverseResolveExpressions(canonical, processingType, validationResult)
     }
     Future.successful(validatedDetails)

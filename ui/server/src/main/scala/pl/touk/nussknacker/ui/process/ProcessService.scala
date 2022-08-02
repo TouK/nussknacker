@@ -215,7 +215,9 @@ class DBProcessService(managerActor: ActorRef,
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
       val result = for {
-        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
+        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(
+          processResolving.validateBeforeUiResolving(action.process, process.processCategory)
+        ))
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
@@ -263,7 +265,7 @@ class DBProcessService(managerActor: ActorRef,
         .map{ jsonCanonicalProcess =>
           val canonical = jsonCanonicalProcess.withProcessId(processId.name)
           val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
-          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType)
+          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
           new ValidatedDisplayableProcess(displayable, validationResult)
         }
 

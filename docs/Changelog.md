@@ -3,6 +3,7 @@
 1.6.0 (Not released yet)
 ------------------------
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
+* [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
 
 1.5.0 (Not released yet)
 ------------------------

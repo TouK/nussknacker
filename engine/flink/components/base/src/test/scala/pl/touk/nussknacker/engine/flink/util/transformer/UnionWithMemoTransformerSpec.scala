@@ -124,7 +124,8 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val validationResult = model.validator.validate(process).result
+    val processValidator = model.prepareValidatorForCategory("Category1")
+    val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}"""
     validationResult should matchPattern {
@@ -164,7 +165,8 @@ class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
 
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
-    val validationResult = model.validator.validate(process).result
+    val processValidator = model.prepareValidatorForCategory("Category1")
+    val validationResult = processValidator.validate(process).result
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
     validationResult should matchPattern {

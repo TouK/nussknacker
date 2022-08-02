@@ -4,6 +4,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import slick.jdbc.JdbcProfile
 
 import scala.concurrent.duration._
@@ -12,6 +13,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 trait SubprocessRepository {
 
   def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails]
+
+  def loadSubprocesses(versions: Map[String, VersionId], category: String): Set[SubprocessDetails]
 
   def loadSubprocesses(): Set[SubprocessDetails] = loadSubprocesses(Map.empty)
 
@@ -26,7 +29,11 @@ case class SubprocessDetails(canonical: CanonicalProcess, category: String)
 class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends SubprocessRepository {
   //TODO: make it return Future?
   override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
-    Await.result(listSubprocesses(versions), 10 seconds)
+    Await.result(listSubprocesses(versions, None), 10 seconds)
+  }
+
+  override def loadSubprocesses(versions: Map[String, VersionId], category: String): Set[SubprocessDetails] = {
+    Await.result(listSubprocesses(versions, Some(category)), 10 seconds)
   }
 
   import db.driver.api._
@@ -38,26 +45,26 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   implicit val iec = ec
 
   //Fetches subprocess in given version if specified, fetches latest version otherwise
-  def listSubprocesses(versions: Map[String, VersionId]) : Future[Set[SubprocessDetails]] = {
+  def listSubprocesses(versions: Map[String, VersionId], category: Option[String]) : Future[Set[SubprocessDetails]] = {
     val versionSubprocesses = Future.sequence {
       versions.map { case (subprocessId, subprocessVersion) =>
-        fetchSubprocess(subprocessId, subprocessVersion)
+        fetchSubprocess(subprocessId, subprocessVersion, category)
       }
     }
     val fetchedSubprocesses = for {
       subprocesses <- versionSubprocesses
-      latestSubprocesses <- listLatestSubprocesses()
+      latestSubprocesses <- listLatestSubprocesses(category)
     } yield latestSubprocesses.groupBy(_.canonical.metaData.id).mapValues(_.head) ++ subprocesses.groupBy(_.canonical.metaData.id).mapValues(_.head)
 
     fetchedSubprocesses.map(_.values.toSet)
   }
 
-  private def listLatestSubprocesses() : Future[Set[SubprocessDetails]] = {
+  private def listLatestSubprocesses(category: Option[String]) : Future[Set[SubprocessDetails]] = {
     val action = for {
       latestProcesses <- processVersionsTableNoJson.groupBy(_.processId).map { case (n, group) => (n, group.map(_.createDate).max) }
         .join(processVersionsTable).on { case (((processId, latestVersionDate)), processVersion) =>
         processVersion.processId === processId && processVersion.createDate === latestVersionDate
-      }.join(subprocessesQuery)
+      }.join(subprocessesQuery(category))
         .on { case ((_, latestVersion), process) => latestVersion.processId === process.id }
         .result
     } yield latestProcesses.map { case ((_, processVersion), process) =>
@@ -67,10 +74,10 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     db.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchSubprocess(subprocessName: String, version: VersionId) : Future[SubprocessDetails] = {
+  private def fetchSubprocess(subprocessName: String, version: VersionId, category: Option[String]) : Future[SubprocessDetails] = {
     val action = for {
       subprocessVersion <- processVersionsTable.filter(p => p.id === version)
-        .join(subprocessesQueryByName(subprocessName))
+        .join(subprocessesQueryByName(subprocessName, category))
         .on { case (latestVersion, process) => latestVersion.processId === process.id }
         .result.headOption
     } yield subprocessVersion.flatMap { case (processVersion, process) =>
@@ -86,15 +93,16 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   private def createSubprocessDetails(process: ProcessEntityData, processVersion: ProcessVersionEntityData): Option[SubprocessDetails] =
     processVersion.json.map { canonical => SubprocessDetails(canonical, process.processCategory) }
 
-  private def subprocessesQuery = {
-    processesTable
-      .filter(_.isSubprocess)
-      .filter(!_.isArchived)
+  private def subprocessesQuery(category: Option[String]) = {
+    val query = processesTable.filter(_.isSubprocess).filter(!_.isArchived)
+
+    category
+      .map{cat =>query.filter(p => p.processCategory === cat)}
+      .getOrElse(query)
   }
 
-  private def subprocessesQueryByName(subprocessName: String) = {
-    subprocessesQuery.filter(_.name === subprocessName)
-  }
+  private def subprocessesQueryByName(subprocessName: String, category: Option[String]) =
+    subprocessesQuery(category).filter(_.name === subprocessName)
 }
 
 

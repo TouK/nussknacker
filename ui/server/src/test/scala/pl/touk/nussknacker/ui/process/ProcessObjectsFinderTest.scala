@@ -76,7 +76,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
-    ))
+  ))
 
   private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder

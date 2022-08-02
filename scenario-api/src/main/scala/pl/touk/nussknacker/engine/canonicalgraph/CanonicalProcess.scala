@@ -75,6 +75,8 @@ case class CanonicalProcess(metaData: MetaData,
                            ) extends CanonicalTreeNode {
   import CanonicalProcess._
 
+  lazy val id: String = metaData.id
+
   def allStartNodes: NonEmptyList[List[CanonicalNode]] = NonEmptyList(nodes, additionalBranches)
 
   def mapAllNodes(action: List[CanonicalNode] => List[CanonicalNode]): CanonicalProcess = withNodes(allStartNodes.map(action))

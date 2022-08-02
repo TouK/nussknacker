@@ -135,8 +135,8 @@ class AppResources(config: Config,
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails[DisplayableProcess]().map { processes =>
-      val processesWithErrors = processes.map(_.json)
-        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
+      val processesWithErrors = processes
+        .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json, process.processCategory)))
         .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }

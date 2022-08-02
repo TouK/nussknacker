@@ -7,13 +7,14 @@ import cats.instances.future._
 import com.typesafe.config.{Config, ConfigFactory}
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.definition.FixedExpressionValue
-import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.engine.compile.ProcessValidator
+import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.security.Permission
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.processDefinition
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.{RouteWithUser, RouteWithoutUser}
 import pl.touk.nussknacker.ui.db.DbConfig
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.ui.process.NewProcessPreparer
 import pl.touk.nussknacker.ui.process.deployment.ScenarioResolver
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository._
-import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessDetails, SubprocessResolver}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -33,48 +34,34 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: merge with ProcessTestData?
 object TestFactory extends TestPermissions{
 
+  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
+
+  private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
+
   //FIIXME: remove testCategory dummy implementation
   val testCategory:CategorizedPermission= Map(
     TestCategories.TestCat -> Permission.ALL_PERMISSIONS,
     TestCategories.TestCat2 -> Permission.ALL_PERMISSIONS
   )
 
+  val possibleValues: List[FixedExpressionValue] = List(FixedExpressionValue("a", "a"))
+
+  val processValidation: ProcessValidation = ProcessTestData.processValidation.withSubprocessResolver(sampleResolver)
+
+  val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
+
+  val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
+
+  val posting = new ProcessPosting
+
   // It should be defined as method, because when it's defined as val then there is bug in IDEA at DefinitionPreparerSpec - it returns null
-  def prepareSampleSubprocessRepository: StubSubprocessRepository = StubSubprocessRepository(Set(ProcessTestData.sampleSubprocess))
+  def prepareSampleSubprocessRepository: StubSubprocessRepository = new StubSubprocessRepository(Set(
+    SubprocessDetails(ProcessTestData.sampleSubprocess, TestCategories.TestCat))
+  )
 
   def sampleResolver = new SubprocessResolver(prepareSampleSubprocessRepository)
 
   def scenarioResolver = new ScenarioResolver(sampleResolver)
-
-  val possibleValues = List(FixedExpressionValue("a", "a"))
-
-  val processValidation = new ProcessValidation(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-    sampleResolver,
-    emptyProcessingTypeDataProvider
-  )
-  val processResolving = new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)
-  val posting = new ProcessPosting
-  val buildInfo: Map[String, String] = Map("engine-version" -> "0.1")
-
-  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
-    id = "fooProcess",
-    properties = ProcessProperties(StreamMetaData(
-      Some(2)),
-      Some(ProcessAdditionalFields(Some("scenario description"), Map(
-        "maxEvents" -> "text",
-        "unknown" -> "x",
-        "numberOfThreads" -> "wrong fixed value"
-      ))),
-      subprocessVersions = Map.empty),
-    nodes = List.empty,
-    edges = List.empty,
-    processingType = TestProcessingTypes.Streaming
-  )
-
-  private val dummyDbConfig: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
-  private val dummyDb: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", dummyDbConfig), HsqldbProfile)
 
   def newDummyManagerActor(): ActorRef = TestProbe()(ActorSystem("DefaultComponentServiceSpec")).ref
 
@@ -135,13 +122,7 @@ object TestFactory extends TestPermissions{
 
   def emptyProcessingTypeDataProvider = new MapBasedProcessingTypeDataProvider[Nothing](Map.empty)
 
-  object StubSubprocessRepository {
-    def apply(subprocesses: Set[CanonicalProcess]): StubSubprocessRepository =
-      new StubSubprocessRepository(subprocesses.map(c => SubprocessDetails(c, TestCategories.TestCat)))
-  }
-
-  class StubSubprocessRepository(subprocesses: Set[SubprocessDetails]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = subprocesses
-  }
+  def createValidator(processDefinition: ProcessDefinition[ObjectDefinition]): ProcessValidator =
+    ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
 
 }
