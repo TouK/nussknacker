@@ -41,6 +41,12 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     LogicalTypes.timeMicros(), LogicalTypes.timestampMillis(), LogicalTypes.timestampMicros()
   )
 
+  private val additionalTypesMapping: Map[Type, Set[Class[_]]] = Map(
+    Type.LONG -> Set(classOf[java.lang.Integer]),
+    Type.FLOAT -> Set(classOf[java.lang.Integer], classOf[java.lang.Long]),
+    Type.DOUBLE -> Set(classOf[java.lang.Integer], classOf[java.lang.Long], classOf[java.lang.Float]),
+  )
+
   /**
     * see {@link pl.touk.nussknacker.engine.avro.encode.BestEffortAvroEncoder} for underlying avro types
     */
@@ -242,32 +248,27 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         case _ => validationTypingResult
       }
     }
-
   }
 
-  private def validateSchemaWithBaseType[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorTypeError], Unit] = {
+  private def validateSchemaWithBaseType[T:ClassTag](typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val clazz: Class[_] = implicitly[ClassTag[T]].runtimeClass
 
     (schemaAsTypedResult, typingResult) match {
-      case (TypedClass(schemaClass, _), TypedClass(typeClass, _)) if typeClass == schemaClass => valid
-      case (_, TypedClass(typeClass, _)) if clazz == typeClass => valid
-      case (_, TypedObjectWithValue(underlying, _)) if clazz == underlying.klass => valid
-      case _ => invalid(typingResult, schema, path)
+      case (_, typing: SingleTypingResult) if clazz == typing.objType.klass => valid
+      case _ => canBeSubclassOf(typingResult, schema, path)
     }
   }
 
-  /**
-    * TODO: Consider verification class instead of using .canBeSubclassOf from Typing - at avro we want to avoid:
-    * * Unknown.canBeSubclassOf(Any) => true
-    * * Long.canBeSubclassOf(Integer) => true
-    * Should we use strict verification at avro?
-    */
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
-      val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
-      condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-        OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema))
-      )
+    val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val additionalTypes = additionalTypesMapping.getOrElse(schema.getType, Set.empty)
+
+    (schemaAsTypedResult, typingResult) match {
+      case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
+      case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
+      case _ => invalid(typingResult, schema, path)
+    }
   }
 
   private def invalid(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
