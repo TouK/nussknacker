@@ -1,4 +1,5 @@
-name: NU CI
+#this should be the same as workflow name in test-report.yml
+name: CI
 on:
   pull_request:
     branches:
