@@ -1,4 +1,5 @@
 package pl.touk.nussknacker.engine.avro.encode
+
 import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
@@ -16,7 +17,7 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 }
 
 object JsonSchemaOutputValidator {
-  private[encode] val SimplePath = "Data" //todo: check why is it needed, and if we can get rid of it.
+  private[encode] val SimplePath = "Value"
 }
 
 class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
@@ -28,8 +29,8 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private val valid = Validated.Valid(())
 
   /**
-    * Currently we support only basic json-schema configurations. See {@link pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor}
-    */
+   * Currently we support only basic json-schema configurations. See {@link pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor}
+   */
   def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, parentSchema, None)
 
@@ -47,48 +48,45 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: ObjectSchema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     val schemaFields = schema.getPropertySchemas.asScala
-
-    val requiredFieldNames = if (validationMode == ValidationMode.strict) {
-      schemaFields.keys
-    } else {
-      schemaFields.filterNot(_._2.hasDefaultValue).keys
-    }
-
-    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
-
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
 
-    val requiredFieldsValidation = {
-      val missingFields = requiredFieldNames.filterNot(typingResult.fields.contains).toList.sorted.toSet
-      condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
+    def validateRequiredFields = {
+      val requiredFieldNames = if (validationMode == ValidationMode.strict) {
+        schemaFields.keys
+      } else {
+        schemaFields.filterNot(_._2.hasDefaultValue).keys
+      }
+      {
+        val missingFields = requiredFieldNames.filterNot(typingResult.fields.contains).toList.sorted.toSet
+        condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
+      }
     }
-
-    val schemaFieldsValidation = {
-      fieldsToValidate.flatMap{ case (key, value) =>
+    def validateSchemaFields = {
+      val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
+      fieldsToValidate.flatMap { case (key, value) =>
         val fieldPath = buildPath(key, path)
         schemaFields.get(key).map(f => validateTypingResult(value, f, fieldPath))
       }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
     }
-
-    val redundantFieldsValidation = {
+    def validateRedundantFields = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
       condNel(redundantFields.isEmpty || validationMode != ValidationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
-   requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
+    validateRequiredFields combine validateSchemaFields combine validateRedundantFields
   }
 
   /**
-    * TODO: Consider verification class instead of using .canBeSubclassOf from Typing - we want to avoid:
-    * * Unknown.canBeSubclassOf(Any) => true
-    * * Long.canBeSubclassOf(Integer) => true
-    * Should we use strict verification at avro?
-    */
+   * TODO: Consider verification class instead of using .canBeSubclassOf from Typing - we want to avoid:
+   * * Unknown.canBeSubclassOf(Any) => true
+   * * Long.canBeSubclassOf(Integer) => true
+   * Should we use strict verification at json?
+   */
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
-      val schemaAsTypedResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
-      condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-        OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
-      )
+    val schemaAsTypedResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
+      OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
+    )
   }
 
   private def invalid(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorTypeError, Nothing] =
@@ -98,6 +96,6 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
 
   private def buildPath(key: String, path: Option[String], useIndexer: Boolean = false) = Some(
-    path.map(p => if(useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)
+    path.map(p => if (useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)
   )
 }
