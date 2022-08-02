@@ -4,11 +4,9 @@ import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
@@ -98,20 +96,6 @@ object TestProcessUtil {
     commentId = None,
     comment = None,
     buildInfo = Map.empty
-  )
-
-  def createEmptyStreamingGraph(id: String): CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(
-    s"""
-       |{
-       |  "metaData" : {
-       |    "id" : "$id",
-       |    "typeSpecificData" : {
-       |      "type" : "StreamMetaData"
-       |    }
-       |  },
-       |  "nodes" : []
-       |}
-       |""".stripMargin
   )
 
   private def generateId() = Math.abs(randomGenerator.nextLong())

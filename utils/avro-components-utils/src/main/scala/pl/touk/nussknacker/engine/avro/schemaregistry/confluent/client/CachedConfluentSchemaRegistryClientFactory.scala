@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import pl.touk.nussknacker.engine.avro.schemaregistry.{SchemaWithMetadata}
+import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaWithMetadata
 import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
@@ -34,6 +34,7 @@ class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyL
 
   import cacheConfig._
 
+  val latestSchemaIdCache = new DefaultCache[String, Int](CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty))
   val schemaCache = new DefaultCache[String, SchemaWithMetadata](CacheConfig(maximumSize, parsedSchemaAccessExpirationTime, Option.empty))
   val versionsCache = new DefaultCache[String, List[Integer]](CacheConfig(maximumSize, Option.empty, availableSchemasExpirationTime))
   val topicsCache = new SingleValueCache[List[String]](Option.empty, availableSchemasExpirationTime)

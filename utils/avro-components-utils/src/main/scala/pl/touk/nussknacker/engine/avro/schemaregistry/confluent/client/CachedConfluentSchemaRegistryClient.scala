@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client
 
 import cats.data.Validated
+import cats.data.Validated.valid
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.SchemaProvider
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
@@ -54,7 +55,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
   private def latestSchemaRequest(subject: String): SchemaWithMetadata = {
     val schemaMetadata = client.getLatestSchemaMetadata(subject)
-
+    caches.latestSchemaIdCache.put(subject)(schemaMetadata.getId)
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
       SchemaWithMetadata(schemaMetadata, config)
@@ -64,6 +65,14 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   override def getSchemaById(id: Int): SchemaWithMetadata = {
     val rawSchema = client.getSchemaById(id)
     SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+  }
+
+  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int] = {
+    val subject = ConfluentUtils.topicSubject(topic, isKey)
+    caches.latestSchemaIdCache.get(subject) match {
+      case Some(id) => valid(id)
+      case None => getLatestFreshSchema(topic, isKey).map(_.id)
+    }
   }
 }
 

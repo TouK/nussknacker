@@ -76,8 +76,11 @@ class TypeMethodReference(methodName: String,
   }
 
   private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfos.map(_.computeResultType(calledParams))
-    val combinedReturnTypes = returnTypesForMatchingMethods.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
+    // We combine MethodInfo with errors so we can use it to decide which
+    // error to display.
+    val infosWithValidationResults = methodInfos.map(x => (x, x.computeResultType(calledParams)))
+    val returnTypes = infosWithValidationResults.map{case (info, typ) => typ.leftMap(_.map((info, _)))}
+    val combinedReturnTypes = returnTypes.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
       case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
       case (Valid(xs), Invalid(_)) => Valid(xs)
       case (Invalid(_), Valid(ys)) => Valid(ys)
@@ -90,14 +93,22 @@ class TypeMethodReference(methodName: String,
     }
   }
 
+  private def combineArgumentTypeErrors(left: ArgumentTypeError, right: ArgumentTypeError): ArgumentTypeError = {
+    if (!left.found.equals(right.found))
+      throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
+    new ArgumentTypeError(left.found, left.possibleSignatures ::: right.possibleSignatures)
+  }
+
   // We try to combine ArgumentTypeErrors into one error. If we fail
-  // then we return only first error. All regular functions return
+  // then we only one first error. All regular functions return
   // only ArgumentTypeError, so we will lose information only when
-  // there are two
-  private def combineErrors(errors: NonEmptyList[ExpressionParseError]): ExpressionParseError = errors match {
-    case xs if xs.forall(_.isInstanceOf[ArgumentTypeError]) =>
-      xs.map(_.asInstanceOf[ArgumentTypeError]).toList.reduce(_.combine(_))
-    case NonEmptyList(head, _) =>
-      head
+  // there is more than one generic function.
+  private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError = errors match {
+    case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
+      xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)
+    case list =>
+      // We return error caused by method with the most parameters, because
+      // this is the method the would be displayed in suggestions on FE.
+      list.sortBy(- _._1.staticParameters.length).head._2
   }
 }

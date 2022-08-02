@@ -116,6 +116,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
+      eventually {
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ProcessDetails]
+          processDetails.isDeployed shouldBe true
+        }
+      }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
