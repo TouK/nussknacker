@@ -6,7 +6,7 @@ trait ExpressionParseError {
   def message: String
 }
 
-class ArgumentTypeError(val found: NoVarArgSignature, val possibleSignatures: List[Signature]) extends ExpressionParseError {
+class ArgumentTypeError(val found: Signature, val possibleSignatures: List[Signature]) extends ExpressionParseError {
   override def message: String =
     s"Mismatch parameter types. Found: ${found.display}. Required: ${possibleSignatures.map(_.display).mkString(" or ")}"
 }
@@ -16,23 +16,18 @@ class GenericFunctionError(messageInner: String) extends ExpressionParseError {
 }
 
 
-sealed abstract class Signature {
-  def display: String
-
-  protected def typesToString(types: List[TypingResult]): String =
+final class Signature(val name: String, val noVarArgs: List[TypingResult], val varArg: Option[TypingResult]) {
+  private def typesToString(types: List[TypingResult]): String =
     types.map(_.display).mkString(", ")
-}
 
-class NoVarArgSignature(val name: String, val types: List[TypingResult]) extends Signature {
-  def display = s"$name(${typesToString(types)})"
+  def display: String = varArg match {
+    case Some(x) => s"$name(${typesToString(noVarArgs :+ x)}...)"
+    case None => s"$name(${typesToString(noVarArgs)})"
+  }
 
   override def equals(obj: Any): Boolean = obj match {
-    case x: NoVarArgSignature => name == x.name && types == x.types
+    case x: Signature => name == x.name && noVarArgs == x.noVarArgs && varArg == x.varArg
     case _ => false
   }
-}
-
-class VarArgSignature(val name: String, val noVarArgs: List[TypingResult], val varArg: TypingResult) extends Signature {
-  def display = s"$name(${typesToString(noVarArgs :+ varArg)}...)"
 }
 

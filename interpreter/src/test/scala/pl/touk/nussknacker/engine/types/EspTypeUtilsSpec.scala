@@ -5,7 +5,7 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, GenericType, NoVarArgSignature, ExpressionParseError, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -359,8 +359,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         name,
         arguments,
         new ArgumentTypeError(
-          new NoVarArgSignature(name, arguments),
-          List(new NoVarArgSignature(name, expected))
+          new Signature(name, arguments, None),
+          List(new Signature(name, expected, None))
         ).message.invalidNel
       )
 
@@ -428,8 +428,8 @@ private class HeadHelper extends TypingFunction {
 
   private def error(arguments: List[TypingResult]): ExpressionParseError =
     new ArgumentTypeError(
-      new NoVarArgSignature("head", arguments),
-      List(new NoVarArgSignature("head", List(Typed.fromDetailedType[List[Object]])))
+      new Signature("head", arguments, None),
+      List(new Signature("head", List(Typed.fromDetailedType[List[Object]]), None))
     )
 
   override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {

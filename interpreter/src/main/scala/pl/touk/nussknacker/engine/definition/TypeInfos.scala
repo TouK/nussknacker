@@ -4,7 +4,7 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, NoVarArgSignature, ExpressionParseError, VarArgSignature}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, Signature}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 
@@ -73,8 +73,8 @@ object TypeInfos {
         staticResult.validNel
       else
         new ArgumentTypeError(
-          new NoVarArgSignature(name, arguments),
-          List(new NoVarArgSignature(name, staticParameters.map(_.refClazz)))
+          new Signature(name, arguments, None),
+          List(new Signature(name, staticParameters.map(_.refClazz), None))
         ).invalidNel
     }
 
@@ -103,8 +103,8 @@ object TypeInfos {
         staticResult.validNel
       else
         new ArgumentTypeError(
-          new NoVarArgSignature(name, arguments),
-          List(new VarArgSignature(name, noVarParameters.map(_.refClazz), varParameter.refClazz))
+          new Signature(name, arguments, None),
+          List(new Signature(name, noVarParameters.map(_.refClazz), Some(varParameter.refClazz)))
         ).invalidNel
     }
 
