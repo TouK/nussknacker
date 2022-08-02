@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.Config
+import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, toFicusConfig}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -8,6 +9,7 @@ import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaB
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.generic.BaseGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{deserializeToMap, deserializeToTypedMap, jsonFormatterFactory}
@@ -49,7 +51,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     val jsonPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
     val universalSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
 
-    val lowLevelKafkaComponents = List(
+    lazy val lowLevelKafkaComponents = List(
       ComponentDefinition(KafkaJsonName, new KafkaSinkFactory(GenericJsonSerialization(_), dependencies, LiteKafkaSinkImplFactory)).withRelativeDocs(noTypeInfo),
       ComponentDefinition(KafkaJsonName, new KafkaSourceFactory[String, util.Map[_, _]](
         ConsumerRecordDeserializationSchemaFactory.fixedValueDeserialization(deserializeToMap), jsonFormatterFactory, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(noTypeInfo),
@@ -67,13 +69,17 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: ConfluentSchemaReg
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
       ComponentDefinition(KafkaUniversalName, new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, new LiteKafkaSourceImplFactory)).withRelativeDocs(avro),
-      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition(KafkaUniversalName, new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, dependencies, LiteKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
+    )
 
-    lowLevelKafkaComponents ::: universalKafkaComponents
+    //TODO: for now we add this feature flag inside kafka, when this provider can handle multiple kafka brokers move to provider config
+    val lowLevelComponentsEnabled = dependencies.config.getAs[Boolean]("kafka.lowLevelComponentsEnabled").getOrElse(KafkaConfig.lowLevelComponentsEnabled)
+    if (lowLevelComponentsEnabled) {
+      lowLevelKafkaComponents ::: universalKafkaComponents
+    } else {
+      universalKafkaComponents
+    }
   }
-
-
-
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
 

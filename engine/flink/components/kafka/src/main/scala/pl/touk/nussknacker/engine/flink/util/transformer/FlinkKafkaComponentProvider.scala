@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import net.ceedubs.ficus.Ficus.{booleanValueReader, optionValueReader, toFicusConfig}
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
@@ -35,7 +36,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val jsonPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(schemaRegistryClientFactory)
     val universalSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
 
-    val lowLevelKafkaComponents = List(
+    lazy val lowLevelKafkaComponents = List(
       ComponentDefinition("kafka-json", new GenericKafkaJsonSinkFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-json", new GenericJsonSourceFactory(overriddenDependencies)).withRelativeDocs(noTypeInfo),
       ComponentDefinition("kafka-typed-json", new GenericTypedJsonSourceFactory(overriddenDependencies)).withRelativeDocs("DataSourcesAndSinks#manually-typed--json-serialization"),
@@ -46,13 +47,18 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
       ComponentDefinition("kafka-registry-typed-json-raw", new KafkaAvroSinkFactory(schemaRegistryClientFactory, jsonPayloadSerdeProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(schemaRegistryTypedJson),
       ComponentDefinition("kafka-avro-raw", new KafkaAvroSinkFactory(schemaRegistryClientFactory, avroPayloadSerdeProvider, overriddenDependencies, FlinkKafkaAvroSinkImplFactory)).withRelativeDocs(avro)
     )
-
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
       ComponentDefinition("kafka", new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
-      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro))
+      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
+    )
 
-    lowLevelKafkaComponents ::: universalKafkaComponents
+    val lowLevelComponentsEnabled = config.getAs[Boolean]("config.lowLevelComponentsEnabled").getOrElse(KafkaConfig.lowLevelComponentsEnabled)
+    if (lowLevelComponentsEnabled) {
+      lowLevelKafkaComponents ::: universalKafkaComponents
+    } else {
+      universalKafkaComponents
+    }
   }
 
   override def isCompatible(version: NussknackerVersion): Boolean = true
