@@ -99,8 +99,6 @@ object TypeInfos {
           List(new Signature(name, staticParameters.map(_.refClazz), None))
         ).invalidNel
     }
-
-    override def varArgs: Boolean = false
   }
 
   case class StaticVarArgMethodInfo(staticNoVarArgParameters: List[Parameter],
