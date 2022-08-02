@@ -109,6 +109,6 @@ class TypeMethodReference(methodName: String,
     case list =>
       // We return error caused by method with the most parameters, because
       // this is the method the would be displayed in suggestions on FE.
-      list.sortBy(- _._1.staticParameters.length).head._2
+      list.sortBy(- _._1.staticParametersWithSimpleVarArg.length).head._2
   }
 }

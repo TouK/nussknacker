@@ -57,10 +57,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false)),
-      "bar" -> List(MethodInfo(List.empty, Typed[String], "bar", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
-      "returnContext" -> List(MethodInfo(List(), Typed[Context], "returnContext", None, varArgs = false))
+      "foo" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false)),
+      "bar" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed[String], "bar", None, varArgs = false)),
+      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
+      "returnContext" -> List(StaticMethodInfo.fromParameterList(List(), Typed[Context], "returnContext", None, varArgs = false))
     )
   }
 
@@ -68,10 +68,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val classInfo = singleClassDefinition[ClassWithOptions]()
     classInfo.value.methods shouldBe Map(
       // generic type of Java type is properly read
-      "longJavaOption" -> List(MethodInfo(List.empty, Typed[Long], "longJavaOption", None, varArgs = false)),
+      "longJavaOption" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed[Long], "longJavaOption", None, varArgs = false)),
       // generic type of Scala type is erased - this case documents that behavior
-      "longScalaOption" -> List(MethodInfo(List.empty, typing.Unknown, "longScalaOption", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
+      "longScalaOption" -> List(StaticMethodInfo.fromParameterList(List.empty, typing.Unknown, "longScalaOption", None, varArgs = false)),
+      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
     )
   }
 
@@ -119,8 +119,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false)),
-          "foo" -> List(MethodInfo(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false))
+          "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
+          "foo" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false))
         )
       }
     }
@@ -131,10 +131,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
-      "string" -> List(MethodInfo(List(), Typed[String], "string", None, varArgs = false)),
-      "javaList" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.List[String]], "javaList", None, varArgs = false)),
-      "javaMap" -> List(MethodInfo(List(), Typed.fromDetailedType[java.util.Map[String, String]], "javaMap", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false))
+      "string" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "string", None, varArgs = false)),
+      "javaList" -> List(StaticMethodInfo.fromParameterList(List(), Typed.fromDetailedType[java.util.List[String]], "javaList", None, varArgs = false)),
+      "javaMap" -> List(StaticMethodInfo.fromParameterList(List(), Typed.fromDetailedType[java.util.Map[String, String]], "javaMap", None, varArgs = false)),
+      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false))
     ), Map.empty))
 
   }
@@ -143,9 +143,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
     typeUtils shouldBe Some(ClazzDefinition(Typed.typedClass[ClassWithHiddenFields], Map(
-      "normalField" -> List(MethodInfo(List(), Typed[String], "normalField", None, varArgs = false)),
-      "normalParam" -> List(MethodInfo(List(), Typed[String], "normalParam", None, varArgs = false)),
-      "toString" -> List(MethodInfo(List(), Typed[String], "toString", None, varArgs = false))
+      "normalField" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "normalField", None, varArgs = false)),
+      "normalParam" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "normalParam", None, varArgs = false)),
+      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false))
     ), Map.empty))
   }
 
@@ -240,7 +240,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
       val javaInfo :: Nil = javaClazzInfo.methods(name)
       List(scalaInfo, javaInfo).foreach(info => {
-          info.staticParameters shouldBe params
+          info.staticParametersWithSimpleVarArg shouldBe params
           info.staticResult shouldBe result
           info.description shouldBe desc
           info.varArgs shouldBe varArgs
@@ -273,7 +273,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.staticParameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.staticParametersWithSimpleVarArg.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -305,13 +305,13 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     classDef.methods.get("normalMethod") shouldBe defined
   }
 
-  test("should extract vaarargs") {
+  test("should extract varargs") {
     val classDef = singleClassDefinition[JavaClassWithVarargs](ClassExtractionSettings.Default).value
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.staticParameters should have length 1
-    method.staticParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+    method.staticParametersWithFullVarArg should have length 1
+    method.staticParametersWithFullVarArg.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
   private def checkApplyFunction(classes: List[ClazzDefinition],
