@@ -21,7 +21,7 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
   private implicit val user: LoggedUser = LoggedUser("1", "admin", category1Deploy)
-  private val modelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig))
+  private val modelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig))
   private val serviceRoutes = new ServiceRoutes(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson

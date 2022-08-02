@@ -32,6 +32,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   import TestProcessingTypes._
   import VersionId._
   import TestFactory._
+  import TestCategories._
 
   private implicit val system: ActorSystem = ActorSystem()
   private implicit val user: LoggedUser = TestFactory.adminUser("user")
@@ -45,7 +46,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
   private val writeProcessRepository = newWriteProcessRepository(db)
   private val actionRepository = newActionProcessRepository(db)
   private val activityRepository = newProcessActivityRepository(db)
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   private val deploymentService = new DeploymentService(fetchingProcessRepository, actionRepository, TestFactory.scenarioResolver)
 
@@ -417,7 +418,7 @@ class ManagementActorSpec extends FunSuite with Matchers with PatientScalaFuture
 
   private def prepareProcess(processName: ProcessName): Future[ProcessId] = {
     val canonicalProcess = createEmptyStreamingGraph(processName.value)
-    val action = CreateProcessAction(processName, testCategoryName, canonicalProcess, Streaming, isSubprocess = false)
+    val action = CreateProcessAction(processName, TestCat, canonicalProcess, Streaming, isSubprocess = false)
 
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
