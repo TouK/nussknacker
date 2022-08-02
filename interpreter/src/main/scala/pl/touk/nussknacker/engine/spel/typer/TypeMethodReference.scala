@@ -93,13 +93,19 @@ class TypeMethodReference(methodName: String,
     }
   }
 
+  private def combineArgumentTypeErrors(left: ArgumentTypeError, right: ArgumentTypeError): ArgumentTypeError = {
+    if (!left.found.equals(right.found))
+      throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
+    new ArgumentTypeError(left.found, left.possibleSignatures ::: right.possibleSignatures)
+  }
+
   // We try to combine ArgumentTypeErrors into one error. If we fail
   // then we only one first error. All regular functions return
   // only ArgumentTypeError, so we will lose information only when
   // there is more than one generic function.
   private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError = errors match {
     case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
-      xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(_.combine(_))
+      xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)
     case list =>
       // We return error caused by method with the most parameters, because
       // this is the method the would be displayed in suggestions on FE.

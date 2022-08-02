@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import cats.Eq
-import cats.kernel.Eq.neqv
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 trait ExpressionParseError {
@@ -11,11 +9,6 @@ trait ExpressionParseError {
 class ArgumentTypeError(val found: NoVarArgSignature, val possibleSignatures: List[Signature]) extends ExpressionParseError {
   override def message: String =
     s"Mismatch parameter types. Found: ${found.display}. Required: ${possibleSignatures.map(_.display).mkString(" or ")}"
-
-  def combine(x: ArgumentTypeError): ArgumentTypeError = {
-    if (!found.equals(x.found)) throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
-    new ArgumentTypeError(found, possibleSignatures ::: x.possibleSignatures)
-  }
 }
 
 class GenericFunctionError(messageInner: String) extends ExpressionParseError {
