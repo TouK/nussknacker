@@ -1292,7 +1292,7 @@ lazy val openapiComponents = (project in component("openapi")).
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
     ),
-  ).dependsOn(componentsApi % Provided, jsonUtils, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestkit % "it,test")
+  ).dependsOn(componentsApi % Provided, jsonUtils % Provided, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestkit % "it,test")
 
 lazy val sqlComponents = (project in component("sql")).
   configs(IntegrationTest).
