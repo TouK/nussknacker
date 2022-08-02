@@ -5,22 +5,26 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, Parameter, SerializableMethodInfo, StaticMethodInfo, StaticNoVarArgMethodInfo, StaticVarArgMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, Parameter, SerializableMethodInfo, StaticMethodInfo}
 
 class TypeInfosSpec extends FunSuite with Matchers {
   test("should create methodInfos without varArgs") {
-    StaticMethodInfo(List(), Unknown, "", None, varArgs = false) shouldBe
-      StaticNoVarArgMethodInfo(List(), Unknown, "", None)
+    StaticMethodInfo.fromParameterList(List(), Unknown, "", None, varArgs = false) shouldBe
+      StaticMethodInfo(List(), None, Unknown, "", None)
   }
 
   test("should create methodInfos with varArgs") {
-    StaticMethodInfo(List(Parameter("", Typed[Array[Object]])), Unknown, "", None, varArgs = true) shouldBe
-      StaticVarArgMethodInfo(List(), Parameter("", Unknown), Unknown, "", None)
+    StaticMethodInfo.fromParameterList(List(Parameter("", Typed[Array[Object]])), Unknown, "", None, varArgs = true) shouldBe
+      StaticMethodInfo(List(), Some(Parameter("", Unknown)), Unknown, "", None)
   }
 
   test("should throw errors when creating illegal method") {
-    intercept[AssertionError] { StaticMethodInfo(List(Parameter("", Typed[Int])), Unknown, "", None, varArgs = true) }
-    intercept[AssertionError] { StaticMethodInfo(List(), Unknown, "", None, varArgs = true) }
+    intercept[AssertionError] {
+      StaticMethodInfo.fromParameterList(List(Parameter("", Typed[Int])), Unknown, "", None, varArgs = true)
+    }
+    intercept[AssertionError] {
+      StaticMethodInfo.fromParameterList(List(), Unknown, "", None, varArgs = true)
+    }
   }
 
   test("should generate serializable method info") {
@@ -29,20 +33,20 @@ class TypeInfosSpec extends FunSuite with Matchers {
     val paramYArray = Parameter("y", Typed.genericTypeClass[Array[Object]](List(Typed[String])))
     def f(x: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = Unknown.validNel
 
-    StaticNoVarArgMethodInfo(List(paramX), Typed[Double], "b", Some("c")).serializable shouldBe
+    StaticMethodInfo(List(paramX), None, Typed[Double], "b", Some("c")).serializable shouldBe
       SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)
-    StaticVarArgMethodInfo(List(paramX), paramY, Typed[Long], "d", Some("e")).serializable shouldBe
+    StaticMethodInfo(List(paramX), Some(paramY), Typed[Long], "d", Some("e")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramYArray), Typed[Long], Some("e"), varArgs = true)
-    FunctionalMethodInfo(f, List(paramX, paramY), Typed[String], "f", Some("g"), varArgs = false).serializable shouldBe
+    FunctionalMethodInfo(f, StaticMethodInfo(List(paramX, paramY), None, Typed[String], "f", Some("g"))).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramY), Typed[String], Some("g"), varArgs = false)
   }
 
   private val noVarArgsMethodInfo =
-    StaticNoVarArgMethodInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), Typed[Double], "f", None)
+    StaticMethodInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double], "f", None)
   private val varArgsMethodInfo =
-    StaticVarArgMethodInfo(List(Parameter("", Typed[String])), Parameter("", Typed[Int]), Typed[Float], "f", None)
+    StaticMethodInfo(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int])), Typed[Float], "f", None)
   private val superclassMethodInfo =
-    StaticVarArgMethodInfo(List(Parameter("", Unknown)), Parameter("", Typed[Number]), Typed[String], "f", None)
+    StaticMethodInfo(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number])), Typed[String], "f", None)
 
   private def checkApply(info: MethodInfo,
                          args: List[TypingResult],
@@ -65,7 +69,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
     def noVarArgsCheckInvalid(args: List[TypingResult]): Unit =
       checkApplyInvalid(noVarArgsMethodInfo, args, new ArgumentTypeError(
         new Signature(noVarArgsMethodInfo.name, args, None),
-        List(new Signature(noVarArgsMethodInfo.name, noVarArgsMethodInfo.staticParameters.map(_.refClazz), None))
+        new Signature(noVarArgsMethodInfo.name, noVarArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz), None) :: Nil
       ))
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
@@ -82,7 +86,11 @@ class TypeInfosSpec extends FunSuite with Matchers {
     def varArgsCheckInvalid(args: List[TypingResult]): Unit =
       checkApplyInvalid(varArgsMethodInfo, args, new ArgumentTypeError(
         new Signature(varArgsMethodInfo.name, args, None),
-        List(new Signature(varArgsMethodInfo.name, varArgsMethodInfo.noVarParameters.map(_.refClazz), Some(varArgsMethodInfo.varParameter.refClazz)))
+        new Signature(
+          varArgsMethodInfo.name,
+          varArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz),
+          varArgsMethodInfo.staticVarArgParameter.map(_.refClazz)
+        ) :: Nil
       ))
 
     varArgsCheckValid(List(Typed[String]))

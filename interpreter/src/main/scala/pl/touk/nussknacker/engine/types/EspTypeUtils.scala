@@ -63,7 +63,7 @@ object EspTypeUtils {
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.staticParameters.map(_.refClazz) :+ methodInfo.staticResult).forall {
+      (methodInfo.staticParametersWithSimpleVarArg.map(_.refClazz) :+ methodInfo.staticResult).forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -84,7 +84,7 @@ object EspTypeUtils {
     In our case the second one is correct
    */
   private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.staticParameters))
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.staticParametersWithSimpleVarArg))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -150,21 +150,19 @@ object EspTypeUtils {
     val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
-    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo.usingParameterList(
       x => typeFunctionInstance.computeResultType(x),
-      StaticMethodInfo(
-        parameterInfo,
-        resultInfo,
-        methodName,
-        extractNussknackerDocs(method),
-        method.isVarArgs
-      )
+      parameterInfo,
+      resultInfo,
+      methodName,
+      extractNussknackerDocs(method),
+      method.isVarArgs
     ))
   }
 
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
-    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo.fromParameterList(
       extractParameters(method),
       extractMethodReturnType(method),
       methodName,
@@ -179,7 +177,13 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> StaticMethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
+      field.getName -> StaticMethodInfo.fromParameterList(
+        List.empty,
+        extractFieldReturnType(field),
+        field.getName,
+        extractNussknackerDocs(field),
+        varArgs = false
+      )
     }.toMap
   }
 

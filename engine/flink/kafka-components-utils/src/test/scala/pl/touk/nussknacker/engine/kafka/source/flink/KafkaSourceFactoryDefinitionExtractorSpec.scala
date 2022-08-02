@@ -16,14 +16,14 @@ class KafkaSourceFactoryDefinitionExtractorSpec extends KafkaSourceFactoryProces
     // and they must not be returned by other services.
     extractedTypes should contain allOf (
       ClazzDefinition(Typed.genericTypeClass(classOf[SampleKey],Nil), Map(
-        "partOne" -> List(StaticMethodInfo(Nil, Typed[String], "partOne", None, varArgs = false)),
-        "partTwo" -> List(StaticMethodInfo(Nil, Typed[Long], "partTwo", None, varArgs = false)),
-        "toString" -> List(StaticMethodInfo(Nil, Typed[String], "toString", None, varArgs = false))
+        "partOne" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[String], "partOne", None, varArgs = false)),
+        "partTwo" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[Long], "partTwo", None, varArgs = false)),
+        "toString" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[String], "toString", None, varArgs = false))
       ), Map.empty),
       ClazzDefinition(Typed.genericTypeClass(classOf[SampleValue],Nil), Map(
-        "id" -> List(StaticMethodInfo(Nil, Typed[String], "id", None, varArgs = false)),
-        "field" -> List(StaticMethodInfo(Nil, Typed[String], "field", None, varArgs = false)),
-        "toString" -> List(StaticMethodInfo(Nil, Typed[String], "toString", None, varArgs = false))
+        "id" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[String], "id", None, varArgs = false)),
+        "field" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[String], "field", None, varArgs = false)),
+        "toString" -> List(StaticMethodInfo.fromParameterList(Nil, Typed[String], "toString", None, varArgs = false))
       ), Map.empty)
     )
   }
