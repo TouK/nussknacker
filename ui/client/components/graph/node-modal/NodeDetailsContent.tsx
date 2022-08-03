@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import {cloneDeep, get, has, isEqual, partition, set, sortBy, startsWith} from "lodash"
-import React, {PropsWithChildren, useMemo, useState} from "react"
+import React, {PropsWithChildren, SetStateAction, useCallback, useEffect, useMemo, useRef, useState} from "react"
 import {v4 as uuid4} from "uuid"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import ProcessUtils from "../../../common/ProcessUtils"
@@ -72,6 +72,8 @@ interface State {
 export interface NodeDetailsContentProps2 extends NodeDetailsContentProps {
   parameterDefinitions: UIParameter[],
   originalNode: NodeType,
+  editedNode: NodeType,
+  setEditedNode: DispatchWithCallback<SetStateAction<NodeType>>,
 }
 
 function getParameterDefinitions(processDefinitionData: ProcessDefinitionData, node: NodeType, dynamicParameterDefinitions?: UIParameter[]): UIParameter[] {
@@ -109,22 +111,53 @@ function IdField({
   )
 }
 
+type Callback<T> = (value?: T) => void
+type DispatchWithCallback<T> = (value: T, callback?: Callback<T>) => void
+
+function useStateCallback<T>(initialState: T | (() => T)): [T, DispatchWithCallback<SetStateAction<T>>] {
+  const [state, _setState] = useState(initialState)
+
+  const callbackRef = useRef<Callback<T>>()
+  const isFirstCallbackCall = useRef(true)
+
+  const setState = useCallback((setStateAction: SetStateAction<T>, callback?: Callback<T>): void => {
+    callbackRef.current = callback
+    _setState(setStateAction)
+  }, [])
+
+  useEffect(() => {
+    if (isFirstCallbackCall.current) {
+      isFirstCallbackCall.current = false
+      return
+    }
+    callbackRef.current?.(state)
+  }, [state])
+
+  return [state, setState]
+}
+
 export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
-  const {node, dynamicParameterDefinitions, processDefinitionData} = props
+  const {node, processId, dynamicParameterDefinitions, processDefinitionData} = props
   const parameterDefinitions = useMemo(() => {
     return getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions)
   }, [dynamicParameterDefinitions, node, processDefinitionData])
 
   const [originalNode] = useState(node)
+  const [editedNode, setEditedNode] = useStateCallback<NodeType>(node)
 
   return (
-    <NodeDetailsContent2
-      {...props}
-      {...{
-        parameterDefinitions,
-        originalNode,
-      }}
-    />
+    <>
+      <NodeDetailsContent2
+        {...props}
+        {...{
+          parameterDefinitions,
+          originalNode,
+          editedNode,
+          setEditedNode,
+        }}
+      />
+      <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
+    </>
   )
 }
 
@@ -150,21 +183,21 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     this.generateUUID("fields", "parameters")
   }
 
-  generateUUID(...properties) {
+  generateUUID(...properties: string[]): void {
     properties.forEach((property) => {
-      if (has(this.state.editedNode, property)) {
-        get(this.state.editedNode, property, []).forEach((el) => el.uuid = el.uuid || uuid4())
+      if (has(this.getEditedNode(), property)) {
+        get(this.getEditedNode(), property, []).forEach((el) => el.uuid = el.uuid || uuid4())
       }
     })
   }
 
   //TODO: get rid of this method as deprecated in React
-  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps>) {
+  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps>): void {
     if (
       !isEqual(this.props.node, nextProps.node) ||
       !isEqual(this.props.edges, nextProps.edges)
     ) {
-      this.updateNodeState(nextProps.node, [])
+      this.updateNodeState(() => ({editedNode: nextProps.node}), [])
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
       this.updateNodeDataIfNeeded(nextProps.node)
@@ -174,12 +207,12 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     }
   }
 
-  adjustStateWithParameters(nodeToAdjust) {
+  adjustStateWithParameters(nodeToAdjust: NodeType): void {
     const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.props.parameterDefinitions)
-    this.updateNodeState(node, unusedParameters)
+    this.updateNodeState(() => ({editedNode: node}), unusedParameters)
   }
 
-  updateNodeDataIfNeeded(currentNode) {
+  updateNodeDataIfNeeded(currentNode: NodeType): void {
     if (this.props.isEditMode) {
       this.props.updateNodeData(this.props.processId, {
         variableTypes: this.props.findAvailableVariables(this.props.originalNodeId),
@@ -189,36 +222,36 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         outgoingEdges: this.state.edges.map(e => ({...e, to: e._id || e.to})),
       })
     } else {
-      this.updateNodeState(currentNode, [])
+      this.updateNodeState(() => ({editedNode: currentNode}), [])
     }
   }
 
-  componentDidUpdate(prevProps, prevState) {
+  componentDidUpdate(prevProps: NodeDetailsContentProps2, prevState: State): void {
     if (
-      !isEqual(prevState.editedNode, this.state.editedNode) ||
+      !isEqual(prevState.editedNode, this.getEditedNode()) ||
       !isEqual(prevState.edges, this.state.edges)
     ) {
-      this.updateNodeDataIfNeeded(this.state.editedNode)
+      this.updateNodeDataIfNeeded(this.getEditedNode())
     }
   }
 
-  removeElement = (property, index) => {
-    const {unusedParameters, editedNode} = this.state
-    if (has(editedNode, property)) {
-      const node = cloneDeep(editedNode)
+  removeElement = (property: string, index: number): void => {
+    const {unusedParameters} = this.state
+    if (has(this.getEditedNode(), property)) {
+      const node = cloneDeep(this.getEditedNode())
       get(node, property).splice(index, 1)
 
-      this.updateNodeState(node, unusedParameters)
+      this.updateNodeState(() => ({editedNode: node}), unusedParameters)
     }
   }
 
-  addElement = (property, element) => {
-    const {unusedParameters, editedNode} = this.state
-    if (has(editedNode, property)) {
-      const node = cloneDeep(editedNode)
+  addElement = <T extends unknown>(property: string, element: T): void => {
+    const {unusedParameters} = this.state
+    if (has(this.getEditedNode(), property)) {
+      const node = cloneDeep(this.getEditedNode())
       get(node, property).push(element)
 
-      this.updateNodeState(node, unusedParameters)
+      this.updateNodeState(() => ({editedNode: node}), unusedParameters)
     }
   }
 
@@ -227,7 +260,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
       isMarked={this.isMarked("id")}
       isEditMode={this.props.isEditMode}
       showValidation={this.props.showValidation}
-      editedNode={this.state.editedNode}
+      editedNode={this.getEditedNode()}
       onChange={(newValue) => this.setNodeDataAt("id", newValue)}
     >
       {this.renderFieldLabel("Name")}
@@ -236,7 +269,6 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
 
   customNode = (fieldErrors: Error[], testResultsState: StateForSelectTestResults): JSX.Element => {
     const {
-      editedNode,
       edges,
     } = this.state
     const {
@@ -279,7 +311,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
           <SubprocessInputDefinition
             addElement={this.addElement}
             onChange={this.setNodeDataAt}
-            node={editedNode}
+            node={this.getEditedNode()}
             isMarked={this.isMarked}
             readOnly={!isEditMode}
             removeElement={this.removeElement}
@@ -295,7 +327,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
-            node={editedNode}
+            node={this.getEditedNode()}
             addElement={this.addElement}
             isMarked={this.isMarked}
             readOnly={!isEditMode}
@@ -330,14 +362,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
                   label={"Outputs"}
                   nodeId={originalNodeId}
                   value={edges}
-                  onChange={(nextEdges) => this.setState(
-                    ({edges}) => {
-                      if (nextEdges !== edges) {
-                        return {edges: nextEdges}
-                      }
-                    },
-                    this.publishNodeChange
-                  )}
+                  onChange={(nextEdges) => this.setEdgesState(nextEdges)}
                   edgeTypes={[
                     {value: EdgeKind.filterTrue, onlyOne: true},
                     {value: EdgeKind.filterFalse, onlyOne: true},
@@ -355,7 +380,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         return (
           <div className="node-table-body">
             {this.idField()}
-            {serviceParameters(editedNode).map((param, index) => {
+            {serviceParameters(this.getEditedNode()).map((param, index) => {
               return (
                 <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
@@ -399,8 +424,8 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
             })}
             <ParameterList
               processDefinitionData={processDefinitionData}
-              editedNode={editedNode}
-              savedNode={editedNode}
+              editedNode={this.getEditedNode()}
+              savedNode={this.getEditedNode()}
               setNodeState={newParams => this.setNodeDataAt("ref.parameters", newParams)}
               createListField={(param, index) => this.createParameterExpressionField(
                 {
@@ -442,9 +467,9 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
                 validators: [errorValidator(fieldErrors, "outputVar")],
               })
             }
-            {NodeUtils.nodeIsJoin(editedNode) && (
+            {NodeUtils.nodeIsJoin(this.getEditedNode()) && (
               <BranchParameters
-                node={editedNode}
+                node={this.getEditedNode()}
                 isMarked={this.isMarked}
                 showValidation={showValidation}
                 showSwitch={showSwitch}
@@ -456,7 +481,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
                 findAvailableVariables={findAvailableVariables}
               />
             )}
-            {editedNode.parameters?.map((param, index) => {
+            {this.getEditedNode().parameters?.map((param, index) => {
               return (
                 <div className="node-block" key={node.id + param.name + index}>
                   {this.createParameterExpressionField(
@@ -480,7 +505,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
             renderFieldLabel={this.renderFieldLabel}
             removeElement={this.removeElement}
             onChange={this.setNodeDataAt}
-            node={editedNode}
+            node={this.getEditedNode()}
             addElement={this.addElement}
             isMarked={this.isMarked}
             readOnly={!isEditMode}
@@ -496,7 +521,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
           <Variable
             renderFieldLabel={this.renderFieldLabel}
             onChange={this.setNodeDataAt}
-            node={editedNode}
+            node={this.getEditedNode()}
             isMarked={this.isMarked}
             readOnly={!isEditMode}
             showValidation={showValidation}
@@ -506,7 +531,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
           />
         )
       case "Switch":
-        const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
+        const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === this.getEditedNode().type)
         const currentExpression = originalNode["expression"]
         const currentExprVal = originalNode["exprVal"]
         const exprValValidator = errorValidator(fieldErrors, "exprVal")
@@ -538,24 +563,17 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
                   label={"Conditions"}
                   nodeId={originalNodeId}
                   value={edges}
-                  onChange={(nextEdges) => this.setState(
-                    ({edges}) => {
-                      if (nextEdges !== edges) {
-                        return {edges: nextEdges}
-                      }
-                    },
-                    this.publishNodeChange
-                  )}
+                  onChange={(nextEdges) => this.setEdgesState(nextEdges)}
                   edgeTypes={[
                     {value: EdgeKind.switchNext},
                     {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
                   ]}
                   ordered
                   readOnly={!isEditMode}
-                  variableTypes={editedNode["exprVal"] ?
+                  variableTypes={this.getEditedNode()["exprVal"] ?
                     {
                       ...variableTypes,
-                      [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                      [this.getEditedNode()["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
                     } :
                     variableTypes}
                   fieldErrors={fieldErrors}
@@ -643,7 +661,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
               propertyErrors={fieldErrors}
               onChange={this.setNodeDataAt}
               renderFieldLabel={this.renderFieldLabel}
-              editedNode={editedNode}
+              editedNode={this.getEditedNode()}
               readOnly={!isEditMode}
             />
           )
@@ -670,12 +688,11 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     children,
     testResultsState,
   }: { fieldErrors: Error[], children?: JSX.Element, testResultsState: StateForSelectTestResults }): JSX.Element {
-    const {editedNode} = this.state
     const {node} = this.props
     return (
       <div className="node-table-body">
         {this.idField()}
-        {refParameters(editedNode).map((param, index) => (
+        {refParameters(this.getEditedNode()).map((param, index) => (
           <div className="node-block" key={node.id + param.name + index}>
             {this.createParameterExpressionField(
               {
@@ -712,11 +729,9 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     validators?: Validator[],
   }): JSX.Element => {
     const {isEditMode, showValidation} = this.props
-    const {editedNode} = this.state
-
     const isMarked = this.isMarked(fieldProperty)
     const readOnly = !isEditMode || readonly
-    const value: T = get(editedNode, fieldProperty, null) ?? defaultValue
+    const value: T = get(this.getEditedNode(), fieldProperty, null) ?? defaultValue
     const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
     const onChange = (newValue) => this.setNodeDataAt(fieldProperty, newValue, defaultValue)
     return (
@@ -750,7 +765,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         fieldLabel={fieldLabel}
         exprPath={`${expressionProperty}`}
         isEditMode={this.props.isEditMode}
-        editedNode={this.state.editedNode}
+        editedNode={this.getEditedNode()}
         isMarked={this.isMarked}
         showValidation={this.props.showValidation}
         showSwitch={this.props.showSwitch}
@@ -778,7 +793,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         fieldLabel={parameter.name}
         exprPath={`${listFieldPath}.${expressionProperty}`}
         isEditMode={this.props.isEditMode}
-        editedNode={this.state.editedNode}
+        editedNode={this.getEditedNode()}
         isMarked={this.isMarked}
         showValidation={this.props.showValidation}
         showSwitch={this.props.showSwitch}
@@ -792,39 +807,67 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     )
   }
 
+  publishNodeChange = (): void => {
+    this.props.onChange?.(this.getEditedNode(), this.state.edges)
+  }
+
   isMarked = (path: string): boolean => {
     const {pathsToMark} = this.props
     return pathsToMark?.some(toMark => startsWith(toMark, path))
   }
 
-  publishNodeChange = (): void => {
-    this.props.onChange?.(this.state.editedNode, this.state.edges)
-  }
-
-  setNodeDataAt = <T extends any>(propToMutate: string, newValue: T, defaultValue?: T): void => {
+  setNodeDataAt = <T extends unknown>(propToMutate: string, newValue: T, defaultValue?: T): void => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
-    this.setState(
-      ({editedNode}) => {
-        const node = cloneDeep(editedNode)
-        return {editedNode: set(node, propToMutate, value)}
-      },
-      this.publishNodeChange,
-    )
+
+    this.updateNodeOnly((current) => {
+      const node = cloneDeep(current)
+      return {editedNode: set(node, propToMutate, value)}
+    })
   }
 
-  updateNodeState = (editedNode: NodeType, unusedParameters: Parameter[]): void => {
+  updateNodeOnly = (updateNode: (current: NodeType) => { editedNode: NodeType }): void => {
+    this.props.setEditedNode(
+      node => updateNode(node)?.editedNode,
+      this.publishNodeChange
+    )
     this.setState(
-      {editedNode, unusedParameters},
+      s => updateNode(s.editedNode),
       this.publishNodeChange
     )
   }
 
-  descriptionField = () => {
+  updateNodeState = (updateNode: (current: NodeType) => { editedNode: NodeType }, unusedParameters?: Parameter[]): void => {
+    if (unusedParameters) {
+      this.setState(
+        {unusedParameters},
+        () => this.updateNodeOnly(updateNode)
+      )
+    } else {
+      this.updateNodeOnly(updateNode)
+    }
+  }
+
+  descriptionField = (): JSX.Element => {
     return this.createField({
       fieldType: FieldType.plainTextarea,
       fieldLabel: "Description",
       fieldProperty: "additionalFields.description",
     })
+  }
+
+  render(): JSX.Element {
+    const {currentErrors = [], processId, node} = this.props
+    const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
+
+    return (
+      <>
+        <NodeErrors errors={otherErrors} message="Node has errors"/>
+        <TestResultsWrapper nodeId={node.id}>
+          {testResultsState => this.customNode(fieldErrors, testResultsState || {})}
+        </TestResultsWrapper>
+        <NodeAdditionalInfoBox node={this.getEditedNode()} processId={processId}/>
+      </>
+    )
   }
 
   renderFieldLabel = (paramName: string): JSX.Element => (
@@ -835,19 +878,18 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     />
   )
 
-  render() {
-    const {currentErrors = [], processId, node} = this.props
-    const {editedNode} = this.state
-    const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
+  private getEditedNode() {
+    return this.state.editedNode
+  }
 
-    return (
-      <>
-        <NodeErrors errors={otherErrors} message="Node has errors"/>
-        <TestResultsWrapper nodeId={node.id}>
-          {testResultsState => this.customNode(fieldErrors, testResultsState || {})}
-        </TestResultsWrapper>
-        <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
-      </>
+  private setEdgesState = (nextEdges: Edge[]) => {
+    this.setState(
+      ({edges}) => {
+        if (nextEdges !== edges) {
+          return {edges: nextEdges}
+        }
+      },
+      this.publishNodeChange
     )
   }
 }

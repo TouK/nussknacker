@@ -14,6 +14,7 @@ import {WithId} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
+import {NodeAdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -375,8 +376,8 @@ class HttpService {
     return promise
   }
 
-  getNodeAdditionalData(processId, node) {
-    const promise = api.post(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
+  getNodeAdditionalData(processId, node): Promise<AxiosResponse<NodeAdditionalInfo>> {
+    const promise = api.post<NodeAdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToFetchState", "Failed to get node additional data"),
       error,
