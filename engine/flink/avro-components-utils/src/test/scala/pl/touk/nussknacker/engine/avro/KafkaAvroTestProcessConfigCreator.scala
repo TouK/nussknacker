@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.avro.schema.{GeneratedAvroClassSample, Generat
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, ConfluentSchemaRegistryClientFactory}
-import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
-import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
+import pl.touk.nussknacker.engine.avro.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
+import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
+import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -24,6 +24,8 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
     SinkForInputMeta.clear()
   }
 
+  private val universalPayload = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val schemaBasedMessagesSerdeProvider = createSchemaBasedMessagesSerdeProvider
 
@@ -31,14 +33,16 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
     // Simple implementations e.g. FullNameV1, although they extend SimpleRecordBase, are not recognized as SpecificRecord classes.
     def avroSpecificSourceFactory[V <: SpecificRecord : ClassTag] = new SpecificRecordKafkaAvroSourceFactory[V](schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
 
+    val universalSourceFactory = new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     val avroGenericSourceFactory = new KafkaAvroSourceFactory(schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
-    val avroGenericSourceFactoryWithKeySchemaSupport = new KafkaAvroSourceFactory(schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    val avroGenericSourceFactoryWithKeySchemaSupport = new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalPayload, processObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = false)
     }
 
     Map(
+      "kafka" -> defaultCategory(universalSourceFactory),
       "kafka-avro" -> defaultCategory(avroGenericSourceFactory),
-      "kafka-avro-key-value" -> defaultCategory(avroGenericSourceFactoryWithKeySchemaSupport),
+      "kafka-key-value" -> defaultCategory(avroGenericSourceFactoryWithKeySchemaSupport),
       "kafka-avro-specific" -> defaultCategory(avroSpecificSourceFactory[GeneratedAvroClassSample]),
       "kafka-avro-specific-with-logical-types" -> defaultCategory(avroSpecificSourceFactory[GeneratedAvroClassWithLogicalTypes])
     )
@@ -52,6 +56,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
     val schemaBasedMessagesSerdeProvider = createSchemaBasedMessagesSerdeProvider
 
     Map(
+      "kafka" -> defaultCategory(new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalPayload, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory)),
       "kafka-avro-raw" -> defaultCategory(new KafkaAvroSinkFactory(schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
       "kafka-avro" -> defaultCategory(new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
       "sinkForInputMeta" -> defaultCategory(SinkForInputMeta.toSinkFactory)

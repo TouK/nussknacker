@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.charset.StandardCharsets
 
-class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
@@ -56,8 +56,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read event in the same version as source requires and save it in the same version") {
     val topicConfig = createAndRegisterTopicConfig("simple", PaymentV1.schema)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
@@ -68,8 +68,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read primitive event and save it in the same format") {
     val topicConfig = createAndRegisterTopicConfig("simple.primitive", Schema.create(Schema.Type.STRING))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, "fooBar", "fooBar")
@@ -77,8 +77,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should handle invalid expression type for topic") {
     val topicConfig = createAndRegisterTopicConfig("simple.bad-expression-type", Schema.create(Schema.Type.STRING))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"123L")
 
     intercept[Exception] {
@@ -88,8 +88,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should handle null value for mandatory parameter") {
     val topicConfig = createAndRegisterTopicConfig("simple.empty-mandatory-field", Schema.create(Schema.Type.STRING))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process = createAvroProcess(sourceParam, sinkParam, sourceTopicParamValue = _ => s"")
 
     intercept[Exception] {
@@ -99,8 +99,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read newer compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("newer-older-older", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
@@ -108,8 +108,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read older compatible event then source requires and save it in newer compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-newer", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(2), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
@@ -117,8 +117,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read event in the same version as source requires and save it in newer compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-older-newer", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input", validationMode = Some(ValidationMode.lax))
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(2), "#input", validationMode = Some(ValidationMode.lax))
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
@@ -126,8 +126,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read older compatible event then source requires and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-older", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
@@ -135,8 +135,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read older compatible event with source and save it in latest compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-latest-latest", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
@@ -144,8 +144,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read older compatible event then source requires, filter and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("older-newer-filter-older", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
     val filterParam = Some("#input.cnt == 0")
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
@@ -154,8 +154,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read compatible events with source, filter and save only one") {
     val topicConfig = createAndRegisterTopicConfig("two-source-filter-one", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(2), "#input")
     val filterParam = Some("#input.cnt == 1")
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
     val events = List(PaymentV1.record, PaymentV2.recordWithData)
@@ -165,8 +165,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read newer (back-compatible) newer event with source and save it in older compatible version") {
     val topicConfig = createAndRegisterTopicConfig("bc-older-older", payment2Schemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentNotCompatible.record, PaymentV1.record)
@@ -174,8 +174,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read older compatible event with source and save it in latest compatible version with map output") {
     val topicConfig = createAndRegisterTopicConfig("older-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, PaymentV2.jsonMap)
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, PaymentV2.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV2.record)
@@ -183,8 +183,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should read newer compatible event with source and save it in older compatible version with map output") {
     val topicConfig = createAndRegisterTopicConfig("newer-output-with-map", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), PaymentV1.jsonMap)
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), PaymentV1.jsonMap)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV2.record, PaymentV1.record)
@@ -192,8 +192,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should rise exception when we provide wrong data map for #Avro helper output") {
     val topicConfig = createAndRegisterTopicConfig("bad-data-with-helper", List(PaymentV1.schema, PaymentV2.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), """{id: "bad"}""")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), """{id: "bad"}""")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     assertThrowsWithParent[Exception] {
@@ -203,8 +203,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should handle exception when saving runtime incompatible event") {
     val topicConfig = createAndRegisterTopicConfig("runtime-incompatible", Address.schema)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{city: #input.city, street: #input.city == 'Warsaw' ? #input.street : null}")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "{city: #input.city, street: #input.city == 'Warsaw' ? #input.street : null}")
     val events = List(Address.encode(Address.exampleData + ("city" -> "Ochota")), Address.record)
     val process = createAvroProcess(sourceParam, sinkParam)
 
@@ -222,8 +222,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should throw exception when try to filter by missing field") {
     val topicConfig = createAndRegisterTopicConfig("try-filter-by-missing-field", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val filterParam = Some("#input.cnt == 1")
     val events = List(PaymentV1.record, PaymentV2.record)
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
@@ -235,8 +235,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should throw exception when try to convert not compatible event") {
     val topicConfig = createAndRegisterTopicConfig("try-to-convert-not-compatible", payment2Schemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(3))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(3), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(3))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(3), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     /**
@@ -311,8 +311,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should accept logical types in generic record") {
     val topicConfig = createAndRegisterTopicConfig("logical-fields-generic", List(PaymentDate.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, "#input")
     val process = createAvroProcess(sourceParam, sinkParam, Some(
       s"#input.dateTime.toEpochMilli == ${PaymentDate.instant.toEpochMilli}L AND " +
         s"#input.date.year == ${PaymentDate.date.getYear} AND #input.date.monthValue == ${PaymentDate.date.getMonthValue} AND #input.date.dayOfMonth == ${PaymentDate.date.getDayOfMonth} AND " +
@@ -330,7 +330,7 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
       GeneratedAvroClassWithLogicalTypesNewSchema.schema
     ))
     val sourceParam = SourceAvroParam.forSpecificWithLogicalTypes(topicConfig)
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(2), "#input")
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(2), "#input")
 
     val givenRecord = GeneratedAvroClassWithLogicalTypesOldSchema(
       PaymentDate.instant,
@@ -357,8 +357,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should define kafka key for output record") {
     val topicConfig = createAndRegisterTopicConfig("kafka-key", List(FullNameV1.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input", key = "#input.first")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input", key = "#input.first")
     val process = createAvroProcess(sourceParam, sinkParam, None)
 
     kafkaClient.createTopic(topicConfig.input, partitions = 1)
@@ -375,8 +375,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should use null key for empty key expression") {
     val topicConfig = createAndRegisterTopicConfig("kafka-null-key", List(FullNameV1.schema))
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input")
     val process = createAvroProcess(sourceParam, sinkParam, None)
 
     kafkaClient.createTopic(topicConfig.input, partitions = 1)
@@ -392,8 +392,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should represent avro string type as Java string") {
     val topicConfig = createAndRegisterTopicConfig("avro-string-type-test", paymentSchemas)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(2))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(2))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input", validationMode = Some(ValidationMode.lax))
     val filterParam = Some("#input.id.toLowerCase != 'we use here method that only String class has'")
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 
@@ -402,8 +402,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
 
   test("should treat key as string when source has string-as-key deserialization") {
     val topicConfig = createAndRegisterTopicConfig("kafka-generic-source-without-key-schema", Product.schema)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input")
     val process = createAvroProcess(sourceParam, sinkParam, None)
 
     kafkaClient.createTopic(topicConfig.input, partitions = 1)
@@ -428,8 +428,8 @@ class KafkaAvroIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndAfter {
     registerSchema(topicConfig.input, FullNameV1.schema, isKey = true)
 
     // create process
-    val sourceParam = SourceAvroParam.forGenericWithKeySchemaSupport(topicConfig, LatestSchemaVersion)
-    val sinkParam = SinkAvroParam(topicConfig, LatestSchemaVersion, value = "#input")
+    val sourceParam = SourceAvroParam.forUniversalWithKeySchemaSupport(topicConfig, LatestSchemaVersion)
+    val sinkParam = UniversalSinkParam(topicConfig, LatestSchemaVersion, value = "#input")
     val filterParam = Some(s"#inputMeta.key.first == '${FullNameV1.BaseFirst}'")
     val process = createAvroProcess(sourceParam, sinkParam, filterParam)
 

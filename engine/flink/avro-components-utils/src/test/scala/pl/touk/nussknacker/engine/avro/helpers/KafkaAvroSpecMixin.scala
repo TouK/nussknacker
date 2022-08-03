@@ -11,24 +11,24 @@ import org.scalatest.{Assertion, FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
-import pl.touk.nussknacker.engine.api.process.{Source, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
+import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
 import pl.touk.nussknacker.engine.avro.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkFactory
-import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaAvroSinkImplFactory
-import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
+import pl.touk.nussknacker.engine.avro.sink.flink.FlinkKafkaUniversalSinkImplFactory
+import pl.touk.nussknacker.engine.avro.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
+import pl.touk.nussknacker.engine.avro.{KafkaAvroBaseComponentTransformer, KafkaUniversalComponentTransformer}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.{EspProcess, expression}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
@@ -44,15 +44,16 @@ import scala.reflect.ClassTag
 
 trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
 
+  type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
+
   import spel.Implicits._
 
   protected var registrar: FlinkProcessRegistrar = _
 
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
 
-  // In default test scenario we use avro payload.
-  protected lazy val schemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider =
-    ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
+  private lazy val avroPayload: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
+  private lazy val universalPayload = ConfluentSchemaBasedSerdeProvider.universal(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
     ExecutionConfigPreparer.chain(
@@ -69,34 +70,34 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
 
   protected lazy val nodeId: NodeId = NodeId("mock-node-id")
 
-  protected def avroSourceFactory(useStringForKey: Boolean): KafkaAvroSourceFactory[Any, Any] = {
-    new KafkaAvroSourceFactory[Any, Any](confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+  protected def universalSourceFactory(useStringForKey: Boolean): KafkaSource = {
+    new UniversalKafkaSourceFactory[Any, Any](confluentClientFactory, universalPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
     }
   }
 
   // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
-  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaAvroSourceFactory[Any, Any] = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaSource = {
+    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, avroPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
     }
     factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
   }
 
-  protected lazy val avroSinkFactory: KafkaAvroSinkFactory = {
-    new KafkaAvroSinkFactory(confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, FlinkKafkaAvroSinkImplFactory)
+  protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
+    new UniversalKafkaSinkFactory(confluentClientFactory, universalPayload, testProcessObjectDependencies, FlinkKafkaUniversalSinkImplFactory)
   }
 
   protected def validationModeParam(validationMode: ValidationMode): expression.Expression = s"'${validationMode.name}'"
 
   protected def createAvroProcess(source: SourceAvroParam,
-                                  sink: SinkAvroParam,
+                                  sink: UniversalSinkParam,
                                   filterExpression: Option[String] = None,
                                   sourceTopicParamValue: String => String = topic => s"'${topic}'"): EspProcess = {
     import spel.Implicits._
     val sourceParams = List(TopicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
-      case GenericSourceAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
-      case GenericSourceWithKeySupportAvroParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+      case UniversalSourceParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
+      case UniversalSourceWithKeySupportParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case SpecificSourceAvroParam(_) => List.empty
       case SpecificWithLogicalTypesSourceAvroParam(_) => List.empty
     })
@@ -105,6 +106,8 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       TopicParamName -> s"'${sink.topic}'",
       SchemaVersionParamName -> formatVersionParam(sink.versionOption),
       SinkKeyParamName -> sink.key)
+
+    val editorParams: List[(String, expression.Expression)] = List(RawEditorParamName -> s"${sink.validationMode.isDefined}")
 
     val validationParams: List[(String, expression.Expression)] =
       sink.validationMode.map(validation => SinkValidationModeParameterName -> validationModeParam(validation)).toList
@@ -126,8 +129,8 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
       .split("split",
         GraphBuilder.emptySink(
           "end",
-          sink.sinkId,
-          baseSinkParams ++ validationParams ++ sink.valueParams: _*
+          "kafka",
+          baseSinkParams ++ editorParams ++ validationParams ++ sink.valueParams: _*
         ),
         GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "value" -> "#inputMeta")
       )
@@ -167,12 +170,12 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     def sourceType: String
   }
 
-  case class GenericSourceAvroParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro"
+  case class UniversalSourceParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
+    override def sourceType: String = "kafka"
   }
 
-  case class GenericSourceWithKeySupportAvroParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro-key-value"
+  case class UniversalSourceWithKeySupportParam(topic: String, versionOption: SchemaVersionOption) extends SourceAvroParam {
+    override def sourceType: String = "kafka-key-value"
   }
 
   case class SpecificSourceAvroParam(topic: String) extends SourceAvroParam {
@@ -184,43 +187,40 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   }
 
   object SourceAvroParam {
+    def forUniversal(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
+      UniversalSourceParam(topicConfig.input, versionOption)
 
-    def forGeneric(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      GenericSourceAvroParam(topicConfig.input, versionOption)
-
-    def forGenericWithKeySchemaSupport(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
-      GenericSourceWithKeySupportAvroParam(topicConfig.input, versionOption)
+    def forUniversalWithKeySchemaSupport(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
+      UniversalSourceWithKeySupportParam(topicConfig.input, versionOption)
 
     def forSpecific(topicConfig: TopicConfig): SourceAvroParam =
       SpecificSourceAvroParam(topicConfig.input)
 
     def forSpecificWithLogicalTypes(topicConfig: TopicConfig): SourceAvroParam =
       SpecificWithLogicalTypesSourceAvroParam(topicConfig.input)
-
   }
 
-  case class SinkAvroParam(topic: String,
-                           versionOption: SchemaVersionOption,
-                           valueParams: List[(String, expression.Expression)],
-                           key: String,
-                           validationMode: Option[ValidationMode],
-                           sinkId: String)
+  case class UniversalSinkParam(topic: String,
+                                versionOption: SchemaVersionOption,
+                                valueParams: List[(String, expression.Expression)],
+                                key: String,
+                                validationMode: Option[ValidationMode]) //todo: improve it, but now - if defined we use 'raw editor' otherwise 'value editor'
 
-  object SinkAvroParam {
+  object UniversalSinkParam {
 
     import spel.Implicits.asSpelExpression
 
-    def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: Option[ValidationMode] = Some(ValidationMode.strict)): SinkAvroParam =
-      new SinkAvroParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode, "kafka-avro-raw")
+    def apply(topicConfig: TopicConfig, version: SchemaVersionOption, value: String, key: String = "", validationMode: Option[ValidationMode] = Some(ValidationMode.strict)): UniversalSinkParam =
+      new UniversalSinkParam(topicConfig.output, version, (SinkValueParamName -> asSpelExpression(value)) :: Nil, key, validationMode)
   }
 
-  protected def roundTripKeyValueObject(sourceFactory: Boolean => KafkaAvroSourceFactory[Any, Any], useStringForKey: Boolean, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  protected def roundTripKeyValueObject(sourceFactory: Boolean => KafkaSource, useStringForKey: Boolean, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     pushMessageWithKey(givenKey, givenValue, topic, useStringForKey = useStringForKey)
     readLastMessageAndVerify(sourceFactory(useStringForKey), topic, versionOption, givenKey, givenValue)
   }
 
-  protected def readLastMessageAndVerify(sourceFactory: KafkaAvroSourceFactory[Any, Any], topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
+  protected def readLastMessageAndVerify(sourceFactory: KafkaSource, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
     val parameterValues = sourceFactory match {
       case _: SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaAvroBaseComponentTransformer.TopicParamName -> topic)
@@ -244,7 +244,7 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
     }
   }
 
-  private def createValidatedSource(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  private def createValidatedSource(sourceFactory: KafkaSource, parameterValues: Map[String, Any]):
   Validated[NonEmptyList[ProcessCompilationError], Source with TestDataGenerator with FlinkSourceTestSupport[AnyRef]] = {
     val validatedState = validateParamsAndInitializeState(sourceFactory, parameterValues)
     validatedState.map(state => {
@@ -261,14 +261,14 @@ trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations
   // This transformation can return
   // - the state that contains information on runtime key-value schemas, which is required in createSource.
   // - validation errors
-  private def validateParamsAndInitializeState(sourceFactory: KafkaAvroSourceFactory[Any, Any], parameterValues: Map[String, Any]):
+  private def validateParamsAndInitializeState(sourceFactory: KafkaSource, parameterValues: Map[String, Any]):
   Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
     val parameters = parameterValues.mapValues(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {
-      case sourceFactory.FinalResults(_, Nil, state) => Valid(state.get)
+      case sourceFactory.FinalResults(_, Nil, state) => Valid(state.get.asInstanceOf[sourceFactory.State])
       case result: sourceFactory.FinalResults => Invalid(NonEmptyList.fromListUnsafe(result.errors))
       case _ => Invalid(NonEmptyList(CustomNodeError("Unexpected result of contextTransformation", None), Nil))
     }

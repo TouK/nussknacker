@@ -40,13 +40,13 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read generated generic record in v1 with null key") {
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenObj)
   }
 
   test("should read generated generic record in v1 with empty string key") {
     val givenObj = FullNameV1.createRecord("Jan", "Kowalski")
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenObj)
   }
 
   test("should read generated specific record in v1") {
@@ -58,7 +58,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read last generated generic record with logical types") {
     val givenObj = PaymentDate.record
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, PaymentDateTopic, ExistingSchemaVersion(1), "", givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, PaymentDateTopic, ExistingSchemaVersion(1), "", givenObj)
   }
 
   test("should read last generated specific record with logical types ") {
@@ -72,19 +72,19 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read generated record in v2") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(2), null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(2), null, givenObj)
   }
 
   test("should read generated record in last version") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, LatestSchemaVersion, null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, LatestSchemaVersion, null, givenObj)
   }
 
   test("should return validation errors when schema doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    readLastMessageAndVerify(avroSourceFactory(useStringForKey = true), "fake-topic", ExistingSchemaVersion(1), null, givenObj) should matchPattern {
+    readLastMessageAndVerify(universalSourceFactory(useStringForKey = true), "fake-topic", ExistingSchemaVersion(1), null, givenObj) should matchPattern {
       case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: fake-topic, version: ExistingSchemaVersion(1)", _), _)) => ()
     }
   }
@@ -92,7 +92,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should return validation errors when schema version doesn't exist") {
     val givenObj = FullNameV2.createRecord("Jan", "Maria", "Kowalski")
 
-    readLastMessageAndVerify(avroSourceFactory(useStringForKey = true), RecordTopic, ExistingSchemaVersion(3), null, givenObj) should matchPattern {
+    readLastMessageAndVerify(universalSourceFactory(useStringForKey = true), RecordTopic, ExistingSchemaVersion(3), null, givenObj) should matchPattern {
       case Invalid(NonEmptyList(CustomNodeError(_, "Fetching schema error for topic: testAvroRecordTopic1, version: ExistingSchemaVersion(3)", _), _)) => ()
     }
   }
@@ -100,13 +100,13 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read last generated simple object without key schema") {
     val givenObj = 123123
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, IntTopicNoKey, ExistingSchemaVersion(1), null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, IntTopicNoKey, ExistingSchemaVersion(1), null, givenObj)
   }
 
   test("should ignore key schema and empty key value with string-as-key deserialization") {
     val givenObj = 123123
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, IntTopicWithKey, ExistingSchemaVersion(1), null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, IntTopicWithKey, ExistingSchemaVersion(1), null, givenObj)
   }
 
   test("should read last generated simple object with expected key schema and valid key") {
@@ -116,14 +116,14 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenObj)
     kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
 
-    readLastMessageAndVerify(avroSourceFactory(useStringForKey = true), IntTopicWithKey, ExistingSchemaVersion(1), new String(serializedKey, StandardCharsets.UTF_8), givenObj)
+    readLastMessageAndVerify(universalSourceFactory(useStringForKey = true), IntTopicWithKey, ExistingSchemaVersion(1), new String(serializedKey, StandardCharsets.UTF_8), givenObj)
   }
 
   test("should read object with invalid defaults") {
     val givenObj = new GenericData.Record(InvalidDefaultsSchema)
     givenObj.put("field1", "foo")
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, InvalidDefaultsTopic, ExistingSchemaVersion(1), null, givenObj)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, InvalidDefaultsTopic, ExistingSchemaVersion(1), null, givenObj)
   }
 
   test("should read last generated key-value object, simple type") {
@@ -134,7 +134,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val serializedValue = valueSerializer.serialize(IntTopicWithKey, givenValue)
     kafkaClient.sendRawMessage(IntTopicWithKey, serializedKey, serializedValue, Some(0))
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = false, IntTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = false, IntTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)
   }
 
   test("should read last generated key-value object, complex object") {
@@ -145,7 +145,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val serializedValue = valueSerializer.serialize(RecordTopicWithKey, givenValue)
     kafkaClient.sendRawMessage(RecordTopicWithKey, serializedKey, serializedValue, Some(0))
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = false, RecordTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = false, RecordTopicWithKey, ExistingSchemaVersion(1), givenKey, givenValue)
   }
 
   test("Should validate specific version") {
@@ -209,7 +209,7 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
+    validator.validateNode(universalSourceFactory(useStringForKey = true), paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
   }
 
 }

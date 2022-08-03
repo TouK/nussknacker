@@ -46,8 +46,8 @@ class NamespacedKafkaSourceSinkTest extends KafkaAvroSpecMixin with OptionValues
     val topicConfig = TopicConfig(InputPaymentWithNamespaced, OutputPaymentWithNamespaced, PaymentV1.schema, isKey = false)
     // Process should be created from topic without namespace..
     val processTopicConfig = TopicConfig("input_payment", "output_payment", PaymentV1.schema, isKey = false)
-    val sourceParam = SourceAvroParam.forGeneric(processTopicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(processTopicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(processTopicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.record, PaymentV1.record)
