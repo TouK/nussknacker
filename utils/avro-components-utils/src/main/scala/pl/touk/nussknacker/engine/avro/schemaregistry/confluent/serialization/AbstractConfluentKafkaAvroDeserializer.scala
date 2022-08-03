@@ -89,7 +89,7 @@ object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializ
 object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 
   override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
-    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]]
+    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[JsonSchema]]
     val length = buffer.limit() - bufferDataStart
     val bytes = new Array[Byte](length)
     buffer.get(bytes, 0, length)
