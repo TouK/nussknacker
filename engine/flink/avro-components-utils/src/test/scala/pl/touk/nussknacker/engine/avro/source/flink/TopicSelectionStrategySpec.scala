@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.avro.source.flink
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.source.KafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.avro.{AllTopicsSelectionStrategy, TopicPatternSelectionStrategy}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 
@@ -30,7 +31,7 @@ class TopicSelectionStrategySpec extends KafkaAvroSpecMixin with KafkaAvroSource
   }
 
   test("show how to override topic selection strategy") {
-    new KafkaAvroSourceFactory(confluentClientFactory, schemaBasedMessagesSerdeProvider, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
+    new UniversalKafkaSourceFactory(confluentClientFactory, ConfluentSchemaBasedSerdeProvider.universal(confluentClientFactory), testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override def topicSelectionStrategy = new TopicPatternSelectionStrategy(Pattern.compile("test-.*"))
     }
   }

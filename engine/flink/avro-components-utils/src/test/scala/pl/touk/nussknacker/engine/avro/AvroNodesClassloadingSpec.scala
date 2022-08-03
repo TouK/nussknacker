@@ -29,7 +29,7 @@ class AvroNodesClassloadingSpec extends FunSuite with Matchers with SchemaRegist
 
   private val scenario = ScenarioBuilder
     .streaming("test")
-    .source("source", "kafka-avro",
+    .source("source", "kafka",
       KafkaAvroBaseComponentTransformer.TopicParamName ->  "'not_exist'",
       KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
     )

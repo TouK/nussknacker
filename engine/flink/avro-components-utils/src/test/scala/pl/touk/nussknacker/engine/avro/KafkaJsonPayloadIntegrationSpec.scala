@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.avro
 
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.{BeforeAndAfter, FunSuite}
 import pl.touk.nussknacker.engine.avro.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
@@ -27,22 +28,21 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
 
-  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentSchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(confluentClientFactory)
-
   override protected def prepareValueDeserializer(useSpecificAvroReader: Boolean): Deserializer[Any] = SimpleKafkaJsonDeserializer
 
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    val modelData = LocalModelData(config, creator)
+    val modelData = LocalModelData(config
+      .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)), creator)
     registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), executionConfigPreparerChain(modelData))
   }
 
   test("should read and write json of generic record via avro schema") {
     val topicConfig = createAndRegisterTopicConfig("simple-generic", PaymentV1.schema)
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData))
@@ -51,7 +51,7 @@ class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin w
   test("should read and write json of specific record via avro schema") {
     val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassSampleSchema.schema)
     val sourceParam = SourceAvroParam.forSpecific(topicConfig)
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "#input")
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
     val givenObj = GeneratedAvroClassSampleSchema.specificRecord

@@ -24,6 +24,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.AvroSchemaWithJsonPayload;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -40,6 +41,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
     private static final long serialVersionUID = 2;
     private static final byte avroSchemaType = 1;
     private static final byte jsonSchemaType = 2;
+    private static final byte avroSchemaWithJsonPayloadType = 3;
 
     private transient @Nullable T schema;
 
@@ -65,7 +67,11 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             } else if (schema instanceof JsonSchema) {
                 oos.writeByte(jsonSchemaType);
                 oos.writeUTF(((JsonSchema) schema).rawSchema().toString());
-            } else {
+            } else if (schema instanceof AvroSchemaWithJsonPayload) {
+                oos.writeByte(avroSchemaWithJsonPayloadType);
+                oos.writeUTF(((AvroSchemaWithJsonPayload) schema).rawSchema().toString());
+            }
+            else {
                 throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schema.schemaType());
             }
         }
@@ -83,6 +89,10 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
                 case jsonSchemaType:
                     String jsonSchemaStr = ois.readUTF();
                     this.schema = (T) new JsonSchema(jsonSchemaStr);
+                    break;
+                case avroSchemaWithJsonPayloadType:
+                    String avroSchema = ois.readUTF();
+                    this.schema = (T) new AvroSchemaWithJsonPayload(new AvroSchema(avroSchema));
                     break;
                 default:
                     throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schemaType);

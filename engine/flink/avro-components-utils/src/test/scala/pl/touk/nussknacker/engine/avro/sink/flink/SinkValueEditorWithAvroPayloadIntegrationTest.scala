@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
+private object SinkValueEditorWithAvroPayloadIntegrationTest {
 
   val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
@@ -83,8 +83,8 @@ private object KafkaAvroSinkFactoryWithEditorIntegrationTest {
   )
 }
 
-class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
-  import KafkaAvroSinkFactoryWithEditorIntegrationTest._
+class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin with BeforeAndAfter {
+  import SinkValueEditorWithAvroPayloadIntegrationTest._
 
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
@@ -107,9 +107,9 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
 
   test("record") {
     val topicConfig = topicConfigs("record")
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
-      valueParams = MyRecord.toSampleParams, key = "", validationMode = None, sinkId = "kafka-avro")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topic = topicConfig.output, versionOption = ExistingSchemaVersion(1),
+      valueParams = MyRecord.toSampleParams, key = "", validationMode = None)
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, event = MyRecord.record, expected = MyRecord.record)
@@ -117,8 +117,8 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
 
   test("primitive at top level") {
     val topicConfig = topicConfigs("long")
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "42L", validationMode = None).copy(sinkId = "kafka-avro")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "42L", validationMode = None)
     val process = createAvroProcess(sourceParam, sinkParam)
     val encoded = encode(42L, topicSchemas("long"))
     runAndVerifyResult(process, topicConfig, event = encoded, expected = encoded)
@@ -126,8 +126,8 @@ class KafkaAvroSinkFactoryWithEditorIntegrationTest extends KafkaAvroSpecMixin w
 
   test("array at top level") {
     val topicConfig = topicConfigs("array")
-    val sourceParam = SourceAvroParam.forGeneric(topicConfig, ExistingSchemaVersion(1))
-    val sinkParam = SinkAvroParam(topicConfig, ExistingSchemaVersion(1), "{42L}").copy(sinkId = "kafka-avro")
+    val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(1))
+    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "{42L}")
     val process = createAvroProcess(sourceParam, sinkParam)
     val thrown = intercept[IllegalArgumentException] {
       runAndVerifyResult(process, topicConfig, event = null, expected = null)

@@ -11,14 +11,15 @@ import pl.touk.nussknacker.engine.avro.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.avro.schema.FullNameV1
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.avro.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor}
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Matchers with SchemaRegistryMixin with KafkaAvroSinkSpecMixin with CorrectExceptionHandlingSpec {
+class KafkaUniversalSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Matchers with SchemaRegistryMixin with KafkaAvroSinkSpecMixin with CorrectExceptionHandlingSpec {
 
   private val topic = "topic1"
 
@@ -34,10 +35,9 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
         val schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
-        val provider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
+        val universalProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
         Map(
-          "kafka-avro" -> WithCategories(new KafkaAvroSinkFactoryWithEditor(schemaRegistryClientFactory, provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
-          "kafka-avro-raw" -> WithCategories(new KafkaAvroSinkFactory(schemaRegistryClientFactory, provider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
+          "kafka" -> WithCategories(new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory)),
         )
       }
     }
@@ -45,18 +45,20 @@ class KafkaAvroSinkExceptionHandlingSpec extends FunSuite with FlinkSpec with Ma
     checkExceptions(configCreator) { case (graph, generator) =>
       graph.split("split",
         GraphBuilder.emptySink("avro-raw",
-          "kafka-avro-raw",
+          "kafka",
           KafkaAvroBaseComponentTransformer.TopicParamName -> s"'$topic'",
           KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'",
           KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"""{first: 'Test', last: (${generator.throwFromString()})}""",
           KafkaAvroBaseComponentTransformer.SinkKeyParamName -> generator.throwFromString(),
+          RawEditorParamName -> s"true",
           KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'"
         ),
         GraphBuilder.emptySink("avro",
-          "kafka-avro",
+          "kafka",
           KafkaAvroBaseComponentTransformer.TopicParamName -> s"'$topic'",
           KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'",
           KafkaAvroBaseComponentTransformer.SinkKeyParamName -> generator.throwFromString(),
+          RawEditorParamName -> s"false",
           "first" -> generator.throwFromString(),
           "last" -> generator.throwFromString()
         ),

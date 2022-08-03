@@ -15,9 +15,6 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  // Use SchemaRegistryProvider for jsonPayload
-  override protected lazy val schemaBasedMessagesSerdeProvider: ConfluentSchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.jsonPayload(confluentClientFactory)
-
   // Use kafka-json serializers
   override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
@@ -26,13 +23,13 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
   test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenValue)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenValue)
   }
 
   test("should read generated generic record in v1 with empty string key") {
     val givenValue = FullNameV1.record
 
-    roundTripKeyValueObject(avroSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
+    roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
   }
 
   test("should read generated specific record in v1") {
