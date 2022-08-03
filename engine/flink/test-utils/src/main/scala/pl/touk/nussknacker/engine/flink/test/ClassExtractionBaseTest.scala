@@ -27,7 +27,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
     case x: StaticMethodInfo => x.copy(name = "")
     case x: FunctionalMethodInfo =>
-      StaticMethodInfo.fromParameterList(x.staticParametersWithFullVarArg, x.staticResult, "", x.description, x.varArgs)
+      StaticMethodInfo.fromParameterList(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
   }
 
   // We need to sort methods with identical names to make checks ignore order.
@@ -66,7 +66,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       cd.clazzName ::
         (cd.methods ++ cd.staticMethods)
           .flatMap(_._2)
-          .flatMap(mi => mi.staticResult :: mi.staticParametersWithSimpleVarArg.map(_.refClazz))
+          .flatMap(mi => mi.staticResult :: mi.staticParameters.map(_.refClazz))
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName

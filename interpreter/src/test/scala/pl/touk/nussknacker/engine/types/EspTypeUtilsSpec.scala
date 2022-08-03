@@ -240,7 +240,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
       val javaInfo :: Nil = javaClazzInfo.methods(name)
       List(scalaInfo, javaInfo).foreach(info => {
-          info.staticParametersWithSimpleVarArg shouldBe params
+          info.staticParameters shouldBe params
           info.staticResult shouldBe result
           info.description shouldBe desc
           info.varArgs shouldBe varArgs
@@ -273,7 +273,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.staticParametersWithSimpleVarArg.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.staticParameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -310,8 +310,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.staticParametersWithFullVarArg should have length 1
-    method.staticParametersWithFullVarArg.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+    method.staticParameters should have length 1
+    method.staticParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
   private def checkApplyFunction(classes: List[ClazzDefinition],

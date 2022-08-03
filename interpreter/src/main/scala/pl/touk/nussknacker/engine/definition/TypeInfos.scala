@@ -24,7 +24,7 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def staticParametersWithFullVarArg: List[Parameter] =
+    def staticParameters: List[Parameter] =
       staticNoVarArgParameters ::: staticVarArgParameter.map{ case Parameter(name, refClazz) =>
         Parameter(name, Typed.genericTypeClass(classOf[Array[Object]], List(refClazz)))
       }.toList
@@ -42,7 +42,7 @@ object TypeInfos {
     def varArgs: Boolean = staticVarArgParameter.isDefined
 
     def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParametersWithFullVarArg, staticResult, description, varArgs)
+      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
   }
 
   object StaticMethodInfo {
@@ -87,8 +87,8 @@ object TypeInfos {
         staticResult.validNel
       else
         new ArgumentTypeError(
-          new Signature(name, arguments, None),
-          new Signature(name, staticNoVarArgParameters.map(_.refClazz), staticVarArgParameter.map(_.refClazz)) :: Nil
+          Signature(name, arguments, None),
+          Signature(name, staticNoVarArgParameters.map(_.refClazz), staticVarArgParameter.map(_.refClazz)) :: Nil
         ).invalidNel
     }
   }
