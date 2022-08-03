@@ -66,7 +66,6 @@ export interface NodeDetailsContentProps {
 interface State {
   editedNode: NodeType,
   edges: WithTempId<Edge>[],
-  unusedParameters: Parameter[],
 }
 
 export interface NodeDetailsContentProps2 extends NodeDetailsContentProps {
@@ -167,11 +166,10 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     super(props)
 
     const {edges, node, isEditMode, parameterDefinitions} = props
-    const {node: editedNode, unusedParameters} = adjustParameters(node, parameterDefinitions)
+    const {adjustedNode: editedNode} = adjustParameters(node, parameterDefinitions)
 
     this.state = {
       editedNode,
-      unusedParameters,
       edges,
     }
 
@@ -192,12 +190,12 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
   }
 
   //TODO: get rid of this method as deprecated in React
-  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps>): void {
+  UNSAFE_componentWillReceiveProps(nextProps: Readonly<NodeDetailsContentProps2>): void {
     if (
       !isEqual(this.props.node, nextProps.node) ||
       !isEqual(this.props.edges, nextProps.edges)
     ) {
-      this.updateNodeState(() => ({editedNode: nextProps.node}), [])
+      this.updateNodeState(() => ({editedNode: nextProps.node}))
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
       this.updateNodeDataIfNeeded(nextProps.node)
@@ -208,8 +206,8 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
   }
 
   adjustStateWithParameters(nodeToAdjust: NodeType): void {
-    const {node, unusedParameters} = adjustParameters(nodeToAdjust, this.props.parameterDefinitions)
-    this.updateNodeState(() => ({editedNode: node}), unusedParameters)
+    const {adjustedNode} = adjustParameters(nodeToAdjust, this.props.parameterDefinitions)
+    this.updateNodeState(() => ({editedNode: adjustedNode}))
   }
 
   updateNodeDataIfNeeded(currentNode: NodeType): void {
@@ -222,7 +220,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         outgoingEdges: this.state.edges.map(e => ({...e, to: e._id || e.to})),
       })
     } else {
-      this.updateNodeState(() => ({editedNode: currentNode}), [])
+      this.updateNodeState(() => ({editedNode: currentNode}))
     }
   }
 
@@ -236,22 +234,20 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
   }
 
   removeElement = (property: string, index: number): void => {
-    const {unusedParameters} = this.state
     if (has(this.getEditedNode(), property)) {
       const node = cloneDeep(this.getEditedNode())
       get(node, property).splice(index, 1)
 
-      this.updateNodeState(() => ({editedNode: node}), unusedParameters)
+      this.updateNodeState(() => ({editedNode: node}))
     }
   }
 
   addElement = <T extends unknown>(property: string, element: T): void => {
-    const {unusedParameters} = this.state
     if (has(this.getEditedNode(), property)) {
       const node = cloneDeep(this.getEditedNode())
       get(node, property).push(element)
 
-      this.updateNodeState(() => ({editedNode: node}), unusedParameters)
+      this.updateNodeState(() => ({editedNode: node}))
     }
   }
 
@@ -711,7 +707,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     )
   }
 
-  createField = <K extends keyof State["editedNode"] & string, T extends State["editedNode"][K]>({
+  createField = <K extends keyof NodeType & string, T extends NodeType[K]>({
     fieldType,
     fieldLabel,
     fieldProperty,
@@ -819,32 +815,17 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
   setNodeDataAt = <T extends unknown>(propToMutate: string, newValue: T, defaultValue?: T): void => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
 
-    this.updateNodeOnly((current) => {
+    this.updateNodeState((current) => {
       const node = cloneDeep(current)
       return {editedNode: set(node, propToMutate, value)}
     })
   }
 
-  updateNodeOnly = (updateNode: (current: NodeType) => { editedNode: NodeType }): void => {
-    this.props.setEditedNode(
-      node => updateNode(node)?.editedNode,
-      this.publishNodeChange
-    )
+  updateNodeState = (updateNode: (current: NodeType) => { editedNode: NodeType }): void => {
     this.setState(
       s => updateNode(s.editedNode),
       this.publishNodeChange
     )
-  }
-
-  updateNodeState = (updateNode: (current: NodeType) => { editedNode: NodeType }, unusedParameters?: Parameter[]): void => {
-    if (unusedParameters) {
-      this.setState(
-        {unusedParameters},
-        () => this.updateNodeOnly(updateNode)
-      )
-    } else {
-      this.updateNodeOnly(updateNode)
-    }
   }
 
   descriptionField = (): JSX.Element => {
