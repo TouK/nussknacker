@@ -9,10 +9,9 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -25,7 +24,7 @@ class UniversalSourceJsonSchemaLiteTest extends FunSuite with Matchers with Vali
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import io.circe.parser._
-  import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
+  import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val schema = SchemaLoader.load(new JSONObject(
@@ -50,7 +49,7 @@ class UniversalSourceJsonSchemaLiteTest extends FunSuite with Matchers with Vali
 
   private val scenario = ScenarioBuilder.streamingLite("check json serialization")
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", RawEditorParamName -> "false",
+    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
       "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
 
 

@@ -5,10 +5,9 @@ import io.circe.parser.parse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.AvroUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
@@ -18,7 +17,7 @@ class UniversalSourceAvroSchemaLiteTest extends FunSuite with Matchers with Vali
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
-  import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
+  import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   private val inputTopic = "input"
@@ -26,7 +25,7 @@ class UniversalSourceAvroSchemaLiteTest extends FunSuite with Matchers with Vali
   private val schema = AvroUtils.parseSchema(
     s"""{
        |  "type": "record",
-       |  "namespace": "pl.touk.nussknacker.engine.avro",
+       |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
        |  "name": "FullName",
        |  "fields": [
        |    { "name": "first", "type": "string" },
@@ -38,7 +37,7 @@ class UniversalSourceAvroSchemaLiteTest extends FunSuite with Matchers with Vali
 
   private val scenario = ScenarioBuilder.streamingLite("check json serialization")
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
-    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", RawEditorParamName -> "false",
+    .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
       "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
 
   test("should read data with json payload on avro schema based topic") {

@@ -9,8 +9,8 @@ import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer
-import pl.touk.nussknacker.engine.avro.schemaregistry.ExistingSchemaVersion
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
@@ -66,8 +66,8 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     .streaming("stateCompatibilityTest")
     .parallelism(1)
     .source("start", "kafka-avro",
-      KafkaAvroBaseComponentTransformer.TopicParamName -> s"'$inTopic'",
-      KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
+      KafkaUniversalComponentTransformer.TopicParamName -> s"'$inTopic'",
+      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
     )
     .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
     .emptySink("sink", "kafka-json", "topic" -> s"'$outTopic'", "value" -> s"{input: #input, previousInput: #previousValue}")

@@ -48,6 +48,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
 * [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction`, `FlinkKafkaSource.createFlinkSource` and `DelayedFlinkKafkaConsumer.apply` takes additional argument, `FlinkCustomNodeContext` now
 * [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Numerous renames:
+  * module `nussknacker-avro-components-utils` -> `nussknacker-schemed-kafka-components-utils`
+  * module `nussknacker-flink-avro-components-utils` -> `nussknacker-flink-schemed-kafka-components-utils`
+  * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
+  * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
 
 ### REST API changes
 
@@ -61,6 +66,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Breaking changes
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Due to addition of support for different schema type (AvroSchema and JsonSchema for now) serialization format of `NkSerializableParsedSchema` has changed. Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Due to renames (see section `Code API changes`) Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
 
 ### Other changes
 

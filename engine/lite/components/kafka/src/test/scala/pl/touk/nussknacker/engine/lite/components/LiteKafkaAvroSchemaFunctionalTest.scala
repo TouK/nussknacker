@@ -14,11 +14,10 @@ import org.scalatest.{FunSuite, Inside, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
-import pl.touk.nussknacker.engine.avro.{AvroUtils, KafkaAvroBaseComponentTransformer}
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
@@ -39,7 +38,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import ValidationMode._
-  import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
+  import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
   import pl.touk.nussknacker.test.LiteralSpEL._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
@@ -439,7 +438,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
         SinkValueParamName -> s"${config.sinkDefinition}",
-        RawEditorParamName -> "true",
+        SinkRawEditorParamName -> "true",
         SinkValidationModeParameterName -> s"'${config.validationModeName}'"
       )
 
@@ -474,7 +473,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
 
   private def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
     val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError)
-    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(KafkaAvroBaseComponentTransformer.SinkValueParamName))))
+    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))))
   }
 
   //RecordConfig -> config with record as a input
