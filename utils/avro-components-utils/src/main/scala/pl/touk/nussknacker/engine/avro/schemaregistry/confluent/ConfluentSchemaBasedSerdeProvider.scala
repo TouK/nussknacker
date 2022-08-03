@@ -6,7 +6,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClientFactory}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClientFactory, SwaggerSchema}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroToJsonFormatterFactory, JsonPayloadToJsonFormatterFactory, UniversalToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadSerializerFactory, ConfluentKeyValueKafkaJsonDeserializerFactory}
@@ -31,6 +31,7 @@ class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSch
           Valid(schema)
       }
       case s: JsonSchema => Valid(schema)
+      case s: SwaggerSchema => Valid(schema)
       case s: AvroSchemaWithJsonPayload => Valid(schema)
       case schema => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
     }

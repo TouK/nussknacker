@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.avro.encode._
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient, SwaggerSchema}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
@@ -58,7 +58,7 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
 }
 
 
-object JsonSchemaSupport extends ParsedSchemaSupport[JsonSchema] {
+object JsonSchemaSupport extends ParsedSchemaSupport[SwaggerSchema] {
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonSchemaPayloadDeserializer
 
   override def serializer[T](schema: ParsedSchema, c: ConfluentSchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[T] = (topic: String, data: T) => data match {
@@ -75,7 +75,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[JsonSchema] {
     case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema.cast().rawSchema()).typingResult
+  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema.cast().swaggerSchema).typingResult
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
