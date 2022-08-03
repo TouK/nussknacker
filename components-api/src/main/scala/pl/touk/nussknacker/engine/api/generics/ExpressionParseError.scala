@@ -16,18 +16,13 @@ class GenericFunctionError(messageInner: String) extends ExpressionParseError {
 }
 
 
-final class Signature(val name: String, val noVarArgs: List[TypingResult], val varArg: Option[TypingResult]) {
+case class Signature(name: String, noVarArgs: List[TypingResult], varArg: Option[TypingResult]) {
   private def typesToString(types: List[TypingResult]): String =
     types.map(_.display).mkString(", ")
 
   def display: String = varArg match {
     case Some(x) => s"$name(${typesToString(noVarArgs :+ x)}...)"
     case None => s"$name(${typesToString(noVarArgs)})"
-  }
-
-  override def equals(obj: Any): Boolean = obj match {
-    case x: Signature => name == x.name && noVarArgs == x.noVarArgs && varArg == x.varArg
-    case _ => false
   }
 }
 
