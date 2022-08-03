@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json
 
 import org.everit.json.schema._
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.collection.JavaConverters._
@@ -47,7 +47,7 @@ class JsonSchemaTypeDefinitionExtractor {
   }
 
   def parseCombinedSchema(combined: CombinedSchema): TypingResult = combined.getSubschemas.toList match {
-    case Nil => Typed.typedClass[Null]
+    case Nil => TypedNull
     case s :: Nil => typeDefinition(s)
     case List(a: StringSchema, _: EnumSchema) => typeDefinition(a)
     case List(_: EnumSchema, b: StringSchema) => typeDefinition(b)
@@ -64,7 +64,7 @@ class JsonSchemaTypeDefinitionExtractor {
       case _: BooleanSchema => Typed.typedClass[Boolean]
       case _: TrueSchema => Typed.typedClass[Boolean]
       case _: FalseSchema => Typed.typedClass[Boolean]
-      case _: NullSchema => Typed.typedClass[Null]
+      case _: NullSchema => TypedNull
       case s: StringSchema => resolveStringWithFormat(s)
       case _: EnumSchema => Typed.typedClass[String]
       case s => throw new IllegalArgumentException(s"Schema '$s' is not supported yet.")

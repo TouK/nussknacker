@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
-import io.swagger.v3.oas.models.media.{ArraySchema, JsonSchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedObjectTypingResult}
+import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
 import java.time.LocalDateTime
@@ -11,7 +11,7 @@ import scala.collection.JavaConverters._
 
 @JsonCodec sealed trait SwaggerTyped {
   self =>
-  def typingResult: SingleTypingResult =
+  def typingResult: TypingResult =
     SwaggerTyped.typingResult(self)
 }
 
@@ -68,7 +68,7 @@ object SwaggerTyped {
     Option(schema.getType)
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
-  def typingResult(swaggerTyped: SwaggerTyped): SingleTypingResult = swaggerTyped match {
+  def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
     case SwaggerObject(elementType, _) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
@@ -89,7 +89,7 @@ object SwaggerTyped {
     case SwaggerDateTime =>
       Typed.typedClass[LocalDateTime]
     case SwaggerNull =>
-      Typed.typedClass[Null]
+      TypedNull
   }
 }
 
