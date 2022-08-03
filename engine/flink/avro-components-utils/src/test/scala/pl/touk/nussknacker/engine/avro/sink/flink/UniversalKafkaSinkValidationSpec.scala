@@ -5,26 +5,26 @@ import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchema
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
+import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
 import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.helpers.KafkaAvroSpecMixin
+import pl.touk.nussknacker.engine.avro.helpers.UniversalKafkaSpecMixin
+import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.avro.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkFactory.RawEditorParamName
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.{GenericNodeTransformationValidator, TransformationResult}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.avro.schema.{FullNameV1, PaymentV1}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSinkSpecMixin {
+class UniversalKafkaSinkValidationSpec extends UniversalKafkaSpecMixin with KafkaAvroSinkSpecMixin {
 
-  import pl.touk.nussknacker.test.LiteralSpELImplicits._
   import KafkaAvroSinkMockSchemaRegistry._
+  import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
@@ -38,13 +38,14 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(avroSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
+    validator.validateNode(sinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
   }
 
-  test("should validate specific version") {
+  test("should validate specific avro schema version") {
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> FullNameV1.exampleData.toSpELLiteral,
+      RawEditorParamName -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'1'")
@@ -52,10 +53,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     result.errors shouldBe Nil
   }
 
-  test("should validate latest version") {
+  test("should validate avro schema latest version") {
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> PaymentV1.exampleData.toSpELLiteral,
+      RawEditorParamName -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
@@ -67,6 +69,7 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
+      RawEditorParamName -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "'1'")
@@ -75,10 +78,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
       InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
   }
 
-  test("should return sane error on invalid version") {
+  test("should return sane error on invalid avro version") {
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "null",
+      RawEditorParamName -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> "'343543'")
@@ -86,10 +90,11 @@ class KafkaAvroSinkImplFactorySpec extends KafkaAvroSpecMixin with KafkaAvroSink
     result.errors shouldBe InvalidPropertyFixedValue(SchemaVersionParamName, None, "'343543'", List("'latest'", "'1'", "'2'", "'3'"), "id") :: Nil
   }
 
-  test("should validate value") {
+  test("should validate value against avro schema") {
     val result = validate(
       SinkKeyParamName -> "",
       SinkValueParamName -> "''",
+      RawEditorParamName -> "true",
       SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
       TopicParamName -> s"'${KafkaAvroSinkMockSchemaRegistry.fullnameTopic}'",
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")

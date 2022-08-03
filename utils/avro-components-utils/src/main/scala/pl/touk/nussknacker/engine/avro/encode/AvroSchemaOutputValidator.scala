@@ -26,7 +26,7 @@ private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputVali
 }
 
 object AvroSchemaOutputValidator {
-  private[encode] val SimpleAvroPath = "Data"
+  private[encode] val SimpleAvroPath = "Value"
 }
 
 class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {

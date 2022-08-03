@@ -12,8 +12,8 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, ProcessObject
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer.SchemaVersionParamName
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.avro.schemaregistry._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.avro.source.UniversalKafkaSourceFactory.UniversalKafkaSourceFactoryState
 import pl.touk.nussknacker.engine.avro.{KafkaUniversalComponentTransformer, RuntimeSchemaData}
 import pl.touk.nussknacker.engine.kafka.PreparedKafkaTopic
@@ -60,7 +60,8 @@ class UniversalKafkaSourceFactory[K: ClassTag, V: ClassTag](val schemaRegistryCl
   protected def determineSchemaAndType(schemaDeterminer: ParsedSchemaDeterminer, paramName: Option[String])(implicit nodeId: NodeId):
   Validated[ProcessCompilationError, (Option[RuntimeSchemaData[ParsedSchema]], TypingResult)] = {
     schemaDeterminer.determineSchemaUsedInTyping.map { schemaData =>
-      (Some(schemaData), UniversalSchemaSupport.typeDefinition(schemaData.schema))
+      val schema = schemaData.schema
+      (Some(schemaData), UniversalSchemaSupport.forSchemaType(schema.schemaType()).typeDefinition(schema))
     }.leftMap(error => CustomNodeError(error.getMessage, paramName))
   }
 

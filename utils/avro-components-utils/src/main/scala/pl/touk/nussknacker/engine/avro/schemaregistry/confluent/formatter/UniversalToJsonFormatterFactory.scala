@@ -41,8 +41,8 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                         ) extends RecordFormatter {
 
-  private lazy val messageFormatter: UniversalMessageFormatter = UniversalSchemaSupport.createMessageFormatter(schemaRegistryClient)
-  private lazy val messageReader: UniversalMessageReader = UniversalSchemaSupport.createMessageReader(schemaRegistryClient)
+  private def formatter(schema: ParsedSchema) = UniversalSchemaSupport.forSchemaType(schema.schemaType()).messageFormatter(schemaRegistryClient)
+  private def reader(schema: ParsedSchema) = UniversalSchemaSupport.forSchemaType(schema.schemaType()).messageReader(schema, schemaRegistryClient)
 
   /**
    * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.
@@ -85,10 +85,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
         }
       } else {
         val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))
-        keyOpt.map(keyJson => messageReader.readJson(keyJson, keySchema, ConfluentUtils.keySubject(topic))).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
+        keyOpt.map(keyJson => reader(keySchema)(keyJson, ConfluentUtils.keySubject(topic))
+          ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
       val valueSchema = getParsedSchemaById(record.valueSchemaId)
-      val valueBytes = messageReader.readJson(value, valueSchema, ConfluentUtils.valueSubject(topic))
+      val valueBytes = reader(valueSchema)(value, ConfluentUtils.valueSubject(topic))
       (keyBytes, valueBytes)
     }
 
@@ -98,10 +99,10 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
   protected def createKeyEncoder(schemaOpt: Option[ParsedSchema]): Encoder[K] = {
     case str: String => Json.fromString(str)
-    case key => messageFormatter.asJson(key, schemaOpt.get)
+    case key => formatter(schemaOpt.get)(key)
   }
 
-  protected def createValueEncoder(schema: ParsedSchema): Encoder[V] = (value: V) => messageFormatter.asJson(value, schema)
+  protected def createValueEncoder(schema: ParsedSchema): Encoder[V] = (value: V) => formatter(schema)(value)
 
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[UniversalSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
@@ -121,11 +122,3 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[Int],
                                                      valueSchemaId: Int,
                                                      consumerRecord: SerializableConsumerRecord[K, V])
-
-private[confluent] trait UniversalMessageFormatter {
-  def asJson(obj: Any, parsedSchema: ParsedSchema): Json
-}
-
-private[confluent] trait UniversalMessageReader {
-  def readJson(jsonObj: Json, parsedSchema: ParsedSchema, subject: String): Array[Byte]
-}

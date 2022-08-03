@@ -41,6 +41,7 @@
   * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
   * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
   * [#3354](https://github.com/TouK/nussknacker/pull/3354) Universal source optimization - if message without schemaId, using cache when getting one
+  * [#3346](https://github.com/TouK/nussknacker/pull/3346) UniversalKafkaSink provides also 'raw editor'
   * [#3345](https://github.com/TouK/nussknacker/pull/3345) Swagger 2.2.1, OpenAPI 3.1, jsonSchema typing and deserialization same as in openapi components
   
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump

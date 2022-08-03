@@ -7,8 +7,12 @@ import org.apache.avro.Schema
 
 import java.util
 
+object AvroSchemaWithJsonPayload {
+  val TYPE = "AVRO_JSON_PAYLOAD"
+}
+
 case class AvroSchemaWithJsonPayload(avroSchema: AvroSchema) extends ParsedSchema {
-  override def schemaType(): String = "AVRO_JSON_PAYLOAD"
+  override def schemaType(): String = AvroSchemaWithJsonPayload.TYPE
 
   override def name(): String = avroSchema.name()
 
