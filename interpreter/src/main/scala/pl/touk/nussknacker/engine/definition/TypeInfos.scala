@@ -29,8 +29,6 @@ object TypeInfos {
         Parameter(name, Typed.genericTypeClass(classOf[Array[Object]], List(refClazz)))
       }.toList
 
-    final def staticParametersWithSimpleVarArg: List[Parameter] = staticNoVarArgParameters ::: staticVarArgParameter.toList
-
     def staticNoVarArgParameters: List[Parameter]
 
     def staticVarArgParameter: Option[Parameter]
