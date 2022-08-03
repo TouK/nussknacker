@@ -24,6 +24,9 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
+    // Returns all parameters including varArg presented as Array[VarArgType];
+    // this the same as method.getParameters. This method is used in logic
+    // that is independent of whether a function has varArgs.
     final def staticParameters: List[Parameter] =
       staticNoVarArgParameters ::: staticVarArgParameter.map{ case Parameter(name, refClazz) =>
         Parameter(name, Typed.genericTypeClass(classOf[Array[Object]], List(refClazz)))
