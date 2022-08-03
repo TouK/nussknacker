@@ -150,7 +150,7 @@ object EspTypeUtils {
     val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
-    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo.usingParameterList(
+    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo.fromParameterList(
       x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,

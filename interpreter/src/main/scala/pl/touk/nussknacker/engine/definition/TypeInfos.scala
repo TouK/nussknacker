@@ -94,12 +94,12 @@ object TypeInfos {
   }
 
   object FunctionalMethodInfo {
-    def usingParameterList(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
-                           parameters: List[Parameter],
-                           refClazz: TypingResult,
-                           name: String,
-                           description: Option[String],
-                           varArgs: Boolean): FunctionalMethodInfo =
+    def fromParameterList(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+                          parameters: List[Parameter],
+                          refClazz: TypingResult,
+                          name: String,
+                          description: Option[String],
+                          varArgs: Boolean): FunctionalMethodInfo =
       FunctionalMethodInfo(typeFunction, StaticMethodInfo.fromParameterList(parameters, refClazz, name, description, varArgs))
   }
 
@@ -115,11 +115,6 @@ object TypeInfos {
     override def staticResult: TypingResult = staticInfo.staticResult
 
     override def description: Option[String] = staticInfo.description
-
-    override def varArgs: Boolean = staticInfo.varArgs
-
-    override def serializable: SerializableMethodInfo = staticInfo.serializable
-
   }
 
 
