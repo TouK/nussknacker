@@ -11,7 +11,7 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
 import pl.touk.nussknacker.engine.avro.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.SwaggerJsonSchema
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 
@@ -89,7 +89,7 @@ object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializ
 object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 
   override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
-    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[SwaggerJsonSchema]]
+    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]]
     val length = buffer.limit() - bufferDataStart
     val bytes = new Array[Byte](length)
     buffer.get(bytes, 0, length)
