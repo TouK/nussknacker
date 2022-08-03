@@ -1,7 +1,11 @@
 import NodeUtils from "./NodeUtils"
 import {cloneDeep, isEqual, map, reject} from "lodash"
 import {Edge, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
-import {enrichNodeWithProcessDependentData, removeBranchParameter} from "../../reducers/graph/utils"
+import {
+  adjustBranchParametersAfterDisconnect,
+  enrichNodeWithProcessDependentData,
+  removeBranchParameter
+} from "../../reducers/graph/utils"
 
 export function mapProcessWithNewNode(process: Process, before: NodeType, after: NodeType): Process {
   return {
@@ -71,9 +75,12 @@ export function replaceNodeOutputEdges(process: Process, processDefinitionData: 
   }
 }
 
-export function deleteNode(process: Process, id: NodeId): Process {
-  const edges = process.edges.filter((e) => e.from !== id).map((e) => e.to === id ? {...e, to: ""} : e)
-  const nodes = process.nodes.filter((n) => n.id !== id)
+export function deleteNode(process: Process, nodeId: NodeId): Process {
+  const edges = process.edges.filter((e) => e.from !== nodeId).map((e) => e.to === nodeId ? {...e, to: ""} : e)
+  const nodesAfterRemove = process.nodes.filter((n) => n.id !== nodeId)
+  const removedEdges = process.edges.filter((e) => e.from === nodeId)
+  const nodes = adjustBranchParametersAfterDisconnect(nodesAfterRemove, removedEdges)
+
   return {...process, edges, nodes}
 }
 
