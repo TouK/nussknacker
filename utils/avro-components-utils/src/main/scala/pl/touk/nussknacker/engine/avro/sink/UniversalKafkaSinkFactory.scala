@@ -65,8 +65,8 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       val validationResult = determinedSchema.map(_.schema)
         .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
         .andThen { schema =>
-          val validate = UniversalSchemaSupport.rawOutputValidator(schema)
-          validate(value.returnType, extractValidationMode(mode))
+          UniversalSchemaSupport.forSchemaType(schema.schemaType())
+            .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)
@@ -92,7 +92,9 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       validatedSchema.andThen { schemaData =>
-        UniversalSchemaSupport.extractSinkValueParameter(schemaData.schema).map { valueParam =>
+        UniversalSchemaSupport.forSchemaType(schemaData.schema.schemaType())
+          .extractSinkValueParameter(schemaData.schema)
+          .map { valueParam =>
           val state = TransformationState(schemaData, valueParam)
           NextParameters(valueParam.toParameters, state = Option(state))
         }

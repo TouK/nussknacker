@@ -55,7 +55,8 @@ class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler.handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
-          UniversalSchemaSupport.sinkValueEncoder(schema.getParsedSchema, validationMode)(data)
+          val encode = UniversalSchemaSupport.forSchemaType(schema.getParsedSchema.schemaType()).sinkValueEncoder(schema.getParsedSchema, validationMode)
+          encode(data)
         }.orNull
       }
     }

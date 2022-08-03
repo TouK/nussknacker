@@ -51,6 +51,11 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
   }
 }
 
+object ConfluentAvroPayloadDeserializer {
+  val default = new ConfluentAvroPayloadDeserializer(false, false, false, DecoderFactory.get())
+}
+
+
 class ConfluentAvroPayloadDeserializer(
                                         useSchemaReflection: Boolean,
                                         useSpecificAvroReader: Boolean,

@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import java.nio.ByteBuffer
 import scala.reflect.ClassTag
-import scala.util.Try
 
 class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with $actualType schema type")
 
@@ -44,8 +43,8 @@ class ConfluentUniversalKafkaDeserializer[T](schemaRegistryClient: ConfluentSche
 
     val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    UniversalSchemaSupport
-      .createPayloadDeserializer(writerSchema)
+    UniversalSchemaSupport.forSchemaType(writerSchema.schemaType())
+      .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
       .asInstanceOf[T]
   }
