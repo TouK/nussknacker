@@ -4,10 +4,11 @@ import {ThunkAction as TA, ThunkDispatch as TD} from "redux-thunk"
 import {ActionTypes} from "./actionTypes"
 import {
   DisplayProcessActivityAction,
+  DisplayProcessCountsAction,
   HandleHTTPErrorAction,
   NodeActions,
   ReportEventAction,
-  SelectionActions
+  SelectionActions,
 } from "./nk"
 import {FeatureFlagsActions} from "./nk/featureFlags"
 import {UserSettingsActions} from "./nk/userSettings"
@@ -17,7 +18,8 @@ import {ToolbarActions} from "./nk/toolbars"
 import {RootState} from "../reducers"
 import {UndoRedoActions} from "./undoRedoActions"
 import {NodeDetailsActions} from "./nk/nodeDetails"
-import {NotificationActions} from "./nk/notifications";
+import {NotificationActions} from "./nk/notifications"
+import {DisplayTestResultsDetailsAction} from "./nk/displayTestResults"
 
 type TypedAction =
   | HandleHTTPErrorAction
@@ -33,6 +35,8 @@ type TypedAction =
   | UserSettingsActions
   | SelectionActions
   | NotificationActions
+  | DisplayTestResultsDetailsAction
+  | DisplayProcessCountsAction
 
 interface UntypedAction extends AnyAction {
   type: Exclude<ActionTypes, TypedAction["type"]>,

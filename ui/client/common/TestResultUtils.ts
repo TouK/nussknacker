@@ -1,89 +1,109 @@
 /* eslint-disable i18next/no-literal-string */
-import {get, head, uniq, values} from "lodash"
+import {head, uniq, values} from "lodash"
 import {NodeId} from "../types"
 
-interface Context {
-  id: number,
+export interface Context {
+  id: string,
   variables: Record<string, { original?: string }>,
 }
 
-interface NodeResults {
+export interface NodeResult {
   context: Context,
 }
 
-interface InvocationResult {
+export interface InvocationResult {
   contextId: Context["id"],
   name: string,
   value: unknown,
 }
 
-export interface TestResults {
-  mockedResults: { contextId: Context["id"] }[],
-  invocationResults: InvocationResult[],
-  nodeResults: NodeResults[],
-  exceptions: { nodeId: NodeId }[],
-  errors: { context: Context, throwable: unknown }[],
+export interface Error {
+  nodeId: NodeId,
+  context: Context,
+  throwable,
 }
 
-interface NodeTestResults {
-  mockedResults: unknown,
-  invocationResults: unknown,
-  nodeResults: unknown,
-  errors: unknown,
+interface MockedResult {
+  contextId: Context["id"],
+}
+
+export interface TestResults {
+  mockedResults: Record<NodeId, MockedResult[]>,
+  invocationResults: Record<NodeId, InvocationResult[]>,
+  nodeResults: Record<NodeId, NodeResult[]>,
+  exceptions: Error[],
+}
+
+export interface NodeTestResults {
+  mockedResults: MockedResult[],
+  invocationResults: InvocationResult[],
+  nodeResults: NodeResult[],
+  errors: Error[],
 }
 
 export interface StateForSelectTestResults {
-  testResultsToShow,
-  testResultsIdToShow: number,
+  testResultsToShow?: NodeResultsForContext,
+  testResultsIdToShow?: string,
+}
+
+export interface NodeResultsForContext {
+  context: Context,
+  mockedResultsForEveryContext: MockedResult[],
+  expressionResults: Record<string, any>,
+  mockedResultsForCurrentContext: MockedResult[],
+  error: Error,
 }
 
 //TODO move it to backend
 class TestResultUtils {
 
   resultsForNode = (testResults: TestResults, nodeId: NodeId): NodeTestResults | null => {
-    if (testResults && this._nodeResults(testResults, nodeId)) {
+    const nodeResults = this._nodeResults(testResults, nodeId)
+    if (nodeResults) {
       return {
+        nodeResults,
         invocationResults: this._invocationResults(testResults, nodeId),
         mockedResults: this._mockedResults(testResults, nodeId),
-        nodeResults: this._nodeResults(testResults, nodeId),
         errors: this._errors(testResults, nodeId),
       }
-    } else {
-      return null
     }
+    return null
   }
 
-  private _nodeResults = ({nodeResults}: TestResults, nodeId: NodeId) => {
-    return (nodeResults || {})[nodeId] || []
-  }
-
-  private _invocationResults = ({invocationResults}: TestResults, nodeId: NodeId) => {
-    return (invocationResults || {})[nodeId] || []
-  }
-
-  private _mockedResults = ({mockedResults}: TestResults, nodeId: NodeId) => {
-    return (mockedResults || {})[nodeId] || []
-  }
-
-  private _errors = ({exceptions}: TestResults, nodeId: NodeId) => {
-    return (exceptions || []).filter((ex) => ex.nodeId == nodeId)
-  }
-
-  stateForSelectTestResults = (id: number, testResults: TestResults): StateForSelectTestResults | null => {
+  stateForSelectTestResults = (testResults?: NodeTestResults, id?: string): StateForSelectTestResults => {
     if (this.hasTestResults(testResults)) {
-      const chosenId = id || get(head(this.availableContexts(testResults)), "id")
+      const chosenId = id || this.availableContexts(testResults)[0].id
       return {
         testResultsToShow: this.nodeResultsForContext(testResults, chosenId),
         testResultsIdToShow: chosenId,
       }
-    } else {
-      return null
     }
+    return {}
   }
 
-  availableContexts = (testResults: TestResults) => {
+  availableContexts = (testResults: NodeTestResults) => {
     return uniq(testResults.nodeResults.map(nr => ({id: nr.context.id, display: this._contextDisplay(nr.context)})))
 
+  }
+
+  hasTestResults = (testResults?: NodeTestResults): boolean => {
+    return testResults && this.availableContexts(testResults).length > 0
+  }
+
+  private _nodeResults(results: TestResults, nodeId: NodeId): NodeResult[] {
+    return results?.nodeResults?.[nodeId] || []
+  }
+
+  private _invocationResults(results: TestResults, nodeId: NodeId): InvocationResult[] {
+    return results?.invocationResults?.[nodeId] || []
+  }
+
+  private _mockedResults(results: TestResults, nodeId: NodeId): MockedResult[] {
+    return results?.mockedResults?.[nodeId] || []
+  }
+
+  private _errors(results: TestResults, nodeId: NodeId): Error[] {
+    return results?.exceptions?.filter((ex) => ex.nodeId === nodeId)
   }
 
   private _contextDisplay = (context: Context): string => {
@@ -93,15 +113,15 @@ class TestResultUtils {
     return (varToInclude.original || "").toString().substring(0, 50)
   }
 
-  private nodeResultsForContext = (nodeTestResults: TestResults, contextId: number) => {
-    const context = (nodeTestResults.nodeResults.find(result => result.context.id == contextId) || {}).context
+  private nodeResultsForContext = (nodeTestResults: NodeTestResults, contextId: string): NodeResultsForContext => {
+    const context = nodeTestResults.nodeResults.find(result => result.context.id == contextId)?.context
     const expressionResults = Object.fromEntries(nodeTestResults
       .invocationResults
       .filter(result => result.contextId == contextId)
       .map(result => [result.name, result.value]))
     const mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
     const mockedResultsForEveryContext = nodeTestResults.mockedResults
-    const error = ((nodeTestResults.errors || []).find((error) => error.context.id === contextId) || {}).throwable
+    const error = nodeTestResults.errors?.find((error) => error.context.id === contextId)?.throwable
     return {
       context,
       expressionResults,
@@ -110,8 +130,6 @@ class TestResultUtils {
       error,
     }
   }
-
-  hasTestResults = (testResults: TestResults): boolean => testResults && this.availableContexts(testResults).length > 0
 }
 
 //TODO this pattern is not necessary, just export every public function as in actions.js

@@ -6,6 +6,7 @@ import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {Error} from "../Validators"
 import {EditorType} from "./Editor"
+import {NodeResultsForContext} from "../../../../../common/TestResultUtils"
 
 type Props = {
   fieldName: string,
@@ -17,10 +18,8 @@ type Props = {
   showValidation: boolean,
   showSwitch: boolean,
   parameterDefinition: UIParameter,
-  setNodeDataAt: UnknownFunction,
-  testResultsToShow: $TodoType,
-  testResultsToHide: $TodoType,
-  toggleTestResult: UnknownFunction,
+  setNodeDataAt: <T extends any>(propToMutate: string, newValue: T, defaultValue?: T) => void,
+  testResultsToShow: NodeResultsForContext,
   renderFieldLabel: UnknownFunction,
   errors: Array<Error>,
   variableTypes: VariableTypes,
@@ -29,7 +28,7 @@ type Props = {
 function ExpressionField(props: Props): JSX.Element {
   const {
     fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
-    parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel,
+    parameterDefinition, setNodeDataAt, testResultsToShow, renderFieldLabel,
     errors, variableTypes,
   } = props
 
@@ -64,8 +63,6 @@ function ExpressionField(props: Props): JSX.Element {
     <ExpressionTestResults
       fieldName={fieldName}
       resultsToShow={testResultsToShow}
-      resultsToHide={testResultsToHide}
-      toggleResult={toggleTestResult}
     >
       <EditableEditor
         param={parameterDefinition}
