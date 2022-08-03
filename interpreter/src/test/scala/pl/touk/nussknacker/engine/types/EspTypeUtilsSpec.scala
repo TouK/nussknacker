@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 
@@ -359,8 +359,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         name,
         arguments,
         new ArgumentTypeError(
-          new Signature(name, arguments, None),
-          List(new Signature(name, expected, None))
+          Signature(name, arguments, None),
+          List(Signature(name, expected, None))
         ).message.invalidNel
       )
 
@@ -428,8 +428,8 @@ private class HeadHelper extends TypingFunction {
 
   private def error(arguments: List[TypingResult]): ExpressionParseError =
     new ArgumentTypeError(
-      new Signature("head", arguments, None),
-      List(new Signature("head", List(Typed.fromDetailedType[List[Object]]), None))
+      Signature("head", arguments, None),
+      List(Signature("head", List(Typed.fromDetailedType[List[Object]]), None))
     )
 
   override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
