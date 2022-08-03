@@ -4,7 +4,7 @@ import org.apache.avro.Schema
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.scalacheck.Gen
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets

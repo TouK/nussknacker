@@ -4,9 +4,9 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
-import pl.touk.nussknacker.engine.avro._
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka._
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.spel
@@ -89,18 +89,18 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .source(
         "start",
         "kafka-registry-typed-json",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka-registry-typed-json-raw",
-        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseComponentTransformer.SinkValueParamName -> "#input",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
       )
 
   private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
@@ -110,18 +110,18 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
         "kafka-avro-raw",
-        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseComponentTransformer.SinkValueParamName -> "#input",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
+        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
 
       )
 
@@ -132,17 +132,17 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .source(
         "start",
         "kafka-avro",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
         "kafka-avro-raw",
-        KafkaAvroBaseComponentTransformer.SinkKeyParamName -> "",
-        KafkaAvroBaseComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
-        KafkaAvroBaseComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaAvroBaseComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
-        KafkaAvroBaseComponentTransformer.SchemaVersionParamName -> "'1'"
+        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
+        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
+        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
+        KafkaUniversalComponentTransformer.SchemaVersionParamName -> "'1'"
       )
 
 

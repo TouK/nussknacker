@@ -606,7 +606,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
       )
     }
   ).
-  dependsOn(flinkAvroComponentsUtils,
+  dependsOn(flinkSchemedKafkaComponentsUtils,
     flinkComponentsUtils % Provided,
     componentsUtils,
     //TODO: NodeAdditionalInfoProvider & ComponentExtractor should probably be moved to API?
@@ -704,7 +704,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     Jmh / classDirectory := (Test / classDirectory).value,
     Jmh / dependencyClasspath := (Test / dependencyClasspath).value,
     Jmh / generateJmhSourcesAndResources := (Jmh / generateJmhSourcesAndResources).dependsOn(Test / compile).value,
-  ).dependsOn(interpreter, flinkAvroComponentsUtils, flinkExecutor, flinkBaseComponents, testUtils % "test")
+  ).dependsOn(interpreter, flinkSchemedKafkaComponentsUtils, flinkExecutor, flinkBaseComponents, testUtils % "test")
 
 
 lazy val kafkaUtils = (project in utils("kafka-utils")).
@@ -737,10 +737,10 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils")).
     }
   ).dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
 
-lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
+lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-avro-components-utils",
+    name := "nussknacker-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
         "io.confluent" % "kafka-json-schema-provider" % confluentV excludeAll(
@@ -762,10 +762,10 @@ lazy val avroComponentsUtils = (project in utils("avro-components-utils")).
     }
   ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test", jsonUtils)
 
-lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
+lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-components-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-flink-avro-components-utils",
+    name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
@@ -775,7 +775,7 @@ lazy val flinkAvroComponentsUtils = (project in flink("avro-components-utils")).
       )
     }
   )
-  .dependsOn(avroComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
+  .dependsOn(schemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
     kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")).
@@ -845,7 +845,7 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-components-testkit",
-  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, avroComponentsUtils)
+  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, schemedKafkaComponentsUtils)
 
 
 lazy val commonUtils = (project in utils("utils")).
@@ -982,7 +982,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
   liteEngineKafkaComponentsApi % Provided,
   liteComponentsApi % Provided,
   componentsUtils % Provided,
-  avroComponentsUtils,
+  schemedKafkaComponentsUtils,
   liteComponentsTestkit % Test
 )
 
@@ -1027,7 +1027,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
       "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
       "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it"
     )
-  ).dependsOn(interpreter % "it", avroComponentsUtils % "it", testUtils % "it", kafkaTestUtils % "it", httpUtils % "it")
+  ).dependsOn(interpreter % "it", schemedKafkaComponentsUtils % "it", testUtils % "it", kafkaTestUtils % "it", httpUtils % "it")
 
 lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")).
   settings(commonSettings).
@@ -1341,7 +1341,7 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   settings(publishAssemblySettings: _*).
   settings(
     name := "nussknacker-flink-kafka-components",
-  ).dependsOn(flinkComponentsApi % Provided, flinkKafkaComponentsUtils, flinkAvroComponentsUtils, commonUtils % Provided, componentsUtils % Provided)
+  ).dependsOn(flinkComponentsApi % Provided, flinkKafkaComponentsUtils, flinkSchemedKafkaComponentsUtils, commonUtils % Provided, componentsUtils % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
 lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
@@ -1466,7 +1466,7 @@ lazy val ui = (project in file("ui/server"))
     liteEmbeddedDeploymentManager % "provided",
     liteK8sDeploymentManager % "provided",
     kafkaUtils % "provided",
-    avroComponentsUtils % "provided",
+    schemedKafkaComponentsUtils % "provided",
     requestResponseRuntime % "provided",
     developmentTestsDeploymentManager % "provided",
   )
@@ -1513,9 +1513,9 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, helpersUtils, commonUtils, utilsInternal, testUtils,
-  flinkExecutor, flinkAvroComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
+  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, avroComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit
 )

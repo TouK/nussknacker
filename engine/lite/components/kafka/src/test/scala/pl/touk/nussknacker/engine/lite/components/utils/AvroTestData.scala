@@ -7,7 +7,7 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{LogicalTypes, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.avro.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.lite.components.utils.AvroSchemaCreator.{Null, createArray, createEnum, createField, createFixed, createLogical, createMap, createRecord}
 
 import java.nio.charset.StandardCharsets

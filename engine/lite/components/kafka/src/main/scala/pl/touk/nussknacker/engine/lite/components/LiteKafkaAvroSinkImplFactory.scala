@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.lite.components
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.process.Sink
-import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.sink.KafkaAvroSinkImplFactory
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.sink.KafkaAvroSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.util.KeyedValue

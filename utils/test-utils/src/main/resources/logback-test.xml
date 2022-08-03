@@ -18,7 +18,7 @@
     <logger name="pl.touk.nussknacker.engine.flink.util.async" level="WARN"/>
     <logger name="pl.touk.nussknacker.engine.process.registrar.DefaultStreamExecutionEnvPreparer" level="ERROR"/>
 
-    <logger name="pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient" level="OFF"/>
+    <logger name="pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClient" level="OFF"/>
 
     <logger name="pl.touk.nussknacker.engine.kafka.RichKafkaConsumer" level="DEBUG"/>
 
