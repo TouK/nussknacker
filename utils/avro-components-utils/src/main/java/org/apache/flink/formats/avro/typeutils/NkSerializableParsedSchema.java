@@ -20,11 +20,11 @@ package org.apache.flink.formats.avro.typeutils;
 
 import io.confluent.kafka.schemaregistry.ParsedSchema;
 import io.confluent.kafka.schemaregistry.avro.AvroSchema;
-import io.confluent.kafka.schemaregistry.json.JsonSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.AvroSchemaWithJsonPayload;
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.OpenAPIJsonSchema;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -64,9 +64,9 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             if (schema instanceof AvroSchema) {
                 oos.writeByte(avroSchemaType);
                 oos.writeUTF(((AvroSchema) schema).rawSchema().toString(false));
-            } else if (schema instanceof JsonSchema) {
+            } else if (schema instanceof OpenAPIJsonSchema) {
                 oos.writeByte(jsonSchemaType);
-                oos.writeUTF(((JsonSchema) schema).rawSchema().toString());
+                oos.writeUTF(((OpenAPIJsonSchema) schema).rawSchema().toString());
             } else if (schema instanceof AvroSchemaWithJsonPayload) {
                 oos.writeByte(avroSchemaWithJsonPayloadType);
                 oos.writeUTF(((AvroSchemaWithJsonPayload) schema).rawSchema().toString());
@@ -88,7 +88,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
                     break;
                 case jsonSchemaType:
                     String jsonSchemaStr = ois.readUTF();
-                    this.schema = (T) new JsonSchema(jsonSchemaStr);
+                    this.schema = (T) new OpenAPIJsonSchema(jsonSchemaStr);
                     break;
                 case avroSchemaWithJsonPayloadType:
                     String avroSchema = ois.readUTF();
