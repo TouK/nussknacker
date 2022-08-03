@@ -30,7 +30,7 @@ class ConfluentSchemaBasedSerdeProvider(val serializationSchemaFactory: KafkaSch
         else
           Valid(schema)
       }
-      case s: OpenAPIJsonSchema => Valid(schema)
+      case s: JsonSchema => Valid(schema)
       case s: AvroSchemaWithJsonPayload => Valid(schema)
       case schema => throw new IllegalArgumentException(s"Unsupported schema type: $schema")
     }
