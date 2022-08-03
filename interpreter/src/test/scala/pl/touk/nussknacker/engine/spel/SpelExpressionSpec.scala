@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
@@ -11,13 +12,13 @@ import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.{TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
@@ -601,6 +602,21 @@ class SpelExpressionSpec extends FunSuite with Matchers {
     parseOrFail[Any]("#processHelper.constant()", ctxWithGlobal).evaluateSync[Int](ctxWithGlobal) should equal(4)
   }
 
+  test("should be able to call generic functions") {
+    parseOrFail[Int]("#processHelper.genericFunction(8, false)", ctxWithGlobal)
+      .evaluateSync[Int](ctxWithGlobal) shouldBe 8
+  }
+
+  test("should be able to call generic functions with varArgs") {
+    parseOrFail[Int]("#processHelper.genericFunctionWithVarArg(4)", ctxWithGlobal)
+      .evaluateSync[Int](ctxWithGlobal) shouldBe 4
+    // FIXME: Calling any function with exactly one varArg causes evaluation to fail.
+//    parseOrFail[Int]("#processHelper.genericFunctionWithVarArg(4, true)", ctxWithGlobal)
+//      .evaluateSync[Int](ctxWithGlobal) shouldBe 5
+    parseOrFail[Int]("#processHelper.genericFunctionWithVarArg(4, true, false, true)", ctxWithGlobal)
+      .evaluateSync[Int](ctxWithGlobal) shouldBe 6
+  }
+
   test("detect bad type of literal or variable") {
 
     def shouldHaveBadType(valid: Validated[NonEmptyList[ExpressionParseError], _], message: String) =
@@ -893,6 +909,23 @@ object SampleGlobalObject {
   def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
 
   def methodWithPrimitiveParams(int: Int, long: Long, bool: Boolean): String = s"$int $long $bool"
+
+  @GenericType(typingFunction = classOf[GenericFunctionHelper])
+  def genericFunction(a: Int, b: Boolean): Int = a + (if (b) 1 else 0)
+
+  @GenericType(typingFunction = classOf[GenericFunctionVarArgHelper])
+  @varargs
+  def genericFunctionWithVarArg(a: Int, b: Boolean*): Int = a + b.count(identity)
+
+  private case class GenericFunctionHelper() extends TypingFunction {
+    override def computeResultType(arguments: List[typing.TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+      Typed[Int].validNel
+  }
+
+  private case class GenericFunctionVarArgHelper() extends TypingFunction {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+      Typed[Int].validNel
+  }
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {
