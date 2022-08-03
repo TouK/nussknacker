@@ -38,7 +38,6 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
   protected def prepareFixture(inputTopic: String = generateInputTopicName, outputTopic: String = generateOutputTopicName,
                                initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
     val configToUse = config
-      .withValue("auto.offset.reset", fromAnyRef("earliest"))
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
       .withValue("components.kafka.enabled", fromAnyRef(true))
       .withValue("kafka.kafkaProperties", fromMap(Map[String, Any](
@@ -46,7 +45,8 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
         //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
         "max.block.ms" -> 2000,
         "request.timeout.ms" -> 2000,
-        "default.api.timeout.ms" -> 2000
+        "default.api.timeout.ms" -> 2000,
+        "auto.offset.reset" -> "earliest"
       ).asJava))
 
     val modelData = LocalModelData(configToUse, new EmptyProcessConfigCreator)
