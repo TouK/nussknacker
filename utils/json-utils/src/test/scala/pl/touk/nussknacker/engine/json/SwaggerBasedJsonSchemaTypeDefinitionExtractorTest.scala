@@ -35,7 +35,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends FunSuite {
         |  }
         |}""".stripMargin))
 
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val results = List(
       "last" -> Typed.apply[String],
@@ -70,7 +70,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends FunSuite {
         |}
         |""".stripMargin))
 
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val results = List(
       "rectangle" -> TypedObjectTypingResult.apply(
@@ -99,7 +99,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends FunSuite {
         |  }
         |}""".stripMargin))
 
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val results = List(
       "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(Typed[String])),

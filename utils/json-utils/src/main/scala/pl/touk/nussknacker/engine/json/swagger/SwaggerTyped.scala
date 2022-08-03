@@ -42,11 +42,11 @@ object SwaggerTyped {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas)
     case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas)
-    case objectSchema: JsonSchema if Option(objectSchema.getTypes).exists(_.contains("object")) => SwaggerObject(objectSchema, swaggerRefSchemas)
     case _ => Option(schema.get$ref()) match {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
-      case None => (Option(schema.getType).getOrElse(schema.getTypes.asScala.head), Option(schema.getFormat)) match {
+      case None => (extractType(schema).get, Option(schema.getFormat)) match {
+        case ("object", _) => SwaggerObject(schema.asInstanceOf[ObjectSchema], swaggerRefSchemas)
         case ("boolean", _) => SwaggerBool
         case ("string", Some("date-time")) => SwaggerDateTime
         case ("string", _) => Option(schema.getEnum) match {
@@ -58,10 +58,15 @@ object SwaggerTyped {
         case ("number", Some("double")) => SwaggerDouble
         case ("number", Some("float")) => SwaggerDouble
         case (null, None) => SwaggerNull
+        //todo handle unions
         case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
       }
     }
   }
+
+  private def extractType(schema: Schema[_]): Option[String] =
+    Option(schema.getType)
+      .orElse(Option(schema.getTypes).map(_.asScala.head))
 
   def typingResult(swaggerTyped: SwaggerTyped): SingleTypingResult = swaggerTyped match {
     case SwaggerObject(elementType, _) =>

@@ -75,7 +75,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[JsonSchema] {
     case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema.cast().rawSchema()).typingResult
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
