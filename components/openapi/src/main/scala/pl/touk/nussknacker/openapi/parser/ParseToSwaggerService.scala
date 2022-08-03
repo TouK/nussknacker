@@ -12,6 +12,8 @@ import io.swagger.v3.oas.models.parameters.RequestBody
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import io.swagger.v3.oas.models.servers.Server
+import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
+import pl.touk.nussknacker.engine.json.swagger.parser.SwaggerRefSchemas
 import pl.touk.nussknacker.openapi._
 
 import scala.collection.JavaConverters._

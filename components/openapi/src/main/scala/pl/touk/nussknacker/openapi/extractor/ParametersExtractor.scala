@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.openapi.extractor
 
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerEnum, SwaggerObject, SwaggerTyped}
 import pl.touk.nussknacker.openapi._
 
 object ParametersExtractor {

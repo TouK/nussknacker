@@ -1,14 +1,16 @@
-package pl.touk.nussknacker.openapi.extractor
-
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-import java.time.format.DateTimeFormatter
+package pl.touk.nussknacker.engine.json.swagger.extractor
 
 import io.circe.{Json, JsonNumber, JsonObject}
-import pl.touk.nussknacker.openapi.{PropertyName, SwaggerArray, SwaggerBigDecimal, SwaggerBool, SwaggerDateTime, SwaggerDouble, SwaggerEnum, SwaggerLong, SwaggerObject, SwaggerString, SwaggerTyped}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
+import pl.touk.nussknacker.engine.json.swagger._
+
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
 // TODO: Validated
 object JsonToObject {
+
   import scala.collection.JavaConverters._
 
   case class JsonToObjectError(json: Json, definition: SwaggerTyped)

@@ -101,6 +101,7 @@ def modelMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
+  case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -893,6 +894,12 @@ lazy val jsonUtils = (project in utils("json-utils")).
   settings(
     name := "nussknacker-json-utils",
     libraryDependencies ++= Seq(
+      "io.swagger.parser.v3" % "swagger-parser" % swaggerParserV excludeAll(
+        ExclusionRule(organization = "javax.mail"),
+        ExclusionRule(organization = "javax.validation"),
+        ExclusionRule(organization = "jakarta.activation"),
+        ExclusionRule(organization = "jakarta.validation")
+      ),
       "com.github.erosb" % "everit-json-schema" % everitSchemaV
     )
   ).dependsOn(componentsUtils, testUtils % "test")
@@ -967,12 +974,12 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
     },
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
   ).dependsOn(
-    liteEngineKafkaComponentsApi % Provided,
-    liteComponentsApi % Provided,
-    componentsUtils % Provided,
-    avroComponentsUtils,
-    liteComponentsTestkit % Test
-  )
+  liteEngineKafkaComponentsApi % Provided,
+  liteComponentsApi % Provided,
+  componentsUtils % Provided,
+  avroComponentsUtils,
+  liteComponentsTestkit % Test
+)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
@@ -1262,8 +1269,8 @@ lazy val httpUtils = (project in utils("http-utils")).
     }
   ).dependsOn(componentsApi % Provided, testUtils % "test")
 
-val swaggerParserV = "2.0.20"
-val swaggerIntegrationV = "2.1.3"
+val swaggerParserV = "2.1.1"
+val swaggerIntegrationV = "2.2.1"
 
 lazy val openapiComponents = (project in component("openapi")).
   configs(IntegrationTest).
@@ -1274,12 +1281,6 @@ lazy val openapiComponents = (project in component("openapi")).
   settings(
     name := "nussknacker-openapi",
     libraryDependencies ++= Seq(
-      "io.swagger.parser.v3" % "swagger-parser" % swaggerParserV excludeAll(
-        ExclusionRule(organization = "javax.mail"),
-        ExclusionRule(organization = "javax.validation"),
-        ExclusionRule(organization = "jakarta.activation"),
-        ExclusionRule(organization = "jakarta.validation")
-      ),
       "io.swagger.core.v3" % "swagger-integration" % swaggerIntegrationV excludeAll(
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
@@ -1291,7 +1292,7 @@ lazy val openapiComponents = (project in component("openapi")).
       "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
     ),
-  ).dependsOn(componentsApi % Provided, componentsUtils % Provided, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestkit % "it,test")
+  ).dependsOn(componentsApi % Provided, jsonUtils % Provided, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestkit % "it,test")
 
 lazy val sqlComponents = (project in component("sql")).
   configs(IntegrationTest).

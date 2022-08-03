@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.converter.SwaggerConverter
 import io.swagger.v3.parser.core.models.ParseOptions
+import pl.touk.nussknacker.engine.json.swagger.parser.ParseSwaggerRefSchemas
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 
 import java.util.Collections

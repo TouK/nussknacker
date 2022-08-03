@@ -16,11 +16,11 @@ import pl.touk.nussknacker.engine.avro.encode._
 import pl.touk.nussknacker.engine.avro.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient}
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.formatter.{ConfluentAvroMessageFormatter, ConfluentAvroMessageReader}
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization._
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.avro.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.avro.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, JsonSinkValueParameter}
+import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.output.OutputValidatorError
@@ -75,7 +75,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[JsonSchema] {
     case other => other.noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
+  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema.cast().rawSchema()).typingResult
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)

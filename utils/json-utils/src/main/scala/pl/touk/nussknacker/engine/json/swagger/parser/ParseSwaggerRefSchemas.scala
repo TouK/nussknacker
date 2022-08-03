@@ -1,10 +1,10 @@
-package pl.touk.nussknacker.openapi.parser
+package pl.touk.nussknacker.engine.json.swagger.parser
 
 import io.swagger.v3.oas.models.{Components, OpenAPI}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-private[parser] object ParseSwaggerRefSchemas {
+object ParseSwaggerRefSchemas {
 
   def apply(parseResult: OpenAPI): SwaggerRefSchemas =
     Option(parseResult.getComponents).map(refSchemas).getOrElse(Map.empty)

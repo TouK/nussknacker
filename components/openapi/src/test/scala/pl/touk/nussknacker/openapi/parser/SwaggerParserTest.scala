@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.openapi.parser
 
-import org.apache.commons.io.IOUtils
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.openapi.{HeaderParameter, _}
+import pl.touk.nussknacker.engine.json.swagger
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerBool, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.openapi._
 
 class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
 
@@ -33,7 +34,7 @@ class SwaggerParserTest extends FunSuite with BaseOpenAPITest with Matchers {
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
-        "offers" -> SwaggerArray(SwaggerObject(Map("accountId" -> SwaggerLong), Set[String]())),
+        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong), Set[String]())),
         "otherField" -> SwaggerString
       ), Set[String]()))
     )

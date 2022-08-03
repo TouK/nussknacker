@@ -3,6 +3,7 @@ package pl.touk.nussknacker.openapi.parser
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import io.swagger.v3.oas.models.servers.Server
+import pl.touk.nussknacker.engine.json.swagger.parser.SwaggerRefSchemas
 import pl.touk.nussknacker.openapi.{OpenAPISecurityConfig, SwaggerService}
 
 import scala.collection.JavaConverters._
