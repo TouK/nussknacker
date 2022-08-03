@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.avro.schemaregistry
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, SwaggerSchema}
+import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, SwaggerJsonSchema}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
 /**
@@ -27,7 +27,7 @@ object SchemaWithMetadata {
 
     withExtraSchemaTypes(schemaMetadata.getSchemaType match {
       case "AVRO" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), schemaMetadata.getId)
-      case "JSON" => SchemaWithMetadata(new SwaggerSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      case "JSON" => SchemaWithMetadata(SwaggerJsonSchema(schemaMetadata.getSchema), schemaMetadata.getId)
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     })
   }
