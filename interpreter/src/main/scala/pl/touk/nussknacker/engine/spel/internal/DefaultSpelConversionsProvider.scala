@@ -24,7 +24,6 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
   override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
     service.addConverterFactory(new NumberToNumberConverterFactory())
-    service.addConverter(new ObjectToArrayConverter(service))
     service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))
     service.addConverter(classOf[String], classOf[ZoneOffset], (source: String) => ZoneOffset.of(source))
     service.addConverter(classOf[String], classOf[Locale], (source: String) => StringUtils.parseLocale(source))
@@ -36,6 +35,10 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     service.addConverter(classOf[String], classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
+    // This is used only to prevent errors when calling function with
+    // varArgs with exactly one argument.
+    // TODO: Remove it once Spring is updated; it should work with version 5.3.22
+    service.addConverter(new ObjectToArrayConverter(service))
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
     service
