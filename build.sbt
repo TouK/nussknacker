@@ -229,6 +229,9 @@ lazy val commonSettings =
         // akka-actor depends on old, 0.8 version
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
 
+        //security features
+        "org.scala-lang.modules" %% "scala-xml" % "2.1.0",
+
         //Our main kafka dependencies are Confluent (for avro) and Flink (Kafka connector)
         "org.apache.kafka" % "kafka-clients" % kafkaV,
         "org.apache.kafka" %% "kafka" % kafkaV,
