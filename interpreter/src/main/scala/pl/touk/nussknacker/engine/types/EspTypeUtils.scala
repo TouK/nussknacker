@@ -155,9 +155,9 @@ object EspTypeUtils {
   private def extractGenericMethod(method: Method, genericType: GenericType)
                                   (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
-    val parameterInfo = typeFunctionInstance.staticParameters
-      .getOrElse(ParameterList.fromList(extractParameters(method), method.isVarArgs))
-    val resultInfo = typeFunctionInstance.staticResult
+
+    val parameterInfo = extractGenericParameters(typeFunctionInstance, method)
+    val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
     collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
@@ -196,6 +196,41 @@ object EspTypeUtils {
 
   private def extractNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
     extractAnnotation(accessibleObject, classOf[Documentation]).map(_.description())
+  }
+
+  private def checkSubclassParameters(subclassParameters: List[Parameter],
+                                      subclassIsVarArg: Boolean,
+                                      superclassParameters: List[Parameter],
+                                      superclassIsVarArg: Boolean): Boolean = {
+    val (subclassNoVarArg, subclassVarArgOption) = MethodInfo.separateVarArg(subclassParameters, subclassIsVarArg)
+    val (superclassNoVarArg, superclassVarArgOption) = MethodInfo.separateVarArg(superclassParameters, superclassIsVarArg)
+
+    val subclassNoVarArgOption = subclassNoVarArg.map(Some(_))
+    val superclassNoVarArgOption = superclassNoVarArg.map(Some(_))
+
+    val zippedParameters = subclassNoVarArgOption.zipAll(superclassNoVarArgOption, subclassVarArgOption, superclassVarArgOption) :+
+      (subclassVarArgOption, superclassVarArgOption)
+
+    subclassNoVarArg.length >= superclassNoVarArg.length && zippedParameters.forall{
+      case (None, None) => true
+      case (None, Some(_)) => true
+      case (Some(_), None) => false
+      case (Some(sub), Some(sup)) => sub.refClazz.canBeSubclassOf(sup.refClazz)
+    }
+  }
+
+  private def extractGenericParameters(typingFunction: TypingFunction, method: Method): List[Parameter] = {
+    def autoExtractedParameters = extractParameters(method)
+    def definedParametersOption = typingFunction.staticParameters().map(_.map{ case (name, typ) => Parameter(name, typ) })
+
+    definedParametersOption match {
+      case Some(definedParameters) =>
+        if (!checkSubclassParameters(definedParameters, subclassIsVarArg = false, autoExtractedParameters, superclassIsVarArg = method.isVarArgs))
+          throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature")
+        definedParameters
+      case None =>
+        autoExtractedParameters
+    }
   }
 
   private def extractParameters(method: Method): List[Parameter] = {
