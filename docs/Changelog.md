@@ -55,6 +55,7 @@
 * [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation: include optional fields validation, reduce number of validation modes.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
+* [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default
 
 1.4.0 (14 Jun 2022)
 ------------------------
