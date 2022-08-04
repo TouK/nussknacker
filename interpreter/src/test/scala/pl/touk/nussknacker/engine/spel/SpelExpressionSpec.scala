@@ -848,7 +848,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("should be able to spel type conversions") {
     parseOrFail[String]("T(java.text.NumberFormat).getNumberInstance('PL').format(12.34)", ctx).evaluateSync[String](ctx) shouldBe "12,34"
-//    parseOrFail[Locale]("'PL'", ctx).evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
+    parseOrFail[Locale]("'PL'", ctx).evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
   }
 
 }
