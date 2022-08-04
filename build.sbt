@@ -112,6 +112,7 @@ def uiMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
   case PathList("com", "sun", "el", _@_*) => MergeStrategy.first //Some legacy batik stuff
   case PathList("org", "w3c", "dom", "events", _@_*) => MergeStrategy.first //Some legacy batik stuff
+  case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
