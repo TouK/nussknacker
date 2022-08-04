@@ -170,6 +170,7 @@ class SpelExpressionSpec extends FunSuite with Matchers {
 
   test("parsing method with return type of array, selection on result") {
     parseOrFail[Any]("'t,e,s,t'.split(',').?[(#this=='t')]").evaluateSync[Any](ctx) should equal(Array("t", "t"))
+    parseOrFail[Any]("'t,e,s,t'.split(',')[2]").evaluateSync[Any](ctx) shouldEqual "s"
   }
 
   test("blocking excluded reflect in runtime, without previous static validation") {

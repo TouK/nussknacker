@@ -121,7 +121,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     @tailrec
     def typeIndexer(e: Indexer, typingResult: TypingResult): NodeTypingResult = {
       typingResult match {
-        case TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) => valid(param)
+        case TypedClass(clazz, param :: Nil) if clazz.isAssignableFrom(classOf[java.util.List[_]]) || clazz.isAssignableFrom(classOf[Array[Object]]) => valid(param)
         case TypedClass(clazz, keyParam :: valueParam :: Nil) if clazz.isAssignableFrom(classOf[java.util.Map[_, _]]) => valid(valueParam)
         case d: TypedDict => dictTyper.typeDictValue(d, e).map(toResult)
         case TypedUnion(possibleTypes) => typeUnion(e, possibleTypes)
