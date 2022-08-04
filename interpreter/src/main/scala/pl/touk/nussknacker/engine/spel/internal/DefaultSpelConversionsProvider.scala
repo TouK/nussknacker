@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.spel.internal
 
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
-import org.springframework.core.convert.support.{GenericConversionService, DefaultConversionService}
+import org.springframework.core.convert.support.GenericConversionService
 import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 
 import java.nio.charset.Charset
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time._
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, Locale, UUID}
 
 /**
@@ -23,10 +23,8 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
 
   override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
-    // We only need ObjectToArrayConverter, but it has package
-    // visibility so we add all collection converters.
-    DefaultConversionService.addCollectionConverters(service)
     service.addConverterFactory(new NumberToNumberConverterFactory())
+    service.addConverter(new ObjectToArrayConverter(service))
     service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))
     service.addConverter(classOf[String], classOf[ZoneOffset], (source: String) => ZoneOffset.of(source))
     service.addConverter(classOf[String], classOf[Locale], (source: String) => StringUtils.parseLocale(source))
