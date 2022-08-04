@@ -23,6 +23,8 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
 
   override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
+    // We only need ObjectToArrayConverter, but it has package
+    // visibility so we add all collection converters.
     DefaultConversionService.addCollectionConverters(service)
     service.addConverterFactory(new NumberToNumberConverterFactory())
     service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))
