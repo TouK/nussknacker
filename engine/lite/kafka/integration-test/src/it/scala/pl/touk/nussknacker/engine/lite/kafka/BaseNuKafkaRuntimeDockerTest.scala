@@ -50,6 +50,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
       exposedPorts = Seq(runtimeManagementPort),
       env = Map(
         "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
+        "KAFKA_AUTO_OFFSET_RESET" -> "earliest",
         "KAFKA_ERROR_TOPIC" -> fixture.errorTopic
       ) ++ sys.env.get("NUSSKNACKER_LOG_LEVEL").map("NUSSKNACKER_LOG_LEVEL" -> _) ++ additionalEnvs)
     runtimeContainer.underlyingUnsafeContainer.withNetwork(network)

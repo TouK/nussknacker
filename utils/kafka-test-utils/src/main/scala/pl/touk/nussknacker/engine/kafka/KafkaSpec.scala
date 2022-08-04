@@ -14,6 +14,8 @@ trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
   override protected def resolveConfig(config: Config): Config =
     super.resolveConfig(config)
       .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
+      //For tests we want to read from the beginning...
+      .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

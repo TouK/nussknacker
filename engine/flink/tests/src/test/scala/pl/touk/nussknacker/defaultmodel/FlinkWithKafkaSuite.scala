@@ -59,6 +59,8 @@ abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpe
     .withValue("components.kafka.disabled", fromAnyRef(true))
     .withValue("components.mockKafka.disabled", fromAnyRef(false))
     .withValue("components.mockKafka.config.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
+    //For tests we want to read from the beginning...
+    .withValue("components.mockKafka.config.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(s"components.mockKafka.config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
 

@@ -93,7 +93,6 @@ trait KafkaUtils extends LazyLogging {
 
   def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
-    props.setProperty("auto.offset.reset", "earliest")
     props.put("value.deserializer", classOf[ByteArrayDeserializer])
     props.put("key.deserializer", classOf[ByteArrayDeserializer])
     groupId.foreach(props.setProperty("group.id", _))
