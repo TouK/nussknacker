@@ -158,7 +158,7 @@ object EspTypeUtils {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
 
     val parameterInfo = extractGenericParameters(typeFunctionInstance, method)
-    val resultInfo = typeFunctionInstance.staticResult
+    val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
     collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
