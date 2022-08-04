@@ -43,6 +43,7 @@ export interface NodeDetailsContentProps {
 
 export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
   const {node, processId, dynamicParameterDefinitions, processDefinitionData} = props
+
   const parameterDefinitions = useMemo(() => {
     return getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions)
   }, [dynamicParameterDefinitions, node, processDefinitionData])
