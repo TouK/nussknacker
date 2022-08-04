@@ -64,7 +64,7 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     inside(extractMethod(name, List(Typed[String]))) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
         new Signature(name, List(Typed[String]), None),
-        new Signature(name, expectedTypes, None) :: Nil
+        List(new Signature(name, expectedTypes, None))
       ))
     }
   }

@@ -150,17 +150,19 @@ object EspTypeUtils {
     val resultInfo = typeFunctionInstance.staticResult()
       .getOrElse(extractMethodReturnType(method))
 
-    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo.fromParameterList(
       x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,
-      extractNussknackerDocs(method)
+      methodName,
+      extractNussknackerDocs(method),
+      method.isVarArgs
     ))
   }
 
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
-    collectMethodNames(method).map(methodName => methodName -> MethodInfo(
+    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo.fromParameterList(
       extractParameters(method),
       extractMethodReturnType(method),
       methodName,
@@ -175,7 +177,13 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> MethodInfo(List.empty, extractFieldReturnType(field), field.getName, extractNussknackerDocs(field), varArgs = false)
+      field.getName -> StaticMethodInfo.fromParameterList(
+        List.empty,
+        extractFieldReturnType(field),
+        field.getName,
+        extractNussknackerDocs(field),
+        varArgs = false
+      )
     }.toMap
   }
 
