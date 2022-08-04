@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.spel.internal
 
 import org.springframework.core.convert.TypeDescriptor
 import org.springframework.core.convert.converter.{ConditionalConverter, Converter, ConverterFactory}
-import org.springframework.core.convert.support.GenericConversionService
+import org.springframework.core.convert.support.{GenericConversionService, DefaultConversionService}
 import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 
@@ -23,6 +23,7 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
 
   override def getConversionService: GenericConversionService = {
     val service = new GenericConversionService
+    DefaultConversionService.addCollectionConverters(service)
     service.addConverterFactory(new NumberToNumberConverterFactory())
     service.addConverter(classOf[String], classOf[ZoneId], (source: String) => ZoneId.of(source))
     service.addConverter(classOf[String], classOf[ZoneOffset], (source: String) => ZoneOffset.of(source))
