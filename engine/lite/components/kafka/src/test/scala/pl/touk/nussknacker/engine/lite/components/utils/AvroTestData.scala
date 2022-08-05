@@ -155,7 +155,7 @@ object AvroTestData {
 
   val recordUnionRecordLongAndStringSchema: Schema = createSimpleRecord(recordLongSchema, stringSchema)
 
-  val recordUnionMapOfIntsAndIntSchema: Schema = createSimpleRecord(createMap(integerSchema), integerSchema)
+  val recordUnionMapOfIntsAndIntSchema: Schema = createSimpleRecord(mapOfIntsSchema, integerSchema)
 
   val recordUnionMapOfLongsAndLongSchema: Schema = createSimpleRecord(createMap(longSchema), longSchema)
 
@@ -222,6 +222,8 @@ object AvroTestData {
   val sampleUnionRecordIntAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordIntAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
 
   val sampleUnionRecordLongAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordLongAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger.toLong)))
+
+  val sampleMapOfIntsAndInt: GenericRecord = AvroUtils.createRecord(recordMapOfIntsSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
 
   val sampleUnionMapOfIntsAndInt: GenericRecord = AvroUtils.createRecord(recordUnionMapOfIntsAndIntSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
 

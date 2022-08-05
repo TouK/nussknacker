@@ -184,8 +184,10 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleUnionRecordLongAndString, recordUnionRecordLongAndStringSchema, recordUnionRecordIntAndStringSchema, Input), invalidTypes("path 'field' actual: '{field: Long} | String' expected: '{field: Integer} | String'")),
       (rConfig(sampleUnionRecordIntAndString, recordUnionRecordIntAndStringSchema, recordUnionRecordLongAndStringSchema, Input), valid(sampleUnionRecordLongAndString)),
 
-      (rConfig(sampleUnionMapOfLongsAndLong, recordUnionMapOfLongsAndLongSchema, recordUnionMapOfIntsAndIntSchema, Input), invalidTypes("path 'field' actual: 'Map[String,Long] | String' expected: 'Map[String,Integer] | String'")),
+      (rConfig(sampleUnionMapOfLongsAndLong, recordUnionMapOfLongsAndLongSchema, recordUnionMapOfIntsAndIntSchema, Input), invalidTypes("path 'field' actual: 'Map[String,Long] | Long' expected: 'Map[String, Null | Integer] | Integer'")),
       (rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordUnionMapOfLongsAndLongSchema, Input), valid(sampleUnionMapOfLongsAndLong)),
+      (rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input), invalidTypes("path 'field' actual: 'Map[String,Integer] | Integer' expected: 'Map[String, Null | Integer]'")),
+      (rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input, Some(ValidationMode.lax)), valid(sampleMapOfIntsAndInt)),
 
       (rConfig(sampleString, recordUnionStringAndRecordIntSchema, recordUnionRecordIntAndStringSchema, Input), rValid(sampleString, recordUnionRecordIntAndStringSchema)),
       (rConfig(sampleString, recordUnionRecordIntAndStringSchema, recordUnionRecordIntAndStringSchema, Input), rValid(sampleString, recordUnionRecordIntAndStringSchema)),

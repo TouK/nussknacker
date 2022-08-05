@@ -55,6 +55,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
+      case (union: TypedUnion, _) =>
+        validateUnionInput(union, schema, path)
       case (tc@TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
         validateSpecificRecord(tc, schema, path)
       case (typingResult: TypedObjectTypingResult, Type.RECORD) =>
@@ -86,6 +88,15 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (_, _) =>
         canBeSubclassOf(typingResult, schema, path)
     }
+  }
+
+  private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {
+    if (validationMode == ValidationMode.strict && !union.possibleTypes.forall(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else if (validationMode == ValidationMode.lax && !union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else
+      valid
   }
 
   private def validateSpecificRecord(typedClass: TypedClass, schema: Schema, path: Option[String]) = {
@@ -164,47 +175,36 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
 
   private def validateUnionSchema(typingResult: TypingResult, schema: Schema, path: Option[String]) = {
-    def validateSingleTypingResultToUnion = {
-      //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
-      def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
-        errors.collect{case err: OutputValidatorTypeError => err} match {
-          case head :: Nil => path.contains(head.field)
-          case _ => false
+    //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
+    def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
+      errors.collect{case err: OutputValidatorTypeError => err} match {
+        case head :: Nil => path.contains(head.field)
+        case _ => false
+      }
+
+    def createUnionValidationResults(checkNullSchemaType: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
+      val schemas = if(checkNullSchemaType) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
+      schemas.map(validateTypingResult(typingResult, _, path)).toList
+    }
+
+    def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
+      if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
+
+    val unionValidationResults = schema match {
+      case sch if sch.getTypes.size() == 2 && sch.isNullable =>
+        val notNullableValidationResults = createUnionValidationResults(checkNullSchemaType = false)
+
+        asSingleValidatedResults(notNullableValidationResults) match {
+          case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
+            createUnionValidationResults(checkNullSchemaType = true)
+          case _ =>
+            notNullableValidationResults
         }
-
-      def createUnionValidationResults(checkNullSchemaType: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
-        val schemas = if(checkNullSchemaType) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
-        schemas.map(validateTypingResult(typingResult, _, path)).toList
-      }
-
-      def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
-        if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
-
-      val unionValidationResults = schema match {
-        case sch if sch.getTypes.size() == 2 && sch.isNullable =>
-          val notNullableValidationResults = createUnionValidationResults(checkNullSchemaType = false)
-
-          asSingleValidatedResults(notNullableValidationResults) match {
-            case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
-              createUnionValidationResults(checkNullSchemaType = true)
-            case _ =>
-              notNullableValidationResults
-          }
-        case _ =>
-          createUnionValidationResults(checkNullSchemaType = true)
-      }
-
-      asSingleValidatedResults(unionValidationResults)
+      case _ =>
+        createUnionValidationResults(checkNullSchemaType = true)
     }
 
-    def verifyUnion(union: TypedUnion): Boolean =
-      schema.isUnion && schema.getTypes.asScala.forall(schema => union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
-
-    typingResult match {
-      case union: TypedUnion if verifyUnion(union) => valid
-      case union: TypedUnion => invalid(union, schema, path)
-      case _ => validateSingleTypingResultToUnion
-    }
+    asSingleValidatedResults(unionValidationResults)
   }
 
   private def validateEnum(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
