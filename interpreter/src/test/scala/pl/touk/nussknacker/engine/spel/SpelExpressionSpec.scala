@@ -322,11 +322,27 @@ class SpelExpressionSpec extends FunSuite with Matchers {
   }
 
   test("validate MethodReference for scala varargs") {
+    parse[Any]("#processHelper.addAll()", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.addAll(1)", ctxWithGlobal) shouldBe 'valid
     parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
   }
 
   test("validate MethodReference for java varargs") {
+    parse[Any]("#javaClassWithVarargs.addAll()", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#javaClassWithVarargs.addAll(1)", ctxWithGlobal) shouldBe 'valid
     parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+  }
+
+  test("evaluate MethodReference for scala varargs") {
+    parseOrFail[Any]("#processHelper.addAll()", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 0
+    parseOrFail[Any]("#processHelper.addAll(1)", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 1
+    parseOrFail[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 6
+  }
+
+  test("evaluate MethodReference for java varargs") {
+    parseOrFail[Any]("#javaClassWithVarargs.addAll()", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 0
+    parseOrFail[Any]("#javaClassWithVarargs.addAll(1)", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 1
+    parseOrFail[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal).evaluateSync[Any](ctxWithGlobal) shouldBe 6
   }
 
   test("skip MethodReference validation without strictMethodsChecking") {
