@@ -164,36 +164,43 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
 
   private def validateUnionSchema(typingResult: TypingResult, schema: Schema, path: Option[String]) = {
-    //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
-    def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
-      errors.collect{case err: OutputValidatorTypeError => err} match {
-        case head :: Nil => path.contains(head.field)
-        case _ => false
+    def validateSingleTypingResultToUnion = {
+      //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
+      def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
+        errors.collect{case err: OutputValidatorTypeError => err} match {
+          case head :: Nil => path.contains(head.field)
+          case _ => false
+        }
+
+      def createUnionValidationResults(checkNullSchemaType: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
+        val schemas = if(checkNullSchemaType) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
+        schemas.map(validateTypingResult(typingResult, _, path)).toList
       }
 
-    def createUnionValidationResults(checkNullSchemaType: Boolean): List[ValidatedNel[OutputValidatorError, Unit]] = {
-      val schemas = if(checkNullSchemaType) schema.getTypes.asScala else schema.getTypes.asScala.filterNot(_.isNullable)
-      schemas.map(validateTypingResult(typingResult, _, path)).toList
+      def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
+        if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
+
+      val unionValidationResults = schema match {
+        case sch if sch.getTypes.size() == 2 && sch.isNullable =>
+          val notNullableValidationResults = createUnionValidationResults(checkNullSchemaType = false)
+
+          asSingleValidatedResults(notNullableValidationResults) match {
+            case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
+              createUnionValidationResults(checkNullSchemaType = true)
+            case _ =>
+              notNullableValidationResults
+          }
+        case _ =>
+          createUnionValidationResults(checkNullSchemaType = true)
+      }
+
+      asSingleValidatedResults(unionValidationResults)
     }
 
-    def asSingleValidatedResults(results: List[ValidatedNel[OutputValidatorError, Unit]]) =
-      if (results.exists(_.isValid)) valid else results.sequence.map(_=> ())
-
-    val unionValidationResults = schema match {
-      case sch if sch.getTypes.size() == 2 && sch.isNullable =>
-        val notNullableValidationResults = createUnionValidationResults(checkNullSchemaType = false)
-
-        asSingleValidatedResults(notNullableValidationResults) match {
-          case Invalid(errors) if singleObjectTypingError(errors) => //when single typing error is true, we have to validate again including nullability
-            createUnionValidationResults(checkNullSchemaType = true)
-          case _ =>
-            notNullableValidationResults
-        }
-      case _ =>
-        createUnionValidationResults(checkNullSchemaType = true)
+    typingResult match {
+      case union: TypedUnion => canBeSubclassOf(union, schema, path)
+      case _ => validateSingleTypingResultToUnion
     }
-
-    asSingleValidatedResults(unionValidationResults)
   }
 
   private def validateEnum(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
@@ -267,6 +274,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     (schemaAsTypedResult, typingResult) match {
       case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
       case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
+      case (left: TypedUnion, right: TypedUnion) if left == right => valid
       case _ => invalid(typingResult, schema, path)
     }
   }

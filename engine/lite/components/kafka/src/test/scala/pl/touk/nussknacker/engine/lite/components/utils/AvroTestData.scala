@@ -143,7 +143,9 @@ object AvroTestData {
   val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordV2FieldsSchema)
 
   //Union schemas
-  val recordUnionOfStringIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
+  val recordUnionStringIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
+
+  val recordUnionStringBooleanSchema: Schema = createSimpleRecord(stringSchema, booleanSchema)
 
   val recordMaybeBooleanSchema: Schema = createSimpleRecord(nullSchema, booleanSchema)
 
