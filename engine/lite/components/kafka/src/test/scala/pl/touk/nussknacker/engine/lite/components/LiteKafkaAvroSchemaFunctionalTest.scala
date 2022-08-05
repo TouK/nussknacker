@@ -40,11 +40,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
   import ValidationMode._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
-  import pl.touk.nussknacker.test.LiteralSpEL._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import SpecialSpELElement._
-
-  private val EmptyBaseObject: SpecialSpELElement = SpecialSpELElement("{:}")
 
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
@@ -85,7 +82,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
     val genScenarioConfig = for {
       schema <- AvroGen.genSchema(config)
       value <- genValueForSchema(schema)
-    } yield (value, ScenarioConfig(sampleBytes, bytesSchema, schema, value.toSpELLiteral, None))
+    } yield (value, ScenarioConfig(randomTopic, sampleBytes, bytesSchema, schema, value.toSpELLiteral, None))
 
     forAll(genScenarioConfig) { case (value, config) =>
       val resultsInput = runWithValueResults(config)
@@ -233,8 +230,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleInteger, recordIntegerSchema, recordMaybeArrayOfNumbersSchema, List(sampleString)), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, sampleInteger), invalidTypes(s"path 'field' actual: '${typedInt.display}' expected: 'Null | List[Integer | Double]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, null), rValid(null, recordOptionalArrayOfNumbersSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, EmptyBaseObject), invalid(Nil, List("field"), Nil)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, EmptyBaseObject, Some(lax)), rValid(null, recordOptionalArrayOfNumbersSchema)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, EmptyMap), invalid(Nil, List("field"), Nil)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfNumbersSchema, EmptyMap, Some(lax)), rValid(null, recordOptionalArrayOfNumbersSchema)),
 
       (rConfig(List(List("12")), recordOptionalArrayOfArraysStringsSchema, recordOptionalArrayOfArraysNumbersSchema, Input), invalidTypes("path 'field[][]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalArrayOfArraysNumbersSchema, List(List(1.0, 2.5))), rValid(List(List(1.0, 2.5)), recordOptionalArrayOfArraysNumbersSchema)),
@@ -268,8 +265,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, Map("first" -> sampleInteger)), invalidTypes(s"path 'field.first' actual: '${typedInt.display}' expected: 'Null | Map[String, Null | Integer]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, Nil), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | Map[String, Null | Integer]]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, null), rValid(null, recordOptionalMapOfMapsIntsSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyBaseObject), invalid(Nil, List("field"), Nil)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyBaseObject, Some(lax)), rValid(null, recordOptionalMapOfMapsIntsSchema)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyMap), invalid(Nil, List("field"), Nil)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfMapsIntsSchema, EmptyMap, Some(lax)), rValid(null, recordOptionalMapOfMapsIntsSchema)),
 
       (rConfig(Map("first" -> Map("price" -> "15.5")), recordOptionalMapOfStringRecordsSchema, recordOptionalMapOfRecordsSchema, Input), invalidTypes("path 'field[*].price' actual: 'String' expected: 'Null | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, Map("first" -> Map("price" -> sampleString))), invalidTypes(s"path 'field.first.price' actual: '${typedStr.display}' expected: 'Null | Double'")),
@@ -277,8 +274,8 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, Map("first" -> sampleInteger)), invalidTypes(s"path 'field.first' actual: '${typedInt.display}' expected: 'Null | {price: Null | Double}'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, Nil), invalidTypes("path 'field' actual: 'List[Unknown]' expected: 'Null | Map[String, Null | {price: Null | Double}]'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, null), rValid(null, recordOptionalMapOfRecordsSchema)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyBaseObject), invalid(Nil, List("field"), Nil)),
-      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyBaseObject, Some(lax)), rValid(null, recordOptionalMapOfRecordsSchema)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyMap), invalid(Nil, List("field"), Nil)),
+      (rConfig(sampleInteger, recordIntegerSchema, recordOptionalMapOfRecordsSchema, EmptyMap, Some(lax)), rValid(null, recordOptionalMapOfRecordsSchema)),
 
       //Record validations
       (rConfig(Map("sub" -> Map("price" -> "15.5")), nestedRecordWithStringPriceSchema, nestedRecordSchema, Input), invalidTypes("path 'field.sub.price' actual: 'String' expected: 'Null | Double'")),
@@ -410,12 +407,10 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
   }
 
   private def runWithValueResults(config: ScenarioConfig) =
-    runWithResults(config).map{runResult =>
-      runResult.copy(successes = runResult.successes.map(r => r.value() match {
-        case bytes: Array[Byte] => ByteBuffer.wrap(bytes) //We convert bytes to byte buffer because comparing array[byte] compares reference
-        case v => v
-      }))
-    }
+    runWithResults(config).map(_.mapSuccesses(r => r.value() match {
+      case bytes: Array[Byte] => ByteBuffer.wrap(bytes) //We convert bytes to byte buffer because comparing array[byte] compares reference
+      case v => v
+    }))
 
   private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, Any]] = {
     val avroScenario: EspProcess = createScenario(config)
@@ -442,17 +437,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
         SinkValidationModeParameterName -> s"'${config.validationModeName}'"
       )
 
-  object ScenarioConfig {
-
-    private def randomTopic = UUID.randomUUID().toString
-
-    def apply(inputData: Any, schema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]): ScenarioConfig =
-      new ScenarioConfig(randomTopic, inputData, schema, schema, sinkDefinition, validationMode)
-
-    def apply(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]): ScenarioConfig =
-      new ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, sinkDefinition, validationMode)
-
-  }
+  private def randomTopic = UUID.randomUUID().toString
 
   case class ScenarioConfig(topic: String, inputData: Any, sourceSchema: Schema, sinkSchema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
@@ -479,7 +464,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
   //RecordConfig -> config with record as a input
   private def rConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
-      case element: SpecialSpELElement if List(EmptyBaseObject, Input).contains(element) => element
+      case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
       case any => Map(RecordFieldName -> any)
     }
 
@@ -488,7 +473,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       case any => AvroUtils.createRecord(sourceSchema, Map(RecordFieldName -> any))
     }
 
-    ScenarioConfig(input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
+    ScenarioConfig(randomTopic, input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
   }
 
   //StandardConfig -> simple avro type as a input
@@ -496,6 +481,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
     sConfig(inputData, schema, schema, output, None)
 
   private def sConfig(inputData: Any, sourceSchema: Schema, sinkSchema: Schema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig =
-    ScenarioConfig(inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
+    ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
 
 }
