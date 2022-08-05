@@ -169,7 +169,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Double'")),
       (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Double'")),
 
-      //Record with simple union field validations
+      //Record with union field validations
       (rConfig(sampleInteger, recordUnionStringIntegerSchema, recordUnionStringIntegerSchema, Input, None), rValid(sampleInteger, recordUnionStringIntegerSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordUnionStringIntegerSchema, Input, None), rValid(sampleInteger, recordUnionStringIntegerSchema)),
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionStringIntegerSchema, sampleInteger, None), rValid(sampleInteger, recordUnionStringIntegerSchema)),
@@ -177,6 +177,14 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
       (rConfig(sampleString, recordUnionStringIntegerSchema, recordUnionStringIntegerSchema, Input, None), rValid(sampleString, recordUnionStringIntegerSchema)),
       (rConfig(sampleString, recordStringSchema, recordUnionStringIntegerSchema, Input, None), rValid(sampleString, recordUnionStringIntegerSchema)),
       (rConfig(sampleBoolean, recordBooleanSchema, recordUnionStringIntegerSchema, sampleString, None), rValid(sampleString, recordUnionStringIntegerSchema)),
+
+      (rConfig(sampleBoolean, recordBooleanSchema, recordUnionStringIntegerSchema, sampleString, None), rValid(sampleString, recordUnionStringIntegerSchema)),
+
+      (rConfig(sampleUnionStringRecordInt, recordUnionStringRecordIntSchema, recordUnionRecordIntStringSchema, Input, None), valid(sampleUnionRecordIntString)),
+      (rConfig(sampleUnionRecordIntString, recordUnionRecordIntStringSchema, recordUnionStringRecordIntSchema, Input, None), valid(sampleUnionStringRecordInt)),
+
+      (rConfig(sampleString, recordUnionStringRecordIntSchema, recordUnionRecordIntStringSchema, Input, None), rValid(sampleString, recordUnionRecordIntStringSchema)),
+      (rConfig(sampleString, recordUnionRecordIntStringSchema, recordUnionRecordIntStringSchema, Input, None), rValid(sampleString, recordUnionRecordIntStringSchema)),
 
       (ScenarioConfig(sampleString, stringSchema, recordUnionStringIntegerSchema, Input.toSpELLiteral, None), invalidTypes("path 'Value' actual: 'String' expected: '{field: String | Integer}'")),
       (rConfig(sampleBoolean, recordUnionStringBooleanSchema, recordUnionStringIntegerSchema, Input), invalidTypes("path 'field' actual: 'String | Boolean' expected: 'String | Integer'")),

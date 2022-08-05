@@ -271,10 +271,13 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     val schemaAsTypedResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema)
     val additionalTypes = additionalTypesMapping.getOrElse(schema.getType, Set.empty)
 
+    def verifyUnion(union: TypedUnion): Boolean =
+      schema.isUnion && schema.getTypes.asScala.forall(schema => union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
+
     (schemaAsTypedResult, typingResult) match {
       case (schemaType: SingleTypingResult, typing: SingleTypingResult) if schemaType.objType.klass == typing.objType.klass => valid
       case (_, typing: SingleTypingResult) if additionalTypes.contains(typing.objType.klass) => valid
-      case (left: TypedUnion, right: TypedUnion) if left == right => valid
+      case (_, right: TypedUnion) if verifyUnion(right) => valid
       case _ => invalid(typingResult, schema, path)
     }
   }

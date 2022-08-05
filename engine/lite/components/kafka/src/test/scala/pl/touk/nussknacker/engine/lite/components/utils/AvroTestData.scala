@@ -149,6 +149,12 @@ object AvroTestData {
 
   val recordMaybeBooleanSchema: Schema = createSimpleRecord(nullSchema, booleanSchema)
 
+  val recordUnionStringRecordIntSchema: Schema = createSimpleRecord(stringSchema, recordIntegerSchema)
+
+  val recordUnionRecordIntStringSchema: Schema = createSimpleRecord(recordIntegerSchema, stringSchema)
+
+  val recordUnionRecordLongStringSchema: Schema = createSimpleRecord(recordLongSchema, stringSchema)
+
   //Avro other schemas
   val recordWithBigUnionSchema: Schema = createSimpleRecord(nullSchema, booleanSchema, baseRecordWithStringPriceSchema, baseRecordWithPriceSchema)
 
@@ -206,6 +212,12 @@ object AvroTestData {
   val sampleNestedRecordV2: GenericRecord = AvroUtils.createRecord(nestedRecordSchemaV2,
     Map(RecordFieldName -> Map("sub" -> Map("price" -> sampleDouble, "currency" -> "PLN"), "str" -> "sample"))
   )
+
+  val sampleUnionStringRecordInt: GenericRecord = AvroUtils.createRecord(recordUnionStringRecordIntSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+
+  val sampleUnionRecordIntString: GenericRecord = AvroUtils.createRecord(recordUnionRecordIntStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+
+  val sampleUnionRecordLongString: GenericRecord = AvroUtils.createRecord(recordUnionRecordLongStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleLong)))
 
   val sampleEnumString = "SPADES"
   val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
