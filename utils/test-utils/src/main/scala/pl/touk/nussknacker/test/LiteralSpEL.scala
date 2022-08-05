@@ -1,14 +1,9 @@
 package pl.touk.nussknacker.test
 
-import java.util
-import LiteralSpEL._
+import pl.touk.nussknacker.test.SpecialSpELElement.EmptyMap
 
 import java.time.{Instant, LocalDate, LocalTime}
-
-object LiteralSpEL {
-  val Input: SpecialSpELElement = SpecialSpELElement("#input")
-  val EmptyRecord: String = "{:}"
-}
+import java.util
 
 trait LiteralSpEL {
 
@@ -19,7 +14,7 @@ trait LiteralSpEL {
 
     data match {
       case map: collection.Map[String@unchecked, _] if map.isEmpty =>
-        EmptyRecord
+        EmptyMap.value
       case map: collection.Map[String@unchecked, _] =>
         val elements = map.map{case (key, value) => s""""$key": ${toSpELLiteral(value)}"""}
         convertCollection(elements.toList)
@@ -51,6 +46,9 @@ object LiteralSpELImplicits {
 final case class SpecialSpELElement(value: String) extends AnyVal
 
 object SpecialSpELElement {
+
+  val Input: SpecialSpELElement = SpecialSpELElement("#input")
+  val EmptyMap: SpecialSpELElement = SpecialSpELElement("{:}")
 
   def double(value: Any): SpecialSpELElement =
     SpecialSpELElement(s"T(java.lang.Double).valueOf($value)")
