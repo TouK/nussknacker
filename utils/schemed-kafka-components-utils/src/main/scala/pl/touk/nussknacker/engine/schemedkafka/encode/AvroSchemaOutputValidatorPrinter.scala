@@ -37,6 +37,7 @@ object AvroSchemaOutputValidatorPrinter {
     Schema.Type.ENUM -> List(AvroStringSettings.stringTypingResult.klass),
   )
 
+  // We try to keep this representation convention similar to TypingResult.display convention
   def print(schema: Schema): String = {
     schema.getType match {
       case Schema.Type.RECORD =>
@@ -48,7 +49,7 @@ object AvroSchemaOutputValidatorPrinter {
       case Schema.Type.ARRAY =>
         s"List[${print(schema.getElementType)}]"
       case Schema.Type.MAP =>
-        s"Map[String, ${print(schema.getValueType)}]"
+        s"Map[String,${print(schema.getValueType)}]"
       case Schema.Type.UNION =>
         schema.getTypes.asScala.map(print).toList.printType
       case _ =>
