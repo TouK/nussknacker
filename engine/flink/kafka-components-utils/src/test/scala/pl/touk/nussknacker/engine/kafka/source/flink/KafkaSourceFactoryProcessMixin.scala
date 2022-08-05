@@ -58,20 +58,6 @@ trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSo
     env.withJobRunning(process.id)(action)
   }
 
-  protected def fail(process: EspProcess): Unit = {
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
-    //we don't wait for start, since the job may fail before starting...
-    val executionResult = env.execute(process.id)
-    env.waitForFail(executionResult.getJobID, process.id)()
-  }
-
-  protected def runAndFail(topicName: String, process: EspProcess, obj: ObjToSerialize): Unit = {
-    val topic = createTopic(topicName)
-    pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
-    fail(process)
-  }
-
   protected def runAndVerifyResult(topicName: String, process: EspProcess, obj: ObjToSerialize): List[InputMeta[Any]] = {
     val topic = createTopic(topicName)
     pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)

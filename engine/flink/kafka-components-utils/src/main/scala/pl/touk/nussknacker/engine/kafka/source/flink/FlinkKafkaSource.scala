@@ -80,6 +80,11 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
 }
 
+// TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
+//       making KafkaDeserializationSchema stupid (just producing ConsumerRecord[Array[Byte], Array[Byte]])
+//       and moving deserialization logic to separate flatMap function that would produce Context.
+//       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
+//       It is done this way in lite engine implementation.
 @silent("deprecated")
 class FlinkKafkaConsumerHandlingExceptions[T](topics: java.util.List[String], deserializationSchema: FlinkDeserializationSchemaWrapper[T], props: Properties,
                                               exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,

@@ -69,7 +69,7 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
     new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer) {
 
       override protected def createFlinkSource(consumerGroupId: String, flinkNodeContext: FlinkCustomNodeContext): SourceFunction[ConsumerRecord[K, V]] =
-        DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner)
+        DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner, flinkNodeContext)
 
     }
   }

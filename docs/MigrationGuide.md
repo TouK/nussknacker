@@ -46,7 +46,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
   * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
-* [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction` and `FlinkKafkaSource.createFlinkSource` takes additional argument, `FlinkCustomNodeContext` now
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction`, `FlinkKafkaSource.createFlinkSource` and `DelayedFlinkKafkaConsumer.apply` takes additional argument, `FlinkCustomNodeContext` now
 * [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
 
 ### REST API changes
