@@ -143,17 +143,21 @@ object AvroTestData {
   val nestedRecordSchemaV2: Schema = createSimpleRecord(Null, nestedRecordV2FieldsSchema)
 
   //Union schemas
-  val recordUnionStringIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
+  val recordUnionStringAndIntegerSchema: Schema = createSimpleRecord(stringSchema, integerSchema)
 
-  val recordUnionStringBooleanSchema: Schema = createSimpleRecord(stringSchema, booleanSchema)
+  val recordUnionStringAndBooleanSchema: Schema = createSimpleRecord(stringSchema, booleanSchema)
 
   val recordMaybeBooleanSchema: Schema = createSimpleRecord(nullSchema, booleanSchema)
 
-  val recordUnionStringRecordIntSchema: Schema = createSimpleRecord(stringSchema, recordIntegerSchema)
+  val recordUnionStringAndRecordIntSchema: Schema = createSimpleRecord(stringSchema, recordIntegerSchema)
 
-  val recordUnionRecordIntStringSchema: Schema = createSimpleRecord(recordIntegerSchema, stringSchema)
+  val recordUnionRecordIntAndStringSchema: Schema = createSimpleRecord(recordIntegerSchema, stringSchema)
 
-  val recordUnionRecordLongStringSchema: Schema = createSimpleRecord(recordLongSchema, stringSchema)
+  val recordUnionRecordLongAndStringSchema: Schema = createSimpleRecord(recordLongSchema, stringSchema)
+
+  val recordUnionMapOfIntsAndIntSchema: Schema = createSimpleRecord(createMap(integerSchema), integerSchema)
+
+  val recordUnionMapOfLongsAndLongSchema: Schema = createSimpleRecord(createMap(longSchema), longSchema)
 
   //Avro other schemas
   val recordWithBigUnionSchema: Schema = createSimpleRecord(nullSchema, booleanSchema, baseRecordWithStringPriceSchema, baseRecordWithPriceSchema)
@@ -213,11 +217,15 @@ object AvroTestData {
     Map(RecordFieldName -> Map("sub" -> Map("price" -> sampleDouble, "currency" -> "PLN"), "str" -> "sample"))
   )
 
-  val sampleUnionStringRecordInt: GenericRecord = AvroUtils.createRecord(recordUnionStringRecordIntSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+  val sampleUnionStringAndRecordInt: GenericRecord = AvroUtils.createRecord(recordUnionStringAndRecordIntSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
 
-  val sampleUnionRecordIntString: GenericRecord = AvroUtils.createRecord(recordUnionRecordIntStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
+  val sampleUnionRecordIntAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordIntAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger)))
 
-  val sampleUnionRecordLongString: GenericRecord = AvroUtils.createRecord(recordUnionRecordLongStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleLong)))
+  val sampleUnionRecordLongAndString: GenericRecord = AvroUtils.createRecord(recordUnionRecordLongAndStringSchema, Map(RecordFieldName -> Map(RecordFieldName -> sampleInteger.toLong)))
+
+  val sampleUnionMapOfIntsAndInt: GenericRecord = AvroUtils.createRecord(recordUnionMapOfIntsAndIntSchema, Map(RecordFieldName -> Map("key" -> sampleInteger)))
+
+  val sampleUnionMapOfLongsAndLong: GenericRecord = AvroUtils.createRecord(recordUnionMapOfLongsAndLongSchema, Map(RecordFieldName -> Map("key" -> sampleInteger.toLong)))
 
   val sampleEnumString = "SPADES"
   val sampleEnum = new EnumSymbol(baseEnumSchema, sampleEnumString)
