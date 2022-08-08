@@ -55,6 +55,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
+      case (union: TypedUnion, _) =>
+        validateUnionInput(union, schema, path)
       case (tc@TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
         validateSpecificRecord(tc, schema, path)
       case (typingResult: TypedObjectTypingResult, Type.RECORD) =>
@@ -86,6 +88,15 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (_, _) =>
         canBeSubclassOf(typingResult, schema, path)
     }
+  }
+
+  private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {
+    if (validationMode == ValidationMode.strict && !union.possibleTypes.forall(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else if (validationMode == ValidationMode.lax && !union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else
+      valid
   }
 
   private def validateSpecificRecord(typedClass: TypedClass, schema: Schema, path: Option[String]) = {

@@ -52,7 +52,8 @@
 * [#3264](https://github.com/TouK/nussknacker/pull/3264) Added support for generic functions
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation: include optional fields validation, reduce number of validation modes.
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict avro schema validation: include optional fields validation, 
+  handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
