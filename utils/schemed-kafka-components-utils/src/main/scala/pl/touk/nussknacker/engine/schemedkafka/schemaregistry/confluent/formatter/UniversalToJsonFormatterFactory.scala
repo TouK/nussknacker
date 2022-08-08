@@ -40,16 +40,18 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                         ) extends RecordFormatter with UniversalSchemaIdFromMessageExtractor {
 
-  private def formatter(schemaOpt: Option[ParsedSchema]) = {
+  private lazy val jsonPayloadToJsonDeserializer  = new KafkaJsonKeyValueDeserializationSchemaFactory().create[K, V](kafkaConfig, None, None)
+
+  private def formatMessage(schemaOpt: Option[ParsedSchema], data: Any) = {
     // We do not support formatting AVRO messages without schemaId to json. So when schema is missing we assume it must be JSON payload.
     val payloadType = schemaOpt.map(s => UniversalComponentsSupport.forSchemaType(s.schemaType())).map(_.payloadType).getOrElse(PayloadType.Json)
-    UniversalComponentsSupport.forPayloadType(payloadType).messageFormatter(schemaRegistryClient.client)
+    UniversalComponentsSupport.forPayloadType(payloadType).formatMessage(schemaRegistryClient.client, data)
   }
 
-  private def reader(schemaOpt: Option[ParsedSchema]) = {
+  private def readMessage(schemaOpt: Option[ParsedSchema], subject: String, jsonObj: Json) = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
     val payloadType = schemaOpt.map(s => UniversalComponentsSupport.forSchemaType(s.schemaType())).map(_.payloadType).getOrElse(PayloadType.Json)
-    UniversalComponentsSupport.forPayloadType(payloadType).messageReader(schemaOpt, schemaRegistryClient.client)
+    UniversalComponentsSupport.forPayloadType(payloadType).readMessage(schemaRegistryClient.client, subject, schemaOpt, jsonObj)
   }
 
   /**
@@ -58,20 +60,29 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
    * Step 3: Encode event's data with schema id's with derived encoder.
    */
   override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
-    val deserializedRecord = deserializationSchema.deserialize(record)
+    def deserializeRecord(record: ConsumerRecord[Array[Byte], Array[Byte]], messageWithSchemaId: Boolean) = {
+      val deserializer = if(messageWithSchemaId){
+        deserializationSchema
+      } else {
+        // We do not support deserializing AVRO messages without schemaId. Wen message comes without schema, we assume it must be JSON payload.
+        jsonPayloadToJsonDeserializer
+      }
+      deserializer.deserialize(record)
+    }
 
     val keySchemaIdOpt = if (kafkaConfig.useStringForKey) None else {
       getSchemaIdWhenPresent(record.headers(), record.key(), isKey = true).map(_.value)
     }
+    val valueSchemaIdOpt = getSchemaIdWhenPresent(record.headers(), record.value(), isKey = false).map(_.value)
 
-    val valueSchemaId = getSchemaIdWhenPresent(record.headers(), record.value(), isKey = false).map(_.value)
+    val deserializedRecord = deserializeRecord(record, messageWithSchemaId = valueSchemaIdOpt.isDefined)
 
     val serializableRecord = UniversalSerializableConsumerRecord(
       keySchemaIdOpt,
-      valueSchemaId,
+      valueSchemaIdOpt,
       SerializableConsumerRecord(deserializedRecord)
     )
-    consumerRecordEncoder(keySchemaIdOpt.map(getParsedSchemaById), valueSchemaId.map(getParsedSchemaById))(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
+    consumerRecordEncoder(keySchemaIdOpt.map(getParsedSchemaById), valueSchemaIdOpt.map(getParsedSchemaById))(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
   }
 
   /**
@@ -91,11 +102,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
         }
       } else {
         val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id))
-        keyOpt.map(keyJson => reader(keySchema)(keyJson, ConfluentUtils.keySubject(topic))
+        keyOpt.map(keyJson => readMessage(keySchema, ConfluentUtils.keySubject(topic), keyJson)
           ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
       val valueSchema = record.valueSchemaId.map(getParsedSchemaById)
-      val valueBytes = reader(valueSchema)(value, ConfluentUtils.valueSubject(topic))
+      val valueBytes = readMessage(valueSchema, ConfluentUtils.valueSubject(topic), value)
       (keyBytes, valueBytes)
     }
 
@@ -105,10 +116,10 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
   protected def createKeyEncoder(schemaOpt: Option[ParsedSchema]): Encoder[K] = {
     case str: String => Json.fromString(str)
-    case key => formatter(schemaOpt)(key)
+    case key => formatMessage(schemaOpt, key)
   }
 
-  protected def createValueEncoder(schemaOpt: Option[ParsedSchema]): Encoder[V] = (value: V) => formatter(schemaOpt)(value)
+  protected def createValueEncoder(schemaOpt: Option[ParsedSchema]): Encoder[V] = (value: V) => formatMessage(schemaOpt, value)
 
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[UniversalSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder

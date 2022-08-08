@@ -42,6 +42,4 @@ trait UniversalSchemaSupport {
   val payloadType: PayloadType
 }
 
-
-
 class UnsupportedSchemaType(schemaType: String) extends IllegalArgumentException(s"Unsupported schema type: $schemaType")
