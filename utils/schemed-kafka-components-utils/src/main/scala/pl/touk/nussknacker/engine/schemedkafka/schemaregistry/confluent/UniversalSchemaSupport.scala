@@ -10,13 +10,12 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.PayloadType.PayloadType
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
-object UniversalComponentsSupport {
+object UniversalSchemaSupport {
   def forSchemaType(schemaType: String): UniversalSchemaSupport = schemaType match {
     case AvroSchema.TYPE => AvroSchemaSupport
     case AvroSchemaWithJsonPayload.TYPE => AvroSchemaWithJsonPayloadSupport
@@ -24,12 +23,6 @@ object UniversalComponentsSupport {
     case _ => throw new UnsupportedSchemaType(schemaType)
   }
 
-  def forPayloadType(payloadType: PayloadType): UniversalPayloadSupport = {
-    payloadType match {
-      case PayloadType.Avro => AvroPayloadSupport
-      case PayloadType.Json => JsonPayloadSupport
-    }
-  }
 }
 
 trait UniversalSchemaSupport {
@@ -39,7 +32,7 @@ trait UniversalSchemaSupport {
   def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
   def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit]
-  val payloadType: PayloadType
+  val recordFormatterSupport: RecordFormatterSupport
 }
 
 class UnsupportedSchemaType(schemaType: String) extends IllegalArgumentException(s"Unsupported schema type: $schemaType")

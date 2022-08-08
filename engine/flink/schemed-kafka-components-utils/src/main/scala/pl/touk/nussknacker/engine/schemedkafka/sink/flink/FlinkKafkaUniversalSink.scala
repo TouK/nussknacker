@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalComponentsSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
@@ -55,7 +55,7 @@ class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler.handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
-          val encode = UniversalComponentsSupport.forSchemaType(schema.getParsedSchema.schemaType()).sinkValueEncoder(schema.getParsedSchema, validationMode)
+          val encode = UniversalSchemaSupport.forSchemaType(schema.getParsedSchema.schemaType()).sinkValueEncoder(schema.getParsedSchema, validationMode)
           encode(data)
         }.orNull
       }

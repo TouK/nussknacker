@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.PayloadType.PayloadType
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient, OpenAPIJsonSchema}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
@@ -45,7 +44,7 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 
-  override val payloadType: PayloadType = PayloadType.Avro
+  override val recordFormatterSupport: RecordFormatterSupport = AvroPayloadRecordFromatterSupport
 }
 
 
@@ -69,7 +68,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 
-  override val payloadType: PayloadType = PayloadType.Json
+  override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 }
 
 
@@ -90,5 +89,5 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
 
-  override val payloadType: PayloadType = PayloadType.Json
+  override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 }

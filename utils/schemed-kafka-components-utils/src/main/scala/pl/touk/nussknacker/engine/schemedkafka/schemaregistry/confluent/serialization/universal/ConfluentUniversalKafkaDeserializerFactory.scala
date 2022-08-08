@@ -7,7 +7,7 @@ import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalComponentsSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
@@ -34,7 +34,7 @@ class ConfluentUniversalKafkaDeserializer[T](override val schemaRegistryClient: 
 
     val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    UniversalComponentsSupport.forSchemaType(writerSchema.schemaType())
+    UniversalSchemaSupport.forSchemaType(writerSchema.schemaType())
       .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
       .asInstanceOf[T]

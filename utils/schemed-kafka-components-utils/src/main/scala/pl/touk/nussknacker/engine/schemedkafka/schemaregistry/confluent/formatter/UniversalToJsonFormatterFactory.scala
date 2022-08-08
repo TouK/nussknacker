@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentUtils, PayloadType, UniversalComponentsSupport}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentUtils, JsonPayloadRecordFormatterSupport, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.UniversalSchemaIdFromMessageExtractor
 
@@ -44,14 +44,14 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
   private def formatMessage(schemaOpt: Option[ParsedSchema], data: Any) = {
     // We do not support formatting AVRO messages without schemaId to json. So when schema is missing we assume it must be JSON payload.
-    val payloadType = schemaOpt.map(s => UniversalComponentsSupport.forSchemaType(s.schemaType())).map(_.payloadType).getOrElse(PayloadType.Json)
-    UniversalComponentsSupport.forPayloadType(payloadType).formatMessage(schemaRegistryClient.client, data)
+    val support = schemaOpt.map(_.schemaType()).map(UniversalSchemaSupport.forSchemaType).map(_.recordFormatterSupport).getOrElse(JsonPayloadRecordFormatterSupport)
+    support.formatMessage(schemaRegistryClient.client, data)
   }
 
   private def readMessage(schemaOpt: Option[ParsedSchema], subject: String, jsonObj: Json) = {
     // We do not support reading AVRO messages without schemaId. So when schema is missing we assume it must be JSON payload.
-    val payloadType = schemaOpt.map(s => UniversalComponentsSupport.forSchemaType(s.schemaType())).map(_.payloadType).getOrElse(PayloadType.Json)
-    UniversalComponentsSupport.forPayloadType(payloadType).readMessage(schemaRegistryClient.client, subject, schemaOpt, jsonObj)
+    val support = schemaOpt.map(_.schemaType()).map(UniversalSchemaSupport.forSchemaType).map(_.recordFormatterSupport).getOrElse(JsonPayloadRecordFormatterSupport)
+    support.readMessage(schemaRegistryClient.client, subject, schemaOpt, jsonObj)
   }
 
   /**

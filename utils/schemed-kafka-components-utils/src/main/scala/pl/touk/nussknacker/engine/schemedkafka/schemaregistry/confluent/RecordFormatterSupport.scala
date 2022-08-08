@@ -9,17 +9,12 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.nio.charset.StandardCharsets
 
-trait UniversalPayloadSupport {
+trait RecordFormatterSupport {
   def formatMessage(client: SchemaRegistryClient, data: Any): Json
   def readMessage(client: SchemaRegistryClient, subject: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte]
 }
 
-object PayloadType extends Enumeration {
-  type PayloadType = Value
-  val Avro, Json = Value
-}
-
-object JsonPayloadSupport extends UniversalPayloadSupport {
+object JsonPayloadRecordFormatterSupport extends RecordFormatterSupport {
   override def formatMessage(client: SchemaRegistryClient, data: Any): Json = BestEffortJsonEncoder(failOnUnkown = false, classLoader = getClass.getClassLoader).encode(data)
 
   override def readMessage(client: SchemaRegistryClient, subject: String, schemaOpt: Option[ParsedSchema], jsonObj: Json): Array[Byte] = jsonObj match {
@@ -29,7 +24,7 @@ object JsonPayloadSupport extends UniversalPayloadSupport {
   }
 }
 
-object AvroPayloadSupport extends UniversalPayloadSupport {
+object AvroPayloadRecordFromatterSupport extends RecordFormatterSupport {
 
   override def formatMessage(client: SchemaRegistryClient, data: Any): Json = new ConfluentAvroMessageFormatter(client).asJson(data)
 
