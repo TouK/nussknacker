@@ -8,13 +8,13 @@ import org.apache.flink.streaming.api.datastream.DataStreamSink
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.flink.api.exception.{ExceptionHandler, WithExceptionHandler}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkSink}
 import pl.touk.nussknacker.engine.flink.util.keyed.KeyedValueMapper
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PartitionByKeyFlinkKafkaProducer, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalComponentsSupport
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
@@ -55,7 +55,7 @@ class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
     override def map(ctx: ValueWithContext[KeyedValue[AnyRef, AnyRef]]): KeyedValue[AnyRef, AnyRef] = {
       ctx.value.mapValue { data =>
         exceptionHandler.handling(Some(NodeComponentInfo(nodeId, "flinkKafkaAvroSink", ComponentType.Sink)), ctx.context) {
-          val encode = UniversalSchemaSupport.forSchemaType(schema.getParsedSchema.schemaType()).sinkValueEncoder(schema.getParsedSchema, validationMode)
+          val encode = UniversalComponentsSupport.forSchemaType(schema.getParsedSchema.schemaType()).sinkValueEncoder(schema.getParsedSchema, validationMode)
           encode(data)
         }.orNull
       }

@@ -27,7 +27,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   override def resolveConfig(config: Config): Config = super.resolveConfig(config).withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
 
-  ignore("should read generated generic record in v1 with null key") {
+  test("should read generated generic record in v1 with null key") {
     val givenValue = FullNameV1.record
 
     roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), null, givenValue)
@@ -39,8 +39,7 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(2), null, givenValue)
   }
 
-  //todo
-  ignore("should read generated generic record in v1 with empty string key") {
+  test("should read generated generic record in v1 with empty string key") {
     val givenValue = FullNameV1.record
 
     roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, RecordTopic, ExistingSchemaVersion(1), "", givenValue)
