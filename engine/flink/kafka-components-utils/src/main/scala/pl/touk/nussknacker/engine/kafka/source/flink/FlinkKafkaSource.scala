@@ -2,23 +2,28 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.ContextInitializer
+import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
+import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkIntermediateRawSource, FlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka._
-import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.{FlinkDeserializationSchemaWrapper, wrapToFlinkDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
 
 import java.time.Duration
+import java.util.Properties
 import scala.collection.JavaConverters._
 
 class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
@@ -38,7 +43,7 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val consumerGroupId = overriddenConsumerGroup.getOrElse(ConsumerGroupDeterminer(kafkaConfig).consumerGroup(flinkNodeContext))
-    val sourceFunction = flinkSourceFunction(consumerGroupId)
+    val sourceFunction = flinkSourceFunction(consumerGroupId, flinkNodeContext)
 
     prepareSourceStream(env, flinkNodeContext, sourceFunction)
   }
@@ -47,14 +52,15 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
     wrapToFlinkDeserializationSchema(deserializationSchema).getProducedType
   }
 
-  protected def flinkSourceFunction(consumerGroupId: String): SourceFunction[T] = {
+  protected def flinkSourceFunction(consumerGroupId: String, flinkNodeContext: FlinkCustomNodeContext): SourceFunction[T] = {
     topics.foreach(KafkaUtils.setToLatestOffsetIfNeeded(kafkaConfig, _, consumerGroupId))
-    createFlinkSource(consumerGroupId)
+    createFlinkSource(consumerGroupId, flinkNodeContext)
   }
 
-  @silent("deprecated")
-  protected def createFlinkSource(consumerGroupId: String): SourceFunction[T] = {
-    new FlinkKafkaConsumer[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema), KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)))
+  protected def createFlinkSource(consumerGroupId: String, flinkNodeContext: FlinkCustomNodeContext): SourceFunction[T] = {
+    new FlinkKafkaConsumerHandlingExceptions[T](topics.asJava, wrapToFlinkDeserializationSchema(deserializationSchema),
+      KafkaUtils.toConsumerProperties(kafkaConfig, Some(consumerGroupId)),
+      flinkNodeContext.exceptionHandlerPreparer, flinkNodeContext.convertToEngineRuntimeContext, NodeId(flinkNodeContext.nodeId))
   }
 
   //Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
@@ -70,6 +76,38 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
 
   protected def deserializeTestData(record: ConsumerRecord[Array[Byte], Array[Byte]]): T = {
     deserializationSchema.deserialize(record)
+  }
+
+}
+
+// TODO: Tricks like deserializationSchema.setExceptionHandlingData and FlinkKafkaConsumer overriding could be replaced by
+//       making KafkaDeserializationSchema stupid (just producing ConsumerRecord[Array[Byte], Array[Byte]])
+//       and moving deserialization logic to separate flatMap function that would produce Context.
+//       Thanks to that contextInitializer.initContext would be wrapped by exception handling mechanism as well.
+//       It is done this way in lite engine implementation.
+@silent("deprecated")
+class FlinkKafkaConsumerHandlingExceptions[T](topics: java.util.List[String], deserializationSchema: FlinkDeserializationSchemaWrapper[T], props: Properties,
+                                              exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+                                              convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+                                              nodeId: NodeId)
+  extends FlinkKafkaConsumer[T](topics, deserializationSchema, props) {
+
+  protected var exceptionHandler: ExceptionHandler = _
+
+  protected var exceptionPurposeContextIdGenerator: ContextIdGenerator = _
+
+  override def open(parameters: Configuration): Unit = {
+    super.open(parameters)
+    exceptionHandler = exceptionHandlerPreparer(getRuntimeContext)
+    exceptionPurposeContextIdGenerator = convertToEngineRuntimeContext(getRuntimeContext).contextIdGenerator(nodeId.id)
+    deserializationSchema.setExceptionHandlingData(exceptionHandler, exceptionPurposeContextIdGenerator, nodeId)
+  }
+
+  override def close(): Unit = {
+    if (exceptionHandler != null) {
+      exceptionHandler.close()
+    }
+    super.close()
   }
 
 }

@@ -72,10 +72,6 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     }(patience, implicitly[Position])
   }
 
-  def waitForFail(jobID: JobID, name: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): Unit = {
-    waitForJobState(jobID, name, ExecutionState.CANCELED, ExecutionState.FAILED)(patience)
-  }
-
   def checkJobNotFailing(jobID: JobID): Unit = {
     val executionGraph = flinkMiniClusterHolder.getExecutionGraph(jobID).get()
     assert(!Set(JobStatus.FAILING, JobStatus.FAILED, JobStatus.RESTARTING).contains(executionGraph.getState),

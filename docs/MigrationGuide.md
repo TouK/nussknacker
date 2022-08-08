@@ -46,6 +46,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
   * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction`, `FlinkKafkaSource.createFlinkSource` and `DelayedFlinkKafkaConsumer.apply` takes additional argument, `FlinkCustomNodeContext` now
+* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
 
 ### REST API changes
 
@@ -63,8 +65,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Other changes
 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
-  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module 
-* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
+  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) Behavior of Flink's Kafka deserialization errors handling was changed - now instead of job failure, invalid message is omitted and configured `exceptionHandler` mechanism is used.
 
 ## In version 1.4.0
                  

@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.avro.schema
 
+import org.apache.avro.generic.GenericData
+
 object PaymentNotCompatible extends TestSchemaWithRecord {
   val stringSchema: String =
     s"""
@@ -56,4 +58,7 @@ object PaymentNotCompatible extends TestSchemaWithRecord {
     """.stripMargin
 
   val exampleData = PaymentV2.exampleData ++ Map("attributes" -> Map(), "date" -> 189123)
+
+  val recordWithData: GenericData.Record = avroEncoder.encodeRecordOrError(exampleData, schema)
+
 }

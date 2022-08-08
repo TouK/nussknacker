@@ -2,10 +2,8 @@ package pl.touk.nussknacker.engine.avro
 
 import io.circe.generic.JsonCodec
 import org.apache.avro.{AvroRuntimeException, Schema}
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
-import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.avro.KafkaAvroBaseComponentTransformer._
@@ -15,7 +13,6 @@ import pl.touk.nussknacker.engine.avro.schema._
 import pl.touk.nussknacker.engine.avro.schemaregistry._
 import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -233,21 +230,13 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     }
   }
 
-  test("should throw exception when try to convert not compatible event") {
+  test("should handle convert not compatible event") {
     val topicConfig = createAndRegisterTopicConfig("try-to-convert-not-compatible", payment2Schemas)
     val sourceParam = SourceAvroParam.forUniversal(topicConfig, ExistingSchemaVersion(3))
     val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(3), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
-
-    /**
-     * When we try deserialize not compatible event then exception will be thrown..
-     * After that flink will stopped working.. And we can't find job. It can take some time.
-     */
-    pushMessage(PaymentV2.recordWithData, topicConfig.input)
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
-    val executionResult = env.execute(process.id)
-    env.waitForFail(executionResult.getJobID, process.id)()
+    runAndVerifyResult(process, topicConfig, List(PaymentV2.recordWithData, PaymentNotCompatible.recordWithData), PaymentNotCompatible.recordWithData)
+    RecordingExceptionConsumer.dataFor(runId) should have size 1
   }
 
   test("should pass timestamp from flink to kafka") {

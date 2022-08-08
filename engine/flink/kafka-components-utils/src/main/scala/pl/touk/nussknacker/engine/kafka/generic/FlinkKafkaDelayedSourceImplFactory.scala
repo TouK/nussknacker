@@ -5,12 +5,13 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.delayed.{DelayCalculator, FixedDelayCalculator}
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSource.defaultMaxOutOfOrdernessMillis
-import pl.touk.nussknacker.engine.kafka.source.flink.{FlinkConsumerRecordBasedKafkaSource, FlinkKafkaSourceImplFactory, FlinkKafkaSource}
+import pl.touk.nussknacker.engine.kafka.source.flink.{FlinkConsumerRecordBasedKafkaSource, FlinkKafkaSource, FlinkKafkaSourceImplFactory}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 import java.time.Duration
@@ -67,8 +68,8 @@ class FlinkKafkaDelayedSourceImplFactory[K, V](timestampAssigner: Option[Timesta
                                          delayCalculator: DelayCalculator): FlinkKafkaSource[ConsumerRecord[K, V]] = {
     new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer) {
 
-      override protected def createFlinkSource(consumerGroupId: String): SourceFunction[ConsumerRecord[K, V]] =
-        DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner)
+      override protected def createFlinkSource(consumerGroupId: String, flinkNodeContext: FlinkCustomNodeContext): SourceFunction[ConsumerRecord[K, V]] =
+        DelayedFlinkKafkaConsumer(preparedTopics, deserializationSchema, kafkaConfig, consumerGroupId, delayCalculator, timestampAssigner, flinkNodeContext)
 
     }
   }
