@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, SerializableMethodInfo, StaticMethodInfo}
-
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, SerializableMethodInfo, FunctionalMethodInfo, StaticMethodInfo}
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
