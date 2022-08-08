@@ -81,6 +81,7 @@
 * [#3114](https://github.com/TouK/nussknacker/pull/3114) Add `flush` method to `WithSharedKafkaProducer`
 * [#3034](https://github.com/TouK/nussknacker/pull/3034) Fixed sorting on new scenarios list
 * [#3330](https://github.com/TouK/nussknacker/pull/3330) ConfluentUniversalKafkaDeserializer - deserialize using latest schema for topic if no headers or magic-byte/schemaId/payload
+* [#3380](https://github.com/TouK/nussknacker/pull/3380) Enhancements: more strict typing union validation
 
 1.3.0 (22 Apr 2022)
 ------------------------

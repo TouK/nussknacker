@@ -122,10 +122,10 @@ trait CanBeSubclassDeterminer {
   }
 
   private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): ValidatedNel[String, Unit] = {
-    condNel(givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _).isValid)), (),
-      s"""None of the following types:
+    condNel(givenTypes.forall(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _).isValid)), (),
+      s"""The following union of types:
          |${givenTypes.map(" - " + _.display).mkString(",\n")}
-         |can be a subclass of any of:
+         |can't be a subclass of union of types:
          |${superclassCandidates.map(" - " + _.display).mkString(",\n")}""".stripMargin
     )
   }

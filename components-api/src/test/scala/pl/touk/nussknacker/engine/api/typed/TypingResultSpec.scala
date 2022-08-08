@@ -48,11 +48,11 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("determine if can be subclass for typed unions") {
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed[Int]) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed[Int]) shouldBe false
     Typed[Int].canBeSubclassOf(Typed(Typed[String], Typed[Int])) shouldBe true
 
-    Typed(Typed[String], Typed[Int]).canBeSubclassOf(
-      Typed(Typed[Long], Typed[Int])) shouldBe true
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed(Typed[Long], Typed[Int])) shouldBe false
+    Typed(Typed[String], Typed[Int]).canBeSubclassOf(Typed(Typed[Long], Typed[String], Typed[Int])) shouldBe true
   }
 
   test("determine if can be subclass for unknown") {
