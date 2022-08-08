@@ -38,4 +38,9 @@ object RunResult {
 
 }
 
-case class RunResult[T](errors: List[NuExceptionInfo[_]], successes: List[T])
+case class RunResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) {
+
+  def mapSuccesses[U](f: T => U): RunResult[U] =
+    copy(successes = successes.map(f))
+
+}
