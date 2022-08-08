@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.common.serialization.Serializer
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedValueSerializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 class ConfluentUniversalKafkaSerializationSchemaFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory)
   extends KafkaSchemaBasedValueSerializationSchemaFactory {

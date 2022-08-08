@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde._
 
 import java.nio.ByteBuffer
+import scala.util.Try
 
 case class SchemaIdWithPositionedBuffer(value: Int, buffer: ByteBuffer) {
   def bufferStartPosition: Int = buffer.position()
@@ -20,8 +21,8 @@ trait UniversalSchemaIdFromMessageExtractor {
   // SchemaId can be obtain in several ways. Precedent:
   // * from kafka header
   // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])
-  // * latest schema for topic
-  def getSchemaId(topic: String, isKey: Boolean, headers: Headers, data: Array[Byte]): SchemaIdWithPositionedBuffer = {
+  // * from source editor version param - this is just an assumption we make (when processing no-schemed-data, everything can happen)
+  def getSchemaId(headers: Headers, data: Array[Byte], isKey: Boolean, fallback: Option[Int]): SchemaIdWithPositionedBuffer = {
     val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
     headers.getSchemaId(headerName) match {
@@ -30,10 +31,18 @@ trait UniversalSchemaIdFromMessageExtractor {
         SchemaIdWithPositionedBuffer(idFromHeader, buffer)
       case None =>
         val idAndBuffer = ConfluentUtils.readIdAndGetBuffer(data).toOption
-          .getOrElse(schemaRegistryClient
-            .getLatestSchemaId(topic, isKey = isKey).map((_, ByteBuffer.wrap(data)))
-            .valueOr(e => throw new RuntimeException("Missing schemaId in kafka header and in payload. Trying to fetch latest schema for this topic but it failed", e)))
+          .getOrElse(
+            fallback.map((_, ByteBuffer.wrap(data)))
+              .getOrElse(throw new MessageWithoutSchemaIdException()))
         SchemaIdWithPositionedBuffer(idAndBuffer._1, buffer = idAndBuffer._2)
     }
   }
+
+  def getSchemaIdWhenPresent(headers: Headers, data: Array[Byte], isKey: Boolean): Option[SchemaIdWithPositionedBuffer] =
+    Try(getSchemaId(headers, data, isKey, fallback = None)).map(Some(_))
+      .recover({
+        case _: MessageWithoutSchemaIdException => None
+      }).get
 }
+
+class MessageWithoutSchemaIdException extends IllegalArgumentException("Missing schemaId in kafka headers, in payload, and no fallback provided")

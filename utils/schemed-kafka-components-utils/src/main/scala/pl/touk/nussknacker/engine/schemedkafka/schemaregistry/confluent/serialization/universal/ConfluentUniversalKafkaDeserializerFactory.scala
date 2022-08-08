@@ -5,11 +5,11 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Deserializer
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
 import scala.reflect.ClassTag
 
@@ -24,7 +24,7 @@ class ConfluentUniversalKafkaDeserializer[T](override val schemaRegistryClient: 
   }
 
   override def deserialize(topic: String, headers: Headers, data: Array[Byte]): T = {
-    val writerSchemaId = getSchemaId(topic, isKey, headers, data)
+    val writerSchemaId = getSchemaId(headers, data, isKey, fallback = readerSchemaDataOpt.flatMap(_.schemaIdOpt))
     val writerSchema = schemaRegistryClient.getSchemaById(writerSchemaId.value).schema
 
     readerSchemaDataOpt.map(_.schema.schemaType()).foreach(readerSchemaType => {
