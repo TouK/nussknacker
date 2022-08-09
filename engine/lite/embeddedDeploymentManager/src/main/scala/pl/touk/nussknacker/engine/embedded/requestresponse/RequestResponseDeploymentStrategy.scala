@@ -4,27 +4,20 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
+import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.RequestResponseConfig
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, ScenarioRoute}
+import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
@@ -33,7 +26,9 @@ import scala.util.{Failure, Success, Try}
 
 object RequestResponseDeploymentStrategy {
 
-  case class RequestResponseConfig(port: Int, interface: String = "0.0.0.0")
+  import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
     new RequestResponseDeploymentStrategy(config.rootAs[RequestResponseConfig])
@@ -75,7 +70,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
     val interpreter = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-    val interpreterWithPath = pathForScenario(jobData.metaData).product(interpreter)
+    val interpreterWithPath = ScenarioRoute.pathForScenario(jobData.metaData).product(interpreter)
     interpreterWithPath.foreach { case (path, interpreter) =>
       pathToRequestHandler += (path -> new RequestResponseAkkaHttpHandler(interpreter))
       interpreter.open()
@@ -83,11 +78,6 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     interpreterWithPath
       .map { case (path, deployment) => new RequestResponseDeployment(path, deployment) }
       .fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
-  }
-
-  private def pathForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
-    case RequestResponseMetaData(path) => Valid(path.getOrElse(metaData.id))
-    case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
   }
 
   override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner

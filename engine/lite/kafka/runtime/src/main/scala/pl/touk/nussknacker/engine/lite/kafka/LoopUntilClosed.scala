@@ -4,7 +4,8 @@ import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.apache.kafka.common.errors.InterruptException
-import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
+import pl.touk.nussknacker.engine.lite.TaskStatus
+import pl.touk.nussknacker.engine.lite.TaskStatus.{DuringDeploy, Restarting, Running, TaskStatus}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
 import java.util.concurrent.atomic.AtomicBoolean
@@ -66,15 +67,6 @@ class TaskRunner(taskName: String,
       logger.error("Thread pool termination timeout")
     }
   }
-}
-
-object TaskStatus extends Enumeration {
-  type TaskStatus = Value
-
-//  Value.id determines the precedence of statuses (i.e. if one of the tasks is Restarting while others are During Deploy, Restarting status should be displayed)
-  val Running: Value = Value(0, "RUNNING")
-  val DuringDeploy: Value = Value(1, "DURING_DEPLOY")
-  val Restarting: Value = Value(2, "RESTARTING")
 }
 
 //Assumptions: run will be invoked only after successful init, close will be invoked if init fails

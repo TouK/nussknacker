@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy, EmbeddedStateStatus}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.TestRunner
-import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData, TaskStatus}
+import pl.touk.nussknacker.engine.lite.{TaskStatus, TestRunner}
+import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}

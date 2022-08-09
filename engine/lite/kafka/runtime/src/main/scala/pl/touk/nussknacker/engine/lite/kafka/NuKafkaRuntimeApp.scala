@@ -1,60 +1,68 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import akka.actor.ActorSystem
-import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.commons.io.FileUtils
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreterFactory
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
-import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 
-import java.net.URL
 import java.nio.file.Path
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.control.NonFatal
 
+// TODO: get rid of kafka specific things: class name, LiteKafkaJobData
 object NuKafkaRuntimeApp extends App with LazyLogging {
 
   JavaClassVersionChecker.check()
   SLF4JBridgeHandlerRegistrar.register()
 
   val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
-
   val scenario = parseScenario(scenarioFileLocation)
-
   val liteKafkaJobData = parseDeploymentConfig(deploymentConfigLocation)
-
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
-  val system = ActorSystem("nu-kafka-runtime", runtimeConfig)
+  val system = ActorSystem("nu-lite-runtime", runtimeConfig)
   import system.dispatcher
 
-  val scenarioInterpreter = prepareScenarioInterpreter(runtimeConfig, liteKafkaJobData)
-  Runtime.getRuntime.addShutdownHook(new Thread() {
-    override def run(): Unit = {
-      logger.info("Closing KafkaTransactionalScenarioInterpreter")
-      scenarioInterpreter.close()
-    }
-  })
+  // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
+  // will be still alive even if something fail (like scenarioInterpreter creation)
+  val exitCode = try {
+    runAfterActorSystemCreation()
+    0
+  } catch {
+    case NonFatal(ex) =>
+      logger.error("Exception during runtime execution", ex)
+      1
+  } finally {
+    Await.result(system.terminate(), 5.seconds)
+  }
+  System.exit(exitCode)
 
-  private val healthCheckServer = new HealthCheckServerRunner(system, scenarioInterpreter)
-  Await.result(for {
-    _ <- healthCheckServer.start()
-    _ <- scenarioInterpreter.run()
-  } yield (), Duration.Inf)
+  private def runAfterActorSystemCreation(): Unit = {
+    val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, liteKafkaJobData, system)
+    Runtime.getRuntime.addShutdownHook(new Thread() {
+      override def run(): Unit = {
+        logger.info("Closing RunnableScenarioInterpreter")
+        scenarioInterpreter.close()
+      }
+    })
 
-  logger.info(s"Closing application NuKafkaRuntimeApp")
+    val healthCheckServer = new HealthCheckServerRunner(system, scenarioInterpreter)
+    Await.result(for {
+      _ <- healthCheckServer.start()
+      _ <- scenarioInterpreter.run()
+    } yield (), Duration.Inf)
 
-  Await.ready(healthCheckServer.stop(), 5.seconds)
-  Await.result(system.terminate(), 5.seconds)
+    logger.info(s"Closing application NuKafkaRuntimeApp")
+    Await.ready(healthCheckServer.stop(), 5.seconds)
+  }
 
   private def parseArgs: (Path, Path) = {
     if (args.length < 1) {
@@ -86,24 +94,6 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   private def parseDeploymentConfig(path: Path): LiteKafkaJobData = {
     ConfigFactory.parseFile(path.toFile).as[LiteKafkaJobData]
-  }
-
-  private def prepareScenarioInterpreter(runtimeConfig: Config, liteKafkaJobData: LiteKafkaJobData): KafkaTransactionalScenarioInterpreter = {
-    val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
-
-    val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
-
-    val metricRegistry = prepareMetricRegistry(runtimeConfig)
-    val preparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
-    // TODO Pass correct ProcessVersion and DeploymentData
-    val jobData = JobData(scenario.metaData, ProcessVersion.empty)
-
-    KafkaTransactionalScenarioInterpreter(scenario, jobData, liteKafkaJobData, modelData, preparer)
-  }
-
-  private def prepareMetricRegistry(engineConfig: Config) = {
-    lazy val instanceId = sys.env.getOrElse("INSTANCE_ID", LiteMetricRegistryFactory.hostname)
-    new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
   }
 
 }

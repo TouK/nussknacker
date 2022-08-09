@@ -1062,6 +1062,8 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       (defaultModel / assembly).value -> "model/defaultModel.jar",
       (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
       (liteKafkaComponents / assembly).value -> "components/lite/liteKafka.jar",
+      // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
+      (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
       (openapiComponents / assembly).value -> "components/common/openapi.jar",
       (sqlComponents / assembly).value -> "components/common/sql.jar"
     ),
@@ -1073,7 +1075,8 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
     )
-  ).dependsOn(liteEngineRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test")
+    // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
+  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test")
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
