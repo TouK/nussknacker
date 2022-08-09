@@ -24,7 +24,6 @@ class ProcessNameValidator extends CustomProcessValidator {
 
       )
     }
-
   }
 
 }
