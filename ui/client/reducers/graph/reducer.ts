@@ -176,7 +176,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       }
     }
     case "NODES_DISCONNECTED": {
-      const nodesToSet = adjustBranchParametersAfterDisconnect(state.processToDisplay.nodes, action.from, action.to)
+      const nodesToSet = adjustBranchParametersAfterDisconnect(state.processToDisplay.nodes, [action])
       return {
         ...state,
         processToDisplay: {

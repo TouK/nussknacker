@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-
 import io.circe.Json
 import io.circe.Json.fromString
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.openapi._
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.json.swagger.{extractor, _}
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
+
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
 
 class JsonToObjectTest extends FunSuite
   with Matchers {
@@ -50,7 +51,7 @@ class JsonToObjectTest extends FunSuite
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), required = Set("field3"))
 
     assertThrows[JsonToObject.JsonToObjectError] {
-      JsonToObject(json, definition)
+      extractor.JsonToObject(json, definition)
     }
   }
 }

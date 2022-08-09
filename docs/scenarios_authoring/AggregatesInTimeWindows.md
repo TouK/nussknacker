@@ -64,15 +64,16 @@ Let’s map the above statement on the parameters of the Nussknacker Aggregate c
 **output** - name of the variable which will hold the result of the aggregator.
 
 **groupBy** - equivalent of the GROUP BY in SQL; a result of the aggregator will be computed for each distinct groupBy value found by Nussknacker in the time window. Whenever an event with aggregate is emitted, the `#key` variable will be available containing value of this field. 
+The result of the `groupBy` expression must be of type String.
 
 **aggregateBy** - this is an input to the aggregator; for each event  with the same groupBy value which qualifies to the time window, the aggregateBy expression will be evaluated, fed to the aggregator and the aggregate will be updated.
 
-| groupBy               | aggregateBy                                          | aggregator | result*                                                                                                                                                          |
-|-----------------------|------------------------------------------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `#input.subscriberId` | `#input.value`                                       | Sum        | <p>`6000.0` for subscriberId = 1 </p> `200.0` for subscriberId = 2                                                                                               |
-| `#input.subscriberId` | `1L`                                                 | Sum        | <p>`3` for subscriberId = 1 </p> `1` for subscriberId = 2                                                                                                        |
-| `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List       | <p>`{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}}` for subscriberId = 1 </p> `{{“tid”:12, “val”: 2000.0}}` for subscriberId = 2 |
-
+| groupBy               | aggregateBy                                          | aggregator | result*                                                                                                                                                          | #key                    |
+|-----------------------|------------------------------------------------------|------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------|
+| `#input.subscriberId` | `#input.value`                                       | Sum        | <p>6000.0  </p> 200.0                                                                                               | <p> '1' </p> '2'|
+| `#input.subscriberId` | `1L`                                                 | Sum        | <p>3 </p> 1                                     |  <p> '1' </p> '2'                                                                  | |
+| `#input.subscriberId` | `{“tid”: #input.transactionId, “val”: #input.value}` | List       | <p>{{“tid”:11, “val”: 500.0},{“tid”:13, “val”: 5000.0},{“tid”:14, “val”: 1000.0}} </p> {{“tid”:12, “val”: 2000.0}} |  <p> '1' </p> '2'|
+| `#input.subscriberId +'-'+ #input.operation` | `#input.value` | Max | <p> 500  </p> <p> 5000  </p> <p> 200  </p> | <p> '1-RECHARGE' </p> <p>  '1-TRANSFER' </p> <p> '2-RECHARGE' </p> 
 
 *result is held in the variable configured in the `output` field.
 

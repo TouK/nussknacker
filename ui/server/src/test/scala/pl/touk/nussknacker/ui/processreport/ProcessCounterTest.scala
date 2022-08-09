@@ -2,15 +2,14 @@ package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.SetSubprocessRepository
+import pl.touk.nussknacker.ui.api.helpers.{StubSubprocessRepository, TestCategories}
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository}
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
@@ -19,7 +18,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
 
   import spel.Implicits._
 
-  private val defaultCounter = new ProcessCounter(new SetSubprocessRepository(Set()))
+  private val defaultCounter = new ProcessCounter(new StubSubprocessRepository(Set()))
 
   test("compute counts for simple process") {
     val process = ScenarioBuilder
@@ -110,12 +109,7 @@ class ProcessCounterTest extends FunSuite with Matchers {
     )
   }
 
+  private def subprocessRepository(processes: Set[CanonicalProcess]): SubprocessRepository =
+    new StubSubprocessRepository(processes.map(c => SubprocessDetails(c, TestCategories.Category1)))
 
-  private def subprocessRepository(processes: Set[CanonicalProcess]): SubprocessRepository = {
-    new SubprocessRepository {
-      override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
-        processes.map(c => SubprocessDetails(c, "category1"))
-      }
-    }
-  }
 }

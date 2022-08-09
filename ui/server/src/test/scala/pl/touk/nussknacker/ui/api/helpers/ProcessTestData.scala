@@ -2,15 +2,14 @@ package pl.touk.nussknacker.ui.api.helpers
 
 import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.definition._
-import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.CustomTransformerAdditionalData
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
@@ -28,22 +27,21 @@ import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
-import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 object ProcessTestData {
 
-  class SetSubprocessRepository(processes: Set[SubprocessDetails]) extends SubprocessRepository {
-    override def loadSubprocesses(versions: Map[String, VersionId]): Set[SubprocessDetails] = {
-      processes
-    }
-  }
+  import spel.Implicits._
 
   val existingSourceFactory = "barSource"
   val otherExistingSourceFactory = "fooSource"
+  val secretExistingSourceFactory = "secretSource"
+
   val existingSinkFactory = "barSink"
   val existingSinkFactory2 = "barSink2"
   val otherExistingSinkFactory = "barSink"
+
   val existingServiceId = "barService"
   val otherExistingServiceId = "fooService"
   val otherExistingServiceId2 = "fooService2"
@@ -59,9 +57,10 @@ object ProcessTestData {
   val otherExistingStreamTransformer2 = "otherTransformer2"
   val optionalEndingStreamTransformer = "optionalEndingTransformer"
 
-  val processDefinition = ProcessDefinitionBuilder.empty
+  val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] = ProcessDefinitionBuilder.empty
     .withSourceFactory(existingSourceFactory)
     .withSourceFactory(otherExistingSourceFactory)
+    .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
     .withSinkFactory(otherExistingSinkFactory)
     .withSinkFactory(existingSinkFactory)
     .withService(existingServiceId)
@@ -83,18 +82,20 @@ object ProcessTestData {
     .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
       manyInputs = false, canBeEnding = true))
 
-  val validator: ProcessValidator = ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
-
-  val validation = new ProcessValidation(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator),
+  val processValidation: ProcessValidation = ProcessValidation(
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-    new SubprocessResolver(new SetSubprocessRepository(Set())),
+    new SubprocessResolver(new StubSubprocessRepository(Set())),
     emptyProcessingTypeDataProvider
   )
 
   val validProcess: EspProcess = validProcessWithId("fooProcess")
 
   val validProcessWithEmptyExpr: EspProcess = validProcessWithParam("fooProcess", "expression" -> Expression("spel", ""))
+
+  val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
+
+  val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
 
   def validProcessWithId(id: String): EspProcess = ScenarioBuilder
     .streaming(id)
@@ -110,18 +111,12 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-
-  val validDisplayableProcess: ValidatedDisplayableProcess = toValidatedDisplayable(validProcess)
-  val validProcessDetails: ValidatedProcessDetails = TestProcessUtil.validatedToProcess(validDisplayableProcess)
-
   def toValidatedDisplayable(espProcess: EspProcess): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, TestProcessingTypes.Streaming)
-    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, TestCategories.Category1))
   }
 
-  import spel.Implicits._
-
-  val multipleSourcesValidProcess = toValidatedDisplayable(EspProcess(MetaData("fooProcess", StreamMetaData()), NonEmptyList.of(
+  val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(EspProcess(MetaData("fooProcess", StreamMetaData()), NonEmptyList.of(
     GraphBuilder
       .source("source1", existingSourceFactory)
       .branchEnd("branch1", "join1"),
@@ -139,7 +134,7 @@ object ProcessTestData {
       .emptySink("sink1", existingSinkFactory))
   ))
 
-  val technicalValidProcess =
+  val technicalValidProcess: EspProcess =
     ScenarioBuilder
       .streaming("fooProcess")
       .source("source", existingSourceFactory)
@@ -158,7 +153,7 @@ object ProcessTestData {
           .emptySink("sink2", existingSinkFactory)
         ))
 
-  val invalidProcess = {
+  val invalidProcess: EspProcess = {
     val missingSourceFactory = "missingSource"
     val missingSinkFactory = "fooSink"
 
@@ -168,7 +163,7 @@ object ProcessTestData {
       .emptySink("sink", missingSinkFactory)
   }
 
-  val invalidProcessWithEmptyMandatoryParameter = {
+  val invalidProcessWithEmptyMandatoryParameter: EspProcess = {
     ScenarioBuilder.streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId3, "expression" -> "")
@@ -181,14 +176,29 @@ object ProcessTestData {
       .enricher("custom", "out1", notBlankExistingServiceId, "expression" -> "''")
       .emptySink("sink", existingSinkFactory)
 
-  val invalidProcessWithWrongFixedExpressionValue = {
+  val invalidProcessWithWrongFixedExpressionValue: EspProcess = {
     ScenarioBuilder.streaming("fooProcess")
       .source("source", existingSourceFactory)
       .enricher("custom", "out1", otherExistingServiceId4, "expression" -> "wrong fixed value")
       .emptySink("sink", existingSinkFactory)
   }
 
-  val sampleDisplayableProcess = {
+  val processWithInvalidAdditionalProperties: DisplayableProcess = DisplayableProcess(
+    id = "fooProcess",
+    properties = ProcessProperties(StreamMetaData(
+      Some(2)),
+      Some(ProcessAdditionalFields(Some("scenario description"), Map(
+        "maxEvents" -> "text",
+        "unknown" -> "x",
+        "numberOfThreads" -> "wrong fixed value"
+      ))),
+      subprocessVersions = Map.empty),
+    nodes = List.empty,
+    edges = List.empty,
+    processingType = TestProcessingTypes.Streaming
+  )
+
+  val sampleDisplayableProcess: DisplayableProcess = {
     DisplayableProcess(
       id = "fooProcess",
       properties = ProcessProperties(StreamMetaData(Some(2)), Some(ProcessAdditionalFields(Some("process description"), Map.empty)), subprocessVersions = Map.empty),

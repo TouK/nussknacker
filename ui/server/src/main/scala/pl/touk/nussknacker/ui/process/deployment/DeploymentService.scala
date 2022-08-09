@@ -53,7 +53,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json).flatMap(canonical => {
+        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).flatMap(canonical => {
           ProcessCanonizer.uncanonize(canonical).map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
         }).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
@@ -109,7 +109,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                                    deploymentManager: DeploymentManager)(implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
     val processVersion = process.toEngineProcessVersion
     val validatedData = for {
-      resolvedCanonicalProces <- Future.fromTry(scenarioResolver.resolveScenario(process.json))
+      resolvedCanonicalProces <- Future.fromTry(scenarioResolver.resolveScenario(process.json, process.processCategory))
       deploymentData = prepareDeploymentData(toManagerUser(user))
       _ <- deploymentManager.validate(processVersion, deploymentData, resolvedCanonicalProces)
     } yield (resolvedCanonicalProces, deploymentData)

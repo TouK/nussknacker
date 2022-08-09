@@ -3,6 +3,10 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+## In version 1.6.0 (Not released yet)
+* [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
+  From now import scenario with nodes from other categories than scenario category will be not allowed.
+
 ## In version 1.5.0 (Not released yet)
 
 ### Configuration changes
@@ -29,7 +33,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299)[#3309](https://github.com/TouK/nussknacker/pull/3309) 
   [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
-  * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema
+  * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema`
   * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
   * `SchemaRegistryProvider` refactoring:
     * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
@@ -46,6 +50,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
   * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction`, `FlinkKafkaSource.createFlinkSource` and `DelayedFlinkKafkaConsumer.apply` takes additional argument, `FlinkCustomNodeContext` now
+* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Numerous renames:
+  * module `nussknacker-avro-components-utils` -> `nussknacker-schemed-kafka-components-utils`
+  * module `nussknacker-flink-avro-components-utils` -> `nussknacker-flink-schemed-kafka-components-utils`
+  * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
+  * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
 
 ### REST API changes
 
@@ -59,12 +70,13 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Breaking changes
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Due to addition of support for different schema type (AvroSchema and JsonSchema for now) serialization format of `NkSerializableParsedSchema` has changed. Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Due to renames (see section `Code API changes`) Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
 
 ### Other changes
 
 * [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
-  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module 
-* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
+  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) Behavior of Flink's Kafka deserialization errors handling was changed - now instead of job failure, invalid message is omitted and configured `exceptionHandler` mechanism is used.
 
 ## In version 1.4.0
                  
@@ -87,6 +99,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Breaking changes
 * [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. Flink state compatibility has been broken.
 * [#3116](https://github.com/TouK/nussknacker/pull/3116) Refactor `SchemaRegistryClientFactory` so it takes dedicated config object instead of KafkaConfig. This change minimizes chance of future Flink state compatibility break. `SchemaIdBasedAvroGenericRecordSerializer` is serialized in Flink state, so we provide it now with as little dependencies as necessary. Flink state compatibility has been broken again.
+* [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. For default configuration files, you can use `KAFKA_AUTO_OFFSET_RESET` env variable to easily change this setting.               
 
 ## In version 1.3.0
 

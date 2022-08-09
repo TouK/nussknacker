@@ -9,61 +9,75 @@ import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.restmodel.validation.{CustomProcessValidator, PrettyValidationErrors}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
-import shapeless.syntax.typeable._
 
 object ProcessValidation {
-  def apply(data: ProcessingTypeDataProvider[ModelData],
+  def apply(modelData: ProcessingTypeDataProvider[ModelData],
             additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
             subprocessResolver: SubprocessResolver,
             customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator]): ProcessValidation = {
-    new ProcessValidation(data.mapValues(_.validator), additionalProperties, subprocessResolver, customProcessNodesValidators)
+    new ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators, None)
   }
 }
 
-class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator],
+class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
                         additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
                         subprocessResolver: SubprocessResolver,
-                        customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator]) {
+                        customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator],
+                        expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
 
   val uiValidationError = "UiValidation"
+
+  /**
+   * We cache there model with category as a key, because model can be reloaded.
+   * In consequence of that we have to make sure that we use actual state of model
+   */
+  private val processValidatorCache = new DefaultCache[ValidatorKey, ProcessValidator](CacheConfig())
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
   private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig)
 
-  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(validators, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators)
+  def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(
+    modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, None
+  )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
-    validators.mapValues(_.withExpressionParsers(modify)), additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators)
+    modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, Some(modify)
+  )
 
-  def validate(displayable: DisplayableProcess): ValidationResult = {
+  def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) =
+    new ProcessValidation(modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, None)
+
+  def validate(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
 
     //there is no point in further validations if ui process structure is invalid
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      uiValidationResult.add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType))
+      uiValidationResult.add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
     } else {
       uiValidationResult
     }
   }
 
-  def processingTypeValidationWithTypingInfo(canonical: CanonicalProcess, processingType: ProcessingType): ValidationResult = {
-    validators.forType(processingType) match {
+  def processingTypeValidationWithTypingInfo(canonical: CanonicalProcess, processingType: ProcessingType, category: Category): ValidationResult = {
+    modelData.forType(processingType) match {
       case None =>
         ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(processingType)))
-      case Some(processValidator) =>
-        validateUsingTypeValidator(canonical, processValidator)
+      case Some(model) =>
+        validateUsingTypeValidator(canonical, model, category)
     }
   }
 
@@ -78,13 +92,21 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
       .add(warningValidation(displayable))
   }
 
-  private def validateUsingTypeValidator(canonical: CanonicalProcess, processValidator: ProcessValidator): ValidationResult = {
-    subprocessResolver.resolveSubprocesses(canonical) match {
+  private def validateUsingTypeValidator(canonical: CanonicalProcess, modelData: ModelData, category: Category): ValidationResult = {
+    val processValidator = processValidatorCache.getOrCreate(ValidatorKey(modelData, category)) {
+      val modelCategoryValidator = modelData.prepareValidatorForCategory(Some(category))
+
+      expressionParsers
+        .map(modelCategoryValidator.withExpressionParsers)
+        .getOrElse(modelCategoryValidator)
+    }
+
+    subprocessResolver.resolveSubprocesses(canonical, category) match {
       case Invalid(e) => formatErrors(e)
       case _ =>
         /* 1. We remove disabled nodes from canonical to not validate disabled nodes
            2. TODO: handle types when subprocess resolution fails... */
-        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes) match {
+        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category) match {
           case Valid(process) =>
             val validated = processValidator.validate(process)
             //FIXME: Validation errors for subprocess nodes are not properly handled by FE
@@ -95,10 +117,11 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
     }
   }
 
-  private def nodeInfoToResult(typingInfo: NodeTypingInfo)
-  = NodeTypingData(typingInfo.inputValidationContext.variables,
+  private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
+    typingInfo.inputValidationContext.variables,
     typingInfo.parameters.map(_.map(UIProcessObjectsFactory.createUIParameter)),
-    typingInfo.expressionsTypingInfo)
+    typingInfo.expressionsTypingInfo
+  )
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {
     val disabledNodes = process.nodes.collect { case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d }
@@ -191,4 +214,6 @@ class ProcessValidation(validators: ProcessingTypeDataProvider[ProcessValidator]
       .map(_.validate(process))
       .getOrElse(ValidationResult.success)
   }
+
+  private case class ValidatorKey(modelData: ModelData, category: Category)
 }

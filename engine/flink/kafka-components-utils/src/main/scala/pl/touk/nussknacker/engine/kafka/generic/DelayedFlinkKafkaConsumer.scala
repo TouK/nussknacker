@@ -1,24 +1,29 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
+import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.metrics.MetricGroup
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.operators.StreamingRuntimeContext
 import org.apache.flink.streaming.connectors.kafka
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumerBase
 import org.apache.flink.streaming.connectors.kafka.config.OffsetCommitMode
 import org.apache.flink.streaming.connectors.kafka.internals.{AbstractFetcher, KafkaFetcher, KafkaTopicPartition, KafkaTopicPartitionState}
-import org.apache.flink.streaming.connectors.kafka.{FlinkKafkaConsumer, FlinkKafkaConsumerBase}
 import org.apache.flink.streaming.runtime.tasks.ProcessingTimeService
 import org.apache.flink.util.SerializedValue
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.common.TopicPartition
+import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
+import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
+import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{LegacyTimestampWatermarkHandler, StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 import pl.touk.nussknacker.engine.kafka.generic.DelayedFlinkKafkaConsumer.ExtractTimestampForDelay
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.serialization.FlinkSerializationSchemaConversions.wrapToFlinkDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.delayed.DelayCalculator
+import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaConsumerHandlingExceptions
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils, PreparedKafkaTopic}
 
 import java.time.temporal.ChronoUnit
@@ -34,16 +39,19 @@ object DelayedFlinkKafkaConsumer {
                config: KafkaConfig,
                consumerGroupId: String,
                delayCalculator: DelayCalculator,
-               timestampAssigner: Option[TimestampWatermarkHandler[T]]): FlinkKafkaConsumerBase[T] = {
+               timestampAssigner: Option[TimestampWatermarkHandler[T]],
+               flinkNodeContext: FlinkCustomNodeContext): FlinkKafkaConsumerBase[T] = {
 
     val props = KafkaUtils.toConsumerProperties(config, Some(consumerGroupId))
 
     // Here: partitionState.extractTimestamp works correctly only when WatermarkStrategy is assigned
     // For legacy TimestampAssigners we extract timestamp from Assigner
-    def defaultConsumer = new DelayedFlinkKafkaConsumer[T](topics, schema, props, delayCalculator, (ps, e, t) => ps.extractTimestamp(e, t))
+    def defaultConsumer = new DelayedFlinkKafkaConsumer[T](topics, schema, props, delayCalculator, (ps, e, t) => ps.extractTimestamp(e, t),
+      flinkNodeContext.exceptionHandlerPreparer, flinkNodeContext.convertToEngineRuntimeContext, NodeId(flinkNodeContext.nodeId))
     timestampAssigner match {
       case Some(lth: LegacyTimestampWatermarkHandler[T]) =>
-        new DelayedFlinkKafkaConsumer[T](topics, schema, props, delayCalculator, (_, e, t) => lth.extractTimestamp(e, t))
+        new DelayedFlinkKafkaConsumer[T](topics, schema, props, delayCalculator, (_, e, t) => lth.extractTimestamp(e, t),
+          flinkNodeContext.exceptionHandlerPreparer, flinkNodeContext.convertToEngineRuntimeContext, NodeId(flinkNodeContext.nodeId))
       case Some(sth: StandardTimestampWatermarkHandler[T]) =>
         defaultConsumer.assignTimestampsAndWatermarks(sth.strategy)
       case None => defaultConsumer
@@ -53,13 +61,16 @@ object DelayedFlinkKafkaConsumer {
   type ExtractTimestampForDelay[T] = (KafkaTopicPartitionState[T, TopicPartition], T, Long) => Long
 }
 
-@silent("deprecated")
 class DelayedFlinkKafkaConsumer[T](topics: List[PreparedKafkaTopic],
                                    schema: KafkaDeserializationSchema[T],
                                    props: Properties,
                                    delayCalculator: DelayCalculator,
-                                   extractTimestamp: ExtractTimestampForDelay[T])
-  extends FlinkKafkaConsumer[T](topics.map(_.prepared).asJava, wrapToFlinkDeserializationSchema(schema), props) {
+                                   extractTimestamp: ExtractTimestampForDelay[T],
+                                   exceptionHandlerPreparer: RuntimeContext => ExceptionHandler,
+                                   convertToEngineRuntimeContext: RuntimeContext => EngineRuntimeContext,
+                                   nodeId: NodeId)
+  extends FlinkKafkaConsumerHandlingExceptions[T](topics.map(_.prepared).asJava, wrapToFlinkDeserializationSchema(schema),
+    props, exceptionHandlerPreparer, convertToEngineRuntimeContext, nodeId) {
 
 
   override def createFetcher(sourceContext: SourceFunction.SourceContext[T],

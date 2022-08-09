@@ -1,13 +1,12 @@
 package pl.touk.nussknacker
 
-import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder}
+import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 
-import java.net.{URI, URL}
+import java.net.URL
 
 package object openapi {
-  type PropertyName = String
-  type SwaggerRef = String
 
   implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toExternalForm)
   implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))

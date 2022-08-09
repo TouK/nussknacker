@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.json.serde
 
-import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.{FunSuite, Matchers}
@@ -37,7 +36,7 @@ class CirceJsonDeserializerSpec extends FunSuite with ValidatedValuesDetailedMes
     result.validValue shouldEqual Map(
       "firstName" -> "John",
       "lastName" -> "Doe",
-      "age" -> new java.math.BigDecimal(21)
+      "age" -> 21L
     ).asJava
   }
 

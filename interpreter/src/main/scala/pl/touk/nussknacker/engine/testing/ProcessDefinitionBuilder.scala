@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.testing
 
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
+import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -65,6 +66,9 @@ object ProcessDefinitionBuilder {
 
     def withSourceFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(sourceFactories = definition.sourceFactories + (typ -> ObjectDefinition.withParams(params.toList)))
+
+    def withSourceFactory(typ: String, category: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
+      definition.copy(sourceFactories = definition.sourceFactories + (typ -> new ObjectDefinition(params.toList, Unknown, Some(List(category)), SingleComponentConfig.zero)))
 
     def withSinkFactory(typ: String, params: Parameter*): ProcessDefinition[ObjectDefinition] =
       definition.copy(sinkFactories = definition.sinkFactories + (typ -> ObjectDefinition.withParams(params.toList)))

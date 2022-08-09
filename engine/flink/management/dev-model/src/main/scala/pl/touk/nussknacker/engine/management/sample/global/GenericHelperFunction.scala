@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, NoVarArgSignature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.Documentation
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult, Unknown}
 
@@ -19,8 +19,8 @@ object GenericHelperFunction {
 
     private def error(arguments: List[TypingResult]) = {
       new ArgumentTypeError(
-        new NoVarArgSignature("head", arguments),
-        List(new NoVarArgSignature("head", List(Typed.fromDetailedType[java.util.List[Object]])))
+        new Signature("head", arguments, None),
+        List(new Signature("head", List(Typed.fromDetailedType[java.util.List[Object]]), None))
       )
     }
 
@@ -43,8 +43,8 @@ object GenericHelperFunction {
 
     private def error(arguments: List[TypingResult]) = {
       new ArgumentTypeError(
-        new NoVarArgSignature("exampleOfType", arguments),
-        List(new NoVarArgSignature("exampleOfType", List(expectedArgument)))
+        new Signature("exampleOfType", arguments, None),
+        List(new Signature("exampleOfType", List(expectedArgument), None))
       )
     }
 

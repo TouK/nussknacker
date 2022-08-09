@@ -41,7 +41,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
     .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
 
-  val validator: ProcessValidator = modelData().validator
+  private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality","#input.str",  Typed[Long])
@@ -132,7 +132,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = validator.validate(testProcess)
+    val result = processValidator.validate(testProcess)
 
     inside(result.result) {
       case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
@@ -419,7 +419,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    validator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
+    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
   }
 
   private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger, afterAggregateExpression: String = "") = {

@@ -15,8 +15,7 @@ object ValidationResults {
   private implicit val typingResultDecoder: Decoder[TypingResult] = Decoder.decodeJson.map(_ => typing.Unknown)
 
   //TODO: consider extracting additional DTO class
-  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings,
-                                                   nodeResults: Map[String, NodeTypingData]) {
+  @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, nodeResults: Map[String, NodeTypingData]) {
     val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
@@ -24,29 +23,28 @@ object ValidationResults {
       ValidationErrors(
         errors.invalidNodes.combine(other.errors.invalidNodes),
         errors.processPropertiesErrors ++ other.errors.processPropertiesErrors,
-        errors.globalErrors ++ other.errors.globalErrors),
+        errors.globalErrors ++ other.errors.globalErrors
+      ),
       ValidationWarnings(
         warnings.invalidNodes.combine(other.warnings.invalidNodes)
       ),
       nodeResults ++ other.nodeResults
     )
 
-    def withNodeResults(nodeResults: Map[String, NodeTypingData]): ValidationResult
-    = copy(nodeResults = nodeResults)
+    def withNodeResults(nodeResults: Map[String, NodeTypingData]): ValidationResult =
+      copy(nodeResults = nodeResults)
 
-    def renderNotAllowedErrors: List[NodeValidationError] = {
+    def renderNotAllowedErrors: List[NodeValidationError] =
       allErrors.filter(_.errorType == NodeValidationErrorType.RenderNotAllowed)
-    }
 
-    def saveNotAllowedErrors: List[NodeValidationError] = {
+    def saveNotAllowedErrors: List[NodeValidationError] =
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
-    }
 
-    def typingInfo: Map[String, Map[String, ExpressionTypingInfo]] = nodeResults.mapValues(_.typingInfo)
+    def typingInfo: Map[String, Map[String, ExpressionTypingInfo]] =
+      nodeResults.mapValues(_.typingInfo)
 
-    private def allErrors: List[NodeValidationError] = {
+    private def allErrors: List[NodeValidationError] =
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList
-    }
 
   }
 
@@ -77,15 +75,19 @@ object ValidationResults {
                                             errorType: NodeValidationErrorType.Value)
 
   object ValidationErrors {
-    val success = ValidationErrors(Map.empty, List(), List())
+    val success: ValidationErrors = ValidationErrors(Map.empty, List(), List())
   }
 
   object ValidationWarnings {
-    val success = ValidationWarnings(Map.empty)
+    val success: ValidationWarnings = ValidationWarnings(Map.empty)
   }
 
   object ValidationResult {
-    val success = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
+
+    val success: ValidationResult = ValidationResult(ValidationErrors.success, ValidationWarnings.success, Map.empty)
+
+    def globalErrors(globalErrors: List[NodeValidationError]): ValidationResult =
+      ValidationResult.errors(Map(), List(), globalErrors)
 
     def errors(invalidNodes: Map[String, List[NodeValidationError]],
                processPropertiesErrors: List[NodeValidationError],

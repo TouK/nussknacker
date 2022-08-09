@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -18,11 +19,11 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
   */
 class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor]) {
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
+  def validateBeforeUiResolving(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val v = validation.withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
-    v.validate(displayable)
+    v.validate(displayable, category)
   }
 
   def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {
@@ -32,9 +33,8 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
       .getOrElse(canonical)
   }
 
-  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType): ValidationResult = {
-    validation.processingTypeValidationWithTypingInfo(canonical, processingType)
-  }
+  def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType, category: Category): ValidationResult =
+    validation.processingTypeValidationWithTypingInfo(canonical, processingType, category)
 
   def reverseResolveExpressions(canonical: CanonicalProcess, processingType: ProcessingType, validationResult: ValidationResult): ValidatedDisplayableProcess = {
     val substituted = substitutorByProcessingType.forType(processingType)
@@ -42,8 +42,7 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
       .getOrElse(canonical)
     val displayable = ProcessConverter.toDisplayable(substituted, processingType)
     val uiValidations = validation.uiValidation(displayable)
-    new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult)
-    )
+    new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult))
   }
 
 }

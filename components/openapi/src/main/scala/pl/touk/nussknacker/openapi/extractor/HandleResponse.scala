@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.openapi.extractor
 
 import java.util.Collections
-
 import io.circe.Json
-import pl.touk.nussknacker.openapi.{SwaggerArray, SwaggerTyped}
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerTyped}
 
 object HandleResponse {
   def apply(res: Option[Json], responseType: SwaggerTyped): AnyRef = res match {

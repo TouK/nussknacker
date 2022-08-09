@@ -2,7 +2,11 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.kafka.common.record.TimestampType
 import KafkaSourceFactoryMixin.{ObjToSerialize, SampleKey, SampleValue}
+import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
+import pl.touk.nussknacker.engine.kafka.serialization
+import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
+import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
@@ -68,11 +72,20 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
     }.getMessage should startWith("Compilation errors: ExpressionParserCompilationError(There is no property 'invalid'")
   }
 
-  test("should fail when expected key is null") {
+  test("should handle situation when expected key is null for key value source") {
     val topic = "kafka-key-value-key-null"
-    val givenObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
+    createTopic(topic)
+    val objWithoutKey = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
+    val correctObj = ObjToSerialize(TestSampleValue, TestSampleKey, TestSampleHeaders)
+    pushMessage(objToSerializeSerializationSchema(topic), objWithoutKey, topic, timestamp = constTimestamp)
+    pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
     val process = createProcess(topic, SourceType.jsonKeyJsonValueWithMeta)
-    runAndFail(topic, process, givenObj)
+    run(process) {
+      eventually {
+        SinkForSampleValue.data shouldBe List(correctObj.value)
+        RecordingExceptionConsumer.dataFor(runId) should have size 1
+      }
+    }
   }
 
   test("source with value only should accept null key") {
@@ -120,6 +133,22 @@ class KafkaSourceFactoryIntegrationSpec extends KafkaSourceFactoryProcessMixin  
     intercept[Exception] {
       runAndVerifyResult(topic, process, givenObj)
     }.getMessage should include ("Checking scenario: fetch topics from external source")
+  }
+
+  test("error during deserialization") {
+    val topic = "kafka-invalid-value"
+    val invalidJson = "{asdf@#$"
+    val process = createProcess(topic, SourceType.jsonValueWithMeta)
+    createTopic(topic)
+    pushMessage(new SimpleSerializationSchema[String](topic, identity).asInstanceOf[serialization.KafkaSerializationSchema[Any]], invalidJson, topic, timestamp = constTimestamp)
+    val correctObj = ObjToSerialize(TestSampleValue, null, TestSampleHeaders)
+    pushMessage(objToSerializeSerializationSchema(topic), correctObj, topic, timestamp = constTimestamp + 1)
+    run(process) {
+      eventually {
+        SinkForSampleValue.data shouldBe List(correctObj.value)
+        RecordingExceptionConsumer.dataFor(runId) should have size 1
+      }
+    }
   }
 
 }

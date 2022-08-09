@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import java.net.URL
-
 import io.circe
 import io.circe.Json
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -11,6 +9,8 @@ import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri.PathSegment
 import sttp.model.{Header, Method, Uri}
+
+import java.net.URL
 
 object ServiceRequest {
 

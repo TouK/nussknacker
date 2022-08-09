@@ -4,13 +4,13 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.api.process.Sink
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter}
-import pl.touk.nussknacker.engine.avro.RuntimeSchemaData
-import pl.touk.nussknacker.engine.avro.encode.ValidationMode
-import pl.touk.nussknacker.engine.avro.schemaregistry.confluent.UniversalSchemaSupport
-import pl.touk.nussknacker.engine.avro.sink.UniversalKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.util.{KeyedValue, ThreadUtils}
 
 object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
