@@ -205,5 +205,8 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class ProcessNameValidationError(message: String) extends ProcessCompilationError {
+    override def nodeIds: Set[String] = Set()
+  }
 
 }
