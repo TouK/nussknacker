@@ -55,10 +55,9 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
         "label" -> Json.fromString(Label)))
     }
 
-//FIXME: Request was rejected??
-//    Get(s"/api/88/${TestProcessingTypes.Streaming}/dict/notExisting/entry?label=fo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
-//      status shouldEqual StatusCodes.NotFound
-//    }
+    Get(s"/api/processDefinitionData/${TestProcessingTypes.Streaming}/dict/notExisting/entry?label=fo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.NotFound
+    }
 
     Get(s"/api/processDefinitionData/${TestProcessingTypes.Streaming}/dict/$DictId/entry?label=notexisting") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
