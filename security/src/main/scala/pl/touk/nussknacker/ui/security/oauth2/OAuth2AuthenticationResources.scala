@@ -60,6 +60,7 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
         `Set-Cookie`(HttpCookie(config.name,
           auth.accessToken,
           httpOnly = true,
+          secure = true, // consider making it configurable (with default value 'true') so one could setup development environment easier (by setting it to 'false')
           path = config.path,
           domain = config.domain,
           maxAge = auth.expirationPeriod.map(_.toSeconds),
