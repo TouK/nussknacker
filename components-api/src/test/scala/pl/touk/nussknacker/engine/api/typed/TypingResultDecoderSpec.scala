@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{AdditionalDataValue, Typed, TypedNull, TypedObjectTypingResult, TypedObjectWithValue, TypedUnion, Unknown}
 
 import scala.collection.immutable.ListMap
 
-class TypingResultDecoderSpec extends FunSuite with Matchers {
+class TypingResultDecoderSpec extends AnyFunSuite with Matchers {
 
   test("should decode same type after encoding") {
     val decoder = new TypingResultDecoder(getClass.getClassLoader.loadClass)

@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine
 
 import java.util.Collections
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.modelconfig.{DefaultModelConfigLoader, InputConfigDuringExecution}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class DefaultModelConfigLoaderTest extends FunSuite with Matchers {
+class DefaultModelConfigLoaderTest extends AnyFunSuite with Matchers {
 
   private val inputConfig = ConfigFactory.parseMap(Collections.singletonMap("property1", "value1"))
 

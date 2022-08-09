@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -23,7 +25,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBFetchingProcessRepositorySpec
-  extends FunSuite
+  extends AnyFunSuite
     with Matchers
     with BeforeAndAfterEach
     with BeforeAndAfterAll

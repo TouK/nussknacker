@@ -5,11 +5,13 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.Json._
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 
-class UsersResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class UsersResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with EspItTest with PatientScalaFutures {
 
   private val usersRoute = new UserResources(processCategoryService)

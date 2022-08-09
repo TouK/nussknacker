@@ -4,7 +4,9 @@ import io.circe.Json
 import io.circe.Json.{fromDoubleOrNull, fromString}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.encode.AvroToJsonEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -14,7 +16,7 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.util.{Failure, Try}
 
-class JsonPayloadToAvroConverterSpec extends FunSuite with Matchers with OptionValues with Inside {
+class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private val jsonToAvroConverter = new JsonPayloadToAvroConverter(None)
   val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)

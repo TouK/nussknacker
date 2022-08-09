@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Decoder
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 
-class OpenIdConnectUserInfoSpec extends FunSuite with Matchers {
+class OpenIdConnectUserInfoSpec extends AnyFunSuite with Matchers {
 
   test("parses token with role claims") {
 

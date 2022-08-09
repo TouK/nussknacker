@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class MathSpec extends FunSuite with Matchers {
+class MathSpec extends AnyFunSuite with Matchers {
 
   test("should return max") {
     math.max(2.0d, 2.1d) shouldEqual 2.1d

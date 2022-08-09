@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import cats.data.NonEmptyList
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
@@ -27,7 +28,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataPr
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
-class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
+class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 

@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.validation
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, UnknownSubprocess}
 import pl.touk.nussknacker.engine.api.definition._
@@ -33,8 +35,7 @@ import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessR
 
 import scala.collection.immutable.ListMap
 
-class ProcessValidationSpec extends FunSuite with Matchers {
-
+class ProcessValidationSpec extends AnyFunSuite with Matchers {
   import ProcessValidationSpec._
   import ProcessTestData._
   import TestCategories._

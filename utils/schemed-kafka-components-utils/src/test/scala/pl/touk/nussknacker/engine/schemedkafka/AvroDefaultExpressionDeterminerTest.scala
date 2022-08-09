@@ -2,10 +2,12 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import cats.data.Validated.{Invalid, Valid}
 import org.apache.avro.Schema
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.Assertion
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.graph.expression.Expression
 
-class AvroDefaultExpressionDeterminerTest extends FunSuite with Matchers {
+class AvroDefaultExpressionDeterminerTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
   import scala.collection.JavaConverters._

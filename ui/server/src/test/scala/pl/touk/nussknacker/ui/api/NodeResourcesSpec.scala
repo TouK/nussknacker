@@ -4,7 +4,9 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
-class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData))

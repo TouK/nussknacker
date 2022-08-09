@@ -6,7 +6,9 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Inside, Matchers}
+import org.scalatest.{BeforeAndAfterEach, Inside}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -28,7 +30,7 @@ import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresent
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class RemoteEnvironmentResourcesSpec extends FlatSpec with ScalatestRouteTest with PatientScalaFutures with Matchers with FailFastCirceSupport
+class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with PatientScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with EspItTest {
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 

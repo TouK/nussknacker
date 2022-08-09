@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.security.oauth2
 import com.dimafeng.testcontainers.{ForAllTestContainer, SingleContainer}
 import dasniko.testcontainers.keycloak.KeycloakContainer
 import org.apache.commons.lang3.StringEscapeUtils
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.security.oidc.{OidcAuthenticationConfiguration, OidcService}
@@ -14,7 +15,7 @@ import sttp.client.{SttpBackend, _}
 import java.net.URI
 import scala.concurrent.Future
 
-class GenericOidcServiceSpec extends FunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures {
+class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures {
 
   private val realmClientSecret = "123456789"
 

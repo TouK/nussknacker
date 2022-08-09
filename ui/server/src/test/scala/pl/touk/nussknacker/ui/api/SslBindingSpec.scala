@@ -7,7 +7,8 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.Materializer
 import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest._
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -16,7 +17,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-class SslBindingSpec extends FlatSpec with Matchers {
+class SslBindingSpec extends AnyFlatSpec with Matchers {
 
   it should "connect to api via SSL" in {
     implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfig)

@@ -4,7 +4,9 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfter}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.flink.util.source.StaticSource
@@ -16,7 +18,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class EvictableStateTest extends FlatSpec with Matchers with BeforeAndAfter with VeryPatientScalaFutures {
+class EvictableStateTest extends AnyFlatSpec with Matchers with BeforeAndAfter with VeryPatientScalaFutures {
 
   var futureResult: Future[_] = _
 

@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.source.delayed
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class DelayCalculatorSpec extends FunSuite with Matchers {
+class DelayCalculatorSpec extends AnyFunSuite with Matchers {
 
   test("should calculate fixed delay") {
     val fixedDelayCalculator = new FixedDelayCalculator(1000)

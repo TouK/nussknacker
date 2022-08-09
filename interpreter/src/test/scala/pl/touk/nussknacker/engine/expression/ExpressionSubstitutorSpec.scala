@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.expression
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.ast._
 import pl.touk.nussknacker.engine.spel.ast.{OptionallyTypedNode, ReplacingStrategy, SpelSubstitutionsCollector, TypedTreeLevel}
 
-class ExpressionSubstitutorSpec extends FunSuite with Matchers {
+class ExpressionSubstitutorSpec extends AnyFunSuite with Matchers {
 
   test("indexer substitution") {
     val expression = "#foo['bar']"

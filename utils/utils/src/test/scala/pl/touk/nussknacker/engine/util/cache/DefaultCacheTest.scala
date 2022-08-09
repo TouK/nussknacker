@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.util.cache
 
 import com.github.benmanes.caffeine.cache.Ticker
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.Future
 import scala.concurrent.duration.{DAYS, Deadline, FiniteDuration, HOURS, MINUTES}
 
-class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutures{
+class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFutures{
 
   private var currentTime = Deadline.now
   private val ticker = new Ticker {

@@ -5,7 +5,9 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
+import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
@@ -23,7 +25,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
-class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with FailFastCirceSupport
+class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

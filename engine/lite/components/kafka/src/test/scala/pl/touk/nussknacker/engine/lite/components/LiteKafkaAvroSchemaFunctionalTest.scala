@@ -10,7 +10,9 @@ import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
@@ -33,7 +35,7 @@ import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMess
 import java.nio.ByteBuffer
 import java.util.UUID
 
-class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
+class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._

@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java._
 import java.time.LocalDateTime
 
-class AvroUtilsTest extends FunSuite with Matchers {
+class AvroUtilsTest extends AnyFunSuite with Matchers {
 
   test("testCreateRecord") {
     val recordUserSchema = AvroUtils.parseSchema("""{"name": "UserRecord","type":"record","fields":[{"name":"user","type":["null","string"]}]}""")

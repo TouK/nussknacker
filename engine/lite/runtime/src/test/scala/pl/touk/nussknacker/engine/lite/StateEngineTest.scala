@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.lite
 
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{  OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
@@ -8,7 +11,7 @@ import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 //TODO: test for test-from-file
-class StateEngineTest extends FunSuite with Matchers with OptionValues {
+class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("run scenario with sum aggregation") {
     val results = sample.run(sampleScenarioWithState, ScenarioInputBatch(List(0, 1, 2, 3).zipWithIndex.map { case (value, idx) =>

@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.{ Inside}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -35,7 +37,7 @@ import java.util.Collections
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
+class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
 
   private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)

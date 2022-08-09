@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.util
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class MathUtilsSpec extends FunSuite with Matchers {
+class MathUtilsSpec extends AnyFunSuite with Matchers {
 
   test("min for nulls") {
     MathUtils.min(null, null) shouldEqual null

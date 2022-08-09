@@ -3,12 +3,14 @@ package pl.touk.nussknacker.engine.kafka.consumerrecord
 import java.util.Optional
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.source.flink.{KafkaSourceFactoryMixin, SampleConsumerRecordDeserializationSchemaFactory}
 
-class ConsumerRecordToJsonFormatterSpec extends FunSuite with Matchers with KafkaSpec with BeforeAndAfterAll with KafkaSourceFactoryMixin {
+class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with KafkaSpec with BeforeAndAfterAll with KafkaSourceFactoryMixin {
 
   private val topic = "dummyTopic"
   private val deserializationSchemaFactory = new SampleConsumerRecordDeserializationSchemaFactory(sampleKeyJsonDeserializer, sampleValueJsonDeserializer)

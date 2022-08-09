@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport}
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class ModelDataTestInfoProviderSpec extends FunSuite with Matchers {
+class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers {
 
   private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {

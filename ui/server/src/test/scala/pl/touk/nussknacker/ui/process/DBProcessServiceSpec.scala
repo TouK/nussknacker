@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
-import org.scalatest.{FlatSpec, Matchers}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.compile.NodeTypingInfo
@@ -25,7 +26,7 @@ import java.time.Duration
 import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class DBProcessServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
+class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._

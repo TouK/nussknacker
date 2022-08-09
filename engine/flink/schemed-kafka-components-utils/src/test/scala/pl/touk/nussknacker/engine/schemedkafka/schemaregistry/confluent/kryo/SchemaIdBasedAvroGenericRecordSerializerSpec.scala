@@ -5,13 +5,14 @@ import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputDeserializer, DataOutputSerializer}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializerSpec.schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 
-class SchemaIdBasedAvroGenericRecordSerializerSpec extends FunSuite with Matchers {
+class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matchers {
 
   test("should be able to duplicate serializer after use") {
 

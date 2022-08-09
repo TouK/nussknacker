@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.util.config
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.net.URI
 
-class URIExtensionsSpec extends FlatSpec with URIExtensions with Matchers {
+class URIExtensionsSpec extends AnyFlatSpec with URIExtensions with Matchers {
 
   it should ("default to a file when no scheme has been provided") in {
     URI.create("/absolute/path").withFileSchemeDefault shouldBe URI.create("file:///absolute/path")

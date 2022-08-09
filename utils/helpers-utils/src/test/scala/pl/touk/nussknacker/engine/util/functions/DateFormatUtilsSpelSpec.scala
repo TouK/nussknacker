@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.time.{Instant, LocalDate, LocalDateTime, LocalTime, OffsetDateTime, ZoneId, ZoneOffset, ZonedDateTime}
 import scala.reflect.runtime.universe._
 
-class DateFormatUtilsSpelSpec extends FunSuite with BaseSpelSpec with Matchers {
+class DateFormatUtilsSpelSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   test("parsing") {
     evaluate[LocalDate]("#DATE_FORMAT.parseLocalDate('2020-01-01')", Map.empty) shouldEqual LocalDate.of(2020, 1, 1)

@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.{TestPermissions, TestProcessingTypes}
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, 
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 
-class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
+class ServiceRoutesSpec extends AnyFunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
 
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 

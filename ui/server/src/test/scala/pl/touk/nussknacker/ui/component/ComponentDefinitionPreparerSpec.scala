@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.{  OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -17,7 +19,7 @@ import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
+class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
 
   private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 

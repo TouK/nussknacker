@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.transformation.TypedNodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.ReturningType
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import java.util.Collections.singletonMap
 import java.util.Optional
 
-class KafkaSourceFactorySpec extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
+class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec with PatientScalaFutures with KafkaSourceFactoryMixin {
 
   private lazy val metaData: MetaData = MetaData("mock-id", StreamMetaData())
 

@@ -2,15 +2,20 @@ package pl.touk.nussknacker.openapi.extractor
 
 import io.circe.Json
 import io.circe.Json.fromString
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger.{extractor, _}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
+import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.openapi._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class JsonToObjectTest extends FunSuite
+class JsonToObjectTest extends AnyFunSuite
   with Matchers {
 
   private val json = Json.obj(

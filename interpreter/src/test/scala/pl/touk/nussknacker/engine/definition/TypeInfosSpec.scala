@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.definition
 
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, Parameter, SerializableMethodInfo, StaticMethodInfo}
 
-class TypeInfosSpec extends FunSuite with Matchers {
+class TypeInfosSpec extends AnyFunSuite with Matchers {
   test("should create methodInfos without varArgs") {
     StaticMethodInfo.fromParameterList(List(), Unknown, "", None, varArgs = false) shouldBe
       StaticMethodInfo(List(), None, Unknown, "", None)

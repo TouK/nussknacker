@@ -3,7 +3,8 @@ package pl.touk.nussknacker.openapi.extractor
 import java.lang
 import java.net.URL
 import java.util.Collections.singletonMap
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
@@ -13,7 +14,7 @@ import sttp.model.Uri
 import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConverter}
 import scala.io.Source
 
-class ServiceRequestTest extends FunSuite with Matchers {
+class ServiceRequestTest extends AnyFunSuite with Matchers {
 
   private val baseUrl = new URL("http://baseUrl")
 

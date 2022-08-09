@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.json
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 
-class JsonSchemaTypeDefinitionExtractorTest extends FunSuite {
+class JsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
 
   test("should extract object with simple fields") {
     val schema: Schema = SchemaLoader.load(new JSONObject(

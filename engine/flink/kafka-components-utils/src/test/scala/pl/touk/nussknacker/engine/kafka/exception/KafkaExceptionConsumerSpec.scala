@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
 import java.util.Date
 
-class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
+class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
 
   private val topicName = "testingErrors"
 

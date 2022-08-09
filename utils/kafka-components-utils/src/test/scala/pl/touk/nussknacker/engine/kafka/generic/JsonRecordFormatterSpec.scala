@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 
 import java.nio.charset.StandardCharsets
 
-class JsonRecordFormatterSpec extends FunSuite with Matchers {
+class JsonRecordFormatterSpec extends AnyFunSuite with Matchers {
 
   private val topic = "testTopic"
 

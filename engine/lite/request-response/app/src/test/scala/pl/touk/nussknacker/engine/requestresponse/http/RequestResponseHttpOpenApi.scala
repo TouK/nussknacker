@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResponseInterpreterTest {
+class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestResponseInterpreterTest {
 
   test("render schema for process") {
     val inputSchema = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"

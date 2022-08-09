@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.definition.parameter.defaults
 
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.{  OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.definition.parameter.defaults.TypeRelatedParameterValueDeterminer._
 
-class TypeRelatedParameterValueDeterminerTest extends FunSuite with Matchers with OptionValues {
+class TypeRelatedParameterValueDeterminerTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("defaults for common types") {
     determineTypeRelatedDefaultParamValue(classOf[Int]).value shouldBe "0"

@@ -2,14 +2,14 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.Config
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaSpec}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.WithConfig
 
-trait SchemaRegistryMixin extends FunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations with WithConfig {
+trait SchemaRegistryMixin extends AnyFunSuite with KafkaSpec with KafkaWithSchemaRegistryOperations with WithConfig {
 
   override protected def resolveConfig(config: Config): Config = {
     super.resolveConfig(config)

@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, LoneElement, Matchers}
+import org.scalatest.{ LoneElement}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.collection.immutable.ListMap
 
-class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
+class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
   import scala.collection.JavaConverters._
 

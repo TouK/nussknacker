@@ -1,14 +1,14 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.lite.kafka.NuRuntimeTestUtils.{saveScenarioToTmp, testCaseId}
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuReqRespTestSamples.{jsonPingMessage, jsonPongMessage, pingPongScenario}
 import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 
 // depends on liteEngineKafkaRuntime / Universal / stage sbt task
-class NuReqRespRuntimeBinTest extends FunSuite with BaseNuRuntimeBinTestMixin with LazyLogging {
+class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with LazyLogging {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 

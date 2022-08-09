@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.util.loader
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.net.{URL, URLClassLoader}
 
-class ModelClassLoaderSpec extends FunSuite with Matchers {
+class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
 
   test("should detect nested URLs in classloader") {
 

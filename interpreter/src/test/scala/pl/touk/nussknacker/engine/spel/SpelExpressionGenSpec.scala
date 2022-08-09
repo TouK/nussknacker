@@ -5,7 +5,9 @@ import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.{ Inside}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import org.springframework.expression.spel.support.StandardEvaluationContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
@@ -21,7 +23,7 @@ import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 
 import scala.util.{Failure, Success, Try}
 
-class SpelExpressionGenSpec extends FunSuite with ScalaCheckDrivenPropertyChecks with Matchers with Inside with LazyLogging {
+class SpelExpressionGenSpec extends AnyFunSuite with ScalaCheckDrivenPropertyChecks with Matchers with Inside with LazyLogging {
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0)
 

@@ -2,10 +2,12 @@ package pl.touk.nussknacker.engine.api.typed
 
 import cats.implicits._
 import cats.data.NonEmptyList
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionValues with Inside {
+class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
 

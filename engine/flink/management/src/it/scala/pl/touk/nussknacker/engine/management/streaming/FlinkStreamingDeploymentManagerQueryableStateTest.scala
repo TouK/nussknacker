@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import org.apache.flink.api.scala._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 
 import scala.concurrent.ExecutionContext.Implicits._
 
-class FlinkStreamingDeploymentManagerQueryableStateTest extends FunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerQueryableStateTest extends AnyFunSuite with Matchers with StreamingDockerTest {
 
   //see DevConfigCreator
   val oneElementValue = "One element"

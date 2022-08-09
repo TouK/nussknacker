@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{BeforeAndAfter}
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSampleSchema, PaymentV1}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-class KafkaJsonPayloadIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
+class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter {
 
   import KafkaAvroIntegrationMockSchemaRegistry._
 

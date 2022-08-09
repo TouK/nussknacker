@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class SampleComponentProviderTest extends FunSuite with FlinkSpec with Matchers {
+class SampleComponentProviderTest extends AnyFunSuite with FlinkSpec with Matchers {
 
   override protected lazy val config = ConfigFactory.empty()
 

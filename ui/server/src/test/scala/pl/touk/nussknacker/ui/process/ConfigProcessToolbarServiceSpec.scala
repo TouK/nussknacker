@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.ui.process
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
-class ConfigProcessToolbarServiceSpec extends FlatSpec with Matchers {
+class ConfigProcessToolbarServiceSpec extends AnyFlatSpec with Matchers {
 
   import ToolbarButtonConfigType._
   import ToolbarButtonsConfigVariant._

@@ -4,7 +4,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.EnumerationReader._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.exception.KafkaErrorTopicInitializer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter._
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import scala.util.Random
 
 
-class KafkaErrorTopicInitializerTest extends FunSuite with KafkaSpec with Matchers with PatientScalaFutures {
+class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
   private def initializer(topic: String): KafkaErrorTopicInitializer = {
     val engineConfig = config

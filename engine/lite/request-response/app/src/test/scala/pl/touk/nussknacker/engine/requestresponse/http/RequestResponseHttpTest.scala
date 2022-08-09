@@ -4,7 +4,9 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity, RequestEntity, Status
 import akka.http.scaladsl.server.Route
 import io.circe.Encoder
 import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest.{Assertion, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{Assertion, BeforeAndAfterEach}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -22,7 +24,7 @@ import java.nio.file.Files
 import java.util
 import java.util.UUID
 
-class RequestResponseHttpTest extends FlatSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport with BeforeAndAfterEach {
+class RequestResponseHttpTest extends AnyFlatSpec with Matchers with ScalatestRouteTest with FailFastCirceSupport with BeforeAndAfterEach {
 
   private val config = ConfigFactory.load()
     .withValue("scenarioRepositoryLocation", fromAnyRef(Files.createTempDirectory("scenarioLocation").toFile.getAbsolutePath))

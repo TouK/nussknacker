@@ -2,7 +2,9 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Slow
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -11,7 +13,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess}
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
 @Slow
-class ManagementResourcesConcurrentSpec extends FunSuite with ScalatestRouteTest
+class ManagementResourcesConcurrentSpec extends AnyFunSuite with ScalatestRouteTest
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   test("not allow concurrent deployment of same process") {

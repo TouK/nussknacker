@@ -5,7 +5,9 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.util.Collections
 
-class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
+class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)

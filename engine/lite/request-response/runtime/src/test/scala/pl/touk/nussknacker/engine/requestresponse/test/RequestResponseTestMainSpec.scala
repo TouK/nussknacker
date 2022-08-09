@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.requestresponse.test
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
@@ -14,7 +16,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
 
-class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
+class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

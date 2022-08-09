@@ -2,13 +2,15 @@ package pl.touk.nussknacker.ui.security.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, Matchers, OptionValues}
+import org.scalatest.{ OptionValues}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.cache.CacheConfig
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 
 import scala.concurrent.duration._
 
-class AuthenticationConfigurationSpec extends FlatSpec with Matchers with ScalatestRouteTest with OptionValues {
+class AuthenticationConfigurationSpec extends AnyFlatSpec with Matchers with ScalatestRouteTest with OptionValues {
   it should "parse rules default config" in {
 
     val config = ConfigFactory.parseString(

@@ -8,8 +8,10 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import cats.instances.all._
 import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
+import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.LoneElement._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
@@ -37,7 +39,7 @@ import scala.language.higherKinds
 /**
   * TODO: On resource tests we should verify permissions and encoded response data. All business logic should be tested at ProcessServiceDb.
   */
-class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
+class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import io.circe._, io.circe.parser._

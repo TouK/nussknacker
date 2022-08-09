@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.management
 
 import org.apache.flink.configuration.{Configuration, CoreOptions}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkSlotsChecker.{NotEnoughSlotsException, SlotsBalance}
@@ -17,7 +18,7 @@ import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class FlinkSlotsCheckerTest extends FunSuite with Matchers with PatientScalaFutures {
+class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 

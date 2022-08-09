@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.ui.config.UiConfigLoader
@@ -10,7 +11,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.util.UUID
 
-class ConfigurationTest extends FunSuite with Matchers {
+class ConfigurationTest extends AnyFunSuite with Matchers {
 
   // warning: can't be val - uses ConfigFactory.load which breaks "should preserve config overrides" test
   private def globalConfig = ConfigWithScalaVersion.TestsConfig

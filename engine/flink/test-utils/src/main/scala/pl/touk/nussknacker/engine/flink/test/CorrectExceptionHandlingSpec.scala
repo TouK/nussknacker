@@ -2,17 +2,18 @@ package pl.touk.nussknacker.engine.flink.test
 
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
-import org.scalatest.{Matchers, Suite}
+import org.scalatest.{Suite}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, ProcessMetaDataBuilder}
+import pl.touk.nussknacker.engine.build.{ProcessMetaDataBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import org.scalatest.matchers.should.Matchers
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 

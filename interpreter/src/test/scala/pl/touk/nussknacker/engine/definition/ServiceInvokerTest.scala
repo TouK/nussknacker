@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
-import org.scalatest.{FlatSpec, Matchers, OptionValues}
+import org.scalatest.{ OptionValues}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -11,7 +13,7 @@ import java.util.concurrent.Executor
 import java.util.function.Supplier
 import scala.concurrent.{ExecutionContext, Future}
 
-class ServiceInvokerTest extends FlatSpec with PatientScalaFutures with OptionValues with Matchers {
+class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with OptionValues with Matchers {
   import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
 
   import scala.concurrent.ExecutionContext.Implicits.global

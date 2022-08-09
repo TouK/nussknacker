@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.process.runner
 import cats.data.NonEmptyList
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.runtime.client.JobExecutionException
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
@@ -22,8 +22,10 @@ import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class FlinkTestMainSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach {
+class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach {
 
   import spel.Implicits._
 

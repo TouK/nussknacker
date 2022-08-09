@@ -1,10 +1,11 @@
 package db.migration
 
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 
-class V1_030__SpillStateToDiskSpec extends FlatSpec with Matchers {
+class V1_030__SpillStateToDiskSpec extends AnyFlatSpec with Matchers {
 
   private lazy val expectedJsonWithSpillStateToDisk = {
     val rawJsonString =

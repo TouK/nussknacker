@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.util.functions
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.time._
 import scala.reflect.runtime.universe._
 
-class DateUtilsSpelSpec extends FunSuite with BaseSpelSpec with Matchers {
+class DateUtilsSpelSpec extends AnyFunSuite with BaseSpelSpec with Matchers {
 
   test("now returning various time classes") {
     evaluate[Instant]("#DATE.now", Map.empty) shouldEqual fixedZoned.toInstant

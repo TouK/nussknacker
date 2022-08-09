@@ -4,10 +4,11 @@ import io.circe.Json
 import io.circe.Json.{fromLong, fromString, obj}
 import org.apache.avro.SchemaBuilder
 import org.apache.avro.generic.GenericRecordBuilder
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-class AvroToJsonEncoderSpec extends FunSpec with Matchers {
+class AvroToJsonEncoderSpec extends AnyFunSpec with Matchers {
 
   val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
 

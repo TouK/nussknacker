@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.{ Inside}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 
-class CronSchedulePropertyExtractorTest extends FunSuite
+class CronSchedulePropertyExtractorTest extends AnyFunSuite
   with Matchers
   with Inside {
 

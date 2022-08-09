@@ -2,8 +2,8 @@ package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.circe.syntax.EncoderOps
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
@@ -15,7 +15,7 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod,
 import scala.collection.JavaConverters._
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
-class DeploymentPreparerTest extends FunSuite {
+class DeploymentPreparerTest extends AnyFunSuite {
 
   val configMapId = "fooConfigMap"
   val loggingConfigMapId = "barConfigMap"

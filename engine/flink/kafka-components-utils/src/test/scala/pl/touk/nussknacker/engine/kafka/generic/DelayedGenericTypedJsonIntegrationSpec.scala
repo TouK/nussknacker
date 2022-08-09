@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.generic.JsonCodec
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.engine.spel
 import java.time.{Duration, Instant}
 import java.util.UUID
 
-class DelayedGenericTypedJsonIntegrationSpec extends FunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
+class DelayedGenericTypedJsonIntegrationSpec extends AnyFunSuite with FlinkSpec with Matchers with KafkaSpec with KafkaSourceFactoryProcessMixin {
 
   @JsonCodec
   case class BasicEvent(id: String, name: String, timestamp: Option[Long])

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.generic.GenericRecord
-import org.scalatest.{BeforeAndAfter, FunSuite}
+import org.scalatest.BeforeAndAfter
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName}
@@ -25,7 +26,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Instant
 
-class DelayedKafkaAvroIntegrationSpec extends FunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
+class DelayedKafkaAvroIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
