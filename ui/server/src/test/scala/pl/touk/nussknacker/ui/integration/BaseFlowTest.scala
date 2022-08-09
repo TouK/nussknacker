@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ContentTypeOptionsSecureSupport, CorsSupport, MultipartUtils}
 
 import scala.concurrent.duration._
 import scala.util.Properties
@@ -312,6 +312,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
     firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
+  }
+
+  test("should return response with required headers") {
+    Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      headers should contain allElementsOf (CorsSupport.headers ::: ContentTypeOptionsSecureSupport.header :: Nil)
+    }
   }
 
   test("should reload model config") {
