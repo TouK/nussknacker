@@ -290,6 +290,7 @@ object EspTypeUtils {
   private def extractAnnotation[T <: Annotation](obj: AnnotatedElement, annotationType: Class[T]): Option[T] =
     Option(obj.getAnnotation(annotationType)).orElse(obj match {
       case method: Method => extractScalaVersionOfVarArgMethod(method).flatMap(extractAnnotation(_, annotationType))
+      // TODO: Add new case for parameters.
       case _ => None
     })
 
