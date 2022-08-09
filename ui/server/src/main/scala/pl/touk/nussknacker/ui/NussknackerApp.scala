@@ -214,7 +214,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
-    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), ContentTypeOptionsSecureSupport) {
+    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), ContentTypeOptionsSecureSupport()) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~ pathPrefix("api") {
