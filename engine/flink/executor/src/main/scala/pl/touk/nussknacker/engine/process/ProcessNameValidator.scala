@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 import scala.concurrent.Future
 
-object ProcessNameValidator extends CustomProcessValidator {
+class ProcessNameValidator extends CustomProcessValidator {
 
   private lazy val flinkProcessNameValidationPattern = "[a-zA-Z0-9-_ ]+"r
 
