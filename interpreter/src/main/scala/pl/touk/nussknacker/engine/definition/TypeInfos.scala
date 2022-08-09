@@ -76,7 +76,7 @@ object TypeInfos {
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
                                   staticInfo: StaticMethodInfo) extends MethodInfo {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      typeFunction(arguments)
+      staticInfo.computeResultType(arguments).andThen(_ => typeFunction(arguments))
 
     override def staticParameters: ParameterList = staticInfo.staticParameters
 

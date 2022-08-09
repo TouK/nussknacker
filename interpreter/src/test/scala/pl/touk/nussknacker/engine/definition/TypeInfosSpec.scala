@@ -88,4 +88,25 @@ class TypeInfosSpec extends FunSuite with Matchers {
   test("should accept subclasses as arguments to methods") {
     checkApplyValid(superclassMethodInfo, List(Typed[String], Typed[Int], Typed[Double], Typed[Number]), Typed[String])
   }
+
+  test("should automatically validate arguments of generic functions") {
+    def f(lst: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = Typed[Int].validNel
+
+    val methodInfo = FunctionalMethodInfo(
+      f,
+      ParameterList(Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil, Some(Parameter("c", Typed[String]))),
+      Typed[Int],
+      "f",
+      None
+    )
+
+    methodInfo.computeResultType(List(Typed[Int], Typed[Double])) should be valid;
+    methodInfo.computeResultType(List(Typed[Int], Typed[Double], Typed[String])) should be valid;
+    methodInfo.computeResultType(List(Typed[Int], Typed[Double], Typed[String], Typed[String])) should be valid
+
+    methodInfo.computeResultType(List(Typed[Int])) should be invalid;
+    methodInfo.computeResultType(List(Typed[Int], Typed[String])) should be invalid;
+    methodInfo.computeResultType(List(Typed[Double], Typed[Int], Typed[String])) should be invalid;
+    methodInfo.computeResultType(List()) should be invalid
+  }
 }
