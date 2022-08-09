@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, ContentTypeOptionsSecureSupport, CorsSupport, MultipartUtils}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, SecurityHeadersSupport, CorsSupport, MultipartUtils}
 
 import scala.concurrent.duration._
 import scala.util.Properties
@@ -317,14 +317,14 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   test("should return response with required headers") {
     Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      headers should contain allElementsOf (CorsSupport.headers ::: ContentTypeOptionsSecureSupport.header :: Nil)
+      headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
     }
   }
 
   test("should handle OPTIONS method request") {
     Options("/") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
-      headers should contain allElementsOf (CorsSupport.headers ::: ContentTypeOptionsSecureSupport.header :: Nil)
+      headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
     }
   }
 
