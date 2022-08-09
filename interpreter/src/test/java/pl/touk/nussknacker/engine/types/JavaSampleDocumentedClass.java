@@ -11,10 +11,7 @@ import pl.touk.nussknacker.engine.api.ParamName;
 import pl.touk.nussknacker.engine.api.typed.supertype.*;
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult;
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass;
-import scala.collection.JavaConverters;
 import scala.collection.immutable.List;
-
-import java.util.stream.Collectors;
 
 public class JavaSampleDocumentedClass {
     static final String bazDocs = "This is sample documentation for baz method";
@@ -68,28 +65,17 @@ public class JavaSampleDocumentedClass {
     static class HeadHelper extends TypingFunction {
         private final Class<?> listClass = java.util.List.class;
 
-        private String argumentsToString(List<TypingResult> arguments) {
-            Iterable<String> strings = JavaConverters.asJavaCollection(arguments).stream().map(TypingResult::display).collect(Collectors.toList());
-            return String.join(", ", strings);
-        }
-
-        private ExpressionParseError error(List<TypingResult> arguments) {
-            String expectedString = "head(List[Unknown])";
-            String foundString = "head(" + argumentsToString(arguments) + ")";
-            return new GenericFunctionError("Mismatch parameter types. Found: " + foundString + ". Required: " + expectedString);
-        }
-
-        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> computeResultType(List<TypingResult> arguments) {
+        public Validated<NonEmptyList<GenericFunctionTypingError>, TypingResult> computeResultType(List<TypingResult> arguments) {
             if (arguments.length() != 1) {
-                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
             }
             if (!(arguments.head() instanceof TypedClass)) {
-                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
             }
 
             TypedClass arg = (TypedClass) arguments.head();
             if (arg.klass() != listClass) {
-                return Invalid.invalid(NonEmptyList.one(error(arguments)));
+                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
             }
             if (arg.params().length() != 1) {
                 throw new AssertionError("Lists must have one parameter");

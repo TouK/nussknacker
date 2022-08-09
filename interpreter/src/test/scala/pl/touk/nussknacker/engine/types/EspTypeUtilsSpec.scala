@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.engine.types
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.supertype.{ClassHierarchyCommonSupertypeFinder, CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 
@@ -368,9 +369,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         List(scalaClassInfo, javaClassInfo),
         name,
         arguments,
-        new ArgumentTypeError(
+        ArgumentTypeError(
           Signature(name, arguments, None),
-          List(Signature(name, expected, None))
+          NonEmptyList.one(Signature(name, expected, None))
         ).message.invalidNel
       )
 
@@ -436,16 +437,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 private class HeadHelper extends TypingFunction {
   private val listClass = classOf[java.util.List[_]]
 
-  private def error(arguments: List[TypingResult]): ExpressionParseError =
-    new ArgumentTypeError(
-      Signature("head", arguments, None),
-      List(Signature("head", List(Typed.fromDetailedType[List[Object]]), None))
-    )
-
-  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
+  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-    case _ => error(arguments).invalidNel
+    case _ => GenericFunctionTypingError.ArgumentTypeError().invalidNel
   }
 }
 

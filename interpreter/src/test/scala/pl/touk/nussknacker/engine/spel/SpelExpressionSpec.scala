@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -19,8 +19,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjec
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{OperatorMismatchTypeError, OperatorNonNumericError}
@@ -898,12 +897,12 @@ object SampleGlobalObject {
   def genericFunctionWithVarArg(a: Int, b: Boolean*): Int = a + b.count(identity)
 
   private case class GenericFunctionHelper() extends TypingFunction {
-    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
       Typed[Int].validNel
   }
 
   private case class GenericFunctionVarArgHelper() extends TypingFunction {
-    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
       Typed[Int].validNel
   }
 }

@@ -4,9 +4,10 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, Parameter, ParameterList, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, ParameterList}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
   //a bit sad that it isn't derived automatically, but...
@@ -29,6 +30,8 @@ object TypeInfos {
     final def staticVarArgParameter: Option[Parameter] = staticParameters.varArg
 
     def staticResult: TypingResult
+
+    def name: String
 
     def description: Option[String]
 
@@ -57,15 +60,12 @@ object TypeInfos {
       if (checkNoVarArgs(arguments) && checkVarArgs(arguments))
         staticResult.validNel
       else
-        new ArgumentTypeError(
-          Signature(name, arguments, None),
-          Signature(name, staticNoVarArgParameters.map(_.refClazz), staticVarArgParameter.map(_.refClazz)) :: Nil
-        ).invalidNel
+        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError()).invalidNel
     }
   }
 
   object FunctionalMethodInfo {
-    def apply(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+    def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
               staticParameters: ParameterList,
               staticResult: TypingResult,
               name: String,
@@ -73,14 +73,17 @@ object TypeInfos {
       FunctionalMethodInfo(typeFunction, StaticMethodInfo(staticParameters, staticResult, name, description))
   }
 
-  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
                                   staticInfo: StaticMethodInfo) extends MethodInfo {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      staticInfo.computeResultType(arguments).andThen(_ => typeFunction(arguments))
+      staticInfo.computeResultType(arguments).andThen(_ =>
+        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_))))
 
     override def staticParameters: ParameterList = staticInfo.staticParameters
 
     override def staticResult: TypingResult = staticInfo.staticResult
+
+    override def name: String = staticInfo.name
 
     override def description: Option[String] = staticInfo.description
   }
