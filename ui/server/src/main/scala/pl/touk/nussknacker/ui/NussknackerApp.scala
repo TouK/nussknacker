@@ -40,7 +40,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.util.{ContentTypeOptionsSecureSupport, CorsSupport, WithDirectives}
+import pl.touk.nussknacker.ui.util.{ContentTypeOptionsSecureSupport, CorsSupport, OptionsMethodSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.{CustomProcessValidatorLoader, ProcessValidation}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
@@ -214,7 +214,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
-    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), ContentTypeOptionsSecureSupport()) {
+    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), ContentTypeOptionsSecureSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route
       } ~ pathPrefix("api") {

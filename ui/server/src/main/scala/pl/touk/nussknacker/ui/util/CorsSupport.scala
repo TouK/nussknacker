@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.util
 
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directive
+import akka.http.scaladsl.server.Directives.respondWithHeaders
 
 object CorsSupport {
 
@@ -13,10 +14,9 @@ object CorsSupport {
 
   def cors(enabled: Boolean) = {
     if (enabled) {
-      WithHeaders(headers)
+      respondWithHeaders(headers)
     } else {
       Directive.Empty
     }
   }
-
 }

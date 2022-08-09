@@ -321,6 +321,13 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     }
   }
 
+  test("should handle OPTIONS method request") {
+    Options("/") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      headers should contain allElementsOf (CorsSupport.headers ::: ContentTypeOptionsSecureSupport.header :: Nil)
+    }
+  }
+
   test("should reload model config") {
     def invokeModelConfigReader(configPath: String): String = {
       val serviceParameters = List(Parameter("configPath", s"'$configPath'"))
