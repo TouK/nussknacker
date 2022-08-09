@@ -63,8 +63,8 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List(Typed[String]))) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(Typed[String]), None),
-        List(new Signature(name, expectedTypes, None))
+        Signature(name, List(Typed[String]), None),
+        Signature(name, expectedTypes, None) :: Nil
       ))
     }
   }
@@ -81,11 +81,11 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(), None),
+        Signature(name, List(), None),
         List(
-          new Signature(name, expectedTypesA, None),
-          new Signature(name, expectedTypesB, None),
-          new Signature(name, expectedTypesC, None)
+          Signature(name, expectedTypesA, None),
+          Signature(name, expectedTypesB, None),
+          Signature(name, expectedTypesC, None)
         )
       ))
     }
@@ -98,7 +98,13 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypes) shouldBe Right(Typed[String])
 
     inside(extractMethod(name, List())) {
-      case Left(error: GenericFunctionError) => checkErrorEquality(error, new GenericFunctionError("error"))
+      case Left(error: ArgumentTypeError) => checkErrorEquality(
+        error,
+        new ArgumentTypeError(
+          Signature(name, List(), None),
+          Signature(name, expectedTypes, None) :: Nil
+        )
+      )
     }
   }
 
@@ -114,8 +120,10 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod("overloadedGenericFunction", List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(), None),
-        new Signature(name, expectedTypesC, None) :: Nil
+        Signature(name, List(), None),
+        Signature(name, expectedTypesA, None) :: 
+          Signature(name, expectedTypesB, None) ::
+          Signature(name, expectedTypesC, None) :: Nil
       ))
     }
   }
@@ -131,7 +139,15 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypesC) shouldBe Right(Typed[Float])
 
     inside(extractMethod(name, List())) {
-      case Left(error: GenericFunctionError) => checkErrorEquality(error, new GenericFunctionError("errorC"))
+      case Left(error: ArgumentTypeError) => checkErrorEquality(
+        error,
+        new ArgumentTypeError(
+          Signature(name, List(), None),
+          Signature(name, expectedTypesA, None) ::
+            Signature(name, expectedTypesB, None) ::
+            Signature(name, expectedTypesC, None) :: Nil
+        )
+      )
     }
   }
 }
