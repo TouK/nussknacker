@@ -23,7 +23,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 
   def validate(process: DisplayableProcess): ValidationResult = additionalPropertiesConfig.forType(process.processingType) match {
     case None =>
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
+      ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
 
     case Some(config) => {
       val additionalProperties = process.metaData.additionalFields

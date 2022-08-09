@@ -87,12 +87,12 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     case DeploymentActionFinished(process, user, _) =>
       implicit val listenerUser: ListenerUser = ListenerApiUser(user)
       beingDeployed -= process.name
-    case Test(id, canonicalProcess, testData, user, encoder) =>
+    case Test(id, canonicalProcess, category, testData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
-          resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess))
+          resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
           testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
         } yield testResult
         reply(testAction)
@@ -203,7 +203,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, test: TestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: LocalDateTime, action: ProcessActionType)
 

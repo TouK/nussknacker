@@ -34,6 +34,7 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess
+    createProcess(ProcessTestData.sampleDisplayableProcess.processName)
 
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -42,7 +43,6 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
       
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
-
   }
 
   test("export process and import it (as common user)") {

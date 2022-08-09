@@ -4,7 +4,8 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.6.0 (Not released yet)
-* [#TODO](https://github.com/TouK/nussknacker/pull/TODO) *
+* [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
+  From now import scenario with nodes from other categories than scenario category will be not allowed.
 
 ## In version 1.5.0 (Not released yet)
 

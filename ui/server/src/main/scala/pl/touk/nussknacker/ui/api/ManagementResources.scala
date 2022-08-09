@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessIdWithNameAndCategory}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
@@ -204,15 +204,15 @@ class ManagementResources(processCounter: ProcessCounter,
       } ~
       //TODO: maybe Write permission is enough here?
       path("processManagement" / "test" / Segment) { processName =>
-        (post & processId(processName)) { processId =>
-          canDeploy(processId) {
+        (post & processIdWithCategory(processName)) { idWithCategory =>
+          canDeploy(idWithCategory.id) {
             formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
               complete {
                 if (testData.length > testDataSettings.testDataMaxBytes) {
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    performTest(processId, testData, displayableProcessJson).flatMap { results =>
+                    performTest(idWithCategory, testData, displayableProcessJson).flatMap { results =>
                       Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                     }.recover(EspErrorToHttp.errorToHttp)
                   }
@@ -249,12 +249,12 @@ class ManagementResources(processCounter: ProcessCounter,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
+  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
-        val validationResult = processResolving.validateBeforeUiResolving(process)
+        val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        (managementActor ? Test(id, canonical, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))

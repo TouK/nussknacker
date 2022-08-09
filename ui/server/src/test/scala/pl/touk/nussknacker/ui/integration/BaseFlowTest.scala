@@ -33,7 +33,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
 
@@ -177,17 +177,17 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   }
 
   test("validate process additional properties") {
-    Post(
-      "/api/processValidation",
-      HttpEntity(ContentTypes.`application/json`, TestFactory.processWithInvalidAdditionalProperties.asJson.spaces2)
-    ) ~> addCredentials(credentials) ~> mainRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      val entity = responseAs[String]
+    val scenario = ProcessTestData.processWithInvalidAdditionalProperties
+    Post(s"/api/processes/${scenario.id}/Category1?isSubprocess=${scenario.metaData.isSubprocess}") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      Post("/api/processValidation", HttpEntity(ContentTypes.`application/json`, scenario.asJson.spaces2)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+        status shouldEqual StatusCodes.OK
+        val entity = responseAs[String]
 
-      entity should include("Configured property environment (Environment) is missing")
-      entity should include("This field value has to be an integer number")
-      entity should include("Unknown property unknown")
-      entity should include("Property numberOfThreads (Number of threads) has invalid value")
+        entity should include("Configured property environment (Environment) is missing")
+        entity should include("This field value has to be an integer number")
+        entity should include("Unknown property unknown")
+        entity should include("Property numberOfThreads (Number of threads) has invalid value")
+      }
     }
   }
 

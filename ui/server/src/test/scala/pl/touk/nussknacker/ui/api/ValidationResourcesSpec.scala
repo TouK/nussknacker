@@ -7,10 +7,10 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import org.scalatest._
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.definition.{FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.node
+import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -18,29 +18,30 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 
-class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport {
+class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with FailFastCirceSupport
+  with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  val processValidation = new ProcessValidation(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> ProcessTestData.validator),
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
+  private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-    )),
-    sampleResolver,
-    emptyProcessingTypeDataProvider
+    ))
   )
-  val route: Route = withPermissions(new ValidationResources(new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead)
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private val route: Route = withPermissions(new ValidationResources(fetchingProcessRepository,
+    new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
+  )
 
   it should "find errors in a bad scenario" in {
-    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcess)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("MissingSourceFactory")
@@ -48,7 +49,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find errors in scenario with Mandatory parameters" in {
-    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithEmptyMandatoryParameter)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.invalidProcessWithEmptyMandatoryParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("This field is mandatory and can not be empty")
@@ -56,7 +57,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find errors in scenario with NotBlank parameters" in {
-    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithBlankParameter)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.invalidProcessWithBlankParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("This field value is required and can not be blank")
@@ -64,7 +65,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find errors in scenario properties" in {
-    Post("/processValidation", posting.toEntity(TestFactory.processWithInvalidAdditionalProperties)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("Configured property requiredStringProperty (label) is missing")
@@ -75,7 +76,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find errors in scenario with wrong fixed expression value" in {
-    Post("/processValidation", posting.toEntity(ProcessTestData.invalidProcessWithWrongFixedExpressionValue)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.invalidProcessWithWrongFixedExpressionValue) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("Property expression has invalid value")
@@ -88,7 +89,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       List(Edge("s1", "f1\"'", None))
     )
 
-    Post("/processValidation",  posting.toEntity(invalidCharacters)) ~> route ~> check {
+    createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
       entity should include ("Node id contains invalid characters")
@@ -99,7 +100,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       List(Edge("s1", "s1", None))
     )
 
-    Post("/processValidation", posting.toEntity(duplicateIds)) ~> route ~> check {
+    createAndValidateScenario(duplicateIds) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
       entity should include ("Duplicate node ids: s1")
@@ -112,7 +113,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       List(Edge("s1", "f1", None))
     )
 
-    Post("/processValidation", posting.toEntity(invalidShapeProcess)) ~> route ~> check {
+    createAndValidateScenario(invalidShapeProcess) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include("InvalidTailOfBranch")
@@ -120,7 +121,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
   }
 
   it should "find no errors in a good scenario" in {
-    Post("/processValidation", posting.toEntity(ProcessTestData.validProcess)) ~> route ~> check {
+    createAndValidateScenario(ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -135,7 +136,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     val edges = List(Edge("source1", "filter1", None), Edge("filter1", "proc1", None), Edge("proc1", "sink1", None))
     val processWithDisabledFilterAndProcessor = newDisplayableProcess("p1", nodes, edges)
 
-    Post("/processValidation", posting.toEntity(processWithDisabledFilterAndProcessor)) ~> route ~> check {
+    createAndValidateScenario(processWithDisabledFilterAndProcessor) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
       validation.warnings.invalidNodes("filter1").head.message should include("Node is disabled")
@@ -143,7 +144,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
     }
   }
 
-  def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]) = {
+  private def newDisplayableProcess(id: String, nodes: List[NodeData], edges: List[Edge]): DisplayableProcess = {
     DisplayableProcess(
       id = id,
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None, subprocessVersions = Map.empty),
@@ -151,6 +152,17 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Matc
       edges = edges,
       processingType = TestProcessingTypes.Streaming
     )
+  }
+
+  private def createAndValidateScenario(scenario: EspProcess)(testCode: => Assertion): Assertion =
+    createAndValidateScenario(TestProcessUtil.toDisplayable(scenario))(testCode)
+
+  private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    createProcess(displayable.processName)
+
+    Post("/processValidation", posting.toEntity(displayable)) ~> route ~> check {
+      testCode
+    }
   }
 
 }

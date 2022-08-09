@@ -177,7 +177,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
         ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
-        new ValidationResources(processResolving),
+        new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
