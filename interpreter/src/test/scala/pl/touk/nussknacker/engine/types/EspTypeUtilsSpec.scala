@@ -8,6 +8,7 @@ import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.supertype.{ClassHierarchyCommonSupertypeFinder, CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 import java.util
 import java.util.regex.Pattern
 import scala.annotation.meta.getter
+import scala.annotation.varargs
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.reflect.runtime.universe._
@@ -199,6 +201,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     @GenericType(typingFunction = classOf[HeadHelper])
     def head[T >: Null](list: java.util.List[T]): T =
       list.asScala.headOption.orNull
+
+    @Documentation(description = ScalaSampleDocumentedClass.maxDocs)
+    @GenericType(typingFunction = classOf[MaxHelper])
+    @varargs
+    def max[T <: Number](args: T*): T =
+      args.maxBy(_.doubleValue())
   }
 
   case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String], javaMap: java.util.Map[String, String])
@@ -225,6 +233,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     final val bazDocs = "This is sample documentation for baz method"
     final val quxDocs = "This is sample documentation for qux method"
     final val headDocs = "This is sample documentation for head method"
+    final val maxDocs = "This is sample documentation for max method"
   }
 
   test("should extract description and params from method") {
@@ -256,7 +265,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("qux", List(param[String]("quxParam1")), Typed[Long], Some(ScalaSampleDocumentedClass.quxDocs), false),
       ("field1", List.empty, Typed[Long], None, false),
       ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false),
-      ("head", List(param[java.util.List[_]]("list")), Typed[Object], Some(ScalaSampleDocumentedClass.headDocs), false)
+      ("head", List(param[java.util.List[_]]("list")), Typed[Object], Some(ScalaSampleDocumentedClass.headDocs), false),
+      ("max", List(param[Array[Number]]("args")), Typed[Number], Some(ScalaSampleDocumentedClass.maxDocs), true)
     )
 
     forAll(table)(checkMethodInfo)
@@ -436,5 +446,12 @@ private class HeadHelper extends TypingFunction {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
     case _ => error(arguments).invalidNel
+  }
+}
+
+private class MaxHelper extends TypingFunction {
+  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
+    arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }
 }
