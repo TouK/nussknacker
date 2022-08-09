@@ -1,8 +1,8 @@
-package pl.touk.nussknacker.restmodel.validation
+package pl.touk.nussknacker.engine
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 
 //TODO: Move to some designer extensions module or to common extensions module when we switch from CanonicalProcess to DisplayableProcess in all places
 trait CustomProcessValidatorFactory {
@@ -10,5 +10,5 @@ trait CustomProcessValidatorFactory {
 }
 
 trait CustomProcessValidator {
-  def validate(process: DisplayableProcess): ValidationResult
+  def validate(process: CanonicalProcess): List[ProcessCompilationError]
 }

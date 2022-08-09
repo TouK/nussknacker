@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
@@ -13,8 +13,8 @@ import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
-import pl.touk.nussknacker.restmodel.validation.{CustomProcessValidator, PrettyValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, ValidationResult}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -209,10 +209,22 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   }
 
   private def validateWithCustomProcessValidator(process: DisplayableProcess): ValidationResult = {
-    customProcessNodesValidators
+
+    val errors = customProcessNodesValidators
       .forType(process.processingType)
-      .map(_.validate(process))
-      .getOrElse(ValidationResult.success)
+      .map(_.validate(ProcessConverter.fromDisplayable(process)))
+      .getOrElse(List())
+    val globalErrors = errors.filter(_.nodeIds.isEmpty)
+
+    ValidationResult.errors(
+      invalidNodes = (for {
+        error <- errors.filterNot(globalErrors.contains)
+        nodeId <- error.nodeIds
+      } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
+      processPropertiesErrors = Nil,
+      globalErrors = globalErrors.map(PrettyValidationErrors.formatErrorMessage)
+    )
+
   }
 
   private case class ValidatorKey(modelData: ModelData, category: Category)

@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.ui.validation
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.{CustomProcessValidator, CustomProcessValidatorFactory, ModelData}
 import pl.touk.nussknacker.engine.util.loader.{LoadClassFromClassLoader, ScalaServiceLoader}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.validation.{CustomProcessValidator, CustomProcessValidatorFactory}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   override type ClassToLoad = CustomProcessValidatorFactory
@@ -21,10 +23,8 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   }
 
   private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator]) extends CustomProcessValidator {
-    override def validate(process: DisplayableProcess): ValidationResult = {
-      customValidators.map(_.validate(process))
-        .foldLeft(ValidationResult.success)(_ add _)
+    override def validate(process: CanonicalProcess): List[ProcessCompilationError] = {
+      customValidators.flatMap(_.validate(process))
     }
   }
-
 }
