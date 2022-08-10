@@ -5,12 +5,14 @@ import java.util.Optional
 import cats.data.StateT
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.generics.{GenericType, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, Parameter, ParameterList, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, Parameter, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
+
+import java.lang.annotation.Annotation
 
 object EspTypeUtils {
 
@@ -48,9 +50,14 @@ object EspTypeUtils {
     }
     val publicMethods = clazz.getMethods.toList ++ additionalMethods
 
-    val filteredMethods =
+    val methods =
       if (staticMethodsAndFields) publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => Modifier.isStatic(m.getModifiers))
       else publicMethods.filter(membersPredicate.shouldBeVisible).filter(m => !Modifier.isStatic(m.getModifiers))
+
+    // "varargs" annotation generates two methods - one with scala style varArgs
+    // and one with java style varargs. We want only the second one so we have
+    // to filter them.
+    val filteredMethods = methods.filter(extractJavaVersionOfVarArgMethod(_).isEmpty)
 
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(_))
@@ -63,7 +70,8 @@ object EspTypeUtils {
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
     def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.staticParameters.map(_.refClazz) :+ methodInfo.staticResult).forall {
+      val types = methodInfo.staticParameters.toList.map(_.refClazz) :+ methodInfo.staticResult
+      types.forall {
         //TODO: handle arrays properly in ClassExtractionSettings
         case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
         case TypedUnion(results) => results.forall(typeResultVisible)
@@ -119,9 +127,9 @@ object EspTypeUtils {
 
   private def extractMethod(method: Method)
                            (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] =
-    method.getAnnotation(classOf[GenericType]) match {
-      case null => extractRegularMethod(method)
-      case annotation => extractGenericMethod(method, annotation)
+    extractAnnotation(method, classOf[GenericType]) match {
+      case None => extractRegularMethod(method)
+      case Some(annotation) => extractGenericMethod(method, annotation)
     }
 
   private def getTypeFunctionInstanceFromAnnotation(method: Method, genericType: GenericType): TypingFunction = {
@@ -144,30 +152,27 @@ object EspTypeUtils {
   private def extractGenericMethod(method: Method, genericType: GenericType)
                                   (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
-    val parameterInfo = typeFunctionInstance.staticParameters()
-      .map(_.map{ case (name, typ) => Parameter(name, typ) })
-      .getOrElse(extractParameters(method))
-    val resultInfo = typeFunctionInstance.staticResult()
+    val parameterInfo = typeFunctionInstance.staticParameters
+      .getOrElse(ParameterList.fromList(extractParameters(method), method.isVarArgs))
+    val resultInfo = typeFunctionInstance.staticResult
       .getOrElse(extractMethodReturnType(method))
 
-    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo.fromParameterList(
+    collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
       x => typeFunctionInstance.computeResultType(x),
       parameterInfo,
       resultInfo,
       methodName,
-      extractNussknackerDocs(method),
-      method.isVarArgs
+      extractNussknackerDocs(method)
     ))
   }
 
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
-    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo.fromParameterList(
-      extractParameters(method),
+    collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
+      ParameterList.fromList(extractParameters(method), method.isVarArgs),
       extractMethodReturnType(method),
       methodName,
-      extractNussknackerDocs(method),
-      method.isVarArgs
+      extractNussknackerDocs(method)
     ))
 
   private def extractPublicFields(clazz: Class[_], membersPredicate: VisibleMembersPredicate, staticMethodsAndFields: Boolean)
@@ -177,24 +182,23 @@ object EspTypeUtils {
       if(staticMethodsAndFields) interestingFields.filter(m => Modifier.isStatic(m.getModifiers))
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
-      field.getName -> StaticMethodInfo.fromParameterList(
-        List.empty,
+      field.getName -> StaticMethodInfo(
+        ParameterList(Nil, None),
         extractFieldReturnType(field),
         field.getName,
-        extractNussknackerDocs(field),
-        varArgs = false
+        extractNussknackerDocs(field)
       )
     }.toMap
   }
 
   private def extractNussknackerDocs(accessibleObject: AccessibleObject): Option[String] = {
-    Option(accessibleObject.getAnnotation(classOf[Documentation])).map(_.description())
+    extractAnnotation(accessibleObject, classOf[Documentation]).map(_.description())
   }
 
   private def extractParameters(method: Method): List[Parameter] = {
     for {
       param <- method.getParameters.toList
-      annotationOption = Option(param.getAnnotation(classOf[ParamName]))
+      annotationOption = extractAnnotation(param, classOf[ParamName])
       name = annotationOption.map(_.value).getOrElse(param.getName)
       paramType = extractParameterType(param)
     } yield Parameter(name, paramType)
@@ -256,6 +260,39 @@ object EspTypeUtils {
   private def extractGenericParams(paramsType: ParameterizedType, paramsRawType: Class[_]): TypingResult = {
     Typed.genericTypeClass(paramsRawType, paramsType.getActualTypeArguments.toList.map(p => extractClass(p).getOrElse(Unknown)))
   }
+
+  private def extractScalaVersionOfVarArgMethod(method: Method): Option[Method] = {
+    val obj = method.getDeclaringClass
+    val name = method.getName
+    val args = method.getParameterTypes.toList
+    args match {
+      case noVarArgs :+ varArg if method.isVarArgs && varArg.isArray =>
+        try {
+          Some(obj.getMethod(name, noVarArgs :+ classOf[Seq[_]]: _*))
+        } catch {
+          case _: NoSuchMethodException => None
+        }
+      case _ => None
+    }
+  }
+
+  private def extractJavaVersionOfVarArgMethod(method: Method): Option[Method] = {
+    method.getDeclaringClass.getMethods.find(m => m.isVarArgs && (m.getParameterTypes.toList match {
+      case noVarArgs :+ varArgArr if varArgArr.isArray =>
+        method.getParameterTypes.toList == noVarArgs :+ classOf[Seq[_]]
+      case _ => false
+    }))
+  }
+
+  // "varargs" annotation creates new function that has java style varArgs
+  // but it disregards annotations, so we have to look for original function
+  // to extract them.
+  private def extractAnnotation[T <: Annotation](obj: AnnotatedElement, annotationType: Class[T]): Option[T] =
+    Option(obj.getAnnotation(annotationType)).orElse(obj match {
+      case method: Method => extractScalaVersionOfVarArgMethod(method).flatMap(extractAnnotation(_, annotationType))
+      // TODO: Add new case for parameters.
+      case _ => None
+    })
 
   def companionObject[T](klazz: Class[T]): T = {
     klazz.getField("MODULE$").get(null).asInstanceOf[T]

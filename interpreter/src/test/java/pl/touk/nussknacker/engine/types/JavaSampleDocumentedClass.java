@@ -7,6 +7,7 @@ import cats.data.Validated.Valid;
 import pl.touk.nussknacker.engine.api.Documentation;
 import pl.touk.nussknacker.engine.api.generics.*;
 import pl.touk.nussknacker.engine.api.ParamName;
+import pl.touk.nussknacker.engine.api.typed.supertype.*;
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult;
 import pl.touk.nussknacker.engine.api.typed.typing.TypedClass;
 import scala.collection.JavaConverters;
@@ -19,6 +20,7 @@ public class JavaSampleDocumentedClass {
     static final String field2Docs = "This is sample documentation for field2 field";
     static final String quxDocs = "This is sample documentation for qux method";
     static final String headDocs = "This is sample documentation for head method";
+    static final String maxDocs = "This is sample documentation for max method";
 
     public long foo(String fooParam1) {
         return 0L;
@@ -51,6 +53,16 @@ public class JavaSampleDocumentedClass {
         return list.get(0);
     }
 
+    @Documentation(description = maxDocs)
+    @GenericType(typingFunction = MaxHelper.class)
+    public <T extends Number> T max(T... args) {
+        T ans = args[0];
+        for (T a: args) {
+            if (a.doubleValue() > ans.doubleValue()) ans = a;
+        }
+        return ans;
+    }
+
     static class HeadHelper extends TypingFunction {
         private final Class<?> listClass = java.util.List.class;
 
@@ -81,6 +93,19 @@ public class JavaSampleDocumentedClass {
                 throw new AssertionError("Lists must have one parameter");
             }
             return Valid.valid(arg.params().head());
+        }
+    }
+
+    static class MaxHelper extends TypingFunction {
+
+        @Override
+        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> computeResultType(List<TypingResult> arguments) {
+            CommonSupertypeFinder supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union$.MODULE$, true);
+            TypingResult res = arguments.head();
+            for (int i = 1; i != arguments.length(); ++i) {
+                res = supertypeFinder.commonSupertype(res, arguments.apply(i), NumberTypesPromotionStrategy.ToSupertype$.MODULE$);
+            }
+            return new Valid(res);
         }
     }
 }

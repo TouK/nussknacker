@@ -5,19 +5,21 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.typed.supertype.{ClassHierarchyCommonSupertypeFinder, CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionRepr
 import pl.touk.nussknacker.engine.types.TypesInformationExtractor._
 
 import java.util
 import java.util.regex.Pattern
 import scala.annotation.meta.getter
+import scala.annotation.varargs
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 import scala.reflect.runtime.universe._
@@ -57,10 +59,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val sampleClassInfo = singleClassDefinition[SampleClass]()
 
     sampleClassInfo.value.methods shouldBe Map(
-      "foo" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false)),
-      "bar" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed[String], "bar", None, varArgs = false)),
-      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
-      "returnContext" -> List(StaticMethodInfo.fromParameterList(List(), Typed[Context], "returnContext", None, varArgs = false))
+      "foo" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed(Integer.TYPE), "foo", None)),
+      "bar" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "bar", None)),
+      "toString" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "toString", None)),
+      "returnContext" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[Context], "returnContext", None))
     )
   }
 
@@ -68,10 +70,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val classInfo = singleClassDefinition[ClassWithOptions]()
     classInfo.value.methods shouldBe Map(
       // generic type of Java type is properly read
-      "longJavaOption" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed[Long], "longJavaOption", None, varArgs = false)),
+      "longJavaOption" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[Long], "longJavaOption", None)),
       // generic type of Scala type is erased - this case documents that behavior
-      "longScalaOption" -> List(StaticMethodInfo.fromParameterList(List.empty, typing.Unknown, "longScalaOption", None, varArgs = false)),
-      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
+      "longScalaOption" -> List(StaticMethodInfo(ParameterList(Nil, None), typing.Unknown, "longScalaOption", None)),
+      "toString" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "toString", None)),
     )
   }
 
@@ -119,8 +121,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         val sampleClassInfo = infos.find(_.clazzName.klass.getName.contains(clazzName)).get
 
         sampleClassInfo.methods shouldBe Map(
-          "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false)),
-          "foo" -> List(StaticMethodInfo.fromParameterList(List.empty, Typed(Integer.TYPE), "foo", None, varArgs = false))
+          "toString" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "toString", None)),
+          "foo" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed(Integer.TYPE), "foo", None))
         )
       }
     }
@@ -131,10 +133,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassAndItsChildrenDefinition[Embeddable]()
 
     typeUtils.find(_.clazzName == Typed[TestEmbedded]) shouldBe Some(ClazzDefinition(Typed.typedClass[TestEmbedded], Map(
-      "string" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "string", None, varArgs = false)),
-      "javaList" -> List(StaticMethodInfo.fromParameterList(List(), Typed.fromDetailedType[java.util.List[String]], "javaList", None, varArgs = false)),
-      "javaMap" -> List(StaticMethodInfo.fromParameterList(List(), Typed.fromDetailedType[java.util.Map[String, String]], "javaMap", None, varArgs = false)),
-      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false))
+      "string" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "string", None)),
+      "javaList" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed.fromDetailedType[java.util.List[String]], "javaList", None)),
+      "javaMap" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed.fromDetailedType[java.util.Map[String, String]], "javaMap", None)),
+      "toString" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "toString", None))
     ), Map.empty))
 
   }
@@ -143,9 +145,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val typeUtils = singleClassDefinition[ClassWithHiddenFields]()
 
     typeUtils shouldBe Some(ClazzDefinition(Typed.typedClass[ClassWithHiddenFields], Map(
-      "normalField" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "normalField", None, varArgs = false)),
-      "normalParam" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "normalParam", None, varArgs = false)),
-      "toString" -> List(StaticMethodInfo.fromParameterList(List(), Typed[String], "toString", None, varArgs = false))
+      "normalField" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "normalField", None)),
+      "normalParam" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "normalParam", None)),
+      "toString" -> List(StaticMethodInfo(ParameterList(Nil, None), Typed[String], "toString", None))
     ), Map.empty))
   }
 
@@ -199,6 +201,12 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     @GenericType(typingFunction = classOf[HeadHelper])
     def head[T >: Null](list: java.util.List[T]): T =
       list.asScala.headOption.orNull
+
+    @Documentation(description = ScalaSampleDocumentedClass.maxDocs)
+    @GenericType(typingFunction = classOf[MaxHelper])
+    @varargs
+    def max[T <: Number](args: T*): T =
+      args.maxBy(_.doubleValue())
   }
 
   case class TestEmbedded(string: String, javaList: java.util.List[String], scalaList: List[String], javaMap: java.util.Map[String, String])
@@ -225,6 +233,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     final val bazDocs = "This is sample documentation for baz method"
     final val quxDocs = "This is sample documentation for qux method"
     final val headDocs = "This is sample documentation for head method"
+    final val maxDocs = "This is sample documentation for max method"
   }
 
   test("should extract description and params from method") {
@@ -240,7 +249,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
       val javaInfo :: Nil = javaClazzInfo.methods(name)
       List(scalaInfo, javaInfo).foreach(info => {
-          info.staticParameters shouldBe params
+          info.staticParameters shouldBe ParameterList.fromList(params, varArgs)
           info.staticResult shouldBe result
           info.description shouldBe desc
           info.varArgs shouldBe varArgs
@@ -256,7 +265,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("qux", List(param[String]("quxParam1")), Typed[Long], Some(ScalaSampleDocumentedClass.quxDocs), false),
       ("field1", List.empty, Typed[Long], None, false),
       ("field2", List.empty, Typed[Long], Some(ScalaSampleDocumentedClass.field2Docs), false),
-      ("head", List(param[java.util.List[_]]("list")), Typed[Object], Some(ScalaSampleDocumentedClass.headDocs), false)
+      ("head", List(param[java.util.List[_]]("list")), Typed[Object], Some(ScalaSampleDocumentedClass.headDocs), false),
+      ("max", List(param[Array[Number]]("args")), Typed[Number], Some(ScalaSampleDocumentedClass.maxDocs), true)
     )
 
     forAll(table)(checkMethodInfo)
@@ -273,7 +283,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.staticParameters.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.staticParameters.toList.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -310,8 +320,8 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.staticParameters should have length 1
-    method.staticParameters.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
+    method.staticParameters.toList should have length 1
+    method.staticParameters.toList.head.refClazz shouldEqual Typed.fromDetailedType[Array[Object]]
   }
 
   private def checkApplyFunction(classes: List[ClazzDefinition],
@@ -436,5 +446,12 @@ private class HeadHelper extends TypingFunction {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
     case _ => error(arguments).invalidNel
+  }
+}
+
+private class MaxHelper extends TypingFunction {
+  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+    val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
+    arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }
 }

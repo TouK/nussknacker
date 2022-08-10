@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.management.sample.global
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.Documentation
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult}
 
+import scala.annotation.varargs
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
@@ -19,8 +20,8 @@ object GenericHelperFunction {
 
     private def error(arguments: List[TypingResult]) = {
       new ArgumentTypeError(
-        new Signature("head", arguments, None),
-        List(new Signature("head", List(Typed.fromDetailedType[java.util.List[Object]]), None))
+        Signature("head", arguments, None),
+        List(Signature("head", List(Typed.fromDetailedType[java.util.List[Object]]), None))
       )
     }
 
@@ -43,15 +44,15 @@ object GenericHelperFunction {
 
     private def error(arguments: List[TypingResult]) = {
       new ArgumentTypeError(
-        new Signature("exampleOfType", arguments, None),
-        List(new Signature("exampleOfType", List(expectedArgument), None))
+        Signature("exampleOfType", arguments, None),
+        List(Signature("exampleOfType", List(expectedArgument), None))
       )
     }
 
-    override def staticParameters(): Option[List[(String, TypingResult)]] =
-      Some(List(("typeName", expectedArgument)))
+    override def staticParameters: Option[ParameterList] =
+      Some(ParameterList(List(Parameter("typeName", expectedArgument)), None))
 
-    override def staticResult(): Option[TypingResult] =
+    override def staticResult: Option[TypingResult] =
       Some(expectedResult)
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = arguments match {
@@ -105,6 +106,31 @@ object GenericHelperFunction {
         new GenericFunctionError("Expected typed object").invalidNel
       case _ =>
         new GenericFunctionError("Expected one argument").invalidNel
+    }
+  }
+
+  @Documentation(description = "zips up to 3 numbers")
+  @GenericType(typingFunction = classOf[ZipHelper])
+  @varargs
+  def zip(x: Number*): Any = ???
+
+  private class ZipHelper extends TypingFunction {
+    private def error(arguments: List[TypingResult]): ExpressionParseError =
+      new ArgumentTypeError(
+        Signature("zip", arguments, None),
+        Signature("zip", Typed[Number] :: Nil, None) ::
+          Signature("zip", Typed[Number] :: Typed[Number] :: Nil, None) ::
+          Signature("zip", Typed[Number] :: Typed[Number] :: Typed[Number] :: Nil, None) :: Nil
+      )
+
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return error(arguments).invalidNel
+      arguments match {
+        case t :: Nil => t.validNel
+        case l :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "right" -> r)).validNel
+        case l :: m :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "mid" -> m, "right" -> r)).validNel
+        case _ => error(arguments).invalidNel
+      }
     }
   }
 }

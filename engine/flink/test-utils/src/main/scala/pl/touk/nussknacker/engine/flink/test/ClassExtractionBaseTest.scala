@@ -8,13 +8,14 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter, SerializableMethodInfo, FunctionalMethodInfo, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, SerializableMethodInfo, FunctionalMethodInfo, StaticMethodInfo}
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.api.generics.{Parameter, ParameterList}
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
@@ -26,8 +27,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   // not serialized.
   protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
     case x: StaticMethodInfo => x.copy(name = "")
-    case x: FunctionalMethodInfo =>
-      StaticMethodInfo.fromParameterList(x.staticParameters, x.staticResult, "", x.description, x.varArgs)
+    case x: FunctionalMethodInfo => x.staticInfo.copy(name = "")
   }
 
   // We need to sort methods with identical names to make checks ignore order.
@@ -66,7 +66,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       cd.clazzName ::
         (cd.methods ++ cd.staticMethods)
           .flatMap(_._2)
-          .flatMap(mi => mi.staticResult :: mi.staticParameters.map(_.refClazz))
+          .flatMap(mi => mi.staticResult :: mi.staticParameters.toList.map(_.refClazz))
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName
@@ -155,12 +155,8 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
     implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
       // Name is not serialized so we leave it empty.
-      case SerializableMethodInfo(parameters :+ Parameter(name, TypedClass(`objectClass`, types)), refClazz, description, true) =>
-        StaticMethodInfo(parameters, Some(Parameter(name, Typed(types.toSet))), refClazz, "", description)
-      case SerializableMethodInfo(parameters, _, _, true) =>
-        throw new AssertionError(parameters.toString)
-      case SerializableMethodInfo(parameters, refClazz, description, false) =>
-        StaticMethodInfo(parameters, None, refClazz, "", description)
+      case SerializableMethodInfo(parameters, refClazz, description, varArgs) =>
+        StaticMethodInfo(ParameterList.fromList(parameters, varArgs), refClazz, "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder

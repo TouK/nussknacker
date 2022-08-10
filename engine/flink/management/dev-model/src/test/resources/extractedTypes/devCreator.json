@@ -10301,6 +10301,29 @@
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": false
         }
+      ],
+      "zip": [
+        {
+          "description": "zips up to 3 numbers",
+          "parameters": [
+            {
+              "name": "x",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Number",
+                    "params": [],
+                    "refClazzName": "java.lang.Number",
+                    "type": "TypedClass"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": true
+        }
       ]
     },
     "staticMethods": {}
