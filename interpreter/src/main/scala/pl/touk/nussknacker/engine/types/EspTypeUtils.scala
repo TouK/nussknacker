@@ -202,14 +202,11 @@ object EspTypeUtils {
     def autoExtractedParameters = extractParameters(method)
     def definedParametersOption = typingFunction.staticParameters
 
-    definedParametersOption match {
-      case Some(definedParameters) =>
-        if (!ParameterListSubclassChecker.check(definedParameters, autoExtractedParameters))
-          throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature")
-        definedParameters
-      case None =>
-        autoExtractedParameters
+    definedParametersOption.foreach{params =>
+      if (!ParameterListSubclassChecker.check(params, autoExtractedParameters))
+        throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature")
     }
+    definedParametersOption.getOrElse(autoExtractedParameters)
   }
 
   private def extractParameters(method: Method): ParameterList = {
