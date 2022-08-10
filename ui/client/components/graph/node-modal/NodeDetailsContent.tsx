@@ -62,7 +62,7 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
           setEditedNode,
         }}
       />
-      <NodeAdditionalInfoBox node={editedNode} processId={processId}/>
+      <NodeAdditionalInfoBox node={node} processId={processId}/>
     </>
   )
 }
