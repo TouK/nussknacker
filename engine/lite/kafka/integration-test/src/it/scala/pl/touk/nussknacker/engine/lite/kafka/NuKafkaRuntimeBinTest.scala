@@ -1,10 +1,13 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import com.dimafeng.testcontainers.{Container, GenericContainer, MultipleContainers}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
+import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSuite, Matchers}
 import org.springframework.util.StreamUtils
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.io.IOException
@@ -13,17 +16,44 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeTestMixin with Matchers with LazyLogging with VeryPatientScalaFutures {
+class NuKafkaRuntimeBinTest extends FunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with LazyLogging with VeryPatientScalaFutures {
 
-  override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress
+  private var inputSchemaId: Int = _
+
+  private var outputSchemaId: Int = _
+
+  private def mappedSchemaRegistryAddress = s"http://localhost:${schemaRegistryContainer.mappedPort(schemaRegistryPort)}"
+
+  private val schemaRegistryHostname = "schemaregistry"
+  private val schemaRegistryPort = 8081
+
+  private val schemaRegistryContainer = {
+    val container = GenericContainer(
+      "confluentinc/cp-schema-registry:7.2.1",
+      exposedPorts = Seq(schemaRegistryPort),
+      env = Map(
+        "SCHEMA_REGISTRY_HOST_NAME" -> schemaRegistryHostname,
+        "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" -> dockerNetworkKafkaBoostrapServer)
+    )
+    configureNetwork(container, schemaRegistryHostname)
+    container
+  }
+
+  override val container: Container = {
+    kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
+    schemaRegistryContainer.start() // should be started after kafka
+    fixture = prepareTestCaseFixture("ping-pong", NuKafkaRuntimeTestSamples.avroPingPongScenario)
+    registerSchemas()
+    MultipleContainers(kafkaContainer, schemaRegistryContainer)
+  }
 
   test("should run scenario and pass data to output ") {
-    val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
 
     val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString, deploymentDataFile.toString)
     val shellScriptEnvs = Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       "KAFKA_AUTO_OFFSET_RESET=earliest",
+      s"SCHEMA_REGISTRY_URL=$mappedSchemaRegistryAddress",
       // random management port to avoid clashing of ports
       "CONFIG_FORCE_akka_management_http_port=0",
       // It looks like github-actions doesn't look binding to 0.0.0.0, was problems like: Bind failed for TCP channel on endpoint [/10.1.0.183:0]
@@ -31,11 +61,13 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeT
     )
     withProcessExecutedInBackground(shellScriptArgs, shellScriptEnvs,
       {
-        kafkaClient.sendMessage(fixture.inputTopic, NuKafkaRuntimeTestSamples.jsonPingMessage).futureValue
+        val valueBytes = ConfluentUtils.serializeContainerToBytesArray(NuKafkaRuntimeTestSamples.avroPingRecord, inputSchemaId)
+        kafkaClient.sendRawMessage(fixture.inputTopic, "fooKey".getBytes, valueBytes).futureValue
       },
       {
-        val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1).map(rec => new String(rec.message())).toList
-        messages shouldBe List(NuKafkaRuntimeTestSamples.jsonPingMessage)
+        val messages = kafkaClient.createConsumer().consume(fixture.outputTopic, secondsToWait = 60).take(1)
+          .map(rec => ConfluentUtils.deserializeSchemaIdAndData[GenericRecord](rec.message(), NuKafkaRuntimeTestSamples.avroPingSchema)).toList
+        messages shouldBe List((outputSchemaId, NuKafkaRuntimeTestSamples.avroPingRecord))
       })
   }
 
@@ -90,6 +122,13 @@ class NuKafkaRuntimeBinTest extends FunSuite with KafkaSpec with NuKafkaRuntimeT
           ex.printStackTrace()
         }
     }
+  }
+
+  private def registerSchemas(): Unit = {
+    val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
+    val parsedAvroSchema = ConfluentUtils.convertToAvroSchema(NuKafkaRuntimeTestSamples.avroPingSchema)
+    inputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), parsedAvroSchema)
+    outputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), parsedAvroSchema)
   }
 
   private def shellScriptPath: Path = {

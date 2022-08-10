@@ -77,7 +77,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       KafkaUniversalComponentTransformer.SinkValueParamName -> "{input: #input, previousInput: #previousValue}",
       KafkaUniversalComponentTransformer.TopicParamName -> s"'$outTopic'",
       KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax}'"
+      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'"
     )
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")
