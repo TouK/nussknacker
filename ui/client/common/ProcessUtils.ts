@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {flatten, isEmpty, isEqual, keys, map, mapValues, memoize, omit, pickBy, transform} from "lodash"
+import {flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform} from "lodash"
 import {
   GlobalVariables,
   NodeId,
@@ -94,8 +94,7 @@ class ProcessUtils {
     }
   }
 
-  //TODO: memoize should not be needed
-  findAvailableVariables = memoize((processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
+  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
     const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
@@ -105,7 +104,7 @@ class ProcessUtils {
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
     //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
     return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1)
-  })
+  }
 
   _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const previousNodes = this._findPreviousNodes(nodeId, process)
