@@ -76,7 +76,8 @@ class TyperSpec extends FunSuite with Matchers {
       ("2 * 2", Typed[Int]),
       ("2 ^ 2", Typed(Typed[Int], Typed[Long])),
       ("2 + 2", Typed[Int]),
-      ("+5", Typed.fromInstance(5))
+      ("+5", Typed.fromInstance(5)),
+      ("'a' + 'a'", Typed[String])
     )
     forAll(table)(checkFinalResult)
   }
