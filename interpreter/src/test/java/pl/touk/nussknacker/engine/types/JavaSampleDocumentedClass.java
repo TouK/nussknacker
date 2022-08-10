@@ -67,15 +67,15 @@ public class JavaSampleDocumentedClass {
 
         public Validated<NonEmptyList<GenericFunctionTypingError>, TypingResult> computeResultType(List<TypingResult> arguments) {
             if (arguments.length() != 1) {
-                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
+                return Invalid.invalid(NonEmptyList.one(GenericFunctionTypingError.ArgumentTypeError$.MODULE$));
             }
             if (!(arguments.head() instanceof TypedClass)) {
-                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
+                return Invalid.invalid(NonEmptyList.one(GenericFunctionTypingError.ArgumentTypeError$.MODULE$));
             }
 
             TypedClass arg = (TypedClass) arguments.head();
             if (arg.klass() != listClass) {
-                return Invalid.invalid(NonEmptyList.one(new GenericFunctionTypingError.ArgumentTypeError()));
+                return Invalid.invalid(NonEmptyList.one(GenericFunctionTypingError.ArgumentTypeError$.MODULE$));
             }
             if (arg.params().length() != 1) {
                 throw new AssertionError("Lists must have one parameter");

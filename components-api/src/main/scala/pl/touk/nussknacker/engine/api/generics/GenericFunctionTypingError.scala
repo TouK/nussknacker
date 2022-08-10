@@ -5,7 +5,7 @@ import cats.data.NonEmptyList
 sealed trait GenericFunctionTypingError
 
 object GenericFunctionTypingError {
-  case class ArgumentTypeError() extends GenericFunctionTypingError
+  case object ArgumentTypeError extends GenericFunctionTypingError
 
   case class ArgumentTypeErrorWithSignatures(signatures: NonEmptyList[Signature]) extends GenericFunctionTypingError
 

@@ -60,7 +60,7 @@ object TypeInfos {
       if (checkNoVarArgs(arguments) && checkVarArgs(arguments))
         staticResult.validNel
       else
-        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError()).invalidNel
+        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError).invalidNel
     }
   }
 

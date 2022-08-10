@@ -21,7 +21,7 @@ object GenericHelperFunction {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
       case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
       case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-      case _ => GenericFunctionTypingError.ArgumentTypeError().invalidNel
+      case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
   }
 
@@ -46,7 +46,7 @@ object GenericHelperFunction {
         case "String" => Typed[String].validNel
         case "Int" => Typed[Int].validNel
         case "Double" => Typed[Double].validNel
-        case _ => GenericFunctionTypingError.ArgumentTypeError().invalidNel
+        case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
       }
       case a@TypedObjectWithValue(TypedClass(`stringClass`, _), _) :: Nil =>
         throw new AssertionError(s"Found illegal type $a")
@@ -55,7 +55,7 @@ object GenericHelperFunction {
       case a@TypedClass(`stringClass`, _) :: Nil =>
         throw new AssertionError(s"Found illegal type $a")
       case _ =>
-        GenericFunctionTypingError.ArgumentTypeError().invalidNel
+        GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
   }
 
@@ -71,7 +71,7 @@ object GenericHelperFunction {
         case None => GenericFunctionTypingError.OtherError("Given object does not have field 'a'").invalidNel
       }
       case _ =>
-        GenericFunctionTypingError.ArgumentTypeError().invalidNel
+        GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
   }
 
@@ -87,7 +87,7 @@ object GenericHelperFunction {
         case None => TypedObjectTypingResult(fields + ("a" -> Typed[Int]), obj, info).validNel
       }
       case _ =>
-        GenericFunctionTypingError.ArgumentTypeError().invalidNel
+        GenericFunctionTypingError.ArgumentTypeError.invalidNel
     }
   }
 
@@ -97,7 +97,7 @@ object GenericHelperFunction {
   def zip(x: Number*): Any = ???
 
   private class ZipHelper extends TypingFunction {
-    private def error(arguments: List[TypingResult]): GenericFunctionTypingError =
+    private def error: GenericFunctionTypingError =
       GenericFunctionTypingError.ArgumentTypeErrorWithSignatures(
         NonEmptyList.of(
           Signature("zip", Typed[Number] :: Nil, None),
@@ -107,12 +107,12 @@ object GenericHelperFunction {
       )
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return error(arguments).invalidNel
+      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return error.invalidNel
       arguments match {
         case t :: Nil => t.validNel
         case l :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "right" -> r)).validNel
         case l :: m :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "mid" -> m, "right" -> r)).validNel
-        case _ => error(arguments).invalidNel
+        case _ => error.invalidNel
       }
     }
   }

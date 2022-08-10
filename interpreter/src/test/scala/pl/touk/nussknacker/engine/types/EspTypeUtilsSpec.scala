@@ -460,7 +460,7 @@ private class HeadHelper extends TypingFunction {
   override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
     case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
     case TypedClass(`listClass`, _) :: Nil => throw new AssertionError("Lists must have one parameter")
-    case _ => GenericFunctionTypingError.ArgumentTypeError().invalidNel
+    case _ => GenericFunctionTypingError.ArgumentTypeError.invalidNel
   }
 }
 
