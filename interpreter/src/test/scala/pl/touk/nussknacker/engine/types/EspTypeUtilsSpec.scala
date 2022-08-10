@@ -5,10 +5,10 @@ import cats.implicits.catsSyntaxValidatedId
 import io.circe.Decoder
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.typed.supertype.{ClassHierarchyCommonSupertypeFinder, CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, Documentation, Hidden, HideToString, ParamName}
@@ -354,7 +354,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       ("field2", List(), Typed[Long]),
       ("head", List(Typed.genericTypeClass[java.util.List[_]](List(Typed[Int]))), Typed[Int]),
       ("head", List(Typed.genericTypeClass[java.util.List[_]](List(typedList))), typedList),
-      ("head", List(Typed.genericTypeClass[java.util.List[_]](List(typedMap))), typedMap)
+      ("head", List(Typed.genericTypeClass[java.util.List[_]](List(typedMap))), typedMap),
+      ("max", List(Typed[Double]), Typed[Double]),
+      ("max", List(Typed[Int], Typed[Int], Typed[Int]), Typed[Int]),
+      ("max", List(Typed[Int], Typed[Double], Typed[Long]), Typed[Number])
     )
 
     forAll(table)(checkApplyFunctionValid)
@@ -364,35 +367,52 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
     val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
 
-    def checkApplyFunctionInvalid(name: String, arguments: List[TypingResult], expected: List[TypingResult]): Unit =
+    def checkApplyFunctionInvalid(name: String,
+                                  arguments: List[TypingResult],
+                                  expected: List[TypingResult],
+                                  expectedVarArg: Option[TypingResult]): Unit =
       checkApplyFunction(
         List(scalaClassInfo, javaClassInfo),
         name,
         arguments,
         ArgumentTypeError(
           Signature(name, arguments, None),
-          NonEmptyList.one(Signature(name, expected, None))
+          NonEmptyList.one(Signature(name, expected, expectedVarArg))
         ).message.invalidNel
       )
 
     val table = Table(
-      ("name", "arguments", "expected"),
-      ("foo", List(), List(Typed[String])),
-      ("foo", List(Typed[Int]), List(Typed[String])),
-      ("foo", List(Typed[String], Typed[Int]), List(Typed[String])),
-      ("baz", List(), List(Typed[String], Typed[Int])),
-      ("baz", List(Typed[Int]), List(Typed[String], Typed[Int])),
-      ("baz", List(Typed[String]), List(Typed[String], Typed[Int])),
-      ("baz", List(Typed[String], Typed[Int], Typed[Double]), List(Typed[String], Typed[Int])),
-      ("field1", List(Typed[Int]), List()),
-      ("head", List(Typed[Int]), List(Typed[List[Object]])),
-      ("head", List(Typed[Set[_]]), List(Typed[List[Object]])),
-      ("head", List(Typed[Map[_, _]]), List(Typed[List[Object]])),
-      ("head", List(), List(Typed[List[Object]])),
-      ("head", List(Typed[List[_]], Typed[Int]), List(Typed[List[Object]]))
+      ("name", "arguments", "expected", "expectedVarArg"),
+      ("foo", List(), List(Typed[String]), None),
+      ("foo", List(Typed[Int]), List(Typed[String]), None),
+      ("foo", List(Typed[String], Typed[Int]), List(Typed[String]), None),
+      ("baz", List(), List(Typed[String], Typed[Int]), None),
+      ("baz", List(Typed[Int]), List(Typed[String], Typed[Int]), None),
+      ("baz", List(Typed[String]), List(Typed[String], Typed[Int]), None),
+      ("baz", List(Typed[String], Typed[Int], Typed[Double]), List(Typed[String], Typed[Int]), None),
+      ("field1", List(Typed[Int]), List(), None),
+      ("head", List(Typed[Int]), List(Typed[List[Object]]), None),
+      ("head", List(Typed[Set[_]]), List(Typed[List[Object]]), None),
+      ("head", List(Typed[Map[_, _]]), List(Typed[List[Object]]), None),
+      ("head", List(), List(Typed[List[Object]]), None),
+      ("head", List(Typed[List[_]], Typed[Int]), List(Typed[List[Object]]), None),
+      ("max", List(Typed[String]), List(), Some(Typed[Number])),
+      ("max", List(Typed[Int], Typed[String], Typed[Int]), List(), Some(Typed[Number]))
     )
 
     forAll(table)(checkApplyFunctionInvalid)
+  }
+
+  test("should correctly handle custom errors from generic functions") {
+    val javaClassInfo = singleClassDefinition[JavaSampleDocumentedClass]().value
+    val scalaClassInfo = singleClassDefinition[ScalaSampleDocumentedClass]().value
+
+    checkApplyFunction(
+      List(scalaClassInfo, javaClassInfo),
+      "max",
+      List(),
+      "Max must have at least one argument".invalidNel
+    )
   }
 
   class EmptyClass {
@@ -446,6 +466,8 @@ private class HeadHelper extends TypingFunction {
 
 private class MaxHelper extends TypingFunction {
   override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
+    if (arguments.isEmpty) return GenericFunctionTypingError.OtherError("Max must have at least one argument").invalidNel
+
     val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }

@@ -88,6 +88,10 @@ public class JavaSampleDocumentedClass {
 
         @Override
         public Validated<NonEmptyList<GenericFunctionTypingError>, TypingResult> computeResultType(List<TypingResult> arguments) {
+            if (arguments.isEmpty()) {
+                return Validated.invalidNel(new GenericFunctionTypingError.OtherError("Max must have at least one argument"));
+            }
+
             CommonSupertypeFinder supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union$.MODULE$, true);
             TypingResult res = arguments.head();
             for (int i = 1; i != arguments.length(); ++i) {
