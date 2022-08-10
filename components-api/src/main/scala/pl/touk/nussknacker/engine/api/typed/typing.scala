@@ -7,7 +7,6 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
-import java.util
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
@@ -25,6 +24,8 @@ object typing {
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
 
+    def withoutValue: TypingResult
+
     def display: String
 
   }
@@ -32,9 +33,9 @@ object typing {
   sealed trait KnownTypingResult extends TypingResult
 
   sealed trait SingleTypingResult extends KnownTypingResult {
+    override def withoutValue: SingleTypingResult
 
     def objType: TypedClass
-
   }
 
   object TypedObjectTypingResult {
@@ -56,9 +57,10 @@ object typing {
   case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
                                      objType: TypedClass,
                                      additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
+    override def withoutValue: TypedObjectTypingResult =
+      TypedObjectTypingResult(ListMap(fields.mapValues(_.withoutValue).toList: _*), objType, additionalInfo)
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
-
   }
 
   case class TypedDict(dictId: String, valueType: SingleTypingResult) extends SingleTypingResult {
@@ -66,6 +68,8 @@ object typing {
     type ValueType = SingleTypingResult
 
     override def objType: TypedClass = valueType.objType
+
+    override def withoutValue: TypedDict = TypedDict(dictId, valueType.withoutValue)
 
     override def display: String = s"Dict(id=$dictId)"
 
@@ -80,6 +84,9 @@ object typing {
 
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
     override def data: String = tag
+
+    override def withoutValue: TypedTaggedValue = TypedTaggedValue(underlying.withoutValue, tag)
+
     override def display: String = s"${underlying.display} @ $tag"
   }
 
@@ -88,6 +95,8 @@ object typing {
     val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
     override def data: Any = value
+
+    override def withoutValue: SingleTypingResult = underlying.withoutValue
 
     override def display: String = {
       val dataString = data.toString
@@ -99,20 +108,24 @@ object typing {
   }
 
   case object TypedNull extends TypingResult {
+    override def withoutValue: TypedNull.type = TypedNull
+
     override val display = "Null"
   }
 
   // Unknown is representation of TypedUnion of all possible types
   case object Unknown extends TypingResult {
+    override def withoutValue: Unknown.type = Unknown
 
     override val display = "Unknown"
-
   }
 
   // constructor is package protected because you should use Typed.apply to be sure that possibleTypes.size > 1
   case class TypedUnion private[typing](possibleTypes: Set[SingleTypingResult]) extends KnownTypingResult {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
+
+    override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
 
     override val display : String = possibleTypes.toList match {
       case Nil => "EmptyUnion"
@@ -130,6 +143,8 @@ object typing {
 
   //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
+
+    override def withoutValue: TypedClass = this
 
     override def display: String = {
       val className =
