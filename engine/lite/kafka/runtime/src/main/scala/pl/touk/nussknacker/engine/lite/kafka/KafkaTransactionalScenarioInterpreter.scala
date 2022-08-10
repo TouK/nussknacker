@@ -9,13 +9,13 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
+import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.TestRunner._
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeContext, LiteEngineRuntimeContextPreparer}
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, Output}
-import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
-import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
+import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, RunnableScenarioInterpreter, ScenarioInterpreterFactory, TestRunner}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -76,8 +76,8 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
                                                            jobData: JobData,
                                                            liteKafkaJobData: LiteKafkaJobData,
                                                            modelData: ModelData,
-                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends AutoCloseable {
-  def status(): TaskStatus = taskRunner.status()
+                                                           engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer)(implicit ec: ExecutionContext) extends RunnableScenarioInterpreter {
+  override def status(): TaskStatus = taskRunner.status()
 
   import KafkaTransactionalScenarioInterpreter._
   import net.ceedubs.ficus.Ficus._
@@ -97,13 +97,13 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
     engineConfig.waitAfterFailureDelay,
     context.metricsProvider)
 
-  def run(): Future[Unit] = {
+  override def run(): Future[Unit] = {
     sourceMetrics.registerOwnMetrics(context.metricsProvider)
     interpreter.open(context)
     taskRunner.run(ec)
   }
 
-  def close(): Unit = {
+  override def close(): Unit = {
     Using.resources(context, interpreter, taskRunner)((_, _, _) => ()) // empty "using" to ensure correct closing
   }
 

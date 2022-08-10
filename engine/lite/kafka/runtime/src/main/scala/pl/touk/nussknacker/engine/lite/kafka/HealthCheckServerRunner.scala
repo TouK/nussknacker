@@ -7,18 +7,19 @@ import akka.management.scaladsl.AkkaManagement
 import akka.pattern._
 import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.lite.kafka.KafkaScenarioInterpreterStatusCheckerActor.GetStatus
-import pl.touk.nussknacker.engine.lite.kafka.TaskStatus.{Running, TaskStatus}
+import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
+import pl.touk.nussknacker.engine.lite.TaskStatus.{Running, TaskStatus}
+import pl.touk.nussknacker.engine.lite.kafka.RunnableScenarioInterpreterStatusCheckerActor.GetStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class HealthCheckServerRunner(system: ActorSystem, scenarioInterpreter: KafkaTransactionalScenarioInterpreter) {
+class HealthCheckServerRunner(system: ActorSystem, scenarioInterpreter: RunnableScenarioInterpreter) {
 
   private  val management = AkkaManagement(system)
 
   def start(): Future[Uri] = {
-    system.actorOf(KafkaScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), KafkaScenarioInterpreterStatusCheckerActor.actorName)
+    system.actorOf(RunnableScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), RunnableScenarioInterpreterStatusCheckerActor.actorName)
     management.start()
   }
 
@@ -36,7 +37,7 @@ class KafkaRuntimeRunningCheck(system: ActorSystem) extends (() => Future[Boolea
   import system.dispatcher
 
   override def apply(): Future[Boolean] = {
-    system.actorSelection(system / KafkaScenarioInterpreterStatusCheckerActor.actorName).ask(GetStatus).map {
+    system.actorSelection(system / RunnableScenarioInterpreterStatusCheckerActor.actorName).ask(GetStatus).map {
       case status: TaskStatus =>
         logger.debug(s"Status is: $status")
         status == Running
@@ -45,7 +46,7 @@ class KafkaRuntimeRunningCheck(system: ActorSystem) extends (() => Future[Boolea
 
 }
 
-class KafkaScenarioInterpreterStatusCheckerActor(scenarioInterpreter: KafkaTransactionalScenarioInterpreter) extends Actor {
+class RunnableScenarioInterpreterStatusCheckerActor(scenarioInterpreter: RunnableScenarioInterpreter) extends Actor {
 
   override def receive: Receive = {
     case GetStatus =>
@@ -54,10 +55,10 @@ class KafkaScenarioInterpreterStatusCheckerActor(scenarioInterpreter: KafkaTrans
 
 }
 
-object KafkaScenarioInterpreterStatusCheckerActor {
+object RunnableScenarioInterpreterStatusCheckerActor {
 
-  def props(scenarioInterpreter: KafkaTransactionalScenarioInterpreter): Props =
-    Props(new KafkaScenarioInterpreterStatusCheckerActor(scenarioInterpreter))
+  def props(scenarioInterpreter: RunnableScenarioInterpreter): Props =
+    Props(new RunnableScenarioInterpreterStatusCheckerActor(scenarioInterpreter))
 
   def actorName = "interpreter-status-checker"
 
