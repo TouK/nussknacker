@@ -32,7 +32,7 @@ class NotificationServiceTest extends FunSuite with Matchers with PatientScalaFu
     }
     val listener = new NotificationsListener(NotificationConfig(20 minutes), (id: ProcessId) => Future.successful(Some(ProcessName(id.value + "-name"))), clock)
     val notificationService = new NotificationService(currentDeployments, listener)
-    def notificationsFor(user: String, after: Option[Instant] = None) = notificationService.notifications(LoggedUser(user, ""), after).futureValue
+    def notificationsFor(user: String, after: Option[Instant] = None) = notificationService.notifications(LoggedUser(user, user), after).futureValue
 
 
     val refreshAfterSuccess = List(DataToRefresh.versions, DataToRefresh.activity)
