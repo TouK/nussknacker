@@ -22,6 +22,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -95,7 +96,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't deploy fragment") {
-    val id = createProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -105,7 +106,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't cancel fragment") {
-    val id = createProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -155,7 +156,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    createProcess(processName, TestCat, false)
+    createValidProcess(processName, TestCat, false)
 
     deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
 

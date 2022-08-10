@@ -16,18 +16,15 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -49,8 +46,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
 
-  import TestCategories._
   import TestProcessingTypes._
+  import TestCategories._
 
   protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
@@ -313,27 +310,28 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   protected def createProcess(process: EspProcess, category: String, processingType: ProcessingType): ProcessId = {
-    val processName = ProcessName(process.metaData.id)
-    val action = CreateProcessAction(processName, category, process.toCanonicalProcess, processingType, process.metaData.isSubprocess)
-
-    (for {
-      _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
-      id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
-    } yield id).futureValue
+    val cannonical = process.toCanonicalProcess
+    saveAndGetId(cannonical, category, cannonical.metaData.isSubprocess, processingType).futureValue
   }
 
-  private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
-    val sampleProcess: CanonicalProcess = {
-      if(isSubprocess)
-      CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-        List(
-          canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
-          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+  private def prepareValidProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
+    val validProcess: CanonicalProcess = {
+      if(isSubprocess) SampleFragment.fragment
       else SampleProcess.process.toCanonicalProcess
     }
+    val withNameSet = validProcess.copy(metaData = validProcess.metaData.copy(id = processName.value))
 
-    val action = CreateProcessAction(processName, category, sampleProcess, Streaming, isSubprocess)
+    saveAndGetId(withNameSet, category, isSubprocess)
+  }
 
+  private def prepareEmptyProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
+    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName.value, Streaming, isSubprocess)
+    saveAndGetId(emptyProcess, category, isSubprocess)
+  }
+
+  private def saveAndGetId(process: CanonicalProcess, category: String, isSubprocess: Boolean, processingType: ProcessingType = Streaming): Future[ProcessId] = {
+    val processName = ProcessName(process.id)
+    val action = CreateProcessAction(processName, category, process, processingType, isSubprocess)
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))
       id <- fetchingProcessRepository.fetchProcessId(processName).map(_.get)
@@ -349,12 +347,15 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   protected def prepareCancel(id: ProcessId): Future[ProcessActionEntityData] =
     actionRepository.markProcessAsCancelled(id, VersionId.initialVersionId, Some(DeploymentComment.unsafe("Cancel comment")))
 
-  protected def createProcess(processName: ProcessName, category: String = TestCat, isSubprocess: Boolean = false): ProcessId =
-    prepareProcess(processName, category, isSubprocess).futureValue
+  protected def createEmptyProcess(processName: ProcessName, category: String = TestCat, isSubprocess: Boolean = false): ProcessId =
+    prepareEmptyProcess(processName, category, isSubprocess).futureValue
+
+  protected def createValidProcess(processName: ProcessName, category: String = TestCat, isSubprocess: Boolean = false): ProcessId =
+    prepareValidProcess(processName, category, isSubprocess).futureValue
 
   protected def createArchivedProcess(processName: ProcessName, isSubprocess: Boolean = false): ProcessId = {
     (for {
-      id <- prepareProcess(processName, TestCat, isSubprocess)
+      id <- prepareValidProcess(processName, TestCat, isSubprocess)
       _ <- repositoryManager.runInTransaction(
         writeProcessRepository.archive(processId = id, isArchived = true),
         actionRepository.markProcessAsArchived(processId = id, VersionId(1))
@@ -364,14 +365,14 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def createDeployedProcess(processName: ProcessName, category: String = TestCat) : ProcessId = {
     (for {
-      id <- prepareProcess(processName, category, isSubprocess = false)
+      id <- prepareValidProcess(processName, category, isSubprocess = false)
       _ <- prepareDeploy(id)
     } yield id).futureValue
   }
 
   protected def createDeployedCanceledProcess(processName: ProcessName, category: String = TestCat) : ProcessId = {
     (for {
-      id <- prepareProcess(processName, category, isSubprocess = false)
+      id <- prepareValidProcess(processName, category, isSubprocess = false)
       _ <- prepareDeploy(id)
       _ <-  prepareCancel(id)
     } yield id).futureValue
