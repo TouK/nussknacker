@@ -2,14 +2,16 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, SupertypeClassResolutionStrategy}
-import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.dict.{KeysDictTyper, SimpleDictRegistry}
 import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
@@ -18,11 +20,12 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class TyperSpec extends FunSuite with Matchers {
 
   test("simple expression") {
+    println(typeExpression("#x + 2", "x" -> 2).toOption.get.finalResult)
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
       PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
-      PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(2)),
+      PositionRange(3, 4) -> TypingResultWithContext(Typed[Int]),
       PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
-    ), TypingResultWithContext(Typed.fromInstance(2))))
+    ), TypingResultWithContext(Typed[Int])))
   }
 
   test("template") {
@@ -55,6 +58,27 @@ class TyperSpec extends FunSuite with Matchers {
   test("restricting simple type selection") {
     typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
+  }
+
+  test("should remove values from types in operators") {
+    def checkFinalResult(expr: String, expected: TypingResult): Unit = {
+      typeExpression(expr).toOption.get.finalResult.typingResult shouldBe expected
+    }
+
+    val table = Table(
+      ("expr", "expected"),
+      ("--2", Typed[Int]),
+      ("++2", Typed[Int]),
+      ("2 / 2", Typed[Int]),
+      ("2 - 2", Typed[Int]),
+      ("-2", Typed[Int]),
+      ("2 % 2", Typed[Int]),
+      ("2 * 2", Typed[Int]),
+      ("2 ^ 2", Typed(Typed[Int], Typed[Long])),
+      ("2 + 2", Typed[Int]),
+      ("+5", Typed.fromInstance(5))
+    )
+    forAll(table)(checkFinalResult)
   }
 
   private val strictTypeChecking = false

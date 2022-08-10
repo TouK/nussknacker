@@ -224,14 +224,14 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpMinus => withTypedChildren {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)))
+          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left == right =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(left))
+          Valid(TypingResultWithContext(left.withoutValue))
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil =>
@@ -247,12 +247,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) =>
           Valid(TypingResultWithContext(Typed[String]))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation)))
+          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
           Valid(TypingResultWithContext(left))
-        case TypingResultWithContext(left, _) :: Nil => OperatorNonNumericError(e.getOperatorName, left).invalidNel
+        case TypingResultWithContext(left, _) :: Nil =>
+          OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
       }
       case e: OperatorBetween => fixed(TypingResultWithContext(Typed[Boolean]))
@@ -355,7 +356,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
                                                  (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-        Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)))
+        Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right).withoutValue))
       case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
         OperatorMismatchTypeError(node.getOperatorName, left, right).invalidNel
       case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
@@ -365,7 +366,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-        Valid(TypingResultWithContext(left))
+        Valid(TypingResultWithContext(left.withoutValue))
       case TypingResultWithContext(left, _) :: Nil =>
         OperatorNonNumericError(node.getOperatorName, left).invalidNel
       case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
