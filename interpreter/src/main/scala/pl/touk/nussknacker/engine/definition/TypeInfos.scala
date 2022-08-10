@@ -75,9 +75,21 @@ object TypeInfos {
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
                                   staticInfo: StaticMethodInfo) extends MethodInfo {
+    // We use staticInfo.computeResultType to validate against static
+    // parameters, so that there is no need to perform basic checks in
+    // typeFunction.
+    // This is also used to prevents errors in runtime, when typeFunction
+    // returns illegal results.
+    // TODO: Validate that staticParameters and staticResult match real type of function.
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      staticInfo.computeResultType(arguments).andThen(_ =>
-        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_))))
+      staticInfo.computeResultType(arguments)
+        .andThen(_ => {
+          typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
+        })
+        .map(res => {
+          if (!res.canBeSubclassOf(staticResult)) throw new AssertionError("Generic function returned type that does not match static parameters.")
+          res
+        })
 
     override def staticParameters: ParameterList = staticInfo.staticParameters
 
