@@ -83,13 +83,13 @@ object TypeInfos {
     // TODO: Validate that staticParameters and staticResult match real type of function.
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
       staticInfo.computeResultType(arguments)
-        .andThen(_ => {
-          typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
-        })
-        .map(res => {
+        .andThen{_ =>
+        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
+        }
+        .map{res =>
           if (!res.canBeSubclassOf(staticResult)) throw new AssertionError("Generic function returned type that does not match static parameters.")
-          res
-        })
+            res
+        }
 
     override def staticParameters: ParameterList = staticInfo.staticParameters
 
