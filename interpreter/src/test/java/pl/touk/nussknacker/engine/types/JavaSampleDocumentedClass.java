@@ -87,7 +87,7 @@ public class JavaSampleDocumentedClass {
     static class MaxHelper extends TypingFunction {
 
         @Override
-        public Validated<NonEmptyList<ExpressionParseError>, TypingResult> computeResultType(List<TypingResult> arguments) {
+        public Validated<NonEmptyList<GenericFunctionTypingError>, TypingResult> computeResultType(List<TypingResult> arguments) {
             CommonSupertypeFinder supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union$.MODULE$, true);
             TypingResult res = arguments.head();
             for (int i = 1; i != arguments.length(); ++i) {

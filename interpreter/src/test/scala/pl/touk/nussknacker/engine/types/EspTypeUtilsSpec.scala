@@ -445,7 +445,7 @@ private class HeadHelper extends TypingFunction {
 }
 
 private class MaxHelper extends TypingFunction {
-  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+  override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
     val supertypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     arguments.reduce(supertypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).validNel
   }
