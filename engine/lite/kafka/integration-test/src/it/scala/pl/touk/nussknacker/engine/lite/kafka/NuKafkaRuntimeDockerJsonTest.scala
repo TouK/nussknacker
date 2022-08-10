@@ -4,13 +4,14 @@ import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerJsonTest extends FunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
 
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
-    fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.jsonPingPongScenarioId, NuKafkaRuntimeTestSamples.jsonPingPongScenario)
     startRuntimeContainer(fixture.scenarioFile)
     MultipleContainers(kafkaContainer, runtimeContainer)
   }

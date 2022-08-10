@@ -7,6 +7,7 @@ import org.apache.avro.generic.GenericRecord
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
@@ -37,7 +38,7 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
-    fixture = prepareTestCaseFixture("avro-ping-pong", NuKafkaRuntimeTestSamples.avroPingPongScenario)
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.avroPingPongScenarioId, NuKafkaRuntimeTestSamples.avroPingPongScenario)
     registerSchemas()
     startRuntimeContainer(fixture.scenarioFile, additionalEnvs = Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
