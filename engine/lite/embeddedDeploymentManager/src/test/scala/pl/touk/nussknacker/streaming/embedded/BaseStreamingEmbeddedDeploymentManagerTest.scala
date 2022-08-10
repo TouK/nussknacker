@@ -40,6 +40,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec
     val configToUse = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors"))
       .withValue("components.kafka.enabled", fromAnyRef(true))
+      .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
       .withValue("kafka.kafkaProperties", fromMap(Map[String, Any](
         //        This timeout controls how long the kafka producer initialization in pl.touk.nussknacker.engine.lite.kafka.KafkaSingleScenarioTaskRun.init.
         //        So it has to be set to a reasonably low value for the restarting test to finish before ScalaFutures patience runs out.
