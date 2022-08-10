@@ -16,14 +16,18 @@ import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
+import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api._
+import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
@@ -45,8 +49,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
 
-  import TestProcessingTypes._
   import TestCategories._
+  import TestProcessingTypes._
 
   protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
@@ -319,8 +323,16 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   private def prepareProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
-    val emptyProcess = newProcessPreparer.prepareEmptyProcess(processName.value, Streaming, isSubprocess)
-    val action = CreateProcessAction(processName, category, emptyProcess, Streaming, isSubprocess)
+    val sampleProcess: CanonicalProcess = {
+      if(isSubprocess)
+      CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+        List(
+          canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+          canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
+      else SampleProcess.process.toCanonicalProcess
+    }
+
+    val action = CreateProcessAction(processName, category, sampleProcess, Streaming, isSubprocess)
 
     for {
       _ <- repositoryManager.runInTransaction(writeProcessRepository.saveNewProcess(action))

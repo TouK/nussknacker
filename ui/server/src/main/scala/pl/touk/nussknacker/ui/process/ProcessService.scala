@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.process
 import akka.actor.ActorRef
 import akka.pattern.ask
 import akka.util.Timeout
-import cats.data.{EitherT, Validated}
+import cats.data.EitherT
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
 import io.circe.generic.JsonCodec
@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
-import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
@@ -29,7 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Pro
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
+import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}
@@ -125,11 +125,22 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
-  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment]) =>
-      (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
-        .map(_ => ().asRight)
+  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] = {
+    def withValidProcess(callback: => Future[EmptyResponse]): Future[EmptyResponse] = getProcess[DisplayableProcess](processIdWithName)
+      .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json, pd.processCategory))) // validating the same way, as UI does
+      .flatMap {
+        case l@Left(_) => Future(l.map(_ => ()))
+        case Right(value) if !value.isOk => Future(Left(DeployingInvalidScenarioError))
+        case _ => callback
+      }
+
+    withValidProcess {
+      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[ProcessingType], deploymentComment: Option[DeploymentComment]) =>
+        (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
+          .map(_ => ().asRight)
+      }
     }
+  }
 
   override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
