@@ -64,7 +64,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
       !isEqual(prevProps.edges, nextProps.edges) ||
       !isEqual(prevProps.node, node)
     ) {
-      this.updateNodeState(() => ({editedNode: node}))
+      this.updateNodeState(() => node)
       //In most cases this is not needed, as parameter definitions should be present in validation response
       //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
       if (nextProps.isEditMode) {
@@ -86,9 +86,11 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     this.props.onChange?.(this.state.editedNode, this.state.edges)
   }
 
-  updateNodeState = (updateNode: (current: NodeType) => { editedNode: NodeType }): void => {
+  updateNodeState = (updateNode: (current: NodeType) => NodeType): void => {
     this.setState(
-      s => updateNode(s.editedNode),
+      s => ({
+        editedNode: updateNode(s.editedNode),
+      }),
       this.publishNodeChange
     )
   }
@@ -140,6 +142,7 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
               setEdgesState={setEdgesState}
               updateNodeState={updateNodeState}
               testResultsState={testResultsState}
+              fieldErrors={fieldErrors}
             />
           )}
         </TestResultsWrapper>
