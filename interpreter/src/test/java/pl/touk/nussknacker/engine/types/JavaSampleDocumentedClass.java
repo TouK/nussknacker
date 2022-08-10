@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.types;
 
 import cats.data.NonEmptyList;
 import cats.data.Validated;
+import cats.data.Validated$;
 import cats.data.Validated.Invalid;
 import cats.data.Validated.Valid;
 import pl.touk.nussknacker.engine.api.Documentation;
@@ -53,9 +54,10 @@ public class JavaSampleDocumentedClass {
         return list.get(0);
     }
 
+    @SafeVarargs
     @Documentation(description = maxDocs)
     @GenericType(typingFunction = MaxHelper.class)
-    public <T extends Number> T max(T... args) {
+    public final <T extends Number> T max(T... args) {
         T ans = args[0];
         for (T a: args) {
             if (a.doubleValue() > ans.doubleValue()) ans = a;
@@ -105,7 +107,7 @@ public class JavaSampleDocumentedClass {
             for (int i = 1; i != arguments.length(); ++i) {
                 res = supertypeFinder.commonSupertype(res, arguments.apply(i), NumberTypesPromotionStrategy.ToSupertype$.MODULE$);
             }
-            return new Valid(res);
+            return Validated.validNel(res);
         }
     }
 }
