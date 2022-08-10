@@ -1570,5 +1570,11 @@ prepareDev := {
 
 lazy val buildClient = taskKey[Unit]("Build client")
 buildClient := {
-  "./ui/buildClient.sh" !
+  val s: TaskStreams = streams.value
+  val buildResult = ("./ui/buildClient.sh" !)
+  if (buildResult == 0) {
+    s.log.success("Frontend build success")
+  } else {
+    throw new IllegalStateException("Frontend build failed!")
+  }
 }
