@@ -115,14 +115,15 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .parallelism(1)
       .source(
         "start",
-        "kafka-avro",
+        "kafka",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
-        "kafka-avro-raw",
+        "kafka",
         KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
         KafkaUniversalComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
