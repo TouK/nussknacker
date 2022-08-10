@@ -10,12 +10,13 @@ import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
+import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -65,12 +66,19 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   private def stateCompatibilityProcess(inTopic: String) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
-    .source("start", "kafka-avro",
+    .source("start", "kafka",
       KafkaUniversalComponentTransformer.TopicParamName -> s"'$inTopic'",
       KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
     )
     .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
-    .emptySink("sink", "kafka-json", "topic" -> s"'$outTopic'", "value" -> s"{input: #input, previousInput: #previousValue}")
+    .emptySink("sink", "kafka",
+      KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+      KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
+      KafkaUniversalComponentTransformer.SinkValueParamName -> "{input: #input, previousInput: #previousValue}",
+      KafkaUniversalComponentTransformer.TopicParamName -> s"'$outTopic'",
+      KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax}'"
+    )
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")
   private val event2 = InputEvent("Zenon", "Nowak")
