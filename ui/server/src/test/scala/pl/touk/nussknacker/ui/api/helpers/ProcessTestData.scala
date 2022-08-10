@@ -37,9 +37,11 @@ object ProcessTestData {
   val existingSourceFactory = "barSource"
   val otherExistingSourceFactory = "fooSource"
   val secretExistingSourceFactory = "secretSource"
+  val csvSourceFactory = "csv-source"
 
   val existingSinkFactory = "barSink"
   val existingSinkFactory2 = "barSink2"
+  val existingSinkFactoryKafkaString = "kafka-string"
   val otherExistingSinkFactory = "barSink"
 
   val existingServiceId = "barService"
@@ -60,9 +62,11 @@ object ProcessTestData {
   val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectDefinition] = ProcessDefinitionBuilder.empty
     .withSourceFactory(existingSourceFactory)
     .withSourceFactory(otherExistingSourceFactory)
+    .withSourceFactory(csvSourceFactory)
     .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
     .withSinkFactory(otherExistingSinkFactory)
     .withSinkFactory(existingSinkFactory)
+    .withSinkFactory(existingSinkFactoryKafkaString, Parameter[String]("topic"), Parameter[Any]("value").copy(isLazyParameter = true))
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])

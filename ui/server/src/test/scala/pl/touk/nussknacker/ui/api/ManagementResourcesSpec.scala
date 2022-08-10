@@ -11,6 +11,7 @@ import io.circe.Json
 import io.circe.syntax._
 import org.scalatest._
 import org.scalatest.matchers.BeMatcher
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
@@ -21,6 +22,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -94,7 +96,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't deploy fragment") {
-    val id = createProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -104,7 +106,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't cancel fragment") {
-    val id = createProcess(processName, TestCat, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -154,7 +156,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    createProcess(processName, TestCat, false)
+    createValidProcess(processName, TestCat, false)
 
     deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
 
@@ -209,12 +211,24 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
+  test("should return failure for not validating scenario") {
+    val invalidScenario = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("start", "not existing")
+      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+    saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
+
+    deploymentManager.withFailingDeployment {
+      deployProcess(invalidScenario.id) ~> check {
+        responseAs[String] shouldBe "Cannot deploy invalid scenario"
+        status shouldBe StatusCodes.Conflict
+      }
+    }
+  }
+
   test("should return failure for not validating deployment") {
-    val largeParallelismScenario = ScenarioBuilder
-          .streaming("sampleProcess")
-          .parallelism(MockDeploymentManager.maxParallelism + 1)
-          .source("start", "csv-source")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+    val largeParallelismScenario = SampleProcess.process.copy(metaData = MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))))
     saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
 
     deploymentManager.withFailingDeployment {
@@ -235,7 +249,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("snaphots process") {
+  test("snapshots process") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     snapshot(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK

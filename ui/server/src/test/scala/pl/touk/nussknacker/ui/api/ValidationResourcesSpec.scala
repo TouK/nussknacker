@@ -158,7 +158,7 @@ class ValidationResourcesSpec extends FlatSpec with ScalatestRouteTest with Fail
     createAndValidateScenario(TestProcessUtil.toDisplayable(scenario))(testCode)
 
   private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    createProcess(displayable.processName)
+    createEmptyProcess(displayable.processName)
 
     Post("/processValidation", posting.toEntity(displayable)) ~> route ~> check {
       testCode
