@@ -34,5 +34,5 @@ abstract class TypingFunction {
    */
   def staticResult: Option[TypingResult] = None
 
-  def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
+  def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

@@ -4,9 +4,11 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.Inside.inside
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, GenericFunctionError, GenericType, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.OtherError
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.typer.TypeMethodReference
 
 class TypeMethodReferenceSpec extends FunSuite with Matchers {
@@ -48,12 +50,13 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
   }
 
   private def checkErrorEquality(a: ArgumentTypeError, b: ArgumentTypeError): Unit = {
-    a.found.display shouldBe b.found.display
-    a.possibleSignatures.map(_.display) should contain theSameElementsAs b.possibleSignatures.map(_.display)
+    a.name shouldBe b.name
+    a.found shouldBe b.found
+    a.possibleSignatures.toList should contain theSameElementsAs b.possibleSignatures.toList
   }
 
-  private def checkErrorEquality(a: GenericFunctionError, b: GenericFunctionError): Unit =
-    a.message shouldBe b.message
+  private def checkErrorEquality(a: GenericFunctionTypingError, b: GenericFunctionTypingError): Unit =
+    a shouldBe b
 
   test("should get single method") {
     val name = "simpleFunction"
@@ -62,9 +65,10 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypes) shouldBe Right(Typed[Int])
 
     inside(extractMethod(name, List(Typed[String]))) {
-      case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(Typed[String]), None),
-        List(new Signature(name, expectedTypes, None))
+      case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
+        name,
+        Signature(List(Typed[String]), None),
+        NonEmptyList.one(Signature(expectedTypes, None))
       ))
     }
   }
@@ -80,12 +84,13 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypesC) shouldBe Right(Typed[String])
 
     inside(extractMethod(name, List())) {
-      case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(), None),
-        List(
-          new Signature(name, expectedTypesA, None),
-          new Signature(name, expectedTypesB, None),
-          new Signature(name, expectedTypesC, None)
+      case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
+        name,
+        Signature(List(), None),
+        NonEmptyList.of(
+          Signature(expectedTypesA, None),
+          Signature(expectedTypesB, None),
+          Signature(expectedTypesC, None)
         )
       ))
     }
@@ -98,7 +103,14 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypes) shouldBe Right(Typed[String])
 
     inside(extractMethod(name, List())) {
-      case Left(error: GenericFunctionError) => checkErrorEquality(error, new GenericFunctionError("error"))
+      case Left(error: ArgumentTypeError) => checkErrorEquality(
+        error,
+        ArgumentTypeError(
+          name,
+          Signature(List(), None),
+          NonEmptyList.one(Signature(expectedTypes, None))
+        )
+      )
     }
   }
 
@@ -113,9 +125,14 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod("overloadedGenericFunction", expectedTypesC) shouldBe Right(Typed[Long])
 
     inside(extractMethod("overloadedGenericFunction", List())) {
-      case Left(error: ArgumentTypeError) => checkErrorEquality(error, new ArgumentTypeError(
-        new Signature(name, List(), None),
-        new Signature(name, expectedTypesC, None) :: Nil
+      case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
+        name,
+        Signature(List(), None),
+        NonEmptyList.of(
+          Signature(expectedTypesA, None),
+          Signature(expectedTypesB, None),
+          Signature(expectedTypesC, None)
+        )
       ))
     }
   }
@@ -131,7 +148,18 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
     extractMethod(name, expectedTypesC) shouldBe Right(Typed[Float])
 
     inside(extractMethod(name, List())) {
-      case Left(error: GenericFunctionError) => checkErrorEquality(error, new GenericFunctionError("errorC"))
+      case Left(error: ArgumentTypeError) => checkErrorEquality(
+        error,
+        ArgumentTypeError(
+          name,
+          Signature(List(), None),
+          NonEmptyList.of(
+            Signature(expectedTypesA, None),
+            Signature(expectedTypesB, None),
+            Signature(expectedTypesC, None)
+          )
+        )
+      )
     }
   }
 }
@@ -141,8 +169,8 @@ trait CustomErrorTypingFunctionHelper extends TypingFunction {
   def result: TypingResult
   def error: String
 
-  override def computeResultType(arguments: List[TypingResult]): Validated[NonEmptyList[ExpressionParseError], TypingResult] =
-    if (arguments == expectedArguments) result.validNel else new GenericFunctionError(error).invalidNel
+  override def computeResultType(arguments: List[TypingResult]): Validated[NonEmptyList[GenericFunctionTypingError], TypingResult] =
+    if (arguments == expectedArguments) result.validNel else OtherError(error).invalidNel
 }
 
 trait TypingFunctionHelper extends CustomErrorTypingFunctionHelper {
