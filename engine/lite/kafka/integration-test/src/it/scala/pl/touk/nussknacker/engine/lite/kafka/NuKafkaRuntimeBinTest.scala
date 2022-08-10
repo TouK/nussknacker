@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 
+// depends on liteEngineKafkaRuntime / Universal / stage sbt task
 class NuKafkaRuntimeBinTest extends FunSuite with BaseNuRuntimeBinTestMixin with KafkaSpec with NuKafkaRuntimeTestMixin with LazyLogging {
 
   override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress

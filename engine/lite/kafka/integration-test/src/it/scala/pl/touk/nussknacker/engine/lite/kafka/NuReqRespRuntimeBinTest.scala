@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.lite.kafka.sample.NuReqRespTestSamples.{jsonPi
 import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 
+// depends on liteEngineKafkaRuntime / Universal / stage sbt task
 class NuReqRespRuntimeBinTest extends FunSuite with BaseNuRuntimeBinTestMixin with LazyLogging {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
