@@ -6,11 +6,11 @@ trait ExpressionParseError {
   def message: String
 }
 
-case class Signature(name: String, noVarArgs: List[TypingResult], varArg: Option[TypingResult]) {
+case class Signature(noVarArgs: List[TypingResult], varArg: Option[TypingResult]) {
   private def typesToString(types: List[TypingResult]): String =
     types.map(_.display).mkString(", ")
 
-  def display: String = varArg match {
+  def display(name: String): String = varArg match {
     case Some(x) => s"$name(${typesToString(noVarArgs :+ x)}...)"
     case None => s"$name(${typesToString(noVarArgs)})"
   }

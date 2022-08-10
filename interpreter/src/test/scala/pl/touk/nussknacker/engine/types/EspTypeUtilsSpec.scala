@@ -376,8 +376,9 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
         name,
         arguments,
         ArgumentTypeError(
-          Signature(name, arguments, None),
-          NonEmptyList.one(Signature(name, expected, expectedVarArg))
+          name,
+          Signature(arguments, None),
+          NonEmptyList.one(Signature(expected, expectedVarArg))
         ).message.invalidNel
       )
 

@@ -50,8 +50,9 @@ class TypeInfosSpec extends FunSuite with Matchers {
       checkApplyValid(noVarArgsMethodInfo, args, Typed[Double])
     def noVarArgsCheckInvalid(args: List[TypingResult]): Unit =
       checkApplyInvalid(noVarArgsMethodInfo, args, ArgumentTypeError(
-        Signature(noVarArgsMethodInfo.name, args, None),
-        NonEmptyList.one(Signature(noVarArgsMethodInfo.name, noVarArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz), None))
+        noVarArgsMethodInfo.name,
+        Signature(args, None),
+        NonEmptyList.one(Signature(noVarArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz), None))
       ))
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
@@ -67,9 +68,9 @@ class TypeInfosSpec extends FunSuite with Matchers {
       checkApplyValid(varArgsMethodInfo, args, Typed[Float])
     def varArgsCheckInvalid(args: List[TypingResult]): Unit =
       checkApplyInvalid(varArgsMethodInfo, args, ArgumentTypeError(
-        Signature(varArgsMethodInfo.name, args, None),
+        varArgsMethodInfo.name,
+        Signature(args, None),
         NonEmptyList.one(Signature(
-          varArgsMethodInfo.name,
           varArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz),
           varArgsMethodInfo.staticVarArgParameter.map(_.refClazz)
         ))

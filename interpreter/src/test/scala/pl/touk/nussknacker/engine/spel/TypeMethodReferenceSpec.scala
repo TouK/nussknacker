@@ -50,8 +50,9 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
   }
 
   private def checkErrorEquality(a: ArgumentTypeError, b: ArgumentTypeError): Unit = {
-    a.found.display shouldBe b.found.display
-    a.possibleSignatures.toList.map(_.display) should contain theSameElementsAs b.possibleSignatures.toList.map(_.display)
+    a.name shouldBe b.name
+    a.found shouldBe b.found
+    a.possibleSignatures.toList should contain theSameElementsAs b.possibleSignatures.toList
   }
 
   private def checkErrorEquality(a: GenericFunctionTypingError, b: GenericFunctionTypingError): Unit =
@@ -65,8 +66,9 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List(Typed[String]))) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
-        Signature(name, List(Typed[String]), None),
-        NonEmptyList.one(Signature(name, expectedTypes, None))
+        name,
+        Signature(List(Typed[String]), None),
+        NonEmptyList.one(Signature(expectedTypes, None))
       ))
     }
   }
@@ -83,11 +85,12 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod(name, List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
-        Signature(name, List(), None),
+        name,
+        Signature(List(), None),
         NonEmptyList.of(
-          Signature(name, expectedTypesA, None),
-          Signature(name, expectedTypesB, None),
-          Signature(name, expectedTypesC, None)
+          Signature(expectedTypesA, None),
+          Signature(expectedTypesB, None),
+          Signature(expectedTypesC, None)
         )
       ))
     }
@@ -103,8 +106,9 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
       case Left(error: ArgumentTypeError) => checkErrorEquality(
         error,
         ArgumentTypeError(
-          Signature(name, List(), None),
-          NonEmptyList.one(Signature(name, expectedTypes, None))
+          name,
+          Signature(List(), None),
+          NonEmptyList.one(Signature(expectedTypes, None))
         )
       )
     }
@@ -122,11 +126,12 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
 
     inside(extractMethod("overloadedGenericFunction", List())) {
       case Left(error: ArgumentTypeError) => checkErrorEquality(error, ArgumentTypeError(
-        Signature(name, List(), None),
+        name,
+        Signature(List(), None),
         NonEmptyList.of(
-          Signature(name, expectedTypesA, None),
-          Signature(name, expectedTypesB, None),
-          Signature(name, expectedTypesC, None)
+          Signature(expectedTypesA, None),
+          Signature(expectedTypesB, None),
+          Signature(expectedTypesC, None)
         )
       ))
     }
@@ -146,11 +151,12 @@ class TypeMethodReferenceSpec extends FunSuite with Matchers {
       case Left(error: ArgumentTypeError) => checkErrorEquality(
         error,
         ArgumentTypeError(
-          Signature(name, List(), None),
+          name,
+          Signature(List(), None),
           NonEmptyList.of(
-            Signature(name, expectedTypesA, None),
-            Signature(name, expectedTypesB, None),
-            Signature(name, expectedTypesC, None)
+            Signature(expectedTypesA, None),
+            Signature(expectedTypesB, None),
+            Signature(expectedTypesC, None)
           )
         )
       )

@@ -182,9 +182,9 @@ object SpelExpressionParseError {
   }
 
 
-  case class ArgumentTypeError(found: Signature, possibleSignatures: NonEmptyList[Signature]) extends ExpressionParseError {
+  case class ArgumentTypeError(name: String, found: Signature, possibleSignatures: NonEmptyList[Signature]) extends ExpressionParseError {
     override def message: String =
-      s"Mismatch parameter types. Found: ${found.display}. Required: ${possibleSignatures.map(_.display).toList.mkString(" or ")}"
+      s"Mismatch parameter types. Found: ${found.display(name)}. Required: ${possibleSignatures.map(_.display(name)).toList.mkString(" or ")}"
   }
 
   case class GenericFunctionError(messageInner: String) extends ExpressionParseError {

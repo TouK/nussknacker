@@ -8,18 +8,17 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeErr
 
 case class SpelExpressionParseErrorConverter(methodInfo: MethodInfo, invocationArguments: List[TypingResult]) {
   def convert(error: GenericFunctionTypingError): ExpressionParseError = {
-    val givenSignature = Signature(methodInfo.name, invocationArguments, None)
+    val givenSignature = Signature(invocationArguments, None)
 
     error match {
       case GenericFunctionTypingError.ArgumentTypeError =>
         val expectedSignature = Signature(
-          methodInfo.name,
           methodInfo.staticNoVarArgParameters.map(_.refClazz),
           methodInfo.staticVarArgParameter.map(_.refClazz)
         )
-        ArgumentTypeError(givenSignature, NonEmptyList.of(expectedSignature))
+        ArgumentTypeError(methodInfo.name, givenSignature, NonEmptyList.of(expectedSignature))
       case e: GenericFunctionTypingError.ArgumentTypeErrorWithSignatures =>
-        ArgumentTypeError(givenSignature, e.signatures)
+        ArgumentTypeError(methodInfo.name, givenSignature, e.signatures)
       case e: GenericFunctionTypingError.CustomError =>
         GenericFunctionError(e.message)
     }

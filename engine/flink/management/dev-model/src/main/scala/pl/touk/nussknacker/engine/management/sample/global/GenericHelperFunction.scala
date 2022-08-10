@@ -100,9 +100,9 @@ object GenericHelperFunction {
     private def error: GenericFunctionTypingError =
       GenericFunctionTypingError.ArgumentTypeErrorWithSignatures(
         NonEmptyList.of(
-          Signature("zip", Typed[Number] :: Nil, None),
-          Signature("zip", Typed[Number] :: Typed[Number] :: Nil, None),
-          Signature("zip", Typed[Number] :: Typed[Number] :: Typed[Number] :: Nil, None)
+          Signature(Typed[Number] :: Nil, None),
+          Signature(Typed[Number] :: Typed[Number] :: Nil, None),
+          Signature(Typed[Number] :: Typed[Number] :: Typed[Number] :: Nil, None)
         )
       )
 

@@ -95,9 +95,9 @@ class TypeMethodReference(methodName: String,
   }
 
   private def combineArgumentTypeErrors(left: ArgumentTypeError, right: ArgumentTypeError): ArgumentTypeError = {
-    if (!left.found.equals(right.found))
+    if (left.name != right.name || left.found != right.found)
       throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
-    ArgumentTypeError(left.found, left.possibleSignatures ::: right.possibleSignatures)
+    ArgumentTypeError(left.name, left.found, left.possibleSignatures ::: right.possibleSignatures)
   }
 
   // We try to combine ArgumentTypeErrors into one error. If we fail
