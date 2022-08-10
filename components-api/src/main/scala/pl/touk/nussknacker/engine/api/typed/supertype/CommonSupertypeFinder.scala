@@ -164,18 +164,25 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
   private def commonSuperTypeForComplexTypes(left: Class[_], leftParams: List[TypingResult], right: Class[_], rightParams: List[TypingResult])
                                             (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
     if (left.isAssignableFrom(right)) {
-      Typed.genericTypeClass(left, commonSuperTypesForGenericParams(leftParams, rightParams))
+      genericClassWithSuperTypeParams(left, leftParams, rightParams)
     } else if (right.isAssignableFrom(left)) {
-      Typed.genericTypeClass(right, commonSuperTypesForGenericParams(leftParams, rightParams))
+      genericClassWithSuperTypeParams(right, rightParams, leftParams)
     } else {
       // until here things are rather simple
       Typed(commonSuperTypeForClassesNotInSameInheritanceLine(left, right))
     }
   }
 
-  private def commonSuperTypesForGenericParams(leftParams: List[TypingResult], rightParams: List[TypingResult])
-                                              (implicit numberPromotionStrategy: NumberTypesPromotionStrategy) = {
-    leftParams.zip(rightParams).map { case (l, p) => commonSupertype(l, p) }
+  private def genericClassWithSuperTypeParams(superType: Class[_], superTypeParams: List[TypingResult], subTypeParams: List[TypingResult])
+                                             (implicit numberPromotionStrategy: NumberTypesPromotionStrategy)= {
+    // Here is a little bit heuristics. We are not sure what generic types we are comparing, for List[T] with Collection[U]
+    // it is ok to look for common super type of T and U but for Comparable[T] and Integer it won't be ok.
+    // Maybe we should do this common super type checking only for well known cases?
+    val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size)
+      superTypeParams.zip(subTypeParams).map { case (l, p) => commonSupertype(l, p) }
+    else
+      superTypeParams
+    Typed.genericTypeClass(superType, commonSuperTypesForGenericParams)
   }
 
   private def commonSuperTypeForClassesNotInSameInheritanceLine(left: Class[_], right: Class[_]): Set[TypingResult] = {

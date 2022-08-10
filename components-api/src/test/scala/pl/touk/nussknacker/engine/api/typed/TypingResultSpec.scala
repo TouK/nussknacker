@@ -4,6 +4,7 @@ import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
+import java.util
 import scala.collection.immutable.ListMap
 
 class TypingResultSpec extends FunSuite with Matchers with OptionValues with Inside {
@@ -145,6 +146,15 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed.empty
 
     commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
+  }
+
+  test("common supertype with generics") {
+    commonSuperTypeFinder.commonSupertype(Typed[Comparable[Number]], Typed[Integer]) shouldEqual Typed[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed[Integer], Typed[Comparable[Number]]) shouldEqual Typed[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed[util.List[Integer]], Typed[util.List[Number]]) shouldEqual Typed[util.List[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed[util.List[Integer]], Typed[util.Collection[Number]]) shouldEqual Typed[util.Collection[Number]]
+    // below weird examples which will work
+    commonSuperTypeFinder.commonSupertype(Typed[util.List[Number]], Typed[util.Collection[Integer]]) shouldEqual Typed[util.Collection[Number]]
   }
 
   test("common supertype with union of not matching classes strategy with enabled strictTypeChecking") {
