@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.types
 
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.generics.{Parameter, ParameterList}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 
 class ParameterListSubclassCheckerSpec extends FunSuite with Matchers {
   private def check(subclassNoVarArgs: List[TypingResult],
@@ -48,5 +48,21 @@ class ParameterListSubclassCheckerSpec extends FunSuite with Matchers {
 
     check(List(Typed[Int]), Some(Typed[String]), List(Typed[Int], Typed[String]), Some(Typed[String])) shouldBe false
     check(List(), Some(Typed[Long]), List(), Some(Typed[String])) shouldBe false
+  }
+
+  test("should work with typed maps") {
+    check(
+      List(TypedObjectTypingResult(List("a" -> Typed[String], "b" -> Typed[String]))),
+      None,
+      List(Typed[java.util.Map[_, _]]),
+      None
+    ) shouldBe true
+
+    check(
+      List(TypedObjectTypingResult(List("a" -> Typed[Int], "b" -> Typed[Double]))),
+      None,
+      List(Typed.fromDetailedType[java.util.Map[String, Number]]),
+      None
+    ) shouldBe true
   }
 }
