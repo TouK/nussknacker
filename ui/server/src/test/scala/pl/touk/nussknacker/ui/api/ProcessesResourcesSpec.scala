@@ -58,7 +58,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   override protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager(SimpleStateStatus.NotDeployed)
 
   test("return list of process") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
 
     forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.exists(_.processId == processId.value) shouldBe true
@@ -130,7 +130,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("should allow rename not deployed process") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
     renameProcess(processName, newName) { status =>
@@ -172,7 +172,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     * In that case we can change process name.. We should block rename process in that situation.
     */
   ignore("should not allow rename process with running state") {
-    createProcess(processName)
+    createEmptyProcess(processName)
     val newName = ProcessName("ProcessChangedName")
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Running) {
@@ -240,7 +240,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("allow update category for existing process") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
 
     changeProcessCategory(processName, TestCat2, isAdmin = true) { status =>
       status shouldEqual StatusCodes.OK
@@ -251,7 +251,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not allow update to not existed category") {
-    createProcess(processName)
+    createEmptyProcess(processName)
 
     changeProcessCategory(processName, "not-exists-category", isAdmin = true) { status =>
       status shouldEqual StatusCodes.BadRequest
@@ -279,7 +279,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return process if user has category") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
     updateCategory(processId, TestCat2)
 
     forScenarioReturned(processName) { process =>
@@ -289,7 +289,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not return processes not in user categories") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
     val category = "Category1"
 
     updateCategory(processId, category)
@@ -304,7 +304,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return all processes for admin user") {
-    val processId = createProcess(processName)
+    val processId = createEmptyProcess(processName)
     val category = "Category1"
 
     updateCategory(processId, category)
@@ -319,8 +319,8 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("search processes by categories") {
-    createProcess(ProcessName("Processor1"), TestCat)
-    createProcess(ProcessName("Processor2"), TestCat2)
+    createEmptyProcess(ProcessName("Processor1"), TestCat)
+    createEmptyProcess(ProcessName("Processor2"), TestCat2)
 
     forScenariosReturned(ProcessesQuery.empty) { processes =>
       processes.size shouldBe 2
@@ -344,7 +344,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
     val secondProcessor = ProcessName("Processor2")
     val thirdProcessor = ProcessName("Processor3")
 
-    createProcess(firstProcessor)
+    createEmptyProcess(firstProcessor)
     createDeployedCanceledProcess(secondProcessor)
     createDeployedProcess(thirdProcessor)
 
@@ -378,7 +378,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("return sample process details") {
-    createProcess(processName)
+    createEmptyProcess(processName)
 
     forScenarioReturned(processName) { process =>
       process.name shouldBe processName.value
@@ -538,7 +538,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("archive process") {
-    createProcess(processName)
+    createEmptyProcess(processName)
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -574,7 +574,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
   }
 
   test("not allow to unarchive not archived process") {
-    createProcess(processName)
+    createEmptyProcess(processName)
 
     unArchiveProcess(processName) { status =>
       status shouldEqual StatusCodes.Conflict
@@ -727,7 +727,7 @@ class ProcessesResourcesSpec extends FunSuite with ScalatestRouteTest with Match
 
   test("fetching scenario toolbar definitions") {
     val toolbarConfig = ProcessToolbarsConfigProvider.create(testConfig, Some(TestCat))
-    val id = createProcess(processName)
+    val id = createEmptyProcess(processName)
 
     withProcessToolbars(processName) { toolbar =>
       toolbar shouldBe ProcessToolbarSettings(

@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ExtremelyPatientScalaFutures}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend, UriContext, asString, basicRequest}
@@ -20,7 +21,7 @@ class NuKafkaRuntimeDockerProbesTest extends FunSuite with BaseNuKafkaRuntimeDoc
   }
 
   private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend()
-  private val baseManagementUrl = uri"http://localhost:$runtimeManagementMappedPort"
+  private val baseManagementUrl = uri"http://localhost:$mappedRuntimeManagementPort"
 
   test("readiness probe") {
     eventually {

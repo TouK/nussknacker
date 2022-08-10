@@ -6,13 +6,15 @@ import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, Statu
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
 import akka.stream.Materializer
-import cats.data.{EitherT, NonEmptyList}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{EitherT, NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import io.circe.{Encoder, Json}
-import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.api.{Context, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
@@ -33,7 +35,7 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
         handlePath(scenarioPath)
       }
       //TODO place openApi endpoint
-    } ~ path("healthCheck") {
+    } ~ path("healthCheck") { // TODO: remove it from here - we are using healthCheck on other level
       get {
         complete {
           HttpResponse(status = StatusCodes.OK)
@@ -67,6 +69,15 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
   }
 
   @JsonCodec case class NuError(nodeId: Option[String], message: Option[String])
+
+}
+
+object ScenarioRoute {
+
+  def pathForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
+    case RequestResponseMetaData(path) => Valid(path.getOrElse(metaData.id))
+    case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
+  }
 
 }
 

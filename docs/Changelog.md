@@ -5,6 +5,8 @@
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
+* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-response mode available for k8s deployment
+* [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
 
 1.5.0 (Not released yet)
 ------------------------
