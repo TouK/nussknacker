@@ -91,7 +91,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
   }
 
   test("should automatically validate arguments of generic functions") {
-    def f(lst: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = Typed[Int].validNel
+    def f(lst: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = Typed[Int].validNel
 
     val methodInfo = FunctionalMethodInfo(
       f,
