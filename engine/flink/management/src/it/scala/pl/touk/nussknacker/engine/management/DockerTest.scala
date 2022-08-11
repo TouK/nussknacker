@@ -49,7 +49,9 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
-      val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
+     val clazz = getClass
+     val rezz = clazz.getResourceAsStream(s"/docker/$file")
+      val resource = IOUtils.toString(rezz)
       val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
       image.withFileFromString(file, withVersionReplaced)
     }
