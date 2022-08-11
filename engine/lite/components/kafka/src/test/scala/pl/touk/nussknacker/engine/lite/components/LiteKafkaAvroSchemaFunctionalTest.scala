@@ -113,6 +113,14 @@ class LiteKafkaAvroSchemaFunctionalTest extends FunSuite with Matchers with Scal
     ))
   }
 
+  test("should test end to end kafka avro record data at sink with Unknown type") {
+    testEnd2End(Table(
+      ("config", "result"),
+      (sConfig(null, nullSchema, integerSchema, SpecialSpELElement(s"""{$sampleInteger, "$sampleString"}[0]""")), invalidTypes(s"path 'Value' actual: 'Unknown' expected: 'Integer'")),
+      (sConfig(null, nullSchema, integerSchema, SpecialSpELElement(s"""{$sampleInteger, "$sampleString"}[0]"""), Some(ValidationMode.lax)), valid(sampleInteger)),
+    ))
+  }
+
   test("should test end to end kafka avro record data at sink / source with primitive longs") {
     testEnd2End(Table(
       ("config", "result"),
