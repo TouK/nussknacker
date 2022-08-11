@@ -260,6 +260,8 @@ val kafkaV = "2.8.1"
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.2.10"
 val scalaCheckV = "1.15.0"
+val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
+val scalaTestPlusV = "3.2.10.0" //has to match scalatest and scalacheck versions, see
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.2"
@@ -684,7 +686,7 @@ lazy val interpreter = (project in file("interpreter")).
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
         "com.cronutils" % "cron-utils" % cronParserV % "test",
-        "org.scalatestplus" %% "scalacheck-1-16" % "3.2.13.0" % "test"
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     }
   ).
@@ -976,7 +978,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
     libraryDependencies ++= {
       Seq(
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
-        "org.scalatestplus" %% "scalacheck-1-16" % "3.2.13.0" % "test"
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     },
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
