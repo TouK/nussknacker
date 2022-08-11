@@ -18,7 +18,8 @@ import java.util.concurrent.TimeoutException
 import scala.util.Try
 
 // Created base class and used one test class for each test case because runtime has fixed one Nussknacker scenario
-trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAfterAll with NuKafkaRuntimeTestMixin with TryValues { self: TestSuite with LazyLogging =>
+trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAfterAll with NuKafkaRuntimeTestMixin with TryValues {
+  self: TestSuite with LazyLogging =>
 
   private val kafkaHostname = "kafka"
 
@@ -51,6 +52,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
       env = Map(
         "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
         "KAFKA_AUTO_OFFSET_RESET" -> "earliest",
+        "CONFIG_FORCE_kafka_lowLevelComponentsEnabled" -> "true",
         "KAFKA_ERROR_TOPIC" -> fixture.errorTopic
       ) ++ sys.env.get("NUSSKNACKER_LOG_LEVEL").map("NUSSKNACKER_LOG_LEVEL" -> _) ++ additionalEnvs)
     runtimeContainer.underlyingUnsafeContainer.withNetwork(network)
@@ -87,6 +89,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
 
   object DumbWaitStrategy extends WaitStrategy {
     override def waitUntilReady(waitStrategyTarget: WaitStrategyTarget): Unit = {}
+
     override def withStartupTimeout(startupTimeout: Duration): WaitStrategy = this
   }
 

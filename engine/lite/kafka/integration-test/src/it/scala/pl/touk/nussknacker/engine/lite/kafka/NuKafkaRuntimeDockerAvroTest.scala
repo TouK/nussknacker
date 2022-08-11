@@ -16,7 +16,7 @@ class NuKafkaRuntimeDockerAvroTest extends FunSuite with BaseNuKafkaRuntimeDocke
 
   private val schemaRegistryContainer = {
     val container = GenericContainer(
-      "confluentinc/cp-schema-registry:5.5.0",
+      "confluentinc/cp-schema-registry:7.2.1",
       exposedPorts = Seq(schemaRegistryPort),
       env = Map(
         "SCHEMA_REGISTRY_HOST_NAME" -> schemaRegistryHostname,

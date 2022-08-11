@@ -56,6 +56,7 @@ abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpe
 
   override lazy val config: Config = ConfigFactory.load()
     .withValue("components.mockKafka.config.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
+    .withValue("components.mockKafka.config.lowLevelComponentsEnabled", fromAnyRef(true))
     .withValue("components.kafka.disabled", fromAnyRef(true))
     .withValue("components.mockKafka.disabled", fromAnyRef(false))
     .withValue("components.mockKafka.config.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
