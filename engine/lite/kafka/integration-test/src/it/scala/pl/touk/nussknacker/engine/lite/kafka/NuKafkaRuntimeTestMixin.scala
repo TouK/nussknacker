@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.spel.Implicits._
 import io.circe.syntax._
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 
 import java.io.File
@@ -56,11 +56,12 @@ object NuKafkaRuntimeTestSamples {
 
   def avroPingPongScenario(inputTopic: String, outputTopic: String): EspProcess = ScenarioBuilder
     .streamingLite("avro-ping-pong")
-    .source("source", "kafka-avro", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+    .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
     .emptySink("sink",
-      "kafka-avro-raw",
+      "kafka",
       TopicParamName -> s"'$outputTopic'",
       SchemaVersionParamName -> "'latest'",
+      SinkRawEditorParamName -> "true",
       SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
       SinkKeyParamName -> "",
       SinkValueParamName -> "#input"
