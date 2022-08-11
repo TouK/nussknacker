@@ -3,12 +3,11 @@ package pl.touk.nussknacker.engine.types
 import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, Parameter, ParameterList, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, Parameter, ParameterList, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 
 import scala.annotation.varargs
-import scala.reflect.ClassTag
 
 class GenericFunctionStaticParametersSpec extends FunSuite with Matchers with OptionValues{
   implicit val classExtractionSettings: ClassExtractionSettings = ClassExtractionSettings.Default
@@ -23,20 +22,20 @@ class GenericFunctionStaticParametersSpec extends FunSuite with Matchers with Op
   }
 
   test("should throw exception when trying to declare illegal parameter types") {
-    def test(clazz: Class[_]) = {
+    def test(clazz: Class[_], message: String) = {
       intercept[IllegalArgumentException] {
         EspTypeUtils.clazzDefinition(clazz)
-      }.getMessage shouldBe "Generic function f has declared parameters that are incompatible with methods signature"
+      }.getMessage shouldBe message
     }
 
-    test(classOf[Invalid.Foo1])
-    test(classOf[Invalid.Foo2])
-    test(classOf[Invalid.Foo3])
-    test(classOf[Invalid.Foo4])
+    test(classOf[Invalid.Foo1], "Generic function f has declared parameters that are incompatible with methods signature: wrong number of no-vararg arguments: found 1, expected: 2")
+    test(classOf[Invalid.Foo2], "Generic function f has declared parameters that are incompatible with methods signature: argument at position 4 has illegal type: String cannot be subclass of Number")
+    test(classOf[Invalid.Foo3], "Generic function f has declared parameters that are incompatible with methods signature: function with varargs cannot be more specific than function without varargs; wrong number of no-vararg arguments: found 1, expected: 2")
+    test(classOf[Invalid.Foo4], "Generic function f has declared parameters that are incompatible with methods signature: argument at position 3 has illegal type: Double cannot be subclass of Long")
   }
 }
 
-private trait IllegalDeclaredParametersHelper extends TypingFunction {
+private trait TypingFunctionHelper extends TypingFunction {
   def params: List[TypingResult]
 
   def varArgParam: Option[TypingResult]
@@ -49,38 +48,38 @@ private trait IllegalDeclaredParametersHelper extends TypingFunction {
 }
 
 private object Valid {
-  case class Foo1() {
-    @GenericType(typingFunction = classOf[Foo1Helper])
+  class Foo1() {
+    @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  case class Foo1Helper() extends IllegalDeclaredParametersHelper {
+  class Foo1TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  case class Foo2() {
-    @GenericType(typingFunction = classOf[Foo2Helper])
+  class Foo2() {
+    @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
   }
 
-  case class Foo2Helper() extends IllegalDeclaredParametersHelper {
+  class Foo2TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String], Typed[Double], Typed[Int])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  case class Foo4() {
-    @GenericType(typingFunction = classOf[Foo4Helper])
+  class Foo4() {
+    @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
   }
 
-  case class Foo4Helper() extends IllegalDeclaredParametersHelper {
+  class Foo4TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Double], Typed[String], Typed[Long])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
@@ -88,50 +87,50 @@ private object Valid {
 }
 
 private object Invalid {
-  case class Foo1() {
-    @GenericType(typingFunction = classOf[Foo1Helper])
+  class Foo1() {
+    @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  case class Foo1Helper() extends IllegalDeclaredParametersHelper {
+  class Foo1TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  case class Foo2() {
-    @GenericType(typingFunction = classOf[Foo2Helper])
+  class Foo2() {
+    @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
   }
 
-  case class Foo2Helper() extends IllegalDeclaredParametersHelper {
+  class Foo2TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String], Typed[Double], Typed[String])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  case class Foo3() {
-    @GenericType(typingFunction = classOf[Foo3Helper])
+  class Foo3() {
+    @GenericType(typingFunction = classOf[Foo3TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  case class Foo3Helper() extends IllegalDeclaredParametersHelper {
+  class Foo3TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[String])
   }
 
 
-  case class Foo4() {
-    @GenericType(typingFunction = classOf[Foo4Helper])
+  class Foo4() {
+    @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
   }
 
-  case class Foo4Helper() extends IllegalDeclaredParametersHelper {
+  class Foo4TypingFunction() extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Double], Typed[String], Typed[Double])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
