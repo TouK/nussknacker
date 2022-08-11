@@ -178,10 +178,15 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
     // Here is a little bit heuristics. We are not sure what generic types we are comparing, for List[T] with Collection[U]
     // it is ok to look for common super type of T and U but for Comparable[T] and Integer it won't be ok.
     // Maybe we should do this common super type checking only for well known cases?
-    val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size)
-      superTypeParams.zip(subTypeParams).map { case (l, p) => commonSupertype(l, p) }
-    else
+    val commonSuperTypesForGenericParams = if (superTypeParams.size == subTypeParams.size) {
+      // for generic params it is always better to return Union generic param than Typed.empty
+      val anyFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, strictTaggedTypesChecking)
+      superTypeParams.zip(subTypeParams).map { case (l, p) =>
+        anyFinder.commonSupertype(l, p)
+      }
+    } else {
       superTypeParams
+    }
     Typed.genericTypeClass(superType, commonSuperTypesForGenericParams)
   }
 
