@@ -24,15 +24,7 @@ abstract class TypingFunction {
    * and generating error messages. Defaults to types that can be
    * extracted from methods signature if it is not specified.
    */
-  def staticParameters: Option[ParameterList] = None
-
-  /**
-   * Approximation of return type of method. Used for displaying
-   * information about method on FE and for method suggestions.
-   * Defaults to type extracted from methods signature if it is
-   * not specified.
-   */
-  def staticResult: Option[TypingResult] = None
+  def staticParameters: List[MethodTypeInfo] = Nil
 
   def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

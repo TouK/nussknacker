@@ -2,14 +2,43 @@ package pl.touk.nussknacker.engine.management.sample.global
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, Parameter, ParameterList, Signature, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, MethodTypeInfo, Parameter, Signature, TypingFunction}
 import pl.touk.nussknacker.engine.api.Documentation
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypedObjectWithValue, TypingResult}
 
 import scala.annotation.varargs
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
+  @GenericType(typingFunction = classOf[PlusGenericFunction])
+  def plus(left: Any, right: Any): Any = (left, right) match {
+    case (left: Int, right: Int) => left + right
+    case (left: String, right: String) => left + right
+    case _ => throw new AssertionError("should not be reached")
+  }
+
+  private class PlusGenericFunction() extends TypingFunction {
+    private val intType = Typed.typedClass[Int]
+    private val stringType = Typed.typedClass[String]
+
+    override val staticParameters: List[MethodTypeInfo] =
+      List(
+        MethodTypeInfo(Parameter("left", intType) :: Parameter("right", intType) :: Nil, None, intType),
+        MethodTypeInfo(Parameter("left", stringType) :: Parameter("right", stringType) :: Nil, None, stringType)
+      )
+
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
+      case left :: right :: Nil =>
+        (left.withoutValue, right.withoutValue) match {
+          case (`intType`, `intType`) => intType.validNel
+          case (`stringType`, `stringType`) => stringType.validNel
+          case _ => ArgumentTypeError.invalidNel
+        }
+      case _ => ArgumentTypeError.invalidNel
+    }
+  }
+
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head[T >: Null](list: java.util.List[T]): T =
@@ -35,11 +64,8 @@ object GenericHelperFunction {
     private val expectedArgument = Typed(Typed.fromInstance("String"), Typed.fromInstance("Double"), Typed.fromInstance("Int"))
     private val expectedResult = Typed(Typed[String], Typed[Double], Typed[Int])
 
-    override def staticParameters: Option[ParameterList] =
-      Some(ParameterList(List(Parameter("typeName", expectedArgument)), None))
-
-    override def staticResult: Option[TypingResult] =
-      Some(expectedResult)
+    override def staticParameters: List[MethodTypeInfo] =
+      List(MethodTypeInfo(List(Parameter("typeName", expectedArgument)), None, expectedResult))
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
       case TypedObjectWithValue(TypedClass(`stringClass`, Nil), typ: String) :: Nil => typ match {
@@ -97,22 +123,20 @@ object GenericHelperFunction {
   def zip(x: Number*): Any = ???
 
   private class ZipHelper extends TypingFunction {
-    private def error: GenericFunctionTypingError =
-      GenericFunctionTypingError.ArgumentTypeErrorWithSignatures(
-        NonEmptyList.of(
-          Signature(Typed[Number] :: Nil, None),
-          Signature(Typed[Number] :: Typed[Number] :: Nil, None),
-          Signature(Typed[Number] :: Typed[Number] :: Typed[Number] :: Nil, None)
-        )
+    override def staticParameters: List[MethodTypeInfo] =
+      List(
+        MethodTypeInfo(Parameter("arg", Typed[Number]) :: Nil, None, Typed[Number]),
+        MethodTypeInfo(Parameter("left", Typed[Number]) :: Parameter("right", Typed[Number]) :: Nil, None, Typed[Number]),
+        MethodTypeInfo(Parameter("left", Typed[Number]) :: Parameter("mid", Typed[Number]) :: Parameter("right", Typed[Number]) :: Nil, None, Typed[Number])
       )
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
-      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return error.invalidNel
+      if (arguments.exists(!_.canBeSubclassOf(Typed[Number]))) return ArgumentTypeError.invalidNel
       arguments match {
         case t :: Nil => t.validNel
         case l :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "right" -> r)).validNel
         case l :: m :: r :: Nil => TypedObjectTypingResult(List("left" -> l, "mid" -> m, "right" -> r)).validNel
-        case _ => error.invalidNel
+        case _ => ArgumentTypeError.invalidNel
       }
     }
   }

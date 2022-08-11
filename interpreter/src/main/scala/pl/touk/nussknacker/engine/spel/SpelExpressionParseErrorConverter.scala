@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.spel
 
-import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.definition.TypeInfos.MethodInfo
@@ -12,13 +11,9 @@ case class SpelExpressionParseErrorConverter(methodInfo: MethodInfo, invocationA
 
     error match {
       case GenericFunctionTypingError.ArgumentTypeError =>
-        val expectedSignature = Signature(
-          methodInfo.staticNoVarArgParameters.map(_.refClazz),
-          methodInfo.staticVarArgParameter.map(_.refClazz)
-        )
-        ArgumentTypeError(methodInfo.name, givenSignature, NonEmptyList.of(expectedSignature))
-      case e: GenericFunctionTypingError.ArgumentTypeErrorWithSignatures =>
-        ArgumentTypeError(methodInfo.name, givenSignature, e.signatures)
+        val expectedSignatures = methodInfo.signatures.map(info =>
+          Signature(info.noVarArgs.map(_.refClazz), info.varArg.map(_.refClazz)))
+        ArgumentTypeError(methodInfo.name, givenSignature, expectedSignatures)
       case e: GenericFunctionTypingError.CustomError =>
         GenericFunctionError(e.message)
     }
