@@ -3,18 +3,18 @@ package pl.touk.nussknacker.engine.types
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.generics.{Parameter, ParameterList}
+import pl.touk.nussknacker.engine.api.generics.{Parameter, MethodTypeInfo}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class ParameterListSubclassCheckerSpec extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class MethodTypeInfoSubclassCheckerSpec extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
   private def check(subclassNoVarArgs: List[TypingResult],
                     subclassVarArg: Option[TypingResult],
                     superclassNoVarArgs: List[TypingResult],
                     superclassVarArg: Option[TypingResult],
                     expectedErrors: List[ParameterListError]): Unit = {
-    def toParameterList(noVarArgs: List[TypingResult], varArg: Option[TypingResult]): ParameterList =
-      ParameterList(noVarArgs.map(Parameter("", _)), varArg.map(Parameter("", _)))
+    def toParameterList(noVarArgs: List[TypingResult], varArg: Option[TypingResult]): MethodTypeInfo =
+      MethodTypeInfo(noVarArgs.map(Parameter("", _)), varArg.map(Parameter("", _)), Unknown)
 
     val checkResult = ParameterListSubclassChecker.check(
       toParameterList(subclassNoVarArgs, subclassVarArg),
@@ -88,5 +88,17 @@ class ParameterListSubclassCheckerSpec extends FunSuite with Matchers with Valid
       None,
       Nil
     )
+  }
+
+  test("should check return type") {
+    ParameterListSubclassChecker.check(
+      MethodTypeInfo(Nil, None, Typed[Long]),
+      MethodTypeInfo(Nil, None, Typed[Number])
+    ) shouldBe ().validNel
+
+    ParameterListSubclassChecker.check(
+      MethodTypeInfo(Nil, None, Typed[String]),
+      MethodTypeInfo(Nil, None, Typed[Int])
+    ) shouldBe NotSubclassResult(Typed[String], Typed[Int]).invalidNel
   }
 }

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.definition
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, ParameterList}
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
@@ -23,54 +24,63 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def staticParameters: ParameterList
+    def signatures: NonEmptyList[MethodTypeInfo]
 
-    final def staticNoVarArgParameters: List[Parameter] = staticParameters.noVarArgs
-
-    final def staticVarArgParameter: Option[Parameter] = staticParameters.varArg
-
-    def staticResult: TypingResult
+    final def mainSignature: MethodTypeInfo = signatures.toList.maxBy(_.parametersToList.length)
 
     def name: String
 
     def description: Option[String]
 
-    final def varArgs: Boolean = staticVarArgParameter.isDefined
-
     final def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParameters.toList, staticResult, description, varArgs)
+      SerializableMethodInfo(mainSignature.parametersToList, mainSignature.result, description, mainSignature.varArg.isDefined)
+
+    protected def convertError(error: GenericFunctionTypingError, arguments: List[TypingResult]): ExpressionParseError =
+      SpelExpressionParseErrorConverter(this, arguments).convert(error)
   }
 
-  case class StaticMethodInfo(staticParameters: ParameterList,
-                              staticResult: TypingResult,
+  object StaticMethodInfo {
+    def apply(signatures: MethodTypeInfo, name: String, description: Option[String]): StaticMethodInfo =
+      StaticMethodInfo(NonEmptyList.one(signatures), name, description)
+  }
+
+  case class StaticMethodInfo(signatures: NonEmptyList[MethodTypeInfo],
                               name: String,
                               description: Option[String]) extends MethodInfo {
-    private def checkNoVarArgs(arguments: List[TypingResult]): Boolean =
-      arguments.length >= staticNoVarArgParameters.length &&
-        arguments.zip(staticNoVarArgParameters).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
+    private def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
+      val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
+        arguments.zip(methodTypeInfo.noVarArgs).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
 
-    private def checkVarArgs(arguments: List[TypingResult]): Boolean = staticVarArgParameter match {
-      case Some(Parameter(_, t)) =>
-        arguments.drop(staticNoVarArgParameters.length).forall(_.canBeSubclassOf(t))
-      case None =>
-        arguments.length == staticNoVarArgParameters.length
+      val checkVarArgs = methodTypeInfo.varArg match {
+        case Some(Parameter(_, t)) =>
+          arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeSubclassOf(t))
+        case None =>
+          arguments.length == methodTypeInfo.noVarArgs.length
+      }
+
+      checkNoVarArgs && checkVarArgs
     }
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (checkNoVarArgs(arguments) && checkVarArgs(arguments))
-        staticResult.validNel
-      else
-        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError).invalidNel
+      signatures
+        .find(isValidMethodInfo(arguments, _))
+        .map(_.result.validNel)
+        .getOrElse(convertError(ArgumentTypeError, arguments).invalidNel)
     }
   }
 
   object FunctionalMethodInfo {
     def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-              staticParameters: ParameterList,
-              staticResult: TypingResult,
+              signature: MethodTypeInfo,
               name: String,
               description: Option[String]): FunctionalMethodInfo =
-      FunctionalMethodInfo(typeFunction, StaticMethodInfo(staticParameters, staticResult, name, description))
+      FunctionalMethodInfo(typeFunction, NonEmptyList.one(signature), name, description)
+
+    def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
+              signatures: NonEmptyList[MethodTypeInfo],
+              name: String,
+              description: Option[String]): FunctionalMethodInfo =
+      FunctionalMethodInfo(typeFunction, StaticMethodInfo(signatures, name, description))
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
@@ -87,13 +97,12 @@ object TypeInfos {
         typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
         }
         .map{res =>
-          if (!res.canBeSubclassOf(staticResult)) throw new AssertionError("Generic function returned type that does not match static parameters.")
-            res
+          if (!staticInfo.signatures.map(_.result).exists(res.canBeSubclassOf))
+            throw new AssertionError("Generic function returned type that does not match static parameters.")
+          res
         }
 
-    override def staticParameters: ParameterList = staticInfo.staticParameters
-
-    override def staticResult: TypingResult = staticInfo.staticResult
+    override def signatures: NonEmptyList[MethodTypeInfo] = staticInfo.signatures
 
     override def name: String = staticInfo.name
 

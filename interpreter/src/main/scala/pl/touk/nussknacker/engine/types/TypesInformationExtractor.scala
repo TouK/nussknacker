@@ -109,14 +109,14 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
   private def definitionsFromMethods(classDefinition: ClazzDefinition)
                                     (collectedSoFar: mutable.Set[TypingResult], path: DiscoveryPath)
                                     (implicit settings: ClassExtractionSettings): Set[ClazzDefinition] = {
-    classDefinition.methods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.staticResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
-      // TODO verify if parameters are need and if they are not, remove this
-//        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
-    }.toSet ++
-    classDefinition.staticMethods.values.flatten.flatMap { kl =>
-      clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl.staticResult)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
-    }.toSet
+    def extractFromMethods(methods: Map[String, List[MethodInfo]]) =
+      methods.values.flatten.flatMap(_.signatures.toList.map(_.result)).flatMap { kl =>
+        clazzAndItsChildrenDefinitionIfNotCollectedSoFar(kl)(collectedSoFar, path.pushSegment(MethodReturnType(kl)))
+        // TODO verify if parameters are need and if they are not, remove this
+        //        ++ kl.parameters.flatMap(p => clazzAndItsChildrenDefinition(p.refClazz)(collectedSoFar, path.pushSegment(MethodParameter(p))))
+      }.toSet
+
+    extractFromMethods(classDefinition.methods) ++ extractFromMethods(classDefinition.staticMethods)
   }
 
   private def clazzDefinitionWithLogging(clazz: Class[_])
@@ -152,8 +152,8 @@ object TypesInformationExtractor extends LazyLogging with ExecutionTimeMeasuring
     override def print: String = s"[$ix]${classNameWithStrippedPackages(cl)}"
   }
 
-  private case class MethodReturnType(m: MethodInfo) extends DiscoverySegment {
-    override def print: String = s"ret(${classNameWithStrippedPackages(m.staticResult)})"
+  private case class MethodReturnType(m: TypingResult) extends DiscoverySegment {
+    override def print: String = s"ret(${classNameWithStrippedPackages(m)})"
   }
 
   private case class MethodParameter(p: Parameter) extends DiscoverySegment {

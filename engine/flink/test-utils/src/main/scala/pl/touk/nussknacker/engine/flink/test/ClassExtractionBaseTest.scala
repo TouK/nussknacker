@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodI
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.generics.{Parameter, ParameterList}
+import pl.touk.nussknacker.engine.api.generics.{Parameter, MethodTypeInfo}
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
@@ -66,7 +66,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       cd.clazzName ::
         (cd.methods ++ cd.staticMethods)
           .flatMap(_._2)
-          .flatMap(mi => mi.staticResult :: mi.staticParameters.toList.map(_.refClazz))
+          .flatMap(mi => mi.mainSignature.result :: mi.mainSignature.parametersToList.map(_.refClazz))
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName
@@ -150,13 +150,11 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       }.getOrElse(json)
     })
 
-    val objectClass = classOf[Array[Object]]
-
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
     implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
       // Name is not serialized so we leave it empty.
       case SerializableMethodInfo(parameters, refClazz, description, varArgs) =>
-        StaticMethodInfo(ParameterList.fromList(parameters, varArgs), refClazz, "", description)
+        StaticMethodInfo(MethodTypeInfo.fromList(parameters, varArgs, refClazz), "", description)
     }
     implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder

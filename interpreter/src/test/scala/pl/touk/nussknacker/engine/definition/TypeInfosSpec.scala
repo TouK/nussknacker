@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, ParameterList, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, MethodTypeInfo, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, SerializableMethodInfo, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
@@ -15,20 +15,20 @@ class TypeInfosSpec extends FunSuite with Matchers {
     val paramYArray = Parameter("y", Typed.genericTypeClass[Array[Object]](List(Typed[String])))
     def f(x: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = Unknown.validNel
 
-    StaticMethodInfo(ParameterList(List(paramX), None), Typed[Double], "b", Some("c")).serializable shouldBe
+    StaticMethodInfo(MethodTypeInfo(List(paramX), None, Typed[Double]), "b", Some("c")).serializable shouldBe
       SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)
-    StaticMethodInfo(ParameterList(List(paramX), Some(paramY)), Typed[Long], "d", Some("e")).serializable shouldBe
+    StaticMethodInfo(MethodTypeInfo(List(paramX), Some(paramY), Typed[Long]), "d", Some("e")).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramYArray), Typed[Long], Some("e"), varArgs = true)
-    FunctionalMethodInfo(f, StaticMethodInfo(ParameterList(List(paramX, paramY), None), Typed[String], "f", Some("g"))).serializable shouldBe
+    FunctionalMethodInfo(f, StaticMethodInfo(MethodTypeInfo(List(paramX, paramY), None, Typed[String]), "f", Some("g"))).serializable shouldBe
       SerializableMethodInfo(List(paramX, paramY), Typed[String], Some("g"), varArgs = false)
   }
 
   private val noVarArgsMethodInfo =
-    StaticMethodInfo(ParameterList(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None), Typed[Double], "f", None)
+    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double]), "f", None)
   private val varArgsMethodInfo =
-    StaticMethodInfo(ParameterList(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int]))), Typed[Float], "f", None)
+    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Typed[String])), Some(Parameter("", Typed[Int])), Typed[Float]), "f", None)
   private val superclassMethodInfo =
-    StaticMethodInfo(ParameterList(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number]))), Typed[String], "f", None)
+    StaticMethodInfo(MethodTypeInfo(List(Parameter("", Unknown)), Some(Parameter("", Typed[Number])), Typed[String]), "f", None)
 
   private def checkApply(info: MethodInfo,
                          args: List[TypingResult],
@@ -52,7 +52,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
       checkApplyInvalid(noVarArgsMethodInfo, args, ArgumentTypeError(
         noVarArgsMethodInfo.name,
         Signature(args, None),
-        NonEmptyList.one(Signature(noVarArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz), None))
+        NonEmptyList.one(Signature(noVarArgsMethodInfo.mainSignature.noVarArgs.map(_.refClazz), None))
       ))
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
@@ -71,8 +71,8 @@ class TypeInfosSpec extends FunSuite with Matchers {
         varArgsMethodInfo.name,
         Signature(args, None),
         NonEmptyList.one(Signature(
-          varArgsMethodInfo.staticNoVarArgParameters.map(_.refClazz),
-          varArgsMethodInfo.staticVarArgParameter.map(_.refClazz)
+          varArgsMethodInfo.mainSignature.noVarArgs.map(_.refClazz),
+          varArgsMethodInfo.mainSignature.varArg.map(_.refClazz)
         ))
       ))
 
@@ -95,9 +95,8 @@ class TypeInfosSpec extends FunSuite with Matchers {
     def f(lst: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = Typed[Int].validNel
 
     val methodInfo = FunctionalMethodInfo(
-      f,
-      ParameterList(Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil, Some(Parameter("c", Typed[String]))),
-      Typed[Int],
+      x => f(x),
+      MethodTypeInfo(Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil, Some(Parameter("c", Typed[String])), Typed[Int]),
       "f",
       None
     )
