@@ -11,6 +11,20 @@ import scala.annotation.varargs
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
+  @GenericType(typingFunction = classOf[HeadGenericFunction])
+  def headA[T](list: java.util.List[T]): T =
+    list.get(0)
+
+  private case class HeadGenericFunction() extends TypingFunction {
+    private val listClass = classOf[java.util.List[_]]
+
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
+      arguments match {
+        case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
+      }
+    }
+  }
+
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head[T >: Null](list: java.util.List[T]): T =
