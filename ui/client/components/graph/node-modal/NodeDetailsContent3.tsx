@@ -81,47 +81,56 @@ function DisableField(props: CompFunctions & NodeDetailsContentProps3) {
 }
 
 export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Element {
+  const {
+    updateNodeState,
+    findAvailableVariables,
+    parameterDefinitions,
+    originalNodeId,
+    pathsToMark,
+  } = props
+
   const testResultsState = useTestResults()
+
   const isMarked = useCallback((path = ""): boolean => {
-    return props.pathsToMark?.some(toMark => startsWith(toMark, path))
-  }, [props.pathsToMark])
+    return pathsToMark?.some(toMark => startsWith(toMark, path))
+  }, [pathsToMark])
 
   //compare window uses legacy egde component
   const isCompareView = useMemo(() => isMarked(), [isMarked])
 
   const removeElement = useCallback((property: keyof NodeType, index: number): void => {
-    props.updateNodeState((currentNode) => ({
+    updateNodeState((currentNode) => ({
       ...currentNode,
       [property]: currentNode[property]?.filter((_, i) => i !== index) || [],
     }))
-  }, [props])
+  }, [updateNodeState])
 
   const renderFieldLabel = useCallback((paramName: string): JSX.Element => {
     return (
       <FieldLabel
-        nodeId={props.originalNodeId}
-        parameterDefinitions={props.parameterDefinitions}
+        nodeId={originalNodeId}
+        parameterDefinitions={parameterDefinitions}
         paramName={paramName}
       />
     )
-  }, [props.originalNodeId, props.parameterDefinitions])
+  }, [originalNodeId, parameterDefinitions])
 
   const addElement = useCallback(<K extends keyof NodeType>(property: K, element: ArrayElement<NodeType[K]>): void => {
-    props.updateNodeState((currentNode) => ({
+    updateNodeState((currentNode) => ({
       ...currentNode,
       [property]: [...currentNode[property], element],
     }))
-  }, [props])
+  }, [updateNodeState])
 
   const setProperty = useCallback(<K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
-    props.updateNodeState((currentNode) => {
+    updateNodeState((currentNode) => {
       const node = cloneDeep(currentNode)
       return set(node, property, value)
     })
-  }, [props])
+  }, [updateNodeState])
 
-  const variableTypes = useMemo(() => props.findAvailableVariables(props.originalNodeId), [props])
+  const variableTypes = useMemo(() => findAvailableVariables(originalNodeId), [findAvailableVariables, originalNodeId])
 
   switch (NodeUtils.nodeType(props.node)) {
     case "Source":
