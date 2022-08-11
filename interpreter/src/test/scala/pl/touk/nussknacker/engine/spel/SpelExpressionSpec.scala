@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, ParamName, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
@@ -860,6 +860,14 @@ class SpelExpressionSpec extends FunSuite with Matchers with ValidatedValuesDeta
     parse[Locale]("'PL'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
   }
 
+  test("comparison of generic type with not generic type") {
+    val result = parseV[Any]("#a.someComparable == 2L",
+      ValidationContext.empty
+        .withVariable("a", Typed.fromInstance(SampleGlobalObject), None)
+        .validValue)
+   result shouldBe 'valid
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
@@ -888,6 +896,8 @@ object SampleGlobalObject {
   def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
 
   def methodWithPrimitiveParams(int: Int, long: Long, bool: Boolean): String = s"$int $long $bool"
+
+  def someComparable: Comparable[Any] = ???
 
   @GenericType(typingFunction = classOf[GenericFunctionHelper])
   def genericFunction(a: Int, b: Boolean): Int = a + (if (b) 1 else 0)

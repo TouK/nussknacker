@@ -141,7 +141,6 @@ object typing {
 
   }
 
-  //TODO: make sure parameter list has right size - can be filled with Unknown if needed
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
 
     override def withoutValue: TypedClass = this
@@ -183,7 +182,6 @@ object typing {
 
     def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypedClass = genericTypeClass(toRuntime[T], params)
 
-    // TODO: validate parameters for some generic standard cases like List or Map
     def genericTypeClass(klass: Class[_], params: List[TypingResult]): TypedClass = typedClass(klass, Some(params))
 
     // Below are not secure variants of typing factory methods - they are need because of Java's type erasure

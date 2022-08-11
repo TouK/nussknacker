@@ -4,13 +4,12 @@ import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedNull, TypedObjectTypingResult, TypedUnion, TypingResult, Unknown}
 
+import java.util
 import scala.collection.immutable.ListMap
 
 class TypingResultSpec extends FunSuite with Matchers with OptionValues with Inside {
 
   private val commonSuperTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, true)
-
-  implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
 
@@ -23,7 +22,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     ) shouldBe true
 
     typeMap("field1" -> Typed[String]).canBeSubclassOf(
-          typeMap("field1" -> Typed[String], "field2" -> Typed[Int])
+      typeMap("field1" -> Typed[String], "field2" -> Typed[Int])
     ) shouldBe false
 
     typeMap("field1" -> Typed[Int]).canBeSubclassOf(
@@ -84,6 +83,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find common supertype for simple types enabled strictTypeChecking") {
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
     commonSuperTypeFinder.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
     commonSuperTypeFinder.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
     commonSuperTypeFinder.commonSupertype(Typed[Int], Typed[Double]) shouldEqual Typed[java.lang.Double]
@@ -95,6 +95,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find common supertype for simple types disabled strictTypeChecking") {
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
     val typeFinderDisabledStrictTypeChecking = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Intersection, false)
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[String], Typed[String]) shouldEqual Typed[String]
     typeFinderDisabledStrictTypeChecking.commonSupertype(Typed[java.lang.Integer], Typed[java.lang.Double]) shouldEqual Typed[java.lang.Double]
@@ -107,6 +108,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find special types") {
+    implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ForMathOperation
     commonSuperTypeFinder.commonSupertype(Unknown, Unknown) shouldEqual Unknown
     commonSuperTypeFinder.commonSupertype(Unknown, Typed[Long]) shouldEqual Unknown
 
@@ -121,6 +123,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find common supertype for complex types with inheritance in classes hierarchy") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     import ClassHierarchy._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
@@ -130,6 +133,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find common supertype for complex types with inheritance in interfaces hierarchy") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     import InterfaceHierarchy._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
@@ -139,6 +143,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("find common supertype for complex types with inheritance in mixins hierarchy") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     import HierarchyInMixins._
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Pet]) shouldEqual Typed[Pet]
     commonSuperTypeFinder.commonSupertype(Typed[Dog], Typed[Cat]) shouldEqual Typed[Pet]
@@ -147,7 +152,19 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
     commonSuperTypeFinder.commonSupertype(Typed(Typed[Dog], Typed[Cactus]), Typed[Cat]) shouldEqual Typed[Pet]
   }
 
+  test("common supertype with generics") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[Comparable[Number]], Typed.fromDetailedType[Integer]) shouldEqual Typed.fromDetailedType[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[Integer], Typed.fromDetailedType[Comparable[Number]]) shouldEqual Typed.fromDetailedType[Comparable[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Integer]], Typed.fromDetailedType[util.List[Number]]) shouldEqual Typed.fromDetailedType[util.List[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Integer]], Typed.fromDetailedType[util.Collection[Number]]) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
+    // below weird examples which will work
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[Number]], Typed.fromDetailedType[util.Collection[Integer]]) shouldEqual Typed.fromDetailedType[util.Collection[Number]]
+    commonSuperTypeFinder.commonSupertype(Typed.fromDetailedType[util.List[String]], Typed.fromDetailedType[util.Collection[Integer]]) shouldEqual Typed.genericTypeClass[util.Collection[_]](List(Unknown))
+  }
+
   test("common supertype with union of not matching classes strategy with enabled strictTypeChecking") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     import ClassHierarchy._
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
@@ -156,6 +173,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("common supertype with union of not matching classes strategy with disabled strictTypeChecking") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     import ClassHierarchy._
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(Typed[Dog], Typed[Cactus]) shouldEqual Typed(Typed[Dog], Typed[Cactus])
@@ -205,6 +223,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("determinate if can be superclass for objects with value") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
     unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
@@ -212,6 +231,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("should calculate supertype for objects with value when strict type checking is on") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, true)
     unionFinder.commonSupertype(Typed.fromInstance(65), Typed.fromInstance(65)) shouldBe Typed.fromInstance(65)
     unionFinder.commonSupertype(Typed.fromInstance(91), Typed.fromInstance(35)) shouldBe Typed.typedClass[Int]
@@ -219,6 +239,7 @@ class TypingResultSpec extends FunSuite with Matchers with OptionValues with Ins
   }
 
   test("should calculate supertype for null") {
+    implicit val toSupertypePromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
     val unionFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.Union, false)
     unionFinder.commonSupertype(TypedNull, TypedNull) shouldBe TypedNull
     unionFinder.commonSupertype(TypedNull, Typed[String]) shouldBe Typed[String]
