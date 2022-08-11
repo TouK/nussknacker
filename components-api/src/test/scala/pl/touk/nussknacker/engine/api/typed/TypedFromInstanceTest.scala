@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{ LoneElement}
+import org.scalatest.LoneElement
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

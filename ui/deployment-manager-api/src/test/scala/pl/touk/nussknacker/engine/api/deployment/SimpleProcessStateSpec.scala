@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import org.scalatest.{ Inside}
+import org.scalatest.Inside
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}

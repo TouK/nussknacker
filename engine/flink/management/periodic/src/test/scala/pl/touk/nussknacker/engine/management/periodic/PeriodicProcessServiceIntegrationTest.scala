@@ -7,7 +7,7 @@ import com.cronutils.model.field.expression.FieldExpressionFactory.{on, question
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{  OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}

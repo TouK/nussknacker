@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.runner
 
 import io.circe.Encoder
 import io.circe.syntax._
-import org.scalatest.{ Inside}
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._

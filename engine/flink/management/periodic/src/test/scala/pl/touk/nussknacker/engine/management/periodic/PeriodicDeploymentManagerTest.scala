@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}

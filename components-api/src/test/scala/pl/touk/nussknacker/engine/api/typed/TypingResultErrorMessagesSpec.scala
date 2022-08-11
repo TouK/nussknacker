@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.typed
 
 import cats.implicits._
 import cats.data.NonEmptyList
-import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._

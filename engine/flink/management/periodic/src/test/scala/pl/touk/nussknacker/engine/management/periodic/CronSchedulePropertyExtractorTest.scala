@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.periodic
 
-import org.scalatest.{ Inside}
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder

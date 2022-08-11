@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Json
-import org.scalatest.{ Suite}
+import org.scalatest.Suite
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{  OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder

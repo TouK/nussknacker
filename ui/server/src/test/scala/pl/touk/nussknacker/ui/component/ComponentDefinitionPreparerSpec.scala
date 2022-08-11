@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
-import org.scalatest.{  OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}

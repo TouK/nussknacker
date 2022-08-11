@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition.parameter.defaults
 
-import org.scalatest.{  OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.definition.parameter.defaults.TypeRelatedParameterValueDeterminer._

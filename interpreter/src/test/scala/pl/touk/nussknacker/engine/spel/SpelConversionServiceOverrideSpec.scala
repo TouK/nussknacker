@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{  OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService

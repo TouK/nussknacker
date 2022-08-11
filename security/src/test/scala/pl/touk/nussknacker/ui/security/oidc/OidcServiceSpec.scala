@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import cats.data.Validated.Invalid
-import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtBase64, JwtCirce, JwtClaim, JwtHeader}

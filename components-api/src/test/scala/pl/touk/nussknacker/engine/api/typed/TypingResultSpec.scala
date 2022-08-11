@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed
 
-import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}

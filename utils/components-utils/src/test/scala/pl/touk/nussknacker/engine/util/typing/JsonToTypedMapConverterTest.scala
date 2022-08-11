@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util.typing
 
 import io.circe.parser._
-import org.scalatest.{ Inside}
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 

@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import org.scalacheck.Arbitrary._
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalatest.{ Inside}
+import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

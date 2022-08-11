@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.definition
 
-import org.scalatest.{ OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._

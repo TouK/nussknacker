@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.security.ssl
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{ OptionValues}
+import org.scalatest.OptionValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 

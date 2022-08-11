@@ -4,7 +4,7 @@ import io.circe.Json
 import io.circe.Json.{fromDoubleOrNull, fromString}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
-import org.scalatest.{ Inside, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.encode.AvroToJsonEncoder
