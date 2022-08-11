@@ -1,16 +1,17 @@
+/* eslint-disable i18next/no-literal-string */
 import _ from "lodash"
 import React, {useCallback, useMemo} from "react"
 import {useSelector} from "react-redux"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
-import {Field} from "../../../../types"
+import {Parameter} from "../../../../types"
 import {MapVariableProps} from "../MapVariable"
 import {NodeCommonDetailsDefinition} from "../NodeCommonDetailsDefinition"
 import FieldsSelect from "./FieldsSelect"
 
-type Props<F extends Field> = MapVariableProps<F>
+type Props = MapVariableProps<Parameter>
 
-export default function SubprocessInputDefinition<F extends Field>(props: Props<F>): JSX.Element {
+export default function SubprocessInputDefinition(props: Props): JSX.Element {
   const {removeElement, addElement, ...passProps} = props
   const {isMarked, node, onChange, readOnly, showValidation} = passProps
 
@@ -25,7 +26,7 @@ export default function SubprocessInputDefinition<F extends Field>(props: Props<
   const defaultTypeOption = useMemo(() => _.find(typeOptions, {label: "String"}) || _.head(typeOptions), [typeOptions])
 
   const addField = useCallback(() => {
-    addElement("parameters", {name: "", typ: {refClazzName: defaultTypeOption.value}})
+    addElement("parameters", {name: "", typ: {refClazzName: defaultTypeOption.value}} as Parameter)
   }, [addElement, defaultTypeOption.value])
 
   const fields = useMemo(() => node.parameters || [], [node.parameters])

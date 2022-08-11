@@ -138,7 +138,6 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
               {...this.props}
               editedNode={this.state.editedNode}
               edges={this.state.edges}
-              publishNodeChange={publishNodeChange}
               setEdgesState={setEdgesState}
               updateNodeState={updateNodeState}
               testResultsState={testResultsState}

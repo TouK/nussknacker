@@ -6,7 +6,7 @@ import {NodeCommonDetailsDefinition, NodeDetailsProps} from "./NodeCommonDetails
 
 export interface MapVariableProps<F extends Field> extends NodeDetailsProps<F> {
   removeElement: (namespace: string, ix: number) => void,
-  addElement: (property: string, element: $TodoType) => void,
+  addElement: (property: string, element: F) => void,
   variableTypes: VariableTypes,
   expressionType?: TypedObjectTypingResult,
 }
@@ -15,7 +15,7 @@ function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {
   const {removeElement, addElement, variableTypes, expressionType, ...passProps} = props
   const {node, ...mapProps} = passProps
 
-  const addField = useCallback((namespace: string, field) => {
+  const addField = useCallback((namespace, field) => {
     const newField: Field = {name: "", expression: {expression: "", language: ExpressionLang.SpEL}}
     addElement(namespace, field || newField)
   }, [addElement])

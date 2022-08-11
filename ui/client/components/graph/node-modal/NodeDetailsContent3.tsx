@@ -6,16 +6,14 @@ import {
   NodeValidationError,
   Parameter,
   ProcessDefinitionData,
-  ProcessId,
   UIParameter,
   VariableTypes,
 } from "../../../types"
 import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {UserSettings} from "../../../reducers/userSettings"
 import {DispatchWithCallback, hasOutputVar, IdField} from "./NodeDetailsContentUtils"
 import React, {SetStateAction, useCallback, useMemo} from "react"
-import {get, isEqual, set, sortBy, startsWith} from "lodash"
+import {cloneDeep, get, isEqual, set, sortBy, startsWith} from "lodash"
 import {FieldLabel, findParamDefinitionByName} from "./FieldLabel"
 import {allValid, Error, errorValidator, Validator} from "./editors/Validators"
 import {StateForSelectTestResults} from "../../../common/TestResultUtils"
@@ -34,13 +32,11 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import Variable from "./Variable"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
 
-type UpdateState<T> = (updateState: (currentState: T) => T) => void
+type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
 
 export interface NodeDetailsContentProps3 {
   fieldErrors?: NodeValidationError[],
   isEditMode?: boolean,
-  dynamicParameterDefinitions?: UIParameter[],
-  processId?: ProcessId,
   additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
   showValidation?: boolean,
   showSwitch?: boolean,
@@ -48,15 +44,12 @@ export interface NodeDetailsContentProps3 {
   processDefinitionData?: ProcessDefinitionData,
   node: NodeType,
   edges?: Edge[],
-  expressionType?,
   originalNodeId?: NodeType["id"],
-  nodeTypingInfo?,
-  findAvailableBranchVariables?,
-  processProperties?,
   pathsToMark?: string[],
+  expressionType?,
+  nodeTypingInfo?,
   onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   variableTypes?: VariableTypes,
-  userSettings: UserSettings,
 
   parameterDefinitions: UIParameter[],
   originalNode: NodeType,
@@ -64,10 +57,11 @@ export interface NodeDetailsContentProps3 {
   setEditedNode: DispatchWithCallback<SetStateAction<NodeType>>,
   updateNodeState: UpdateState<NodeType>,
 
-  publishNodeChange,
   setEdgesState,
   testResultsState,
 }
+
+export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
 export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Element {
   const {
@@ -99,10 +93,10 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
   //compare window uses legacy egde component
   const isCompareView = useMemo(() => isMarked(), [isMarked])
 
-  const removeElement = useCallback((property: string, index: number): void => {
+  const removeElement = useCallback((property: keyof NodeType, index: number): void => {
     updateNodeState((currentNode) => ({
       ...currentNode,
-      [property]: currentNode[property].filter((_, i) => i !== index),
+      [property]: currentNode[property]?.filter((_, i) => i !== index) || [],
     }))
   }, [updateNodeState])
 
@@ -116,22 +110,23 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     )
   }, [originalNodeId, parameterDefinitions])
 
-  const addElement = useCallback(<T extends unknown>(property: string, element: T): void => {
-    updateNodeState((editedNode) => {
-      const elements = editedNode[property]
-      return {...editedNode, [property]: [...elements, element]}
-    })
+  const addElement = useCallback(<K extends keyof NodeType>(property: K, element: ArrayElement<NodeType[K]>): void => {
+    updateNodeState((currentNode) => ({
+      ...currentNode,
+      [property]: [...currentNode[property], element],
+    }))
   }, [updateNodeState])
 
-  const setNodeDataAt = useCallback(<T extends unknown>(propToMutate: string, newValue: T, defaultValue?: T): void => {
+  const setProperty = useCallback(<K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     updateNodeState((currentNode) => {
-      return set(currentNode, propToMutate, value)
+      const node = cloneDeep(currentNode)
+      return set(node, property, value)
     })
   }, [updateNodeState])
 
   //this is for "static" fields like expressions in filters, switches etc.
-  const createStaticExpressionField = useCallback(({
+  const StaticExpressionField = useCallback(({
     fieldName,
     fieldLabel,
     expressionProperty,
@@ -149,14 +144,14 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         showValidation={showValidation}
         showSwitch={showSwitch}
         parameterDefinition={findParamDefinitionByName(parameterDefinitions, fieldName)}
-        setNodeDataAt={setNodeDataAt}
+        setNodeDataAt={setProperty}
         testResultsToShow={testResultsState.testResultsToShow}
         renderFieldLabel={renderFieldLabel}
         variableTypes={findAvailableVariables(originalNodeId, undefined)}
         errors={fieldErrors}
       />
     )
-  }, [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setNodeDataAt, showSwitch, showValidation])
+  }, [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setProperty, showSwitch, showValidation])
 
   const idField = useMemo(() => (
     <IdField
@@ -164,11 +159,11 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
       isEditMode={isEditMode}
       showValidation={showValidation}
       editedNode={editedNode}
-      onChange={(newValue) => setNodeDataAt("id", newValue)}
+      onChange={(newValue) => setProperty("id", newValue)}
     >
       {renderFieldLabel("Name")}
     </IdField>
-  ), [editedNode, isEditMode, isMarked, renderFieldLabel, setNodeDataAt, showValidation])
+  ), [editedNode, isEditMode, isMarked, renderFieldLabel, setProperty, showValidation])
 
   const createField = useCallback(<K extends keyof NodeType & string, T extends NodeType[K]>({
     fieldType,
@@ -190,7 +185,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     const readOnly = !isEditMode || readonly
     const value: T = get(editedNode, fieldProperty, null) ?? defaultValue
     const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
-    const onChange = (newValue) => setNodeDataAt(fieldProperty, newValue, defaultValue)
+    const onChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue)
     return (
       <Field
         type={fieldType}
@@ -206,7 +201,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         {renderFieldLabel(fieldLabel)}
       </Field>
     )
-  }, [editedNode, isEditMode, isMarked, renderFieldLabel, setNodeDataAt, showValidation])
+  }, [editedNode, isEditMode, isMarked, renderFieldLabel, setProperty, showValidation])
 
   const DescriptionField = useCallback((): JSX.Element => {
     return createField({
@@ -235,7 +230,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
           showValidation={showValidation}
           showSwitch={showSwitch}
           parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
-          setNodeDataAt={setNodeDataAt}
+          setNodeDataAt={setProperty}
           testResultsToShow={testResultsState.testResultsToShow}
           renderFieldLabel={renderFieldLabel}
           variableTypes={findAvailableVariables(originalNodeId, parameterDefinitions?.find(p => p.name === parameter.name))}
@@ -243,7 +238,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         />
       )
     }
-    , [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setNodeDataAt, showSwitch, showValidation])
+    , [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setProperty, showSwitch, showValidation])
 
   const SourceSinkCommon = useCallback(({
     fieldErrors,
@@ -296,7 +291,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
       return (
         <SubprocessInputDefinition
           addElement={addElement}
-          onChange={setNodeDataAt}
+          onChange={setProperty}
           node={editedNode}
           isMarked={isMarked}
           readOnly={!isEditMode}
@@ -312,7 +307,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         <SubprocessOutputDefinition
           renderFieldLabel={renderFieldLabel}
           removeElement={removeElement}
-          onChange={setNodeDataAt}
+          onChange={setProperty}
           node={editedNode}
           addElement={addElement}
           isMarked={isMarked}
@@ -328,15 +323,13 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
       return (
         <div className="node-table-body">
           {idField}
-          {createStaticExpressionField(
-            {
-              fieldName: "expression",
-              fieldLabel: "Expression",
-              expressionProperty: "expression",
-              fieldErrors: fieldErrors,
-              testResultsState,
-            }
-          )}
+          <StaticExpressionField
+            fieldName={"expression"}
+            fieldLabel={"Expression"}
+            expressionProperty={"expression"}
+            fieldErrors={fieldErrors}
+            testResultsState={testResultsState}
+          />
           {createField({
             fieldType: FieldType.checkbox,
             fieldLabel: "Disabled",
@@ -411,7 +404,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
             processDefinitionData={processDefinitionData}
             editedNode={editedNode}
             savedNode={editedNode}
-            setNodeState={newParams => setNodeDataAt("ref.parameters", newParams)}
+            setNodeState={newParams => setProperty("ref.parameters", newParams)}
             createListField={(param, index) => (
               <ParameterExpressionField
                 parameter={param}
@@ -462,7 +455,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
               isEditMode={isEditMode}
               errors={fieldErrors}
               parameterDefinitions={parameterDefinitions}
-              setNodeDataAt={setNodeDataAt}
+              setNodeDataAt={setProperty}
               testResultsToShow={testResultsState.testResultsToShow}
               findAvailableVariables={findAvailableVariables}
             />
@@ -489,7 +482,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         <MapVariable
           renderFieldLabel={renderFieldLabel}
           removeElement={removeElement}
-          onChange={setNodeDataAt}
+          onChange={setProperty}
           node={editedNode}
           addElement={addElement}
           isMarked={isMarked}
@@ -505,7 +498,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
       return (
         <Variable
           renderFieldLabel={renderFieldLabel}
-          onChange={setNodeDataAt}
+          onChange={setProperty}
           node={editedNode}
           isMarked={isMarked}
           readOnly={!isEditMode}
@@ -526,13 +519,15 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         <div className="node-table-body">
           {idField}
           {showExpression ?
-            createStaticExpressionField({
-              fieldName: "expression",
-              fieldLabel: "Expression (deprecated)",
-              expressionProperty: "expression",
-              fieldErrors: fieldErrors,
-              testResultsState,
-            }) :
+            (
+              <StaticExpressionField
+                fieldName={"expression"}
+                fieldLabel={"Expression (deprecated)"}
+                expressionProperty={"expression"}
+                fieldErrors={fieldErrors}
+                testResultsState={testResultsState}
+              />
+            ) :
             null}
           {showExprVal ?
             createField({
@@ -644,7 +639,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
             propertyName={propName}
             propertyConfig={propConfig}
             propertyErrors={fieldErrors}
-            onChange={setNodeDataAt}
+            onChange={setProperty}
             renderFieldLabel={renderFieldLabel}
             editedNode={editedNode}
             readOnly={!isEditMode}
