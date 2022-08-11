@@ -8,6 +8,7 @@
 * [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-response mode available for k8s deployment
 * [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
+* [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-response mode publishes OpenApi specification for its services
 
 1.5.0 (Not released yet)
 ------------------------

@@ -1077,10 +1077,13 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
-      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
-    )
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
+      "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
+)
     // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
-  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test",
+  kafkaTestUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
