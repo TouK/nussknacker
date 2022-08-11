@@ -393,10 +393,12 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
   }
 
-  generateTestData(processId, testSampleSize, data) {
-    return api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+  generateTestData(processId, testSampleSize, data): Promise<AxiosResponse<any>> {
+    const promise = api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+    promise
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error))
+    return promise
   }
 
   fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment): Promise<AxiosResponse<ProcessCounts>> {

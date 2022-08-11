@@ -1,8 +1,6 @@
 import {css} from "@emotion/css"
-import React, {PropsWithChildren, useMemo} from "react"
+import React, {PropsWithChildren} from "react"
 import {useSelector} from "react-redux"
-import TestResultUtils, {NodeTestResults} from "../../../../common/TestResultUtils"
-import {getTestResults} from "../../../../reducers/selectors/graph"
 import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
 import NodeDetailsContent from "../NodeDetailsContent/NodeDetailsContentConnected"
@@ -20,15 +18,9 @@ interface Props {
   updateEdgesState: (edges: Edge[]) => void,
 }
 
-export function useNodeTestResults(id: NodeId): NodeTestResults {
-  const results = useSelector(getTestResults)
-  return useMemo(() => TestResultUtils.resultsForNode(results, id), [id, results])
-}
-
 export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
   const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
   const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
-  const testResults = useNodeTestResults(currentNodeId)
 
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
@@ -40,7 +32,6 @@ export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>)
             updateNodeState(node)
           }}
           isEditMode={!readOnly}
-          testResults={testResults}
           showValidation={true}
           showSwitch={true}
           originalNodeId={currentNodeId}

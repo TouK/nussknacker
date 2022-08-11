@@ -121,7 +121,6 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     const {
       props,
       updateNodeState,
-      publishNodeChange,
       setEdgesState,
     } = this
 
@@ -133,17 +132,14 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
       <>
         <NodeErrors errors={otherErrors} message="Node has errors"/>
         <TestResultsWrapper nodeId={node.id}>
-          {testResultsState => (
-            <NodeDetailsContent3
-              {...this.props}
-              editedNode={this.state.editedNode}
-              edges={this.state.edges}
-              setEdgesState={setEdgesState}
-              updateNodeState={updateNodeState}
-              testResultsState={testResultsState}
-              fieldErrors={fieldErrors}
-            />
-          )}
+          <NodeDetailsContent3
+            {...this.props}
+            editedNode={this.state.editedNode}
+            edges={this.state.edges}
+            setEdgesState={setEdgesState}
+            updateNodeState={updateNodeState}
+            fieldErrors={fieldErrors}
+          />
         </TestResultsWrapper>
       </>
     )
