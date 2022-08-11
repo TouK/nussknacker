@@ -37,7 +37,7 @@
   [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
   [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
   [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3337](https://github.com/TouK/nussknacker/pull/3337) [#3287](https://github.com/TouK/nussknacker/pull/3287)
-  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned off by new lowLevelComponentsEnabled flag 
+  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned on by new lowLevelComponentsEnabled flag 
   * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
   * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
   * [#3354](https://github.com/TouK/nussknacker/pull/3354) Universal source optimization - if message without schemaId, using cache when getting one
