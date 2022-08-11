@@ -84,8 +84,8 @@ class NotificationService(currentDeployments: CurrentDeployments,
   private def prepareDeploymentNotifications(user: LoggedUser)(implicit ec: ExecutionContext, timeout: Timeout): Future[List[Notification]] = {
     currentDeployments.retrieve.map { case DeploymentStatusResponse(deploymentInfos) =>
       deploymentInfos
-        //no need to inform current user
-        .filterNot(_._2.userId == user.id)
+        //no need to inform current user, DeployInfo takes username, not id
+        .filterNot(_._2.userId == user.username)
         .map { case (k, v) => currentDeploymentToNotification(k, v) }.toList
     }
   }
@@ -96,7 +96,7 @@ class NotificationService(currentDeployments: CurrentDeployments,
       case DeploymentActionType.Cancel => "cancelled"
     }
     //TODO: should it be displayed only once?
-    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", Some(NotificationType.info), Nil)
+    Notification(UUID.randomUUID().toString, None, s"Scenario ${processName.value} is being $actionString by ${deploymentInfo.userId}", Some(NotificationType.success), Nil)
   }
 
 }
