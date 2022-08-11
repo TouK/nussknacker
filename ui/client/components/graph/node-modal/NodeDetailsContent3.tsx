@@ -11,12 +11,11 @@ import {
 } from "../../../types"
 import AdditionalProperty, {AdditionalPropertyConfig} from "./AdditionalProperty"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {DispatchWithCallback, hasOutputVar, IdField} from "./NodeDetailsContentUtils"
+import {DispatchWithCallback, hasOutputVar} from "./NodeDetailsContentUtils"
 import React, {SetStateAction, useCallback, useMemo} from "react"
 import {cloneDeep, get, isEqual, set, sortBy, startsWith} from "lodash"
 import {FieldLabel, findParamDefinitionByName} from "./FieldLabel"
-import {allValid, Error, errorValidator, Validator} from "./editors/Validators"
-import {StateForSelectTestResults} from "../../../common/TestResultUtils"
+import {allValid, errorValidator, mandatoryValueValidator, Validator} from "./editors/Validators"
 import ExpressionField from "./editors/expression/ExpressionField"
 import Field, {FieldType} from "./editors/field/Field"
 import {refParameters, serviceParameters} from "./NodeDetailsContent/helpers"
@@ -31,6 +30,186 @@ import MapVariable from "./MapVariable"
 import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import Variable from "./Variable"
 import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
+
+interface CompFunctions {
+  isMarked: (path?: string) => boolean,
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+}
+
+interface StaticExpressionFieldProps extends CompFunctions, NodeDetailsContentProps3 {
+  fieldLabel: string,
+}
+
+//this is for "static" fields like expressions in filters, switches etc.
+const StaticExpressionField = ({
+  fieldLabel, isMarked, renderFieldLabel, setProperty, ...props
+}: StaticExpressionFieldProps): JSX.Element => {
+  const fieldName = "expression"
+  const expressionProperty = "expression"
+  return (
+    <ExpressionField
+      fieldName={fieldName}
+      fieldLabel={fieldLabel}
+      exprPath={`${expressionProperty}`}
+      isEditMode={props.isEditMode}
+      editedNode={props.editedNode}
+      isMarked={isMarked}
+      showValidation={props.showValidation}
+      showSwitch={props.showSwitch}
+      parameterDefinition={findParamDefinitionByName(props.parameterDefinitions, fieldName)}
+      setNodeDataAt={setProperty}
+      testResultsToShow={props.testResultsState.testResultsToShow}
+      renderFieldLabel={renderFieldLabel}
+      variableTypes={props.findAvailableVariables(props.originalNodeId, undefined)}
+      errors={props.fieldErrors || []}
+    />
+  )
+}
+
+interface ParameterExpressionField extends CompFunctions, NodeDetailsContentProps3 {
+  parameter: Parameter,
+  listFieldPath: string,
+}
+
+//this is for "dynamic" parameters in sources, sinks, services etc.
+const ParameterExpressionField = ({
+  parameter,
+  listFieldPath,
+  isMarked, renderFieldLabel, setProperty,
+  ...props
+}: ParameterExpressionField): JSX.Element => {
+  const expressionProperty = "expression"
+  return (
+    <ExpressionField
+      fieldName={parameter.name}
+      fieldLabel={parameter.name}
+      exprPath={`${listFieldPath}.${expressionProperty}`}
+      isEditMode={props.isEditMode}
+      editedNode={props.editedNode}
+      isMarked={isMarked}
+      showValidation={props.showValidation}
+      showSwitch={props.showSwitch}
+      parameterDefinition={findParamDefinitionByName(props.parameterDefinitions, parameter.name)}
+      setNodeDataAt={setProperty}
+      testResultsToShow={props.testResultsState.testResultsToShow}
+      renderFieldLabel={renderFieldLabel}
+      variableTypes={props.findAvailableVariables(props.originalNodeId, props.parameterDefinitions?.find(p => p.name === parameter.name))}
+      errors={props.fieldErrors || []}
+    />
+  )
+}
+
+function IdField({
+  isMarked,
+  isEditMode,
+  showValidation,
+  editedNode,
+  setProperty,
+  renderFieldLabel,
+}: CompFunctions & NodeDetailsContentProps3): JSX.Element {
+  const validators = [mandatoryValueValidator]
+
+  return (
+    <Field
+      type={FieldType.input}
+      isMarked={isMarked("id")}
+      showValidation={showValidation}
+      onChange={(newValue) => setProperty("id", newValue.toString())}
+      readOnly={!isEditMode}
+      className={!showValidation || allValid(validators, [editedNode.id]) ? "node-input" : "node-input node-input-with-error"}
+      validators={validators}
+      value={editedNode.id}
+      autoFocus
+    >
+      {renderFieldLabel("Name")}
+
+    </Field>
+  )
+}
+
+const CreateField = <K extends keyof NodeType & string, T extends NodeType[K]>({
+  fieldType,
+  fieldLabel,
+  fieldProperty,
+  autoFocus,
+  readonly,
+  defaultValue,
+  validators = [],
+  isMarked, renderFieldLabel, setProperty,
+  ...props
+}: {
+  fieldType: FieldType,
+  fieldLabel: string,
+  fieldProperty: K,
+  autoFocus?: boolean,
+  readonly?: boolean,
+  defaultValue?: T,
+  validators?: Validator[],
+} & CompFunctions & NodeDetailsContentProps3): JSX.Element => {
+  const readOnly = !props.isEditMode || readonly
+  const value: T = get(props.editedNode, fieldProperty, null) ?? defaultValue
+  const className = !props.showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
+  const onChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue)
+  return (
+    <Field
+      type={fieldType}
+      isMarked={isMarked(fieldProperty)}
+      readOnly={readOnly}
+      showValidation={props.showValidation}
+      autoFocus={autoFocus}
+      className={className}
+      validators={validators}
+      value={value}
+      onChange={onChange}
+    >
+      {renderFieldLabel(fieldLabel)}
+    </Field>
+  )
+}
+
+const DescriptionField = ({
+  isMarked, renderFieldLabel, setProperty,
+  ...props
+}: CompFunctions & NodeDetailsContentProps3): JSX.Element => {
+  return CreateField({
+    ...props,
+    isMarked, renderFieldLabel, setProperty,
+    fieldType: FieldType.plainTextarea,
+    fieldLabel: "Description",
+    fieldProperty: "additionalFields.description",
+  })
+}
+
+const SourceSinkCommon = ({
+  children,
+  isMarked, renderFieldLabel, setProperty,
+  ...props
+}: { children?: JSX.Element } & CompFunctions & NodeDetailsContentProps3): JSX.Element => {
+  return (
+    <div className="node-table-body">
+      <IdField
+        {...props}
+        {...{isMarked, renderFieldLabel, setProperty}}
+      />
+      {refParameters(props.editedNode).map((param, index) => (
+        <div className="node-block" key={props.node.id + param.name + index}>
+          <ParameterExpressionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+            parameter={param}
+            listFieldPath={`ref.parameters[${index}]`}
+          />
+        </div>
+      ))}
+      {children}
+      <DescriptionField
+        {...props}
+        {...{isMarked, renderFieldLabel, setProperty}}
+      />
+    </div>
+  )
+}
 
 type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
 
@@ -64,227 +243,70 @@ export interface NodeDetailsContentProps3 {
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
 export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Element {
-  const {
-    fieldErrors = [],
-    additionalPropertiesConfig,
-    edges,
-    editedNode,
-    expressionType,
-    findAvailableVariables,
-    isEditMode,
-    node,
-    nodeTypingInfo,
-    originalNode,
-    originalNodeId,
-    parameterDefinitions,
-    pathsToMark,
-    processDefinitionData,
-    setEdgesState,
-    showSwitch,
-    showValidation,
-    testResultsState,
-    updateNodeState,
-  } = props
-
   const isMarked = useCallback((path = ""): boolean => {
-    return pathsToMark?.some(toMark => startsWith(toMark, path))
-  }, [pathsToMark])
+    return props.pathsToMark?.some(toMark => startsWith(toMark, path))
+  }, [props.pathsToMark])
 
   //compare window uses legacy egde component
   const isCompareView = useMemo(() => isMarked(), [isMarked])
 
   const removeElement = useCallback((property: keyof NodeType, index: number): void => {
-    updateNodeState((currentNode) => ({
+    props.updateNodeState((currentNode) => ({
       ...currentNode,
       [property]: currentNode[property]?.filter((_, i) => i !== index) || [],
     }))
-  }, [updateNodeState])
+  }, [props.updateNodeState])
 
   const renderFieldLabel = useCallback((paramName: string): JSX.Element => {
     return (
       <FieldLabel
-        nodeId={originalNodeId}
-        parameterDefinitions={parameterDefinitions}
+        nodeId={props.originalNodeId}
+        parameterDefinitions={props.parameterDefinitions}
         paramName={paramName}
       />
     )
-  }, [originalNodeId, parameterDefinitions])
+  }, [props.originalNodeId, props.parameterDefinitions])
 
   const addElement = useCallback(<K extends keyof NodeType>(property: K, element: ArrayElement<NodeType[K]>): void => {
-    updateNodeState((currentNode) => ({
+    props.updateNodeState((currentNode) => ({
       ...currentNode,
       [property]: [...currentNode[property], element],
     }))
-  }, [updateNodeState])
+  }, [props.updateNodeState])
 
   const setProperty = useCallback(<K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
     const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
-    updateNodeState((currentNode) => {
+    props.updateNodeState((currentNode) => {
       const node = cloneDeep(currentNode)
       return set(node, property, value)
     })
-  }, [updateNodeState])
+  }, [props.updateNodeState])
 
-  //this is for "static" fields like expressions in filters, switches etc.
-  const StaticExpressionField = useCallback(({
-    fieldName,
-    fieldLabel,
-    expressionProperty,
-    fieldErrors,
-    testResultsState,
-  }: { fieldName: string, fieldLabel: string, expressionProperty: string, fieldErrors: Error[], testResultsState?: StateForSelectTestResults }): JSX.Element => {
-    return (
-      <ExpressionField
-        fieldName={fieldName}
-        fieldLabel={fieldLabel}
-        exprPath={`${expressionProperty}`}
-        isEditMode={isEditMode}
-        editedNode={editedNode}
-        isMarked={isMarked}
-        showValidation={showValidation}
-        showSwitch={showSwitch}
-        parameterDefinition={findParamDefinitionByName(parameterDefinitions, fieldName)}
-        setNodeDataAt={setProperty}
-        testResultsToShow={testResultsState.testResultsToShow}
-        renderFieldLabel={renderFieldLabel}
-        variableTypes={findAvailableVariables(originalNodeId, undefined)}
-        errors={fieldErrors}
-      />
-    )
-  }, [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setProperty, showSwitch, showValidation])
+  const variableTypes = useMemo(() => props.findAvailableVariables(props.originalNodeId), [props.findAvailableVariables, props.originalNodeId])
 
-  const idField = useMemo(() => (
-    <IdField
-      isMarked={isMarked("id")}
-      isEditMode={isEditMode}
-      showValidation={showValidation}
-      editedNode={editedNode}
-      onChange={(newValue) => setProperty("id", newValue)}
-    >
-      {renderFieldLabel("Name")}
-    </IdField>
-  ), [editedNode, isEditMode, isMarked, renderFieldLabel, setProperty, showValidation])
-
-  const createField = useCallback(<K extends keyof NodeType & string, T extends NodeType[K]>({
-    fieldType,
-    fieldLabel,
-    fieldProperty,
-    autoFocus,
-    readonly,
-    defaultValue,
-    validators = [],
-  }: {
-    fieldType: FieldType,
-    fieldLabel: string,
-    fieldProperty: K,
-    autoFocus?: boolean,
-    readonly?: boolean,
-    defaultValue?: T,
-    validators?: Validator[],
-  }): JSX.Element => {
-    const readOnly = !isEditMode || readonly
-    const value: T = get(editedNode, fieldProperty, null) ?? defaultValue
-    const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
-    const onChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue)
-    return (
-      <Field
-        type={fieldType}
-        isMarked={isMarked(fieldProperty)}
-        readOnly={readOnly}
-        showValidation={showValidation}
-        autoFocus={autoFocus}
-        className={className}
-        validators={validators}
-        value={value}
-        onChange={onChange}
-      >
-        {renderFieldLabel(fieldLabel)}
-      </Field>
-    )
-  }, [editedNode, isEditMode, isMarked, renderFieldLabel, setProperty, showValidation])
-
-  const DescriptionField = useCallback((): JSX.Element => {
-    return createField({
-      fieldType: FieldType.plainTextarea,
-      fieldLabel: "Description",
-      fieldProperty: "additionalFields.description",
-    })
-  }, [createField])
-
-  //this is for "dynamic" parameters in sources, sinks, services etc.
-  const ParameterExpressionField = useCallback(({
-      parameter,
-      listFieldPath,
-      fieldErrors,
-      testResultsState,
-      expressionProperty = "expression",
-    }: { parameter: Parameter, expressionProperty?: string, listFieldPath: string, fieldErrors: Error[], testResultsState: StateForSelectTestResults }): JSX.Element => {
+  switch (NodeUtils.nodeType(props.node)) {
+    case "Source":
       return (
-        <ExpressionField
-          fieldName={parameter.name}
-          fieldLabel={parameter.name}
-          exprPath={`${listFieldPath}.${expressionProperty}`}
-          isEditMode={isEditMode}
-          editedNode={editedNode}
-          isMarked={isMarked}
-          showValidation={showValidation}
-          showSwitch={showSwitch}
-          parameterDefinition={findParamDefinitionByName(parameterDefinitions, parameter.name)}
-          setNodeDataAt={setProperty}
-          testResultsToShow={testResultsState.testResultsToShow}
-          renderFieldLabel={renderFieldLabel}
-          variableTypes={findAvailableVariables(originalNodeId, parameterDefinitions?.find(p => p.name === parameter.name))}
-          errors={fieldErrors}
+        <SourceSinkCommon
+          {...props}
+          {...{isMarked, renderFieldLabel, setProperty}}
         />
       )
-    }
-    , [editedNode, findAvailableVariables, isEditMode, isMarked, originalNodeId, parameterDefinitions, renderFieldLabel, setProperty, showSwitch, showValidation])
-
-  const SourceSinkCommon = useCallback(({
-    fieldErrors,
-    children,
-    testResultsState,
-  }: { fieldErrors: Error[], children?: JSX.Element, testResultsState: StateForSelectTestResults }): JSX.Element => {
-    return (
-      <div className="node-table-body">
-        {idField}
-        {refParameters(editedNode).map((param, index) => {
-          return (
-            <div className="node-block" key={node.id + param.name + index}>
-              <ParameterExpressionField
-                parameter={param}
-                listFieldPath={`ref.parameters[${index}]`}
-
-                expressionProperty={"expression"}
-                fieldErrors={fieldErrors}
-                testResultsState={testResultsState}
-              />
-            </div>
-          )
-        })}
-        {children}
-        <DescriptionField/>
-      </div>
-    )
-  }, [DescriptionField, ParameterExpressionField, editedNode, idField, node.id])
-
-  const variableTypes = useMemo(() => findAvailableVariables(originalNodeId), [findAvailableVariables, originalNodeId])
-
-  switch (NodeUtils.nodeType(node)) {
-    case "Source":
-      return <SourceSinkCommon fieldErrors={fieldErrors} testResultsState={testResultsState}/>
     case "Sink":
       return (
-        <SourceSinkCommon fieldErrors={fieldErrors} testResultsState={testResultsState}>
-          {(
-            <div>
-              {createField({
-                fieldType: FieldType.checkbox,
-                fieldLabel: "Disabled",
-                fieldProperty: "isDisabled",
-              })}
-            </div>
-          )}
+        <SourceSinkCommon
+          {...props}
+          {...{isMarked, renderFieldLabel, setProperty}}
+        >
+          <div>
+            {CreateField({
+              ...props,
+              isMarked, renderFieldLabel, setProperty,
+              fieldType: FieldType.checkbox,
+              fieldLabel: "Disabled",
+              fieldProperty: "isDisabled",
+            })}
+          </div>
         </SourceSinkCommon>
       )
     case "SubprocessInputDefinition":
@@ -292,13 +314,13 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         <SubprocessInputDefinition
           addElement={addElement}
           onChange={setProperty}
-          node={editedNode}
+          node={props.editedNode}
           isMarked={isMarked}
-          readOnly={!isEditMode}
+          readOnly={!props.isEditMode}
           removeElement={removeElement}
-          showValidation={showValidation}
+          showValidation={props.showValidation}
           renderFieldLabel={renderFieldLabel}
-          errors={fieldErrors}
+          errors={props.fieldErrors || []}
           variableTypes={variableTypes}
         />
       )
@@ -308,29 +330,33 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
           renderFieldLabel={renderFieldLabel}
           removeElement={removeElement}
           onChange={setProperty}
-          node={editedNode}
+          node={props.editedNode}
           addElement={addElement}
           isMarked={isMarked}
-          readOnly={!isEditMode}
-          showValidation={showValidation}
-          errors={fieldErrors}
+          readOnly={!props.isEditMode}
+          showValidation={props.showValidation}
+          errors={props.fieldErrors || []}
 
           variableTypes={variableTypes}
-          expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
+          expressionType={props.expressionType || props.nodeTypingInfo && {fields: props.nodeTypingInfo}}
         />
       )
     case "Filter":
       return (
         <div className="node-table-body">
-          {idField}
-          <StaticExpressionField
-            fieldName={"expression"}
-            fieldLabel={"Expression"}
-            expressionProperty={"expression"}
-            fieldErrors={fieldErrors}
-            testResultsState={testResultsState}
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
           />
-          {createField({
+          <StaticExpressionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+            fieldLabel={"Expression"}
+          />
+          {CreateField({
+            ...props,
+            isMarked, renderFieldLabel, setProperty,
+
             fieldType: FieldType.checkbox,
             fieldLabel: "Disabled",
             fieldProperty: "isDisabled",
@@ -339,80 +365,95 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
             (
               <EdgesDndComponent
                 label={"Outputs"}
-                nodeId={originalNodeId}
-                value={edges}
-                onChange={(nextEdges) => setEdgesState(nextEdges)}
+                nodeId={props.originalNodeId}
+                value={props.edges}
+                onChange={(nextEdges) => props.setEdgesState(nextEdges)}
                 edgeTypes={[
                   {value: EdgeKind.filterTrue, onlyOne: true},
                   {value: EdgeKind.filterFalse, onlyOne: true},
                 ]}
-                readOnly={!isEditMode}
-                fieldErrors={fieldErrors}
+                readOnly={!props.isEditMode}
+                fieldErrors={props.fieldErrors || []}
               />
             ) :
             null}
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     case "Enricher":
     case "Processor":
       return (
         <div className="node-table-body">
-          {idField}
-          {serviceParameters(editedNode).map((param, index) => {
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
+          {serviceParameters(props.editedNode).map((param, index) => {
             return (
-              <div className="node-block" key={node.id + param.name + index}>
+              <div className="node-block" key={props.node.id + param.name + index}>
                 <ParameterExpressionField
+                  {...props}
+                  {...{isMarked, renderFieldLabel, setProperty}}
                   parameter={param}
                   listFieldPath={`service.parameters[${index}]`}
-
-                  expressionProperty={"expression"}
-                  fieldErrors={fieldErrors}
-                  testResultsState={testResultsState}
                 />
               </div>
             )
           })}
-          {node.type === "Enricher" ?
-            createField({
+          {props.node.type === "Enricher" ?
+            CreateField({
+              ...props,
+              isMarked, renderFieldLabel, setProperty,
+
               fieldType: FieldType.input,
               fieldLabel: "Output",
               fieldProperty: "output",
-              validators: [errorValidator(fieldErrors, "output")],
+              validators: [errorValidator(props.fieldErrors || [], "output")],
             }) :
             null}
-          {node.type === "Processor" ?
-            createField({
+          {props.node.type === "Processor" ?
+            CreateField({
+              ...props, isMarked, renderFieldLabel, setProperty,
+
               fieldType: FieldType.checkbox,
               fieldLabel: "Disabled",
               fieldProperty: "isDisabled",
             }) :
             null}
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     case "SubprocessInput":
       return (
         <div className="node-table-body">
-          {idField}
-          {createField({
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
+          {CreateField({
+            ...props, isMarked, renderFieldLabel, setProperty,
+
             fieldType: FieldType.checkbox,
             fieldLabel: "Disabled",
             fieldProperty: "isDisabled",
           })}
           <ParameterList
-            processDefinitionData={processDefinitionData}
-            editedNode={editedNode}
-            savedNode={editedNode}
+            processDefinitionData={props.processDefinitionData}
+            editedNode={props.editedNode}
+            savedNode={props.editedNode}
             setNodeState={newParams => setProperty("ref.parameters", newParams)}
             createListField={(param, index) => (
               <ParameterExpressionField
+                {...props}
+                {...{isMarked, renderFieldLabel, setProperty}}
                 parameter={param}
                 listFieldPath={`ref.parameters[${index}]`}
-
-                expressionProperty={"expression"}
-                fieldErrors={fieldErrors}
-                testResultsState={testResultsState}
               />
             )}
             createReadOnlyField={params => (
@@ -429,7 +470,10 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
               </div>
             )}
           />
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
 
@@ -437,44 +481,50 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "CustomNode":
       return (
         <div className="node-table-body">
-          {idField}
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
           {
-            hasOutputVar(node, processDefinitionData) && createField({
+            hasOutputVar(props.node, props.processDefinitionData) && CreateField({
+              ...props, isMarked, renderFieldLabel, setProperty,
+
               fieldType: FieldType.input,
               fieldLabel: "Output variable name",
               fieldProperty: "outputVar",
-              validators: [errorValidator(fieldErrors, "outputVar")],
+              validators: [errorValidator(props.fieldErrors || [], "outputVar")],
             })
           }
-          {NodeUtils.nodeIsJoin(editedNode) && (
+          {NodeUtils.nodeIsJoin(props.editedNode) && (
             <BranchParameters
-              node={editedNode}
+              node={props.editedNode}
               isMarked={isMarked}
-              showValidation={showValidation}
-              showSwitch={showSwitch}
-              isEditMode={isEditMode}
-              errors={fieldErrors}
-              parameterDefinitions={parameterDefinitions}
+              showValidation={props.showValidation}
+              showSwitch={props.showSwitch}
+              isEditMode={props.isEditMode}
+              errors={props.fieldErrors || []}
+              parameterDefinitions={props.parameterDefinitions}
               setNodeDataAt={setProperty}
-              testResultsToShow={testResultsState.testResultsToShow}
-              findAvailableVariables={findAvailableVariables}
+              testResultsToShow={props.testResultsState.testResultsToShow}
+              findAvailableVariables={props.findAvailableVariables}
             />
           )}
-          {editedNode.parameters?.map((param, index) => {
+          {props.editedNode.parameters?.map((param, index) => {
             return (
-              <div className="node-block" key={node.id + param.name + index}>
+              <div className="node-block" key={props.node.id + param.name + index}>
                 <ParameterExpressionField
+                  {...props}
+                  {...{isMarked, renderFieldLabel, setProperty}}
                   parameter={param}
                   listFieldPath={`parameters[${index}]`}
-
-                  expressionProperty={"expression"}
-                  fieldErrors={fieldErrors}
-                  testResultsState={testResultsState}
                 />
               </div>
             )
           })}
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     case "VariableBuilder":
@@ -483,181 +533,213 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
           renderFieldLabel={renderFieldLabel}
           removeElement={removeElement}
           onChange={setProperty}
-          node={editedNode}
+          node={props.editedNode}
           addElement={addElement}
           isMarked={isMarked}
-          readOnly={!isEditMode}
-          showValidation={showValidation}
+          readOnly={!props.isEditMode}
+          showValidation={props.showValidation}
           variableTypes={variableTypes}
-          errors={fieldErrors}
-          expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
+          errors={props.fieldErrors || []}
+          expressionType={props.expressionType || props.nodeTypingInfo && {fields: props.nodeTypingInfo}}
         />
       )
     case "Variable":
-      const varExprType = expressionType || (nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
+      const varExprType = props.expressionType || (props.nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
       return (
         <Variable
           renderFieldLabel={renderFieldLabel}
           onChange={setProperty}
-          node={editedNode}
+          node={props.editedNode}
           isMarked={isMarked}
-          readOnly={!isEditMode}
-          showValidation={showValidation}
+          readOnly={!props.isEditMode}
+          showValidation={props.showValidation}
           variableTypes={variableTypes}
-          errors={fieldErrors}
+          errors={props.fieldErrors || []}
           inferredVariableType={ProcessUtils.humanReadableType(varExprType)}
         />
       )
     case "Switch":
-      const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
-      const currentExpression = originalNode["expression"]
-      const currentExprVal = originalNode["exprVal"]
-      const exprValValidator = errorValidator(fieldErrors, "exprVal")
+      const {node: definition} = props.processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === props.editedNode.type)
+      const currentExpression = props.originalNode["expression"]
+      const currentExprVal = props.originalNode["exprVal"]
+      const exprValValidator = errorValidator(props.fieldErrors || [], "exprVal")
       const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
       const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
       return (
         <div className="node-table-body">
-          {idField}
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
           {showExpression ?
             (
               <StaticExpressionField
-                fieldName={"expression"}
+                {...props}
+                {...{isMarked, renderFieldLabel, setProperty}}
                 fieldLabel={"Expression (deprecated)"}
-                expressionProperty={"expression"}
-                fieldErrors={fieldErrors}
-                testResultsState={testResultsState}
               />
             ) :
             null}
           {showExprVal ?
-            createField({
+            CreateField({
+              ...props, isMarked, renderFieldLabel, setProperty,
+
               fieldType: FieldType.input,
               fieldLabel: "exprVal (deprecated)",
               fieldProperty: "exprVal",
-              validators: [errorValidator(fieldErrors, "exprVal")],
+              validators: [errorValidator(props.fieldErrors || [], "exprVal")],
             }) :
             null}
           {!isCompareView ?
             (
               <EdgesDndComponent
                 label={"Conditions"}
-                nodeId={originalNodeId}
-                value={edges}
-                onChange={(nextEdges) => setEdgesState(nextEdges)}
+                nodeId={props.originalNodeId}
+                value={props.edges}
+                onChange={(nextEdges) => props.setEdgesState(nextEdges)}
                 edgeTypes={[
                   {value: EdgeKind.switchNext},
                   {value: EdgeKind.switchDefault, onlyOne: true, disabled: true},
                 ]}
                 ordered
-                readOnly={!isEditMode}
-                variableTypes={editedNode["exprVal"] ?
+                readOnly={!props.isEditMode}
+                variableTypes={props.editedNode["exprVal"] ?
                   {
                     ...variableTypes,
-                    [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                    [props.editedNode["exprVal"]]: props.expressionType || props.nodeTypingInfo && {fields: props.nodeTypingInfo},
                   } :
                   variableTypes}
-                fieldErrors={fieldErrors}
+                fieldErrors={props.fieldErrors || []}
               />
             ) :
             null}
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     case "Split":
       return (
         <div className="node-table-body">
-          {idField}
-          <DescriptionField/>
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     case "Properties":
-      const type = node.typeSpecificProperties.type
+      const type = props.node.typeSpecificProperties.type
       //fixme move this configuration to some better place?
       const fields =
-        node.isSubprocess ?
+        props.node.isSubprocess ?
           [
-            createField({
+            CreateField({
+              ...props, isMarked, renderFieldLabel, setProperty,
+
               fieldType: FieldType.input,
               fieldLabel: "Documentation url",
               fieldProperty: "typeSpecificProperties.docsUrl",
               autoFocus: true,
-              validators: [errorValidator(fieldErrors, "docsUrl")],
+              validators: [errorValidator(props.fieldErrors || [], "docsUrl")],
             }),
           ] :
           type === "StreamMetaData" ?
             [
-              createField({
+              CreateField({
+                ...props, isMarked, renderFieldLabel, setProperty,
+
                 fieldType: FieldType.input,
                 fieldLabel: "Parallelism",
                 fieldProperty: "typeSpecificProperties.parallelism",
                 autoFocus: true,
-                validators: [errorValidator(fieldErrors, "parallelism")],
+                validators: [errorValidator(props.fieldErrors || [], "parallelism")],
               }),
-              createField({
+              CreateField({
+                ...props, isMarked, renderFieldLabel, setProperty,
+
                 fieldType: FieldType.input,
                 fieldLabel: "Checkpoint interval in seconds",
                 fieldProperty: "typeSpecificProperties.checkpointIntervalInSeconds",
-                validators: [errorValidator(fieldErrors, "checkpointIntervalInSeconds")],
+                validators: [errorValidator(props.fieldErrors || [], "checkpointIntervalInSeconds")],
               }),
-              createField({
+              CreateField({
+                ...props, isMarked, renderFieldLabel, setProperty,
+
                 fieldType: FieldType.checkbox,
                 fieldLabel: "Spill state to disk",
                 fieldProperty: "typeSpecificProperties.spillStateToDisk",
-                validators: [errorValidator(fieldErrors, "spillStateToDisk")],
+                validators: [errorValidator(props.fieldErrors || [], "spillStateToDisk")],
               }),
-              createField({
+              CreateField({
+                ...props, isMarked, renderFieldLabel, setProperty,
+
                 fieldType: FieldType.checkbox,
                 fieldLabel: "Should use async interpretation",
                 fieldProperty: "typeSpecificProperties.useAsyncInterpretation",
-                validators: [errorValidator(fieldErrors, "useAsyncInterpretation")],
-                defaultValue: processDefinitionData.defaultAsyncInterpretation,
+                validators: [errorValidator(props.fieldErrors || [], "useAsyncInterpretation")],
+                defaultValue: props.processDefinitionData.defaultAsyncInterpretation,
               }),
             ] :
             type === "LiteStreamMetaData" ?
               [
-                createField({
+                CreateField({
+                  ...props, isMarked, renderFieldLabel, setProperty,
+
                   fieldType: FieldType.input,
                   fieldLabel: "Parallelism",
                   fieldProperty: "typeSpecificProperties.parallelism",
                   autoFocus: true,
-                  validators: [errorValidator(fieldErrors, "parallelism")],
+                  validators: [errorValidator(props.fieldErrors || [], "parallelism")],
                 }),
               ] :
-              [createField({
+              [CreateField({
+                ...props, isMarked, renderFieldLabel, setProperty,
+
                 fieldType: FieldType.input,
                 fieldLabel: "Query path",
                 fieldProperty: "typeSpecificProperties.path",
-                validators: [errorValidator(fieldErrors, "path")],
+                validators: [errorValidator(props.fieldErrors || [], "path")],
               })]
       //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
-      const additionalFields = sortBy(Object.entries(additionalPropertiesConfig), e => e[0]).map(
+      const additionalFields = sortBy(Object.entries(props.additionalPropertiesConfig), e => e[0]).map(
         ([propName, propConfig]) => (
           <AdditionalProperty
             key={propName}
-            showSwitch={showSwitch}
-            showValidation={showValidation}
+            showSwitch={props.showSwitch}
+            showValidation={props.showValidation}
             propertyName={propName}
             propertyConfig={propConfig}
-            propertyErrors={fieldErrors}
+            propertyErrors={props.fieldErrors || []}
             onChange={setProperty}
             renderFieldLabel={renderFieldLabel}
-            editedNode={editedNode}
-            readOnly={!isEditMode}
+            editedNode={props.editedNode}
+            readOnly={!props.isEditMode}
           />
         )
       )
       return (
         <div className="node-table-body">
-          {idField}
+          <IdField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
           {[...fields, ...additionalFields]}
-          <DescriptionField/>
+          <DescriptionField
+            {...props}
+            {...{isMarked, renderFieldLabel, setProperty}}
+          />
         </div>
       )
     default:
       return (
         <div>
           Node type not known.
-          <NodeDetails node={node}/>
+          <NodeDetails node={props.node}/>
         </div>
       )
   }
