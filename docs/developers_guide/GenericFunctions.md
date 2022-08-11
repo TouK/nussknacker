@@ -4,7 +4,7 @@
 
 ## Creating generic functions
 
-Let's create `head` function. We will start by writing this function in scala.
+Let's create `get` function. We will start by writing this function in scala.
 ```scala
 def head[T](list: java.util.List[T]): T =
   list.get(0)
@@ -18,15 +18,35 @@ head's result, and attach it to the function.
 def head[T](list: java.util.List[T]): T =
   list.get(0)
     
-private case class HeadGenericFunction() extends TypingFunction {
+private class HeadGenericFunction() extends TypingFunction {
   override def computeResultType(arguments: List[TypingResult]): 
     ValidatedNel[GenericFunctionTypingError, TypingResult] = ???
 }
 ```
 Now we need to implement `computeResultType` function that takes list of 
-argument types and return type of the result or some errors.
+argument types and return type of the result or some errors. Our function
+gets exactly one parameter - list of elements of type `T` and returns type `T`
+otherwise we will return validation error that signals we expected other
+arguments.
+```scala
+private val listClass = classOf[java.util.List[_]]
+
+override def computeResultType(arguments: List[TypingResult]): 
+  ValidatedNel[GenericFunctionTypingError, TypingResult] = {
+  arguments match {
+    case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
+    case _ => ArgumentTypeError.invalidNel
+  }
+}
+```
+Now head function is ready, and we can run nussknacker and see that
+`head(List[Int]) = Int` or `head(List[String]) = String`.
 
 ## Specifying parameters
+
+Sometimes want to use parameters that are more specific than what scala or
+java can offer us. In such cases we need to manually specify types of
+parameters and result. 
 
 ## Using varargs
 
@@ -37,13 +57,3 @@ argument types and return type of the result or some errors.
 ## Overloading
 
 ## Working from Java
-
-```scala
-val scenario = 
-  ScenarioBuilder
-    .streaming("openapi-test")
-    .parallelism(1)
-    .source("start", "source")
-    .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
-    .processorEnd("end", "invocationCollector", "value" -> "#customer")
-```

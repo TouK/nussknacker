@@ -15,15 +15,47 @@ object GenericHelperFunction {
   def headA[T](list: java.util.List[T]): T =
     list.get(0)
 
-  private case class HeadGenericFunction() extends TypingFunction {
+  private class HeadGenericFunction() extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
       arguments match {
         case TypedClass(`listClass`, t :: Nil) :: Nil => t.validNel
+        case _ => ArgumentTypeError.invalidNel
       }
     }
   }
+
+
+  @GenericType(typingFunction = classOf[PlusGenericFunction])
+  def plus(left: Any, right: Any): Any = (left, right) match {
+    case (left: Int, right: Int) => left + right
+    case (left: String, right: String) => left + right
+    case _ => throw new AssertionError("should not be reached")
+  }
+
+  private class PlusGenericFunction() extends TypingFunction {
+    private val intType = Typed.typedClass[Int]
+    private val stringType = Typed.typedClass[String]
+    private val intOrStringType = TypedUnion(Set(intType, stringType))
+
+    override val staticParameters: Option[ParameterList] =
+      Some(ParameterList(Parameter("left", intOrStringType) :: Parameter("right", intOrStringType) :: Nil, None))
+
+    override def staticResult: Option[TypingResult] =
+      Some(intOrStringType)
+
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
+      case left :: right :: Nil =>
+        (left.withoutValue, right.withoutValue) match {
+          case (`intType`, `intType`) => intType.validNel
+          case (`stringType`, `stringType`) => stringType.validNel
+          case _ => ArgumentTypeError.invalidNel
+        }
+      case _ => ArgumentTypeError.invalidNel
+    }
+  }
+
 
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
