@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.types
 import java.lang.reflect._
 import java.util.Optional
 import cats.data.StateT
+import cats.data.Validated.Invalid
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, Parameter, ParameterList, TypingFunction}
@@ -195,13 +196,17 @@ object EspTypeUtils {
   }
 
   private def extractGenericParameters(typingFunction: TypingFunction, method: Method): ParameterList = {
-    def autoExtractedParameters = extractParameters(method)
-    def definedParametersOption = typingFunction.staticParameters
+    val autoExtractedParameters = extractParameters(method)
+    val definedParametersOption = typingFunction.staticParameters
 
-    definedParametersOption.foreach{params =>
-      if (!ParameterListSubclassChecker.check(params, autoExtractedParameters))
-        throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature")
-    }
+    definedParametersOption
+      .map(ParameterListSubclassChecker.check(_, autoExtractedParameters))
+      .collect{ case Invalid(e) => e }
+      .foreach { x =>
+        val errorString = x.map(_.message).toList.mkString("; ")
+        throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature: $errorString")
+      }
+
     definedParametersOption.getOrElse(autoExtractedParameters)
   }
 
