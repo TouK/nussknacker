@@ -4,7 +4,9 @@ import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,7 +23,7 @@ import java.time.{Clock, LocalDate, LocalDateTime}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-class PeriodicProcessServiceTest extends FunSuite
+class PeriodicProcessServiceTest extends AnyFunSuite
   with Matchers
   with OptionValues
   with ScalaFutures

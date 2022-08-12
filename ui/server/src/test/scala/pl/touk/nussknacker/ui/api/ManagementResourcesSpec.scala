@@ -9,7 +9,7 @@ import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.BeMatcher
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
@@ -28,10 +28,12 @@ import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.time.LocalDateTime
 
-class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import TestCategories._

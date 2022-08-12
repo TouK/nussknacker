@@ -4,12 +4,13 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import org.apache.flink.api.common.restartstrategy.RestartStrategies.RestartStrategyConfiguration
 import org.apache.flink.api.common.time.Time
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class RestartStrategyFromConfigurationSpec extends FunSuite with Matchers {
+class RestartStrategyFromConfigurationSpec extends AnyFunSuite with Matchers {
 
   private val meta = MetaData("", StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(description = None,
     properties = Map("myStrategy" -> "oneStrategy", "myOtherStrategy" -> ""))))

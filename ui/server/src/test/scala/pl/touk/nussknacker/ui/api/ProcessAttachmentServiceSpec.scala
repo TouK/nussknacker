@@ -5,7 +5,8 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.Source
 import akka.util.ByteString
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.ui.listener.Comment
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
-class ProcessAttachmentServiceSpec extends FunSuite with Matchers with ScalaFutures {
+class ProcessAttachmentServiceSpec extends AnyFunSuite with Matchers with ScalaFutures {
   private implicit val ec = ExecutionContext.global
   private implicit val user = LoggedUser("test user", "test user")
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)

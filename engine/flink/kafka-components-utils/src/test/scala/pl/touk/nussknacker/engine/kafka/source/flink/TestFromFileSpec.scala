@@ -5,7 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json.{Null, fromString, obj}
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,7 +22,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.util.Collections
 
-class TestFromFileSpec extends FunSuite with Matchers with LazyLogging {
+class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
 
   private lazy val creator = new KafkaSourceFactoryProcessConfigCreator()

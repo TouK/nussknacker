@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.notifications
 
 import akka.util.Timeout
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._
@@ -17,7 +18,7 @@ import java.time.{Clock, Instant, LocalDateTime, ZoneId}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
-class NotificationServiceTest extends FunSuite with Matchers with PatientScalaFutures {
+class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val timeout: Timeout = Timeout(1 second)
 

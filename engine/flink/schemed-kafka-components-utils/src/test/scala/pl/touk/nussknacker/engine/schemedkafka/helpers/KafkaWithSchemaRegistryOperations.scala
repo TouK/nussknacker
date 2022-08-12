@@ -6,7 +6,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
-import org.scalatest.{Assertion, Matchers}
+import org.scalatest.{Assertion}
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}

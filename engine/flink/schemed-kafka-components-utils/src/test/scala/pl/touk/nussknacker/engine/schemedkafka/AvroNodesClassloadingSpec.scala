@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.testmode.TestDataPreparer
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.test.FailingContextClassloader
 
-class AvroNodesClassloadingSpec extends FunSuite with Matchers with SchemaRegistryMixin {
+class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaRegistryMixin {
 
   override protected val schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.getClientForScope("testScope")
 

@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine.util.sharedservice
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class SharedServiceSpec extends FunSuite with Matchers {
+class SharedServiceSpec extends AnyFunSuite with Matchers {
 
   private implicit val metaData: MetaData = MetaData("test1", StreamMetaData())
 

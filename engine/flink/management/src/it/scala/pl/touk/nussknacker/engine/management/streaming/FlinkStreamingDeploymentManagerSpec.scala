@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.management.streaming
 import com.typesafe.config.ConfigValueFactory
 import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
@@ -19,7 +20,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.duration._
 
-class FlinkStreamingDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
+class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
 
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.k8s.manager
 
 import org.apache.commons.io.IOUtils
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -13,7 +14,7 @@ import skuber.json.format._
 
 //It's no so easy to move deployment in unstable state reliably, so
 //for now we have unit tests based on real responses - generated manually, using kubectl -v=9 describe deployment [...]
-class K8sDeploymentStatusMapperSpec extends FunSuite with Matchers {
+class K8sDeploymentStatusMapperSpec extends AnyFunSuite with Matchers {
 
   private val mapper = new K8sDeploymentStatusMapper(K8sProcessStateDefinitionManager)
 

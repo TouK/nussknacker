@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.file.{Files, Path, Paths}
 
-class JarManagerTest extends FunSuite
+class JarManagerTest extends AnyFunSuite
   with Matchers
   with ScalaFutures
   with PatientScalaFutures {

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.processCounts.influxdb
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.Identity
@@ -8,7 +9,7 @@ import sttp.client.monad.IdMonad
 
 import java.time.Instant
 
-class InfluxGeneratorSpec extends FunSuite with Matchers with PatientScalaFutures {
+class InfluxGeneratorSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import InfluxGenerator._
 

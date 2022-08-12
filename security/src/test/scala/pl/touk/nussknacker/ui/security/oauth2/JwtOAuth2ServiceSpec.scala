@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.typesafe.config.ConfigFactory
 import io.circe.Decoder
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
@@ -46,7 +47,7 @@ trait WithJwtOauth2Service {
   protected val jwtOAuth2Service = new JwtOAuth2Service(OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](config), config)
 }
 
-class JwtOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
+class JwtOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
 
   final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
 

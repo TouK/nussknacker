@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.lite.components
 import com.typesafe.config.ConfigValueFactory._
 import io.circe.parser.parse
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class UniversalSourceAvroSchemaLiteTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._

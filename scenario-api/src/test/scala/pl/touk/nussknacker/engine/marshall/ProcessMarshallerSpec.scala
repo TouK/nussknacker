@@ -6,11 +6,13 @@ import io.circe.generic.extras.semiauto.deriveConfiguredCodec
 import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.syntax._
 import io.circe.{Codec, Json}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FlatSpec, Inside, Matchers, OptionValues}
+import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -19,7 +21,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 
-class ProcessMarshallerSpec extends FlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
+class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues with Inside with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

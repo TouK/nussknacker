@@ -2,13 +2,14 @@ package pl.touk.nussknacker.openapi
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 import java.util
 
-class OpenAPIComponentProviderTest extends FunSuite with Matchers {
+class OpenAPIComponentProviderTest extends AnyFunSuite with Matchers {
 
   private val provider = new OpenAPIComponentProvider
 

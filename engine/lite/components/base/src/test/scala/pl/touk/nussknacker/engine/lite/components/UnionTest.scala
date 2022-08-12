@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.Monad
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, Source, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import scala.concurrent.Future
 import scala.language.higherKinds
 
-class UnionTest extends FunSuite with Matchers with EitherValuesDetailedMessage {
+class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   test("unification of same types") {
     val validationResult = validate("123", "234")

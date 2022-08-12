@@ -8,7 +8,9 @@ import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
 import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -21,7 +23,7 @@ import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitia
 import java.util.UUID
 import scala.concurrent.duration._
 
-class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValuesDetailedMessage with OptionValues {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)

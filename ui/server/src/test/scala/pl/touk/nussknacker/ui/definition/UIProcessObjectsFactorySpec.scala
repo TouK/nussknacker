@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.definition
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import scala.concurrent.Future
 
-class UIProcessObjectsFactorySpec extends FunSuite with Matchers {
+class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
   object TestService extends Service {
 

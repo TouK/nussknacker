@@ -5,7 +5,8 @@ import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company, FullNameV1, StringForcingDatumReaderProvider}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
@@ -16,7 +17,7 @@ import java.time._
 import java.util.UUID
 import scala.collection.immutable.ListSet
 
-class BestEffortAvroEncoderSpec extends FunSpec with Matchers with EitherValuesDetailedMessage {
+class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValuesDetailedMessage {
 
   import collection.JavaConverters._
 

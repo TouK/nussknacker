@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.component
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import com.vdurmont.semver4j.Semver
 import net.ceedubs.ficus.Ficus._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{Component, ComponentDefinition, ComponentProvider, NussknackerVersion, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, Service}
@@ -22,7 +23,7 @@ object ComponentExtractorTest {
 
 }
 
-class ComponentExtractorTest extends FunSuite with Matchers {
+class ComponentExtractorTest extends AnyFunSuite with Matchers {
 
   private val loader = new DefaultModelConfigLoader
 

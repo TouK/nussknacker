@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.security.oauth2
 import com.github.benmanes.caffeine.cache.Ticker
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Millis, Seconds, Span}
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 
 import java.time.{Clock, Instant}
@@ -11,7 +12,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class CachingOAuth2ServiceSpec extends FunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
+class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matchers with WithJwtOauth2Service {
 
   final override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(100, Millis)))
 

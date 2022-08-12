@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class SampleRecommendationProcess extends FlatSpec with FlinkSpec with Matchers {
+class SampleRecommendationProcess extends AnyFlatSpec with FlinkSpec with Matchers {
 
   import spel.Implicits._
 

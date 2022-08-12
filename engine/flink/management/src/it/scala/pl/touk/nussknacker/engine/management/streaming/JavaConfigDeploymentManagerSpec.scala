@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.management.FlinkStateStatus
 
 import scala.concurrent.duration._
 
-class JavaConfigDeploymentManagerSpec extends FunSuite with Matchers with StreamingDockerTest {
+class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with StreamingDockerTest {
 
   override protected def classPath: List[String] = ClassPaths.javaClasspath
 

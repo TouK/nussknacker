@@ -10,13 +10,13 @@ import akka.http.scaladsl.server.directives.BasicDirectives.{extractExecutionCon
 import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials}
 import akka.http.scaladsl.server.directives.FutureDirectives.onSuccess
 import akka.http.scaladsl.server.directives.RouteDirectives.reject
-import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive, Directive1, Route}
+import akka.http.scaladsl.server.{AuthenticationFailedRejection, Directive1, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class SecurityApiSpec extends org.scalatest.FlatSpec with Matchers with ScalatestRouteTest {
+class SecurityApiSpec extends org.scalatest.flatspec.AnyFlatSpec with Matchers with ScalatestRouteTest {
 
   import SecurityApiSpec._
 

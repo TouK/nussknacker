@@ -11,7 +11,9 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
@@ -40,7 +42,7 @@ import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, SecurityHeadersSuppo
 import scala.concurrent.duration._
 import scala.util.Properties
 
-class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
   import io.circe.syntax._

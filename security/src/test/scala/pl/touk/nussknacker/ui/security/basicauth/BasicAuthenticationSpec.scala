@@ -5,13 +5,14 @@ import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import sttp.client.testing.SttpBackendStub
 
 import scala.concurrent.Future
 
-class BasicAuthenticationSpec extends FunSpec with Matchers with ScalatestRouteTest with Directives {
+class BasicAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives {
 
   implicit private val testingBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing]
   private val classLoader = getClass.getClassLoader

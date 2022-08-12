@@ -10,8 +10,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
-import org.scalatest.{Assertion, Matchers}
+import org.scalatest.Assertion
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.Eventually
+import org.scalatest.enablers.Retrying
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
 import scala.collection.JavaConverters._
@@ -69,7 +71,7 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
       val executionVertices = executionGraph.getAllExecutionVertices.asScala
       val notRunning = executionVertices.filterNot(v => expectedState.contains(v.getExecutionState))
       assert(notRunning.isEmpty, s"Some vertices of $name are still not running: ${notRunning.map(rs => s"${rs.getTaskNameWithSubtaskIndex} - ${rs.getExecutionState}")}")
-    }(patience, implicitly[Position])
+    }(patience,implicitly[Retrying[Assertion]], implicitly[Position])
   }
 
   def checkJobNotFailing(jobID: JobID): Unit = {

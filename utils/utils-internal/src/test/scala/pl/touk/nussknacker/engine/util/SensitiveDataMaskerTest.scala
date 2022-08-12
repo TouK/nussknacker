@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.util
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-class SensitiveDataMaskerTest extends FunSuite with Matchers with EitherValuesDetailedMessage {
+class SensitiveDataMaskerTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   test("mask long string") {
     SensitiveDataMasker.mask("123456") shouldEqual "12**56"

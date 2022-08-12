@@ -2,7 +2,9 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.test.PatientScalaFutures
@@ -13,7 +15,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.language.higherKinds
 
-class ProcessesChangeListenerSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
+class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import TestCategories._

@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import org.scalatest.Inside.inside
-import org.scalatest.{BeforeAndAfter, FlatSpec, Matchers, Suite}
+import org.scalatest.{BeforeAndAfter, Suite}
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
 import sttp.client.StringBody
 import sttp.client.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
+import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class OAuth2ClientApiSpec extends FlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
+class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
   val config = ExampleOAuth2ServiceFactory.testConfig

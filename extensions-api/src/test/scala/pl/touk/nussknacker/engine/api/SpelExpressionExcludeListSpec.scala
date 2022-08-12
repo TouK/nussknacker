@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.api
 
 import org.apache.commons.lang3.ClassUtils
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.exception.ExcludedPatternInvocationException
 
 import java.io.File
@@ -9,7 +10,7 @@ import java.math.BigInteger
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
-class SpelExpressionExcludeListSpec extends FunSuite with Matchers {
+class SpelExpressionExcludeListSpec extends AnyFunSuite with Matchers {
 
   val spelExpressionExcludeList: SpelExpressionExcludeList = SpelExpressionExcludeList.default
   val excludedPatterns: List[Regex] = spelExpressionExcludeList.excludedPatterns

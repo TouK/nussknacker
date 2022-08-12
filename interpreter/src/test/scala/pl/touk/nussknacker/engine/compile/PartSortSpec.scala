@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.NonEmptyList
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.split.ProcessSplitter
 
-class PartSortSpec extends FunSuite with Matchers {
+class PartSortSpec extends AnyFunSuite with Matchers {
 
   private def sortSourceIds(roots: NonEmptyList[SourceNode]): List[String] = {
     val process = EspProcess(MetaData("proc1", StreamMetaData()), roots)

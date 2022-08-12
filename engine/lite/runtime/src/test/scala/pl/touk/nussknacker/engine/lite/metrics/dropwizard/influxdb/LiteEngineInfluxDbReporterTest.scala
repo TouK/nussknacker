@@ -3,11 +3,12 @@ package pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb
 import com.typesafe.config.{Config, ConfigFactory}
 import io.dropwizard.metrics5.influxdb.InfluxDbReporter
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.collection.JavaConverters._
 
-class LiteEngineInfluxDbReporterTest extends FunSuite with Matchers {
+class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
 
   test("reporter should be created for correct format") {
     val config = ConfigFactory.parseString(

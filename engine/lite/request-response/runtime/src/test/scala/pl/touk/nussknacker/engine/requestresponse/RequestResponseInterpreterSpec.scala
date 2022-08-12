@@ -4,7 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.Inside.inside
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -32,7 +33,7 @@ import scala.collection.convert.Wrappers.SeqWrapper
 import scala.concurrent.Future
 import scala.util.Using
 
-class RequestResponseInterpreterSpec extends FunSuite with Matchers with PatientScalaFutures {
+class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 

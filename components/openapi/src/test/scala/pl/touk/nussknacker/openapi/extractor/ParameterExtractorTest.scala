@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.openapi.extractor
 
 import io.swagger.v3.oas.models.PathItem.HttpMethod
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.openapi.BaseOpenAPITest
 
-class ParameterExtractorTest extends FunSuite with BaseOpenAPITest with Matchers {
+class ParameterExtractorTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("check all parameters lazy") {
 

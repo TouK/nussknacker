@@ -2,7 +2,9 @@ package pl.touk.nussknacker.sql.service
 
 import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside.inside
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -12,7 +14,7 @@ import pl.touk.nussknacker.sql.utils.ignite.WithIgniteDB
 
 import scala.collection.JavaConverters._
 
-class IgniteEnrichmentLiteRuntimeTest extends FunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll
+class IgniteEnrichmentLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll
   with WithIgniteDB {
 
   override val prepareIgniteDDLs: List[String] = List(

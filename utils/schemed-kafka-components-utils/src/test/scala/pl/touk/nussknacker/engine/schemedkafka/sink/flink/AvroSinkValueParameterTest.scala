@@ -3,9 +3,10 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import org.apache.avro.SchemaBuilder
-import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter}
 
-class AvroSinkValueParameterTest extends FunSuite with Matchers {
+class AvroSinkValueParameterTest extends AnyFunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
 
   test("typing result to AvroSinkRecordParameter") {

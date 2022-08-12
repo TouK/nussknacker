@@ -3,7 +3,8 @@ package pl.touk.nussknacker.streaming.embedded
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -21,7 +22,7 @@ import sttp.model.StatusCode
 
 import scala.concurrent.Future
 
-class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matchers with PatientScalaFutures {
+class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 

@@ -2,12 +2,13 @@ package db.migration
 
 import db.migration.V1_032__StandaloneToRequestResponseDefinition.migrateMetadata
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import io.circe.syntax._
 
-class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
+class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers {
 
   private val id = "id1"
 

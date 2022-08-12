@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import org.scalatest.{Assertion, Matchers, Suite}
+import org.scalatest.{Assertion, Suite}
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -55,13 +57,14 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
   protected def cancelProcess(processId: String): Unit = {
     assert(deploymentManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
     eventually {
-      val runningJobs = deploymentManager
+      val statusOpt = deploymentManager
         .findJobStatus(ProcessName(processId))
         .futureValue
-        .filter(_.status.isRunning)
+      val runningOrDurringCancelJobs = statusOpt
+        .filter(state => state.status.isRunning || state.status == SimpleStateStatus.DuringCancel)
 
-      logger.debug(s"waiting for jobs: $processId, $runningJobs")
-      if (runningJobs.nonEmpty) {
+      logger.debug(s"waiting for jobs: $processId, $statusOpt")
+      if (runningOrDurringCancelJobs.nonEmpty) {
         throw new IllegalStateException("Job still exists")
       }
     }

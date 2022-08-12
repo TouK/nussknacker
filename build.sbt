@@ -258,8 +258,10 @@ val avroV = "1.11.0"
 val kafkaV = "2.8.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
-val scalaTestV = "3.0.8"
-val scalaCheckV = "1.14.0"
+val scalaTestV = "3.2.10"
+val scalaCheckV = "1.15.0"
+val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
+val scalaTestPlusV = "3.2.10.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.2"
@@ -683,7 +685,8 @@ lazy val interpreter = (project in file("interpreter")).
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "org.apache.avro" % "avro" % avroV % "test",
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
-        "com.cronutils" % "cron-utils" % cronParserV % "test"
+        "com.cronutils" % "cron-utils" % cronParserV % "test",
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     }
   ).
@@ -975,6 +978,7 @@ lazy val liteKafkaComponents = (project in lite("components/kafka")).
     libraryDependencies ++= {
       Seq(
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     },
     //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...

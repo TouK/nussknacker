@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{BeforeAndAfter, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfter}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
 import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
@@ -26,7 +28,7 @@ import pl.touk.nussknacker.test.NussknackerAssertions
 
 import scala.collection.JavaConverters.mapAsJavaMapConverter
 
-trait KafkaSourceFactoryProcessMixin extends FunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
+trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
 
   protected var registrar: FlinkProcessRegistrar = _
 

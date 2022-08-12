@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import org.apache.kafka.clients.producer.MockProducer
 import org.apache.kafka.common.serialization.ByteArraySerializer
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 import java.time.Instant
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 
-class KafkaExceptionConsumerSerializationSpec extends FunSuite with Matchers {
+class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers {
 
   private val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
 

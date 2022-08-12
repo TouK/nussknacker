@@ -4,7 +4,8 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessingTypeDeploymentService, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -19,7 +20,7 @@ import java.util.UUID
 import scala.concurrent.{Await, Future}
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
-class FlinkStreamingProcessTestRunnerSpec extends FlatSpec with Matchers with VeryPatientScalaFutures {
+class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
 
   private implicit val actorSystem: ActorSystem = ActorSystem(getClass.getSimpleName)
   import actorSystem.dispatcher

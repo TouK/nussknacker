@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.Date
 
-class FlinkStreamingProcessRegistrarSpec extends FlatSpec with Matchers with ProcessTestHelpers with PatientScalaFutures {
+class FlinkStreamingProcessRegistrarSpec extends AnyFlatSpec with Matchers with ProcessTestHelpers with PatientScalaFutures {
 
   import spel.Implicits._
 

@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.definition
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class LazyParameterSpec extends FunSuite with Matchers {
+class LazyParameterSpec extends AnyFunSuite with Matchers {
 
   test("should parse expression for param once") {
     checkParameterInvokedOnceAfterTransform(identity)

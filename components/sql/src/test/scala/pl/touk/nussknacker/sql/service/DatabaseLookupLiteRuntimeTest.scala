@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.sql.service
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.Inside.inside
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -11,7 +13,7 @@ import pl.touk.nussknacker.sql.utils._
 
 import scala.collection.JavaConverters._
 
-class DatabaseLookupLiteRuntimeTest extends FunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
+class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
   override val prepareHsqlDDLs: List[String] = List(
     "CREATE TABLE persons (id INT, name VARCHAR(40));",
     "INSERT INTO persons (id, name) VALUES (1, 'John')",

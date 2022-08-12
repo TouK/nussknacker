@@ -6,7 +6,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
 import sttp.client.testing.SttpBackendStub
@@ -14,7 +15,7 @@ import sttp.model.{Method, Uri}
 
 import java.net.URI
 
-class OpaqueTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
+class OpaqueTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
 
   private val tokenUri = Uri(URI.create("http://authorization.server/token"))
   private val userinfoUri = Uri(URI.create("http://authorization.server/userinfo"))

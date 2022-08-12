@@ -5,7 +5,9 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -36,7 +38,7 @@ import java.util.Arrays.asList
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
-class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside {
+class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
   def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
     .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))

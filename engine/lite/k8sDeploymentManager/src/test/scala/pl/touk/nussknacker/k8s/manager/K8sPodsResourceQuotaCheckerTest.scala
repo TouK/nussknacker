@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.k8s.manager
 
 import cats.data.Validated.{Invalid, Valid}
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.{ResourceQuotaExceededException, podsResourceQuota}
 import skuber.Resource.Quota
 import skuber.{ListResource, Resource}
 
-class K8sPodsResourceQuotaCheckerTest extends FunSuite {
+class K8sPodsResourceQuotaCheckerTest extends AnyFunSuite {
 
   test("should not exceed limit when no quotas defined") {
     val quotaExceeded = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(None, ListResource("", "", None, List[Resource.Quota]()), 1)

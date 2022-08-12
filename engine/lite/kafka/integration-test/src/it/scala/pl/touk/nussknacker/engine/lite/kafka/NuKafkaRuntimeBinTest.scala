@@ -1,13 +1,15 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.springframework.util.StreamUtils
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 
 // depends on liteEngineKafkaRuntime / Universal / stage sbt task
-class NuKafkaRuntimeBinTest extends FunSuite with BaseNuRuntimeBinTestMixin with KafkaSpec with NuKafkaRuntimeTestMixin with LazyLogging {
+class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with KafkaSpec with NuKafkaRuntimeTestMixin with LazyLogging {
 
   override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress
 

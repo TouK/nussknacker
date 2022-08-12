@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine
 
 import io.circe.syntax._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.ProcessNodesRewriter
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.language.implicitConversions
 
-class ScenarioApiShowcasesTest extends FunSuite with Matchers with EitherValuesDetailedMessage {
+class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

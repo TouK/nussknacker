@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.management
 
-import org.scalatest.{FunSpec, Inside, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Inside}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
@@ -8,7 +10,7 @@ import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import scala.collection.immutable.List
 
-class FlinkProcessStateSpec extends FunSpec with Matchers with Inside {
+class FlinkProcessStateSpec extends AnyFunSpec with Matchers with Inside {
   def createProcessState(stateStatus: StateStatus): ProcessState =
     FlinkProcessStateDefinitionManager.processState(stateStatus, Some(ExternalDeploymentId("12")), Some(ProcessVersion.empty))
 

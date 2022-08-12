@@ -2,7 +2,8 @@ package db.migration
 
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
-class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends FlatSpec with Matchers {
+class V1_019__SourceSinkExceptionHandlerExpressionsChangeSpec extends AnyFlatSpec with Matchers {
 
   private val migrationFunc = V1_019__SourceSinkExceptionHandlerExpressionsChange.processJson _
 

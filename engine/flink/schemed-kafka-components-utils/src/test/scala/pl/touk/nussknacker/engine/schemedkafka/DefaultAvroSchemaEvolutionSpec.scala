@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 
-class DefaultAvroSchemaEvolutionSpec extends FunSpec with Matchers {
+class DefaultAvroSchemaEvolutionSpec extends AnyFunSpec with Matchers {
 
   val schemaEvolutionHandler: DefaultAvroSchemaEvolution = new DefaultAvroSchemaEvolution
 

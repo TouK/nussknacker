@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ServiceQuerySpec extends FlatSpec with Matchers with PatientScalaFutures {
+class ServiceQuerySpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

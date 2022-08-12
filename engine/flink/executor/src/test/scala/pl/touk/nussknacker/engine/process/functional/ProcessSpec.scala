@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.process.functional
 
 import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.LoneElement._
-import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.spel
 
 import java.util.{Date, UUID}
 
-class ProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
+class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 

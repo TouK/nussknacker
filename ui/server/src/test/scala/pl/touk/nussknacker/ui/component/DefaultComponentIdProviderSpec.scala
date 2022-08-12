@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Fragments}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, ComponentType, SingleComponentConfig}
 import pl.touk.nussknacker.engine.graph.node._
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-class DefaultComponentIdProviderSpec extends FlatSpec with Matchers with PatientScalaFutures {
+class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.engine.spel.Implicits._

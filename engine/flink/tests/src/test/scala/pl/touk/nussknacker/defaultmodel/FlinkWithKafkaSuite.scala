@@ -6,7 +6,9 @@ import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerialize
 import org.apache.avro.Schema
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.{RecordSchemaV1, schemaRegistryMockClient}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{JobData, ProcessListener, ProcessVersion}
@@ -28,7 +30,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.LoggingListener
 import pl.touk.nussknacker.test.WithConfig
 
-abstract class FlinkWithKafkaSuite extends FunSuite with FlinkSpec with KafkaSpec with BeforeAndAfterAll with BeforeAndAfter with WithConfig with Matchers {
+abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with KafkaSpec with BeforeAndAfterAll with BeforeAndAfter with WithConfig with Matchers {
 
   private lazy val creator: DefaultConfigCreator = new TestDefaultConfigCreator
 

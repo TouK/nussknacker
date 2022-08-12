@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.definition
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
-class AdditionalVariableSpec extends FunSuite with Matchers {
+class AdditionalVariableSpec extends AnyFunSuite with Matchers {
 
   test("detect AdditionalVariable with fixed value") {
     val parameters = definition(new CorrectService)

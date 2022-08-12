@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.lite.util.test
 import cats.data.Validated.Valid
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, Service}
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import java.util
 import scala.concurrent.Future
 
-class LiteTestScenarioRunnerSpec extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class LiteTestScenarioRunnerSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   test("should test custom component with lite") {
 

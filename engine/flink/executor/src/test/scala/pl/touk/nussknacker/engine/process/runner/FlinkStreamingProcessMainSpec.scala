@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.process.runner
 
 import io.circe.Encoder
 import io.circe.syntax._
-import org.scalatest.{FlatSpec, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
@@ -14,7 +16,7 @@ import pl.touk.nussknacker.engine.spel
 
 import java.net.ConnectException
 
-class FlinkStreamingProcessMainSpec extends FlatSpec with Matchers with Inside {
+class FlinkStreamingProcessMainSpec extends AnyFlatSpec with Matchers with Inside {
 
   import spel.Implicits._
 

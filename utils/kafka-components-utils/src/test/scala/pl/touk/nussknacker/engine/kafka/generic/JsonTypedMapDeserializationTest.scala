@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.Json
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.deserializeToTypedMap
 
 import java.nio.charset.StandardCharsets
 
-class JsonTypedMapDeserializationTest extends FunSuite with Matchers {
+class JsonTypedMapDeserializationTest extends AnyFunSuite with Matchers {
 
   import scala.collection.JavaConverters._
 

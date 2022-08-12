@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -30,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
+class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>

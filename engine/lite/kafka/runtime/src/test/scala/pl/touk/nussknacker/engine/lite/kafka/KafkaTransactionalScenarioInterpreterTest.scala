@@ -5,7 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5._
-import org.scalatest._
+import org.scalatest.{Assertion, OptionValues, Outcome}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProvi
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
+import org.scalatest.funsuite.FixtureAnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -31,7 +33,7 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}
 
-class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
+class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
 
   import KafkaTransactionalScenarioInterpreter._
 

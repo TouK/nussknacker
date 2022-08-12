@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.util.namespaces
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.namespaces.{CustomUsageKey, FlinkUsageKey, KafkaUsageKey, NamingContext}
 
-class DefaultNamespacedObjectNamingSpec extends FunSuite with Matchers {
+class DefaultNamespacedObjectNamingSpec extends AnyFunSuite with Matchers {
 
   private val emptyConfig = ConfigFactory.empty()
 

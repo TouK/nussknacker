@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.data.Validated.{Invalid, Valid}
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
@@ -17,7 +19,7 @@ import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
-class SubprocessResolverSpec extends FunSuite with Matchers with Inside{
+class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

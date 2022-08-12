@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.{Matchers, TestSuite}
+import org.scalatest.TestSuite
+import org.scalatest.matchers.should.Matchers
 import org.springframework.util.StreamUtils
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 

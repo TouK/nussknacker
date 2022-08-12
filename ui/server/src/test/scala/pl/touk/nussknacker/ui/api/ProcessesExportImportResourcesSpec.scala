@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -16,11 +15,14 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import io.circe.syntax._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.language.higherKinds
 
-class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
+class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import akka.http.scaladsl.server.RouteConcatenation._

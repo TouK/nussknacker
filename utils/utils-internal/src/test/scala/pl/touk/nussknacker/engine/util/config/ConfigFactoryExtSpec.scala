@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.util.config
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.net.URI
 import java.nio.file.Files
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class ConfigFactoryExtSpec extends FunSuite with Matchers {
+class ConfigFactoryExtSpec extends AnyFunSuite with Matchers {
 
   test("loads in correct order") {
 

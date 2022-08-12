@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.definition.parameter.defaults
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 
-class EditorPossibleValuesBasedDefaultValueDeterminerTest extends FunSuite with Matchers {
+class EditorPossibleValuesBasedDefaultValueDeterminerTest extends AnyFunSuite with Matchers {
 
   test("determine default param value from first value from fixed values editor possible values") {
     val fixedValuesEditor = Some(FixedValuesParameterEditor(List(

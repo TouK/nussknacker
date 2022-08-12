@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.sql.utils
 
-import org.scalatest.Matchers
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase

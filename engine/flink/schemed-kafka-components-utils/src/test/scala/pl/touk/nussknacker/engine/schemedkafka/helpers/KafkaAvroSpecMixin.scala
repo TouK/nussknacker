@@ -7,7 +7,9 @@ import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.clients.consumer.ConsumerRecord
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.{Assertion}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -41,7 +43,7 @@ import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
 
-trait KafkaAvroSpecMixin extends FunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
+trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
 
   type KafkaSource = SourceFactory with KafkaUniversalComponentTransformer[Source]
 

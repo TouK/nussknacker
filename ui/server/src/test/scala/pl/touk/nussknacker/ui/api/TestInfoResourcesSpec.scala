@@ -6,7 +6,8 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import org.apache.commons.lang3.StringUtils
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFuture
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 
-class TestInfoResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
+class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with EspItTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {

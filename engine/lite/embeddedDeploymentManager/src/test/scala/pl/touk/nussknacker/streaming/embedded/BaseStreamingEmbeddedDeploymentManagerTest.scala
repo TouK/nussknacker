@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.streaming.embedded
 
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromMap}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
@@ -20,7 +21,7 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-trait BaseStreamingEmbeddedDeploymentManagerTest extends FunSuite with KafkaSpec with Matchers with VeryPatientScalaFutures {
+trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with KafkaSpec with Matchers with VeryPatientScalaFutures {
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
