@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.process.typeinformation
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{NothingTypeInfo, TypeInformation}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, TraversableTypeInfo}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.engine.flink.api.{ConfigGlobalParameters, NkGlobalPar
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.TypedScalaMapTypeInformation
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
-class TypeInformationDetectionSpec extends FunSuite with Matchers {
+class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
 
   private val loader = getClass.getClassLoader
 

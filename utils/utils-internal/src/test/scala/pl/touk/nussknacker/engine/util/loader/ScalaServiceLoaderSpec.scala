@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.util.loader
 
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor3}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
 import java.net.{URL, URLClassLoader}
 import java.nio.file.Files
 
-class ScalaServiceLoaderSpec extends FlatSpec with Matchers with TableDrivenPropertyChecks {
+class ScalaServiceLoaderSpec extends AnyFlatSpec with Matchers with TableDrivenPropertyChecks {
 
   behavior of "ScalaServiceLoader.chooseClass"
 

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.security.oidc
 
 import cats.data.Validated.Invalid
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import org.scalatest.{Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtBase64, JwtCirce, JwtClaim, JwtHeader}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2JwtDecodeClaimsError, OAuth2JwtDecodeClaimsJsonError, OAuth2JwtDecodeRawError, OAuth2JwtKeyDetermineError}
@@ -11,7 +13,7 @@ import java.net.URI
 import java.nio.charset.StandardCharsets
 import javax.crypto.spec.SecretKeySpec
 
-class OidcServiceSpec extends FunSuite with Matchers with EitherValuesDetailedMessage with OptionValues with Inside {
+class OidcServiceSpec extends AnyFunSuite with Matchers with EitherValuesDetailedMessage with OptionValues with Inside {
 
   test("validate jwt format") {
     val validator = OidcService.createJwtValidator(OidcAuthenticationConfiguration(URI.create("http://foo"), issuer = URI.create("http://foo"), clientId = "foo", clientSecret = None))

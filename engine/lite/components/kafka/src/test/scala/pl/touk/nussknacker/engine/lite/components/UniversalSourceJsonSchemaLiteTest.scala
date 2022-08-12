@@ -7,7 +7,8 @@ import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.io.ByteArrayOutputStream
 
-class UniversalSourceJsonSchemaLiteTest extends FunSuite with Matchers with ValidatedValuesDetailedMessage {
+class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._

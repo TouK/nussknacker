@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.k8s.manager
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionLabel}
@@ -15,7 +16,7 @@ object K8sDeploymentManagerUnitTest {
 
 }
 
-class K8sDeploymentManagerUnitTest extends FunSuite with Matchers {
+class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
   private def versionForName(name: String) = ProcessVersion(VersionId(13), ProcessName(name), ProcessId(256), "user", None)
 

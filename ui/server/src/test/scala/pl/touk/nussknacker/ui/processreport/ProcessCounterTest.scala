@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.processreport
 
 import cats.data.NonEmptyList
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -14,7 +16,7 @@ import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessR
 
 //numbers & processes in this test can be totaly uncorrect and unrealistic, as processCounter does not care
 //about actual values, only assigns them to nodes
-class ProcessCounterTest extends FunSuite with Matchers {
+class ProcessCounterTest extends AnyFunSuite with Matchers {
 
   import spel.Implicits._
 

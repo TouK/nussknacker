@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.process.util
 
 import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.process.util.Serializers.CaseClassSerializer
 
-class SerializersSpec extends FlatSpec with Matchers {
+class SerializersSpec extends AnyFlatSpec with Matchers {
 
   it should "serialize case objects" in {
     val deserialized = serializeAndDeserialize(None)

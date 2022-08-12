@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.ui.security.oidc
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import sttp.client.testing.SttpBackendStub
 
 import java.net.URI
 
-class OidcDiscoveryTest extends FlatSpec with Matchers {
+class OidcDiscoveryTest extends AnyFlatSpec with Matchers {
 
   import io.circe.syntax._
 

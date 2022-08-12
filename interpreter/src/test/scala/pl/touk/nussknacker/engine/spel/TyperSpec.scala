@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.common.TemplateParserContext
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.expression.PositionRange
 import pl.touk.nussknacker.engine.spel.Typer.TypingResultWithContext
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
-class TyperSpec extends FunSuite with Matchers {
+class TyperSpec extends AnyFunSuite with Matchers {
 
   test("simple expression") {
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(

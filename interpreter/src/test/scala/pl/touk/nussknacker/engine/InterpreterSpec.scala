@@ -4,7 +4,8 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.effect.IO
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
@@ -46,7 +47,7 @@ import javax.validation.constraints.NotBlank
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Success, Try}
 
-class InterpreterSpec extends FunSuite with Matchers {
+class InterpreterSpec extends AnyFunSuite with Matchers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
   import pl.touk.nussknacker.engine.util.Implicits._

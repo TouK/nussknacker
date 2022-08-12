@@ -4,9 +4,12 @@ import cats.data.NonEmptyList
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
 import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
-import org.scalatest.{BeforeAndAfterEach, Matchers, Outcome, fixture}
+import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import org.scalatest.funsuite.FixtureAnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
@@ -18,7 +21,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.Date
 
-class MetricsSpec extends fixture.FunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
+class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScalaFutures with ProcessTestHelpers with BeforeAndAfterEach {
 
   private val reporterName = getClass.getName
 

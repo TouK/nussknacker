@@ -3,7 +3,10 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError, InvalidTailOfBranch, MissingParameters}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
@@ -22,7 +25,7 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import scala.collection.Set
 import scala.collection.immutable.ListMap
 
-class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues {
+class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValues {
 
   import spel.Implicits._
 

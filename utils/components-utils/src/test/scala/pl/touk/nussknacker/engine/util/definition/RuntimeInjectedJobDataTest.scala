@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.util.definition
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 
-class RuntimeInjectedJobDataTest extends FunSuite with Matchers {
+class RuntimeInjectedJobDataTest extends AnyFunSuite with Matchers {
 
   import RuntimeInjectedJobDataTest._
 

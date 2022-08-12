@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.ProcessId
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -12,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPer
 import pl.touk.nussknacker.ui.process.repository.MigrationComment
 import shapeless.syntax.typeable.typeableOps
 
-class ProcessModelMigratorSpec extends FlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
+class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with PatientScalaFutures with Matchers with TestPermissions{
   import shapeless.Typeable._
   private def migrator(migrations: Int*) =
     new ProcessModelMigrator(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new TestMigrations(migrations: _*)))

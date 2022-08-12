@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.util
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
 
-class MultiplicitySpec extends FlatSpec with Matchers {
+class MultiplicitySpec extends AnyFlatSpec with Matchers {
   it should "return One element for single element sequence" in {
     Multiplicity(1 :: Nil) shouldBe One(1)
   }

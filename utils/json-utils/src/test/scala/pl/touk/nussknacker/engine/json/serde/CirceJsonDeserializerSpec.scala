@@ -2,12 +2,13 @@ package pl.touk.nussknacker.engine.json.serde
 
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.collection.JavaConverters._
 
-class CirceJsonDeserializerSpec extends FunSuite with ValidatedValuesDetailedMessage with Matchers {
+class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
   test("json object") {
     val schema = SchemaLoader.load(new JSONObject(

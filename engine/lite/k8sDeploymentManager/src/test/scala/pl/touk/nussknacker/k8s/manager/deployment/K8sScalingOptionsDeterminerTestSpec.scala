@@ -2,10 +2,11 @@ package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus.toFicusConfig
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig._
 
-class K8sScalingOptionsDeterminerTestSpec extends FunSuite with Matchers {
+class K8sScalingOptionsDeterminerTestSpec extends AnyFunSuite with Matchers {
 
   test("round dividing") {
     val determiner = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(tasksPerReplica = 4))

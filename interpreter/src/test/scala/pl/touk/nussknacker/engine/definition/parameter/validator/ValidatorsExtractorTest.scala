@@ -4,7 +4,8 @@ import java.time.LocalDate
 import java.util.Optional
 import javax.annotation.Nullable
 import javax.validation.constraints.{Max, Min, NotBlank}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.engine.definition.parameter.{OptionalDeterminer, Para
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
-class ValidatorsExtractorTest extends FunSuite with Matchers {
+class ValidatorsExtractorTest extends AnyFunSuite with Matchers {
 
   private val notAnnotatedParam = getFirstParam("notAnnotated", classOf[String])
   private val nullableAnnotatedParam = getFirstParam("nullableAnnotated", classOf[LocalDate])

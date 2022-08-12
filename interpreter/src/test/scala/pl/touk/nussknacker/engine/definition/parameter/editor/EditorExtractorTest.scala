@@ -4,7 +4,8 @@ import java.time.temporal.ChronoUnit
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
 
 import com.cronutils.model.Cron
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.types.JavaSampleEnum
 
 import scala.reflect.ClassTag
 
-class EditorExtractorTest extends FunSuite with Matchers {
+class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   private def notAnnotated(param: String) {}
 

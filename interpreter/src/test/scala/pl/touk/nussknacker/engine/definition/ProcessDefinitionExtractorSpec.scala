@@ -4,7 +4,8 @@ import cats.data.Validated.Valid
 
 import java.time.Duration
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{AdditionalVariableProvidedInRuntime, FixedExpressionValue, FixedValuesValidator, MandatoryParameterValidator, Parameter, RegExpParameterValidator}
 import pl.touk.nussknacker.engine.api.editor.{LabeledExpression, SimpleEditor, SimpleEditorType}
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersA
 import javax.annotation.Nullable
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessDefinitionExtractorSpec extends FunSuite with Matchers {
+class ProcessDefinitionExtractorSpec extends AnyFunSuite with Matchers {
 
   private val processDefinition: ProcessDefinitionExtractor.ProcessDefinition[DefinitionExtractor.ObjectWithMethodDef] =
     ProcessDefinitionExtractor.extractObjectWithMethods(TestCreator,

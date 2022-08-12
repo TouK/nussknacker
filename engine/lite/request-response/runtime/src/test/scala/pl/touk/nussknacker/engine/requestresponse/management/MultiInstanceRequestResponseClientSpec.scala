@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse.management
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.Future
 
-class MultiInstanceRequestResponseClientSpec extends FunSuite with Matchers with PatientScalaFutures {
+class MultiInstanceRequestResponseClientSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits._
 

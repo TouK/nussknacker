@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.requestresponse.http
 
 import com.typesafe.config.ConfigFactory
 import io.circe.generic.JsonCodec
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{LazyParameter, LazyParameterInterpreter, MethodToInvoke, ParamName, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName, ProcessObjectDependencies, Sink, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.nio.file.Files
 
-class DeploymentServiceSpec extends FlatSpec with Matchers {
+class DeploymentServiceSpec extends AnyFlatSpec with Matchers {
 
   import spel.Implicits._
 

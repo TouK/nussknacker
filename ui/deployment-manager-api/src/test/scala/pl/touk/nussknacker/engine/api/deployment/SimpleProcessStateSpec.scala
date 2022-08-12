@@ -1,12 +1,14 @@
 package pl.touk.nussknacker.engine.api.deployment
 
-import org.scalatest.{FunSpec, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 
 import scala.collection.immutable.List
 
-class SimpleProcessStateSpec extends FunSpec with Matchers with Inside {
+class SimpleProcessStateSpec extends AnyFunSpec with Matchers with Inside {
 
   def createProcessState(stateStatus: StateStatus): ProcessState =
     SimpleProcessStateDefinitionManager.processState(stateStatus, Some(ExternalDeploymentId("12")))

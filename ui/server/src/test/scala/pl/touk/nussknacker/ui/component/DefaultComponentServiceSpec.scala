@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
@@ -33,7 +34,7 @@ import sttp.client.{NothingT, SttpBackend}
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
+class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 

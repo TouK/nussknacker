@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.{convertToAnyShouldWrapper, have}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, have}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.CustomNode
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPro
 
 import scala.reflect.ClassTag
 
-class UnionParametersMigrationSpec extends FunSuite {
+class UnionParametersMigrationSpec extends AnyFunSuite {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.kafka.consumerrecord
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin
@@ -11,7 +13,7 @@ import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.{Sa
 
 import java.util.Optional
 
-class ConsumerRecordDeserializationSpec extends FunSuite with Matchers with KafkaSpec with KafkaSourceFactoryMixin with FlinkTypeInformationSerializationMixin {
+class ConsumerRecordDeserializationSpec extends AnyFunSuite with Matchers with KafkaSpec with KafkaSourceFactoryMixin with FlinkTypeInformationSerializationMixin {
 
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {

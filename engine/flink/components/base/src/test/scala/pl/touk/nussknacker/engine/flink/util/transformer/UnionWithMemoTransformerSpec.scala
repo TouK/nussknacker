@@ -4,7 +4,8 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.streaming.api.scala._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
@@ -28,7 +29,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import java.{util => jul}
 import scala.collection.JavaConverters._
 
-class UnionWithMemoTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
+class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import UnionWithMemoTransformerSpec._
   import pl.touk.nussknacker.engine.spel.Implicits._

@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 
-class DeploymentUtilsTest extends FunSuite {
+
+class DeploymentUtilsTest extends AnyFunSuite {
 
   test("should parse skuber.api.v1.Deployment with empty config"){
     val deploymentSpec = deploymentFromConfig(ConfigFactory.empty())

@@ -2,13 +2,14 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import io.circe.parser.parse
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 
-class UiProcessMarshallerSpec extends FlatSpec with Matchers {
+class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
   val someProcessDescription = "scenario description"
   val someNodeDescription = "single node description"

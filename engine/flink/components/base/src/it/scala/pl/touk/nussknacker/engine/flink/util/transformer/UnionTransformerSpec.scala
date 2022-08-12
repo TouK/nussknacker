@@ -2,8 +2,10 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import org.scalatest.BeforeAndAfterEach
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
@@ -15,7 +17,7 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 
-class UnionTransformerSpec extends FunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
+class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
 
   import ValidatedValuesDetailedMessage._
 

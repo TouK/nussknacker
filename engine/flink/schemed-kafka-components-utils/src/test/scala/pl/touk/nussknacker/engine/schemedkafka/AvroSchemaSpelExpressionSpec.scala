@@ -5,7 +5,8 @@ import cats.data.ValidatedNel
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData.EnumSymbol
 import org.apache.avro.generic.GenericRecord
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.SpelExpressionExcludeList
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -26,7 +27,7 @@ import java.time.{Instant, LocalDate, LocalTime}
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
-class AvroSchemaSpelExpressionSpec extends FunSpec with Matchers {
+class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
 
   private implicit val nid: NodeId = NodeId("")
 

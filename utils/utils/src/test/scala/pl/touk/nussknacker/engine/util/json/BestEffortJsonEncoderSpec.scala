@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.util.json
 
 import io.circe.Json
 import io.circe.Json._
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import java.time._
@@ -10,7 +11,7 @@ import java.util
 import java.util.UUID
 import scala.collection.immutable.{ListMap, ListSet}
 
-class BestEffortJsonEncoderSpec extends FunSpec with Matchers {
+class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
   private val encoder = BestEffortJsonEncoder.defaultForTests
 

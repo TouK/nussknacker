@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.NonEmptyList
 import io.dropwizard.metrics5.{MetricFilter, MetricRegistry}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
 
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-class MetricsTest extends FunSuite with Matchers {
+class MetricsTest extends AnyFunSuite with Matchers {
 
   private val scenarioId = "metrics"
   private val sourceId = "start"

@@ -3,14 +3,16 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.{ActorRef, ActorSystem}
 import akka.testkit.{TestKit, TestKitBase, TestProbe}
 import org.scalatest.LoneElement._
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.management.periodic.DeploymentActor.CheckToBeDeployed
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeployment
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class DeploymentActorTest extends FunSuite
+class DeploymentActorTest extends AnyFunSuite
   with TestKitBase
   with Matchers
   with BeforeAndAfterAll  {

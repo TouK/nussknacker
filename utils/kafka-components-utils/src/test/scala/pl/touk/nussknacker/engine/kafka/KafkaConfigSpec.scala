@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.kafka
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class KafkaConfigSpec extends FunSuite with Matchers {
+class KafkaConfigSpec extends AnyFunSuite with Matchers {
 
   test("parse config") {
     val typesafeConfig = ConfigFactory.parseString(

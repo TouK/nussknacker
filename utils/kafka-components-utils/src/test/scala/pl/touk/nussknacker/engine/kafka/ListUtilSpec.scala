@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ListUtilSpec extends FunSuite with Matchers {
+class ListUtilSpec extends AnyFunSuite with Matchers {
 
   test("merges one list ") {
     ListUtil.mergeListsFromTopics(List(List("a", "b", "c", "d")), 3) shouldBe List("a", "b", "c")

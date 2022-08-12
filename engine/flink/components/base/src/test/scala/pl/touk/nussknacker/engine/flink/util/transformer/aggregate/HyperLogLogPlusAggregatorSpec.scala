@@ -7,14 +7,16 @@ import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.runtime.ValueSerializer
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputViewStreamWrapper, DataOutputViewStreamWrapper}
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.{Assertion}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import scala.util.Random
 
-class HyperLogLogPlusAggregatorSpec extends FunSuite with Matchers {
+class HyperLogLogPlusAggregatorSpec extends AnyFunSuite with Matchers {
 
   //the aim of this test is to be able to test different parameters easily
   test("run alg for different params") {

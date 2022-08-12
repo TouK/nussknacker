@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.process
 
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
 
-class NewProcessPreparerSpec extends FlatSpec with Matchers {
+class NewProcessPreparerSpec extends AnyFlatSpec with Matchers {
 
   val processDefinition = ProcessTestData.processDefinition
 

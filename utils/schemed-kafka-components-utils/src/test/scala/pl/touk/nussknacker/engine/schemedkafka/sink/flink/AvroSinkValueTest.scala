@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
 import org.apache.avro.SchemaBuilder
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordValue, SinkSingleValue, SinkValue}
 
-class AvroSinkValueTest extends FunSuite with Matchers {
+class AvroSinkValueTest extends AnyFunSuite with Matchers {
   private implicit val nodeId: NodeId = NodeId("")
 
   test("sink params to AvroSinkRecordValue") {

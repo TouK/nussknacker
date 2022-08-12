@@ -2,7 +2,8 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
@@ -12,7 +13,7 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessingTypeDataReaderSpec extends FunSuite with Matchers {
+class ProcessingTypeDataReaderSpec extends AnyFunSuite with Matchers {
   implicit val system: ActorSystem = ActorSystem(getClass.getSimpleName)
   import system.dispatcher
   implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)

@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
@@ -23,7 +25,7 @@ import scala.collection.mutable
 import scala.concurrent.Future
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
+class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits._
 
@@ -44,7 +46,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private val returnedJobId = "jobId"
 
   private val canonicalProcess: CanonicalProcess = CanonicalProcess(MetaData("p1", StreamMetaData(Some(1))), Nil, Nil)
-  
+
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,

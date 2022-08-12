@@ -7,7 +7,9 @@ import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax.EncoderOps
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FunSuite, Matchers, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, StateStatus}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
@@ -21,7 +23,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReloa
 
 import java.util.Collections
 
-class AppResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with PatientScalaFutures with FailFastCirceSupport
+class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with PatientScalaFutures with FailFastCirceSupport
   with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private val emptyReload = new ProcessingTypeDataReload {

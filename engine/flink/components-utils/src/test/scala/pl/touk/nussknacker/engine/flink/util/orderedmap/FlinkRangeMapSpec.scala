@@ -3,13 +3,14 @@ package pl.touk.nussknacker.engine.flink.util.orderedmap
 import java.{util => jul}
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
 import scala.collection.immutable.SortedMap
 import scala.language.higherKinds
 
-class FlinkRangeMapSpec extends FunSuite with TableDrivenPropertyChecks with Matchers {
+class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
   test("adding") {
     verifyAdding[SortedMap]

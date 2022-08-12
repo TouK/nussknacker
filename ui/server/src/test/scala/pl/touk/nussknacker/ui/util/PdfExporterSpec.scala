@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.util
 
 import org.apache.commons.io.IOUtils
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
@@ -16,7 +17,7 @@ import java.nio.charset.StandardCharsets
 import java.time.LocalDateTime
 import scala.io.Source
 
-class PdfExporterSpec extends FlatSpec with Matchers {
+class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   private val history = List(ProcessVersion(VersionId.initialVersionId, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
 

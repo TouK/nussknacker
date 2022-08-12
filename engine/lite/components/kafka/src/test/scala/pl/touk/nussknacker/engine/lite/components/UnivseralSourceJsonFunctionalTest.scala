@@ -9,7 +9,9 @@ import io.circe.Json.{fromInt, fromLong}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -30,7 +32,7 @@ import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMess
 
 import java.util.UUID
 
-class UnivseralSourceJsonFunctionalTest extends FunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
