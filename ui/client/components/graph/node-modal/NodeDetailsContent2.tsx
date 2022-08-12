@@ -2,9 +2,9 @@
 import {Edge, NodeType, UIParameter} from "../../../types"
 import {WithTempId} from "./EdgesDndComponent"
 import {DispatchWithCallback} from "./NodeDetailsContentUtils"
-import React, {SetStateAction} from "react"
+import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
 import {adjustParameters} from "./ParametersUtils"
-import {cloneDeep, get, has, isEqual, partition} from "lodash"
+import {cloneDeep, get, has, partition} from "lodash"
 import {v4 as uuid4} from "uuid"
 import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
@@ -32,84 +32,78 @@ export interface NodeDetailsContentProps2 extends NodeDetailsContentProps {
   setEditedEdges: DispatchWithCallback<SetStateAction<WithTempId<Edge>[]>>,
 }
 
-export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps2> {
-  componentDidUpdate(prevProps: NodeDetailsContentProps2): void {
-    const nextProps = this.props
-    let node = nextProps.node
-    if (!isEqual(prevProps.parameterDefinitions, nextProps.parameterDefinitions)) {
-      node = adjustParameters(node, nextProps.parameterDefinitions).adjustedNode
-    }
+export function NodeDetailsContent2(props: NodeDetailsContentProps2): JSX.Element {
+  const {
+    currentErrors = [],
+    node,
+    editedNode,
+    editedEdges,
+    updateNodeData,
+    processId,
+    findAvailableBranchVariables,
+    processProperties,
+    findAvailableVariables,
+    originalNodeId,
+    onChange,
+    setEditedNode,
+    setEditedEdges,
+    parameterDefinitions,
+    isEditMode,
+  } = props
 
-    if (
-      !isEqual(prevProps.edges, nextProps.edges) ||
-      !isEqual(prevProps.node, node)
-    ) {
-      this.updateNodeState(() => node)
-      //In most cases this is not needed, as parameter definitions should be present in validation response
-      //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
-      if (nextProps.isEditMode) {
-        this.updateNodeData(node)
-      }
-    }
-
-    if (
-      !isEqual(prevProps.editedEdges, nextProps.editedEdges) ||
-      !isEqual(prevProps.editedNode, nextProps.editedNode)
-    ) {
-      if (nextProps.isEditMode) {
-        this.updateNodeData(nextProps.editedNode)
-      }
-    }
-  }
-
-  updateNodeData(currentNode: NodeType): void {
-    this.props.updateNodeData(this.props.processId, {
-      variableTypes: this.props.findAvailableVariables(this.props.originalNodeId),
-      branchVariableTypes: this.props.findAvailableBranchVariables(this.props.originalNodeId),
+  const updateNode = useCallback((currentNode: NodeType): void => {
+    updateNodeData(processId, {
+      variableTypes: findAvailableVariables(originalNodeId),
+      branchVariableTypes: findAvailableBranchVariables(originalNodeId),
       nodeData: currentNode,
-      processProperties: this.props.processProperties,
-      outgoingEdges: this.props.editedEdges.map(e => ({...e, to: e._id || e.to})),
+      processProperties: processProperties,
+      outgoingEdges: editedEdges.map(e => ({...e, to: e._id || e.to})),
     })
-  }
+  }, [editedEdges, findAvailableBranchVariables, findAvailableVariables, originalNodeId, processId, processProperties, updateNodeData])
 
-  publishNodeChange = (): void => {
-    this.props.onChange?.(this.props.editedNode, this.props.editedEdges)
-  }
+  useEffect(() => {
+    onChange?.(editedNode, editedEdges)
+  }, [editedEdges, editedNode, onChange])
 
-  updateNodeState = (updateNode: (current: NodeType) => NodeType): void => {
-    this.props.setEditedNode(
+  const updateNodeState = useCallback((updateNode: (current: NodeType) => NodeType): void => {
+    setEditedNode(
       updateNode,
-      this.publishNodeChange
     )
-  }
+  }, [setEditedNode])
 
-  setEdgesState = (nextEdges: Edge[]) => {
-    this.props.setEditedEdges(
+  const setEdgesState = useCallback((nextEdges: Edge[]) => {
+    setEditedEdges(
       currentEdges => nextEdges !== currentEdges ? nextEdges : currentEdges,
-      this.publishNodeChange
     )
-  }
+  }, [setEditedEdges])
 
-  render(): JSX.Element {
-    const {currentErrors = [], node, editedNode, editedEdges} = this.props
+  useEffect(() => {
+    const {adjustedNode} = adjustParameters(node, parameterDefinitions)
+    updateNodeState(() => adjustedNode)
+  }, [node, parameterDefinitions, updateNodeState])
 
-    const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
+  useEffect(() => {
+    if (isEditMode) {
+      updateNode(editedNode)
+    }
+  }, [editedNode, isEditMode, updateNode])
 
-    return (
-      <>
-        <NodeErrors errors={otherErrors} message="Node has errors"/>
-        <TestResultsWrapper nodeId={node.id}>
-          <NodeDetailsContent3
-            {...this.props}
-            editedNode={editedNode}
-            edges={editedEdges}
-            setEdgesState={this.setEdgesState}
-            updateNodeState={this.updateNodeState}
-            fieldErrors={fieldErrors}
-          />
-        </TestResultsWrapper>
-      </>
-    )
-  }
+  const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
+
+  return (
+    <>
+      <NodeErrors errors={otherErrors} message="Node has errors"/>
+      <TestResultsWrapper nodeId={node.id}>
+        <NodeDetailsContent3
+          {...props}
+          editedNode={editedNode}
+          edges={editedEdges}
+          setEdgesState={setEdgesState}
+          updateNodeState={updateNodeState}
+          fieldErrors={fieldErrors}
+        />
+      </TestResultsWrapper>
+    </>
+  )
 }
 

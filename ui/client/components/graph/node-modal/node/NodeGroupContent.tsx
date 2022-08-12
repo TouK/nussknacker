@@ -1,5 +1,5 @@
 import {css} from "@emotion/css"
-import React, {PropsWithChildren} from "react"
+import React, {PropsWithChildren, useCallback} from "react"
 import {useSelector} from "react-redux"
 import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
@@ -22,15 +22,20 @@ export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>)
   const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
   const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
 
+  const onChange = useCallback(
+    (node, edges) => {
+      updateEdgesState(edges)
+      updateNodeState(node)
+    },
+    [updateEdgesState, updateNodeState]
+  )
+
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
       <ContentSize>
         <NodeDetailsContent
           node={editedNode}
-          onChange={(node, edges) => {
-            updateEdgesState(edges)
-            updateNodeState(node)
-          }}
+          onChange={onChange}
           isEditMode={!readOnly}
           showValidation={true}
           showSwitch={true}
