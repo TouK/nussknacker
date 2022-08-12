@@ -76,7 +76,10 @@ object EspTypeUtils {
       case Unknown => true
     }
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.staticParameters.toList.map(_.refClazz) :+ methodInfo.staticResult).forall(typeResultVisible)
+      val noVarArgs = methodInfo.staticParameters.noVarArgs.map(_.refClazz)
+      val varArgs = methodInfo.staticParameters.varArg.toList.map(_.refClazz)
+      val result = methodInfo.staticResult :: Nil
+      (noVarArgs ::: varArgs ::: result).forall(typeResultVisible)
     }
     infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
   }
