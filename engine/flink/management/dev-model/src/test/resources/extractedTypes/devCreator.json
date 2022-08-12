@@ -10158,23 +10158,12 @@
         {
           "description": "zips up to 3 numbers",
           "parameters": [
-            {
-              "name": "x",
-              "refClazz": {
-                "params": [
-                  {
-                    "display": "Number",
-                    "params": [],
-                    "refClazzName": "java.lang.Number",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "[Ljava.lang.Object;"
-              }
-            }
+            {"name": "left", "refClazz": {"refClazzName": "java.lang.Number"}},
+            {"name": "mid", "refClazz": {"refClazzName": "java.lang.Number"}},
+            {"name": "right", "refClazz": {"refClazzName": "java.lang.Number"}}
           ],
-          "refClazz": {"type": "Unknown"},
-          "varArgs": true
+          "refClazz": {"refClazzName": "java.lang.Number"},
+          "varArgs": false
         }
       ]
     },
