@@ -214,7 +214,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   class Embeddable {
 
-    def data: Future[List[TestEmbedded]] = ???
+    def data: Future[java.util.List[TestEmbedded]] = ???
 
   }
 
