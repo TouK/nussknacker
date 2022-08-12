@@ -53,6 +53,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * module `nussknacker-flink-avro-components-utils` -> `nussknacker-flink-schemed-kafka-components-utils`
   * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
   * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
+* [#3412](https://github.com/TouK/nussknacker/pull/3412) More strict filtering method types. Methods with parameters or result like `Collection[IllegalType]` are no longer available in SpEl.
 
 ### REST API changes
 
