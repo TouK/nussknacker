@@ -15,7 +15,9 @@ import {UserSettings} from "../../../reducers/userSettings"
 import {ValidationRequest} from "../../../actions/nk"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {getParameterDefinitions, useStateCallback} from "./NodeDetailsContentUtils"
-import {NodeDetailsContent2} from "./NodeDetailsContent2"
+import {generateUUIDs, NodeDetailsContent2} from "./NodeDetailsContent2"
+import {adjustParameters} from "./ParametersUtils"
+import {WithTempId} from "./EdgesDndComponent"
 
 export interface NodeDetailsContentProps {
   isEditMode?: boolean,
@@ -49,7 +51,14 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   }, [dynamicParameterDefinitions, node, processDefinitionData])
 
   const [originalNode] = useState(node)
-  const [editedNode, setEditedNode] = useStateCallback<NodeType>(node)
+
+  const [editedNode, setEditedNode] = useStateCallback<NodeType>(
+    generateUUIDs(adjustParameters(node, parameterDefinitions).adjustedNode, ["fields", "parameters"])
+  )
+
+  const [editedEdges, setEditedEdges] = useStateCallback<WithTempId<Edge>[]>(
+    props.edges
+  )
 
   return (
     <>
@@ -60,6 +69,8 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
           originalNode,
           editedNode,
           setEditedNode,
+          editedEdges,
+          setEditedEdges,
         }}
       />
       <NodeAdditionalInfoBox node={node} processId={processId}/>

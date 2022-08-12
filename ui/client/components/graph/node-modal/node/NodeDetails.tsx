@@ -45,7 +45,6 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
   }, [nodeId])
 
   const performNodeEdit = useCallback(async () => {
-    //TODO: try to get rid of this.state.editedNode, passing state of NodeDetailsContent via onChange is not nice...
     await dispatch(editNode(processToDisplay, nodeToDisplay, editedNode, outputEdges))
     props.close()
   }, [processToDisplay, nodeToDisplay, editedNode, outputEdges, dispatch, props])

@@ -11,19 +11,7 @@ import {TestResultsWrapper} from "./TestResultsWrapper"
 import {NodeDetailsContentProps} from "./NodeDetailsContent"
 import {NodeDetailsContent3} from "./NodeDetailsContent3"
 
-interface State {
-  editedNode: NodeType,
-  edges: WithTempId<Edge>[],
-}
-
-export interface NodeDetailsContentProps2 extends NodeDetailsContentProps {
-  parameterDefinitions: UIParameter[],
-  originalNode: NodeType,
-  editedNode: NodeType,
-  setEditedNode: DispatchWithCallback<SetStateAction<NodeType>>,
-}
-
-const generateUUIDs = (editedNode: NodeType, properties: string[]): NodeType => {
+export function generateUUIDs(editedNode: NodeType, properties: string[]): NodeType {
   const node = cloneDeep(editedNode)
   properties.forEach((property) => {
     if (has(node, property)) {
@@ -33,27 +21,19 @@ const generateUUIDs = (editedNode: NodeType, properties: string[]): NodeType => 
   return node
 }
 
-export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps2, State> {
-  constructor(props: NodeDetailsContentProps2) {
-    super(props)
+export interface NodeDetailsContentProps2 extends NodeDetailsContentProps {
+  parameterDefinitions: UIParameter[],
+  originalNode: NodeType,
 
-    const {adjustedNode} = adjustParameters(props.node, props.parameterDefinitions)
-    const withUuids = generateUUIDs(adjustedNode, ["fields", "parameters"])
+  editedNode: NodeType,
+  setEditedNode: DispatchWithCallback<SetStateAction<NodeType>>,
 
-    this.state = {
-      editedNode: withUuids,
-      edges: props.edges,
-    }
+  editedEdges: WithTempId<Edge>[],
+  setEditedEdges: DispatchWithCallback<SetStateAction<WithTempId<Edge>[]>>,
+}
 
-    //In most cases this is not needed, as parameter definitions should be present in validation response
-    //However, in dynamic cases (as adding new topic/schema version) this can lead to stale parameters
-    if (props.isEditMode) {
-      this.updateNodeData(withUuids)
-    }
-  }
-
-  componentDidUpdate(prevProps: NodeDetailsContentProps2, prevState: State): void {
-    const nextState = this.state
+export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps2> {
+  componentDidUpdate(prevProps: NodeDetailsContentProps2): void {
     const nextProps = this.props
     let node = nextProps.node
     if (!isEqual(prevProps.parameterDefinitions, nextProps.parameterDefinitions)) {
@@ -73,58 +53,45 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
     }
 
     if (
-      !isEqual(prevState.edges, nextState.edges) ||
-      !isEqual(prevState.editedNode, nextState.editedNode)
+      !isEqual(prevProps.editedEdges, nextProps.editedEdges) ||
+      !isEqual(prevProps.editedNode, nextProps.editedNode)
     ) {
       if (nextProps.isEditMode) {
-        this.updateNodeData(nextState.editedNode)
+        this.updateNodeData(nextProps.editedNode)
       }
     }
   }
 
+  updateNodeData(currentNode: NodeType): void {
+    this.props.updateNodeData(this.props.processId, {
+      variableTypes: this.props.findAvailableVariables(this.props.originalNodeId),
+      branchVariableTypes: this.props.findAvailableBranchVariables(this.props.originalNodeId),
+      nodeData: currentNode,
+      processProperties: this.props.processProperties,
+      outgoingEdges: this.props.editedEdges.map(e => ({...e, to: e._id || e.to})),
+    })
+  }
+
   publishNodeChange = (): void => {
-    this.props.onChange?.(this.state.editedNode, this.state.edges)
+    this.props.onChange?.(this.props.editedNode, this.props.editedEdges)
   }
 
   updateNodeState = (updateNode: (current: NodeType) => NodeType): void => {
-    this.setState(
-      s => ({
-        editedNode: updateNode(s.editedNode),
-      }),
+    this.props.setEditedNode(
+      updateNode,
       this.publishNodeChange
     )
   }
 
-  updateNodeData(currentNode: NodeType): void {
-    const {props, state} = this
-    props.updateNodeData(props.processId, {
-      variableTypes: props.findAvailableVariables(props.originalNodeId),
-      branchVariableTypes: props.findAvailableBranchVariables(props.originalNodeId),
-      nodeData: currentNode,
-      processProperties: props.processProperties,
-      outgoingEdges: state.edges.map(e => ({...e, to: e._id || e.to})),
-    })
-  }
-
   setEdgesState = (nextEdges: Edge[]) => {
-    this.setState(
-      ({edges}) => {
-        if (nextEdges !== edges) {
-          return {edges: nextEdges}
-        }
-      },
+    this.props.setEditedEdges(
+      currentEdges => nextEdges !== currentEdges ? nextEdges : currentEdges,
       this.publishNodeChange
     )
   }
 
   render(): JSX.Element {
-    const {
-      props,
-      updateNodeState,
-      setEdgesState,
-    } = this
-
-    const {currentErrors = [], node} = props
+    const {currentErrors = [], node, editedNode, editedEdges} = this.props
 
     const [fieldErrors, otherErrors] = partition(currentErrors, error => !!error.fieldName)
 
@@ -134,10 +101,10 @@ export class NodeDetailsContent2 extends React.Component<NodeDetailsContentProps
         <TestResultsWrapper nodeId={node.id}>
           <NodeDetailsContent3
             {...this.props}
-            editedNode={this.state.editedNode}
-            edges={this.state.edges}
-            setEdgesState={setEdgesState}
-            updateNodeState={updateNodeState}
+            editedNode={editedNode}
+            edges={editedEdges}
+            setEdgesState={this.setEdgesState}
+            updateNodeState={this.updateNodeState}
             fieldErrors={fieldErrors}
           />
         </TestResultsWrapper>
