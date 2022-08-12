@@ -11,34 +11,6 @@ import scala.annotation.varargs
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
-  @GenericType(typingFunction = classOf[PlusGenericFunction])
-  def plus(left: Any, right: Any): Any = (left, right) match {
-    case (left: Int, right: Int) => left + right
-    case (left: String, right: String) => left + right
-    case _ => throw new AssertionError("should not be reached")
-  }
-
-  private class PlusGenericFunction() extends TypingFunction {
-    private val intType = Typed.typedClass[Int]
-    private val stringType = Typed.typedClass[String]
-
-    override val staticParameters: List[MethodTypeInfo] =
-      List(
-        MethodTypeInfo(Parameter("left", intType) :: Parameter("right", intType) :: Nil, None, intType),
-        MethodTypeInfo(Parameter("left", stringType) :: Parameter("right", stringType) :: Nil, None, stringType)
-      )
-
-    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
-      case left :: right :: Nil =>
-        (left.withoutValue, right.withoutValue) match {
-          case (`intType`, `intType`) => intType.validNel
-          case (`stringType`, `stringType`) => stringType.validNel
-          case _ => ArgumentTypeError.invalidNel
-        }
-      case _ => ArgumentTypeError.invalidNel
-    }
-  }
-
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head[T >: Null](list: java.util.List[T]): T =
