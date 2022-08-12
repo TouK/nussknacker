@@ -8,7 +8,7 @@ import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, Parameter, ParameterList, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
-import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedUnion, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedNull, TypedUnion, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
 
@@ -68,14 +68,18 @@ object EspTypeUtils {
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
   private def filterHiddenParameterAndReturnType(infos: Map[String, List[MethodInfo]])
                                                 (implicit settings: ClassExtractionSettings): Map[String, List[MethodInfo]] = {
-    def typeResultVisible(str: SingleTypingResult) = !settings.isHidden(str.objType.klass)
+    def typeResultVisible(t: TypingResult): Boolean = t match {
+      case str: SingleTypingResult =>
+        !settings.isHidden(str.objType.klass) && str.objType.params.forall(typeResultVisible)
+      case TypedUnion(ts) => ts.forall(typeResultVisible)
+      case TypedNull => true
+      case Unknown => true
+    }
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      (methodInfo.staticParameters.toList.map(_.refClazz) :+ methodInfo.staticResult).forall {
-        //TODO: handle arrays properly in ClassExtractionSettings
-        case e: SingleTypingResult => (methodInfo.varArgs && e.objType.klass.isArray) || typeResultVisible(e)
-        case TypedUnion(results) => results.forall(typeResultVisible)
-        case _ => true
-      }
+      val noVarArgs = methodInfo.staticParameters.noVarArgs.map(_.refClazz)
+      val varArgs = methodInfo.staticParameters.varArg.toList.map(_.refClazz)
+      val result = methodInfo.staticResult :: Nil
+      (noVarArgs ::: varArgs ::: result).forall(typeResultVisible)
     }
     infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
   }

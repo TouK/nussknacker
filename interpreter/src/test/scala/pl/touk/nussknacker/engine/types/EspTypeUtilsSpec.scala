@@ -214,7 +214,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
 
   class Embeddable {
 
-    def data: Future[List[TestEmbedded]] = ???
+    def data: Future[java.util.List[TestEmbedded]] = ???
 
   }
 
@@ -414,6 +414,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
       List(),
       "Max must have at least one argument".invalidNel
     )
+  }
+
+  test("should filter generic types") {
+    val javaClassInfo = singleClassDefinition[JavaClassWithFilteredMethod]().value
+    javaClassInfo.methods.keys shouldNot contain("notVisible")
   }
 
   class EmptyClass {

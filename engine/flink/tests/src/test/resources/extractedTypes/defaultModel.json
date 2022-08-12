@@ -3915,23 +3915,6 @@
           "varArgs": false
         }
       ],
-      "getUnits": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
-          "varArgs": false
-        }
-      ],
       "isNegative": [
         {
           "parameters": [],
@@ -4206,23 +4189,6 @@
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ],
-      "units": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
           "varArgs": false
         }
       ],
@@ -7361,23 +7327,6 @@
           "varArgs": false
         }
       ],
-      "getUnits": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
-          "varArgs": false
-        }
-      ],
       "getYears": [
         {
           "parameters": [],
@@ -7510,23 +7459,6 @@
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.Long"},
-          "varArgs": false
-        }
-      ],
-      "units": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
           "varArgs": false
         }
       ],
@@ -8778,23 +8710,6 @@
           "varArgs": false
         }
       ],
-      "getResolverFields": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalField",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalField",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Set"
-          },
-          "varArgs": false
-        }
-      ],
       "getResolverStyle": [
         {
           "parameters": [],
@@ -8842,36 +8757,6 @@
           "varArgs": false
         }
       ],
-      "parseBest": [
-        {
-          "parameters": [
-            {"name": "arg0", "refClazz": {"refClazzName": "java.lang.CharSequence"}},
-            {
-              "name": "arg1",
-              "refClazz": {
-                "params": [
-                  {
-                    "display": "TemporalQuery[Unknown]",
-                    "params": [
-                      {
-                        "display": "Unknown",
-                        "params": [],
-                        "refClazzName": "java.lang.Object",
-                        "type": "Unknown"
-                      }
-                    ],
-                    "refClazzName": "java.time.temporal.TemporalQuery",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "[Ljava.lang.Object;"
-              }
-            }
-          ],
-          "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"},
-          "varArgs": true
-        }
-      ],
       "parseUnresolved": [
         {
           "parameters": [
@@ -8879,23 +8764,6 @@
             {"name": "arg1", "refClazz": {"refClazzName": "java.text.ParsePosition"}}
           ],
           "refClazz": {"refClazzName": "java.time.temporal.TemporalAccessor"},
-          "varArgs": false
-        }
-      ],
-      "resolverFields": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalField",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalField",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Set"
-          },
           "varArgs": false
         }
       ],
@@ -8933,48 +8801,6 @@
         {
           "parameters": [
             {"name": "arg0", "refClazz": {"refClazzName": "java.util.Locale"}}
-          ],
-          "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"},
-          "varArgs": false
-        }
-      ],
-      "withResolverFields": [
-        {
-          "parameters": [
-            {
-              "name": "arg0",
-              "refClazz": {
-                "params": [
-                  {
-                    "display": "TemporalField",
-                    "params": [],
-                    "refClazzName": "java.time.temporal.TemporalField",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "[Ljava.lang.Object;"
-              }
-            }
-          ],
-          "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"},
-          "varArgs": true
-        },
-        {
-          "parameters": [
-            {
-              "name": "arg0",
-              "refClazz": {
-                "params": [
-                  {
-                    "display": "TemporalField",
-                    "params": [],
-                    "refClazzName": "java.time.temporal.TemporalField",
-                    "type": "TypedClass"
-                  }
-                ],
-                "refClazzName": "java.util.Set"
-              }
-            }
           ],
           "refClazz": {"refClazzName": "java.time.format.DateTimeFormatter"},
           "varArgs": false
