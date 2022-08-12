@@ -416,6 +416,11 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     )
   }
 
+  test("should filter generic types") {
+    val javaClassInfo = singleClassDefinition[JavaClassWithFilteredMethod]().value
+    javaClassInfo.methods.keys shouldNot contain("notVisible")
+  }
+
   class EmptyClass {
     def invoke(): Unit = ???
   }
