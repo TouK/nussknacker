@@ -196,7 +196,7 @@ object EspTypeUtils {
 
   private def extractGenericParameters(typingFunction: TypingFunction, method: Method): NonEmptyList[MethodTypeInfo] = {
     val autoExtractedParameters = extractMethodTypeInfo(method)
-    val definedParametersOption = typingFunction.staticParameters
+    val definedParametersOption = typingFunction.signatures
 
     definedParametersOption
       .map(ParameterListSubclassChecker.check(_, autoExtractedParameters))

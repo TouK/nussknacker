@@ -21,7 +21,7 @@ abstract class TypingFunction {
    * computeResultType.
    * Defaults to type of associated method if empty list is provided.
    */
-  def staticParameters: List[MethodTypeInfo] = Nil
+  def signatures: List[MethodTypeInfo] = Nil
 
   def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

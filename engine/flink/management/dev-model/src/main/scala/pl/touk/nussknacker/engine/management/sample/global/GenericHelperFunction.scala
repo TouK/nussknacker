@@ -36,7 +36,7 @@ object GenericHelperFunction {
     private val expectedArgument = Typed(Typed.fromInstance("String"), Typed.fromInstance("Double"), Typed.fromInstance("Int"))
     private val expectedResult = Typed(Typed[String], Typed[Double], Typed[Int])
 
-    override def staticParameters: List[MethodTypeInfo] =
+    override def signatures: List[MethodTypeInfo] =
       List(MethodTypeInfo(List(Parameter("typeName", expectedArgument)), None, expectedResult))
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = arguments match {
@@ -95,7 +95,7 @@ object GenericHelperFunction {
   def zip(x: Number*): Any = ???
 
   private class ZipHelper extends TypingFunction {
-    override def staticParameters: List[MethodTypeInfo] =
+    override def signatures: List[MethodTypeInfo] =
       List(
         MethodTypeInfo(Parameter("arg", Typed[Number]) :: Nil, None, Typed[Number]),
         MethodTypeInfo(Parameter("left", Typed[Number]) :: Parameter("right", Typed[Number]) :: Nil, None, Typed[Number]),
