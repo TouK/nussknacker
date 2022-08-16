@@ -13,7 +13,8 @@ object TypeInfos {
 
     def signatures: NonEmptyList[MethodTypeInfo]
 
-    val mainSignature: MethodTypeInfo = signatures.toList.maxBy(_.parametersToList.length)
+    // TODO: rename to sth more meaningful
+    val mainSignature: MethodTypeInfo
 
     def name: String
 
@@ -25,12 +26,12 @@ object TypeInfos {
 
   object StaticMethodInfo {
     def apply(signature: MethodTypeInfo, name: String, description: Option[String]): StaticMethodInfo =
-      StaticMethodInfo(NonEmptyList.one(signature), name, description)
+      StaticMethodInfo(signature, name, description)
   }
 
-  case class StaticMethodInfo(signatures: NonEmptyList[MethodTypeInfo],
-                              name: String,
-                              description: Option[String]) extends MethodInfo {
+  case class StaticMethodInfo(override val mainSignature: MethodTypeInfo,
+                              override val name: String,
+                              override val description: Option[String]) extends MethodInfo {
     private def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
       val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
         arguments.zip(methodTypeInfo.noVarArgs).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
@@ -45,6 +46,9 @@ object TypeInfos {
       checkNoVarArgs && checkVarArgs
     }
 
+    override def signatures: NonEmptyList[MethodTypeInfo] = NonEmptyList.one(mainSignature)
+
+    // TODO: use mainSignature
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       signatures
         .find(isValidMethodInfo(arguments, _))
@@ -60,15 +64,10 @@ object TypeInfos {
               description: Option[String]): FunctionalMethodInfo =
       FunctionalMethodInfo(typeFunction, NonEmptyList.one(signature), name, description)
 
-    def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-              signatures: NonEmptyList[MethodTypeInfo],
-              name: String,
-              description: Option[String]): FunctionalMethodInfo =
-      FunctionalMethodInfo(typeFunction, StaticMethodInfo(signatures, name, description))
-  }
-
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-                                  staticInfo: StaticMethodInfo) extends MethodInfo {
+                                  override val signatures: NonEmptyList[MethodTypeInfo],
+                                  override val name: String,
+                                  override val description: Option[String]) extends MethodInfo {
     // We use staticInfo.computeResultType to validate against static
     // parameters, so that there is no need to perform basic checks in
     // typeFunction.
@@ -87,13 +86,11 @@ object TypeInfos {
       typeCalculated
     }
 
-    override def signatures: NonEmptyList[MethodTypeInfo] = staticInfo.signatures
+    override val mainSignature: MethodTypeInfo = staticInfo.mainSignature
 
-    override def name: String = staticInfo.name
+    private def staticInfo: StaticMethodInfo = StaticMethodInfo(signatures.toList.maxBy(_.parametersToList.length), name, description)
 
-    override def description: Option[String] = staticInfo.description
   }
-
 
   case class ClazzDefinition(clazzName: TypedClass,
                              methods: Map[String, List[MethodInfo]],
