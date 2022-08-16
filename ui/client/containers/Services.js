@@ -9,6 +9,7 @@ import {ExpressionLang} from "../components/graph/node-modal/editors/expression/
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
+import "../stylesheets/graph.styl"
 import {find, flatMap, get, isBoolean, isEmpty, isNumber, isObject, map, set, sortBy} from "lodash"
 
 class Services extends React.Component {

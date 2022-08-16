@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.types
 import java.lang.reflect._
 import java.util.Optional
 import cats.data.StateT
+import cats.data.Validated.Invalid
 import cats.effect.IO
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, Parameter, ParameterList, TypingFunction}
@@ -155,8 +156,8 @@ object EspTypeUtils {
   private def extractGenericMethod(method: Method, genericType: GenericType)
                                   (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
-    val parameterInfo = typeFunctionInstance.staticParameters
-      .getOrElse(ParameterList.fromList(extractParameters(method), method.isVarArgs))
+
+    val parameterInfo = extractGenericParameters(typeFunctionInstance, method)
     val resultInfo = typeFunctionInstance.staticResult
       .getOrElse(extractMethodReturnType(method))
 
@@ -172,7 +173,7 @@ object EspTypeUtils {
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
     collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
-      ParameterList.fromList(extractParameters(method), method.isVarArgs),
+      extractParameters(method),
       extractMethodReturnType(method),
       methodName,
       extractNussknackerDocs(method)
@@ -198,13 +199,28 @@ object EspTypeUtils {
     extractAnnotation(accessibleObject, classOf[Documentation]).map(_.description())
   }
 
-  private def extractParameters(method: Method): List[Parameter] = {
-    for {
+  private def extractGenericParameters(typingFunction: TypingFunction, method: Method): ParameterList = {
+    val autoExtractedParameters = extractParameters(method)
+    val definedParametersOption = typingFunction.staticParameters
+
+    definedParametersOption
+      .map(ParameterListSubclassChecker.check(_, autoExtractedParameters))
+      .collect{ case Invalid(e) => e }
+      .foreach { x =>
+        val errorString = x.map(_.message).toList.mkString("; ")
+        throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature: $errorString")
+      }
+
+    definedParametersOption.getOrElse(autoExtractedParameters)
+  }
+
+  private def extractParameters(method: Method): ParameterList = {
+    ParameterList.fromList(for {
       param <- method.getParameters.toList
       annotationOption = extractAnnotation(param, classOf[ParamName])
       name = annotationOption.map(_.value).getOrElse(param.getName)
       paramType = extractParameterType(param)
-    } yield Parameter(name, paramType)
+    } yield Parameter(name, paramType), method.isVarArgs)
   }
 
   def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
