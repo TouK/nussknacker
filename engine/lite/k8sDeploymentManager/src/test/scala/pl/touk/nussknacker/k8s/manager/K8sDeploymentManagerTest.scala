@@ -67,7 +67,6 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
       // TODO: replace with service invocation
       f.withPortForwarded(f.port) {
         val request = basicRequest.post(uri"http://localhost".port(f.port).path("scenario", f.scenario.id))
-//        Thread.sleep(60 * 1000)
         request.body(pingMessage).send().body shouldBe Right(pongMessage)
       }
     }

@@ -20,12 +20,12 @@ class K8sScalingOptionsDeterminerTestSpec extends AnyFunSuite with Matchers {
   }
 
   test("fixed replicas round dividing") {
-    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(FixedReplicasCountConfig(fixedReplicasCount = 2))
+    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(2)
     determiner.determine(parallelism = 8) shouldEqual K8sScalingOptions(replicasCount = 2, noOfTasksInReplica = 4)
   }
 
   test("fixed replicas dividing with remainder") {
-    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(FixedReplicasCountConfig(fixedReplicasCount = 2))
+    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(2)
     determiner.determine(parallelism = 9) shouldEqual K8sScalingOptions(replicasCount = 2, noOfTasksInReplica = 5)
   }
 

@@ -22,7 +22,8 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
+import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
@@ -74,7 +75,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
   private val deploymentPreparer = new DeploymentPreparer(config)
-  private val scalingOptionsDeterminer = K8sScalingOptionsDeterminer(config.scalingConfig)
+  private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -133,10 +134,20 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private def determineScalingOptions(canonicalProcess: CanonicalProcess) = {
     canonicalProcess.metaData.typeSpecificData match {
       case stream: LiteStreamMetaData =>
-        scalingOptionsDeterminer.determine(stream.parallelism.getOrElse(defaultParallelism))
+        val determiner = scalingOptionsDeterminerOpt.getOrElse(defaultKafkaScalingDeterminer)
+        determiner.determine(stream.parallelism.getOrElse(defaultParallelism))
       case _: RequestResponseMetaData =>
-        // FIXME
-        K8sScalingOptions(1, 1)
+        val replicasCount = scalingOptionsDeterminerOpt match {
+          case Some(fixed: FixedReplicasCountK8sScalingOptionsDeterminer) =>
+            fixed.replicasCount
+          case Some(_) =>
+            logger.debug(s"Not supported scaling config for request-response scenario type: ${config.scalingConfig}. Will be used default replicase count: $defaultReqRespReplicaseCount instead")
+            defaultReqRespReplicaseCount
+          case None =>
+            defaultReqRespReplicaseCount
+        }
+        // TODO: noOfTasksInReplica currently has no effect in req-resp, maybe we would like to have some options to tune http throughput instead?
+        K8sScalingOptions(replicasCount = replicasCount, noOfTasksInReplica = 1)
       case other =>
         throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }
@@ -220,6 +231,14 @@ object K8sDeploymentManager {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1
+
+  // 4 because it is quite normal number of cpus reserved for one container
+  val defaultKafkaTasksPerReplica = 4
+
+  val defaultKafkaScalingDeterminer: K8sScalingOptionsDeterminer = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(defaultKafkaTasksPerReplica))
+
+  // 2 for HA purpose
+  val defaultReqRespReplicaseCount = 2
 
   val nussknackerInstanceNameLabel: String = "nussknacker.io/nussknackerInstanceName"
 
