@@ -199,7 +199,7 @@ object EspTypeUtils {
     val definedParametersOption = typingFunction.signatures
 
     definedParametersOption
-      .map(ParameterListSubclassChecker.check(_, autoExtractedParameters))
+      .map(MethodTypeInfoSubclassChecker.check(_, autoExtractedParameters))
       .collect{ case Invalid(e) => e }
       .foreach { x =>
         val errorString = x.map(_.message).toList.mkString("; ")

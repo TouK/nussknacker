@@ -16,7 +16,7 @@ class MethodTypeInfoSubclassCheckerSpec extends FunSuite with Matchers with Vali
     def toMethodTypeInfo(noVarArgs: List[TypingResult], varArg: Option[TypingResult]): MethodTypeInfo =
       MethodTypeInfo(noVarArgs.map(Parameter("", _)), varArg.map(Parameter("", _)), Unknown)
 
-    val checkResult = ParameterListSubclassChecker.check(
+    val checkResult = MethodTypeInfoSubclassChecker.check(
       toMethodTypeInfo(subclassNoVarArgs, subclassVarArg),
       toMethodTypeInfo(superclassNoVarArgs, superclassVarArg)
     )
@@ -91,12 +91,12 @@ class MethodTypeInfoSubclassCheckerSpec extends FunSuite with Matchers with Vali
   }
 
   test("should check return type") {
-    ParameterListSubclassChecker.check(
+    MethodTypeInfoSubclassChecker.check(
       MethodTypeInfo(Nil, None, Typed[Long]),
       MethodTypeInfo(Nil, None, Typed[Number])
     ) shouldBe ().validNel
 
-    ParameterListSubclassChecker.check(
+    MethodTypeInfoSubclassChecker.check(
       MethodTypeInfo(Nil, None, Typed[String]),
       MethodTypeInfo(Nil, None, Typed[Int])
     ) shouldBe NotSubclassResult(Typed[String], Typed[Int]).invalidNel

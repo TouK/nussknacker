@@ -5,10 +5,10 @@ import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
 import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-object ParameterListSubclassChecker {
-  def check(subclassParameters: MethodTypeInfo, superclassParameters: MethodTypeInfo): ValidatedNel[ParameterListError, Unit] = {
-    val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult) = subclassParameters
-    val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassParameters
+object MethodTypeInfoSubclassChecker {
+  def check(subclassInfo: MethodTypeInfo, superclassInfo: MethodTypeInfo): ValidatedNel[ParameterListError, Unit] = {
+    val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult) = subclassInfo
+    val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassInfo
 
     val validatedVarArgs = (subclassVarArgOption, superclassVarArgOption) match {
       case (Some(sub), Some(sup)) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
