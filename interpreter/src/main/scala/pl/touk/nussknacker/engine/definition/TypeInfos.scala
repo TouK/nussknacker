@@ -2,25 +2,12 @@ package pl.touk.nussknacker.engine.definition
 
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import io.circe.Encoder
-import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, MethodTypeInfo, Parameter}
-import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
-  //a bit sad that it isn't derived automatically, but...
-  private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
-
-  @JsonCodec(encodeOnly = true) case class SerializableMethodInfo(parameters: List[Parameter],
-                                                                  refClazz: TypingResult,
-                                                                  description: Option[String],
-                                                                  varArgs: Boolean)
-
-  implicit val methodInfoEncoder: Encoder[MethodInfo] = Encoder[SerializableMethodInfo].contramap(_.serializable)
-
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
@@ -31,9 +18,6 @@ object TypeInfos {
     def name: String
 
     def description: Option[String]
-
-    final def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(mainSignature.parametersToList, mainSignature.result, description, mainSignature.varArg.isDefined)
 
     protected def convertError(error: GenericFunctionTypingError, arguments: List[TypingResult]): ExpressionParseError =
       SpelExpressionParseErrorConverter(this, arguments).convert(error)
