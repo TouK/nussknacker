@@ -17,6 +17,12 @@ object MethodTypeInfo {
     case (false, noVarArgParameters) =>
       MethodTypeInfo(noVarArgParameters, None, result)
   }
+
+  def withoutVarargs(params: List[Parameter], result: TypingResult): MethodTypeInfo =
+    MethodTypeInfo(params, None, result)
+
+  def withoutParameters(result: TypingResult): MethodTypeInfo =
+    MethodTypeInfo(Nil, None, result)
 }
 
 case class MethodTypeInfo(noVarArgs: List[Parameter], varArg: Option[Parameter], result: TypingResult) {

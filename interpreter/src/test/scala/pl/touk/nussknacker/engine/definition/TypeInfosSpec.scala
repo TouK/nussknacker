@@ -5,24 +5,10 @@ import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
 import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, MethodTypeInfo, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, SerializableMethodInfo, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 
 class TypeInfosSpec extends FunSuite with Matchers {
-  test("should generate serializable method info") {
-    val paramX = Parameter("x", Typed[Int])
-    val paramY = Parameter("y", Typed[String])
-    val paramYArray = Parameter("y", Typed.genericTypeClass[Array[Object]](List(Typed[String])))
-    def f(x: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = Unknown.validNel
-
-    StaticMethodInfo(MethodTypeInfo(List(paramX), None, Typed[Double]), "b", Some("c")).serializable shouldBe
-      SerializableMethodInfo(List(paramX), Typed[Double], Some("c"), varArgs = false)
-    StaticMethodInfo(MethodTypeInfo(List(paramX), Some(paramY), Typed[Long]), "d", Some("e")).serializable shouldBe
-      SerializableMethodInfo(List(paramX, paramYArray), Typed[Long], Some("e"), varArgs = true)
-    FunctionalMethodInfo(f, StaticMethodInfo(MethodTypeInfo(List(paramX, paramY), None, Typed[String]), "f", Some("g"))).serializable shouldBe
-      SerializableMethodInfo(List(paramX, paramY), Typed[String], Some("g"), varArgs = false)
-  }
-
   private val noVarArgsMethodInfo =
     StaticMethodInfo(MethodTypeInfo(List(Parameter("", Typed[Int]), Parameter("", Typed[String])), None, Typed[Double]), "f", None)
   private val varArgsMethodInfo =
