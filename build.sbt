@@ -1080,7 +1080,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-)
+    )
     // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
   ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test",
   kafkaTestUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")

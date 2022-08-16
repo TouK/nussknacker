@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.utils
 
 import com.dimafeng.testcontainers.GenericContainer
 import org.slf4j.Logger

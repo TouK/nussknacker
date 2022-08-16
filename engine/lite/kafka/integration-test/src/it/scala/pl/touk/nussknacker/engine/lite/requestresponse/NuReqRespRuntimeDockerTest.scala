@@ -1,12 +1,13 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.requestresponse
 
 import com.dimafeng.testcontainers.{Container, ForAllTestContainer, GenericContainer}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.lite.kafka.NuRuntimeDockerTestUtils._
-import pl.touk.nussknacker.engine.lite.kafka.NuRuntimeTestUtils.testCaseId
-import pl.touk.nussknacker.engine.lite.kafka.sample.NuReqRespTestSamples.{jsonPingMessage, jsonPongMessage, pingPongScenario}
+import pl.touk.nussknacker.engine.lite.requestresponse.sample.NuReqRespTestSamples.{jsonPingMessage, jsonPongMessage, pingPongScenario}
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.testCaseId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 
