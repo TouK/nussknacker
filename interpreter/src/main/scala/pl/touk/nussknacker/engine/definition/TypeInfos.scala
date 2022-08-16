@@ -24,8 +24,8 @@ object TypeInfos {
   }
 
   object StaticMethodInfo {
-    def apply(signatures: MethodTypeInfo, name: String, description: Option[String]): StaticMethodInfo =
-      StaticMethodInfo(NonEmptyList.one(signatures), name, description)
+    def apply(signature: MethodTypeInfo, name: String, description: Option[String]): StaticMethodInfo =
+      StaticMethodInfo(NonEmptyList.one(signature), name, description)
   }
 
   case class StaticMethodInfo(signatures: NonEmptyList[MethodTypeInfo],
@@ -77,10 +77,12 @@ object TypeInfos {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       val errorConverter = SpelExpressionParseErrorConverter(this, arguments)
       val typeFromStaticInfo = staticInfo.computeResultType(arguments)
+      // We use and then to make sure that arguments given to typeFunction
+      // pass basic validation.
       val typeCalculated = typeFromStaticInfo.andThen(_ => typeFunction(arguments).leftMap(_.map(errorConverter.convert)))
       typeFromStaticInfo.toOption.zip(typeCalculated.toOption).foreach{ case (fromStatic, calculated) =>
         if (!calculated.canBeSubclassOf(fromStatic))
-          throw new AssertionError("Generic function returned type that does not match static parameters.")
+          throw new AssertionError(s"Generic function $name returned type ${calculated.display} that does not match declared type ${fromStatic.display} when called with arguments ${arguments.map(_.display).mkString("(", ", ", ")")}")
       }
       typeCalculated
     }
