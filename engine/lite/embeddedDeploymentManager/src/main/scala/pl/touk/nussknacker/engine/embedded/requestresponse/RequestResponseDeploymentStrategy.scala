@@ -49,7 +49,7 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${config.port}")
 
-    val route = new ScenarioRoute(pathToRequestHandler)
+    val route = new ScenarioRoute(pathToRequestHandler, config.definitionMetadata)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(

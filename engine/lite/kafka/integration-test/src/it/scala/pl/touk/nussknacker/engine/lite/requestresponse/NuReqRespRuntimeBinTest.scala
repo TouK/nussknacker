@@ -1,9 +1,10 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.requestresponse
 
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.lite.kafka.NuRuntimeTestUtils.{saveScenarioToTmp, testCaseId}
-import pl.touk.nussknacker.engine.lite.kafka.sample.NuReqRespTestSamples.{jsonPingMessage, jsonPongMessage, pingPongScenario}
+import pl.touk.nussknacker.engine.lite.requestresponse.sample.NuReqRespTestSamples.{jsonPingMessage, jsonPongMessage, pingPongScenario}
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.{saveScenarioToTmp, testCaseId}
+import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
 import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka.sample
+package pl.touk.nussknacker.engine.lite.requestresponse.sample
 
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess

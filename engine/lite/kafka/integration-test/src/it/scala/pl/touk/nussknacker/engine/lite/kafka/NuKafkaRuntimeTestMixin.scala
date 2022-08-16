@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import org.scalatest.TestSuite
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils
 
 import java.io.File
 

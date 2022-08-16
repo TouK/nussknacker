@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
-import pl.touk.nussknacker.engine.lite.kafka.NuRuntimeDockerTestUtils._
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
+import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
 
 import java.io.File
 import java.util.concurrent.TimeoutException

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeCont
 import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
-import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
+import pl.touk.nussknacker.engine.requestresponse.openapi.{OApiInfo, RequestResponseOpenApiGenerator}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
 import scala.concurrent.ExecutionContext
@@ -90,6 +90,12 @@ object RequestResponseInterpreter {
         case Some(outputSchemaStr) => CirceUtil.decodeJsonUnsafe[Json](outputSchemaStr, "Provided json is not valid")
       }
     }
+
+    def generateOpenApiInfoForScenario(): OApiInfo = OApiInfo(
+      title = id,
+      version = context.jobData.processVersion.versionId.value.toString,
+      description = context.jobData.metaData.additionalFields.flatMap(_.description)
+    )
 
     def generateOpenApiDefinition(): Option[Json] = {
       for {

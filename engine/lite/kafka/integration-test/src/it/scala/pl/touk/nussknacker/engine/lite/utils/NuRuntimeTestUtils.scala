@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.utils
 
 import io.circe.syntax._
 import org.apache.commons.io.FileUtils
