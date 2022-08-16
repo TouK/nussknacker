@@ -1,103 +1,78 @@
 package pl.touk.nussknacker.engine.definition
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
-import io.circe.Encoder
-import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, ParameterList}
-import pl.touk.nussknacker.engine.api.typed.TypeEncoders
+import pl.touk.nussknacker.engine.api.generics.GenericFunctionTypingError.ArgumentTypeError
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
-  //a bit sad that it isn't derived automatically, but...
-  private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
-
-  @JsonCodec(encodeOnly = true) case class SerializableMethodInfo(parameters: List[Parameter],
-                                                                  refClazz: TypingResult,
-                                                                  description: Option[String],
-                                                                  varArgs: Boolean)
-
-  implicit val methodInfoEncoder: Encoder[MethodInfo] = Encoder[SerializableMethodInfo].contramap(_.serializable)
-
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    def staticParameters: ParameterList
-
-    final def staticNoVarArgParameters: List[Parameter] = staticParameters.noVarArgs
-
-    final def staticVarArgParameter: Option[Parameter] = staticParameters.varArg
-
-    def staticResult: TypingResult
+    def signatures: NonEmptyList[MethodTypeInfo]
 
     def name: String
 
     def description: Option[String]
 
-    final def varArgs: Boolean = staticVarArgParameter.isDefined
+    protected def convertError(error: GenericFunctionTypingError, arguments: List[TypingResult]): ExpressionParseError =
+      SpelExpressionParseErrorConverter(this, arguments).convert(error)
 
-    final def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParameters.toList, staticResult, description, varArgs)
+    protected def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
+      val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
+        arguments.zip(methodTypeInfo.noVarArgs).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
+
+      val checkVarArgs = methodTypeInfo.varArg match {
+        case Some(Parameter(_, t)) =>
+          arguments.drop(methodTypeInfo.noVarArgs.length).forall(_.canBeSubclassOf(t))
+        case None =>
+          arguments.length == methodTypeInfo.noVarArgs.length
+      }
+
+      checkNoVarArgs && checkVarArgs
+    }
   }
 
-  case class StaticMethodInfo(staticParameters: ParameterList,
-                              staticResult: TypingResult,
+  case class StaticMethodInfo(signature: MethodTypeInfo,
                               name: String,
                               description: Option[String]) extends MethodInfo {
-    private def checkNoVarArgs(arguments: List[TypingResult]): Boolean =
-      arguments.length >= staticNoVarArgParameters.length &&
-        arguments.zip(staticNoVarArgParameters).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
-
-    private def checkVarArgs(arguments: List[TypingResult]): Boolean = staticVarArgParameter match {
-      case Some(Parameter(_, t)) =>
-        arguments.drop(staticNoVarArgParameters.length).forall(_.canBeSubclassOf(t))
-      case None =>
-        arguments.length == staticNoVarArgParameters.length
-    }
+    override def signatures: NonEmptyList[MethodTypeInfo] = NonEmptyList.one(signature)
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      if (checkNoVarArgs(arguments) && checkVarArgs(arguments))
-        staticResult.validNel
-      else
-        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError).invalidNel
+      if (isValidMethodInfo(arguments, signature)) signature.result.validNel
+      else convertError(ArgumentTypeError, arguments).invalidNel
     }
   }
 
   object FunctionalMethodInfo {
     def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-              staticParameters: ParameterList,
-              staticResult: TypingResult,
+              signature: MethodTypeInfo,
               name: String,
               description: Option[String]): FunctionalMethodInfo =
-      FunctionalMethodInfo(typeFunction, StaticMethodInfo(staticParameters, staticResult, name, description))
+      FunctionalMethodInfo(typeFunction, NonEmptyList.one(signature), name, description)
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-                                  staticInfo: StaticMethodInfo) extends MethodInfo {
-    // We use staticInfo.computeResultType to validate against static
-    // parameters, so that there is no need to perform basic checks in
-    // typeFunction.
-    // This is also used to prevents errors in runtime, when typeFunction
-    // returns illegal results.
-    // TODO: Validate that staticParameters and staticResult match real type of function.
-    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      staticInfo.computeResultType(arguments)
-        .andThen{_ =>
-        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
+                                  signatures: NonEmptyList[MethodTypeInfo],
+                                  name: String,
+                                  description: Option[String]) extends MethodInfo {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+      val errorConverter = SpelExpressionParseErrorConverter(this, arguments)
+      val typesFromStaticMethodInfo = signatures.filter(isValidMethodInfo(arguments, _)).map(_.result)
+      if (typesFromStaticMethodInfo.isEmpty) return convertError(ArgumentTypeError, arguments).invalidNel
+
+      val typeCalculated = typeFunction(arguments).leftMap(_.map(errorConverter.convert))
+      typeCalculated.map { calculated =>
+        if (!typesFromStaticMethodInfo.exists(calculated.canBeSubclassOf)) {
+          val expectedTypesString = typesFromStaticMethodInfo.map(_.display).mkString("(", ", ", ")")
+          val argumentsString = arguments.map(_.display).mkString("(", ", ", ")")
+          throw new AssertionError(s"Generic function $name returned type ${calculated.display} that does not match any of declared types $expectedTypesString when called with arguments $argumentsString")
         }
-        .map{res =>
-          if (!res.canBeSubclassOf(staticResult)) throw new AssertionError("Generic function returned type that does not match static parameters.")
-            res
-        }
-
-    override def staticParameters: ParameterList = staticInfo.staticParameters
-
-    override def staticResult: TypingResult = staticInfo.staticResult
-
-    override def name: String = staticInfo.name
-
-    override def description: Option[String] = staticInfo.description
+      }
+      typeCalculated
+    }
   }
 
 

@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.types
 
 import cats.data.{Validated, ValidatedNel}
 import cats.implicits.{catsSyntaxValidatedId, toTraverseOps}
-import pl.touk.nussknacker.engine.api.generics.ParameterList
+import pl.touk.nussknacker.engine.api.generics.MethodTypeInfo
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
-object ParameterListSubclassChecker {
-  def check(subclassParameters: ParameterList, superclassParameters: ParameterList): ValidatedNel[ParameterListError, Unit] = {
-    val ParameterList(subclassNoVarArg, subclassVarArgOption) = subclassParameters
-    val ParameterList(superclassNoVarArg, superclassVarArgOption) = superclassParameters
+object MethodTypeInfoSubclassChecker {
+  def check(subclassInfo: MethodTypeInfo, superclassInfo: MethodTypeInfo): ValidatedNel[ParameterListError, Unit] = {
+    val MethodTypeInfo(subclassNoVarArg, subclassVarArgOption, subclassResult) = subclassInfo
+    val MethodTypeInfo(superclassNoVarArg, superclassVarArgOption, superclassResult) = superclassInfo
 
     val validatedVarArgs = (subclassVarArgOption, superclassVarArgOption) match {
       case (Some(sub), Some(sup)) if sub.refClazz.canBeSubclassOf(sup.refClazz) => ().validNel
@@ -29,7 +29,10 @@ object ParameterListSubclassChecker {
       case ((sub, sup), i) => NotSubclassArgument(i + 1, sub.refClazz, sup.refClazz).invalidNel
     }.sequence.map(_ => ())
 
-    validatedVarArgs combine validatedLength combine validatedNoVarArgs
+    val validatedResult =
+      Validated.condNel(subclassResult.canBeSubclassOf(superclassResult), (), NotSubclassResult(subclassResult, superclassResult))
+
+    validatedVarArgs combine validatedLength combine validatedNoVarArgs combine validatedResult
   }
 }
 
@@ -60,4 +63,9 @@ case class NotSubclassArgument(position: Int, found: TypingResult, expected: Typ
 case class NotSubclassVarArgument(found: TypingResult, expected: TypingResult) extends ParameterListError {
   override def message: String =
     s"vararg argument has illegal type: ${found.display} cannot be subclass of ${expected.display}"
+}
+
+case class NotSubclassResult(found: TypingResult, expected: TypingResult) extends ParameterListError {
+  override def message: String =
+    s"result has illegal type: ${found.display} cannot be subclass of ${expected.display}"
 }
