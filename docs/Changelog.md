@@ -1,6 +1,6 @@
 # Changelog
 
-1.5.0 (Not released yet)
+1.5.0 (16 Aug 2022)
 ------------------------
 * [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
