@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.utils
 
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.TestSuite

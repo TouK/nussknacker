@@ -3,15 +3,16 @@ package pl.touk.nussknacker.engine.lite.requestresponse
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
-import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfigCreator, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -19,7 +20,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import scala.concurrent.Future
 
 
-class ScenarioRouteSpec extends FlatSpec with ScalatestRouteTest with Matchers {
+class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers {
 
   import spel.Implicits._
 
@@ -31,7 +32,7 @@ class ScenarioRouteSpec extends FlatSpec with ScalatestRouteTest with Matchers {
     .source("start", "request")
     .emptySink("end", "response", "place" -> "#input.city")
 
-  private val modelData = LocalModelData(ConfigFactory.load(), new RequestResponseConfigCreator)
+  private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
 
   private val interpreter = RequestResponseInterpreter[Future](
     process,
