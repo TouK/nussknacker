@@ -5,6 +5,7 @@ import java.util.Optional
 import cats.data.{NonEmptyList, StateT}
 import cats.data.Validated.Invalid
 import cats.effect.IO
+import cats.implicits.catsSyntaxSemigroup
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
@@ -67,7 +68,9 @@ object EspTypeUtils {
     val functionalMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
     val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValues(_.map(_._2))
 
-    deduplicateMethodsWithGenericReturnType(staticMethodInfos) ++ groupedFunctionalMethodInfos
+    deduplicateMethodsWithGenericReturnType(staticMethodInfos)
+      .asInstanceOf[Map[String, List[MethodInfo]]]
+      .combine(groupedFunctionalMethodInfos)
   }
 
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
