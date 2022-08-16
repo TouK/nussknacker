@@ -13,7 +13,7 @@ object TypeInfos {
 
     def signatures: NonEmptyList[MethodTypeInfo]
 
-    final def mainSignature: MethodTypeInfo = signatures.toList.maxBy(_.parametersToList.length)
+    val mainSignature: MethodTypeInfo = signatures.toList.maxBy(_.parametersToList.length)
 
     def name: String
 
@@ -74,17 +74,16 @@ object TypeInfos {
     // typeFunction.
     // This is also used to prevents errors in runtime, when typeFunction
     // returns illegal results.
-    // TODO: Validate that staticParameters and staticResult match real type of function.
-    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      staticInfo.computeResultType(arguments)
-        .andThen{_ =>
-        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
-        }
-        .map{res =>
-          if (!staticInfo.signatures.map(_.result).exists(res.canBeSubclassOf))
-            throw new AssertionError("Generic function returned type that does not match static parameters.")
-          res
-        }
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
+      val errorConverter = SpelExpressionParseErrorConverter(this, arguments)
+      val typeFromStaticInfo = staticInfo.computeResultType(arguments)
+      val typeCalculated = typeFromStaticInfo.andThen(_ => typeFunction(arguments).leftMap(_.map(errorConverter.convert)))
+      typeFromStaticInfo.toOption.zip(typeCalculated.toOption).foreach{ case (fromStatic, calculated) =>
+        if (!calculated.canBeSubclassOf(fromStatic))
+          throw new AssertionError("Generic function returned type that does not match static parameters.")
+      }
+      typeCalculated
+    }
 
     override def signatures: NonEmptyList[MethodTypeInfo] = staticInfo.signatures
 

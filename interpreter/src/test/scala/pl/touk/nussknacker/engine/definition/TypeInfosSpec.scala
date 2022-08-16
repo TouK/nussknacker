@@ -78,10 +78,8 @@ class TypeInfosSpec extends FunSuite with Matchers {
   }
 
   test("should automatically validate arguments of generic functions") {
-    def f(lst: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = Typed[Int].validNel
-
     val methodInfo = FunctionalMethodInfo(
-      x => f(x),
+      _ => Typed[Int].validNel,
       MethodTypeInfo(Parameter("a", Typed[Int]) :: Parameter("b", Typed[Double]) :: Nil, Some(Parameter("c", Typed[String])), Typed[Int]),
       "f",
       None
@@ -95,5 +93,17 @@ class TypeInfosSpec extends FunSuite with Matchers {
     methodInfo.computeResultType(List(Typed[Int], Typed[String])) should be invalid;
     methodInfo.computeResultType(List(Typed[Double], Typed[Int], Typed[String])) should be invalid;
     methodInfo.computeResultType(List()) should be invalid
+  }
+
+  test("should validate result against proper signatures") {
+    val sig1 = MethodTypeInfo.withoutVarargs(Parameter("a", Typed[Int]) :: Nil, Typed[Int])
+    val sig2 = MethodTypeInfo.withoutVarargs(Parameter("a", Typed[String]) :: Nil, Typed[String])
+
+    val methodInfo = FunctionalMethodInfo(_ => Typed[Int].validNel, NonEmptyList.of(sig1, sig2), "f", None)
+
+    methodInfo.computeResultType(Typed[Int] :: Nil) shouldBe Typed[Int].validNel
+    intercept[AssertionError] {
+      methodInfo.computeResultType(Typed[String] :: Nil)
+    }.getMessage shouldBe "Generic function returned type that does not match static parameters."
   }
 }
