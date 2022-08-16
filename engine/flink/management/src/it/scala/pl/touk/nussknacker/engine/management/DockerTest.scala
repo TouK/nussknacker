@@ -104,8 +104,8 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
   }
 
   def config: Config = ConfigFactory.load()
-    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getContainerIpAddress}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
-    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getContainerIpAddress}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
+    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
+    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(dockerKafkaAddress))
     .withFallback(additionalConfig)

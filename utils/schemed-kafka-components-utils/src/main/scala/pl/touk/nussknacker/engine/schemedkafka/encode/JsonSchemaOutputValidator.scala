@@ -37,6 +37,10 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   //todo: add support for: unions, enums, nested types, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
+      case (Unknown, _) if validationMode == ValidationMode.lax =>
+        valid
+      case (union: TypedUnion, _) =>
+        validateUnionInput(union, schema, path)
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) =>
         validateRecordSchema(typingResult, s, path)
       case (_@TypedNull, _) if !schema.isNullable =>
@@ -44,6 +48,15 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (_@TypedNull, _) if schema.isNullable => valid
       case (_, _) => canBeSubclassOf(typingResult, schema, path)
     }
+  }
+
+  private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {
+    if (validationMode == ValidationMode.strict && !union.possibleTypes.forall(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else if (validationMode == ValidationMode.lax && !union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
+      invalid(union, schema, path)
+    else
+      valid
   }
 
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: ObjectSchema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {

@@ -55,6 +55,8 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema.getType) match {
+      case (Unknown, _) if validationMode == ValidationMode.lax =>
+        valid
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
       case (tc@TypedClass(cl, _), _) if AvroUtils.isSpecificRecord(cl) =>
