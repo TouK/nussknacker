@@ -13,12 +13,12 @@ class MethodTypeInfoSubclassCheckerSpec extends FunSuite with Matchers with Vali
                     superclassNoVarArgs: List[TypingResult],
                     superclassVarArg: Option[TypingResult],
                     expectedErrors: List[ParameterListError]): Unit = {
-    def toParameterList(noVarArgs: List[TypingResult], varArg: Option[TypingResult]): MethodTypeInfo =
+    def toMethodTypeInfo(noVarArgs: List[TypingResult], varArg: Option[TypingResult]): MethodTypeInfo =
       MethodTypeInfo(noVarArgs.map(Parameter("", _)), varArg.map(Parameter("", _)), Unknown)
 
     val checkResult = ParameterListSubclassChecker.check(
-      toParameterList(subclassNoVarArgs, subclassVarArg),
-      toParameterList(superclassNoVarArgs, superclassVarArg)
+      toMethodTypeInfo(subclassNoVarArgs, subclassVarArg),
+      toMethodTypeInfo(superclassNoVarArgs, superclassVarArg)
     )
 
     expectedErrors match {
