@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.5.0 (Not released yet)
+## In version 1.5.0
 
 ### Configuration changes
 
