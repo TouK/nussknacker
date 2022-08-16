@@ -48,38 +48,38 @@ private trait TypingFunctionHelper extends TypingFunction {
 }
 
 private object Valid {
-  class Foo1() {
+  class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  class Foo1TypingFunction() extends TypingFunctionHelper {
+  class Foo1TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  class Foo2() {
+  class Foo2 {
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
   }
 
-  class Foo2TypingFunction() extends TypingFunctionHelper {
+  class Foo2TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String], Typed[Double], Typed[Int])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  class Foo4() {
+  class Foo4 {
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
   }
 
-  class Foo4TypingFunction() extends TypingFunctionHelper {
+  class Foo4TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Double], Typed[String], Typed[Long])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
@@ -87,50 +87,50 @@ private object Valid {
 }
 
 private object Invalid {
-  class Foo1() {
+  class Foo1 {
     @GenericType(typingFunction = classOf[Foo1TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  class Foo1TypingFunction() extends TypingFunctionHelper {
+  class Foo1TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  class Foo2() {
+  class Foo2 {
     @GenericType(typingFunction = classOf[Foo2TypingFunction])
     @varargs
     def f(a: Int, b: String, c: Number*): Int = ???
   }
 
-  class Foo2TypingFunction() extends TypingFunctionHelper {
+  class Foo2TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int], Typed[String], Typed[Double], Typed[String])
 
     override def varArgParam: Option[TypingResult] = None
   }
 
 
-  class Foo3() {
+  class Foo3 {
     @GenericType(typingFunction = classOf[Foo3TypingFunction])
     def f(a: Int, b: String): Int = ???
   }
 
-  class Foo3TypingFunction() extends TypingFunctionHelper {
+  class Foo3TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Int])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[String])
   }
 
 
-  class Foo4() {
+  class Foo4 {
     @GenericType(typingFunction = classOf[Foo4TypingFunction])
     @varargs
     def f(a: Number, b: String, c: Long*): Int = ???
   }
 
-  class Foo4TypingFunction() extends TypingFunctionHelper {
+  class Foo4TypingFunction extends TypingFunctionHelper {
     override def params: List[TypingResult] = List(Typed[Double], Typed[String], Typed[Double])
 
     override def varArgParam: Option[TypingResult] = Some(Typed[Long])
