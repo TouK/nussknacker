@@ -249,10 +249,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
                         varArgs: Boolean): Unit = {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
       val javaInfo :: Nil = javaClazzInfo.methods(name)
-      List(scalaInfo, javaInfo).map(_.asInstanceOf[StaticMethodInfo]).foreach(info => {
-          info.signature shouldBe MethodTypeInfo.fromList(params, varArgs, result)
+      List(scalaInfo, javaInfo).foreach(info => {
+          info.signatures.head shouldBe MethodTypeInfo.fromList(params, varArgs, result)
           info.description shouldBe desc
-          info.signature.varArg.isDefined shouldBe varArgs
+          info.signatures.head.varArg.isDefined shouldBe varArgs
         }
       )
     }
