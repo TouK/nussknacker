@@ -130,7 +130,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     })
   }, [updateNodeState])
 
-  const variableTypes = useMemo(() => findAvailableVariables(originalNodeId), [findAvailableVariables, originalNodeId])
+  const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
 
   switch (NodeUtils.nodeType(props.node)) {
     case "Source":

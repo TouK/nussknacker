@@ -11,7 +11,6 @@ import {
   UIParameter,
   VariableTypes,
 } from "../../../types"
-import {UserSettings} from "../../../reducers/userSettings"
 import {ValidationRequest} from "../../../actions/nk"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {getParameterDefinitions, useStateCallback} from "./NodeDetailsContentUtils"
@@ -40,7 +39,6 @@ export interface NodeDetailsContentProps {
   pathsToMark?: string[],
   onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   variableTypes?: VariableTypes,
-  userSettings: UserSettings,
 }
 
 export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
@@ -64,14 +62,14 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
     <>
       <NodeDetailsContent2
         {...props}
-        {...{
-          parameterDefinitions,
-          originalNode,
-          editedNode,
-          setEditedNode,
-          editedEdges,
-          setEditedEdges,
-        }}
+        node={props.node}
+        processId={processId}
+        parameterDefinitions={parameterDefinitions}
+        originalNode={originalNode}
+        editedNode={editedNode}
+        setEditedNode={setEditedNode}
+        editedEdges={editedEdges}
+        setEditedEdges={setEditedEdges}
       />
       <NodeAdditionalInfoBox node={node} processId={processId}/>
     </>

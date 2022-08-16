@@ -80,7 +80,7 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   )
 
   const items = useMemo(
-    () => fields.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
+    () => fields?.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
     [Item, appendTypeInfo, fields],
   )
 

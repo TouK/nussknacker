@@ -17,9 +17,8 @@ import {
   getProcessProperties,
   getVariableTypes,
 } from "./selectors"
-import {useUserSettings} from "../../../../common/userSettings"
 
-interface Props extends Omit<NodeDetailsContentProps, "userSettings"> {
+interface Props extends NodeDetailsContentProps {
   [k: string]: unknown,
 }
 
@@ -38,7 +37,6 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
   const processProperties = useSelector(getProcessProperties)
   const processId = useSelector(getProcessId)
-  const [userSettings] = useUserSettings()
 
   const dispatch = useDispatch()
 
@@ -71,7 +69,6 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
         processProperties={processProperties}
         processId={processId}
         updateNodeData={onNodeDataUpdate}
-        userSettings={userSettings}
       />
     </div>
   )

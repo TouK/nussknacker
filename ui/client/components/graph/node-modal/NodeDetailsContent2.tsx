@@ -3,7 +3,6 @@ import {Edge, NodeType, UIParameter} from "../../../types"
 import {WithTempId} from "./EdgesDndComponent"
 import {DispatchWithCallback} from "./NodeDetailsContentUtils"
 import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
-import {adjustParameters} from "./ParametersUtils"
 import {cloneDeep, get, has, partition} from "lodash"
 import {v4 as uuid4} from "uuid"
 import NodeErrors from "./NodeErrors"
@@ -77,16 +76,18 @@ export function NodeDetailsContent2(props: NodeDetailsContentProps2): JSX.Elemen
     )
   }, [setEditedEdges])
 
-  useEffect(() => {
-    const {adjustedNode} = adjustParameters(node, parameterDefinitions)
-    updateNodeState(() => adjustedNode)
-  }, [node, parameterDefinitions, updateNodeState])
+  // useEffect(() => {
+  //   console.log("adjustedNode")
+  //   const {adjustedNode} = adjustParameters(node, parameterDefinitions)
+  //   updateNodeState(() => adjustedNode)
+  // }, [node, parameterDefinitions, updateNodeState])
 
-  useEffect(() => {
-    if (isEditMode) {
-      updateNode(editedNode)
-    }
-  }, [editedNode, isEditMode, updateNode])
+  // useEffect(() => {
+  //   console.log("editedNode")
+  //   if (isEditMode) {
+  //     updateNode(editedNode)
+  //   }
+  // }, [editedNode, isEditMode, updateNode])
 
   const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
