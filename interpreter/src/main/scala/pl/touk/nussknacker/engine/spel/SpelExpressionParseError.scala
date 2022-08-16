@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.spel
 
+import cats.data.NonEmptyList
 import org.springframework.expression.spel.SpelNode
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedDict, TypingResult}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError
 
 object SpelExpressionParseError {
   trait SelectionProjectionError extends ExpressionParseError
@@ -181,6 +181,15 @@ object SpelExpressionParseError {
     }
   }
 
+
+  case class ArgumentTypeError(name: String, found: Signature, possibleSignatures: NonEmptyList[Signature]) extends ExpressionParseError {
+    override def message: String =
+      s"Mismatch parameter types. Found: ${found.display(name)}. Required: ${possibleSignatures.map(_.display(name)).toList.mkString(" or ")}"
+  }
+
+  case class GenericFunctionError(messageInner: String) extends ExpressionParseError {
+    override def message: String = messageInner
+  }
 
   case object PartTypeError extends ExpressionParseError {
     override def message: String = "Wrong part types"

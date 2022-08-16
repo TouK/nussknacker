@@ -4,15 +4,14 @@ import cats.data.ValidatedNel
 import cats.implicits.catsSyntaxValidatedId
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, ParameterList}
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypingResult}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseErrorConverter
 
 object TypeInfos {
   //a bit sad that it isn't derived automatically, but...
   private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
-
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
 
   @JsonCodec(encodeOnly = true) case class SerializableMethodInfo(parameters: List[Parameter],
                                                                   refClazz: TypingResult,
@@ -24,51 +23,25 @@ object TypeInfos {
   sealed trait MethodInfo {
     def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult]
 
-    // Returns all parameters including varArg presented as Array[VarArgType];
-    // this the same as method.getParameters. This method is used in logic
-    // that is independent of whether a function has varArgs.
-    final def staticParameters: List[Parameter] =
-      staticNoVarArgParameters ::: staticVarArgParameter.map{ case Parameter(name, refClazz) =>
-        Parameter(name, Typed.genericTypeClass(classOf[Array[Object]], List(refClazz)))
-      }.toList
+    def staticParameters: ParameterList
 
-    def staticNoVarArgParameters: List[Parameter]
+    final def staticNoVarArgParameters: List[Parameter] = staticParameters.noVarArgs
 
-    def staticVarArgParameter: Option[Parameter]
+    final def staticVarArgParameter: Option[Parameter] = staticParameters.varArg
 
     def staticResult: TypingResult
+
+    def name: String
 
     def description: Option[String]
 
     final def varArgs: Boolean = staticVarArgParameter.isDefined
 
     final def serializable: SerializableMethodInfo =
-      SerializableMethodInfo(staticParameters, staticResult, description, varArgs)
+      SerializableMethodInfo(staticParameters.toList, staticResult, description, varArgs)
   }
 
-  object StaticMethodInfo {
-    private val arrayClass = classOf[Array[Object]]
-
-    def fromParameterList(parameters: List[Parameter],
-                          refClazz: TypingResult,
-                          name: String,
-                          description: Option[String],
-                          varArgs: Boolean): StaticMethodInfo = (varArgs, parameters) match {
-      case (true, noVarArgParameters :+ Parameter(paramName, TypedClass(`arrayClass`, varArgType :: Nil))) =>
-        StaticMethodInfo(noVarArgParameters, Some(Parameter(paramName, varArgType)), refClazz, name, description)
-      case (true, _ :+ Parameter(_, TypedClass(`arrayClass`, _))) =>
-        throw new AssertionError("Array must have one type parameter")
-      case (true, _ :+ Parameter(_, _)) =>
-        throw new AssertionError("VarArg must have type of array")
-      case (true, Nil) =>
-        throw new AssertionError("Method with varArgs must have at least one parameter")
-      case (false, _) =>
-        StaticMethodInfo(parameters, None, refClazz, name, description)
-    }
-  }
-
-  case class StaticMethodInfo(staticNoVarArgParameters: List[Parameter],
-                              staticVarArgParameter: Option[Parameter],
+  case class StaticMethodInfo(staticParameters: ParameterList,
                               staticResult: TypingResult,
                               name: String,
                               description: Option[String]) extends MethodInfo {
@@ -87,33 +60,42 @@ object TypeInfos {
       if (checkNoVarArgs(arguments) && checkVarArgs(arguments))
         staticResult.validNel
       else
-        new ArgumentTypeError(
-          Signature(name, arguments, None),
-          Signature(name, staticNoVarArgParameters.map(_.refClazz), staticVarArgParameter.map(_.refClazz)) :: Nil
-        ).invalidNel
+        SpelExpressionParseErrorConverter(this, arguments).convert(GenericFunctionTypingError.ArgumentTypeError).invalidNel
     }
   }
 
   object FunctionalMethodInfo {
-    def fromParameterList(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
-                          parameters: List[Parameter],
-                          refClazz: TypingResult,
-                          name: String,
-                          description: Option[String],
-                          varArgs: Boolean): FunctionalMethodInfo =
-      FunctionalMethodInfo(typeFunction, StaticMethodInfo.fromParameterList(parameters, refClazz, name, description, varArgs))
+    def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
+              staticParameters: ParameterList,
+              staticResult: TypingResult,
+              name: String,
+              description: Option[String]): FunctionalMethodInfo =
+      FunctionalMethodInfo(typeFunction, StaticMethodInfo(staticParameters, staticResult, name, description))
   }
 
-  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[ExpressionParseError, TypingResult],
+  case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
                                   staticInfo: StaticMethodInfo) extends MethodInfo {
+    // We use staticInfo.computeResultType to validate against static
+    // parameters, so that there is no need to perform basic checks in
+    // typeFunction.
+    // This is also used to prevents errors in runtime, when typeFunction
+    // returns illegal results.
+    // TODO: Validate that staticParameters and staticResult match real type of function.
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] =
-      typeFunction(arguments)
+      staticInfo.computeResultType(arguments)
+        .andThen{_ =>
+        typeFunction(arguments).leftMap(_.map(SpelExpressionParseErrorConverter(this, arguments).convert(_)))
+        }
+        .map{res =>
+          if (!res.canBeSubclassOf(staticResult)) throw new AssertionError("Generic function returned type that does not match static parameters.")
+            res
+        }
 
-    override def staticNoVarArgParameters: List[Parameter] = staticInfo.staticNoVarArgParameters
-
-    override def staticVarArgParameter: Option[Parameter] = staticInfo.staticVarArgParameter
+    override def staticParameters: ParameterList = staticInfo.staticParameters
 
     override def staticResult: TypingResult = staticInfo.staticResult
+
+    override def name: String = staticInfo.name
 
     override def description: Option[String] = staticInfo.description
   }

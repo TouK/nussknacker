@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.types
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.ClassUtils
+import pl.touk.nussknacker.engine.api.generics.Parameter
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, Parameter}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.types.EspTypeUtils.clazzDefinition
 import pl.touk.nussknacker.engine.util.logging.ExecutionTimeMeasuring
 import pl.touk.nussknacker.engine.variables.MetaVariables

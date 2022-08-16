@@ -63,29 +63,6 @@
           "varArgs": false
         }
       ],
-      "retrieveFieldsAsMap": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "CronFieldName",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.CronFieldName",
-                "type": "TypedClass"
-              },
-              {
-                "display": "CronField",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.CronField",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Map"
-          },
-          "varArgs": false
-        }
-      ],
       "toString": [
         {
           "parameters": [],
@@ -270,23 +247,6 @@
           "varArgs": false
         }
       ],
-      "fieldDefinitions": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "FieldDefinition",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.definition.FieldDefinition",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Set"
-          },
-          "varArgs": false
-        }
-      ],
       "getCronConstraints": [
         {
           "parameters": [],
@@ -296,23 +256,6 @@
                 "display": "CronConstraint",
                 "params": [],
                 "refClazzName": "com.cronutils.model.definition.CronConstraint",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Set"
-          },
-          "varArgs": false
-        }
-      ],
-      "getFieldDefinitions": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "FieldDefinition",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.definition.FieldDefinition",
                 "type": "TypedClass"
               }
             ],
@@ -332,29 +275,6 @@
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.Boolean"},
-          "varArgs": false
-        }
-      ],
-      "retrieveFieldDefinitionsAsMap": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "CronFieldName",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.CronFieldName",
-                "type": "TypedClass"
-              },
-              {
-                "display": "FieldDefinition",
-                "params": [],
-                "refClazzName": "com.cronutils.model.field.definition.FieldDefinition",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.Map"
-          },
           "varArgs": false
         }
       ],
@@ -4357,23 +4277,6 @@
           "varArgs": false
         }
       ],
-      "getUnits": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
-          "varArgs": false
-        }
-      ],
       "isNegative": [
         {
           "parameters": [],
@@ -4648,23 +4551,6 @@
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.String"},
-          "varArgs": false
-        }
-      ],
-      "units": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
           "varArgs": false
         }
       ],
@@ -7803,23 +7689,6 @@
           "varArgs": false
         }
       ],
-      "getUnits": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
-          "varArgs": false
-        }
-      ],
       "getYears": [
         {
           "parameters": [],
@@ -7952,23 +7821,6 @@
         {
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.Long"},
-          "varArgs": false
-        }
-      ],
-      "units": [
-        {
-          "parameters": [],
-          "refClazz": {
-            "params": [
-              {
-                "display": "TemporalUnit",
-                "params": [],
-                "refClazzName": "java.time.temporal.TemporalUnit",
-                "type": "TypedClass"
-              }
-            ],
-            "refClazzName": "java.util.List"
-          },
           "varArgs": false
         }
       ],
@@ -10300,6 +10152,29 @@
           "parameters": [],
           "refClazz": {"refClazzName": "java.lang.String"},
           "varArgs": false
+        }
+      ],
+      "zip": [
+        {
+          "description": "zips up to 3 numbers",
+          "parameters": [
+            {
+              "name": "x",
+              "refClazz": {
+                "params": [
+                  {
+                    "display": "Number",
+                    "params": [],
+                    "refClazzName": "java.lang.Number",
+                    "type": "TypedClass"
+                  }
+                ],
+                "refClazzName": "[Ljava.lang.Object;"
+              }
+            }
+          ],
+          "refClazz": {"type": "Unknown"},
+          "varArgs": true
         }
       ]
     },

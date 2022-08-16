@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.spel
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
@@ -11,15 +12,15 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
 import pl.touk.nussknacker.engine.api.dict.{DictDefinition, DictInstance}
 import pl.touk.nussknacker.engine.api.expression.{Expression, TypedExpression}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, GenericType, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, ParamName, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ExpressionTypeError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{OperatorMismatchTypeError, OperatorNonNumericError}
@@ -41,7 +42,7 @@ import scala.reflect.runtime.universe._
 
 class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
-  private implicit class ValidatedExpresssionOps[E](validated: Validated[E, TypedExpression]) {
+  private implicit class ValidatedExpressionOps[E](validated: Validated[E, TypedExpression]) {
     def validExpression: Expression = validated.validValue.expression
   }
 
@@ -524,8 +525,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("validate selection for inline list") {
     parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be 'valid
     parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe 'valid
-
-
   }
 
   test("validate selection and projection for list variable") {
@@ -772,6 +771,20 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
   }
 
+  test("should be able to call generic functions") {
+    parse[Int]("#processHelper.genericFunction(8, false)", ctxWithGlobal)
+      .validExpression.evaluateSync[Int](ctxWithGlobal) shouldBe 8
+  }
+
+  test("should be able to call generic functions with varArgs") {
+    parse[Int]("#processHelper.genericFunctionWithVarArg(4)", ctxWithGlobal)
+      .validExpression.evaluateSync[Int](ctxWithGlobal) shouldBe 4
+    parse[Int]("#processHelper.genericFunctionWithVarArg(4, true)", ctxWithGlobal)
+      .validExpression.evaluateSync[Int](ctxWithGlobal) shouldBe 5
+    parse[Int]("#processHelper.genericFunctionWithVarArg(4, true, false, true)", ctxWithGlobal)
+      .validExpression.evaluateSync[Int](ctxWithGlobal) shouldBe 6
+  }
+
   test("validate selection/projection on non-list") {
     parse[AnyRef]("{:}.![#this.sthsth]") shouldBe 'invalid
     parse[AnyRef]("{:}.?[#this.sthsth]") shouldBe 'invalid
@@ -848,6 +861,14 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Locale]("'PL'", ctx).validExpression.evaluateSync[Locale](ctx) shouldBe Locale.forLanguageTag("PL")
   }
 
+  test("comparison of generic type with not generic type") {
+    val result = parseV[Any]("#a.someComparable == 2L",
+      ValidationContext.empty
+        .withVariable("a", Typed.fromInstance(SampleGlobalObject), None)
+        .validValue)
+   result shouldBe 'valid
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
@@ -876,6 +897,25 @@ object SampleGlobalObject {
   def stringOnStringMap: java.util.Map[String, String] = Map("key1" -> "value1", "key2" -> "value2").asJava
 
   def methodWithPrimitiveParams(int: Int, long: Long, bool: Boolean): String = s"$int $long $bool"
+
+  def someComparable: Comparable[Any] = ???
+
+  @GenericType(typingFunction = classOf[GenericFunctionHelper])
+  def genericFunction(a: Int, b: Boolean): Int = a + (if (b) 1 else 0)
+
+  @GenericType(typingFunction = classOf[GenericFunctionVarArgHelper])
+  @varargs
+  def genericFunctionWithVarArg(a: Int, b: Boolean*): Int = a + b.count(identity)
+
+  private case class GenericFunctionHelper() extends TypingFunction {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+      Typed[Int].validNel
+  }
+
+  private case class GenericFunctionVarArgHelper() extends TypingFunction {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
+      Typed[Int].validNel
+  }
 }
 
 class SampleObjectWithGetMethod(map: Map[String, Any]) {

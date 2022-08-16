@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.spel.typer
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.api.generics.{ArgumentTypeError, ExpressionParseError}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.types.EspTypeUtils
@@ -94,9 +95,9 @@ class TypeMethodReference(methodName: String,
   }
 
   private def combineArgumentTypeErrors(left: ArgumentTypeError, right: ArgumentTypeError): ArgumentTypeError = {
-    if (!left.found.equals(right.found))
+    if (left.name != right.name || left.found != right.found)
       throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
-    new ArgumentTypeError(left.found, left.possibleSignatures ::: right.possibleSignatures)
+    ArgumentTypeError(left.name, left.found, left.possibleSignatures ::: right.possibleSignatures)
   }
 
   // We try to combine ArgumentTypeErrors into one error. If we fail
@@ -109,6 +110,6 @@ class TypeMethodReference(methodName: String,
     case list =>
       // We return error caused by method with the most parameters, because
       // this is the method the would be displayed in suggestions on FE.
-      list.sortBy(- _._1.staticParameters.length).head._2
+      list.sortBy(- _._1.staticParameters.toList.length).head._2
   }
 }

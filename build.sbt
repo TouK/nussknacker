@@ -282,7 +282,7 @@ val commonsIOV = "2.4"
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc11"
 val scalaCollectionsCompatV = "2.3.2"
-val testcontainersScalaV = "0.39.12"
+val testcontainersScalaV = "0.40.10"
 val nettyV = "4.1.48.Final"
 
 val akkaV = "2.6.19"
@@ -1577,5 +1577,11 @@ prepareDev := {
 
 lazy val buildClient = taskKey[Unit]("Build client")
 buildClient := {
-  "./ui/buildClient.sh" !
+  val s: TaskStreams = streams.value
+  val buildResult = ("./ui/buildClient.sh" !)
+  if (buildResult == 0) {
+    s.log.success("Frontend build success")
+  } else {
+    throw new IllegalStateException("Frontend build failed!")
+  }
 }
