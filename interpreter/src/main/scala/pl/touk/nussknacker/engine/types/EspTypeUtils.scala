@@ -63,7 +63,11 @@ object EspTypeUtils {
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(_))
 
-    deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
+    val staticMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[StaticMethodInfo]).asInstanceOf[List[(String, StaticMethodInfo)]]
+    val functionalMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
+    val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValues(_.map(_._2))
+
+    deduplicateMethodsWithGenericReturnType(staticMethodInfos) ++ groupedFunctionalMethodInfos
   }
 
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
@@ -95,8 +99,8 @@ object EspTypeUtils {
       LocalDate toLocalDate()
     In our case the second one is correct
    */
-  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.mainSignature.noVarArgs, mi._2.mainSignature.varArg))
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.signature.noVarArgs, mi._2.signature.varArg))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -106,8 +110,8 @@ object EspTypeUtils {
          */
 
         methodsForParams.find { case (_, methodInfo) =>
-          methodsForParams.forall(mi => methodInfo.mainSignature.result.canBeSubclassOf(mi._2.mainSignature.result))
-        }.getOrElse(methodsForParams.minBy(_._2.mainSignature.result.display))
+          methodsForParams.forall(mi => methodInfo.signature.result.canBeSubclassOf(mi._2.signature.result))
+        }.getOrElse(methodsForParams.minBy(_._2.signature.result.display))
     }.toGroupedMap
       //we sort only to avoid randomness
       .mapValuesNow(_.sortBy(_.toString))
@@ -196,7 +200,7 @@ object EspTypeUtils {
 
   private def extractGenericParameters(typingFunction: TypingFunction, method: Method): NonEmptyList[MethodTypeInfo] = {
     val autoExtractedParameters = extractMethodTypeInfo(method)
-    val definedParametersOption = typingFunction.signatures
+    val definedParametersOption = typingFunction.signatures.toList.flatMap(_.toList)
 
     definedParametersOption
       .map(MethodTypeInfoSubclassChecker.check(_, autoExtractedParameters))

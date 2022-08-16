@@ -28,8 +28,8 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
   protected def outputResource: String
 
-  // We change FunctionalMethodInfo to StaticMethodInfo because otherwise it
-  // cannot be serialized.
+  // We replace typeFunction with null because there is no way to serialize
+  // it with typeFunction.
   private def simplifyMethodInfo(info: MethodInfo): MethodInfo = info match {
     case x: StaticMethodInfo => x
     case x: FunctionalMethodInfo => x.copy(typeFunction = null)
@@ -71,7 +71,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       cd.clazzName ::
         (cd.methods ++ cd.staticMethods)
           .flatMap(_._2)
-          .flatMap(mi => mi.mainSignature.result :: mi.mainSignature.parametersToList.map(_.refClazz))
+          .flatMap(mi => mi.signatures.head.result :: mi.signatures.head.parametersToList.map(_.refClazz))
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName

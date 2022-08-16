@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 /**
@@ -21,7 +21,7 @@ abstract class TypingFunction {
    * computeResultType.
    * Defaults to type of associated method if empty list is provided.
    */
-  def signatures: List[MethodTypeInfo] = Nil
+  def signatures: Option[NonEmptyList[MethodTypeInfo]] = None
 
   def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

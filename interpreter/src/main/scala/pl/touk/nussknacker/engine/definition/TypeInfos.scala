@@ -13,8 +13,6 @@ object TypeInfos {
 
     def signatures: NonEmptyList[MethodTypeInfo]
 
-    val mainSignature: MethodTypeInfo = signatures.toList.maxBy(_.parametersToList.length)
-
     def name: String
 
     def description: Option[String]
@@ -60,11 +58,6 @@ object TypeInfos {
                                   signatures: NonEmptyList[MethodTypeInfo],
                                   name: String,
                                   description: Option[String]) extends MethodInfo {
-    // We use staticInfo.computeResultType to validate against static
-    // parameters, so that there is no need to perform basic checks in
-    // typeFunction.
-    // This is also used to prevents errors in runtime, when typeFunction
-    // returns illegal results.
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       val errorConverter = SpelExpressionParseErrorConverter(this, arguments)
       val typesFromStaticMethodInfo = signatures.filter(isValidMethodInfo(arguments, _)).map(_.result)

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.types
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers, OptionValues}
 import pl.touk.nussknacker.engine.api.generics.{GenericFunctionTypingError, GenericType, MethodTypeInfo, Parameter, TypingFunction}
@@ -40,8 +40,8 @@ private trait TypingFunctionHelper extends TypingFunction {
 
   def varArgParam: Option[TypingResult]
 
-  override def signatures: List[MethodTypeInfo] =
-    MethodTypeInfo(params.map(Parameter("", _)), varArgParam.map(Parameter("", _)), Unknown) :: Nil
+  override def signatures: Option[NonEmptyList[MethodTypeInfo]] =
+    Some(NonEmptyList.one(MethodTypeInfo(params.map(Parameter("", _)), varArgParam.map(Parameter("", _)), Unknown)))
 
   override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
     Unknown.validNel

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.definition
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.scalatest.{FunSuite, Matchers}
-import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFunctionTypingError, Parameter, MethodTypeInfo, Signature}
+import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, Parameter, MethodTypeInfo, Signature}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.definition.TypeInfos.{FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.ArgumentTypeError
@@ -38,7 +38,7 @@ class TypeInfosSpec extends FunSuite with Matchers {
       checkApplyInvalid(noVarArgsMethodInfo, args, ArgumentTypeError(
         noVarArgsMethodInfo.name,
         Signature(args, None),
-        NonEmptyList.one(Signature(noVarArgsMethodInfo.mainSignature.noVarArgs.map(_.refClazz), None))
+        NonEmptyList.one(Signature(noVarArgsMethodInfo.signature.noVarArgs.map(_.refClazz), None))
       ))
 
     noVarArgsCheckValid(List(Typed[Int], Typed[String]))
@@ -57,8 +57,8 @@ class TypeInfosSpec extends FunSuite with Matchers {
         varArgsMethodInfo.name,
         Signature(args, None),
         NonEmptyList.one(Signature(
-          varArgsMethodInfo.mainSignature.noVarArgs.map(_.refClazz),
-          varArgsMethodInfo.mainSignature.varArg.map(_.refClazz)
+          varArgsMethodInfo.signature.noVarArgs.map(_.refClazz),
+          varArgsMethodInfo.signature.varArg.map(_.refClazz)
         ))
       ))
 

@@ -81,7 +81,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
   test("should extract generic field") {
     val sampleClassInfo = singleClassDefinition[JavaClassWithGenericField]()
 
-    sampleClassInfo.value.methods("list").head.mainSignature.result shouldEqual Typed.fromDetailedType[java.util.List[String]]
+    sampleClassInfo.value.methods("list").head.signatures.head.result shouldEqual Typed.fromDetailedType[java.util.List[String]]
   }
 
   test("should detect java beans and fields in java class") {
@@ -249,10 +249,10 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
                         varArgs: Boolean): Unit = {
       val scalaInfo :: Nil = scalaClazzInfo.methods(name)
       val javaInfo :: Nil = javaClazzInfo.methods(name)
-      List(scalaInfo, javaInfo).foreach(info => {
-          info.mainSignature shouldBe MethodTypeInfo.fromList(params, varArgs, result)
+      List(scalaInfo, javaInfo).map(_.asInstanceOf[StaticMethodInfo]).foreach(info => {
+          info.signature shouldBe MethodTypeInfo.fromList(params, varArgs, result)
           info.description shouldBe desc
-          info.mainSignature.varArg.isDefined shouldBe varArgs
+          info.signature.varArg.isDefined shouldBe varArgs
         }
       )
     }
@@ -283,7 +283,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val cl = singleClassDefinition[ClassWithOverloadedMethods]().value
     val methods = cl.methods("method")
     methods should have size 3
-    methods.map(_.mainSignature.noVarArgs.toList.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
+    methods.map(_.signatures.head.noVarArgs.head.refClazz).toSet shouldEqual Set(Typed[Int], Typed[Boolean], Typed[String])
   }
 
   test("hidden by default classes") {
@@ -320,7 +320,7 @@ class EspTypeUtilsSpec extends FunSuite with Matchers with OptionValues {
     val methodDef = classDef.methods.get("addAllWithObjects").value
     methodDef should have length 1
     val method = methodDef.head
-    method.mainSignature.varArg shouldBe Some(Parameter("values", Unknown))
+    method.signatures.head.varArg shouldBe Some(Parameter("values", Unknown))
   }
 
   private def checkApplyFunction(classes: List[ClazzDefinition],
