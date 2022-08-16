@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
@@ -131,8 +131,15 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   }
 
   private def determineScalingOptions(canonicalProcess: CanonicalProcess) = {
-    val parallelism = canonicalProcess.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
-    scalingOptionsDeterminer.determine(parallelism)
+    canonicalProcess.metaData.typeSpecificData match {
+      case stream: LiteStreamMetaData =>
+        scalingOptionsDeterminer.determine(stream.parallelism.getOrElse(defaultParallelism))
+      case _: RequestResponseMetaData =>
+        // FIXME
+        K8sScalingOptions(1, 1)
+      case other =>
+        throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
+    }
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
