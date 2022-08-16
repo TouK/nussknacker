@@ -1,21 +1,26 @@
 package pl.touk.nussknacker.engine.flink.test
 
+import cats.data.NonEmptyList
+import cats.implicits.toFunctorOps
+import io.circe.Decoder.Result
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, Json, Printer}
+import io.circe.{Decoder, Encoder, HCursor, Json, Printer}
+import io.circe.syntax._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}
 import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, TypingResultDecoder}
+import pl.touk.nussknacker.engine.api.generics.{MethodTypeInfo, Parameter}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo, SerializableMethodInfo, FunctionalMethodInfo, StaticMethodInfo}
+import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, FunctionalMethodInfo, MethodInfo, StaticMethodInfo}
+
 import java.io.File
 import java.nio.charset.StandardCharsets
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.generics.{Parameter, ParameterList}
 
 trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
@@ -23,15 +28,15 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
   protected def outputResource: String
 
-  // We remove names and simplify advanced MethodInfo types because they are
-  // not serialized.
-  protected def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
-    case x: StaticMethodInfo => x.copy(name = "")
-    case x: FunctionalMethodInfo => x.staticInfo.copy(name = "")
+  // We replace typeFunction with null because there is no way to serialize
+  // it with typeFunction.
+  private def simplifyMethodInfo(info: MethodInfo): MethodInfo = info match {
+    case x: StaticMethodInfo => x
+    case x: FunctionalMethodInfo => x.copy(typeFunction = null)
   }
 
   // We need to sort methods with identical names to make checks ignore order.
-  protected def assertClassEquality(left: ClazzDefinition, right: ClazzDefinition): Unit = {
+  private def assertClassEquality(left: ClazzDefinition, right: ClazzDefinition): Unit = {
     def simplifyMap(m: Map[String, List[MethodInfo]]): Map[String, List[MethodInfo]] =
       m.mapValues(_.map(simplifyMethodInfo))
 
@@ -66,7 +71,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
       cd.clazzName ::
         (cd.methods ++ cd.staticMethods)
           .flatMap(_._2)
-          .flatMap(mi => mi.staticResult :: mi.staticParameters.toList.map(_.refClazz))
+          .flatMap(mi => mi.signatures.head.result :: mi.signatures.head.parametersToList.map(_.refClazz))
           .toList
     }.collect {
       case e: TypedClass => e.klass.getName
@@ -109,23 +114,33 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     }
   }
 
-  private def encode(types: Set[ClazzDefinition]) = {
-    implicit val typingResultEncoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder.mapJsonObject { obj =>
-      // it will work only on first level unfortunately
-      obj.filter {
-        case ("display", _) => false
-        case ("params", params) => params.asArray.get.nonEmpty
-        case ("type", typ) => typ != Json.fromString("TypedClass")
-        case ("refClazzName", _) => !obj("type").contains(Json.fromString("Unknown"))
-        case _ => true
-      }
+  private implicit val typingResultEncoder: Encoder[TypingResult] = TypeEncoders.typingResultEncoder.mapJsonObject { obj =>
+    // it will work only on first level unfortunately
+    obj.filter {
+      case ("display", _) => false
+      case ("params", params) => params.asArray.get.nonEmpty
+      case ("type", typ) => typ != Json.fromString("TypedClass")
+      case ("refClazzName", _) => !obj("type").contains(Json.fromString("Unknown"))
+      case _ => true
     }
+  }
+  private implicit val parameterE: Encoder[Parameter] = deriveConfiguredEncoder
+  private implicit val methodTypeInfoE: Encoder[MethodTypeInfo] = deriveConfiguredEncoder
+  private implicit val staticMethodInfoE: Encoder[StaticMethodInfo] = deriveConfiguredEncoder
+  private implicit val functionalMethodInfoE: Encoder[FunctionalMethodInfo] = (a: FunctionalMethodInfo) => Json.obj(
+    ("signatures", a.signatures.asJson),
+    ("name", a.name.asJson),
+    ("description", a.description.asJson)
+  )
+  private implicit val methodInfoE: Encoder[MethodInfo] = {
+    case x: StaticMethodInfo => x.asJson
+    case x: FunctionalMethodInfo => x.asJson
+  }
+  private implicit val typedClassE: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
+  private implicit val clazzDefinitionE: Encoder[ClazzDefinition] = deriveConfiguredEncoder
 
-    implicit val parameterD: Encoder[Parameter] = deriveConfiguredEncoder[Parameter]
-    implicit val methodInfoD: Encoder[MethodInfo] = deriveConfiguredEncoder[SerializableMethodInfo].contramap[MethodInfo](_.serializable)
-    implicit val typedClassD: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
-    implicit val clazzDefinitionD: Encoder[ClazzDefinition] = deriveConfiguredEncoder[ClazzDefinition]
 
+  private def encode(types: Set[ClazzDefinition]) = {
     val encoded = types.toList.sortBy(_.clazzName.klass.getName).asJson
     val printed = Printer.spaces2SortKeys.copy(colonLeft = "", dropNullValues = true).print(encoded)
     printed
@@ -138,7 +153,7 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
   private def decode(json: Json): Set[ClazzDefinition] = {
     val typeInformation = new TypingResultDecoder(ClassUtils.forName(_, getClass.getClassLoader))
-    implicit val typingResultEncoder: Decoder[TypingResult] = typeInformation.decodeTypingResults.prepare(cursor => cursor.withFocus { json =>
+    implicit val typingResultDecoder: Decoder[TypingResult] = typeInformation.decodeTypingResults.prepare(cursor => cursor.withFocus { json =>
       json.asObject.map { obj =>
         val withRecoveredEmptyParams = if (!obj.contains("params")) obj.add("params", Json.arr()) else obj
         val withRecoveredTypeClassType = if (!withRecoveredEmptyParams.contains("type")) withRecoveredEmptyParams.add("type", Json.fromString("TypedClass")) else withRecoveredEmptyParams
@@ -149,16 +164,16 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
         Json.fromJsonObject(withRecoveredTypeRefClazzName)
       }.getOrElse(json)
     })
-
-    val objectClass = classOf[Array[Object]]
-
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
-    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[SerializableMethodInfo].map{
-      // Name is not serialized so we leave it empty.
-      case SerializableMethodInfo(parameters, refClazz, description, varArgs) =>
-        StaticMethodInfo(ParameterList.fromList(parameters, varArgs), refClazz, "", description)
-    }
-    implicit val typedClassD: Decoder[TypedClass] = typingResultEncoder.map(k => k.asInstanceOf[TypedClass])
+    implicit val methodTypeInfoD: Decoder[MethodTypeInfo] = deriveConfiguredDecoder
+    implicit val staticMethodInfoD: Decoder[StaticMethodInfo] = deriveConfiguredDecoder
+    implicit val functionalMethodInfoD: Decoder[FunctionalMethodInfo] = (c: HCursor) => for {
+      signatures <- c.downField("signatures").as[NonEmptyList[MethodTypeInfo]]
+      name <- c.downField("name").as[String]
+      description <- c.downField("description").as[Option[String]]
+    } yield FunctionalMethodInfo(null, signatures, name, description)
+    implicit val methodInfoD: Decoder[MethodInfo] = staticMethodInfoD.widen or functionalMethodInfoD.widen
+    implicit val typedClassD: Decoder[TypedClass] = typingResultDecoder.map(_.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
 
     val decoded = json.as[Set[ClazzDefinition]]

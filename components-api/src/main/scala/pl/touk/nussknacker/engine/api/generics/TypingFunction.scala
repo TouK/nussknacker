@@ -1,10 +1,10 @@
 package pl.touk.nussknacker.engine.api.generics
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 
 /**
- * Base for creating custom classes that extend methods signature.
+ * Class representing additional information about methods type.
  *
  * <p>
  * Deriving classes must be declared as non-anonymous class or case class,
@@ -12,27 +12,16 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
  * parameterless constructor. More precisely, they must be instantiable
  * using:
  * <pre>typeFunctionClass.getDeclaredConstructor().newInstance()</pre>
- *
- * <p>
- * Constructor of deriving class will be called every time appropriate
- * method is validated, so it should not do any unnecessary computations.
  */
 abstract class TypingFunction {
   /**
-   * Approximation of types of parameters that can be accepted
-   * by method. Used for displaying information about method on FE
-   * and generating error messages. Defaults to types that can be
-   * extracted from methods signature if it is not specified.
+   * List of possible combinations of parameters and result types that
+   * this function can accept. Must be at least as specific as types that
+   * can be derived from associated method and less specific than
+   * computeResultType.
+   * Defaults to type of associated method if empty list is provided.
    */
-  def staticParameters: Option[ParameterList] = None
-
-  /**
-   * Approximation of return type of method. Used for displaying
-   * information about method on FE and for method suggestions.
-   * Defaults to type extracted from methods signature if it is
-   * not specified.
-   */
-  def staticResult: Option[TypingResult] = None
+  def signatures: Option[NonEmptyList[MethodTypeInfo]] = None
 
   def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult]
 }

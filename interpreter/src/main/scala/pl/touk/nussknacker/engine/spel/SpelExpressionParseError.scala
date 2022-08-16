@@ -182,6 +182,10 @@ object SpelExpressionParseError {
   }
 
 
+  object OverloadedFunctionError extends ExpressionParseError {
+    override def message: String = "Could not match any overloaded method"
+  }
+
   case class ArgumentTypeError(name: String, found: Signature, possibleSignatures: NonEmptyList[Signature]) extends ExpressionParseError {
     override def message: String =
       s"Mismatch parameter types. Found: ${found.display(name)}. Required: ${possibleSignatures.map(_.display(name)).toList.mkString(" or ")}"

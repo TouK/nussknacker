@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.types
 
 import java.lang.reflect._
 import java.util.Optional
-import cats.data.StateT
+import cats.data.{NonEmptyList, StateT}
 import cats.data.Validated.Invalid
 import cats.effect.IO
+import cats.implicits.catsSyntaxSemigroup
 import org.apache.commons.lang3.{ClassUtils, StringUtils}
-import pl.touk.nussknacker.engine.api.generics.{GenericType, Parameter, ParameterList, TypingFunction}
+import pl.touk.nussknacker.engine.api.generics.{GenericType, MethodTypeInfo, Parameter, TypingFunction}
 import pl.touk.nussknacker.engine.api.process.PropertyFromGetterExtractionStrategy.{AddPropertyNextToGetter, DoNothing, ReplaceGetterWithProperty}
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, VisibleMembersPredicate}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, TypedNull, TypedUnion, TypingResult, Unknown}
@@ -63,7 +64,13 @@ object EspTypeUtils {
     val methodNameAndInfoList = filteredMethods
       .flatMap(extractMethod(_))
 
-    deduplicateMethodsWithGenericReturnType(methodNameAndInfoList)
+    val staticMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[StaticMethodInfo]).asInstanceOf[List[(String, StaticMethodInfo)]]
+    val functionalMethodInfos = methodNameAndInfoList.filter(_._2.isInstanceOf[FunctionalMethodInfo])
+    val groupedFunctionalMethodInfos = functionalMethodInfos.groupBy(_._1).mapValues(_.map(_._2))
+
+    deduplicateMethodsWithGenericReturnType(staticMethodInfos)
+      .asInstanceOf[Map[String, List[MethodInfo]]]
+      .combine(groupedFunctionalMethodInfos)
   }
 
   //We have to filter here, not in ClassExtractionSettings, as we do e.g. boxed/unboxed mapping on TypedClass level...
@@ -77,10 +84,10 @@ object EspTypeUtils {
       case Unknown => true
     }
     def filterOneMethod(methodInfo: MethodInfo): Boolean = {
-      val noVarArgs = methodInfo.staticParameters.noVarArgs.map(_.refClazz)
-      val varArgs = methodInfo.staticParameters.varArg.toList.map(_.refClazz)
-      val result = methodInfo.staticResult :: Nil
-      (noVarArgs ::: varArgs ::: result).forall(typeResultVisible)
+      val noVarArgTypes = methodInfo.signatures.toList.flatMap(_.noVarArgs).map(_.refClazz)
+      val varArgTypes = methodInfo.signatures.toList.flatMap(_.varArg.toList).map(_.refClazz)
+      val resultTypes = methodInfo.signatures.toList.map(_.result)
+      (noVarArgTypes ::: varArgTypes ::: resultTypes).forall(typeResultVisible)
     }
     infos.mapValuesNow(methodList => methodList.filter(filterOneMethod)).filter(_._2.nonEmpty)
   }
@@ -95,8 +102,8 @@ object EspTypeUtils {
       LocalDate toLocalDate()
     In our case the second one is correct
    */
-  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, MethodInfo)]) = {
-    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.staticParameters))
+  private def deduplicateMethodsWithGenericReturnType(methodNameAndInfoList: List[(String, StaticMethodInfo)]) = {
+    val groupedByNameAndParameters = methodNameAndInfoList.groupBy(mi => (mi._1, mi._2.signature.noVarArgs, mi._2.signature.varArg))
     groupedByNameAndParameters.toList.map {
       case (_, methodsForParams) =>
         /*
@@ -106,8 +113,8 @@ object EspTypeUtils {
          */
 
         methodsForParams.find { case (_, methodInfo) =>
-          methodsForParams.forall(mi => methodInfo.staticResult.canBeSubclassOf(mi._2.staticResult))
-        }.getOrElse(methodsForParams.minBy(_._2.staticResult.display))
+          methodsForParams.forall(mi => methodInfo.signature.result.canBeSubclassOf(mi._2.signature.result))
+        }.getOrElse(methodsForParams.minBy(_._2.signature.result.display))
     }.toGroupedMap
       //we sort only to avoid randomness
       .mapValuesNow(_.sortBy(_.toString))
@@ -157,14 +164,11 @@ object EspTypeUtils {
                                   (implicit settings: ClassExtractionSettings): List[(String, MethodInfo)] = {
     val typeFunctionInstance = getTypeFunctionInstanceFromAnnotation(method, genericType)
 
-    val parameterInfo = extractGenericParameters(typeFunctionInstance, method)
-    val resultInfo = typeFunctionInstance.staticResult
-      .getOrElse(extractMethodReturnType(method))
+    val methodTypeInfo = extractGenericParameters(typeFunctionInstance, method)
 
     collectMethodNames(method).map(methodName => methodName -> FunctionalMethodInfo(
       x => typeFunctionInstance.computeResultType(x),
-      parameterInfo,
-      resultInfo,
+      methodTypeInfo,
       methodName,
       extractNussknackerDocs(method)
     ))
@@ -173,8 +177,7 @@ object EspTypeUtils {
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
     collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
-      extractParameters(method),
-      extractMethodReturnType(method),
+      extractMethodTypeInfo(method),
       methodName,
       extractNussknackerDocs(method)
     ))
@@ -187,8 +190,7 @@ object EspTypeUtils {
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
       field.getName -> StaticMethodInfo(
-        ParameterList(Nil, None),
-        extractFieldReturnType(field),
+        MethodTypeInfo(Nil, None, extractFieldReturnType(field)),
         field.getName,
         extractNussknackerDocs(field)
       )
@@ -199,28 +201,28 @@ object EspTypeUtils {
     extractAnnotation(accessibleObject, classOf[Documentation]).map(_.description())
   }
 
-  private def extractGenericParameters(typingFunction: TypingFunction, method: Method): ParameterList = {
-    val autoExtractedParameters = extractParameters(method)
-    val definedParametersOption = typingFunction.staticParameters
+  private def extractGenericParameters(typingFunction: TypingFunction, method: Method): NonEmptyList[MethodTypeInfo] = {
+    val autoExtractedParameters = extractMethodTypeInfo(method)
+    val definedParametersOption = typingFunction.signatures.toList.flatMap(_.toList)
 
     definedParametersOption
-      .map(ParameterListSubclassChecker.check(_, autoExtractedParameters))
+      .map(MethodTypeInfoSubclassChecker.check(_, autoExtractedParameters))
       .collect{ case Invalid(e) => e }
       .foreach { x =>
         val errorString = x.map(_.message).toList.mkString("; ")
         throw new IllegalArgumentException(s"Generic function ${method.getName} has declared parameters that are incompatible with methods signature: $errorString")
       }
 
-    definedParametersOption.getOrElse(autoExtractedParameters)
+    NonEmptyList.fromList(definedParametersOption).getOrElse(NonEmptyList.one(autoExtractedParameters))
   }
 
-  private def extractParameters(method: Method): ParameterList = {
-    ParameterList.fromList(for {
+  private def extractMethodTypeInfo(method: Method): MethodTypeInfo = {
+    MethodTypeInfo.fromList(for {
       param <- method.getParameters.toList
       annotationOption = extractAnnotation(param, classOf[ParamName])
       name = annotationOption.map(_.value).getOrElse(param.getName)
       paramType = extractParameterType(param)
-    } yield Parameter(name, paramType), method.isVarArgs)
+    } yield Parameter(name, paramType), method.isVarArgs, extractMethodReturnType(method))
   }
 
   def extractParameterType(javaParam: java.lang.reflect.Parameter): TypingResult = {
