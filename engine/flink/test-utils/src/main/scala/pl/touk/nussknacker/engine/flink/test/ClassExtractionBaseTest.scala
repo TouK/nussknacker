@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.flink.test
 
+import cats.data.NonEmptyList
+import cats.implicits.toFunctorOps
+import io.circe.Decoder.Result
 import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import io.circe.{Decoder, Encoder, Json, Printer}
+import io.circe.{Decoder, Encoder, HCursor, Json, Printer}
+import io.circe.syntax._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.{FunSuite, Inside, Matchers}
 import org.springframework.util.ClassUtils
@@ -26,9 +30,9 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
 
   // We change FunctionalMethodInfo to StaticMethodInfo because otherwise it
   // cannot be serialized.
-  private def simplifyMethodInfo(info: MethodInfo): StaticMethodInfo = info match {
+  private def simplifyMethodInfo(info: MethodInfo): MethodInfo = info match {
     case x: StaticMethodInfo => x
-    case x: FunctionalMethodInfo => x.staticInfo
+    case x: FunctionalMethodInfo => x.copy(typeFunction = null)
   }
 
   // We need to sort methods with identical names to make checks ignore order.
@@ -122,9 +126,15 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
   }
   private implicit val parameterE: Encoder[Parameter] = deriveConfiguredEncoder
   private implicit val methodTypeInfoE: Encoder[MethodTypeInfo] = deriveConfiguredEncoder
-  private implicit val methodInfoE: Encoder[MethodInfo] = deriveConfiguredEncoder[StaticMethodInfo].contramap{
-    case staticMethodInfo: StaticMethodInfo => staticMethodInfo
-    case functionalMethodInfo: FunctionalMethodInfo => functionalMethodInfo.staticInfo
+  private implicit val staticMethodInfoE: Encoder[StaticMethodInfo] = deriveConfiguredEncoder
+  private implicit val functionalMethodInfoE: Encoder[FunctionalMethodInfo] = (a: FunctionalMethodInfo) => Json.obj(
+    ("signatures", a.signatures.asJson),
+    ("name", a.name.asJson),
+    ("description", a.description.asJson)
+  )
+  private implicit val methodInfoE: Encoder[MethodInfo] = {
+    case x: StaticMethodInfo => x.asJson
+    case x: FunctionalMethodInfo => x.asJson
   }
   private implicit val typedClassE: Encoder[TypedClass] = typingResultEncoder.contramap[TypedClass](identity)
   private implicit val clazzDefinitionE: Encoder[ClazzDefinition] = deriveConfiguredEncoder
@@ -156,7 +166,13 @@ trait ClassExtractionBaseTest extends FunSuite with Matchers with Inside {
     })
     implicit val parameterD: Decoder[Parameter] = deriveConfiguredDecoder
     implicit val methodTypeInfoD: Decoder[MethodTypeInfo] = deriveConfiguredDecoder
-    implicit val methodInfoD: Decoder[MethodInfo] = deriveConfiguredDecoder[StaticMethodInfo].map(_.asInstanceOf[MethodInfo])
+    implicit val staticMethodInfoD: Decoder[StaticMethodInfo] = deriveConfiguredDecoder
+    implicit val functionalMethodInfoD: Decoder[FunctionalMethodInfo] = (c: HCursor) => for {
+      signatures <- c.downField("signatures").as[NonEmptyList[MethodTypeInfo]]
+      name <- c.downField("name").as[String]
+      description <- c.downField("description").as[Option[String]]
+    } yield FunctionalMethodInfo(null, signatures, name, description)
+    implicit val methodInfoD: Decoder[MethodInfo] = staticMethodInfoD.widen or functionalMethodInfoD.widen
     implicit val typedClassD: Decoder[TypedClass] = typingResultDecoder.map(_.asInstanceOf[TypedClass])
     implicit val clazzDefinitionD: Decoder[ClazzDefinition] = deriveConfiguredDecoder
 

@@ -21,17 +21,8 @@ object TypeInfos {
 
     protected def convertError(error: GenericFunctionTypingError, arguments: List[TypingResult]): ExpressionParseError =
       SpelExpressionParseErrorConverter(this, arguments).convert(error)
-  }
 
-  object StaticMethodInfo {
-    def apply(signature: MethodTypeInfo, name: String, description: Option[String]): StaticMethodInfo =
-      StaticMethodInfo(NonEmptyList.one(signature), name, description)
-  }
-
-  case class StaticMethodInfo(signatures: NonEmptyList[MethodTypeInfo],
-                              name: String,
-                              description: Option[String]) extends MethodInfo {
-    private def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
+    protected def isValidMethodInfo(arguments: List[TypingResult], methodTypeInfo: MethodTypeInfo): Boolean = {
       val checkNoVarArgs = arguments.length >= methodTypeInfo.noVarArgs.length &&
         arguments.zip(methodTypeInfo.noVarArgs).forall{ case (x, Parameter(_, y)) => x.canBeSubclassOf(y)}
 
@@ -44,12 +35,16 @@ object TypeInfos {
 
       checkNoVarArgs && checkVarArgs
     }
+  }
+
+  case class StaticMethodInfo(signature: MethodTypeInfo,
+                              name: String,
+                              description: Option[String]) extends MethodInfo {
+    override def signatures: NonEmptyList[MethodTypeInfo] = NonEmptyList.one(signature)
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
-      signatures
-        .find(isValidMethodInfo(arguments, _))
-        .map(_.result.validNel)
-        .getOrElse(convertError(ArgumentTypeError, arguments).invalidNel)
+      if (isValidMethodInfo(arguments, signature)) signature.result.validNel
+      else convertError(ArgumentTypeError, arguments).invalidNel
     }
   }
 
@@ -59,16 +54,12 @@ object TypeInfos {
               name: String,
               description: Option[String]): FunctionalMethodInfo =
       FunctionalMethodInfo(typeFunction, NonEmptyList.one(signature), name, description)
-
-    def apply(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-              signatures: NonEmptyList[MethodTypeInfo],
-              name: String,
-              description: Option[String]): FunctionalMethodInfo =
-      FunctionalMethodInfo(typeFunction, StaticMethodInfo(signatures, name, description))
   }
 
   case class FunctionalMethodInfo(typeFunction: List[TypingResult] => ValidatedNel[GenericFunctionTypingError, TypingResult],
-                                  staticInfo: StaticMethodInfo) extends MethodInfo {
+                                  signatures: NonEmptyList[MethodTypeInfo],
+                                  name: String,
+                                  description: Option[String]) extends MethodInfo {
     // We use staticInfo.computeResultType to validate against static
     // parameters, so that there is no need to perform basic checks in
     // typeFunction.
@@ -76,22 +67,19 @@ object TypeInfos {
     // returns illegal results.
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[ExpressionParseError, TypingResult] = {
       val errorConverter = SpelExpressionParseErrorConverter(this, arguments)
-      val typeFromStaticInfo = staticInfo.computeResultType(arguments)
-      // We use and then to make sure that arguments given to typeFunction
-      // pass basic validation.
-      val typeCalculated = typeFromStaticInfo.andThen(_ => typeFunction(arguments).leftMap(_.map(errorConverter.convert)))
-      typeFromStaticInfo.toOption.zip(typeCalculated.toOption).foreach{ case (fromStatic, calculated) =>
-        if (!calculated.canBeSubclassOf(fromStatic))
-          throw new AssertionError(s"Generic function $name returned type ${calculated.display} that does not match declared type ${fromStatic.display} when called with arguments ${arguments.map(_.display).mkString("(", ", ", ")")}")
+      val typesFromStaticMethodInfo = signatures.filter(isValidMethodInfo(arguments, _)).map(_.result)
+      if (typesFromStaticMethodInfo.isEmpty) return convertError(ArgumentTypeError, arguments).invalidNel
+
+      val typeCalculated = typeFunction(arguments).leftMap(_.map(errorConverter.convert))
+      typeCalculated.map { calculated =>
+        if (!typesFromStaticMethodInfo.exists(calculated.canBeSubclassOf)) {
+          val expectedTypesString = typesFromStaticMethodInfo.map(_.display).mkString("(", ", ", ")")
+          val argumentsString = arguments.map(_.display).mkString("(", ", ", ")")
+          throw new AssertionError(s"Generic function $name returned type ${calculated.display} that does not match any of declared types $expectedTypesString when called with arguments $argumentsString")
+        }
       }
       typeCalculated
     }
-
-    override def signatures: NonEmptyList[MethodTypeInfo] = staticInfo.signatures
-
-    override def name: String = staticInfo.name
-
-    override def description: Option[String] = staticInfo.description
   }
 
 

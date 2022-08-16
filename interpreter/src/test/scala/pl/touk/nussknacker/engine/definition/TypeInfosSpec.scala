@@ -104,6 +104,6 @@ class TypeInfosSpec extends FunSuite with Matchers {
     methodInfo.computeResultType(Typed[Int] :: Nil) shouldBe Typed[Int].validNel
     intercept[AssertionError] {
       methodInfo.computeResultType(Typed[String] :: Nil)
-    }.getMessage shouldBe "Generic function f returned type Integer that does not match declared type String when called with arguments (String)"
+    }.getMessage shouldBe "Generic function f returned type Integer that does not match any of declared types (String) when called with arguments (String)"
   }
 }

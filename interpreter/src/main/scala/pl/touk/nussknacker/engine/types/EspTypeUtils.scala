@@ -170,7 +170,7 @@ object EspTypeUtils {
   private def extractRegularMethod(method: Method)
                                   (implicit settings: ClassExtractionSettings): List[(String, StaticMethodInfo)] =
     collectMethodNames(method).map(methodName => methodName -> StaticMethodInfo(
-      NonEmptyList.one(extractMethodTypeInfo(method)),
+      extractMethodTypeInfo(method),
       methodName,
       extractNussknackerDocs(method)
     ))
@@ -183,7 +183,7 @@ object EspTypeUtils {
       else interestingFields.filter(m => !Modifier.isStatic(m.getModifiers))
     fields.map { field =>
       field.getName -> StaticMethodInfo(
-        NonEmptyList.one(MethodTypeInfo(Nil, None, extractFieldReturnType(field))),
+        MethodTypeInfo(Nil, None, extractFieldReturnType(field)),
         field.getName,
         extractNussknackerDocs(field)
       )
