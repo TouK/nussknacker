@@ -72,7 +72,7 @@
             ],
             "livenessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/alive",
                 "scheme": "HTTP"
               },
@@ -83,7 +83,7 @@
             },
             "readinessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/ready",
                 "scheme": "HTTP"
               },
@@ -292,7 +292,7 @@
             ],
             "livenessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/alive",
                 "scheme": "HTTP"
               },
@@ -303,7 +303,7 @@
             },
             "readinessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/ready",
                 "scheme": "HTTP"
               },

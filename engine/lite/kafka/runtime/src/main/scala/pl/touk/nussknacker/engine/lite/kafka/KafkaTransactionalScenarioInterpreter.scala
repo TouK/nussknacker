@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import akka.http.scaladsl.server.Route
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
@@ -112,5 +113,6 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
     new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, interpreter, sourceMetrics)
   }
 
+  override def routes(): Option[Route] = None
 }
 

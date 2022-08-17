@@ -1,12 +1,15 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
+import akka.http.scaladsl.server.RouteConcatenation._
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreterFactory
+import pl.touk.nussknacker.engine.lite.{HttpConfig, RunnableScenarioInterpreterFactory}
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
@@ -28,8 +31,11 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   val liteKafkaJobData = parseDeploymentConfig(deploymentConfigLocation)
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
-  val system = ActorSystem("nu-lite-runtime", runtimeConfig)
+  val httpConfig = runtimeConfig.as[HttpConfig]("http")
+
+  implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
   import system.dispatcher
+  @volatile private var server: ServerBinding = _
 
   // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
   // will be still alive even if something fail (like scenarioInterpreter creation)
@@ -45,24 +51,34 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
   System.exit(exitCode)
 
+  private val akkaHttpCloseTimeout = 10 seconds
+
   private def runAfterActorSystemCreation(): Unit = {
     val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, liteKafkaJobData, system)
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
+        logger.info("Closing http server")
+        if (server != null) Await.result(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
         logger.info("Closing RunnableScenarioInterpreter")
         scenarioInterpreter.close()
       }
     })
 
-    val healthCheckServer = new HealthCheckServerRunner(system, scenarioInterpreter)
-    Await.result(for {
-      _ <- healthCheckServer.start()
-      _ <- scenarioInterpreter.run()
-    } yield (), Duration.Inf)
+    val healthCheckProvider = new HealthCheckRoutesProvider(system, scenarioInterpreter)
 
+    val httpServer = Http().newServerAt(interface = httpConfig.interface, port = httpConfig.port)
+
+    val run = scenarioInterpreter.run()
+    val healthCheckRoutes = healthCheckProvider.routes()
+    val routes = scenarioInterpreter.routes().map(_ ~ healthCheckRoutes).getOrElse(healthCheckRoutes)
+    httpServer.bind(routes).foreach { b =>
+      logger.info(s"Http server started on ${httpConfig.interface}:${httpConfig.port}")
+      server = b
+    }
+    Await.result(run, Duration.Inf)
     logger.info(s"Closing application NuKafkaRuntimeApp")
-    Await.ready(healthCheckServer.stop(), 5.seconds)
   }
+
 
   private def parseArgs: (Path, Path) = {
     if (args.length < 1) {

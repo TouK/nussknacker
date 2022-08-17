@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.TestRunner
+import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
@@ -31,12 +31,12 @@ object RequestResponseDeploymentStrategy {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
-    new RequestResponseDeploymentStrategy(config.rootAs[RequestResponseConfig])
+    new RequestResponseDeploymentStrategy(config.rootAs[HttpConfig], config.rootAs[RequestResponseConfig])
   }
 
 }
 
-class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
+class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
   extends DeploymentStrategy with LazyLogging {
 
   private val akkaHttpSetupTimeout = 10 seconds
@@ -47,15 +47,15 @@ class RequestResponseDeploymentStrategy(config: RequestResponseConfig)(implicit 
 
   override def open(modelData: ModelData, contextPreparer: LiteEngineRuntimeContextPreparer): Unit = {
     super.open(modelData, contextPreparer)
-    logger.info(s"Serving request-response on ${config.port}")
+    logger.info(s"Serving request-response on ${httpConfig.port}")
 
     val route = new ScenarioRoute(pathToRequestHandler, config.definitionMetadata)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
       Http().newServerAt(
-        interface = config.interface,
-        port = config.port
+        interface = httpConfig.interface,
+        port = httpConfig.port
       ).bind(route.route), akkaHttpSetupTimeout)
   }
 

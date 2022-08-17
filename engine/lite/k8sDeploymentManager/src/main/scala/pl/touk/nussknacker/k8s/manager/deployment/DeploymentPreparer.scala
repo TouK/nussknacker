@@ -88,8 +88,8 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value
-      readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-      livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+      readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+      livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
     )
 
     def modifyRuntimeContainer(value: Container): Container = {

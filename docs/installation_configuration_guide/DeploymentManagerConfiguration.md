@@ -89,14 +89,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /alive
-            port: 8558
+            port: 8080
             scheme: HTTP
         name: runtime
         readinessProbe:
           failureThreshold: 60
           httpGet:
             path: /ready
-            port: 8558
+            port: 8080
             scheme: HTTP
           periodSeconds: 1
         volumeMounts:
