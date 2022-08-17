@@ -29,6 +29,7 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     val docsConfig: DocsConfig = new DocsConfig(config)
     import docsConfig._
     val avro = "DataSourcesAndSinks#schema-registry--avro-serialization"
+    val universal = "DataSourcesAndSinks#kafka-source"
     val schemaRegistryTypedJson = "DataSourcesAndSinks#schema-registry--json-serialization"
     val noTypeInfo = "DataSourcesAndSinks#no-type-information--json-serialization"
 
@@ -49,8 +50,8 @@ class FlinkKafkaComponentProvider extends ComponentProvider {
     )
     // TODO: change link to the documentation when json schema handling will be available
     val universalKafkaComponents = List(
-      ComponentDefinition("kafka", new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(avro),
-      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(avro)
+      ComponentDefinition("kafka", new UniversalKafkaSourceFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, new FlinkKafkaSourceImplFactory(None))).withRelativeDocs(universal),
+      ComponentDefinition("kafka", new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalSerdeProvider, overriddenDependencies, FlinkKafkaUniversalSinkImplFactory)).withRelativeDocs(universal)
     )
 
     val lowLevelComponentsEnabled = config.getAs[Boolean]("config.lowLevelComponentsEnabled").getOrElse(KafkaConfig.lowLevelComponentsEnabled)

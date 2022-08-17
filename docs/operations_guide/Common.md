@@ -212,7 +212,7 @@ Common problem is when your Avro data encoding not correspond with the one Nussk
 2022-03-30 14:12:28.034 [worker-DetectLargeTransactions-1] INFO  p.t.n.e.u.e.DefaultWithExceptionExtractor - Unknown exception IllegalArgumentException:Unknown magic byte! for DetectLargeTransactions-kafka-avro-127
 ```
 Check [Schema Registry + Avro serialization
-](../scenarios_authoring/DataSourcesAndSinks.md#schema-registry--avro-serialization) part for explanation.
+](../integration/KafkaIntegration#schema-registry-integration) part for explanation.
 
 ## General production readiness checklist
 
