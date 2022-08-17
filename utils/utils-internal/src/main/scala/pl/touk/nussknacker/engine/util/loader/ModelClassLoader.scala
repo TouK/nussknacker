@@ -22,12 +22,21 @@ object ModelClassLoader extends LazyLogging {
   //for e.g. testing in process module
   val empty: ModelClassLoader = ModelClassLoader(getClass.getClassLoader, List())
 
-  private def expandFiles(urls: Traversable[URL]): Traversable[URL] = {
+  val defaultJarExtension = ".jar"
+
+  private def expandFiles(urls: Traversable[URL], jarExtension: String): Traversable[URL] = {
     urls.flatMap {
       case url if url.getProtocol.toLowerCase == "file" =>
         val file = new File(url.toURI)
         if (file.isDirectory) {
-          expandFiles(file.listFiles().map(_.toURI.toURL))
+          val expanded = expandFiles(file.listFiles().filterNot(_.getName.startsWith(".")).map(_.toURI.toURL), jarExtension)
+          if (expanded.isEmpty) {
+            List.empty
+          } else if (expanded.exists(_.getFile.endsWith(jarExtension))) { // not expand if nested jars not exists
+            expanded
+          } else {
+            List(url)
+          }
         } else {
           List(url)
         }
@@ -35,8 +44,8 @@ object ModelClassLoader extends LazyLogging {
     }
   }
 
-  def apply(urls: List[URL]): ModelClassLoader = {
-    val expandedUrls = expandFiles(urls)
+  def apply(urls: List[URL], jarExtension: String = defaultJarExtension): ModelClassLoader = {
+    val expandedUrls = expandFiles(urls, jarExtension)
     ModelClassLoader(new URLClassLoader(expandedUrls.toArray, this.getClass.getClassLoader), expandedUrls.toList)
   }
 

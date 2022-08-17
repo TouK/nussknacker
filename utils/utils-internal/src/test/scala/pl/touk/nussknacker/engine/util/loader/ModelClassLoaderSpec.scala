@@ -14,7 +14,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
 
     val urls = List(resource(""), nonFileUrl)
 
-    val loader = ModelClassLoader(urls)
+    val loader = ModelClassLoader(urls, ".jara")
 
     //we're not using .jar to avoid messing with .gitignore
     val expected = Set(
@@ -22,6 +22,7 @@ class ModelClassLoaderSpec extends AnyFunSuite with Matchers {
       resource("/a/second.jara"),
       resource("/b/c/fourth.jara"),
       resource("/b/third.jara"),
+      resource("/c/"),
       nonFileUrl
     )
     loader.classLoader.asInstanceOf[URLClassLoader].getURLs.toSet shouldBe expected
