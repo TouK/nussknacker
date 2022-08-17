@@ -12253,7 +12253,192 @@
     }
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.GenericHelperFunction$"},
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.DocumentationFunctions$"},
+    "methods": {
+      "getField": [
+        {
+          "name": "getField",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "obj",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                },
+                {"name": "name", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "head": [
+        {
+          "name": "head",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "list",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.List"
+                  }
+                }
+              ],
+              "result": {"type": "Unknown"}
+            }
+          ]
+        }
+      ],
+      "plus": [
+        {
+          "name": "plus",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "left", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "right", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            },
+            {
+              "noVarArgs": [
+                {"name": "left", "refClazz": {"refClazzName": "java.lang.String"}},
+                {"name": "right", "refClazz": {"refClazzName": "java.lang.String"}}
+              ],
+              "result": {"refClazzName": "java.lang.String"}
+            }
+          ]
+        }
+      ],
+      "toList": [
+        {
+          "name": "toList",
+          "signatures": [
+            {
+              "noVarArgs": [],
+              "result": {
+                "params": [
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.List"
+              },
+              "varArg": {"name": "elems", "refClazz": {"type": "Unknown"}}
+            }
+          ]
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
+        }
+      ],
+      "union": [
+        {
+          "name": "union",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "x",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                },
+                {
+                  "name": "y",
+                  "refClazz": {
+                    "params": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Unknown",
+                        "params": [],
+                        "refClazzName": "java.lang.Object",
+                        "type": "Unknown"
+                      }
+                    ],
+                    "refClazzName": "java.util.Map"
+                  }
+                }
+              ],
+              "result": {
+                "params": [
+                  {
+                    "display": "String",
+                    "params": [],
+                    "refClazzName": "java.lang.String",
+                    "type": "TypedClass"
+                  },
+                  {
+                    "display": "Unknown",
+                    "params": [],
+                    "refClazzName": "java.lang.Object",
+                    "type": "Unknown"
+                  }
+                ],
+                "refClazzName": "java.util.Map"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.ExampleFunctions$"},
     "methods": {
       "addFieldA": [
         {
@@ -12410,6 +12595,39 @@
               "result": {"refClazzName": "java.lang.Number"}
             }
           ]
+        }
+      ]
+    },
+    "staticMethods": {}
+  },
+  {
+    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.GenericHelperFunction$"},
+    "methods": {
+      "docs": [
+        {
+          "name": "docs",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.DocumentationFunctions$"}
+          }
+        }
+      ],
+      "example": [
+        {
+          "name": "example",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.global.ExampleFunctions$"}
+          }
+        }
+      ],
+      "toString": [
+        {
+          "name": "toString",
+          "signature": {
+            "noVarArgs": [],
+            "result": {"refClazzName": "java.lang.String"}
+          }
         }
       ]
     },
