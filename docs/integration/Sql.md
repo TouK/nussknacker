@@ -1,6 +1,8 @@
 ---
-sidebar_title: "SQL"
+sidebar_position: 3
 ---
+
+# SQL
 
 ## Overview
 
