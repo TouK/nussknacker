@@ -1,6 +1,8 @@
 ---
-sidebar_title: "OpenAPI"
+sidebar_position: 2
 ---
+
+# OpenAPI
 
 ## Overview
                               

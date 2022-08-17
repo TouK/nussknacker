@@ -1,6 +1,8 @@
 ---
-sidebar_title: "Machine Learning (Enterprise only)"
+sidebar_position: 4
 ---
+
+# Machine Learning (Enterprise only)
 
 ## Overview
                               
