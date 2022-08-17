@@ -11,11 +11,16 @@ import scala.annotation.varargs
 import scala.jdk.CollectionConverters.collectionAsScalaIterableConverter
 
 object GenericHelperFunction {
+  val docs: DocumentationFunctions.type = DocumentationFunctions
+  val example: ExampleFunctions.type = ExampleFunctions
+}
+
+object DocumentationFunctions {
   @GenericType(typingFunction = classOf[HeadGenericFunction])
   def headA[T](list: java.util.List[T]): T =
     list.get(0)
 
-  private class HeadGenericFunction() extends TypingFunction {
+  private class HeadGenericFunction extends TypingFunction {
     private val listClass = classOf[java.util.List[_]]
 
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
@@ -26,18 +31,17 @@ object GenericHelperFunction {
     }
   }
 
-
   @GenericType(typingFunction = classOf[PlusGenericFunction])
   def plus(left: Any, right: Any): Any = (left, right) match {
     case (left: Int, right: Int) => left + right
+    case (left: Double, right: Double) => left + right
     case (left: String, right: String) => left + right
     case _ => throw new AssertionError("should not be reached")
   }
 
   private class PlusGenericFunction() extends TypingFunction {
-    private val intType = Typed.typedClass[Int]
+    private val numberType = Typed.typedClass[Number]
     private val stringType = Typed.typedClass[String]
-    private val intOrStringType = TypedUnion(Set(intType, stringType))
 
     override val staticParameters: Option[ParameterList] =
       Some(ParameterList(Parameter("left", intOrStringType) :: Parameter("right", intOrStringType) :: Nil, None))
@@ -55,8 +59,9 @@ object GenericHelperFunction {
       case _ => ArgumentTypeError.invalidNel
     }
   }
+}
 
-
+object ExampleFunctions {
   @Documentation(description = "returns first element of list")
   @GenericType(typingFunction = classOf[HeadHelper])
   def head[T >: Null](list: java.util.List[T]): T =
