@@ -58,7 +58,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def name: String = "stub"
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
   override def supportsSignals: Boolean = false
 

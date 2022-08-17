@@ -190,7 +190,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
     new DevelopmentDeploymentManager(actorSystem)
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
   override def supportsSignals: Boolean = false
 

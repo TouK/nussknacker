@@ -4,12 +4,17 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.6.0 (Not released yet)
+
+### Scenario authoring changes
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
   From now import scenario with nodes from other categories than scenario category will be not allowed.
+
+### Code API changes
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Migration from Scalatest 3.0.8 to Scalatest 3.2.10 - if necessary, see the Scalatest migration guides, https://www.scalatest.org/release_notes/3.1.0 and https://www.scalatest.org/release_notes/3.2.0
 * [#3431](https://github.com/TouK/nussknacker/pull/3431) Renamed 
   `helper-utils` to `default-helpers`, separated `MathUtils` from
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
+* [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
 
 ## In version 1.5.0
 

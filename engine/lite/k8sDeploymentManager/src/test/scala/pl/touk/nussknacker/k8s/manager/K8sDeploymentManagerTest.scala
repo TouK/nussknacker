@@ -4,10 +4,14 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable, fromMap}
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.parser
 import org.scalatest.Inspectors.forAll
-import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
+import org.scalatest.{Assertion, BeforeAndAfterAll, OptionValues}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
@@ -19,33 +23,30 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
-import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ExtremelyPatientScalaFutures}
 import skuber.Container.Port
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, Secret, Volume, k8sInit}
+import skuber.{ConfigMap, EnvVar, LabelSelector, ListResource, ObjectMeta, Pod, Resource, Secret, Service, Volume, k8sInit}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
-import java.io.File
 import java.nio.file.Files
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.language.reflectiveCalls
 import scala.util.Random
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-
-import java.net.Socket
 
 // we use this tag to mark tests using external dependencies
 @Network
-class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with OptionValues with LazyLogging with BeforeAndAfterAll {
+class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures
+  with OptionValues with EitherValuesDetailedMessage with LazyLogging with BeforeAndAfterAll {
 
   private implicit val system: ActorSystem = ActorSystem()
   private lazy val k8s = k8sInit
+  private lazy val k8sTestUtils = new K8sTestUtils(k8s)
   private lazy val kafka = new KafkaK8sSupport(k8s)
   private val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
@@ -60,14 +61,32 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   }
 
   test("deployment of req-resp ping-pong") {
-    val f = createReqRespFixture()
+    val givenScenarioName = "reqresp-ping-pong"
+    val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
+    val f = createReqRespFixture(givenScenarioName, givenServicePort)
+
     f.withRunningScenario {
-      val pingMessage = """{"ping":"Nussknacker!"}"""
-      val pongMessage = """{"pong":"Nussknacker!"}"""
-      // TODO: replace with service invocation
-      f.withPortForwarded(f.port) {
-        val request = basicRequest.post(uri"http://localhost".port(f.port).path("scenario", f.scenario.id))
-        request.body(pingMessage).send().body shouldBe Right(pongMessage)
+      val services = k8s.listSelected[ListResource[Service]](requirementForName(f.version.processName)).futureValue.items
+
+      services should have length 1
+      val service = services.head
+      service.name shouldEqual givenScenarioName
+      val ports = service.spec.value.ports
+      ports should have length 1
+      ports.head.port shouldEqual givenServicePort
+
+      k8sTestUtils.withForwardedProxyPod(s"http://${service.name}:$givenServicePort") { proxyLocalPort =>
+        val pingContent = """Nussknacker!"""
+        val pingMessage = s"""{"ping":"$pingContent"}"""
+        val instanceIds = (1 to 10).map { _ =>
+          val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort).path("scenario", f.scenario.id))
+          val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+          jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
+          jsonResponse.hcursor.downField("instanceId").as[String].rightValue
+        }.toSet
+
+        instanceIds.map(_.length) should contain only (5) // size of k8s instance id hash
+        instanceIds.size shouldEqual 2 // default number of replicas
       }
     }
   }
@@ -183,7 +202,7 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   }
 
 
-  test("should deploy scenario with env, resources and replicas count from k8sDeploymentSpecConfig") {
+  test("should deploy scenario with env, resources and replicas count from k8sDeploymentConfig") {
     val f = createKafkaFixture(
       deployConfig = kafkaDeployConfig
         .withValue("k8sDeploymentConfig.spec.replicas", fromAnyRef(3))
@@ -315,7 +334,7 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   }
 
   test("should expose prometheus metrics") {
-    val port = AvailablePortFinder.findAvailablePorts(1).head
+    val port = 8080
     val f = createKafkaFixture(deployConfig = kafkaDeployConfig
       .withValue("k8sDeploymentConfig.spec.template.spec.containers",
         fromIterable(List(
@@ -342,9 +361,9 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
       pod.spec.get.containers.head.ports should contain theSameElementsAs List(Port(port, name = "prometheus" ))
 
-      f.withPortForwarded(port) {
+      k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
-          basicRequest.get(uri"http://localhost:$port").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest.get(uri"http://localhost:$localPort").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
         }
       }
     }
@@ -359,6 +378,7 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   private def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(List(
+      k8s.deleteAllSelected[ListResource[Service]](selector),
       k8s.deleteAllSelected[ListResource[Deployment]](selector),
       k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
       k8s.deleteAllSelected[ListResource[Secret]](selector),
@@ -371,6 +391,7 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   private def assertNoGarbageLeft(): Assertion = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     eventually {
+      k8s.listSelected[ListResource[Service]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[Secret]](selector).futureValue.items shouldBe Nil
@@ -391,14 +412,29 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
   }
 
   private val kafkaDeployConfig: Config = ConfigFactory.empty
+    .withValue("mode", fromAnyRef("streaming"))
     .withValue("dockerImageTag", fromAnyRef(dockerTag))
-    .withValue("k8sDeploymentSpecConfig.replicas", fromAnyRef(3))
     .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaService}:9092"))
 
-  private def reqRespDeployConfig(port: Int): Config = ConfigFactory.empty
-    .withValue("dockerImageTag", fromAnyRef(dockerTag))
-    .withValue("k8sDeploymentSpecConfig.replicas", fromAnyRef(1))
-    .withValue("configExecutionOverrides.http.port", fromAnyRef(port))
+  private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses): Config = {
+    val extraClassesVolume = "extra-classes"
+    ConfigFactory.empty
+      .withValue("mode", fromAnyRef("request-response"))
+      .withValue("dockerImageTag", fromAnyRef(dockerTag))
+      .withValue("servicePort", fromAnyRef(port))
+      .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
+        "name" -> extraClassesVolume,
+        "secret" -> ConfigFactory.parseMap(extraClasses.secretReferenceResourcePart).root()
+      ).asJava)).asJava))
+      .withValue("k8sDeploymentConfig.spec.template.spec.containers", fromIterable(List(fromMap(Map(
+        "name" -> "runtime",
+        "volumeMounts" ->
+          fromIterable(List(fromMap(Map(
+            "name" -> extraClassesVolume,
+            "mountPath" -> "/opt/nussknacker/components/common/extra"
+          ).asJava)).asJava)
+      ).asJava)).asJava))
+  }
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
     //e.g. when we want to run Designer locally with some proxy?
@@ -425,10 +461,11 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
     new KafkaTestFixture(inputTopic = input, outputTopic = output, manager = manager, scenario = scenario, version = version)
   }
 
-  // TODO: use req-resp model data
-  private def createReqRespFixture(modelData: LocalModelData = modelData) = {
-    val port = AvailablePortFinder.findAvailablePorts(1).head
-    val deployConfig = reqRespDeployConfig(port)
+  private def createReqRespFixture(givenScenarioName: String, givenServicePort: Int, modelData: LocalModelData = modelData) = {
+    val extraClasses = new K8sExtraClasses(k8s,
+      List(classOf[TestComponentProvider], classOf[EnvService]),
+      K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
+    val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses)
     val manager = prepareManager(modelData, deployConfig)
     val pingSchema = """{
                        |  "type": "object",
@@ -441,21 +478,23 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
     val pongSchema = """{
                        |  "type": "object",
                        |  "properties": {
-                       |    "pong": { "type": "string" }
+                       |    "pong": { "type": "string" },
+                       |    "instanceId": { "type": "string" }
                        |  }
                        |}
                        |""".stripMargin
     val scenario = ScenarioBuilder
-      .requestResponse("reqresp-ping-pong")
+      .requestResponse(givenScenarioName)
       .additionalFields(properties = Map(
         "inputSchema" -> pingSchema,
         "outputSchema" -> pongSchema
       ))
       .source("source", "request")
-      .emptySink("sink", "response", "pong" -> "#input.ping")
+      .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
+      .emptySink("sink", "response", "pong" -> "#input.ping", "instanceId" -> "#instanceId")
     logger.info(s"Running req-resp test on ${scenario.id}")
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-    new ReqRespTestFixture(port = port, manager = manager, scenario = scenario, version = version)
+    new ReqRespTestFixture(manager = manager, scenario = scenario, version = version, extraClasses)
   }
 
   private class KafkaTestFixture(val inputTopic: String,
@@ -463,20 +502,26 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
                                  manager: K8sDeploymentManager,
                                  scenario: EspProcess,
                                  version: ProcessVersion) extends TestFixture(manager, scenario, version) {
-    override def withRunningScenario(action: => Unit): Assertion = {
+    override def withRunningScenario(action: => Unit): Unit = {
       kafka.createTopic(inputTopic)
       kafka.createTopic(outputTopic)
       super.withRunningScenario(action)
     }
   }
 
-  private class ReqRespTestFixture(val port: Int,
-                                   manager: K8sDeploymentManager,
+  private class ReqRespTestFixture(manager: K8sDeploymentManager,
                                    scenario: EspProcess,
-                                   version: ProcessVersion) extends TestFixture(manager, scenario, version)
+                                   version: ProcessVersion,
+                                   extraClasses: K8sExtraClasses) extends TestFixture(manager, scenario, version) {
+    override def withRunningScenario(action: => Unit): Unit = {
+      extraClasses.withExtraClassesSecret {
+        super.withRunningScenario(action)
+      }
+    }
+  }
 
   private class TestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) {
-    def withRunningScenario(action: => Unit) = {
+    def withRunningScenario(action: => Unit): Unit = {
       manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
       eventually {
         val state = manager.findJobStatus(version.processName).futureValue
@@ -493,20 +538,6 @@ class K8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyP
       //should not fail
       cancelAndAssertCleanup(manager, version)
     }
-
-    def withPortForwarded(port:Int)(action: => Unit) = {
-      val pod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
-      val portForward: Process = new ProcessBuilder("kubectl", "port-forward", s"${pod.name}", s"$port:$port")
-        .directory(new File("/tmp"))
-        .start()
-      eventually {
-        new Socket("localhost", port)
-      }
-      try {
-        action
-      } finally {
-        portForward.destroy()
-      }
-    }
   }
+
 }

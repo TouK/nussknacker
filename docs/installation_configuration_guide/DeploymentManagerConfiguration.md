@@ -14,24 +14,26 @@ deploymentConfig {
 
 Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
 
-## Streaming-Lite on Kubernetes        
+## Lite engine based on Kubernetes
                                                                                 
 Please remember, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
-`streaming-lite-k8s` Deployment Manager has the following configuration options:                 
+`lite-k8s` Deployment Manager has the following configuration options:                 
 
-| Parameter                  | Type                                                    | Default value                      | Description                                                                                                                                                                                                                                                         |
-|----------------------------|---------------------------------------------------------|------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| dockerImageName            | string                                                  | touk/nussknacker-lite-kafka-runtime| Runtime image (please note that it's **not** touk/nussknacker - which is designer image)                                                                                                                                                                            |
-| dockerImageTag             | string                                                  | current nussknacker version        |                                                                                                                                                                                                                                                                     |
-| scalingConfig              | {fixedReplicasCount: int} or {tasksPerReplica: int}     | { tasksPerReplica: 4 }             | see [below](#configuring-replicas-count)                                                                                                                                                                                                                            |
-| configExecutionOverrides   | config                                                  | {}                                 | see [below](#overriding-configuration-passed-to-runtime)                                                                                                                                                                                                            |
-| k8sDeploymentConfig        | config                                                  | {}                                 | see [below](#customizing-k8s-deployment)                                                                                                                                                                                                                            |
-| nussknackerInstanceName    | string                                                  | {?NUSSKNACKER_INSTANCE_NAME}       | see [below](#nussknacker-instance-name)                                                                                                                                                                                                                             |
-| logbackConfigPath          | string                                                  | {}                                 | see [below](#configuring-runtime-logging)                                                                                                                                                                                                                           |
-| commonConfigMapForLogback  | string                                                  | {}                                 | see [below](#configuring-runtime-logging)                                                                                                                                                                                                                           |
+| Parameter                 | Type                                                | Default value                       | Description                                                                              |
+|---------------------------|-----------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
+| mode                      | string                                              |                                     | Either streaming or request-response                                                     |
+| dockerImageName           | string                                              | touk/nussknacker-lite-kafka-runtime | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
+| dockerImageTag            | string                                              | current nussknacker version         |                                                                                          |
+| scalingConfig             | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }              | see [below](#configuring-replicas-count)                                                 |
+| configExecutionOverrides  | config                                              | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
+| k8sDeploymentConfig       | config                                              | {}                                  | see [below](#customizing-k8s-deployment)                                                 |
+| nussknackerInstanceName   | string                                              | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
+| logbackConfigPath         | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
+| commonConfigMapForLogback | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
+| servicePort               | int                                                 | 80                                  | Port of service exposed in request-response mode                                         |
                                                  
 ### Customizing K8s deployment
 

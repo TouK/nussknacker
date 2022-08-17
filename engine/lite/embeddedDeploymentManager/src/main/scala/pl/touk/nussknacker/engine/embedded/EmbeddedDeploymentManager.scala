@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
 
 class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
 
   override def name: String = "request-response-embedded"
 
@@ -40,7 +40,7 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(None))
 
   override def name: String = "streaming-lite-embedded"
 
@@ -66,7 +66,6 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificInitialData: TypeSpecificInitialData
 
   override def supportsSignals: Boolean = false
 

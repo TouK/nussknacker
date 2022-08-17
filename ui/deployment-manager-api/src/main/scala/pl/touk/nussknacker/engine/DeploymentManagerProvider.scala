@@ -18,7 +18,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createQueryableClient(config: Config): Option[QueryableClient]
 
-  def typeSpecificInitialData: TypeSpecificInitialData
+  def typeSpecificInitialData(config: Config): TypeSpecificInitialData
 
   def supportsSignals: Boolean
 }
