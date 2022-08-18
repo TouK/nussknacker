@@ -49,11 +49,66 @@ trait MathUtils {
     promoteThenSum(n1, n2)
   }
 
+  def plus(n1: Number, n2: Number): Number = sum(n1, n2)
+
+  def minus(n1: Number, n2: Number): Number = {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
+      override def onInts(n1: Int, n2: Int): Int = n1 - n2
+      override def onLongs(n1: Long, n2: Long): Long = n1 - n2
+      override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.subtract(n2)
+      override def onFloats(n1: Float, n2: Float): Float = n1 - n2
+      override def onDoubles(n1: Double, n2: Double): Double = n1 - n2
+      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.subtract(n2)
+    })(NumberTypesPromotionStrategy.ForMathOperation)
+  }
+
+  def multiply(n1: Number, n2: Number): Number = {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
+      override def onInts(n1: Int, n2: Int): Int = n1 * n2
+      override def onLongs(n1: Long, n2: Long): Long = n1 * n2
+      override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.multiply(n2)
+      override def onFloats(n1: Float, n2: Float): Float = n1 * n2
+      override def onDoubles(n1: Double, n2: Double): Double = n1 * n2
+      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.multiply(n2)
+    })(NumberTypesPromotionStrategy.ForMathOperation)
+  }
+
+  def divide(n1: Number, n2: Number): Number = {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
+      override def onInts(n1: Int, n2: Int): Int = n1 + n2
+      override def onLongs(n1: Long, n2: Long): Long = n1 + n2
+      override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.divide(n2)
+      override def onFloats(n1: Float, n2: Float): Float = n1 / n2
+      override def onDoubles(n1: Double, n2: Double): Double = n1 / n2
+      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.divide(n2)
+    })(NumberTypesPromotionStrategy.ForMathOperation)
+  }
+
+  def remainder(n1: Number, n2: Number): Number = {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
+      override def onInts(n1: Int, n2: Int): Int = n1 % n2
+      override def onLongs(n1: Long, n2: Long): Long = n1 % n2
+      override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.remainder(n2)
+      override def onFloats(n1: Float, n2: Float): Float = n1 % n2
+      override def onDoubles(n1: Double, n2: Double): Double = n1 % n2
+      override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal = n1.remainder(n2)
+    })(NumberTypesPromotionStrategy.ForMathOperation)
+  }
+
+  def negate(n1: Number): Number = n1 match {
+    case n1: java.lang.Byte => -n1
+    case n1: java.lang.Short => -n1
+    case n1: java.lang.Integer => -n1
+    case n1: java.lang.Long => -n1
+    case n1: java.math.BigInteger => n1.negate()
+    case n1: java.lang.Float => -n1
+    case n1: java.lang.Double => -n1
+    case n1: java.math.BigDecimal => n1.negate()
+  }
+
   private def promoteThenSum(n1: Number, n2: Number)(implicit promotionStrategy: ReturningSingleClassPromotionStrategy) = {
     withNotNullValues(n1, n2) {
-      withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandler {
-        override def onBytes(n1: Byte, n2: Byte): Byte = throw new IllegalStateException("Bytes should be promoted to Ints before addition")
-        override def onShorts(n1: Short, n2: Short): Short = throw new IllegalStateException("Shorts should be promoted to Ints before addition")
+      withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
         override def onInts(n1: Int, n2: Int): Int = n1 + n2
         override def onLongs(n1: Long, n2: Long): Long = n1 + n2
         override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.add(n2)
@@ -116,6 +171,12 @@ trait MathUtils {
     def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal
   }
 
+  protected trait SameNumericTypeMathHandler extends SameNumericTypeHandler {
+    final override def onBytes(n1: Byte, n2: Byte): Byte =
+      throw new IllegalStateException("Bytes should be promoted to Ints before addition")
+    final override def onShorts(n1: Short, n2: Short): Short =
+      throw new IllegalStateException("Shorts should be promoted to Ints before addition")
+  }
 }
 
 object MathUtils extends MathUtils
