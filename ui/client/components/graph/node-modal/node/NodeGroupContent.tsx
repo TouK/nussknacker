@@ -37,11 +37,11 @@ export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>)
           node={editedNode}
           onChange={onChange}
           isEditMode={!readOnly}
-          showValidation={true}
-          showSwitch={true}
           originalNodeId={currentNodeId}
           nodeErrors={nodeErrors}
           edges={props.outputEdges}
+          showValidation
+          showSwitch
         />
       </ContentSize>
       {NodeUtils.nodeIsSubprocess(editedNode) && (

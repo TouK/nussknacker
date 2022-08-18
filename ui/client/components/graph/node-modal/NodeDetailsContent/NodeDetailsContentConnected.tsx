@@ -1,7 +1,7 @@
 import {useDispatch, useSelector} from "react-redux"
 import {nodeValidationDataClear, updateNodeData, ValidationRequest} from "../../../../actions/nk"
 import React, {useCallback, useEffect} from "react"
-import {NodeDetailsContent, NodeDetailsContentProps} from "../NodeDetailsContent"
+import {NodeDetailsContent} from "../NodeDetailsContent"
 import {AdditionalPropertiesConfig, DynamicParameterDefinitions} from "../../../../types"
 import classNames from "classnames"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
@@ -17,13 +17,10 @@ import {
   getProcessProperties,
   getVariableTypes,
 } from "./selectors"
+import {NodeDetailsContentConnectedProps, WithNodeErrors} from "../NodeDetailsContentProps3"
 
-interface Props extends NodeDetailsContentProps {
-  [k: string]: unknown,
-}
-
-function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
-  const {isEditMode, originalNodeId, nodeErrors} = passProps
+function NodeDetailsContentConnected(props: NodeDetailsContentConnectedProps & WithNodeErrors): JSX.Element {
+  const {node, isEditMode, originalNodeId, nodeErrors, onChange, pathsToMark, showValidation, showSwitch, edges} = props
   const nodeId = originalNodeId || node?.id
 
   const expressionType = useSelector(getExpressionType)
@@ -54,8 +51,13 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
   return (
     <div className={nodeClass}>
       <NodeDetailsContent
+        isEditMode={isEditMode}
+        onChange={onChange}
+        pathsToMark={pathsToMark}
+        showValidation={showValidation}
+        showSwitch={showSwitch}
+        edges={edges}
         node={node}
-        {...passProps}
         originalNodeId={nodeId}
         expressionType={expressionType(nodeId)}
         nodeTypingInfo={nodeTypingInfo(nodeId)}

@@ -184,16 +184,8 @@ class VersionsForm extends React.Component<Props, State> {
 
   printNode(node, pathsToMark) {
     return node ?
-      (
-        <NodeDetailsContent
-          isEditMode={false}
-          showValidation={false}
-          showSwitch={false}
-          node={node}
-          pathsToMark={pathsToMark}
-        />
-      ) :
-      (<div className="notPresent">Node not present</div>)
+      <NodeDetailsContent node={node} pathsToMark={pathsToMark}/> :
+      <div className="notPresent">Node not present</div>
   }
 
   stubOnChange = () => {
@@ -217,16 +209,8 @@ class VersionsForm extends React.Component<Props, State> {
 
   printProperties(property, pathsToMark) {
     return property ?
-      (
-        <NodeDetailsContent
-          isEditMode={false}
-          showValidation={false}
-          showSwitch={false}
-          node={property}
-          pathsToMark={pathsToMark}
-        />
-      ) :
-      (<div className="notPresent">Properties not present</div>)
+      <NodeDetailsContent node={property} pathsToMark={pathsToMark}/> :
+      <div className="notPresent">Properties not present</div>
   }
 }
 

@@ -3,7 +3,7 @@ import {getProcessCategory, getProcessToDisplay} from "../../../../reducers/sele
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {RootState} from "../../../../reducers"
-import {AdditionalPropertiesConfig} from "../../../../types"
+import {AdditionalPropertiesConfig, NodeId, NodeValidationError} from "../../../../types"
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, s => s.processDefinition)
 export const getAdditionalPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig)
@@ -57,7 +57,7 @@ export const getProcessId = createSelector(getProcessToDisplay, s => s.id)
 export const getCurrentErrors = createSelector(
   getValidationPerformed,
   getValidationErrors,
-  (validationPerformed, validationErrors) => (originalNodeId, nodeErrors) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
+  (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
   getValidationPerformed,

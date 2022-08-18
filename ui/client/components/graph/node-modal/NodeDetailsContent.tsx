@@ -1,48 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {useMemo, useState} from "react"
-import ProcessUtils from "../../../common/ProcessUtils"
-import {AdditionalPropertyConfig} from "./AdditionalProperty"
-import {
-  Edge,
-  NodeType,
-  NodeValidationError,
-  ProcessDefinitionData,
-  ProcessId,
-  UIParameter,
-  VariableTypes,
-} from "../../../types"
-import {ValidationRequest} from "../../../actions/nk"
+import {Edge, NodeType,} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {getParameterDefinitions, useStateCallback} from "./NodeDetailsContentUtils"
 import {generateUUIDs, NodeDetailsContent2} from "./NodeDetailsContent2"
 import {adjustParameters} from "./ParametersUtils"
 import {WithTempId} from "./EdgesDndComponent"
-
-export interface NodeDetailsContentProps {
-  isEditMode?: boolean,
-  dynamicParameterDefinitions?: UIParameter[],
-  currentErrors?: NodeValidationError[],
-  processId?: ProcessId,
-  additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
-  showValidation?: boolean,
-  showSwitch?: boolean,
-  findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
-  processDefinitionData?: ProcessDefinitionData,
-  node: NodeType,
-  edges?: Edge[],
-  expressionType?,
-  originalNodeId?: NodeType["id"],
-  nodeTypingInfo?,
-  updateNodeData?: (processId: string, validationRequestData: ValidationRequest) => void,
-  findAvailableBranchVariables?,
-  processProperties?,
-  pathsToMark?: string[],
-  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
-  variableTypes?: VariableTypes,
-}
+import {NodeDetailsContentProps} from "./NodeDetailsContentProps3"
 
 export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
-  const {node, processId, dynamicParameterDefinitions, processDefinitionData} = props
+  const {node, processId, dynamicParameterDefinitions, processDefinitionData, ...passProps} = props
 
   const parameterDefinitions = useMemo(() => {
     return getParameterDefinitions(processDefinitionData, node, dynamicParameterDefinitions)
@@ -61,15 +28,15 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   return (
     <>
       <NodeDetailsContent2
-        {...props}
-        node={props.node}
-        processId={processId}
+        {...passProps}
+        node={node}
         parameterDefinitions={parameterDefinitions}
         originalNode={originalNode}
         editedNode={editedNode}
         setEditedNode={setEditedNode}
         editedEdges={editedEdges}
         setEditedEdges={setEditedEdges}
+        processDefinitionData={processDefinitionData}
       />
       <NodeAdditionalInfoBox node={node} processId={processId}/>
     </>
