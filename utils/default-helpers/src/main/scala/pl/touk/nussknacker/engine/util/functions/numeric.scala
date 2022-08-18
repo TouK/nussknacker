@@ -8,20 +8,38 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{Documentation, ParamName}
 import pl.touk.nussknacker.engine.util.MathUtils
-import pl.touk.nussknacker.engine.util.functions.numeric.{AbsTypingFunction, LargeSumTypingFunction, MaxTypingFunction, MinTypingFunction, SumTypingFunction, ToNumberTypingFunction}
+import pl.touk.nussknacker.engine.util.functions.numeric.{SingleArgumentMathTypingFunction, LargeNumberOperatorTypingFunction, MinMaxTypingFunction, MathOperatorTypingFunction, ToNumberTypingFunction}
 
 trait numeric extends MathUtils {
-  @GenericType(typingFunction = classOf[MinTypingFunction])
+  @GenericType(typingFunction = classOf[MinMaxTypingFunction])
   override def min(n1: Number, n2: Number): Number = super.min(n1, n2)
 
-  @GenericType(typingFunction = classOf[MaxTypingFunction])
+  @GenericType(typingFunction = classOf[MinMaxTypingFunction])
   override def max(n1: Number, n2: Number): Number = super.max(n1, n2)
 
-  @GenericType(typingFunction = classOf[SumTypingFunction])
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
   override def sum(n1: Number, n2: Number): Number = super.sum(n1, n2)
 
-  @GenericType(typingFunction = classOf[LargeSumTypingFunction])
+  @GenericType(typingFunction = classOf[LargeNumberOperatorTypingFunction])
   override def largeSum(n1: Number, n2: Number): Number = super.largeSum(n1, n2)
+
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
+  override def plus(n1: Number, n2: Number): Number = super.plus(n1, n2)
+
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
+  override def minus(n1: Number, n2: Number): Number = super.minus(n1, n2)
+
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
+  override def multiply(n1: Number, n2: Number): Number = super.multiply(n1, n2)
+
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
+  override def divide(n1: Number, n2: Number): Number = super.divide(n1, n2)
+
+  @GenericType(typingFunction = classOf[MathOperatorTypingFunction])
+  override def remainder(n1: Number, n2: Number): Number = super.remainder(n1, n2)
+
+  @GenericType(typingFunction = classOf[SingleArgumentMathTypingFunction])
+  override def negate(n1: Number): Number = super.negate(n1)
 
   @Documentation(description = "Parse string to number")
   @GenericType(typingFunction = classOf[ToNumberTypingFunction])
@@ -34,7 +52,7 @@ trait numeric extends MathUtils {
   def pow(@ParamName("a") a: Double, @ParamName("b") b: Double): Double = Math.pow(a, b)
 
   @Documentation(description = "Returns the absolute value of a value.")
-  @GenericType(typingFunction = classOf[AbsTypingFunction])
+  @GenericType(typingFunction = classOf[SingleArgumentMathTypingFunction])
   def abs(@ParamName("a") a: Number): Number = a match {
     case n: java.lang.Byte => Math.abs(n.intValue())
     case n: java.lang.Short => Math.abs(n.intValue())
@@ -58,16 +76,18 @@ trait numeric extends MathUtils {
 }
 
 object numeric extends numeric {
-  private class ToNumberTypingFunction extends TypingFunction {
+  class ToNumberTypingFunction extends TypingFunction {
     override def signatures: Option[NonEmptyList[MethodTypeInfo]] = Some(NonEmptyList.of(
       MethodTypeInfo.withoutVarargs(Parameter("stringOrNumber", Typed(Typed[String], Typed[Number])) :: Nil, Typed[Number])
     ))
 
-    override def computeResultType(arguments: List[typing.TypingResult]): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
-      Typed[Number].validNel
+    override def computeResultType(arguments: List[typing.TypingResult]): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] = {
+      if (arguments.head.canBeSubclassOf(Typed[Number])) arguments.head.withoutValue.validNel
+      else Typed[Number].validNel
+    }
   }
 
-  private class AbsTypingFunction extends TypingFunction {
+  private class SingleArgumentMathTypingFunction extends TypingFunction {
     override def computeResultType(arguments: List[typing.TypingResult]): ValidatedNel[GenericFunctionTypingError, typing.TypingResult] =
       arguments.head.withoutValue.validNel
   }
@@ -79,22 +99,17 @@ object numeric extends numeric {
       numberTypesPromotionStrategy.promote(arguments.head, arguments(1)).withoutValue.validNel
   }
 
-  private class MinTypingFunction extends OperatorTypingFunction {
+  private class MinMaxTypingFunction extends OperatorTypingFunction {
     override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForMinMax
   }
 
-  private class MaxTypingFunction extends OperatorTypingFunction {
-    override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
-      NumberTypesPromotionStrategy.ForMinMax
-  }
-
-  private class SumTypingFunction extends OperatorTypingFunction {
+  private class MathOperatorTypingFunction extends OperatorTypingFunction {
     override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForMathOperation
   }
 
-  private class LargeSumTypingFunction extends OperatorTypingFunction {
+  private class LargeNumberOperatorTypingFunction extends OperatorTypingFunction {
     override protected def numberTypesPromotionStrategy: NumberTypesPromotionStrategy =
       NumberTypesPromotionStrategy.ForLargeNumbersOperation
   }
