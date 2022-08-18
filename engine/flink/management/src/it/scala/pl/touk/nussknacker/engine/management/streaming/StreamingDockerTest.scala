@@ -2,13 +2,13 @@ package pl.touk.nussknacker.engine.management.streaming
 
 import akka.actor.ActorSystem
 import org.asynchttpclient.DefaultAsyncHttpClientConfig
-import org.scalatest.{Assertion, Suite}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, Suite}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
@@ -17,7 +17,6 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.Future
-import scala.concurrent.duration._
 
 trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
@@ -30,10 +29,12 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
   override def beforeAll(): Unit = {
     super.beforeAll()
     kafkaClient = new KafkaClient(hostKafkaAddress, self.suiteName)
+    logger.info("Kafka client created")
   }
 
   override def afterAll(): Unit = {
     kafkaClient.shutdown()
+    logger.info("Kafka client closed")
     super.afterAll()
   }
 
@@ -50,12 +51,12 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
     }
   }
 
-  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
-    assert(deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath).isReadyWithin(100 seconds))
+  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
+    deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath).futureValue
   }
 
   protected def cancelProcess(processId: String): Unit = {
-    assert(deploymentManager.cancel(ProcessName(processId), user = userToAct).isReadyWithin(10 seconds))
+    deploymentManager.cancel(ProcessName(processId), user = userToAct).futureValue
     eventually {
       val statusOpt = deploymentManager
         .findJobStatus(ProcessName(processId))

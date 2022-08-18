@@ -7,28 +7,28 @@ import org.apache.kafka.common.TopicPartition
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.kafka.RichKafkaConsumer.defaultSecondsToWait
 
 import java.time.Duration
 import java.util.concurrent.TimeoutException
-import scala.collection.mutable
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   import scala.collection.JavaConverters._
 
-  def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
+  def consume(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
 
-  def consumeWithString(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[String] =
+  def consumeWithString(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[String] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => new String(record.value()))
 
-  def consumeWithJson(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[Json] =
+  def consumeWithJson(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[Json] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
-  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
+  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[ConsumerRecord[K, M]] = {
     val partitions = fetchTopicPartitions(topic, secondsToWait)
     consumer.assign(partitions.asJava)
     logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
@@ -68,6 +68,10 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
     }
 
   }
+}
+
+object RichKafkaConsumer {
+  val defaultSecondsToWait = 30
 }
 
 case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {

@@ -8,7 +8,7 @@ import org.apache.kafka.common.header.Headers
 
 import java.time.Duration
 import java.util
-import java.util.Collections
+import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
@@ -76,7 +76,9 @@ class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
     adminClient.close()
   }
 
-  def createConsumer(groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+  def createConsumer(groupIdOpt: Option[String] = None): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+    // each consumer by default is in other consumer group to make sure that messages won't be stolen by other consumer consuming the same topic
+    val groupId = groupIdOpt.getOrElse(s"testGroup_${UUID.randomUUID()}")
     val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
