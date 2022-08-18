@@ -41,4 +41,4 @@ echo "Starting Nussknacker Kafka Runtime"
 
 exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \
-          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_CONFIG_FILE"
+          -cp "$CLASSPATH" "pl.touk.nussknacker.engine.lite.kafka.NuRuntimeApp" "$SCENARIO_FILE" "$DEPLOYMENT_CONFIG_FILE"
