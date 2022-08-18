@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.LongFieldV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedKafkaAvroSourceFactory
+import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.RecordingExceptionConsumer
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Instant
 
-class DelayedKafkaAvroIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
+class DelayedUniversalKafkaSourceIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedAvroProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
@@ -89,11 +89,11 @@ class DelayedKafkaAvroIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
 
     import spel.Implicits._
 
-    ScenarioBuilder.streaming("kafka-avro-delayed-test")
+    ScenarioBuilder.streaming("kafka-universal-delayed-test")
       .parallelism(1)
       .source(
         "start",
-        "kafka-avro-delayed",
+        "kafka-universal-delayed",
         s"$TopicParamName" -> s"'${topic}'",
         s"$SchemaVersionParamName" -> asSpelExpression(formatVersionParam(version)),
         s"$TimestampFieldParamName" -> s"${timestampField}",
@@ -108,7 +108,7 @@ class DelayedAvroProcessConfigCreator extends KafkaAvroTestProcessConfigCreator 
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
-      "kafka-avro-delayed" -> defaultCategory(new DelayedKafkaAvroSourceFactory[String, GenericRecord](schemaRegistryClientFactory, createSchemaBasedMessagesSerdeProvider,
+      "kafka-universal-delayed" -> defaultCategory(new DelayedUniversalKafkaSourceFactory[String, GenericRecord](schemaRegistryClientFactory, createSchemaBasedMessagesSerdeProvider,
         processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
     )
   }
