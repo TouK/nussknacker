@@ -690,7 +690,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(utilsInternal, testUtils % "test", componentsUtils % "test")
+  dependsOn(utilsInternal, mathUtils, testUtils % "test", componentsUtils % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -931,7 +931,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, helpersUtils, componentsUtils % "provided", testUtils % "test")
+  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, componentsUtils % "provided", testUtils % "test")
 
 lazy val flinkTestUtils = (project in flink("test-utils")).
   settings(commonSettings).
