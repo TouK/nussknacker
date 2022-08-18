@@ -657,7 +657,7 @@ lazy val defaultModel = (project in (file("defaultModel"))).
   settings(
     name := "nussknacker-default-model"
   )
-  .dependsOn(helpersUtils, extensionsApi % Provided)
+  .dependsOn(defaultHelpers, extensionsApi % Provided)
 
 lazy val flinkExecutor = (project in flink("executor")).
   settings(commonSettings).
@@ -884,10 +884,10 @@ lazy val mathUtils = (project in utils("math-utils")).
     )
   ).dependsOn(componentsApi, testUtils % "test")
 
-lazy val helpersUtils = (project in utils("helpers-utils")).
+lazy val defaultHelpers = (project in utils("default-helpers")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-helpers-utils"
+    name := "nussknacker-default-helpers"
   ).dependsOn(mathUtils, testUtils % "test", interpreter % "test")
 
 lazy val testUtils = (project in utils("test-utils")).
@@ -1530,7 +1530,7 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
-  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, helpersUtils, commonUtils, utilsInternal, testUtils,
+  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
