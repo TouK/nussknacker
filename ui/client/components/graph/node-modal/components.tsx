@@ -225,18 +225,26 @@ export function Filter({
   )
 }
 
-export function getEnricherProcessor(props: NodeDetailsContentProps3, isMarked: (path?: string) => boolean, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any) {
+export function EnricherProcessor({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  ...props
+}: NodeDetailsContentProps3 & NodeContentMethods): JSX.Element {
+  const {fieldErrors, node, editedNode, isEditMode, showValidation} = props
   return (
     <div className="node-table-body">
       <IdField
-        {...props}
         isMarked={isMarked}
-        renderFieldLabel={renderFieldLabel}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
+        editedNode={editedNode}
         setProperty={setProperty}
+        renderFieldLabel={renderFieldLabel}
       />
-      {serviceParameters(props.editedNode).map((param, index) => {
+      {serviceParameters(editedNode).map((param, index) => {
         return (
-          <div className="node-block" key={props.node.id + param.name + index}>
+          <div className="node-block" key={node.id + param.name + index}>
             <ParameterExpressionField
               {...props}
               isMarked={isMarked}
@@ -248,7 +256,7 @@ export function getEnricherProcessor(props: NodeDetailsContentProps3, isMarked: 
           </div>
         )
       })}
-      {props.node.type === "Enricher" ?
+      {node.type === "Enricher" ?
         (
           <NodeField
             {...props}
@@ -258,14 +266,16 @@ export function getEnricherProcessor(props: NodeDetailsContentProps3, isMarked: 
             fieldType={FieldType.input}
             fieldLabel={"Output"}
             fieldProperty={"output"}
-            validators={[errorValidator(props.fieldErrors || [], "output")]}
+            validators={[errorValidator(fieldErrors || [], "output")]}
           />
         ) :
         null}
-      {props.node.type === "Processor" ?
+      {node.type === "Processor" ?
         (
           <DisableField
-            {...props}
+            editedNode={editedNode}
+            isEditMode={isEditMode}
+            showValidation={showValidation}
             isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -273,7 +283,9 @@ export function getEnricherProcessor(props: NodeDetailsContentProps3, isMarked: 
         ) :
         null}
       <DescriptionField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
@@ -282,29 +294,45 @@ export function getEnricherProcessor(props: NodeDetailsContentProps3, isMarked: 
   )
 }
 
-export function getSubprocessInput(props: NodeDetailsContentProps3, isMarked: (path?: string) => boolean, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any) {
+export function SubprocessInput({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  editedNode,
+  isEditMode,
+  showValidation,
+  ...props
+}: NodeDetailsContentProps3 & NodeContentMethods): JSX.Element {
+  const {processDefinitionData} = props
   return (
     <div className="node-table-body">
       <IdField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
       <DisableField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
       <ParameterList
-        processDefinitionData={props.processDefinitionData}
-        editedNode={props.editedNode}
-        savedNode={props.editedNode}
+        processDefinitionData={processDefinitionData}
+        editedNode={editedNode}
+        savedNode={editedNode}
         setNodeState={newParams => setProperty("ref.parameters", newParams)}
         createListField={(param, index) => (
           <ParameterExpressionField
             {...props}
+            editedNode={editedNode}
+            isEditMode={isEditMode}
+            showValidation={showValidation}
             isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -327,7 +355,9 @@ export function getSubprocessInput(props: NodeDetailsContentProps3, isMarked: (p
         )}
       />
       <DescriptionField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
@@ -336,11 +366,22 @@ export function getSubprocessInput(props: NodeDetailsContentProps3, isMarked: (p
   )
 }
 
-export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (path?: string) => boolean, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any, testResultsState: StateForSelectTestResults) {
+export function JoinCustomNode({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  testResultsState,
+  editedNode,
+  isEditMode,
+  showValidation,
+  ...props
+}: NodeDetailsContentProps3 & NodeContentMethods & { testResultsState: StateForSelectTestResults }): JSX.Element {
   return (
     <div className="node-table-body">
       <IdField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
@@ -349,6 +390,9 @@ export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (pa
         hasOutputVar(props.node, props.processDefinitionData) && (
           <NodeField
             {...props}
+            editedNode={editedNode}
+            isEditMode={isEditMode}
+            showValidation={showValidation}
             isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -359,13 +403,13 @@ export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (pa
           />
         )
       }
-      {NodeUtils.nodeIsJoin(props.editedNode) && (
+      {NodeUtils.nodeIsJoin(editedNode) && (
         <BranchParameters
-          node={props.editedNode}
+          node={editedNode}
           isMarked={isMarked}
-          showValidation={props.showValidation}
+          showValidation={showValidation}
           showSwitch={props.showSwitch}
-          isEditMode={props.isEditMode}
+          isEditMode={isEditMode}
           errors={props.fieldErrors || []}
           parameterDefinitions={props.parameterDefinitions}
           setNodeDataAt={setProperty}
@@ -373,11 +417,14 @@ export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (pa
           findAvailableVariables={props.findAvailableVariables}
         />
       )}
-      {props.editedNode.parameters?.map((param, index) => {
+      {editedNode.parameters?.map((param, index) => {
         return (
           <div className="node-block" key={props.node.id + param.name + index}>
             <ParameterExpressionField
               {...props}
+              editedNode={editedNode}
+              isEditMode={isEditMode}
+              showValidation={showValidation}
               isMarked={isMarked}
               renderFieldLabel={renderFieldLabel}
               setProperty={setProperty}
@@ -388,7 +435,9 @@ export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (pa
         )
       })}
       <DescriptionField
-        {...props}
+        editedNode={editedNode}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
@@ -397,42 +446,74 @@ export function getJoinCustomNode(props: NodeDetailsContentProps3, isMarked: (pa
   )
 }
 
-export function getVariableBuilder(renderFieldLabel: (paramName: string) => JSX.Element, removeElement: (property: keyof NodeType, index: number) => void, setProperty: (...args: any[]) => any, props: NodeDetailsContentProps3, addElement: (...args: any[]) => any, isMarked: (path?: string) => boolean, variableTypes) {
+export function VariableBuilder({
+  renderFieldLabel,
+  removeElement,
+  setProperty,
+  addElement,
+  isMarked,
+  variableTypes,
+  expressionType,
+  nodeTypingInfo,
+  showValidation,
+  fieldErrors,
+  isEditMode,
+  editedNode,
+}: NodeDetailsContentProps3 & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
   return (
     <MapVariable
       renderFieldLabel={renderFieldLabel}
       removeElement={removeElement}
       onChange={setProperty}
-      node={props.editedNode}
+      node={editedNode}
       addElement={addElement}
       isMarked={isMarked}
-      readOnly={!props.isEditMode}
-      showValidation={props.showValidation}
+      readOnly={!isEditMode}
+      showValidation={showValidation}
       variableTypes={variableTypes}
-      errors={props.fieldErrors || []}
-      expressionType={props.expressionType || props.nodeTypingInfo && {fields: props.nodeTypingInfo}}
+      errors={fieldErrors || []}
+      expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
     />
   )
 }
 
-export function getVariable(props: NodeDetailsContentProps3, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any, isMarked: (path?: string) => boolean, variableTypes) {
-  const varExprType = props.expressionType || (props.nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
+export function VariableDef({
+  renderFieldLabel,
+  setProperty,
+  isMarked,
+  variableTypes,
+  isEditMode,
+  nodeTypingInfo,
+  showValidation,
+  fieldErrors = [],
+  expressionType,
+  editedNode,
+}: NodeDetailsContentProps3 & NodeContentMethods): JSX.Element {
+  const varExprType = expressionType || (nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
+  const inferredVariableType = ProcessUtils.humanReadableType(varExprType)
   return (
     <Variable
       renderFieldLabel={renderFieldLabel}
       onChange={setProperty}
-      node={props.editedNode}
+      node={editedNode}
       isMarked={isMarked}
-      readOnly={!props.isEditMode}
-      showValidation={props.showValidation}
+      readOnly={!isEditMode}
+      showValidation={showValidation}
       variableTypes={variableTypes}
-      errors={props.fieldErrors || []}
-      inferredVariableType={ProcessUtils.humanReadableType(varExprType)}
+      errors={fieldErrors}
+      inferredVariableType={inferredVariableType}
     />
   )
 }
 
-export function getSwitch(props: NodeDetailsContentProps3, isMarked: (path?: string) => boolean, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any, isCompareView: boolean, variableTypes) {
+export function Switch({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  isCompareView,
+  variableTypes,
+  ...props
+}: NodeContentMethods & NodeDetailsContentProps3 & { isCompareView?: boolean }): JSX.Element {
   const {node: definition} = props.processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === props.editedNode.type)
   const currentExpression = props.originalNode["expression"]
   const currentExprVal = props.originalNode["exprVal"]
@@ -535,29 +616,47 @@ export function Split({
   )
 }
 
-export function getProperties(props: NodeDetailsContentProps3, isMarked: (path?: string) => boolean, renderFieldLabel: (paramName: string) => JSX.Element, setProperty: (...args: any[]) => any) {
-  const type = props.node.typeSpecificProperties.type
+export function Properties({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  isEditMode,
+  showValidation,
+  editedNode,
+  node,
+  processDefinitionData,
+  additionalPropertiesConfig,
+  fieldErrors,
+  showSwitch,
+  ...props
+}: NodeDetailsContentProps3 & NodeContentMethods): JSX.Element {
+  const type = node.typeSpecificProperties.type
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
   return (
     <div className="node-table-body">
       <IdField
-        {...props}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
+        editedNode={editedNode}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
-      {props.node.isSubprocess ?
+      {node.isSubprocess ?
         (
           <NodeField
             {...props}
+            isEditMode={isEditMode}
+            showValidation={showValidation}
+            editedNode={editedNode}
             isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
             fieldLabel={"Documentation url"}
             fieldProperty={"typeSpecificProperties.docsUrl"}
-            validators={[errorValidator(props.fieldErrors || [], "docsUrl")]}
+            validators={[errorValidator(fieldErrors || [], "docsUrl")]}
             autoFocus
           />
         ) :
@@ -566,45 +665,57 @@ export function getProperties(props: NodeDetailsContentProps3, isMarked: (path?:
             <>
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[errorValidator(props.fieldErrors || [], "parallelism")]}
+                validators={[errorValidator(fieldErrors || [], "parallelism")]}
                 autoFocus
               />
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
                 fieldLabel={"Checkpoint interval in seconds"}
                 fieldProperty={"typeSpecificProperties.checkpointIntervalInSeconds"}
-                validators={[errorValidator(props.fieldErrors || [], "checkpointIntervalInSeconds")]}
+                validators={[errorValidator(fieldErrors || [], "checkpointIntervalInSeconds")]}
               />
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
                 fieldLabel={"Spill state to disk"}
                 fieldProperty={"typeSpecificProperties.spillStateToDisk"}
-                validators={[errorValidator(props.fieldErrors || [], "spillStateToDisk")]}
+                validators={[errorValidator(fieldErrors || [], "spillStateToDisk")]}
               />
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
                 fieldLabel={"Should use async interpretation"}
                 fieldProperty={"typeSpecificProperties.useAsyncInterpretation"}
-                validators={[errorValidator(props.fieldErrors || [], "useAsyncInterpretation")]}
-                defaultValue={props.processDefinitionData?.defaultAsyncInterpretation}
+                validators={[errorValidator(fieldErrors || [], "useAsyncInterpretation")]}
+                defaultValue={processDefinitionData?.defaultAsyncInterpretation}
               />
             </>
           ) :
@@ -612,45 +723,54 @@ export function getProperties(props: NodeDetailsContentProps3, isMarked: (path?:
             (
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[errorValidator(props.fieldErrors || [], "parallelism")]}
+                validators={[errorValidator(fieldErrors || [], "parallelism")]}
                 autoFocus
               />
             ) :
             (
               <NodeField
                 {...props}
+                isEditMode={isEditMode}
+                showValidation={showValidation}
+                editedNode={editedNode}
                 isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
                 fieldLabel={"Query path"}
                 fieldProperty={"typeSpecificProperties.path"}
-                validators={[errorValidator(props.fieldErrors || [], "path")]}
+                validators={[errorValidator(fieldErrors || [], "path")]}
               />
             )
       }
-      {sortBy(Object.entries(props.additionalPropertiesConfig), ([name]) => name).map(([propName, propConfig]) => (
+      {sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name).map(([propName, propConfig]) => (
         <AdditionalProperty
           key={propName}
-          showSwitch={props.showSwitch}
-          showValidation={props.showValidation}
+          showSwitch={showSwitch}
+          showValidation={showValidation}
           propertyName={propName}
           propertyConfig={propConfig}
-          propertyErrors={props.fieldErrors || []}
+          propertyErrors={fieldErrors || []}
           onChange={setProperty}
           renderFieldLabel={renderFieldLabel}
-          editedNode={props.editedNode}
-          readOnly={!props.isEditMode}
+          editedNode={editedNode}
+          readOnly={!isEditMode}
         />
       ))}
       <DescriptionField
         {...props}
+        isEditMode={isEditMode}
+        showValidation={showValidation}
+        editedNode={editedNode}
         isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}

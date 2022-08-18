@@ -12,19 +12,19 @@ import {useTestResults} from "./TestResultsWrapper"
 import {NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {
   ArrayElement,
+  EnricherProcessor,
   Filter,
-  getEnricherProcessor,
-  getJoinCustomNode,
-  getProperties,
-  getSubprocessInput,
-  getSwitch,
-  getVariable,
-  getVariableBuilder,
+  JoinCustomNode,
+  Properties,
   Sink,
   Source,
   Split,
+  SubprocessInput,
   SubprocessInputDef,
   SubprocessOutputDef,
+  Switch,
+  VariableBuilder,
+  VariableDef,
 } from "./components"
 
 export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Element {
@@ -126,18 +126,55 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
       )
     case "Enricher":
     case "Processor":
-      return getEnricherProcessor(props, isMarked, renderFieldLabel, setProperty)
+      return (
+        <EnricherProcessor
+          {...props}
+          {...componentsMethods}
+        />
+      )
     case "SubprocessInput":
-      return getSubprocessInput(props, isMarked, renderFieldLabel, setProperty)
+      return (
+        <SubprocessInput
+          {...props}
+          {...componentsMethods}
+        />
+      )
     case "Join":
     case "CustomNode":
-      return getJoinCustomNode(props, isMarked, renderFieldLabel, setProperty, testResultsState)
+      return (
+        <JoinCustomNode
+          {...props}
+          {...componentsMethods}
+          testResultsState={testResultsState}
+        />
+      )
     case "VariableBuilder":
-      return getVariableBuilder(renderFieldLabel, removeElement, setProperty, props, addElement, isMarked, variableTypes)
+      return (
+        <VariableBuilder
+          {...props}
+          {...componentsMethods}
+          removeElement={removeElement}
+          addElement={addElement}
+          variableTypes={variableTypes}
+        />
+      )
     case "Variable":
-      return getVariable(props, renderFieldLabel, setProperty, isMarked, variableTypes)
+      return (
+        <VariableDef
+          {...props}
+          {...componentsMethods}
+          variableTypes={variableTypes}
+        />
+      )
     case "Switch":
-      return getSwitch(props, isMarked, renderFieldLabel, setProperty, isCompareView, variableTypes)
+      return (
+        <Switch
+          {...props}
+          {...componentsMethods}
+          isCompareView={isCompareView}
+          variableTypes={variableTypes}
+        />
+      )
     case "Split":
       return (
         <Split
@@ -146,7 +183,12 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
         />
       )
     case "Properties":
-      return getProperties(props, isMarked, renderFieldLabel, setProperty)
+      return (
+        <Properties
+          {...props}
+          {...componentsMethods}
+        />
+      )
     default:
       return (
         <div>
