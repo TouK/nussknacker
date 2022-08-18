@@ -33,7 +33,7 @@
         "containers": [
           {
             "name": "runtime",
-            "image": "touk/nussknacker-lite-kafka-runtime:1.2.0-SNAPSHOT",
+            "image": "touk/nussknacker-lite-runtime-app:1.2.0-SNAPSHOT",
             "env": [
               {
                 "name": "SCENARIO_FILE",
