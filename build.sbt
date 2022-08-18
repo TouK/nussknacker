@@ -880,7 +880,7 @@ lazy val helpersUtils = (project in utils("helpers-utils")).
   settings(commonSettings).
   settings(
     name := "nussknacker-helpers-utils"
-  ).dependsOn(componentsUtils, testUtils % "test", interpreter % "test")
+  ).dependsOn(componentsApi, commonUtils, testUtils % "test", interpreter % "test")
 
 lazy val testUtils = (project in utils("test-utils")).
   settings(commonSettings).
@@ -923,7 +923,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, componentsUtils % "provided", testUtils % "test")
+  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, helpersUtils, componentsUtils % "provided", testUtils % "test")
 
 lazy val flinkTestUtils = (project in flink("test-utils")).
   settings(commonSettings).
