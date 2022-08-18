@@ -29,7 +29,7 @@ object AvroGen {
   def genSchema(schemaType: Type, config: ExcludedConfig): Gen[Schema] = schemaType match {
     case Type.MAP => genSchema(config).flatMap(Schema.createMap)
     case Type.ARRAY => genSchema(config).flatMap(Schema.createArray)
-    case Type.RECORD => listOfStringsGen(MaxRecordFields).flatMap(names =>
+    case Type.RECORD => nonEmptyDistinctListOfStringsGen(MaxRecordFields).flatMap(names =>
       Gen.sequence(names.map( name =>
         genSchema(config).flatMap(AvroSchemaCreator.createField(name, _))
       )).flatMap(fields =>
@@ -39,7 +39,7 @@ object AvroGen {
     case Type.FIXED => intGen(MaxFixedLength).flatMap(size =>
       stringGen.flatMap(AvroSchemaCreator.createFixed(_, size))
     )
-    case Type.ENUM => listOfStringsGen(MaxEnumSize).flatMap(values =>
+    case Type.ENUM => nonEmptyDistinctListOfStringsGen(MaxEnumSize).flatMap(values =>
       stringGen.flatMap(AvroSchemaCreator.createEnum(_, values))
     )
     case schemaType => Gen.const(Schema.create(schemaType))
@@ -71,7 +71,7 @@ object AvroGen {
     case _ => throw new IllegalArgumentException(s"Unsupported schema: $schema")
   }
 
-  def listOfStringsGen(maxSize: Int): Gen[List[String]] = Gen.containerOfN[Set, String](maxSize, stringGen).suchThat(_.nonEmpty).map(_.toList)
+  def nonEmptyDistinctListOfStringsGen(maxSize: Int): Gen[List[String]] = Gen.containerOfN[Set, String](maxSize, stringGen).suchThat(_.nonEmpty).map(_.toList)
 
   def stringGen: Gen[String] = Gen.chooseNum(MinStringLength, MaxStringLength).flatMap(stringGen)
 
