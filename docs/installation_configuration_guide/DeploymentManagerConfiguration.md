@@ -25,7 +25,7 @@ have to configure `.kube/config` properly.
 | Parameter                 | Type                                                | Default value                       | Description                                                                              |
 |---------------------------|-----------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
 | mode                      | string                                              |                                     | Either streaming or request-response                                                     |
-| dockerImageName           | string                                              | touk/nussknacker-lite-kafka-runtime | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
+| dockerImageName           | string                                              | touk/nussknacker-lite-runtime -app| Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
 | dockerImageTag            | string                                              | current nussknacker version         |                                                                                          |
 | scalingConfig             | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }              | see [below](#configuring-replicas-count)                                                 |
 | configExecutionOverrides  | config                                              | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
@@ -87,7 +87,7 @@ spec:
             fieldRef:
               apiVersion: v1
               fieldPath: metadata.name
-        image: touk/nussknacker-lite-kafka-runtime:1.3.0 # filled with dockerImageName/dockerImageTag 
+        image: touk/nussknacker-lite-runtime-app:1.3.0 # filled with dockerImageName/dockerImageTag 
         livenessProbe:
           httpGet:
             path: /alive

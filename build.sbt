@@ -51,7 +51,7 @@ val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
 val requestResponseDockerPackageName = propOrEnv("requestResponseDockerPackageName", "nussknacker-request-response-app")
 
-val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-kafka-runtime")
+val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-runtime-app")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -1068,7 +1068,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(liteEngineKafkaRuntimeDockerSettings).
   enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
   settings(
-    name := "nussknacker-lite-kafka-runtime",
+    name := "nussknacker-lite-runtime-app",
     Universal / mappings ++= Seq(
       (defaultModel / assembly).value -> "model/defaultModel.jar",
       (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
@@ -1140,7 +1140,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     },
     buildAndImportRuntimeImageToK3d := {
       (liteEngineKafkaRuntime / Docker / publishLocal).value
-      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-kafka-runtime:${version.value}" #|| "echo 'No k3d installed!'" !
+      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}" #|| "echo 'No k3d installed!'" !
     },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
       buildAndImportRuntimeImageToK3d

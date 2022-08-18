@@ -70,7 +70,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   override def name: String = "lite-k8s"
 }
 
-case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
+case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
                                       dockerImageTag: String = BuildInfo.version,
                                       scalingConfig: Option[K8sScalingConfig] = None,
                                       configExecutionOverrides: Config = ConfigFactory.empty(),

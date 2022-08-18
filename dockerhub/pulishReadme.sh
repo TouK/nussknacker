@@ -22,5 +22,5 @@ function publishRepoReadme {
 }
 
 publishRepoReadme "nussknacker"
-publishRepoReadme "nussknacker-lite-kafka-runtime"
+publishRepoReadme "nussknacker-lite-runtime-app"
 publishRepoReadme "nussknacker-request-response-app"
