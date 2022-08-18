@@ -879,8 +879,10 @@ lazy val utilsInternal = (project in utils("utils-internal")).
 lazy val helpersUtils = (project in utils("helpers-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-helpers-utils"
-  ).dependsOn(componentsApi, commonUtils, testUtils % "test", interpreter % "test")
+    name := "nussknacker-helpers-utils",
+  libraryDependencies ++= Seq(
+    "org.springframework" % "spring-expression" % springV,
+  )).dependsOn(componentsApi, testUtils % "test", interpreter % "test")
 
 lazy val testUtils = (project in utils("test-utils")).
   settings(commonSettings).
