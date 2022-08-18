@@ -882,7 +882,7 @@ lazy val mathUtils = (project in utils("math-utils")).
     libraryDependencies ++= Seq(
       "org.springframework" % "spring-expression" % springV,
     )
-  ).dependsOn(componentsApi, testUtils % "test", interpreter % "test")
+  ).dependsOn(componentsApi, testUtils % "test")
 
 lazy val helpersUtils = (project in utils("helpers-utils")).
   settings(commonSettings).
@@ -1535,7 +1535,7 @@ lazy val modules = List[ProjectReference](
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit
+  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
