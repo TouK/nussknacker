@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -41,7 +41,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   }
 
   override def returnType: typing.TypingResult = {
-    JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
   }
 
   override def testDataParser: TestDataParser[TypedMap] = {

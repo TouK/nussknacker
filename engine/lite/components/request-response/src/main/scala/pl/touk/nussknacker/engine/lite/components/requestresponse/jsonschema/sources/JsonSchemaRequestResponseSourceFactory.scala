@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDepen
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source}
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
-import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaTypeDefinitionExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.InputSchemaProperty
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseSource, RequestResponseSourceFactory}
 
@@ -28,7 +28,7 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
       val validationResult = determinedSchema.swap.toList.flatMap(_.toList)
       val finalState = determinedSchema.toOption
       val finalInitializer = determinedSchema.toOption.fold(new BasicContextInitializer(Unknown)) { schema =>
-        val schemaTypingResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+        val schemaTypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
         new BasicContextInitializer(schemaTypingResult)
       }
       FinalResults.forValidation(context, validationResult, finalState)(finalInitializer.validationContext)
