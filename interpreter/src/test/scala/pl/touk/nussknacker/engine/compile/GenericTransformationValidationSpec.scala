@@ -271,7 +271,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     val validationResult = validator.validate(process)
 
     val varsInEnd = validationResult.variablesInNodes("end")
-    varsInEnd("outPutVar") shouldBe Typed[String]
+    varsInEnd("outPutVar") shouldBe Typed.fromInstance("abcdd")
     varsInEnd("intVal") shouldBe Typed.fromInstance(123)
     varsInEnd.get("strVal") shouldBe None
   }
