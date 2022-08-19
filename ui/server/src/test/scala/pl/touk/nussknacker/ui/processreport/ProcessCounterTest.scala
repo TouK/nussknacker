@@ -76,18 +76,18 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .streaming("test").parallelism(1)
       .source("source1", "")
       .filter("filter1", "")
-      .subprocessOneOut("sub1", "subprocess1", "out1")
+      .subprocessOneOut("sub1", "subprocess1", "out1", "fragmentResult")
       .emptySink("sink11", "")
       .toCanonicalProcess
 
     val counter = new ProcessCounter(subprocessRepository(Set(
       CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),
-          List(
-            FlatNode(SubprocessInputDefinition("subInput1", List())),
-            FlatNode(Filter("subFilter1", "")),
-            FlatNode(Filter("subFilter2", "")),
-            FlatNode(SubprocessOutputDefinition("outId1", "out1", List.empty))), List.empty
-        )
+        List(
+          FlatNode(SubprocessInputDefinition("subInput1", List())),
+          FlatNode(Filter("subFilter1", "")),
+          FlatNode(Filter("subFilter2", "")),
+          FlatNode(SubprocessOutputDefinition("outId1", "out1", List.empty))), List.empty
+      )
     )))
 
     val computed = counter.computeCounts(process, Map("source1" -> RawCount(70L, 0L),

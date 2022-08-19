@@ -25,7 +25,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.value2")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -42,7 +42,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "splitSubprocess", "output", "param" -> "#input.value2")
+      .subprocessOneOut("sub", "splitSubprocess", "output", "fragmentResult", "param" -> "#input.value2")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -58,7 +58,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   test("be possible to use global vars in fragment") {
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "subProcessGlobal", "output")
+      .subprocessOneOut("sub", "subProcessGlobal", "output", "fragmentResult")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
@@ -74,7 +74,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   test("be possible to use diamond fragments") {
     val process = resolve(ScenarioBuilder.streaming("proc1")
       .source("id", "input")
-      .subprocessOneOut("sub", "diamondSubprocess", "output33", "ala" -> "#input.id")
+      .subprocessOneOut("sub", "diamondSubprocess", "output33", "fragmentResult", "ala" -> "#input.id")
       .processorEnd("end1", "logService", "all" -> "#input.value2"))
 
     val data = List(
