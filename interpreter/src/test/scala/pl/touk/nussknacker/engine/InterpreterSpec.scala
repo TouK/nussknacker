@@ -549,7 +549,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   test("not evaluate disabled filters") {
 
     val process = ScenarioBuilder.streaming("test").source("start", "transaction-source")
-      .filter("errorFilter", "1/0 == 0", Option(true))
+      .filter("errorFilter", "1/{0, 1}[0] == 0", Option(true))
       .buildSimpleVariable("result-end", resultVariable, "#input.msisdn").emptySink("end-end", "dummySink")
 
     interpretProcess(process, Transaction(msisdn = "125")) should equal("125")

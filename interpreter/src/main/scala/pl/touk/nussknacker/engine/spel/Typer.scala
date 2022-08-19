@@ -236,7 +236,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: OpDivide =>
         val op = Some((x: Number, y: Number) =>
-          if (y.intValue() == 0) DivisionByZeroError(x, y).invalidNel
+          if (y.doubleValue() == 0) DivisionByZeroError(x, y).invalidNel
           else MathUtils.divide(x, y).validNel)
         checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
 
@@ -262,7 +262,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       }
       case e: OpModulus =>
         val op = Some((x: Number, y: Number) =>
-          if (y.intValue() == 0) TakingModuloZeroError(x, y).invalidNel
+          if (y.doubleValue() == 0) TakingModuloZeroError(x, y).invalidNel
           else MathUtils.remainder(x, y).validNel)
         checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMultiply =>

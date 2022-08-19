@@ -650,8 +650,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("be able to type string concatenation") {
-    parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
-    parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
+    parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed.fromInstance("12")
+    parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed.fromInstance("12")
   }
 
   test("expand all fields of TypedObjects in union") {
