@@ -193,7 +193,7 @@ object PdfExporter extends LazyLogging {
       case Processor(_, ServiceRef(typ, params), _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case Sink(_, SinkRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case CustomNode(_, output, typ, params, _) => ("Type", typ) :: ("Output", output.getOrElse("")) :: params.map(p => (p.name, p.expression.expression))
-      case SubprocessInput(_, SubprocessRef(typ, params), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
+      case SubprocessInput(_, SubprocessRef(typ, params, _), _, _, _) => ("Type", typ) :: params.map(p => (p.name, p.expression.expression))
       case SubprocessInputDefinition(_, parameters, _) => parameters.map(p => p.name -> p.typ.refClazzName)
       case SubprocessOutputDefinition(_, outputName, fields, _) => ("Output name", outputName) :: fields.map(p => p.name -> p.expression.expression)
       case Variable(_, name, expr, _) => (name -> expr.expression) :: Nil
@@ -229,7 +229,7 @@ object PdfExporter extends LazyLogging {
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {addEmptySpace(value.toString)}
+                  {addEmptySpace(value)}
                 </block>
               </table-cell>
             </table-row>
