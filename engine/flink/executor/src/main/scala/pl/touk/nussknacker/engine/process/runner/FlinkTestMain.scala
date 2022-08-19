@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.process.runner
 
+import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
