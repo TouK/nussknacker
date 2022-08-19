@@ -61,24 +61,31 @@ class TyperSpec extends AnyFunSuite with Matchers {
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
-  test("should remove values from types in operators") {
-    def checkFinalResult(expr: String, expected: TypingResult): Unit = {
-      typeExpression(expr).toOption.get.finalResult.typingResult shouldBe expected
+  test("should calculate values of operators") {
+    def checkFinalResult(expr: String, expected: Any): Unit = {
+      typeExpression(expr).toOption.get.finalResult.typingResult shouldBe Typed.fromInstance(expected)
     }
 
     val table = Table(
       ("expr", "expected"),
-      ("--2", Typed[Int]),
-      ("++2", Typed[Int]),
-      ("2 / 2", Typed[Int]),
-      ("2 - 2", Typed[Int]),
-      ("-2", Typed[Int]),
-      ("2 % 2", Typed[Int]),
-      ("2 * 2", Typed[Int]),
-      ("2 ^ 2", Typed(Typed[Int], Typed[Long])),
-      ("2 + 2", Typed[Int]),
-      ("+5", Typed.fromInstance(5)),
-      ("'a' + 'a'", Typed[String])
+      ("--2", 1),
+      ("++2", 3),
+      ("2 / 2", 1),
+      ("2 - 2", 0),
+      ("-2", -2),
+      ("2 % 2", 0),
+      ("2 * 2", 4),
+      ("2 + 2", 4),
+      ("+5", 5),
+      ("'a' + 'a'", "aa"),
+      ("'a' + 1", "a1"),
+      ("1 + 'a'", "1a"),
+      ("5 == 5", true),
+      ("5 != 5", false),
+      ("5 > 4", true),
+      ("5 >= 6", false),
+      ("3 < 2", false),
+      ("4 <= 4", true)
     )
     forAll(table)(checkFinalResult)
   }

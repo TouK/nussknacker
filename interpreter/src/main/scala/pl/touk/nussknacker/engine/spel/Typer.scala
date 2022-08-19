@@ -244,7 +244,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
-          val result = operationOnTypesValue(left, right)(MathUtils.minus(_, _).validNel).getOrElse(supertype.validNel)
+          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.minus(_, _).validNel).getOrElse(supertype.validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left == right =>
@@ -253,7 +253,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
           val resultType = left.withoutValue
-          val result = operationOnTypesValue(left)(MathUtils.negate(_).validNel).getOrElse(resultType.validNel)
+          val result = operationOnTypesValue[Number, Number](left)(MathUtils.negate(_).validNel).getOrElse(resultType.validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
@@ -402,7 +402,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       typeChildren(validationContext, node, current) {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
-          val validatedType = op.flatMap(operationOnTypesValue(left, right)(_)).getOrElse(supertype.validNel)
+          val validatedType = op.flatMap(operationOnTypesValue[Number, Number, Any](left, right)(_)).getOrElse(supertype.validNel)
           validatedType.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(node.getOperatorName, left, right).invalidNel
@@ -415,7 +415,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-        val validatedResult = op.flatMap(operationOnTypesValue(left)(_)).getOrElse(left.withoutValue.validNel)
+        val validatedResult = op.flatMap(operationOnTypesValue[Number, Any](left)(_)).getOrElse(left.withoutValue.validNel)
         validatedResult.map(TypingResultWithContext(_))
       case TypingResultWithContext(left, _) :: Nil =>
         OperatorNonNumericError(node.getOperatorName, left).invalidNel
