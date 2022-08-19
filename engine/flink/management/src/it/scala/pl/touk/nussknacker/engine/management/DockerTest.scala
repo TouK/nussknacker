@@ -108,6 +108,7 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
     .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(dockerKafkaAddress))
+    .withValue("modelConfig.kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
   //used for signals, etc.
