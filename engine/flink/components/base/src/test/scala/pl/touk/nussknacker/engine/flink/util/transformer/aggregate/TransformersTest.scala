@@ -161,8 +161,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
-      .buildSimpleVariable("key", "key", "#aggregate.key")
+      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
+      .buildSimpleVariable("key", "key", "#fragmentResult.key")
       .buildSimpleVariable("globalVarAccessTest", "globalVarAccessTest", "#meta.processName")
       .emptySink("end", "dead-end")
 
@@ -185,7 +185,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       .parallelism(1)
       .stateOnDisk(true)
       .source("start", "start")
-      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
+      .subprocessOneOut("fragmentWithTumblingAggregate", "fragmentWithTumblingAggregate", "aggregate", "fragmentResult", ("aggBy", asSpelExpression("#input.eId")), ("key", asSpelExpression("#input.id")))
       .buildSimpleVariable("inputVarAccessTest", "inputVarAccessTest", "#input")
       .emptySink("end", "dead-end")
 
@@ -375,12 +375,12 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     runProcess(model, testProcess, collectingListener)
     val lastResult = variablesForKey(collectingListener, id).last
     aggregates.foreach { case (name, expected) =>
-      lastResult.variableTyped[AnyRef](s"aggregate$name").get shouldBe expected
+      lastResult.variableTyped[AnyRef](s"fragmentResult$name").get shouldBe expected
     }
   }
 
   private def runCollectOutputAggregate[T](key: String, model: LocalModelData, testProcess: EspProcess): List[T] = {
-    runCollectOutputVariables(key, model, testProcess).map(_.variableTyped[T]("aggregate").get)
+    runCollectOutputVariables(key, model, testProcess).map(_.variableTyped[T]("fragmentResult").get)
   }
 
   private def runCollectOutputVariables(key: String, model: LocalModelData, testProcess: EspProcess): List[TestProcess.NodeResult[Any]] = {
@@ -417,7 +417,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
                          typingResult: TypingResult): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
     result.result shouldBe 'valid
-    result.variablesInNodes("end")("aggregate") shouldBe typingResult
+    result.variablesInNodes("end")("fragmentResult") shouldBe typingResult
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
@@ -469,7 +469,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     aggregateData.foldLeft(beforeAggregate) {
       case (builder, definition) =>
         builder
-          .customNode(s"transform${definition.idSuffix}", s"aggregate${definition.idSuffix}", definition.aggregatingNode, params(definition): _*)
+          .customNode(s"transform${definition.idSuffix}", s"fragmentResult${definition.idSuffix}", definition.aggregatingNode, params(definition): _*)
           .buildSimpleVariable(s"after-aggregate-expression-${definition.idSuffix}", s"fooVar${definition.idSuffix}", definition.afterAggregateExpression)
     }.emptySink("end", "dead-end")
   }

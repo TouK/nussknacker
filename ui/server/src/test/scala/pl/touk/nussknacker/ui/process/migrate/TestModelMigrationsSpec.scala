@@ -109,7 +109,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
         .source("source", existingSourceFactory)
-        .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
+        .subprocessOneOut("subprocess", subprocess.id, "output", "fragmentResult", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
 
     val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(subprocess)))
@@ -134,7 +134,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
         .source("source", existingSourceFactory)
-        .subprocessOneOut("subprocess", subprocess.id, "output", "param1" -> "'foo'")
+        .subprocessOneOut("subprocess", subprocess.id, "output", "fragmentResult", "param1" -> "'foo'")
         .emptySink("sink", existingSinkFactory))
 
     val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(subprocess).copy(modelVersion = Some(10))))

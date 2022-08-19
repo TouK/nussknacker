@@ -64,7 +64,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
     ScenarioBuilder
       .streaming("fooProcess4")
       .source("source", existingSourceFactory)
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
@@ -95,7 +95,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
-      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
+      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Nil, Map(
         "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
       ))
   ))
@@ -104,7 +104,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
     ScenarioBuilder
       .streaming("processWithAllObjects")
       .source("source", existingSourceFactory)
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .customNode("custom", "out1", existingStreamTransformer)
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .processor("processor1", existingServiceId)

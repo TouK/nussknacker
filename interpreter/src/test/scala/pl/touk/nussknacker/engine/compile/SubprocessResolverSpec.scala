@@ -27,8 +27,8 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
-      .subprocessOneOut("sub2", "subProcess1", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
+      .subprocessOneOut("sub2", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
 
@@ -59,7 +59,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "param" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "param" -> "'makota'")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
 
@@ -97,7 +97,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "badala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "badala" -> "'makota'")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
 
@@ -117,7 +117,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
 
@@ -187,7 +187,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
   test("inline disabled fragment without inner nodes") {
     val processWithEmptySubprocess = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocessOneOut("sub", "emptySubprocess", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "emptySubprocess", "output", "fragmentResult", "ala" -> "'makota'")
       .filter("d", "true")
       .emptySink("sink", "sink1")
       .toCanonicalProcess
@@ -272,7 +272,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     val process = ScenarioBuilder
       .streaming("process1")
       .source("id1", "source")
-      .subprocessOneOut("nodeSubprocessId", "subProcessId", "output")
+      .subprocessOneOut("nodeSubprocessId", "subProcessId", "fragmentResult", "output")
       .emptySink("id2", "sink")
       .toCanonicalProcess
 
@@ -284,10 +284,9 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
   test("should resolve diamond fragments") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" ->
+      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Nil, Map("output" ->
         GraphBuilder.emptySink("sink", "type")))
       .toCanonicalProcess
-
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
