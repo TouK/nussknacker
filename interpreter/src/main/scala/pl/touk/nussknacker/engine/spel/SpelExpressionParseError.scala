@@ -180,13 +180,27 @@ object SpelExpressionParseError {
       override def message: String = s"Bad '$operator' operator construction"
     }
 
-    case class DivisionByZeroError(expression: String) extends OperatorError {
+    case class DivisionByZeroError private(expression: String) extends OperatorError {
       override def message: String = s"Division by zero: $expression"
     }
 
-    case class TakingModuloZeroError(expression: String) extends OperatorError {
+    object DivisionByZeroError {
+      def apply(expression: String): DivisionByZeroError =
+        new DivisionByZeroError(stripOperatorAST(expression))
+    }
+
+    case class TakingModuloZeroError private(expression: String) extends OperatorError {
       override def message: String = s"Taking remainder modulo zero: $expression"
     }
+
+    object TakingModuloZeroError {
+      def apply(expression: String): TakingModuloZeroError =
+        new TakingModuloZeroError(stripOperatorAST(expression))
+    }
+
+    // Operators AST has form "(expression)" so we need to extract it.
+    private def stripOperatorAST(expression: String) =
+      expression.substring(1, expression.length - 1)
   }
 
 

@@ -61,35 +61,6 @@ class TyperSpec extends AnyFunSuite with Matchers {
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 
-  test("should calculate values of operators") {
-    def checkFinalResult(expr: String, expected: Any): Unit = {
-      typeExpression(expr).toOption.get.finalResult.typingResult shouldBe Typed.fromInstance(expected)
-    }
-
-    val table = Table(
-      ("expr", "expected"),
-      ("--2", 1),
-      ("++2", 3),
-      ("2 / 2", 1),
-      ("2 - 2", 0),
-      ("-2", -2),
-      ("2 % 2", 0),
-      ("2 * 2", 4),
-      ("2 + 2", 4),
-      ("+5", 5),
-      ("'a' + 'a'", "aa"),
-      ("'a' + 1", "a1"),
-      ("1 + 'a'", "1a"),
-      ("5 == 5", true),
-      ("5 != 5", false),
-      ("5 > 4", true),
-      ("5 >= 6", false),
-      ("3 < 2", false),
-      ("4 <= 4", true)
-    )
-    forAll(table)(checkFinalResult)
-  }
-
   private val strictTypeChecking = false
   private val strictMethodsChecking = false
   private val staticMethodInvocationsChecking = false
