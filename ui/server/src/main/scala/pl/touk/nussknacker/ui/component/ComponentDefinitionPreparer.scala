@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentType}
+import pl.touk.nussknacker.engine.api.definition.ParameterGroup
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ProcessDefinition}
@@ -128,8 +129,9 @@ object ComponentDefinitionPreparer {
         ComponentGroup(FragmentsGroupName,
           processDefinition.subprocessInputs.map {
             case (id, definition) =>
-              val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes)), userProcessingTypeCategories.intersect(definition.categories))
+              val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters.filterNot(_.group.exists(_ == ParameterGroup.Output)))
+              val outputs = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters.filter(_.group.exists(_ == ParameterGroup.Output)))
+              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes, Some(outputs))), userProcessingTypeCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty

@@ -330,6 +330,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
             {this.idField()}
             {this.createField("checkbox", "Disabled", "isDisabled")}
             <ParameterList
+              paramsField="parameters"
               processDefinitionData={processDefinitionData}
               editedNode={editedNode}
               savedNode={editedNode}
@@ -353,6 +354,38 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 </div>
               )}
             />
+            <div className="node-row" key="outputs">
+              <div className="node-label" title="Fragment outputs names">Outputs names:</div>
+              <div className="node-value">
+                <div className="fieldsControl">
+                  <ParameterList
+                      paramsField="outputParameters"
+                      processDefinitionData={processDefinitionData}
+                      editedNode={editedNode}
+                      savedNode={editedNode}
+                      setNodeState={newParams => this.setNodeDataAt("ref.outputParameters", newParams)}
+                      createListField={(param, index) => this.createParameterExpressionField(
+                          param,
+                          "expression",
+                          `ref.outputParameters[${index}]`,
+                          fieldErrors
+                      )}
+                      createReadOnlyField={params => (
+                          <div className="node-row">{this.renderFieldLabel(params.name)}
+                            <div className="node-value">
+                              <InputWithFocus
+                                  type="text"
+                                  className="node-input"
+                                  value={params.expression.expression}
+                                  disabled={true}
+                              />
+                            </div>
+                          </div>
+                      )}
+                  />
+                </div>
+              </div>
+            </div>
             {this.descriptionField()}
           </div>
         )
