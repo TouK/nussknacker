@@ -24,9 +24,9 @@ class TyperSpec extends AnyFunSuite with Matchers {
     println(typeExpression("#x + 2", "x" -> 2).toOption.get.finalResult)
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
       PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
-      PositionRange(3, 4) -> TypingResultWithContext(Typed[Int]),
+      PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
       PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
-    ), TypingResultWithContext(Typed[Int])))
+    ), TypingResultWithContext(Typed.fromInstance(4))))
   }
 
   test("template") {
