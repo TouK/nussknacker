@@ -10,9 +10,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.graph.StreamGraph
 import org.apache.flink.util.OptionalFailure
 import org.scalactic.source.Position
+import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{Assertion, Matchers}
 import org.scalatest.enablers.Retrying
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEnvironmentConfig
 
@@ -38,23 +38,23 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     }
   }
 
-  def stopJob[T](jobName: String, executionResult: JobExecutionResult): Unit = {
+  def stopJob(jobName: String, executionResult: JobExecutionResult): Unit = {
     stopJob(jobName, executionResult.getJobID)
   }
 
-  def stopJob[T](jobName: String, jobID: JobID): Unit = {
+  def stopJob(jobName: String, jobID: JobID): Unit = {
     flinkMiniClusterHolder.cancelJob(jobID)
     waitForJobState(jobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
     cleanupGraph()
   }
 
-  def executeAndWaitForStart[T](jobName: String): JobExecutionResult = {
+  def executeAndWaitForStart(jobName: String): JobExecutionResult = {
     val res = execute(jobName)
     waitForStart(res.getJobID, jobName)()
     res
   }
 
-  def executeAndWaitForFinished[T](jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
+  def executeAndWaitForFinished(jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val res = execute(jobName)
     waitForJobState(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
