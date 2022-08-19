@@ -179,6 +179,14 @@ object SpelExpressionParseError {
     case class BadOperatorConstructionError(operator: String) extends OperatorError {
       override def message: String = s"Bad '$operator' operator construction"
     }
+
+    case class DivisionByZeroError(left: Number, right: Number) extends OperatorError {
+      override def message: String = s"Division by zero: $left / $right"
+    }
+
+    case class TakingModuloZeroError(left: Number, right: Number) extends OperatorError {
+      override def message: String = s"Taking remainder modulo zero: $left % $right"
+    }
   }
 
 
