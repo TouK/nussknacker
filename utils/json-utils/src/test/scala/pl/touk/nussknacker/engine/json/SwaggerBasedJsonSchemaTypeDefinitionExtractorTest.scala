@@ -107,5 +107,54 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should support nested schema") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |         "type":"string"
+        |      },
+        |      "nested":{
+        |         "type":"array",
+        |         "items":{
+        |            "type":"object",
+        |            "properties":{
+        |               "id":{
+        |                  "type":"string"
+        |               },
+        |               "nested2": {
+        |                   "type":"object",
+        |                   "properties":{
+        |                      "name":{
+        |                         "type":"string"
+        |                       },
+        |                   }
+        |               }
+        |            },
+        |            "required":[
+        |               "id",
+        |               "nested2"
+        |            ]
+        |         }
+        |      }
+        |   },
+        |   "required":[
+        |      "id",
+        |      "nested"
+        |   ]
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List(
+      "id" -> Typed.apply[String],
+      "nested" -> Typed.genericTypeClass(classOf[java.util.List[_]],
+        List(TypedObjectTypingResult.apply(List(
+          "id" -> Typed.apply[String],
+          "nested2" -> TypedObjectTypingResult.apply(List("name" -> Typed.apply[String]))
+        )))))
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
 
 }
