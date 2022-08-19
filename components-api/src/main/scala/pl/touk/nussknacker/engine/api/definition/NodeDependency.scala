@@ -78,6 +78,10 @@ object NotBlankParameter {
 
 }
 
+object ParameterGroup {
+  val Output = "output"
+}
+
 case class Parameter(name: String,
                      typ: TypingResult,
                      editor: Option[ParameterEditor],
@@ -89,7 +93,8 @@ case class Parameter(name: String,
                      branchParam: Boolean,
                      isLazyParameter: Boolean,
                      scalaOptionParameter: Boolean,
-                     javaOptionalParameter: Boolean) extends NodeDependency {
+                     javaOptionalParameter: Boolean,
+                     group: Option[String] = None) extends NodeDependency {
 
   //we throw exception early, as it indicates that Component implementation is incorrect, this should not happen in running designer...
   if (isLazyParameter && additionalVariables.values.exists(_.isInstanceOf[AdditionalVariableWithFixedValue])) {

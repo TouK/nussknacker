@@ -12,6 +12,8 @@ import pl.touk.nussknacker.engine.graph.{evaluatedparam, node}
 
 trait GraphBuilder[R] {
 
+  import pl.touk.nussknacker.engine.spel.Implicits._
+
   def creator: GraphBuilder.Creator[R]
 
   def build(inner: GraphBuilder.Creator[R]): GraphBuilder[R]
@@ -34,14 +36,14 @@ trait GraphBuilder[R] {
   def disabledProcessor(id: String, svcId: String, params: (String, Expression)*): GraphBuilder[R] =
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), node)))
 
-  def subprocessOneOut(id: String, subProcessId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
-    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map(output -> node))))
+  def subprocessOneOut(id: String, subProcessId: String, fragmentOutputDefinitionName: String, outputParamName: String, params: (String, Expression)*): GraphBuilder[R] =
+    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, Some(List(Parameter.tupled((fragmentOutputDefinitionName, outputParamName)))))), Map(fragmentOutputDefinitionName -> node))))
 
-  def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled))), outputs))
+  def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputParameters: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled), Some(outputParameters.map(Parameter.tupled)))), outputs))
 
   def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map()))
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map()))
 
   def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))
