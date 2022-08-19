@@ -284,10 +284,9 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
   test("should resolve diamond fragments") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map("output" ->
+      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Nil, Map("output" ->
         GraphBuilder.emptySink("sink", "type")))
       .toCanonicalProcess
-
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(

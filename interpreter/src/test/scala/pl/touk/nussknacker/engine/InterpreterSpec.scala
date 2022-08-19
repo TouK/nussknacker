@@ -455,7 +455,10 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
   test("handle fragment with more than one output") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "transaction-source")
-      .subprocess("sub", "subProcess1", List("param" -> "#input.accountId"), Map(
+      .subprocess("sub", "subProcess1",
+        List("param" -> "#input.accountId"),
+        List("output1" -> "left", "output2" -> "right"),
+        Map(
         "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
         "output2" -> GraphBuilder.buildSimpleVariable("result-sink2", resultVariable, "'result2'").emptySink("end-sink2", "dummySink")
       ))

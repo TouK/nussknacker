@@ -39,9 +39,9 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   val uiValidationError = "UiValidation"
 
   /**
-   * We cache there model with category as a key, because model can be reloaded.
-   * In consequence of that we have to make sure that we use actual state of model
-   */
+    * We cache there model with category as a key, because model can be reloaded.
+    * In consequence of that we have to make sure that we use actual state of model
+    */
   private val processValidatorCache = new DefaultCache[ValidatorKey, ProcessValidator](CacheConfig())
 
   import pl.touk.nussknacker.engine.util.Implicits._

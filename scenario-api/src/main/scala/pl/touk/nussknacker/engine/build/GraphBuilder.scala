@@ -35,13 +35,13 @@ trait GraphBuilder[R] {
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), node)))
 
   def subprocessOneOut(id: String, subProcessId: String, output: String, params: (String, Expression)*): GraphBuilder[R] =
-    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map(output -> node))))
+    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map(output -> node))))
 
-  def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled))), outputs))
+  def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputParameters: List[(String, Expression)], outputs: Map[String, SubsequentNode]): R =
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled), Some(outputParameters.map(Parameter.tupled)))), outputs))
 
   def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList)), Map()))
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map()))
 
   def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))

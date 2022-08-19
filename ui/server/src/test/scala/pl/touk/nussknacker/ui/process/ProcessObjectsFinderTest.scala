@@ -95,7 +95,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
-      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
+      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, List("output" -> "out"), Map(
         "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
       ))
   ))
