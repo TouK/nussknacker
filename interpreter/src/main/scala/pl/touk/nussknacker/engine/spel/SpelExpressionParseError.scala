@@ -180,12 +180,12 @@ object SpelExpressionParseError {
       override def message: String = s"Bad '$operator' operator construction"
     }
 
-    case class DivisionByZeroError(left: Number, right: Number) extends OperatorError {
-      override def message: String = s"Division by zero: $left / $right"
+    case class DivisionByZeroError(expression: String) extends OperatorError {
+      override def message: String = s"Division by zero: $expression"
     }
 
-    case class TakingModuloZeroError(left: Number, right: Number) extends OperatorError {
-      override def message: String = s"Taking remainder modulo zero: $left % $right"
+    case class TakingModuloZeroError(expression: String) extends OperatorError {
+      override def message: String = s"Taking remainder modulo zero: $expression"
     }
   }
 
