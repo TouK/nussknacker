@@ -105,6 +105,19 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case _ => PartTypeError.invalidNel
     }
 
+    def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
+      val expectedType = Typed.fromDetailedType[A]
+      val resultType = Typed.fromDetailedType[R]
+      withTypedChildren {
+        case lst@left :: right :: Nil if lst.forall(_.typingResult.canBeSubclassOf(expectedType)) =>
+          val res = left.typingResult.value
+            .flatMap(l => right.typingResult.value.map((l, _)))
+            .map{ case (x, y) => op(x.asInstanceOf[A], y.asInstanceOf[A]) }
+          TypingResultWithContext(res.map(Typed.fromInstance).getOrElse(resultType)).validNel
+        case _ => PartTypeError.invalidNel
+      }
+    }
+
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
       case Success(value) =>
         value
@@ -211,12 +224,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current, isEquality = true)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current, isEquality = false)
 
-      case e: OpAnd => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
-      case e: OpOr => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
-      case e: OpGE => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpGT => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpLE => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpLT => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
+      case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _)
+      case e: OpOr => withTwoChildrenOfType[Boolean, Boolean](_ || _)
+      case e: OpGE => withTwoChildrenOfType[Number, Boolean](MathUtils.greaterOrEqual)
+      case e: OpGT => withTwoChildrenOfType[Number, Boolean](MathUtils.greater)
+      case e: OpLE => withTwoChildrenOfType[Number, Boolean](MathUtils.lesserOrEqual)
+      case e: OpLT => withTwoChildrenOfType[Number, Boolean](MathUtils.lesser)
 
       case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.minus(_, 1).validNel))
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.plus(_, 1).validNel))
@@ -265,7 +278,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
           val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
-          val result = operationOnTypesValue(left, right)(MathUtils.plus(_, _).validNel).getOrElse(supertype.validNel)
+          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.plus(_, _).validNel).getOrElse(supertype.validNel)
           result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
@@ -526,7 +539,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 object Typer {
 
-  // This Semigroup is used in combining `intermediateResults: Map[SpelNodeId, TypingResult]` in TYper.
+  // This Semigroup is used in combining `intermediateResults: Map[SpelNodeId, TypingResult]` in Typer.
   // If there is no bug in Typer, collisions shouldn't happen
   implicit def notAcceptingMergingSemigroup: Semigroup[TypingResultWithContext] = new Semigroup[TypingResultWithContext] with LazyLogging {
     override def combine(x: TypingResultWithContext, y: TypingResultWithContext): TypingResultWithContext = {
