@@ -7,7 +7,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
   From now import scenario with nodes from other categories than scenario category will be not allowed.
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Migration from Scalatest 3.0.8 to Scalatest 3.2.10 - if necessary, see the Scalatest migration guides, https://www.scalatest.org/release_notes/3.1.0 and https://www.scalatest.org/release_notes/3.2.0
-## In version 1.5.0 (Not released yet)
+* [#3431](https://github.com/TouK/nussknacker/pull/3431) Renamed 
+  `helper-utils` to `default-helpers`, separated `MathUtils` from
+  `components-utils` to `math-utils`, removed dependencies from `helper-utils`
+
+## In version 1.5.0
 
 ### Configuration changes
 
@@ -57,6 +61,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * module `nussknacker-flink-avro-components-utils` -> `nussknacker-flink-schemed-kafka-components-utils`
   * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
   * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
+* [#3412](https://github.com/TouK/nussknacker/pull/3412) More strict filtering method types. Methods with parameters or result like `Collection[IllegalType]` are no longer available in SpEl.
 
 ### REST API changes
 

@@ -55,7 +55,7 @@ class CachingOAuth2ServiceSpec extends AnyFunSpec with ScalaFutures with Matcher
     cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
     checkRecordings(token) shouldBe 1
 
-    currentTime += 1.seconds
+    currentTime += 2.seconds
     cachingOAuth2Service.checkAuthorizationAndObtainUserinfo(token).futureValue
     checkRecordings(token) shouldBe 2
   }

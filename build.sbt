@@ -282,7 +282,7 @@ val commonsIOV = "2.4"
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc11"
 val scalaCollectionsCompatV = "2.3.2"
-val testcontainersScalaV = "0.39.12"
+val testcontainersScalaV = "0.40.10"
 val nettyV = "4.1.48.Final"
 
 val akkaV = "2.6.19"
@@ -657,7 +657,7 @@ lazy val defaultModel = (project in (file("defaultModel"))).
   settings(
     name := "nussknacker-default-model"
   )
-  .dependsOn(helpersUtils, extensionsApi % Provided)
+  .dependsOn(defaultHelpers, extensionsApi % Provided)
 
 lazy val flinkExecutor = (project in flink("executor")).
   settings(commonSettings).
@@ -690,7 +690,7 @@ lazy val interpreter = (project in file("interpreter")).
       )
     }
   ).
-  dependsOn(utilsInternal, testUtils % "test", componentsUtils % "test")
+  dependsOn(utilsInternal, mathUtils, testUtils % "test", componentsUtils % "test")
 
 lazy val benchmarks = (project in file("benchmarks")).
   settings(commonSettings).
@@ -875,12 +875,20 @@ lazy val utilsInternal = (project in utils("utils-internal")).
     name := "nussknacker-utils-internal"
   ).dependsOn(commonUtils, extensionsApi, testUtils % "test")
 
-
-lazy val helpersUtils = (project in utils("helpers-utils")).
+lazy val mathUtils = (project in utils("math-utils")).
   settings(commonSettings).
   settings(
-    name := "nussknacker-helpers-utils"
-  ).dependsOn(componentsUtils, testUtils % "test", interpreter % "test")
+    name := "nussknacker-math-utils",
+    libraryDependencies ++= Seq(
+      "org.springframework" % "spring-expression" % springV,
+    )
+  ).dependsOn(componentsApi, testUtils % "test")
+
+lazy val defaultHelpers = (project in utils("default-helpers")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-default-helpers"
+  ).dependsOn(mathUtils, testUtils % "test", interpreter % "test")
 
 lazy val testUtils = (project in utils("test-utils")).
   settings(commonSettings).
@@ -923,7 +931,7 @@ lazy val flinkComponentsUtils = (project in flink("components-utils")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, componentsUtils % "provided", testUtils % "test")
+  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, componentsUtils % "provided", testUtils % "test")
 
 lazy val flinkTestUtils = (project in flink("test-utils")).
   settings(commonSettings).
@@ -1077,10 +1085,13 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
-      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
+      "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+      "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
     )
     // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
-  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test")
+  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test",
+  kafkaTestUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
@@ -1519,12 +1530,12 @@ lazy val bom = (project in file("bom"))
 
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
-  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, helpersUtils, commonUtils, utilsInternal, testUtils,
+  openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit
+  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 
@@ -1577,5 +1588,11 @@ prepareDev := {
 
 lazy val buildClient = taskKey[Unit]("Build client")
 buildClient := {
-  "./ui/buildClient.sh" !
+  val s: TaskStreams = streams.value
+  val buildResult = ("./ui/buildClient.sh" !)
+  if (buildResult == 0) {
+    s.log.success("Frontend build success")
+  } else {
+    throw new IllegalStateException("Frontend build failed!")
+  }
 }

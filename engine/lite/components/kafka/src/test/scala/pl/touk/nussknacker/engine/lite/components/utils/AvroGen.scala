@@ -29,7 +29,7 @@ object AvroGen {
   def genSchema(schemaType: Type, config: ExcludedConfig): Gen[Schema] = schemaType match {
     case Type.MAP => genSchema(config).flatMap(Schema.createMap)
     case Type.ARRAY => genSchema(config).flatMap(Schema.createArray)
-    case Type.RECORD => listOfStringsGen(MaxRecordFields).flatMap(names =>
+    case Type.RECORD => nonEmptyDistinctListOfStringsGen(MaxRecordFields).flatMap(names =>
       Gen.sequence(names.map( name =>
         genSchema(config).flatMap(AvroSchemaCreator.createField(name, _))
       )).flatMap(fields =>
@@ -39,10 +39,10 @@ object AvroGen {
     case Type.FIXED => intGen(MaxFixedLength).flatMap(size =>
       stringGen.flatMap(AvroSchemaCreator.createFixed(_, size))
     )
-    case Type.ENUM => listOfStringsGen(MaxEnumSize).filter(_.nonEmpty).flatMap(values =>
+    case Type.ENUM => nonEmptyDistinctListOfStringsGen(MaxEnumSize).flatMap(values =>
       stringGen.flatMap(AvroSchemaCreator.createEnum(_, values))
     )
-    case schemaType => genOne(Schema.create(schemaType))
+    case schemaType => Gen.const(Schema.create(schemaType))
   }
 
   def genSchemaType(config: ExcludedConfig): Gen[Type] = Gen.oneOf(Seq(
@@ -51,7 +51,7 @@ object AvroGen {
   )).filterNot(config.excluded.contains)
 
   def genValueForSchema(schema: Schema): Gen[Any] = schema.getType match {
-    case Type.NULL => genOne(null)
+    case Type.NULL => Gen.const(null)
     case Type.INT => Gen.choose(Integer.MIN_VALUE, Integer.MAX_VALUE)
     case Type.LONG => Gen.choose(java.lang.Long.MIN_VALUE, java.lang.Long.MAX_VALUE)
     case Type.STRING => stringGen
@@ -71,19 +71,13 @@ object AvroGen {
     case _ => throw new IllegalArgumentException(s"Unsupported schema: $schema")
   }
 
-  def listOfStringsGen(maxSize: Int): Gen[List[String]] = Gen.containerOfN[List, String](randomInt(maxSize), stringGen).suchThat(_.nonEmpty)
+  def nonEmptyDistinctListOfStringsGen(maxSize: Int): Gen[List[String]] = Gen.containerOfN[Set, String](maxSize, stringGen).suchThat(_.nonEmpty).map(_.toList)
 
   def stringGen: Gen[String] = Gen.chooseNum(MinStringLength, MaxStringLength).flatMap(stringGen)
 
   def stringGen(length: Int): Gen[String] = Gen.pick(length, AllowedStringLetters).map(_.mkString)
 
   def intGen(max: Int): Gen[Int] = Gen.choose(1, max)
-
-  def genOne[T](one: T): Gen[T] = Gen.oneOf(Seq(one))
-
-  private def randomInt(max: Int): Int = randomInt(1, max)
-
-  private def randomInt(min: Int, max: Int): Int = random.nextInt(max - min + 1)
 
 }
 

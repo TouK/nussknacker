@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ParameterConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.generics
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.TypeInfos
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
 import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
@@ -94,17 +94,18 @@ object UIProcessObjectsFactory {
   }
 
   private def prepareClazzDefinition(definition: ClazzDefinition): UIClazzDefinition = {
-    def toUIBasicParam(p: TypeInfos.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
+    def toUIBasicParam(p: generics.Parameter): UIBasicParameter = UIBasicParameter(p.name, p.refClazz)
     // TODO: present all overloaded methods on FE
     def toUIMethod(methods: List[MethodInfo]): UIMethodInfo = {
-      val m = methods.maxBy(_.staticParameters.size)
+      val m = methods.maxBy(_.signatures.map(_.parametersToList.length).toList.max)
+      val sig = m.signatures.toList.maxBy(_.parametersToList.length)
       // We send varArg as Type instead of Array[Type] so it is easier to
       // format it on FE.
       UIMethodInfo(
-        (m.staticNoVarArgParameters ::: m.staticVarArgParameter.toList).map(toUIBasicParam),
-        m.staticResult,
+        (sig.noVarArgs ::: sig.varArg.toList).map(toUIBasicParam),
+        sig.result,
         m.description,
-        m.varArgs
+        sig.varArg.isDefined
       )
     }
     val methodsWithHighestArity = definition.methods.mapValues(toUIMethod)

@@ -4,11 +4,11 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.apache.avro.generic.GenericData
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -64,24 +64,6 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     Map("firstname" -> "Jan"), SecondRecordSchemaV1
   )
 
-  private def jsonTypedProcess(filter: String) =
-    ScenarioBuilder
-      .streaming("json-test")
-      .parallelism(1)
-      .source("start", "kafka-typed-json",
-        "topic" -> s"'$JsonInTopic'",
-        "type" ->
-          """{
-            |  "first": "String",
-            |  "last": "String",
-            |  "nestMap": { "nestedField": "String" },
-            |  "list1": {{"listField": "String"}},
-            |  "list2": { "Long" }
-            |}""".stripMargin
-      )
-      .filter("name-filter", filter)
-      .emptySink("end",  "kafka-json", "topic" -> s"'$JsonOutTopic'", "value" -> "#input")
-
   private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     ScenarioBuilder
       .streaming("json-schemed-test")
@@ -109,15 +91,16 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .parallelism(1)
       .source(
         "start",
-        "kafka-avro",
+        "kafka",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .filter("name-filter", "#input.first == 'Jan'")
       .emptySink(
         "end",
-        "kafka-avro-raw",
+        "kafka",
         KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
         KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
@@ -131,47 +114,20 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
       .parallelism(1)
       .source(
         "start",
-        "kafka-avro",
+        "kafka",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
       )
       .emptySink(
         "end",
-        "kafka-avro-raw",
+        "kafka",
         KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+        KafkaUniversalComponentTransformer.SinkRawEditorParamName -> "true",
         KafkaUniversalComponentTransformer.SinkValueParamName -> s"{first: #input.first, last: #input.last}",
         KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
         KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
         KafkaUniversalComponentTransformer.SchemaVersionParamName -> "'1'"
       )
-
-
-  test("should read json object from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
-
-    sendAsJson(givenNotMatchingJsonObj, JsonInTopic, timeAgo)
-    sendAsJson(givenMatchingJsonObj, JsonInTopic, timeAgo)
-
-    assertThrows[Exception] {
-      run(jsonTypedProcess("#input.nestMap.notExist == ''")) {}
-    }
-
-    assertThrows[Exception] {
-      run(jsonTypedProcess("#input.list1[0].notExist == ''")) {}
-    }
-
-    val validJsonProcess = jsonTypedProcess("#input.first == 'Jan' and " +
-      "#input.nestMap.nestedField != 'dummy' and " +
-      "#input.list1[0].listField != 'dummy' and " +
-      "#input.list2[0] != 15")
-    run(validJsonProcess) {
-      val consumer = kafkaClient.createConsumer()
-      val processedMessage = consumer.consume(JsonOutTopic, secondsToWaitForAvro).head
-
-      processedMessage.timestamp shouldBe timeAgo
-      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonObj)
-    }
-  }
 
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
     val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli

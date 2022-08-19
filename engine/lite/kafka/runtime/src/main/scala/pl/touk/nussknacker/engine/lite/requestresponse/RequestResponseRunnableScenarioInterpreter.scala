@@ -42,7 +42,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
       .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
     interpreter.open()
     val path = ScenarioRoute.pathForScenario(jobData.metaData).getOrElse(parsedResolvedScenario.id) // TODO: path should be required
-    val route = new ScenarioRoute(Map(path -> new RequestResponseAkkaHttpHandler(interpreter)))
+    val route = new ScenarioRoute(Map(path -> new RequestResponseAkkaHttpHandler(interpreter)), requestResponseConfig.definitionMetadata)
     implicit val materializer: Materializer = Materializer(actorSystem)
     logger.info(s"Binding scenario route into ${requestResponseConfig.interface}:${requestResponseConfig.port}")
     Http().newServerAt(

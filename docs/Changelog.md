@@ -8,8 +8,10 @@
 * [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-response mode available for k8s deployment
 * [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
+* [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-response mode publishes OpenApi specification for its services
+* [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
 
-1.5.0 (Not released yet)
+1.5.0 (16 Aug 2022)
 ------------------------
 * [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
@@ -46,7 +48,7 @@
   [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
   [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
   [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3337](https://github.com/TouK/nussknacker/pull/3337) [#3287](https://github.com/TouK/nussknacker/pull/3287)
-  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned off by new lowLevelComponentsEnabled flag 
+  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned on by new lowLevelComponentsEnabled flag 
   * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
   * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
   * [#3354](https://github.com/TouK/nussknacker/pull/3354) Universal source optimization - if message without schemaId, using cache when getting one
@@ -65,6 +67,7 @@
   handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
+* [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
 * [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
 * [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling) 

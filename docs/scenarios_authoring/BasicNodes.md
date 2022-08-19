@@ -177,8 +177,6 @@ The `key` parameter will be removed in the future release of Nussknacker, for th
 
 ## DeadEnd
 
-**(Streaming-Flink only)**
-
 ![dead_end_window](img/dead_end.png)
 
 `dead-end` is a special type of a sink that sends your data into the void. 
