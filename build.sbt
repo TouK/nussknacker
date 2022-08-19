@@ -805,7 +805,6 @@ lazy val kafkaTestUtils = (project in utils("kafka-test-utils")).
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
-        "commons-io" % "commons-io" % commonsIOV,
         "org.slf4j" % "log4j-over-slf4j" % slf4jV
       )
     }
@@ -900,7 +899,8 @@ lazy val testUtils = (project in utils("test-utils")).
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "com.typesafe" % "config" % configV,
         "org.typelevel" %% "cats-core" % catsV,
-        "ch.qos.logback" % "logback-classic" % logbackV
+        "ch.qos.logback" % "logback-classic" % logbackV,
+        "commons-io" % "commons-io" % commonsIOV
       )
     }
   )
@@ -1034,7 +1034,6 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integ
       liteEngineKafkaRuntime / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
-      "commons-io" % "commons-io" % commonsIOV,
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
       "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
       "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it"
