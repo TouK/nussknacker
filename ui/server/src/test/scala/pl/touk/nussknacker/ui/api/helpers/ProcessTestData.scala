@@ -275,7 +275,7 @@ object ProcessTestData {
       process = ScenarioBuilder
         .streaming(processName.value)
         .source("source", existingSourceFactory)
-        .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
+        .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Nil, Map(
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
         )),
       subprocess = subprocess

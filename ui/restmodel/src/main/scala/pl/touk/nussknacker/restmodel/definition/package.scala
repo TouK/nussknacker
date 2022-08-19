@@ -43,7 +43,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) case class UIBasicParameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
+  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean, group: Option[String]) {
 
     def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
