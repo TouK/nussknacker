@@ -75,8 +75,8 @@ trait MathUtils {
 
   def divide(n1: Number, n2: Number): Number = {
     withValuesWithTheSameType(n1, n2)(new SameNumericTypeMathHandler {
-      override def onInts(n1: Int, n2: Int): Int = n1 + n2
-      override def onLongs(n1: Long, n2: Long): Long = n1 + n2
+      override def onInts(n1: Int, n2: Int): Int = n1 / n2
+      override def onLongs(n1: Long, n2: Long): Long = n1 / n2
       override def onBigIntegers(n1: BigInteger, n2: BigInteger): BigInteger = n1.divide(n2)
       override def onFloats(n1: Float, n2: Float): Float = n1 / n2
       override def onDoubles(n1: Double, n2: Double): Double = n1 / n2
