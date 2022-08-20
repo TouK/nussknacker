@@ -64,8 +64,14 @@ export const getDynamicParameterDefinitions = createSelector(
   getDetailsParameters,
   getResultParameters,
   (validationPerformed, detailsParameters, resultParameters) => (nodeId) => {
-    return validationPerformed(nodeId) ? detailsParameters(nodeId) :
+
+    const validationPerformed1 = validationPerformed(nodeId)
+    const detailsParameters1 = detailsParameters(nodeId)
+    const newVar = resultParameters(nodeId) || null
+
+    console.log(validationPerformed1, detailsParameters1, newVar)
+    return validationPerformed1 ? detailsParameters1 :
       //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
-      resultParameters(nodeId) || null
+      newVar
   }
 )

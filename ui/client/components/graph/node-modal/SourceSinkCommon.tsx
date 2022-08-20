@@ -9,6 +9,7 @@ export const SourceSinkCommon = ({
   children,
   ...props
 }: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
+  console.log(props.editedNode.ref.parameters)
   return (
     <div className="node-table-body">
       <IdField {...props}/>

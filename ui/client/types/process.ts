@@ -1,7 +1,7 @@
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
 import {TypingResult, UIParameter} from "./definition"
 import {Edge} from "./edge"
-import {NodeType} from "./node"
+import {NodeType, PropertiesType} from "./node"
 import {ValidationResult} from "./validation"
 import {ComponentGroup, SingleComponentConfig} from "./component"
 import {ProcessingType} from "../actions/nk"
@@ -10,7 +10,7 @@ export type Process = {
   id: string,
   nodes: NodeType[],
   edges: Edge[],
-  properties: NodeType,
+  properties: PropertiesType,
   validationResult: ValidationResult,
   processingType?: ProcessingType,
 }

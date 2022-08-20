@@ -2,7 +2,7 @@
 import {NodeContentMethods, NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {SourceSinkCommon} from "./SourceSinkCommon"
 import {DisableField} from "./DisableField"
-import React from "react"
+import React, {useCallback} from "react"
 import {EdgeKind, NodeType} from "../../../types"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import {IdField} from "./IdField"
@@ -304,6 +304,7 @@ export function SubprocessInput({
   ...props
 }: NodeDetailsContentProps3 & NodeContentMethods): JSX.Element {
   const {processDefinitionData} = props
+  const setNodeState = useCallback(newParams => setProperty("ref.parameters", newParams), [setProperty])
   return (
     <div className="node-table-body">
       <IdField
@@ -326,7 +327,7 @@ export function SubprocessInput({
         processDefinitionData={processDefinitionData}
         editedNode={editedNode}
         savedNode={editedNode}
-        setNodeState={newParams => setProperty("ref.parameters", newParams)}
+        setNodeState={setNodeState}
         createListField={(param, index) => (
           <ParameterExpressionField
             {...props}

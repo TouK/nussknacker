@@ -22,7 +22,7 @@ export function mapProcessWithNewNode(process: Process, before: NodeType, after:
     nodes: map(process.nodes, (n) => {
       return isEqual(n, before) ? after : mapBranchParametersWithNewNode(before.id, after.id, n)
     }),
-    properties: NodeUtils.nodeIsProperties(before) ? after : process.properties,
+    properties: NodeUtils.nodeIsProperties(after) ? after : process.properties,
   }
 }
 

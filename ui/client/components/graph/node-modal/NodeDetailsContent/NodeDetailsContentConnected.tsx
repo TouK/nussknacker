@@ -1,8 +1,8 @@
 import {useDispatch, useSelector} from "react-redux"
-import {nodeValidationDataClear, updateNodeData, ValidationRequest} from "../../../../actions/nk"
+import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
 import React, {useCallback, useEffect} from "react"
 import {NodeDetailsContent} from "../NodeDetailsContent"
-import {AdditionalPropertiesConfig, DynamicParameterDefinitions} from "../../../../types"
+import {AdditionalPropertiesConfig, DynamicParameterDefinitions, Edge, NodeType} from "../../../../types"
 import classNames from "classnames"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import {
@@ -18,6 +18,7 @@ import {
   getVariableTypes,
 } from "./selectors"
 import {NodeDetailsContentConnectedProps, WithNodeErrors} from "../NodeDetailsContentProps3"
+import {WithTempId} from "../EdgesDndComponent"
 
 function NodeDetailsContentConnected(props: NodeDetailsContentConnectedProps & WithNodeErrors): JSX.Element {
   const {node, isEditMode, originalNodeId, nodeErrors, onChange, pathsToMark, showValidation, showSwitch, edges} = props
@@ -44,8 +45,16 @@ function NodeDetailsContentConnected(props: NodeDetailsContentConnectedProps & W
   const nodeClass = classNames("node-table", {"node-editable": isEditMode})
 
   const onNodeDataUpdate = useCallback(
-    (processId: string, validationRequestData: ValidationRequest) => dispatch(updateNodeData(processId, validationRequestData)),
-    [dispatch]
+    (node: NodeType, edges: WithTempId<Edge>[]) => {
+      return dispatch(updateNodeData(processId, {
+        variableTypes: findAvailableVariables(originalNodeId),
+        branchVariableTypes: findAvailableBranchVariables(originalNodeId),
+        nodeData: node,
+        processProperties,
+        outgoingEdges: edges.map(e => ({...e, to: e._id || e.to})),
+      }))
+    },
+    [dispatch, findAvailableBranchVariables, findAvailableVariables, originalNodeId, processId, processProperties]
   )
 
   return (

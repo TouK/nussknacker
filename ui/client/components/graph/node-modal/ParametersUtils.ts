@@ -36,21 +36,23 @@ const parametersPath = (node) => {
 export function adjustParameters(node: NodeType, parameterDefinitions: Array<UIParameter>): AdjustReturn {
   const path = parametersPath(node)
 
-  if (path) {
-    const currentParameters = get(node, path)
-    //TODO: currently dynamic branch parameters are *not* supported...
-    const adjustedParameters = parameterDefinitions?.filter(def => !def.branchParam).map(def => {
-      const currentParam = currentParameters.find(p => p.name == def.name)
-      const parameterFromDefinition = {
-        name: def.name,
-        expression: {expression: def.defaultValue, language: ExpressionLang.SpEL},
-      }
-      return currentParam || parameterFromDefinition
-    })
-    const adjustedNode = set(cloneDeep(node), path, adjustedParameters)
-    const unusedParameters = findUnusedParameters(currentParameters, parameterDefinitions)
-    return {adjustedNode, unusedParameters}
+  if (!path) {
+    return {adjustedNode: node, unusedParameters: []}
   }
 
-  return {adjustedNode: node, unusedParameters: []}
+  const currentNode = cloneDeep(node)
+  const currentParameters = get(currentNode, path)
+  //TODO: currently dynamic branch parameters are *not* supported...
+  const adjustedParameters = parameterDefinitions?.filter(def => !def.branchParam).map(def => {
+    const currentParam = currentParameters.find(p => p.name == def.name)
+    const parameterFromDefinition = {
+      name: def.name,
+      expression: {expression: def.defaultValue, language: ExpressionLang.SpEL},
+    }
+    return currentParam || parameterFromDefinition
+  })
+  console.log({parameterDefinitions, currentParameters, adjustedParameters})
+  const adjustedNode = set(currentNode, path, adjustedParameters)
+  const unusedParameters = findUnusedParameters(currentParameters, parameterDefinitions)
+  return {adjustedNode, unusedParameters}
 }

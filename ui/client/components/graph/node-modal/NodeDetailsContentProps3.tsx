@@ -9,12 +9,10 @@ import {
   UIParameter,
   VariableTypes,
 } from "../../../types"
-import {DispatchWithCallback} from "./NodeDetailsContentUtils"
-import {SetStateAction} from "react"
+import {Dispatch, SetStateAction} from "react"
 import {WithTempId} from "./EdgesDndComponent"
 import {AdditionalPropertyConfig} from "./AdditionalProperty"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {ValidationRequest} from "../../../actions/nk"
 import {DescriptionFieldProps} from "./DescriptionField"
 import {FieldType} from "./editors/field/Field"
 import {Validator} from "./editors/Validators"
@@ -45,7 +43,7 @@ export interface NodeDetailsContentProps extends NodeDetailsContentConnectedProp
   processDefinitionData?: ProcessDefinitionData,
   expressionType?,
   nodeTypingInfo?,
-  updateNodeData?: (processId: string, validationRequestData: ValidationRequest) => void,
+  updateNodeData?: (node: NodeType, edges: WithTempId<Edge>[]) => void,
   findAvailableBranchVariables?,
   processProperties?,
   variableTypes?: VariableTypes,
@@ -53,13 +51,13 @@ export interface NodeDetailsContentProps extends NodeDetailsContentConnectedProp
 
 export interface EditableEdges {
   editedEdges: WithTempId<Edge>[],
-  setEditedEdges: DispatchWithCallback<SetStateAction<WithTempId<Edge>[]>>,
+  setEditedEdges: Dispatch<SetStateAction<WithTempId<Edge>[]>>,
 }
 
 export interface EditableNode {
   originalNode: NodeType,
   editedNode: NodeType,
-  setEditedNode: DispatchWithCallback<SetStateAction<NodeType>>,
+  setEditedNode: Dispatch<SetStateAction<NodeType>>,
 }
 
 export interface NodeDetailsContentProps2 extends NodeDetailsContentProps, EditableNode {

@@ -70,8 +70,8 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
   }, [updateNodeState])
 
   const setProperty = useCallback(<K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
-    const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
     updateNodeState((currentNode) => {
+      const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
       const node = cloneDeep(currentNode)
       return set(node, property, value)
     })
