@@ -189,13 +189,13 @@ object SpelExpressionParseError {
         new DivisionByZeroError(stripOperatorAST(expression))
     }
 
-    case class TakingModuloZeroError private(expression: String) extends OperatorError {
+    case class ModuloZeroError private(expression: String) extends OperatorError {
       override def message: String = s"Taking remainder modulo zero: $expression"
     }
 
-    object TakingModuloZeroError {
-      def apply(expression: String): TakingModuloZeroError =
-        new TakingModuloZeroError(stripOperatorAST(expression))
+    object ModuloZeroError {
+      def apply(expression: String): ModuloZeroError =
+        new ModuloZeroError(stripOperatorAST(expression))
     }
 
     // Operators AST has form "(expression)" so we need to extract it.

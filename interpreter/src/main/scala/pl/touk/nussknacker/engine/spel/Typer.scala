@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{DynamicPropertyAccessError, IllegalIndexingOperation, IllegalProjectionSelectionError, IllegalPropertyAccessError, InvalidMethodReference}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NonReferenceError, UnresolvedReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, DivisionByZeroError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, TakingModuloZeroError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, DivisionByZeroError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, ModuloZeroError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorMismatchTypesError, TernaryOperatorNotBooleanError}
@@ -110,10 +110,12 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       val resultType = Typed.fromDetailedType[R]
       withTypedChildren {
         case lst@left :: right :: Nil if lst.forall(_.typingResult.canBeSubclassOf(expectedType)) =>
-          val res = left.typingResult.value
-            .flatMap(l => right.typingResult.value.map((l, _)))
-            .map{ case (x, y) => op(x.asInstanceOf[A], y.asInstanceOf[A]) }
-          TypingResultWithContext(res.map(Typed.fromInstance).getOrElse(resultType)).validNel
+          val typeFromOp = for {
+            leftValue <- left.typingResult.value
+            rightValue <- right.typingResult.value
+            res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[A])
+          } yield Typed.fromInstance(res)
+          TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
         case _ => PartTypeError.invalidNel
       }
     }
@@ -262,7 +264,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       }
       case e: OpModulus =>
         val op = Some((x: Number, y: Number) =>
-          if (y.doubleValue() == 0) TakingModuloZeroError(e.toStringAST).invalidNel
+          if (y.doubleValue() == 0) ModuloZeroError(e.toStringAST).invalidNel
           else MathUtils.remainder(x, y).validNel)
         checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
       case e: OpMultiply =>
