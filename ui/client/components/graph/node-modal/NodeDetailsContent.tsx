@@ -10,7 +10,6 @@ import {nodeValidationDataClear, updateNodeData} from "../../../actions/nk"
 import {
   getAdditionalPropertiesConfig,
   getCurrentErrors,
-  getDetailsParameters,
   getDynamicParameterDefinitions,
   getExpressionType,
   getFindAvailableBranchVariables,
@@ -18,8 +17,6 @@ import {
   getNodeTypingInfo,
   getProcessId,
   getProcessProperties,
-  getResultParameters,
-  getValidationPerformed,
   getVariableTypes,
 } from "./NodeDetailsContent/selectors"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
@@ -49,7 +46,8 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   const dispatch = useDispatch()
   const [originalNode] = useState(node)
 
-  const nodeId = originalNodeId || node.id
+  const {id} = originalNode
+  const nodeId = originalNodeId || id
 
   useEffect(() => {
     dispatch(nodeValidationDataClear(nodeId))
@@ -65,14 +63,7 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(nodeId))
   const variableTypes = useSelector((state: RootState) => getVariableTypes(state)(nodeId))
   const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(nodeId, nodeErrors))
-
-  const NodeDetails = useSelector((state: RootState) => state.nodeDetails[nodeId])
-  const ValidationPerformed = useSelector(getValidationPerformed)
-  const DetailsParameters = useSelector(getDetailsParameters)
-  const ResultParameters = useSelector(getResultParameters)
-
-  const _dynamicParameterDefinitions = useSelector(getDynamicParameterDefinitions)
-  const dynamicParameterDefinitions = useMemo(() => _dynamicParameterDefinitions(nodeId), [_dynamicParameterDefinitions, nodeId])
+  const dynamicParameterDefinitions = useSelector((state: RootState) => getDynamicParameterDefinitions(state)(nodeId))
 
   const nodeDataUpdate = useCallback(
     (node: NodeType, edges: WithTempId<Edge>[]) => {
@@ -123,40 +114,30 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   return (
     <NodeTable editable={isEditMode}>
       <NodeErrors errors={otherErrors} message="Node has errors"/>
-      <TestResultsWrapper nodeId={node.id}>
+      <TestResultsWrapper nodeId={id}>
         <NodeDetailsContent3
-          node={node}
-          edges={edges}
+          node={originalNode}
           isEditMode={isEditMode}
           originalNodeId={originalNodeId}
-          nodeErrors={nodeErrors}
-          onChange={onChange}
           pathsToMark={pathsToMark}
           showValidation={showValidation}
           showSwitch={showSwitch}
-
           parameterDefinitions={parameterDefinitions}
           originalNode={originalNode}
           editedNode={editedNode}
-          setEditedNode={setEditedNode}
           editedEdges={editedEdges}
           setEditedEdges={setEditedEdges}
-          processProperties={processProperties}
           processDefinitionData={processDefinitionData}
           additionalPropertiesConfig={additionalPropertiesConfig}
           findAvailableVariables={findAvailableVariables}
           expressionType={expressionType}
           nodeTypingInfo={nodeTypingInfo}
           variableTypes={variableTypes}
-          // findAvailableBranchVariables={findAvailableBranchVariables}
-          // currentErrors={currentErrors}
-          // dynamicParameterDefinitions={dynamicParameterDefinitions}
-
           updateNodeState={setEditedNode}
           fieldErrors={fieldErrors}
         />
       </TestResultsWrapper>
-      <NodeAdditionalInfoBox node={node}/>
+      <NodeAdditionalInfoBox node={originalNode}/>
     </NodeTable>
   )
 }
