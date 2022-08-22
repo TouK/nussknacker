@@ -4,6 +4,7 @@ import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import {NodeType, VariableTypes} from "../../../types"
+import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 
 type Props = {
   readOnly?: boolean,
@@ -34,7 +35,7 @@ export default function Variable(props: Props): JSX.Element {
   const onExpressionChange = useCallback((value: string) => onChange("value.expression", value), [onChange])
 
   return (
-    <div className="node-table-body node-variable-builder-body">
+    <NodeTableBody className="node-variable-builder-body">
       <LabeledInput
         value={node.id}
         onChange={(event) => onChange("id", event.target.value)}
@@ -77,6 +78,6 @@ export default function Variable(props: Props): JSX.Element {
       >
         {renderFieldLabel("Description")}
       </LabeledTextarea>
-    </div>
+    </NodeTableBody>
   )
 }

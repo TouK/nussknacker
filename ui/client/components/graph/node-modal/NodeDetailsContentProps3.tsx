@@ -19,55 +19,32 @@ import {Validator} from "./editors/Validators"
 
 type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
 
-export interface WithNodeErrors {
+export interface NodeDetailsContentProps3 {
+  originalNodeId?: NodeId,
+  node: NodeType,
+  edges?: Edge[],
+  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   nodeErrors?: NodeValidationError[],
-}
-
-export interface NodeDetailsContentConnectedProps {
+  pathsToMark?: string[],
   isEditMode?: boolean,
   showValidation?: boolean,
   showSwitch?: boolean,
-  node: NodeType,
-  edges?: Edge[],
-  originalNodeId?: NodeId,
-  pathsToMark?: string[],
-  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
-}
-
-export interface NodeDetailsContentProps extends NodeDetailsContentConnectedProps {
-  dynamicParameterDefinitions?: UIParameter[],
-  currentErrors?: NodeValidationError[],
+  originalNode: NodeType,
+  editedNode: NodeType,
+  setEditedNode: Dispatch<SetStateAction<NodeType>>,
+  editedEdges: WithTempId<Edge>[],
+  setEditedEdges: Dispatch<SetStateAction<WithTempId<Edge>[]>>,
   processId?: ProcessId,
   additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   processDefinitionData?: ProcessDefinitionData,
   expressionType?,
   nodeTypingInfo?,
-  updateNodeData?: (node: NodeType, edges: WithTempId<Edge>[]) => void,
-  findAvailableBranchVariables?,
   processProperties?,
   variableTypes?: VariableTypes,
-}
-
-export interface EditableEdges {
-  editedEdges: WithTempId<Edge>[],
-  setEditedEdges: Dispatch<SetStateAction<WithTempId<Edge>[]>>,
-}
-
-export interface EditableNode {
-  originalNode: NodeType,
-  editedNode: NodeType,
-  setEditedNode: Dispatch<SetStateAction<NodeType>>,
-}
-
-export interface NodeDetailsContentProps2 extends NodeDetailsContentProps, EditableNode {
   parameterDefinitions: UIParameter[],
-}
-
-export interface NodeDetailsContentProps3 extends NodeDetailsContentProps2 {
   fieldErrors?: NodeValidationError[],
   updateNodeState: UpdateState<NodeType>,
-  setEdgesState: (edges: Edge[]) => void,
 }
 
 export interface NodeContentMethods {

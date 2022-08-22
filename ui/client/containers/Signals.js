@@ -6,7 +6,7 @@ import QueriedStateTable from "../components/QueriedStateTable"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
 import i18next from "i18next"
-import {SignalsPath} from "./paths"
+import {NodeTable} from "../components/graph/node-modal/NodeDetailsContent/NodeTable"
 
 //this needs some love
 export class Signals extends React.Component {
@@ -44,8 +44,8 @@ export class Signals extends React.Component {
     return (
       <div className="full-dark">
         <div className="modalContentDark">
-          <div className="node-table">
-            <div className="node-table-body">
+          <NodeTable>
+            <NodeTableBody>
               <div className="node-row">
                 <div className="node-label">{i18next.t("signals.type", "Signal type")}</div>
                 <div className="node-value">
@@ -89,7 +89,7 @@ export class Signals extends React.Component {
                   </div>
                 )
               })}
-            </div>
+            </NodeTableBody>
             <button
               type="button"
               className="modalButton"
@@ -97,7 +97,7 @@ export class Signals extends React.Component {
               title={sendSignalButtonTooltip}
               onClick={this.sendSignal.bind(this, this.state.signalType, this.state.processId, this.state.signalParams)}
             >{i18next.t("signals.send.button", "Send signal")}</button>
-          </div>
+          </NodeTable>
         </div>
         <hr/>
         <QueriedStateTable/>

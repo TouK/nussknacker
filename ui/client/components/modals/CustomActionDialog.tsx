@@ -13,6 +13,7 @@ import {WindowKind} from "../../windowManager/WindowKind"
 import {ChangeableValue} from "../ChangeableValue"
 import {editors} from "../graph/node-modal/editors/expression/Editor"
 import {ExpressionLang} from "../graph/node-modal/editors/expression/types"
+import {NodeTable} from "../graph/node-modal/NodeDetailsContent/NodeTable"
 
 interface CustomActionFormProps extends ChangeableValue<UnknownRecord> {
   action: CustomAction,
@@ -37,7 +38,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
   )
 
   return (
-    <div className="node-table">
+    <NodeTable>
       {
         (action?.parameters || []).map(param => {
           const editorType = param.editor.type
@@ -65,7 +66,7 @@ function CustomActionForm(props: CustomActionFormProps): JSX.Element {
           )
         })
       }
-    </div>
+    </NodeTable>
   )
 }
 

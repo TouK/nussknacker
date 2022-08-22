@@ -1,51 +1,42 @@
 import {css} from "@emotion/css"
-import React, {PropsWithChildren, useCallback} from "react"
+import React from "react"
 import {useSelector} from "react-redux"
 import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
-import NodeDetailsContent from "../NodeDetailsContent/NodeDetailsContentConnected"
 import {ContentSize} from "./ContentSize"
 import {SubprocessContent} from "./SubprocessContent"
 import {getErrors} from "./selectors"
 import {RootState} from "../../../../reducers"
+import {NodeDetailsContent} from "../NodeDetailsContent"
 
 interface Props {
-  editedNode: NodeType,
-  outputEdges: Edge[],
   currentNodeId: NodeId,
+  node: NodeType,
+  edges: Edge[],
+  onChange: (node: NodeType, edges: Edge[]) => void,
   readOnly?: boolean,
-  updateNodeState: (node: NodeType) => void,
-  updateEdgesState: (edges: Edge[]) => void,
 }
 
-export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
-  const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
+export function NodeGroupContent(props: Props): JSX.Element {
+  const {currentNodeId, node, edges, onChange, readOnly} = props
   const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
-
-  const onChange = useCallback(
-    (node, edges) => {
-      updateEdgesState(edges)
-      updateNodeState(node)
-    },
-    [updateEdgesState, updateNodeState]
-  )
 
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
       <ContentSize>
         <NodeDetailsContent
-          node={editedNode}
-          onChange={onChange}
-          isEditMode={!readOnly}
           originalNodeId={currentNodeId}
+          node={node}
+          edges={edges}
+          onChange={onChange}
           nodeErrors={nodeErrors}
-          edges={props.outputEdges}
+          isEditMode={!readOnly}
           showValidation
           showSwitch
         />
       </ContentSize>
-      {NodeUtils.nodeIsSubprocess(editedNode) && (
-        <SubprocessContent nodeToDisplay={editedNode} currentNodeId={currentNodeId}/>
+      {NodeUtils.nodeIsSubprocess(node) && (
+        <SubprocessContent nodeToDisplay={node} currentNodeId={currentNodeId}/>
       )}
     </div>
   )

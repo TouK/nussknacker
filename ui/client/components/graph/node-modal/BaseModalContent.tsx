@@ -5,6 +5,7 @@ import {InputWithFocus} from "../../withFocus"
 import NodeErrors from "./NodeErrors"
 import {EdgeKind, NodeValidationError} from "../../../types"
 import {EdgeTypeSelect} from "./EdgeTypeSelect"
+import {NodeTable, NodeTableBody} from "./NodeDetailsContent/NodeTable"
 
 interface Props {
   edge?,
@@ -31,9 +32,9 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
   ]
 
   return (
-    <div className="node-table">
+    <NodeTable>
       <NodeErrors errors={edgeErrors} message={"Edge has errors"}/>
-      <div className="node-table-body">
+      <NodeTableBody>
         <div className="node-row">
           <div className="node-label">From</div>
           <div className="node-value"><InputWithFocus
@@ -66,7 +67,7 @@ export default function BaseModalContent(props: PropsWithChildren<Props>): JSX.E
           </div>
         </div>
         {props.children}
-      </div>
-    </div>
+      </NodeTableBody>
+    </NodeTable>
   )
 }

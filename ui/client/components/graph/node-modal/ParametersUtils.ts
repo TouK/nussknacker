@@ -51,7 +51,6 @@ export function adjustParameters(node: NodeType, parameterDefinitions: Array<UIP
     }
     return currentParam || parameterFromDefinition
   })
-  console.log({parameterDefinitions, currentParameters, adjustedParameters})
   const adjustedNode = set(currentNode, path, adjustedParameters)
   const unusedParameters = findUnusedParameters(currentParameters, parameterDefinitions)
   return {adjustedNode, unusedParameters}

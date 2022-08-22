@@ -4,10 +4,7 @@ import React, {useCallback, useMemo} from "react"
 import {cloneDeep, set, startsWith} from "lodash"
 import {FieldLabel} from "./FieldLabel"
 import NodeUtils from "../NodeUtils"
-import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
-import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import Variable from "./Variable"
-import {NodeDetails} from "./NodeDetailsContent/NodeDetails"
+import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
 import {useTestResults} from "./TestResultsWrapper"
 import {NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {
@@ -34,6 +31,7 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     parameterDefinitions,
     originalNodeId,
     pathsToMark,
+    node,
   } = props
 
   const testResultsState = useTestResults()
@@ -79,28 +77,54 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
 
   const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
 
-  const componentsMethods = {isMarked, renderFieldLabel, setProperty}
-
-  switch (NodeUtils.nodeType(props.node)) {
+  switch (NodeUtils.nodeType(node)) {
     case "Source":
       return (
         <Source
-          {...props}
-          {...componentsMethods}
+          node={props.node}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          findAvailableVariables={props.findAvailableVariables}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     case "Sink":
       return (
         <Sink
-          {...props}
-          {...componentsMethods}
+          node={props.node}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          findAvailableVariables={props.findAvailableVariables}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     case "SubprocessInputDefinition":
       return (
         <SubprocessInputDef
-          {...props}
-          {...componentsMethods}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          editedNode={props.editedNode}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           addElement={addElement}
           removeElement={removeElement}
           variableTypes={variableTypes}
@@ -109,8 +133,16 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "SubprocessOutputDefinition":
       return (
         <SubprocessOutputDef
-          {...props}
-          {...componentsMethods}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          editedNode={props.editedNode}
+          expressionType={props.expressionType}
+          nodeTypingInfo={props.nodeTypingInfo}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           addElement={addElement}
           removeElement={removeElement}
           variableTypes={variableTypes}
@@ -119,8 +151,20 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "Filter":
       return (
         <Filter
-          {...props}
-          {...componentsMethods}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          editedEdges={props.editedEdges}
+          setEditedEdges={props.setEditedEdges}
+          findAvailableVariables={props.findAvailableVariables}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           isCompareView={isCompareView}
         />
       )
@@ -128,31 +172,71 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "Processor":
       return (
         <EnricherProcessor
-          {...props}
-          {...componentsMethods}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          findAvailableVariables={props.findAvailableVariables}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     case "SubprocessInput":
       return (
         <SubprocessInput
-          {...props}
-          {...componentsMethods}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          findAvailableVariables={props.findAvailableVariables}
+          processDefinitionData={props.processDefinitionData}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     case "Join":
     case "CustomNode":
       return (
         <JoinCustomNode
-          {...props}
-          {...componentsMethods}
+          node={props.node}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          findAvailableVariables={props.findAvailableVariables}
+          processDefinitionData={props.processDefinitionData}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           testResultsState={testResultsState}
         />
       )
     case "VariableBuilder":
       return (
         <VariableBuilder
-          {...props}
-          {...componentsMethods}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          editedNode={props.editedNode}
+          expressionType={props.expressionType}
+          nodeTypingInfo={props.nodeTypingInfo}
+          fieldErrors={props.fieldErrors}
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           removeElement={removeElement}
           addElement={addElement}
           variableTypes={variableTypes}
@@ -161,16 +245,39 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "Variable":
       return (
         <VariableDef
-          {...props}
-          {...componentsMethods}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          editedNode={props.editedNode}
+          expressionType={props.expressionType}
+          nodeTypingInfo={props.nodeTypingInfo}
+          fieldErrors={props.fieldErrors}
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           variableTypes={variableTypes}
         />
       )
     case "Switch":
       return (
         <Switch
-          {...props}
-          {...componentsMethods}
+          originalNodeId={props.originalNodeId}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          originalNode={props.originalNode}
+          editedNode={props.editedNode}
+          editedEdges={props.editedEdges}
+          setEditedEdges={props.setEditedEdges}
+          findAvailableVariables={props.findAvailableVariables}
+          processDefinitionData={props.processDefinitionData}
+          expressionType={props.expressionType}
+          nodeTypingInfo={props.nodeTypingInfo}
+          parameterDefinitions={props.parameterDefinitions}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           isCompareView={isCompareView}
           variableTypes={variableTypes}
         />
@@ -178,23 +285,34 @@ export function NodeDetailsContent3(props: NodeDetailsContentProps3): JSX.Elemen
     case "Split":
       return (
         <Split
-          {...props}
-          {...componentsMethods}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          editedNode={props.editedNode}
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     case "Properties":
       return (
         <Properties
-          {...props}
-          {...componentsMethods}
+          node={props.node}
+          isEditMode={props.isEditMode}
+          showValidation={props.showValidation}
+          showSwitch={props.showSwitch}
+          editedNode={props.editedNode}
+          additionalPropertiesConfig={props.additionalPropertiesConfig}
+          processDefinitionData={props.processDefinitionData}
+          fieldErrors={props.fieldErrors}
+
+          isMarked={isMarked}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
       )
     default:
       return (
-        <div>
-          Node type not known.
-          <NodeDetails node={props.node}/>
-        </div>
+        <NodeDetailsFallback node={node}/>
       )
   }
 }

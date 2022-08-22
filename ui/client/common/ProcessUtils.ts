@@ -179,7 +179,7 @@ class ProcessUtils {
       }
     }
     return {
-      parameters: [],
+      parameters: null,
       returnType: null,
     }
   }

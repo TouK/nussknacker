@@ -4,14 +4,14 @@ import {ParameterExpressionField} from "./ParameterExpressionField"
 import {IdField} from "./IdField"
 import {DescriptionField} from "./DescriptionField"
 import {SourceSinkCommonProps} from "./NodeDetailsContentProps3"
+import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 
 export const SourceSinkCommon = ({
   children,
   ...props
 }: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
-  console.log(props.editedNode.ref.parameters)
   return (
-    <div className="node-table-body">
+    <NodeTableBody>
       <IdField {...props}/>
       {props.editedNode.ref.parameters?.map((param, index) => (
         <div className="node-block" key={props.node.id + param.name + index}>
@@ -24,6 +24,6 @@ export const SourceSinkCommon = ({
       ))}
       {children}
       <DescriptionField {...props}/>
-    </div>
+    </NodeTableBody>
   )
 }

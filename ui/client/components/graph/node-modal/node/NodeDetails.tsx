@@ -7,7 +7,7 @@ import {editNode} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
-import {NodeType, Process} from "../../../../types"
+import {Edge, NodeType, Process} from "../../../../types"
 import {WindowContent, WindowKind} from "../../../../windowManager"
 import {replaceWindowsQueryParams} from "../../../../windowManager/useWindows"
 import ErrorBoundary from "../../../common/ErrorBoundary"
@@ -18,36 +18,42 @@ import {getReadOnly} from "./selectors"
 import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
+import {getNodeId} from "../nodeUtils"
 
-export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeType, process: Process }> & { readOnly?: boolean }): JSX.Element {
-  const process = useSelector(getProcessToDisplay)
+interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType, process: Process }> {
+  readOnly?: boolean,
+}
+
+export function NodeDetails(props: NodeDetailsProps): JSX.Element {
+  const defaultProcess = useSelector(getProcessToDisplay)
   const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
-  const {data: {meta}} = props
-  const {node: nodeToDisplay, process: processToDisplay = process} = meta
-  const nodeId = processToDisplay.properties.isSubprocess ? nodeToDisplay.id.replace(`${processToDisplay.id}-`, "") : nodeToDisplay.id
+  const {node, process = defaultProcess} = props.data.meta
+  const currentNodeId = getNodeId(process, node)
 
-  const [editedNode, setEditedNode] = useState(nodeToDisplay)
-  const [outputEdges, setEditedOutputEdges] = useState(() => processToDisplay.edges.filter(({from}) => from === nodeId))
+  const [editedNode, setEditedNode] = useState(node)
+  const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === currentNodeId))
 
-  useEffect(
-    () => {
-      setEditedNode(nodeToDisplay)
-    },
-    [nodeToDisplay],
-  )
+  useEffect(() => {
+    setEditedNode(node)
+  }, [node])
+
+  const onChange = useCallback((node: NodeType, edges: Edge[]) => {
+    setEditedNode(node)
+    setOutputEdges(edges)
+  }, [])
 
   const dispatch = useDispatch()
 
   useEffect(() => {
-    replaceWindowsQueryParams({nodeId})
-    return () => replaceWindowsQueryParams({}, {nodeId})
-  }, [nodeId])
+    replaceWindowsQueryParams({nodeId: currentNodeId})
+    return () => replaceWindowsQueryParams({}, {nodeId: currentNodeId})
+  }, [currentNodeId])
 
   const performNodeEdit = useCallback(async () => {
-    await dispatch(editNode(processToDisplay, nodeToDisplay, editedNode, outputEdges))
+    await dispatch(editNode(process, node, editedNode, outputEdges))
     props.close()
-  }, [processToDisplay, nodeToDisplay, editedNode, outputEdges, dispatch, props])
+  }, [process, node, editedNode, outputEdges, dispatch, props])
 
   const {t} = useTranslation()
   const {theme} = useNkTheme()
@@ -101,9 +107,9 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
   )
 
   const components = useMemo(() => {
-    const HeaderTitle = () => <NodeDetailsModalHeader node={nodeToDisplay}/>
+    const HeaderTitle = () => <NodeDetailsModalHeader node={node}/>
     return {HeaderTitle}
-  }, [nodeToDisplay])
+  }, [node])
 
   return (
     <WindowContent
@@ -116,12 +122,11 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
     >
       <ErrorBoundary>
         <NodeGroupContent
-          editedNode={editedNode}
-          outputEdges={outputEdges}
+          currentNodeId={currentNodeId}
+          node={editedNode}
+          edges={outputEdges}
+          onChange={onChange}
           readOnly={readOnly}
-          currentNodeId={nodeId}
-          updateNodeState={setEditedNode}
-          updateEdgesState={setEditedOutputEdges}
         />
       </ErrorBoundary>
     </WindowContent>

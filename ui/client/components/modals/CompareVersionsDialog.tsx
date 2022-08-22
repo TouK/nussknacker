@@ -12,9 +12,9 @@ import {getTargetEnvironmentId} from "../../reducers/selectors/settings"
 import "../../stylesheets/visualization.styl"
 import {WindowContent} from "../../windowManager"
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent"
-import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent/NodeDetailsContentConnected"
 import {ProcessVersionType} from "../Process/types"
 import {SelectWithFocus} from "../withFocus"
+import {NodeDetailsContent} from "../graph/node-modal/NodeDetailsContent"
 
 interface State {
   currentDiffId: string,

@@ -11,6 +11,7 @@ import HttpService from "../http/HttpService"
 import "../stylesheets/processes.styl"
 import "../stylesheets/graph.styl"
 import {find, flatMap, get, isBoolean, isEmpty, isNumber, isObject, map, set, sortBy} from "lodash"
+import {NodeTable} from "../components/graph/node-modal/NodeDetailsContent/NodeTable"
 
 class Services extends React.Component {
 
@@ -154,14 +155,14 @@ class Services extends React.Component {
     return (
       <div>
         <div className="modalContentDye">
-          <div className="node-table">
+          <NodeTable>
             {this.formRow("serviceName", "Service name", this.serviceList(this.state.services))}
             {this.formRow("processingType", "Process type", readonly(this.state.processingType))}
             {this.parametersList(this.state.nodeParameters)}
             <button type="button" className="big-blue-button input-group" onClick={e => this.invokeService()}>INVOKE
               SERVICE
             </button>
-          </div>
+          </NodeTable>
         </div>
         <div className="queryServiceResults">
           {

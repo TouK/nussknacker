@@ -20,11 +20,11 @@ export const getFindAvailableBranchVariables = createSelector(
   nodeResults => ProcessUtils.findVariablesForBranches(nodeResults)
 )
 const getNodeResult = createSelector(getNodeResults, s => (nodeId) => s?.[nodeId])
-const getNodeDetails = (state: RootState) => (nodeId) => {
+export const getNodeDetails = (state: RootState) => (nodeId) => {
   const nodeDetails = state.nodeDetails
   return nodeDetails[nodeId] || {}
 }
-const getValidationPerformed = createSelector(
+export const getValidationPerformed = createSelector(
   getNodeDetails,
   (nodeDetails) => (nodeId) => nodeDetails(nodeId).validationPerformed
 )
@@ -32,13 +32,13 @@ const getValidationErrors = createSelector(
   getNodeDetails,
   (nodeDetails) => (nodeId) => nodeDetails(nodeId).validationErrors
 )
-const getDetailsParameters = createSelector(
+export const getDetailsParameters = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => nodeDetails(nodeId).parameters
+  (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.parameters || null
 )
-const getResultParameters = createSelector(
+export const getResultParameters = createSelector(
   getNodeResult,
-  (nodeResult) => (nodeId) => nodeResult(nodeId)?.parameters
+  (nodeResult) => (nodeId) => nodeResult(nodeId)?.parameters || null
 )
 export const getExpressionType = createSelector(
   getNodeDetails,
@@ -60,18 +60,9 @@ export const getCurrentErrors = createSelector(
   (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
-  getValidationPerformed,
-  getDetailsParameters,
-  getResultParameters,
-  (validationPerformed, detailsParameters, resultParameters) => (nodeId) => {
-
-    const validationPerformed1 = validationPerformed(nodeId)
-    const detailsParameters1 = detailsParameters(nodeId)
-    const newVar = resultParameters(nodeId) || null
-
-    console.log(validationPerformed1, detailsParameters1, newVar)
-    return validationPerformed1 ? detailsParameters1 :
-      //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
-      newVar
-  }
+  getValidationPerformed, getDetailsParameters, getResultParameters,
+  (validationPerformed, detailsParameters, resultParameters) => (nodeId) => validationPerformed(nodeId) ?
+    detailsParameters(nodeId) :
+    //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
+    resultParameters(nodeId) || null
 )

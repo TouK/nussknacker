@@ -3,10 +3,11 @@ import HttpService from "../../../http/HttpService"
 import ReactMarkdown from "react-markdown/with-html"
 import "../../../stylesheets/markdown.styl"
 import {useDebounce} from "use-debounce"
-import {NodeType, ProcessId} from "../../../types"
+import {NodeType} from "../../../types"
+import {useSelector} from "react-redux"
+import {getProcessId} from "./NodeDetailsContent/selectors"
 
 interface Props {
-  processId: ProcessId,
   node: NodeType,
 }
 
@@ -19,7 +20,8 @@ interface MarkdownNodeAdditionalInfo {
 }
 
 export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
-  const {processId, node} = props
+  const {node} = props
+  const processId = useSelector(getProcessId)
 
   const [additionalData, setAdditionalData] = useState<NodeAdditionalInfo>(null)
 

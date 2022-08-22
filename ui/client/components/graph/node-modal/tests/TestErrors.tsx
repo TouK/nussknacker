@@ -2,6 +2,7 @@ import React from "react"
 import InlinedSvgs from "../../../../assets/icons/InlinedSvgs"
 import NodeTip from "../NodeTip"
 import {useTestResults} from "../TestResultsWrapper"
+import {NodeTableBody} from "../NodeDetailsContent/NodeTable"
 
 export default function TestErrors(): JSX.Element {
   const results = useTestResults()
@@ -11,7 +12,7 @@ export default function TestErrors(): JSX.Element {
   }
 
   return (
-    <div className="node-table-body">
+    <NodeTableBody>
       <div className="node-row">
         <div className="node-label">
           <NodeTip title={"Test case error"} icon={InlinedSvgs.tipsWarning}/>
@@ -20,6 +21,6 @@ export default function TestErrors(): JSX.Element {
           <div className="node-error">{results.testResultsToShow.error}</div>
         </div>
       </div>
-    </div>
+    </NodeTableBody>
   )
 }

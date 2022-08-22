@@ -3,6 +3,7 @@ import {Field, NodeType} from "../../../types"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
+import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 
 export interface NodeDetailsProps<F extends Field> {
   isMarked: (paths: string) => boolean,
@@ -35,7 +36,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({
   }, [onChange])
 
   return (
-    <div className="node-table-body node-variable-builder-body">
+    <NodeTableBody className="node-variable-builder-body">
       <LabeledInput
         value={node.id}
         onChange={(event) => onInputChange("id", event)}
@@ -71,6 +72,6 @@ export function NodeCommonDetailsDefinition<F extends Field>({
       >
         {renderFieldLabel("Description")}
       </LabeledTextarea>
-    </div>
+    </NodeTableBody>
   )
 }

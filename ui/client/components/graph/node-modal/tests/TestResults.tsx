@@ -5,6 +5,7 @@ import NodeTip from "../NodeTip"
 import TestValue from "./TestValue"
 import {useTestResults} from "../TestResultsWrapper"
 import {NodeId} from "../../../../types"
+import {NodeTableBody} from "../NodeDetailsContent/NodeTable"
 
 export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
   const results = useTestResults()
@@ -14,7 +15,7 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
   }
 
   return (
-    <div className="node-table-body node-test-results">
+    <NodeTableBody className="node-test-results">
       <div className="node-row">
         <div className="node-label">
           <NodeTip title={"Variables in test case"} icon={InlinedSvgs.tipsInfo}/>
@@ -53,7 +54,7 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
           ) :
           null
       }
-    </div>
+    </NodeTableBody>
   )
 
   function mergedMockedResults(mockedResults) {
