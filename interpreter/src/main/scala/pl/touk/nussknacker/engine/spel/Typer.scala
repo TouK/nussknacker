@@ -228,10 +228,10 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
       case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _)
       case e: OpOr => withTwoChildrenOfType[Boolean, Boolean](_ || _)
-      case e: OpGE => withTwoChildrenOfType[Number, Boolean](MathUtils.greaterOrEqual)
-      case e: OpGT => withTwoChildrenOfType[Number, Boolean](MathUtils.greater)
-      case e: OpLE => withTwoChildrenOfType[Number, Boolean](MathUtils.lesserOrEqual)
-      case e: OpLT => withTwoChildrenOfType[Number, Boolean](MathUtils.lesser)
+      case e: OpGE => withTwoChildrenOfType(MathUtils.greaterOrEqual)
+      case e: OpGT => withTwoChildrenOfType(MathUtils.greater)
+      case e: OpLE => withTwoChildrenOfType(MathUtils.lesserOrEqual)
+      case e: OpLT => withTwoChildrenOfType(MathUtils.lesser)
 
       case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.minus(_, 1).validNel))
       case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.plus(_, 1).validNel))
