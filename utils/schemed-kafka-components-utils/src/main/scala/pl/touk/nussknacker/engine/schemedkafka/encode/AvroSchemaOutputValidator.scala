@@ -211,7 +211,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateEnum(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     def isValueValid(typedWithObject: TypedObjectWithValue, schema: Schema): Boolean = {
-      val enumValue = typedWithObject.justValue match {
+      val enumValue = typedWithObject.value match {
         case enum: EnumSymbol => Some(`enum`.toString)
         case str: String => Some(str)
         case _ => None
@@ -225,7 +225,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateFixed(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     def isValueValid(typedWithObject: TypedObjectWithValue, schema: Schema): Boolean = {
-      val fixedStringValue = typedWithObject.justValue match {
+      val fixedStringValue = typedWithObject.value match {
         case fixed: Fixed => Some(fixed.bytes())
         case buffer: ByteBuffer => Some(buffer.array())
         case bytes: Array[Byte] => Some(bytes)
@@ -241,7 +241,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateUUID(typingResult: TypingResult, schema: Schema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
     def isValueValid(typedWithObject: TypedObjectWithValue, schema: Schema): Boolean = {
-      typedWithObject.justValue match {
+      typedWithObject.value match {
         case _:UUID => true
         case str: String => Try(UUID.fromString(str)).toValidated.isValid
         case _ => false
