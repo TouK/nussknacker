@@ -31,7 +31,7 @@ object RequestResponseDeploymentStrategy {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
-    new RequestResponseDeploymentStrategy(config.rootAs[HttpConfig], config.rootAs[RequestResponseConfig])
+    new RequestResponseDeploymentStrategy(config.as[HttpConfig]("http"), config.as[RequestResponseConfig]("request-response"))
   }
 
 }

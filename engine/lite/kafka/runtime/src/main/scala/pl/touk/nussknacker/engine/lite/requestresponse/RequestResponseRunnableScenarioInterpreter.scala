@@ -28,13 +28,11 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
 
   private var closed: Boolean = false
 
-  @volatile private var interpreter: RequestResponseScenarioInterpreter[Future] = _
+  private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
+    .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   override def run(): Future[Unit] = {
-    val i = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-      .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
-    i.open()
-    interpreter = i
+    interpreter.open()
     Future {
       waitUntilClosed()
     }
@@ -50,16 +48,14 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
     }
   }
 
-  override def status(): TaskStatus = {
-    if (interpreter != null) TaskStatus.Running else TaskStatus.DuringDeploy
-  }
+  override def status(): TaskStatus = TaskStatus.Running
 
   override def close(): Unit = {
     synchronized {
       closed = true
       notify()
     }
-    if (interpreter != null) interpreter.close()
+    interpreter.close()
   }
 
   override def routes(): Option[Route] = {

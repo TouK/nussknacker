@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.server.RouteConcatenation._
+import akka.http.scaladsl.server.Directives
 import com.typesafe.config.ConfigFactory
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 
 import java.nio.file.Path
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
 import scala.util.control.NonFatal
 
@@ -55,10 +55,9 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   private def runAfterActorSystemCreation(): Unit = {
     val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, liteKafkaJobData, system)
+
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {
-        logger.info("Closing http server")
-        if (server != null) Await.result(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
         logger.info("Closing RunnableScenarioInterpreter")
         scenarioInterpreter.close()
       }
@@ -68,15 +67,17 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
     val httpServer = Http().newServerAt(interface = httpConfig.interface, port = httpConfig.port)
 
-    val run = scenarioInterpreter.run()
+    val runFuture = scenarioInterpreter.run()
     val healthCheckRoutes = healthCheckProvider.routes()
-    val routes = scenarioInterpreter.routes().map(_ ~ healthCheckRoutes).getOrElse(healthCheckRoutes)
-    httpServer.bind(routes).foreach { b =>
+    val routes = Directives.concat(scenarioInterpreter.routes().toList ::: healthCheckRoutes :: Nil: _*)
+
+    val bindedRoutesFuture = httpServer.bind(routes).map { b =>
       logger.info(s"Http server started on ${httpConfig.interface}:${httpConfig.port}")
       server = b
     }
-    Await.result(run, Duration.Inf)
-    logger.info(s"Closing application NuKafkaRuntimeApp")
+    Await.result(Future.sequence(List(runFuture, bindedRoutesFuture)), Duration.Inf)
+    logger.info("Closing application NuKafkaRuntimeApp")
+    if (server != null) Await.ready(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
   }
 
 

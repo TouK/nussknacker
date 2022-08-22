@@ -53,7 +53,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
 
   protected lazy val kafkaClient = new KafkaClient(kafkaBoostrapServer, suiteName)
 
-  protected def mappedRuntimeManagementPort: Int = runtimeContainer.mappedPort(runtimeApiPort)
+  protected def mappedRuntimeApiPort: Int = runtimeContainer.mappedPort(runtimeApiPort)
 
   protected def consumeFirstError: Option[KeyMessage[String, KafkaExceptionInfo]] = {
     Try(errorConsumer(secondsToWait = 1).take(1).headOption).recover {
