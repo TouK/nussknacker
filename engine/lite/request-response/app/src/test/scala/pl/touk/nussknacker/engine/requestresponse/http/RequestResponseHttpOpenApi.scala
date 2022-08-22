@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestResponseInterpreterTest {
 
   test("render schema for process") {
-    val inputSchema = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
-    val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
+    val inputSchema = "{\"type\":\"object\",\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
+    val outputSchema = "{\"type\":\"object\",\"properties\": {\"place\": {\"type\": \"string\"}}}"
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
@@ -31,6 +31,7 @@ class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestR
         |      "content" : {
         |        "application/json" : {
         |          "schema" : {
+        |            "type" : "object",
         |            "nullable" : false,
         |            "properties" : {
         |              "city" : {
@@ -55,6 +56,7 @@ class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestR
         |        "content" : {
         |          "application/json" : {
         |            "schema" : {
+        |              "type" : "object",
         |              "properties" : {
         |                "place" : {
         |                  "type" : "string"
