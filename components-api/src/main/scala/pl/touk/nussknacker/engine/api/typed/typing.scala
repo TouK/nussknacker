@@ -59,8 +59,8 @@ object typing {
   case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
                                      objType: TypedClass,
                                      additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
-    override def valueOpt: Option[Map[String, Any]] =
-      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(_.toMap)
+    override def valueOpt: Option[ListMap[String, Any]] =
+      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(ListMap(_: _*))
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.mapValues(_.withoutValue).toList: _*), objType, additionalInfo)
