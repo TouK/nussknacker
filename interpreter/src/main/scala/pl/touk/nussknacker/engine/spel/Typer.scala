@@ -111,8 +111,8 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       withTypedChildren {
         case lst@left :: right :: Nil if lst.forall(_.typingResult.canBeSubclassOf(expectedType)) =>
           val typeFromOp = for {
-            leftValue <- left.typingResult.value
-            rightValue <- right.typingResult.value
+            leftValue <- left.typingResult.valueOpt
+            rightValue <- right.typingResult.valueOpt
             res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[A])
           } yield Typed.fromInstance(res)
           TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
@@ -358,13 +358,13 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
   private def operationOnTypesValue[A, R](typ: TypingResult)
                                          (op: A => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
-    typ.value.map(v => op(v.asInstanceOf[A]).map(Typed.fromInstance))
+    typ.valueOpt.map(v => op(v.asInstanceOf[A]).map(Typed.fromInstance))
 
   private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult)
                                             (op: (A, B) => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
     for {
-      leftValue <- left.value
-      rightValue <- right.value
+      leftValue <- left.valueOpt
+      rightValue <- right.valueOpt
       res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])
     } yield res.map(Typed.fromInstance)
 

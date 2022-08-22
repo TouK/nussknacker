@@ -24,7 +24,7 @@ object typing {
     final def canBeSubclassOf(typingResult: TypingResult): Boolean =
       CanBeSubclassDeterminer.canBeSubclassOf(this, typingResult).isValid
 
-    def value: Option[Any]
+    def valueOpt: Option[Any]
 
     def withoutValue: TypingResult
 
@@ -59,8 +59,8 @@ object typing {
   case class TypedObjectTypingResult(fields: ListMap[String, TypingResult],
                                      objType: TypedClass,
                                      additionalInfo: Map[String, AdditionalDataValue] = Map.empty) extends SingleTypingResult {
-    override def value: Option[Map[String, Any]] =
-      fields.map{ case (k, v) => v.value.map((k, _))}.toList.sequence.map(_.toMap)
+    override def valueOpt: Option[Map[String, Any]] =
+      fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(_.toMap)
 
     override def withoutValue: TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields.mapValues(_.withoutValue).toList: _*), objType, additionalInfo)
@@ -74,7 +74,7 @@ object typing {
 
     override def objType: TypedClass = valueType.objType
 
-    override def value: Option[Any] = valueType.value
+    override def valueOpt: Option[Any] = valueType.valueOpt
 
     override def withoutValue: TypedDict = TypedDict(dictId, valueType.withoutValue)
 
@@ -92,20 +92,20 @@ object typing {
   case class TypedTaggedValue(underlying: SingleTypingResult, tag: String) extends TypedObjectWithData {
     override def data: String = tag
 
-    override def value: Option[Any] = underlying.value
+    override def valueOpt: Option[Any] = underlying.valueOpt
 
     override def withoutValue: TypedTaggedValue = TypedTaggedValue(underlying.withoutValue, tag)
 
     override def display: String = s"${underlying.display} @ $tag"
   }
 
-  case class TypedObjectWithValue private[typing](underlying: TypedClass, justValue: Any) extends TypedObjectWithData {
+  case class TypedObjectWithValue private[typing](underlying: TypedClass, value: Any) extends TypedObjectWithData {
     val maxDataDisplaySize: Int = 15
     val maxDataDisplaySizeWithDots: Int = maxDataDisplaySize - "...".length
 
-    override def data: Any = justValue
+    override def data: Any = value
 
-    override def value: Option[Any] = Some(justValue)
+    override def valueOpt: Option[Any] = Some(value)
 
     override def withoutValue: SingleTypingResult = underlying.withoutValue
 
@@ -121,7 +121,7 @@ object typing {
   case object TypedNull extends TypingResult {
     override def withoutValue: TypedNull.type = TypedNull
 
-    override val value: None.type = None
+    override val valueOpt: None.type = None
 
     override val display = "Null"
   }
@@ -130,7 +130,7 @@ object typing {
   case object Unknown extends TypingResult {
     override def withoutValue: Unknown.type = Unknown
 
-    override val value: None.type = None
+    override val valueOpt: None.type = None
 
     override val display = "Unknown"
   }
@@ -140,7 +140,7 @@ object typing {
 
     assert(possibleTypes.size != 1, "TypedUnion should has zero or more than one possibleType - in other case should be used TypedObjectTypingResult or TypedClass")
 
-    override def value: None.type = None
+    override def valueOpt: None.type = None
 
     override def withoutValue: TypingResult = Typed(possibleTypes.map(_.withoutValue))
 
@@ -159,7 +159,7 @@ object typing {
   }
 
   case class TypedClass private[typing] (klass: Class[_], params: List[TypingResult]) extends SingleTypingResult {
-    override val value: None.type = None
+    override val valueOpt: None.type = None
 
     override def withoutValue: TypedClass = this
 
