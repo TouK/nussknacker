@@ -869,7 +869,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   private def checkExpressionWithKnownResult(expr: String): Unit = {
     val parsed = parse[Any](expr).validValue
     val expected = parsed.expression.evaluateSync[Any](ctx)
-    parse[Any](expr).validValue.returnType shouldBe Typed.fromInstance(expected)
+    parsed.returnType shouldBe Typed.fromInstance(expected)
   }
 
   test("should calculate values of operators") {
