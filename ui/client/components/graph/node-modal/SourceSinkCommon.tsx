@@ -3,27 +3,73 @@ import React, {PropsWithChildren} from "react"
 import {ParameterExpressionField} from "./ParameterExpressionField"
 import {IdField} from "./IdField"
 import {DescriptionField} from "./DescriptionField"
-import {SourceSinkCommonProps} from "./NodeDetailsContentProps3"
+import {NodeContentMethods, NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 
 export const SourceSinkCommon = ({
   children,
-  ...props
-}: PropsWithChildren<SourceSinkCommonProps>): JSX.Element => {
+  showSwitch,
+  fieldErrors,
+  renderFieldLabel,
+  showValidation,
+  parameterDefinitions,
+  node,
+  isEditMode,
+  isMarked,
+  findAvailableVariables,
+  setProperty,
+  editedNode,
+  originalNodeId,
+}: PropsWithChildren<NodeContentMethods
+  & Pick<NodeDetailsContentProps3,
+  | "showSwitch"
+  | "fieldErrors"
+  | "showValidation"
+  | "parameterDefinitions"
+  | "node"
+  | "isEditMode"
+  | "findAvailableVariables"
+  | "editedNode"
+  | "originalNodeId">>): JSX.Element => {
   return (
     <NodeTableBody>
-      <IdField {...props}/>
-      {props.editedNode.ref.parameters?.map((param, index) => (
-        <div className="node-block" key={props.node.id + param.name + index}>
+      <IdField
+        isEditMode={isEditMode}
+        showValidation={showValidation}
+        editedNode={editedNode}
+        isMarked={isMarked}
+        renderFieldLabel={renderFieldLabel}
+        setProperty={setProperty}
+      />
+      {editedNode.ref.parameters?.map((param, index) => (
+        <div className="node-block" key={node.id + param.name + index}>
           <ParameterExpressionField
-            {...props}
+            originalNodeId={originalNodeId}
+            isEditMode={isEditMode}
+            showValidation={showValidation}
+            showSwitch={showSwitch}
+            editedNode={editedNode}
+            findAvailableVariables={findAvailableVariables}
+            parameterDefinitions={parameterDefinitions}
+            fieldErrors={fieldErrors}
+            isMarked={isMarked}
+            renderFieldLabel={renderFieldLabel}
+            setProperty={setProperty}
+
             parameter={param}
             listFieldPath={`ref.parameters[${index}]`}
           />
         </div>
       ))}
       {children}
-      <DescriptionField {...props}/>
+      <DescriptionField
+        isEditMode={isEditMode}
+        showValidation={showValidation}
+        editedNode={editedNode}
+        isMarked={isMarked}
+        renderFieldLabel={renderFieldLabel}
+        setProperty={setProperty}
+      />
     </NodeTableBody>
   )
 }

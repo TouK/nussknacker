@@ -108,7 +108,6 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
       findAvailableVariables={findAvailableVariables}
       parameterDefinitions={parameterDefinitions}
       fieldErrors={fieldErrors}
-
       isMarked={isMarked}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
@@ -118,7 +117,6 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
           isEditMode={isEditMode}
           showValidation={showValidation}
           editedNode={editedNode}
-
           isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}

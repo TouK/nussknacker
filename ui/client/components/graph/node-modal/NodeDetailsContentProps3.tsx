@@ -12,7 +12,6 @@ import {Dispatch, SetStateAction} from "react"
 import {WithTempId} from "./EdgesDndComponent"
 import {AdditionalPropertyConfig} from "./AdditionalProperty"
 import ProcessUtils from "../../../common/ProcessUtils"
-import {DescriptionFieldProps} from "./DescriptionField"
 import {FieldType} from "./editors/field/Field"
 import {Validator} from "./editors/Validators"
 
@@ -54,13 +53,6 @@ export interface ParameterExpressionFieldProps extends NodeContentMethods, Pick<
   parameter: Parameter,
   listFieldPath: string,
 }
-
-export type SourceSinkCommonProps =
-  NodeContentMethods
-  & IdFieldProps
-  & Omit<ParameterExpressionFieldProps, "parameter" | "listFieldPath">
-  & DescriptionFieldProps
-  & Pick<NodeDetailsContentProps3, "node">
 
 export interface NodeFieldProps<N extends string, V> extends NodeContentMethods, Pick<NodeDetailsContentProps3, "editedNode" | "isEditMode" | "showValidation"> {
   fieldType: FieldType,
