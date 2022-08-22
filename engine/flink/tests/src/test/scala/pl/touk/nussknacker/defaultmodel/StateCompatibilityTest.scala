@@ -99,8 +99,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     })
   }
 
-  //FIXME!
-  ignore("should restore from snapshot") {
+  test("should restore from snapshot") {
     val topicConfig = createAndRegisterTopicConfig(inTopic, RecordSchemaV1)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
