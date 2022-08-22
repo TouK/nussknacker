@@ -651,11 +651,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("12.toString()", ctx).toOption.get.returnType shouldBe Typed[String]
   }
 
-  test("be able to type string concatenation") {
-    parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed.fromInstance("12")
-    parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed.fromInstance("12")
-  }
-
   test("expand all fields of TypedObjects in union") {
     val ctxWithMap = ValidationContext
       .empty
@@ -885,11 +880,16 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       checkExpressionWithKnownResult(s"$a $op $b")
 
     val oneOperandOp = Gen.oneOf("+", "-")
-    val twoOperandOp = Gen.oneOf("+", "-", "*", "/", "%", "==", "!=", ">", ">=", "<", "<=")
-    val numberGen = Gen.oneOf(1, 2, 5, 10, 25)
+    val twoOperandOp = Gen.oneOf("+", "-", "*", "==", "!=", ">", ">=", "<", "<=")
+    val twoOperandNonZeroOp = Gen.oneOf("/", "%")
 
-    ScalaCheckDrivenPropertyChecks.forAll(oneOperandOp, numberGen)(checkOneOperand)
-    ScalaCheckDrivenPropertyChecks.forAll(twoOperandOp, numberGen, numberGen)(checkTwoOperands)
+    val positiveNumberGen = Gen.oneOf(1, 2, 5, 10, 25)
+    val nonZeroNumberGen = Gen.oneOf(-5, -1, 1, 2, 5, 10, 25)
+    val anyNumberGen = Gen.oneOf(-5, -1, 0, 1, 2, 5, 10, 25)
+
+    ScalaCheckDrivenPropertyChecks.forAll(oneOperandOp, positiveNumberGen)(checkOneOperand)
+    ScalaCheckDrivenPropertyChecks.forAll(twoOperandOp, anyNumberGen, anyNumberGen)(checkTwoOperands)
+    ScalaCheckDrivenPropertyChecks.forAll(twoOperandNonZeroOp, anyNumberGen, nonZeroNumberGen)(checkTwoOperands)
 }
 
   test("should calculate values of operators on strings") {
