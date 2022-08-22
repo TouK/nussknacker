@@ -106,17 +106,19 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
 
     def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
-      val expectedType = Typed.fromDetailedType[A]
+      val castExpectedType = CastTypedValue[A]
       val resultType = Typed.fromDetailedType[R]
-      withTypedChildren {
-        case lst@left :: right :: Nil if lst.forall(_.typingResult.canBeSubclassOf(expectedType)) =>
-          val typeFromOp = for {
-            leftValue <- left.typingResult.valueOpt
-            rightValue <- right.typingResult.valueOpt
-            res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[A])
-          } yield Typed.fromInstance(res)
-          TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
-        case _ => PartTypeError.invalidNel
+      withTypedChildren { typingResultWithContextList =>
+        typingResultWithContextList.map(_.typingResult) match {
+          case castExpectedType(left) :: castExpectedType(right) :: Nil =>
+            val typeFromOp = for {
+              leftValue <- left.valueOpt
+              rightValue <- right.valueOpt
+              res = op(leftValue, rightValue)
+            } yield Typed.fromInstance(res)
+            TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
+          case _ => PartTypeError.invalidNel
+        }
       }
     }
 
