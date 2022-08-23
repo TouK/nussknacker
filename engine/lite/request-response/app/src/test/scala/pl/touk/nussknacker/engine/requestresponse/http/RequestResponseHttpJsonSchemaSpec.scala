@@ -36,12 +36,12 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
   }
 
   def jsonSchemaSampleProcess(outputValue: String): CanonicalProcess = {
-    val inputSchema = """{"properties": {"field1": {"type": "string"}, "field2": {"type": "string"} } }"""
-    val outputSchema = """{"properties": {"output": {"type": "string"}}}"""
+    val inputSchema = """{"type":"object","properties": {"field1": {"type": "string"}, "field2": {"type": "string"} } }"""
+    val outputSchema = """{"type":"object","properties": {"output": {"type": "string"}}}"""
     jsonSchemaProcess(inputSchema, outputSchema, outputValue)
   }
 
-  it should "should validate input and output schema and return string concatination" in {
+  it should "should validate input and output schema and return string concatenation" in {
     assertProcessNotRunning(procId)
 
     Post("/deploy", toEntity(deploymentData(
@@ -84,7 +84,7 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(
       jsonSchemaProcess(
-        inputSchema = """{"properties": {"field1": {"type": "integer"}}}""",
+        inputSchema = """{"type":"object","properties": {"field1": {"type": "integer"}}}""",
         outputSchema = """{"type": "string"}""",
         outputValue = """ #input.field1+" Dalmatians" """.strip()
       )
@@ -102,7 +102,7 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(
       jsonSchemaProcess(
-        inputSchema = """{"properties": {"field1": {"type": "integer", "default": 101}}}""",
+        inputSchema = """{"type":"object","properties": {"field1": {"type": "integer", "default": 101}}}""",
         outputSchema = """{"type": "string"}""",
         outputValue = """ #input.field1+" Dalmatians" """.strip()
       )
@@ -120,9 +120,9 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(
       jsonSchemaProcessWithEditor(
-        inputSchema = """{"properties": {"field1": {"type": "integer"}}}""",
+        inputSchema = """{"type":"object","properties": {"field1": {"type": "integer"}}}""",
         outputSchema =
-          """{"properties": {
+          """{"type":"object","properties": {
             |"name": {"type": "string"},
             |"age": {"type": "integer"},
             |"address": {"type": "object", "properties": {"street": {"type": "string"}}}

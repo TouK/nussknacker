@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 
 import scala.language.implicitConversions
@@ -96,7 +96,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
    * Should we use strict verification at json?
    */
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
-    val schemaAsTypedResult = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
     condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
       OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
     )

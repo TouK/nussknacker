@@ -11,6 +11,7 @@
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
 * [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-response mode publishes OpenApi specification for its services
 * [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
+* [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor
 
 1.5.0 (16 Aug 2022)
 ------------------------
