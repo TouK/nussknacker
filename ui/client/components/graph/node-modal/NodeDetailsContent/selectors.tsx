@@ -7,14 +7,7 @@ import {AdditionalPropertiesConfig, NodeId, NodeValidationError} from "../../../
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, s => s.processDefinition)
 export const getAdditionalPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig)
-const getValidationResult = createSelector(getProcessToDisplay, s => s?.validationResult)
-const getNodeResults = createSelector(getValidationResult, s => s?.nodeResults)
-export const getFindAvailableVariables = createSelector(
-  getProcessDefinition,
-  getProcessCategory,
-  getProcessToDisplay,
-  (processDefinition, processCategory, processToDisplay) => ProcessUtils.findAvailableVariables(processDefinition, processCategory, processToDisplay)
-)
+const getNodeResults = createSelector(getProcessToDisplay, process => ProcessUtils.getNodeResults(process))
 export const getFindAvailableBranchVariables = createSelector(
   getNodeResults,
   nodeResults => ProcessUtils.findVariablesForBranches(nodeResults)
@@ -34,7 +27,10 @@ const getValidationErrors = createSelector(
 )
 export const getDetailsParameters = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.parameters || null
+  (nodeDetails) => (nodeId) => {
+    const parameters = nodeDetails(nodeId)?.parameters
+    return parameters || null
+  }
 )
 export const getResultParameters = createSelector(
   getNodeResult,
@@ -48,10 +44,6 @@ export const getNodeTypingInfo = createSelector(
   getNodeResult,
   (nodeResult) => (nodeId) => nodeResult(nodeId)?.typingInfo
 )
-export const getVariableTypes = createSelector(
-  getNodeResult,
-  (nodeResult) => (originalNodeId) => nodeResult(originalNodeId)?.variableTypes || {}
-)
 export const getProcessProperties = createSelector(getProcessToDisplay, s => s.properties)
 export const getProcessId = createSelector(getProcessToDisplay, s => s.id)
 export const getCurrentErrors = createSelector(
@@ -61,8 +53,21 @@ export const getCurrentErrors = createSelector(
 )
 export const getDynamicParameterDefinitions = createSelector(
   getValidationPerformed, getDetailsParameters, getResultParameters,
-  (validationPerformed, detailsParameters, resultParameters) => (nodeId) => validationPerformed(nodeId) ?
-    detailsParameters(nodeId) :
-    //for some cases e.g. properties parameters is undefined, we replace it with null no to care about undefined in comparisons
-    resultParameters(nodeId) || null
+  (validationPerformed, detailsParameters, resultParameters) => (nodeId) => {
+    if (validationPerformed(nodeId)) {
+      return detailsParameters(nodeId)
+    }
+    return resultParameters(nodeId) || null
+  }
+)
+
+export const getFindAvailableVariables = createSelector(
+  getProcessDefinition,
+  getProcessCategory,
+  getProcessToDisplay,
+  (processDefinition, processCategory, processToDisplay) => ProcessUtils.findAvailableVariables(processDefinition, processCategory, processToDisplay)
+)
+export const getVariableTypes = createSelector(
+  getNodeResults,
+  (nodeResults) => (originalNodeId) => ProcessUtils.getVariablesFromValidation(nodeResults, originalNodeId) || {}
 )

@@ -16,7 +16,7 @@ import {
   updateAfterNodeDelete,
   updateAfterNodeIdChange,
 } from "./utils"
-import {Edge} from "../../types"
+import {Edge, ValidationResult} from "../../types"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -32,6 +32,17 @@ const emptyGraphState: GraphState = {
   processState: null,
   processStateLoaded: false,
   unsavedNewName: null,
+}
+
+export function updateValidationResult(state: GraphState, action: { validationResult: ValidationResult }): ValidationResult {
+  return {
+    ...action.validationResult,
+    // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
+    nodeResults: {
+      ...state.processToDisplay.validationResult.nodeResults,
+      ...action.validationResult.nodeResults,
+    },
+  }
 }
 
 const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
@@ -104,7 +115,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...processToDisplay,
-          validationResult: action.validationResult,
+          validationResult: updateValidationResult(state, action),
         },
       }
     }
@@ -117,7 +128,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...stateAfterNodeRename,
         processToDisplay: {
           ...stateAfterNodeRename.processToDisplay,
-          validationResult: action.validationResult,
+          validationResult: updateValidationResult(state, action),
         },
       }
     }
@@ -231,14 +242,7 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         ...state,
         processToDisplay: {
           ...state.processToDisplay,
-          validationResult: {
-            ...action.validationResult,
-            // nodeResults is sometimes empty although it shouldn't e.g. when SaveNotAllowed errors happen
-            nodeResults: {
-              ...state.processToDisplay.validationResult.nodeResults,
-              ...action.validationResult.nodeResults,
-            },
-          },
+          validationResult: updateValidationResult(state, action),
         },
       }
     }

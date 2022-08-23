@@ -3,7 +3,7 @@ import {NodeContentMethods, NodeDetailsContentProps3} from "./NodeDetailsContent
 import {SourceSinkCommon} from "./SourceSinkCommon"
 import {DisableField} from "./DisableField"
 import React, {useCallback, useMemo} from "react"
-import {EdgeKind, NodeType} from "../../../types"
+import {EdgeKind, NodeType, VariableTypes} from "../../../types"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import {IdField} from "./IdField"
 import {NodeField} from "./NodeField"
@@ -20,7 +20,6 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import Variable from "./Variable"
 import ProcessUtils from "../../../common/ProcessUtils"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import {hasOutputVar} from "./NodeDetailsContentUtils"
 import NodeUtils from "../NodeUtils"
 import BranchParameters from "./BranchParameters"
 import ParameterList from "./ParameterList"
@@ -125,7 +124,8 @@ interface AddRemoveMethods {
 type SubprocessInputDefinitionProps =
   AddRemoveMethods
   & NodeContentMethods
-  & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation" | "variableTypes">
+  & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation">
+  & { variableTypes?: VariableTypes }
 
 export function SubprocessInputDef({
   renderFieldLabel,
@@ -466,6 +466,10 @@ export function JoinCustomNode({
   | "originalNodeId"
   | "processDefinitionData"> & NodeContentMethods): JSX.Element {
   const testResultsState = useTestResults()
+  const hasOutputVar = useMemo((): boolean => {
+      return !!ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.returnType || !!editedNode.outputVar
+    },
+    [editedNode, processDefinitionData.processDefinition])
 
   return (
     <NodeTableBody>
@@ -477,7 +481,7 @@ export function JoinCustomNode({
         setProperty={setProperty}
       />
       {
-        hasOutputVar(editedNode, processDefinitionData) && (
+        hasOutputVar && (
           <NodeField
             editedNode={editedNode}
             isEditMode={isEditMode}
@@ -549,13 +553,12 @@ export function VariableBuilder({
   isEditMode,
   editedNode,
 }: Pick<NodeDetailsContentProps3,
-  | "variableTypes"
   | "expressionType"
   | "nodeTypingInfo"
   | "showValidation"
   | "fieldErrors"
   | "isEditMode"
-  | "editedNode"> & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
+  | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
   return (
     <MapVariable
       renderFieldLabel={renderFieldLabel}
@@ -583,13 +586,12 @@ export function VariableDef({
   expressionType,
   editedNode,
 }: Pick<NodeDetailsContentProps3,
-  | "variableTypes"
   | "isEditMode"
   | "nodeTypingInfo"
   | "showValidation"
   | "fieldErrors"
   | "expressionType"
-  | "editedNode"> & NodeContentMethods): JSX.Element {
+  | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods): JSX.Element {
   const varExprType = expressionType || (nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
   const inferredVariableType = ProcessUtils.humanReadableType(varExprType)
   return (
@@ -625,7 +627,6 @@ export function Switch({
   editedEdges,
   showValidation,
 }: NodeContentMethods & Pick<NodeDetailsContentProps3,
-  | "variableTypes"
   | "expressionType"
   | "findAvailableVariables"
   | "editedNode"
@@ -639,7 +640,7 @@ export function Switch({
   | "fieldErrors"
   | "originalNodeId"
   | "editedEdges"
-  | "showValidation">): JSX.Element {
+  | "showValidation"> & { variableTypes?: VariableTypes }): JSX.Element {
   const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
   const currentExpression = originalNode["expression"]
   const currentExprVal = originalNode["exprVal"]

@@ -11,6 +11,7 @@ import {
   ReturnedType,
   TypingResult,
   UIParameter,
+  ValidationResult,
   VariableTypes,
 } from "../types"
 
@@ -41,19 +42,24 @@ class ProcessUtils {
   }
 
   hasNoErrors = (process) => {
-    const result = (process.validationResult || {}).errors
+    const result = this.getValidationErrors(process)
     return !result || Object.keys(result.invalidNodes || {}).length == 0 &&
       (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0
   }
 
+  getValidationResult = (process: Process): ValidationResult => process?.validationResult
+
   hasNoWarnings = (process) => {
-    const warnings = (process.validationResult || {}).warnings
+    const warnings = this.getValidationResult(process)?.warnings
     return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
   hasNoPropertiesErrors = process => {
-    const result = (process.validationResult || {}).errors || {}
-    return isEmpty(result.processPropertiesErrors)
+    return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors)
+  }
+
+  getValidationErrors(process) {
+    return this.getValidationResult(process)?.errors
   }
 
   //see BranchEndDefinition.artificialNodeId
@@ -72,6 +78,8 @@ class ProcessUtils {
       }
     }, {})
   }
+
+  getNodeResults = (process: Process): NodeResults => this.getValidationResult(process)?.nodeResults
 
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
@@ -95,16 +103,19 @@ class ProcessUtils {
   }
 
   findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
-    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
-    const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
+    const nodeResults = this.getNodeResults(process)
+    const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId)
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
     const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
     //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
+    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1)
   }
+
+  getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes
 
   _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const previousNodes = this._findPreviousNodes(nodeId, process)

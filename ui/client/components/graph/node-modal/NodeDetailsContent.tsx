@@ -2,7 +2,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
-import {getParameterDefinitions} from "./NodeDetailsContentUtils"
 import {adjustParameters} from "./ParametersUtils"
 import {WithTempId} from "./EdgesDndComponent"
 import {useDispatch, useSelector} from "react-redux"
@@ -16,7 +15,6 @@ import {
   getNodeTypingInfo,
   getProcessId,
   getProcessProperties,
-  getVariableTypes,
 } from "./NodeDetailsContent/selectors"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {RootState} from "../../../reducers"
@@ -27,6 +25,7 @@ import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
 import {NodeDetailsContent3} from "./NodeDetailsContent3"
 import {useDiffMark} from "./PathsToMark"
+import ProcessUtils from "../../../common/ProcessUtils"
 
 export interface NodeDetailsContentProps {
   originalNodeId?: NodeId,
@@ -59,7 +58,6 @@ export const NodeDetailsContent = ({
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
-  const variableTypes = useSelector((state: RootState) => getVariableTypes(state)(nodeId))
   const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(nodeId, nodeErrors))
   const dynamicParameterDefinitions = useSelector((state: RootState) => getDynamicParameterDefinitions(state)(nodeId))
   const [editedNode, setEditedNode] = useState<NodeType>(originalNode)
@@ -89,8 +87,11 @@ export const NodeDetailsContent = ({
   const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
   const parameterDefinitions = useMemo(() => {
-    return getParameterDefinitions(processDefinitionData, originalNode, dynamicParameterDefinitions)
-  }, [dynamicParameterDefinitions, originalNode, processDefinitionData])
+    if (!dynamicParameterDefinitions) {
+      return ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.parameters
+    }
+    return dynamicParameterDefinitions
+  }, [dynamicParameterDefinitions, editedNode, processDefinitionData])
 
   const adjustNode = useCallback((node: NodeType) => {
     const {adjustedNode} = adjustParameters(node, parameterDefinitions)
@@ -120,7 +121,7 @@ export const NodeDetailsContent = ({
     }
   }, [editedEdges, editedNode, isEditMode, onChange])
 
-  //fixme: workaround for compare view
+  //fixme: workaround for node change (in compare view)
   const [, isCompareView] = useDiffMark()
   useEffect(() => {
     if (isCompareView) {
@@ -147,7 +148,6 @@ export const NodeDetailsContent = ({
           findAvailableVariables={findAvailableVariables}
           expressionType={expressionType}
           nodeTypingInfo={nodeTypingInfo}
-          variableTypes={variableTypes}
           updateNodeState={setEditedNode}
           fieldErrors={fieldErrors}
         />
