@@ -35,7 +35,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new RequestResponseEmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
-      ConfigFactory.empty().withValue("port", fromAnyRef(port)).withValue("interface", fromAnyRef("localhost")))
+      ConfigFactory.empty().withValue("http.port", fromAnyRef(port)).withValue("http.interface", fromAnyRef("localhost")))
     FixtureParam(manager, modelData, port)
   }
 

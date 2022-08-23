@@ -11,6 +11,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `helper-utils` to `default-helpers`, separated `MathUtils` from
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 
+### Configuration changes
+* [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
+  * `interface` -> `http.interface`
+  * `port` -> `http.port`
+  * `definitionMetadata` -> `request-response.definitionMetadata`
+
 ## In version 1.5.0
 
 ### Configuration changes

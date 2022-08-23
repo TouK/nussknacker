@@ -29,10 +29,12 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
   private var closed: Boolean = false
 
   private val interpreter: RequestResponseScenarioInterpreter[Future] = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-    .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+    .map { i =>
+      i.open()
+      i
+    }.valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   override def run(): Future[Unit] = {
-    interpreter.open()
     Future {
       waitUntilClosed()
     }

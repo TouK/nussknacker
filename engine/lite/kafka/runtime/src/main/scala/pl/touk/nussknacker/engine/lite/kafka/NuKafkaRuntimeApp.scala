@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHand
 import java.nio.file.Path
 import scala.concurrent.{Await, Future}
 import scala.concurrent.duration._
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 // TODO: get rid of kafka specific things: class name, LiteKafkaJobData
@@ -35,7 +36,6 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
 
   implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
   import system.dispatcher
-  @volatile private var server: ServerBinding = _
 
   // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
   // will be still alive even if something fail (like scenarioInterpreter creation)
@@ -51,17 +51,12 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
   }
   System.exit(exitCode)
 
-  private val akkaHttpCloseTimeout = 10 seconds
+  private val akkaHttpStartAndCloseTimeout = 10 seconds
 
   private def runAfterActorSystemCreation(): Unit = {
     val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, liteKafkaJobData, system)
 
-    Runtime.getRuntime.addShutdownHook(new Thread() {
-      override def run(): Unit = {
-        logger.info("Closing RunnableScenarioInterpreter")
-        scenarioInterpreter.close()
-      }
-    })
+
 
     val healthCheckProvider = new HealthCheckRoutesProvider(system, scenarioInterpreter)
 
@@ -71,13 +66,24 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     val healthCheckRoutes = healthCheckProvider.routes()
     val routes = Directives.concat(scenarioInterpreter.routes().toList ::: healthCheckRoutes :: Nil: _*)
 
-    val bindedRoutesFuture = httpServer.bind(routes).map { b =>
-      logger.info(s"Http server started on ${httpConfig.interface}:${httpConfig.port}")
-      server = b
+    val boundRoutesFuture = Future {
+      Await.result(httpServer.bind(routes), akkaHttpStartAndCloseTimeout)
     }
-    Await.result(Future.sequence(List(runFuture, bindedRoutesFuture)), Duration.Inf)
+
+    Runtime.getRuntime.addShutdownHook(new Thread() {
+      override def run(): Unit = {
+        logger.info("Closing RunnableScenarioInterpreter")
+        scenarioInterpreter.close()
+        Await.ready(boundRoutesFuture.flatMap(_.terminate(akkaHttpStartAndCloseTimeout)), akkaHttpStartAndCloseTimeout)
+      }
+    })
+    boundRoutesFuture.onComplete {
+      case Failure(exception) => logger.error(s"Failed to start http server within $akkaHttpStartAndCloseTimeout", exception)
+      case Success(_) => logger.info(s"Http server started on ${httpConfig.interface}:${httpConfig.port}")
+    }
+
+    Await.result(Future.sequence(List(runFuture, boundRoutesFuture)), Duration.Inf)
     logger.info("Closing application NuKafkaRuntimeApp")
-    if (server != null) Await.ready(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
   }
 
 
