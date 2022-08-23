@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import org.everit.json.schema.{ObjectSchema, Schema, StringSchema}
-import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
+import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
@@ -10,6 +10,7 @@ import scala.collection.JavaConverters
 object JsonSchemaOutputValidatorPrinter {
 
   import OutputValidatorErrorsMessageFormatter._
+
   import JavaConverters._
 
   private implicit class ListTypesPrinter(list: List[String]) {
