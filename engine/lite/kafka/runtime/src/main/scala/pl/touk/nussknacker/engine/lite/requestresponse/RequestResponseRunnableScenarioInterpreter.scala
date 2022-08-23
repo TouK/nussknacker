@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
+import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
@@ -15,6 +16,7 @@ import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
+import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
 class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
@@ -35,9 +37,14 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
     }.valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   override def run(): Future[Unit] = {
+    val threadFactory = new BasicThreadFactory.Builder()
+      .namingPattern(s"wait-until-closed")
+      .build()
+    // run waiting in separate thread to not exhaust main actor system thread pool
+    val executionContext = ExecutionContext.fromExecutor(Executors.newSingleThreadExecutor(threadFactory))
     Future {
       waitUntilClosed()
-    }
+    }(executionContext)
   }
 
   private def waitUntilClosed(): Unit = {
