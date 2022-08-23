@@ -10,6 +10,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3431](https://github.com/TouK/nussknacker/pull/3431) Renamed 
   `helper-utils` to `default-helpers`, separated `MathUtils` from
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
+* [#3436](https://github.com/TouK/nussknacker/pull/3436) Division by zero will cause validation error. Tests that rely on `1/0` to generate exceptions should have it changed to code like `1/{0, 1}[0]`
 
 ## In version 1.5.0
 
