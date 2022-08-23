@@ -68,7 +68,7 @@ trait MathUtils {
   def plus(n1: Number, n2: Number): Number = sum(n1, n2)
 
   def minus(n1: Number, n2: Number): Number = {
-    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForMathOp {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 - n2
       override def onLongs(n1: java.lang.Long, n2: java.lang.Long): java.lang.Long = n1 - n2
       override def onBigIntegers(n1: java.math.BigInteger, n2: java.math.BigInteger): java.math.BigInteger = n1.subtract(n2)
@@ -79,7 +79,7 @@ trait MathUtils {
   }
 
   def multiply(n1: Number, n2: Number): Number = {
-    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForMathOp {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 * n2
       override def onLongs(n1: java.lang.Long, n2: java.lang.Long): java.lang.Long = n1 * n2
       override def onBigIntegers(n1: java.math.BigInteger, n2: java.math.BigInteger): java.math.BigInteger = n1.multiply(n2)
@@ -90,7 +90,7 @@ trait MathUtils {
   }
 
   def divide(n1: Number, n2: Number): Number = {
-    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForMathOp {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 / n2
       override def onLongs(n1: java.lang.Long, n2: java.lang.Long): java.lang.Long = n1 / n2
       override def onBigIntegers(n1: java.math.BigInteger, n2: java.math.BigInteger): java.math.BigInteger = n1.divide(n2)
@@ -101,7 +101,7 @@ trait MathUtils {
   }
 
   def remainder(n1: Number, n2: Number): Number = {
-    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForMathOp {
+    withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
       override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 % n2
       override def onLongs(n1: java.lang.Long, n2: java.lang.Long): java.lang.Long = n1 % n2
       override def onBigIntegers(n1: java.math.BigInteger, n2: java.math.BigInteger): java.math.BigInteger = n1.remainder(n2)
@@ -144,7 +144,7 @@ trait MathUtils {
 
   private def promoteThenSum(n1: Number, n2: Number)(implicit promotionStrategy: ReturningSingleClassPromotionStrategy) = {
     withNotNullValues(n1, n2) {
-      withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForMathOp {
+      withValuesWithTheSameType(n1, n2)(new SameNumericTypeHandlerForPromotingMathOp {
         override def onInts(n1: java.lang.Integer, n2: java.lang.Integer): java.lang.Integer = n1 + n2
         override def onLongs(n1: java.lang.Long, n2: java.lang.Long): java.lang.Long = n1 + n2
         override def onBigIntegers(n1: java.math.BigInteger, n2: java.math.BigInteger): java.math.BigInteger = n1.add(n2)
@@ -218,7 +218,7 @@ trait MathUtils {
     override def onBigDecimals(n1: java.math.BigDecimal, n2: java.math.BigDecimal): java.math.BigDecimal
   }
 
-  protected trait SameNumericTypeHandlerForMathOp extends SameNumericTypeHandlerReturningNumber {
+  protected trait SameNumericTypeHandlerForPromotingMathOp extends SameNumericTypeHandlerReturningNumber {
     override final def onBytes(n1: java.lang.Byte, n2: java.lang.Byte): Nothing =
       throw new IllegalStateException("Bytes should be promoted to Ints before operator")
     override final def onShorts(n1: java.lang.Short, n2: java.lang.Short): Nothing =
