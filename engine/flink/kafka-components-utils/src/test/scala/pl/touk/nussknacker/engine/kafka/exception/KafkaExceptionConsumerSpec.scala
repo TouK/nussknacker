@@ -43,7 +43,7 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
     val process = ScenarioBuilder
       .streaming("testProcess")
       .source("source", "source")
-      .filter("shouldFail", "1/0 != 10")
+      .filter("shouldFail", "1/{0, 1}[0] != 10")
       .emptySink("end", "sink")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
@@ -57,8 +57,8 @@ class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSp
       val decoded = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](consumed.message())
       decoded.nodeId shouldBe Some("shouldFail")
       decoded.processName shouldBe "testProcess"
-      decoded.message shouldBe Some("Expression [1/0 != 10] evaluation failed, message: / by zero")
-      decoded.exceptionInput shouldBe Some("1/0 != 10")
+      decoded.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
+      decoded.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
       decoded.additionalData shouldBe Map("configurableKey" -> "sampleValue")
 
     }

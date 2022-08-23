@@ -12628,12 +12628,33 @@
         {
           "description": "Parse string to number",
           "name": "toNumber",
-          "signature": {
-            "noVarArgs": [
-              {"name": "stringOrNumber", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "stringOrNumber",
+                  "refClazz": {
+                    "type": "TypedUnion",
+                    "union": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Number",
+                        "params": [],
+                        "refClazzName": "java.lang.Number",
+                        "type": "TypedClass"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ]
     },
@@ -13429,12 +13450,14 @@
         {
           "description": "Returns the absolute value of a value.",
           "name": "abs",
-          "signature": {
-            "noVarArgs": [
-              {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "a", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "ceil": [
@@ -13446,6 +13469,32 @@
               {"name": "a", "refClazz": {"refClazzName": "java.lang.Double"}}
             ],
             "result": {"refClazzName": "java.lang.Double"}
+          }
+        }
+      ],
+      "divide": [
+        {
+          "name": "divide",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "equal": [
+        {
+          "name": "equal",
+          "signature": {
+            "noVarArgs": [
+              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
@@ -13461,40 +13510,161 @@
           }
         }
       ],
-      "largeSum": [
+      "greater": [
         {
-          "name": "largeSum",
+          "name": "greater",
           "signature": {
             "noVarArgs": [
               {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
               {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
-            "result": {"refClazzName": "java.lang.Number"}
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "greaterOrEqual": [
+        {
+          "name": "greaterOrEqual",
+          "signature": {
+            "noVarArgs": [
+              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "largeSum": [
+        {
+          "name": "largeSum",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "lesser": [
+        {
+          "name": "lesser",
+          "signature": {
+            "noVarArgs": [
+              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
+          }
+        }
+      ],
+      "lesserOrEqual": [
+        {
+          "name": "lesserOrEqual",
+          "signature": {
+            "noVarArgs": [
+              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+            ],
+            "result": {"refClazzName": "java.lang.Boolean"}
           }
         }
       ],
       "max": [
         {
           "name": "max",
-          "signature": {
-            "noVarArgs": [
-              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "min": [
         {
           "name": "min",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "minus": [
+        {
+          "name": "minus",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "multiply": [
+        {
+          "name": "multiply",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "negate": [
+        {
+          "name": "negate",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
+        }
+      ],
+      "notEqual": [
+        {
+          "name": "notEqual",
           "signature": {
             "noVarArgs": [
               {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
               {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
             ],
-            "result": {"refClazzName": "java.lang.Number"}
+            "result": {"refClazzName": "java.lang.Boolean"}
           }
+        }
+      ],
+      "plus": [
+        {
+          "name": "plus",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "pow": [
@@ -13508,6 +13678,20 @@
             ],
             "result": {"refClazzName": "java.lang.Double"}
           }
+        }
+      ],
+      "remainder": [
+        {
+          "name": "remainder",
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "round": [
@@ -13525,25 +13709,48 @@
       "sum": [
         {
           "name": "sum",
-          "signature": {
-            "noVarArgs": [
-              {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
-              {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {"name": "n1", "refClazz": {"refClazzName": "java.lang.Number"}},
+                {"name": "n2", "refClazz": {"refClazzName": "java.lang.Number"}}
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "toNumber": [
         {
           "description": "Parse string to number",
           "name": "toNumber",
-          "signature": {
-            "noVarArgs": [
-              {"name": "stringOrNumber", "refClazz": {"type": "Unknown"}}
-            ],
-            "result": {"refClazzName": "java.lang.Number"}
-          }
+          "signatures": [
+            {
+              "noVarArgs": [
+                {
+                  "name": "stringOrNumber",
+                  "refClazz": {
+                    "type": "TypedUnion",
+                    "union": [
+                      {
+                        "display": "String",
+                        "params": [],
+                        "refClazzName": "java.lang.String",
+                        "type": "TypedClass"
+                      },
+                      {
+                        "display": "Number",
+                        "params": [],
+                        "refClazzName": "java.lang.Number",
+                        "type": "TypedClass"
+                      }
+                    ]
+                  }
+                }
+              ],
+              "result": {"refClazzName": "java.lang.Number"}
+            }
+          ]
         }
       ],
       "toString": [

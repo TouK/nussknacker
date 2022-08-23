@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{DynamicPropertyAccessError, IllegalIndexingOperation, IllegalProjectionSelectionError, IllegalPropertyAccessError, InvalidMethodReference}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NonReferenceError, UnresolvedReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, DivisionByZeroError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, ModuloZeroError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorMismatchTypesError, TernaryOperatorNotBooleanError}
@@ -36,6 +36,7 @@ import pl.touk.nussknacker.engine.spel.ast.SpelNodePrettyPrinter
 import pl.touk.nussknacker.engine.spel.internal.EvaluationContextPreparer
 import pl.touk.nussknacker.engine.spel.typer.{MapLikePropertyTyper, TypeMethodReference}
 import pl.touk.nussknacker.engine.types.EspTypeUtils
+import pl.touk.nussknacker.engine.util.MathUtils
 
 import scala.annotation.tailrec
 import scala.reflect.runtime._
@@ -102,6 +103,23 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     def withChildrenOfType[Parts: universe.TypeTag](result: TypingResultWithContext) = withTypedChildren {
       case list if list.forall(_.typingResult.canBeSubclassOf(Typed.fromDetailedType[Parts])) => Valid(result)
       case _ => PartTypeError.invalidNel
+    }
+
+    def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
+      val castExpectedType = CastTypedValue[A]
+      val resultType = Typed.fromDetailedType[R]
+      withTypedChildren { typingResultWithContextList =>
+        typingResultWithContextList.map(_.typingResult) match {
+          case castExpectedType(left) :: castExpectedType(right) :: Nil =>
+            val typeFromOp = for {
+              leftValue <- left.valueOpt
+              rightValue <- right.valueOpt
+              res = op(leftValue, rightValue)
+            } yield Typed.fromInstance(res)
+            TypingResultWithContext(typeFromOp.getOrElse(resultType)).validNel
+          case _ => PartTypeError.invalidNel
+        }
+      }
     }
 
     def catchUnexpectedErrors(block: => NodeTypingResult): NodeTypingResult = Try(block) match {
@@ -210,44 +228,62 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
       case e: OpEQ => checkEqualityLikeOperation(validationContext, e, current, isEquality = true)
       case e: OpNE => checkEqualityLikeOperation(validationContext, e, current, isEquality = false)
 
-      case e: OpAnd => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
-      case e: OpOr => withChildrenOfType[Boolean](TypingResultWithContext(Typed[Boolean]))
-      case e: OpGE => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpGT => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpLE => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
-      case e: OpLT => withChildrenOfType[Number](TypingResultWithContext(Typed[Boolean]))
+      case e: OpAnd => withTwoChildrenOfType[Boolean, Boolean](_ && _)
+      case e: OpOr => withTwoChildrenOfType[Boolean, Boolean](_ || _)
+      case e: OpGE => withTwoChildrenOfType(MathUtils.greaterOrEqual)
+      case e: OpGT => withTwoChildrenOfType(MathUtils.greater)
+      case e: OpLE => withTwoChildrenOfType(MathUtils.lesserOrEqual)
+      case e: OpLT => withTwoChildrenOfType(MathUtils.lesser)
 
-      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)
-      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)
+      case e: OpDec => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.minus(_, 1).validNel))
+      case e: OpInc => checkSingleOperandArithmeticOperation(validationContext, e, current)(Some(MathUtils.plus(_, 1).validNel))
 
-      case e: OpDivide => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
+      case e: OpDivide =>
+        val op = Some((x: Number, y: Number) =>
+          if (y.doubleValue() == 0) DivisionByZeroError(e.toStringAST).invalidNel
+          else MathUtils.divide(x, y).validNel)
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
+
       case e: OpMinus => withTypedChildren {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue))
+          val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
+          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.minus(_, _).validNel).getOrElse(supertype.validNel)
+          result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil
           if left == right =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(left.withoutValue))
+          val resultType = left.withoutValue
+          val result = operationOnTypesValue[Number, Number](left)(MathUtils.negate(_).validNel).getOrElse(resultType.validNel)
+          result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil =>
           EmptyOperatorError(e.getOperatorName).invalidNel
       }
-      case e: OpModulus => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
-      case e: OpMultiply => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForMathOperation)
-      case e: OperatorPower => checkTwoOperandsArithmeticOperation(validationContext, e, current)(NumberTypesPromotionStrategy.ForPowerOperation)
+      case e: OpModulus =>
+        val op = Some((x: Number, y: Number) =>
+          if (y.doubleValue() == 0) ModuloZeroError(e.toStringAST).invalidNel
+          else MathUtils.remainder(x, y).validNel)
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(op)(NumberTypesPromotionStrategy.ForMathOperation)
+      case e: OpMultiply =>
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(Some(MathUtils.multiply(_, _).validNel))(NumberTypesPromotionStrategy.ForMathOperation)
+      case e: OperatorPower =>
+        checkTwoOperandsArithmeticOperation(validationContext, e, current)(None)(NumberTypesPromotionStrategy.ForPowerOperation)
 
       case e: OpPlus => withTypedChildren {
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left == Unknown || right == Unknown =>
           Valid(TypingResultWithContext(Unknown))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[String]) || right.canBeSubclassOf(Typed[String]) =>
-          Valid(TypingResultWithContext(Typed[String]))
+          val result = operationOnTypesValue[Any, Any, String](left, right)((l, r) => (l.toString + r.toString).validNel).getOrElse(Typed[String].validNel)
+          result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-          Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue))
+          val supertype = commonSupertypeFinder.commonSupertype(left, right)(NumberTypesPromotionStrategy.ForMathOperation).withoutValue
+          val result = operationOnTypesValue[Number, Number, Number](left, right)(MathUtils.plus(_, _).validNel).getOrElse(supertype.validNel)
+          result.map(TypingResultWithContext(_))
         case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
           OperatorMismatchTypeError(e.getOperatorName, left, right).invalidNel
         case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
@@ -322,6 +358,18 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     })
   }
 
+  private def operationOnTypesValue[A, R](typ: TypingResult)
+                                         (op: A => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
+    typ.valueOpt.map(v => op(v.asInstanceOf[A]).map(Typed.fromInstance))
+
+  private def operationOnTypesValue[A, B, R](left: TypingResult, right: TypingResult)
+                                            (op: (A, B) => ValidatedNel[ExpressionParseError, R]): Option[ValidatedNel[ExpressionParseError, TypingResult]] =
+    for {
+      leftValue <- left.valueOpt
+      rightValue <- right.valueOpt
+      res = op(leftValue.asInstanceOf[A], rightValue.asInstanceOf[B])
+    } yield res.map(Typed.fromInstance)
+
   //currently there is no better way than to check ast string starting with $ or ^
   private def resolveSelectionTypingResult(node: Selection, parentType: TypingResultWithContext, childElementType: TypingResult) = {
     val isSingleElementSelection = List("$", "^").map(node.toStringAST.startsWith(_)).foldLeft(false)(_ || _)
@@ -353,20 +401,26 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
   }
 
   private def checkTwoOperandsArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
+                                                 (op: Option[(Number, Number) => ValidatedNel[ExpressionParseError, Any]])
                                                  (implicit numberPromotionStrategy: NumberTypesPromotionStrategy): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
-    typeChildren(validationContext, node, current) {
-      case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
-        Valid(TypingResultWithContext(commonSupertypeFinder.commonSupertype(left, right).withoutValue))
-      case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
-        OperatorMismatchTypeError(node.getOperatorName, left, right).invalidNel
-      case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
+      typeChildren(validationContext, node, current) {
+        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil if left.canBeSubclassOf(Typed[Number]) && right.canBeSubclassOf(Typed[Number]) =>
+          val supertype = commonSupertypeFinder.commonSupertype(left, right).withoutValue
+          val validatedType = op.flatMap(operationOnTypesValue[Number, Number, Any](left, right)(_)).getOrElse(supertype.validNel)
+          validatedType.map(TypingResultWithContext(_))
+        case TypingResultWithContext(left, _) :: TypingResultWithContext(right, _) :: Nil =>
+          OperatorMismatchTypeError(node.getOperatorName, left, right).invalidNel
+        case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
+      }
     }
-  }
 
-  private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext): ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
+  private def checkSingleOperandArithmeticOperation(validationContext: ValidationContext, node: Operator, current: TypingContext)
+                                                   (op: Option[Number => ValidatedNel[ExpressionParseError, Any]]):
+    ValidatedNel[ExpressionParseError, CollectedTypingResult] = {
     typeChildren(validationContext, node, current) {
       case TypingResultWithContext(left, _) :: Nil if left.canBeSubclassOf(Typed[Number]) =>
-        Valid(TypingResultWithContext(left.withoutValue))
+        val validatedResult = op.flatMap(operationOnTypesValue[Number, Any](left)(_)).getOrElse(left.withoutValue.validNel)
+        validatedResult.map(TypingResultWithContext(_))
       case TypingResultWithContext(left, _) :: Nil =>
         OperatorNonNumericError(node.getOperatorName, left).invalidNel
       case _ => BadOperatorConstructionError(node.getOperatorName).invalidNel // shouldn't happen
@@ -489,7 +543,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
 
 object Typer {
 
-  // This Semigroup is used in combining `intermediateResults: Map[SpelNodeId, TypingResult]` in TYper.
+  // This Semigroup is used in combining `intermediateResults: Map[SpelNodeId, TypingResult]` in Typer.
   // If there is no bug in Typer, collisions shouldn't happen
   implicit def notAcceptingMergingSemigroup: Semigroup[TypingResultWithContext] = new Semigroup[TypingResultWithContext] with LazyLogging {
     override def combine(x: TypingResultWithContext, y: TypingResultWithContext): TypingResultWithContext = {
