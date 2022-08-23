@@ -358,8 +358,8 @@ class HttpService {
   }
 
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess({edges, ...process}) {
-    return api.post("/processValidation", {...process, edges: edges.filter(e => e.to)})
+  validateProcess({id, nodes, edges, properties, processingType}: Omit<Process, "validationResult">) {
+    return api.post("/processValidation", {id, nodes, properties, processingType, edges: edges.filter(e => e.to)})
       .catch(error => {
         this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)
