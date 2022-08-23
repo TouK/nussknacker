@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Sch
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
-import java.time.LocalDateTime
+import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -28,6 +28,8 @@ case object SwaggerNull extends SwaggerTyped
 case object SwaggerBigDecimal extends SwaggerTyped
 
 case object SwaggerDateTime extends SwaggerTyped
+case object SwaggerDate extends SwaggerTyped
+case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
@@ -49,6 +51,8 @@ object SwaggerTyped {
         case ("object", _) => SwaggerObject(schema.asInstanceOf[ObjectSchema], swaggerRefSchemas)
         case ("boolean", _) => SwaggerBool
         case ("string", Some("date-time")) => SwaggerDateTime
+        case ("string", Some("date")) => SwaggerDate
+        case ("string", Some("time")) => SwaggerTime
         case ("string", _) => Option(schema.getEnum) match {
           case Some(values) => SwaggerEnum(values.asScala.map(_.toString).toList)
           case None => SwaggerString
@@ -88,6 +92,10 @@ object SwaggerTyped {
       Typed.typedClass[java.math.BigDecimal]
     case SwaggerDateTime =>
       Typed.typedClass[LocalDateTime]
+    case SwaggerDate =>
+      Typed.typedClass[LocalDate]
+    case SwaggerTime =>
+      Typed.typedClass[LocalTime]
     case SwaggerNull =>
       TypedNull
   }

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import org.everit.json.schema.{ObjectSchema, Schema, StringSchema}
-import pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaTypeDefinitionExtractor, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
@@ -29,8 +29,8 @@ object JsonSchemaOutputValidatorPrinter {
     (defaultDisplayType ::: logicalTypeDisplayType.toList).printType
   }
 
-  private def baseDisplayType(schema: Schema) = JsonSchemaTypeDefinitionExtractor
-    .typeDefinition(schema).display
+  private def baseDisplayType(schema: Schema) = SwaggerBasedJsonSchemaTypeDefinitionExtractor
+    .swaggerType(schema).typingResult.display
 
   //todo: remove duplication - JsonSchemaTypeDefinitionExtractor
   private def printLogicalType(schema: Schema): Option[String] = Option(schema match {

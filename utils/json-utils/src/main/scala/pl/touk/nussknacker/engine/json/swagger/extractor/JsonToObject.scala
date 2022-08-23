@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.json.swagger._
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 
 // TODO: Validated
 object JsonToObject {
@@ -52,6 +52,10 @@ object JsonToObject {
         extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
       case SwaggerDateTime =>
         extract(_.asString, parseDateTime)
+      case SwaggerTime =>
+        extract(_.asString, parseTime)
+      case SwaggerDate =>
+        extract(_.asString, parseDate)
       case SwaggerDouble =>
         extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
       case SwaggerBigDecimal =>
@@ -68,6 +72,18 @@ object JsonToObject {
   private def parseDateTime(dateTime: String): LocalDateTime = {
     Option(dateTime).filterNot(_.isEmpty).map { dateTime =>
       LocalDateTime.ofInstant(ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_DATE_TIME).toInstant, ZoneId.systemDefault())
+    }.orNull
+  }
+
+  private def parseDate(date: String): LocalDate = {
+    Option(date).filterNot(_.isEmpty).map { date =>
+      LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE)
+    }.orNull
+  }
+
+  private def parseTime(time: String): LocalTime = {
+    Option(time).filterNot(_.isEmpty).map { time =>
+      LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME)
     }.orNull
   }
 }

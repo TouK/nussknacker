@@ -5,15 +5,11 @@ import io.circe.Json.fromString
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.json.swagger.{extractor, _}
+import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
 
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.openapi._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
 class JsonToObjectTest extends AnyFunSuite
   with Matchers {
@@ -24,6 +20,8 @@ class JsonToObjectTest extends AnyFunSuite
     //to jest zgodne z polską strefą - w lipcu jest +02:00...
     "field4" -> fromString("2020-07-10T12:12:30+02:00"),
     "field5" -> fromString(""),
+    "field6" -> fromString("12:12:30"),
+    "field7" -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
     "doubleField" -> Json.fromDoubleOrNull(1.55)
   )
@@ -35,6 +33,8 @@ class JsonToObjectTest extends AnyFunSuite
       "field3" -> SwaggerLong,
       "field4" -> SwaggerDateTime,
       "field5" -> SwaggerDateTime,
+      "field6" -> SwaggerTime,
+      "field7" -> SwaggerDate,
       "decimalField" -> SwaggerBigDecimal,
       "doubleField" -> SwaggerDouble
     ), required = Set("field2"))
@@ -48,6 +48,8 @@ class JsonToObjectTest extends AnyFunSuite
     Option(fields.get("field3")) shouldBe 'empty
     fields.get("field4") shouldBe LocalDateTime.ofInstant(ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME).toInstant, ZoneId.systemDefault())
     Option(fields.get("field5")) shouldBe 'empty
+    fields.get("field6") shouldBe LocalTime.of(12, 12, 30)
+    fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55
   }
