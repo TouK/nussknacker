@@ -5,6 +5,7 @@ import {NodeType, PropertiesType} from "./node"
 import {ValidationResult} from "./validation"
 import {ComponentGroup, SingleComponentConfig} from "./component"
 import {ProcessingType} from "../actions/nk"
+import {AdditionalPropertyConfig} from "../components/graph/node-modal/AdditionalProperty"
 
 export type Process = {
   id: string,
@@ -31,7 +32,7 @@ export type CustomActionParameter = {
   editor: EditorProps,
 }
 
-export type AdditionalPropertiesConfig = $TodoType
+export type AdditionalPropertiesConfig = Record<string, AdditionalPropertyConfig>
 export type DynamicParameterDefinitions = $TodoType
 
 //"ReturnType" is builtin type alias

@@ -25,7 +25,6 @@ import {
 } from "./components"
 
 export function NodeDetailsContent3({
-  additionalPropertiesConfig,
   editedEdges,
   editedNode,
   expressionType,
@@ -33,7 +32,6 @@ export function NodeDetailsContent3({
   findAvailableVariables,
   isEditMode,
   nodeTypingInfo,
-  node,
   originalNode,
   originalNodeId,
   parameterDefinitions,
@@ -88,11 +86,10 @@ export function NodeDetailsContent3({
 
   const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
 
-  switch (NodeUtils.nodeType(node)) {
+  switch (NodeUtils.nodeType(originalNode)) {
     case "Source":
       return (
         <Source
-          node={node}
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
           showValidation={showValidation}
@@ -110,7 +107,6 @@ export function NodeDetailsContent3({
     case "Sink":
       return (
         <Sink
-          node={node}
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
           showValidation={showValidation}
@@ -219,7 +215,6 @@ export function NodeDetailsContent3({
     case "CustomNode":
       return (
         <JoinCustomNode
-          node={node}
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
           showValidation={showValidation}
@@ -307,12 +302,10 @@ export function NodeDetailsContent3({
     case "Properties":
       return (
         <Properties
-          node={node}
           isEditMode={isEditMode}
           showValidation={showValidation}
           showSwitch={showSwitch}
           editedNode={editedNode}
-          additionalPropertiesConfig={additionalPropertiesConfig}
           processDefinitionData={processDefinitionData}
           fieldErrors={fieldErrors}
 
@@ -323,7 +316,7 @@ export function NodeDetailsContent3({
       )
     default:
       return (
-        <NodeDetailsFallback node={node}/>
+        <NodeDetailsFallback node={editedNode}/>
       )
   }
 }

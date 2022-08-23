@@ -13,7 +13,6 @@ export const SourceSinkCommon = ({
   renderFieldLabel,
   showValidation,
   parameterDefinitions,
-  node,
   isEditMode,
   isMarked,
   findAvailableVariables,
@@ -26,7 +25,6 @@ export const SourceSinkCommon = ({
   | "fieldErrors"
   | "showValidation"
   | "parameterDefinitions"
-  | "node"
   | "isEditMode"
   | "findAvailableVariables"
   | "editedNode"
@@ -42,7 +40,7 @@ export const SourceSinkCommon = ({
         setProperty={setProperty}
       />
       {editedNode.ref.parameters?.map((param, index) => (
-        <div className="node-block" key={node.id + param.name + index}>
+        <div className="node-block" key={editedNode.id + param.name + index}>
           <ParameterExpressionField
             originalNodeId={originalNodeId}
             isEditMode={isEditMode}

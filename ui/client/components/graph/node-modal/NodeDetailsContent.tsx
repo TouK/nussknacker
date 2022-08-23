@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {AdditionalPropertiesConfig, Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
+import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {getParameterDefinitions} from "./NodeDetailsContentUtils"
 import {adjustParameters} from "./ParametersUtils"
@@ -8,7 +8,6 @@ import {WithTempId} from "./EdgesDndComponent"
 import {useDispatch, useSelector} from "react-redux"
 import {nodeValidationDataClear, updateNodeData} from "../../../actions/nk"
 import {
-  getAdditionalPropertiesConfig,
   getCurrentErrors,
   getDynamicParameterDefinitions,
   getExpressionType,
@@ -56,7 +55,6 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
   const processDefinitionData = useSelector(getProcessDefinitionData)
-  const additionalPropertiesConfig: AdditionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
   const expressionType = useSelector((state: RootState) => getExpressionType(state)(nodeId))
@@ -116,19 +114,17 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
       <NodeErrors errors={otherErrors} message="Node has errors"/>
       <TestResultsWrapper nodeId={id}>
         <NodeDetailsContent3
-          node={originalNode}
-          isEditMode={isEditMode}
+          originalNode={originalNode}
+          editedNode={editedNode}
           originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
           pathsToMark={pathsToMark}
           showValidation={showValidation}
           showSwitch={showSwitch}
           parameterDefinitions={parameterDefinitions}
-          originalNode={originalNode}
-          editedNode={editedNode}
           editedEdges={editedEdges}
           setEditedEdges={setEditedEdges}
           processDefinitionData={processDefinitionData}
-          additionalPropertiesConfig={additionalPropertiesConfig}
           findAvailableVariables={findAvailableVariables}
           expressionType={expressionType}
           nodeTypingInfo={nodeTypingInfo}

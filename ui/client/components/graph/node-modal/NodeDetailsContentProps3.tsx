@@ -10,7 +10,6 @@ import {
 } from "../../../types"
 import {Dispatch, SetStateAction} from "react"
 import {WithTempId} from "./EdgesDndComponent"
-import {AdditionalPropertyConfig} from "./AdditionalProperty"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {FieldType} from "./editors/field/Field"
 import {Validator} from "./editors/Validators"
@@ -19,24 +18,22 @@ type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
 
 export interface NodeDetailsContentProps3 {
   originalNodeId?: NodeId,
-  node: NodeType,
-  pathsToMark?: string[],
-  isEditMode?: boolean,
-  showValidation?: boolean,
-  showSwitch?: boolean,
   originalNode: NodeType,
   editedNode: NodeType,
   editedEdges: WithTempId<Edge>[],
   setEditedEdges: Dispatch<SetStateAction<WithTempId<Edge>[]>>,
-  additionalPropertiesConfig?: Record<string, AdditionalPropertyConfig>,
+  updateNodeState: UpdateState<NodeType>,
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   processDefinitionData?: ProcessDefinitionData,
   expressionType?,
   nodeTypingInfo?,
+  pathsToMark?: string[],
   variableTypes?: VariableTypes,
   parameterDefinitions: UIParameter[],
   fieldErrors?: NodeValidationError[],
-  updateNodeState: UpdateState<NodeType>,
+  isEditMode?: boolean,
+  showValidation?: boolean,
+  showSwitch?: boolean,
 }
 
 export interface NodeContentMethods {

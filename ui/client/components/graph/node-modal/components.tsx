@@ -2,7 +2,7 @@
 import {NodeContentMethods, NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {SourceSinkCommon} from "./SourceSinkCommon"
 import {DisableField} from "./DisableField"
-import React, {useCallback} from "react"
+import React, {useCallback, useMemo} from "react"
 import {EdgeKind, NodeType} from "../../../types"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import {IdField} from "./IdField"
@@ -28,11 +28,12 @@ import ParameterList from "./ParameterList"
 import {InputWithFocus} from "../../withFocus"
 import MapVariable from "./MapVariable"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
+import {useSelector} from "react-redux"
+import {getAdditionalPropertiesConfig} from "./NodeDetailsContent/selectors"
 
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
 export function Source(props: Pick<NodeDetailsContentProps3,
-  | "node"
   | "originalNodeId"
   | "isEditMode"
   | "showValidation"
@@ -50,14 +51,12 @@ export function Source(props: Pick<NodeDetailsContentProps3,
     findAvailableVariables,
     editedNode,
     parameterDefinitions,
-    node,
     isEditMode,
     originalNodeId,
     showValidation,
   } = props
   return (
     <SourceSinkCommon
-      node={node}
       originalNodeId={originalNodeId}
       isEditMode={isEditMode}
       showValidation={showValidation}
@@ -74,7 +73,6 @@ export function Source(props: Pick<NodeDetailsContentProps3,
 }
 
 export function Sink(props: Pick<NodeDetailsContentProps3,
-  | "node"
   | "originalNodeId"
   | "isEditMode"
   | "showValidation"
@@ -92,14 +90,12 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
     findAvailableVariables,
     editedNode,
     parameterDefinitions,
-    node,
     isEditMode,
     originalNodeId,
     showValidation,
   } = props
   return (
     <SourceSinkCommon
-      node={node}
       originalNodeId={originalNodeId}
       isEditMode={isEditMode}
       showValidation={showValidation}
@@ -471,7 +467,21 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
   )
 }
 
-export function JoinCustomNode(props: Pick<NodeDetailsContentProps3,
+export function JoinCustomNode({
+  isMarked,
+  renderFieldLabel,
+  setProperty,
+  testResultsState,
+  editedNode,
+  isEditMode,
+  showValidation,
+  parameterDefinitions,
+  showSwitch,
+  findAvailableVariables,
+  fieldErrors,
+  originalNodeId,
+  processDefinitionData,
+}: Pick<NodeDetailsContentProps3,
   | "editedNode"
   | "isEditMode"
   | "showValidation"
@@ -479,25 +489,8 @@ export function JoinCustomNode(props: Pick<NodeDetailsContentProps3,
   | "showSwitch"
   | "findAvailableVariables"
   | "fieldErrors"
-  | "node"
   | "originalNodeId"
   | "processDefinitionData"> & NodeContentMethods & { testResultsState: StateForSelectTestResults }): JSX.Element {
-  const {
-    isMarked,
-    renderFieldLabel,
-    setProperty,
-    testResultsState,
-    editedNode,
-    isEditMode,
-    showValidation,
-    parameterDefinitions,
-    showSwitch,
-    findAvailableVariables,
-    fieldErrors,
-    node,
-    originalNodeId,
-    processDefinitionData,
-  } = props
   return (
     <NodeTableBody>
       <IdField
@@ -509,7 +502,7 @@ export function JoinCustomNode(props: Pick<NodeDetailsContentProps3,
         setProperty={setProperty}
       />
       {
-        hasOutputVar(node, processDefinitionData) && (
+        hasOutputVar(editedNode, processDefinitionData) && (
           <NodeField
             editedNode={editedNode}
             isEditMode={isEditMode}
@@ -540,7 +533,7 @@ export function JoinCustomNode(props: Pick<NodeDetailsContentProps3,
       )}
       {editedNode.parameters?.map((param, index) => {
         return (
-          <div className="node-block" key={node.id + param.name + index}>
+          <div className="node-block" key={editedNode.id + param.name + index}>
             <ParameterExpressionField
               originalNodeId={originalNodeId}
               showSwitch={showSwitch}
@@ -808,23 +801,21 @@ export function Properties({
   isEditMode,
   showValidation,
   editedNode,
-  node,
   processDefinitionData,
-  additionalPropertiesConfig,
   fieldErrors,
   showSwitch,
 }: Pick<NodeDetailsContentProps3,
   | "isEditMode"
   | "showValidation"
   | "editedNode"
-  | "node"
   | "processDefinitionData"
-  | "additionalPropertiesConfig"
   | "fieldErrors"
   | "showSwitch"> & NodeContentMethods): JSX.Element {
-  const type = node.typeSpecificProperties.type
+  const additionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig)
+  const type = editedNode.typeSpecificProperties.type
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
+  const sorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
   return (
     <NodeTableBody>
       <IdField
@@ -835,7 +826,7 @@ export function Properties({
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
-      {node.isSubprocess ?
+      {editedNode.isSubprocess ?
         (
           <NodeField
             isEditMode={isEditMode}
@@ -937,7 +928,7 @@ export function Properties({
               />
             )
       }
-      {sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name).map(([propName, propConfig]) => (
+      {sorted.map(([propName, propConfig]) => (
         <AdditionalProperty
           key={propName}
           showSwitch={showSwitch}
