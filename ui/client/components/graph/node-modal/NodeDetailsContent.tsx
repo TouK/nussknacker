@@ -40,29 +40,26 @@ export interface NodeDetailsContentProps {
 }
 
 export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
+  const dispatch = useDispatch()
   const {node, isEditMode, originalNodeId, nodeErrors, onChange, pathsToMark, showValidation, showSwitch, edges} = props
 
-  const dispatch = useDispatch()
   const [originalNode] = useState(node)
-
   const {id} = originalNode
   const nodeId = originalNodeId || id
 
-  useEffect(() => {
-    dispatch(nodeValidationDataClear(nodeId))
-  }, [dispatch, nodeId])
-
-  const processId = useSelector(getProcessId)
-  const processProperties = useSelector(getProcessProperties)
+  //used here and passed
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
-  const expressionType = useSelector((state: RootState) => getExpressionType(state)(nodeId))
-  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(nodeId))
   const variableTypes = useSelector((state: RootState) => getVariableTypes(state)(nodeId))
   const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(nodeId, nodeErrors))
   const dynamicParameterDefinitions = useSelector((state: RootState) => getDynamicParameterDefinitions(state)(nodeId))
+  const [editedNode, setEditedNode] = useState<NodeType>(originalNode)
+  const [editedEdges, setEditedEdges] = useState<WithTempId<Edge>[]>(edges)
 
+  //used only here
+  const processId = useSelector(getProcessId)
+  const processProperties = useSelector(getProcessProperties)
   const nodeDataUpdate = useCallback(
     (node: NodeType, edges: WithTempId<Edge>[]) => {
 
@@ -73,11 +70,15 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
         processProperties,
         outgoingEdges: edges.map(e => ({...e, to: e._id || e.to})),
       }
-      // HttpService.validateNode(processId, validationRequestData)
       return dispatch(updateNodeData(processId, validationRequestData))
     },
     [dispatch, findAvailableBranchVariables, findAvailableVariables, nodeId, processId, processProperties]
   )
+
+  //passed only
+  const expressionType = useSelector((state: RootState) => getExpressionType(state)(nodeId))
+  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(nodeId))
+  const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
   const parameterDefinitions = useMemo(() => {
     return getParameterDefinitions(processDefinitionData, originalNode, dynamicParameterDefinitions)
@@ -88,7 +89,9 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
     return generateUUIDs(adjustedNode, ["fields", "parameters"])
   }, [parameterDefinitions])
 
-  const [editedNode, setEditedNode] = useState<NodeType>(originalNode)
+  useEffect(() => {
+    dispatch(nodeValidationDataClear(nodeId))
+  }, [dispatch, nodeId])
 
   useEffect(() => {
     setEditedNode((node) => {
@@ -97,8 +100,6 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
     })
   }, [adjustNode])
 
-  const [editedEdges, setEditedEdges] = useState<WithTempId<Edge>[]>(edges)
-
   useEffect(() => {
     nodeDataUpdate(editedNode, editedEdges)
   }, [editedEdges, editedNode, nodeDataUpdate])
@@ -106,8 +107,6 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   useEffect(() => {
     onChange?.(editedNode, editedEdges)
   }, [editedEdges, editedNode, onChange])
-
-  const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
   return (
     <NodeTable editable={isEditMode}>

@@ -20,7 +20,6 @@ import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import Variable from "./Variable"
 import ProcessUtils from "../../../common/ProcessUtils"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
-import {StateForSelectTestResults} from "../../../common/TestResultUtils"
 import {hasOutputVar} from "./NodeDetailsContentUtils"
 import NodeUtils from "../NodeUtils"
 import BranchParameters from "./BranchParameters"
@@ -30,6 +29,7 @@ import MapVariable from "./MapVariable"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useSelector} from "react-redux"
 import {getAdditionalPropertiesConfig} from "./NodeDetailsContent/selectors"
+import {useTestResults} from "./TestResultsWrapper"
 
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
@@ -471,7 +471,6 @@ export function JoinCustomNode({
   isMarked,
   renderFieldLabel,
   setProperty,
-  testResultsState,
   editedNode,
   isEditMode,
   showValidation,
@@ -490,7 +489,9 @@ export function JoinCustomNode({
   | "findAvailableVariables"
   | "fieldErrors"
   | "originalNodeId"
-  | "processDefinitionData"> & NodeContentMethods & { testResultsState: StateForSelectTestResults }): JSX.Element {
+  | "processDefinitionData"> & NodeContentMethods): JSX.Element {
+  const testResultsState = useTestResults()
+
   return (
     <NodeTableBody>
       <IdField

@@ -5,7 +5,6 @@ import {cloneDeep, set, startsWith} from "lodash"
 import {FieldLabel} from "./FieldLabel"
 import NodeUtils from "../NodeUtils"
 import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
-import {useTestResults} from "./TestResultsWrapper"
 import {NodeDetailsContentProps3} from "./NodeDetailsContentProps3"
 import {
   ArrayElement,
@@ -42,9 +41,6 @@ export function NodeDetailsContent3({
   showValidation,
   updateNodeState,
 }: NodeDetailsContentProps3): JSX.Element {
-
-  const testResultsState = useTestResults()
-
   const isMarked = useCallback((path = ""): boolean => {
     return pathsToMark?.some(toMark => startsWith(toMark, path))
   }, [pathsToMark])
@@ -228,7 +224,6 @@ export function NodeDetailsContent3({
           isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
-          testResultsState={testResultsState}
         />
       )
     case "VariableBuilder":
