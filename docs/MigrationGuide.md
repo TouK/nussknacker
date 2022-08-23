@@ -22,6 +22,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `interface` -> `http.interface`
   * `port` -> `http.port`
   * `definitionMetadata` -> `request-response.definitionMetadata`
+* [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor.
+  Scenario input/output schema definitions need to be valid OpenAPI definitions - meaning it must declare root type - `"type":"object"` need to be added in most cases.
 
 ## In version 1.5.0
 
