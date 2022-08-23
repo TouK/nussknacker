@@ -41,13 +41,7 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
         get {
           handleDefinitionPath(scenarioPath)
         }
-      } ~ path("healthCheck") { // TODO: remove it from here - we are using healthCheck on other level
-      get {
-        complete {
-          HttpResponse(status = StatusCodes.OK)
-        }
       }
-    }
 
   private def toEntity[T: Encoder](value: T): ResponseEntity = jsonStringToEntity(value.asJson.noSpacesSortKeys)
 

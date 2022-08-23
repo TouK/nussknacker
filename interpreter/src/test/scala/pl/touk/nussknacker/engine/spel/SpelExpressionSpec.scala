@@ -4,9 +4,11 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.catsSyntaxValidatedId
 import org.apache.avro.generic.GenericData
+import org.scalacheck.Gen
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.TypeDefinitionSet
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.dict.embedded.EmbeddedDictDefinition
@@ -17,13 +19,13 @@ import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.api.{Context, NodeId, ParamName, SpelExpressionExcludeList}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{OperatorMismatchTypeError, OperatorNonNumericError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, OperatorMismatchTypeError, OperatorNonNumericError, ModuloZeroError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -649,11 +651,6 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("12.toString()", ctx).toOption.get.returnType shouldBe Typed[String]
   }
 
-  test("be able to type string concatenation") {
-    parse[Any]("12 + ''", ctx).toOption.get.returnType shouldBe Typed[String]
-    parse[Any]("'' + 12", ctx).toOption.get.returnType shouldBe Typed[String]
-  }
-
   test("expand all fields of TypedObjects in union") {
     val ctxWithMap = ValidationContext
       .empty
@@ -869,6 +866,42 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
    result shouldBe 'valid
   }
 
+  private def checkExpressionWithKnownResult(expr: String): Unit = {
+    val parsed = parse[Any](expr).validValue
+    val expected = parsed.expression.evaluateSync[Any](ctx)
+    parsed.returnType shouldBe Typed.fromInstance(expected)
+  }
+
+  test("should calculate values of operators") {
+    def checkOneOperand(op: String, a: Any): Unit =
+      checkExpressionWithKnownResult(s"$op$a")
+
+    def checkTwoOperands(op: String, a: Any, b: Any): Unit =
+      checkExpressionWithKnownResult(s"$a $op $b")
+
+    val oneOperandOp = Gen.oneOf("+", "-")
+    val twoOperandOp = Gen.oneOf("+", "-", "*", "==", "!=", ">", ">=", "<", "<=")
+    val twoOperandNonZeroOp = Gen.oneOf("/", "%")
+
+    val positiveNumberGen = Gen.oneOf(1, 2, 5, 10, 25)
+    val nonZeroNumberGen = Gen.oneOf(-5, -1, 1, 2, 5, 10, 25)
+    val anyNumberGen = Gen.oneOf(-5, -1, 0, 1, 2, 5, 10, 25)
+
+    ScalaCheckDrivenPropertyChecks.forAll(oneOperandOp, positiveNumberGen)(checkOneOperand)
+    ScalaCheckDrivenPropertyChecks.forAll(twoOperandOp, anyNumberGen, anyNumberGen)(checkTwoOperands)
+    ScalaCheckDrivenPropertyChecks.forAll(twoOperandNonZeroOp, anyNumberGen, nonZeroNumberGen)(checkTwoOperands)
+}
+
+  test("should calculate values of operators on strings") {
+    checkExpressionWithKnownResult("'a' + 1")
+    checkExpressionWithKnownResult("1 + 'a'")
+    checkExpressionWithKnownResult("'a' + 'a'")
+  }
+
+  test("should not validate division by zero") {
+    parse[Any]("1 / 0").invalidValue shouldBe NonEmptyList.one(DivisionByZeroError("(1 / 0)"))
+    parse[Any]("1 % 0").invalidValue shouldBe NonEmptyList.one(ModuloZeroError("(1 % 0)"))
+  }
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
