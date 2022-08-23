@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import sttp.client.{NothingT, SttpBackend}
@@ -23,5 +24,22 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   def supportsSignals: Boolean
 }
 
-case class TypeSpecificInitialData(forScenario: ScenarioSpecificData,
-                                   forFragment: FragmentSpecificData = FragmentSpecificData())
+trait TypeSpecificInitialData {
+  def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData
+  def forFragment(scenarioName: ProcessName, scenarioType: String): FragmentSpecificData = FragmentSpecificData()
+}
+
+object TypeSpecificInitialData {
+  def apply(forScenario: ScenarioSpecificData,
+            forFragment: FragmentSpecificData = FragmentSpecificData()): TypeSpecificInitialData =
+    FixedTypeSpecificInitialData(forScenario, forFragment)
+}
+
+case class FixedTypeSpecificInitialData(fixedForScenario: ScenarioSpecificData, fixedForFragment: FragmentSpecificData)
+  extends TypeSpecificInitialData {
+
+  override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = fixedForScenario
+
+  override def forFragment(scenarioName: ProcessName, scenarioType: String): FragmentSpecificData = fixedForFragment
+
+}
