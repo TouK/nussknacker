@@ -3,14 +3,9 @@ package pl.touk.nussknacker.engine.lite.utils
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.TestSuite
 import org.scalatest.matchers.should.Matchers
-import org.springframework.util.StreamUtils
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.{ProcessUtils, VeryPatientScalaFutures}
 
-import java.io.IOException
 import java.nio.file.Path
-import scala.concurrent.Future
-import scala.util.control.NonFatal
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { self: TestSuite with LazyLogging =>
 
@@ -24,56 +19,14 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
   protected def withProcessExecutedInBackground(shellScriptArgs: Array[String], shellScriptEnvs: Array[String],
                                                 executeBeforeProcessStatusCheck: => Unit,
                                                 executeAfterProcessStatusCheck: => Unit): Unit = {
-    @volatile var process: Process = null
-    val processExitCodeFuture = Future {
-      process = Runtime.getRuntime.exec(shellScriptArgs,
-        shellScriptEnvs)
-      logger.info(s"Started runtime process with pid: ${process.pid()}")
-      try {
-        StreamUtils.copy(process.getInputStream, System.out)
-        StreamUtils.copy(process.getErrorStream, System.err)
-      } catch {
-        case _: IOException => // ignore Stream closed
-      }
-      process.onExit().thenApply[Unit](_ => logger.info(s"Runtime process exited with ${process.exitValue()} exit code"))
-      process.waitFor()
-      process.exitValue()
-    }
-
-    try {
+    val process = Runtime.getRuntime.exec(shellScriptArgs, shellScriptEnvs)
+    val processExitCodeFuture = ProcessUtils.attachLoggingAndReturnWaitingFuture(process)
+    ProcessUtils.destroyProcessEventually(process) {
       executeBeforeProcessStatusCheck
-      checkIfFailedInstantly(processExitCodeFuture)
+      ProcessUtils.checkIfFailedInstantly(processExitCodeFuture)
       executeAfterProcessStatusCheck
-    } catch {
-      case NonFatal(ex) =>
-        if (process != null && process.isAlive) {
-          logger.info("Exception during test execution. Runtime process is still alive - dumping threads")
-          // thread dump
-          Runtime.getRuntime.exec(s"kill -3 ${process.pid()}")
-          // wait a while to make sure that stack trace is presented in logs
-          Thread.sleep(3000)
-        }
-        throw ex
-    } finally {
-      if (process != null) {
-        process.destroy()
-      }
     }
-
-    processExitCodeFuture.futureValue shouldEqual 143 // success exit code TODO: shouldn't be just 0?
-  }
-
-  private def checkIfFailedInstantly(future: Future[Int]): Unit = {
-    future.value match {
-      case Some(tryValue) =>
-        // If completed with failure instantly, fail to not shadow true failure by consume timeout
-        tryValue.failed.toOption shouldBe empty
-      case None =>
-        // If not completed instantly but eventually completed with failure, we at least print error on console
-        future.failed.foreach { ex =>
-          ex.printStackTrace()
-        }
-    }
+    ProcessUtils.checkIfSucceedEventually(processExitCodeFuture)
   }
 
   protected def shellScriptPath: Path = {
