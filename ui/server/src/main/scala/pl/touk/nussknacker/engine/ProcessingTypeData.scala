@@ -33,7 +33,7 @@ object ProcessingTypeData {
     ProcessingTypeData(
       manager,
       modelData,
-      deploymentManagerProvider.typeSpecificInitialData,
+      deploymentManagerProvider.typeSpecificInitialData(managerConfig),
       queryableClient,
       deploymentManagerProvider.supportsSignals)
   }

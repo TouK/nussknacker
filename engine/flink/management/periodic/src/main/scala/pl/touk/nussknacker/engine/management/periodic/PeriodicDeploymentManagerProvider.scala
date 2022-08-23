@@ -50,7 +50,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = delegate.createQueryableClient(config)
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = delegate.typeSpecificInitialData
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = delegate.typeSpecificInitialData(config)
 
   override def supportsSignals: Boolean = delegate.supportsSignals
 }

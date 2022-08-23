@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport.kafkaService
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.Container.Running
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
