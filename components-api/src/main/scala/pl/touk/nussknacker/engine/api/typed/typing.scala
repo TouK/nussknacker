@@ -354,4 +354,14 @@ object typing {
     def typingResult: TypingResult
   }
 
+  case class CastTypedValue[T: TypeTag]() {
+    def unapply(typingResult: TypingResult): Option[TypingResultTypedValue[T]] = {
+      Option(typingResult).filter(_.canBeSubclassOf(Typed.fromDetailedType[T])).map(new TypingResultTypedValue(_))
+    }
+  }
+
+  class TypingResultTypedValue[T](typingResult: TypingResult) {
+    def valueOpt: Option[T] = typingResult.valueOpt.asInstanceOf[Option[T]]
+  }
+
 }
