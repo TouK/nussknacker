@@ -157,4 +157,22 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+
+  test("should support schema without type") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "properties":{
+        |      "id":{
+        |         "type":"string"
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[String])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
 }

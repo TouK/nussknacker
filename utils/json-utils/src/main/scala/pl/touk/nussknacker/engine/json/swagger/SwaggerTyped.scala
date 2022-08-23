@@ -28,7 +28,9 @@ case object SwaggerNull extends SwaggerTyped
 case object SwaggerBigDecimal extends SwaggerTyped
 
 case object SwaggerDateTime extends SwaggerTyped
+
 case object SwaggerDate extends SwaggerTyped
+
 case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerEnum(values: List[String]) extends SwaggerTyped
@@ -47,21 +49,22 @@ object SwaggerTyped {
     case _ => Option(schema.get$ref()) match {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
-      case None => (extractType(schema).get, Option(schema.getFormat)) match {
-        case ("object", _) => SwaggerObject(schema.asInstanceOf[ObjectSchema], swaggerRefSchemas)
-        case ("boolean", _) => SwaggerBool
-        case ("string", Some("date-time")) => SwaggerDateTime
-        case ("string", Some("date")) => SwaggerDate
-        case ("string", Some("time")) => SwaggerTime
-        case ("string", _) => Option(schema.getEnum) match {
+      case None => (extractType(schema), Option(schema.getFormat)) match {
+        case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
+        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[ObjectSchema], swaggerRefSchemas)
+        case (Some("boolean"), _) => SwaggerBool
+        case (Some("string"), Some("date-time")) => SwaggerDateTime
+        case (Some("string"), Some("date")) => SwaggerDate
+        case (Some("string"), Some("time")) => SwaggerTime
+        case (Some("string"), _) => Option(schema.getEnum) match {
           case Some(values) => SwaggerEnum(values.asScala.map(_.toString).toList)
           case None => SwaggerString
         }
-        case ("integer", _) => SwaggerLong
-        case ("number", None) => SwaggerBigDecimal
-        case ("number", Some("double")) => SwaggerDouble
-        case ("number", Some("float")) => SwaggerDouble
-        case (null, None) => SwaggerNull
+        case (Some("integer"), _) => SwaggerLong
+        case (Some("number"), None) => SwaggerBigDecimal
+        case (Some("number"), Some("double")) => SwaggerDouble
+        case (Some("number"), Some("float")) => SwaggerDouble
+        case (Some("null"), None) => SwaggerNull
         //todo handle unions
         case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
       }
