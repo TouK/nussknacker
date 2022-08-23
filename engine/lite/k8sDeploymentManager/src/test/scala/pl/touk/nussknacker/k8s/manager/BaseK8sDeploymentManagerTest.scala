@@ -65,7 +65,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
 }
 
-class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) extends VeryPatientScalaFutures with Matchers {
+class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
   def withRunningScenario(action: => Unit): Unit = {
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     eventually {
