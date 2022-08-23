@@ -5,10 +5,10 @@ import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import {NodeType, VariableTypes} from "../../../types"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
+import {useDiffMark} from "./PathsToMark"
 
 type Props = {
   readOnly?: boolean,
-  isMarked: (fieldName: string) => boolean,
   node: NodeType,
   onChange: (fieldName: string, value: string) => void,
   showValidation: boolean,
@@ -23,7 +23,6 @@ export default function Variable(props: Props): JSX.Element {
   const {
     node,
     onChange,
-    isMarked,
     readOnly,
     showValidation,
     errors,
@@ -33,6 +32,7 @@ export default function Variable(props: Props): JSX.Element {
   } = props
 
   const onExpressionChange = useCallback((value: string) => onChange("value.expression", value), [onChange])
+  const [isMarked] = useDiffMark()
 
   return (
     <NodeTableBody className="node-variable-builder-body">

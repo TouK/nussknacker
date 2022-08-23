@@ -14,7 +14,6 @@ export const SourceSinkCommon = ({
   showValidation,
   parameterDefinitions,
   isEditMode,
-  isMarked,
   findAvailableVariables,
   setProperty,
   editedNode,
@@ -35,7 +34,6 @@ export const SourceSinkCommon = ({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -50,7 +48,6 @@ export const SourceSinkCommon = ({
             findAvailableVariables={findAvailableVariables}
             parameterDefinitions={parameterDefinitions}
             fieldErrors={fieldErrors}
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
 
@@ -64,7 +61,6 @@ export const SourceSinkCommon = ({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />

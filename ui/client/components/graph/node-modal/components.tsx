@@ -30,6 +30,7 @@ import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useSelector} from "react-redux"
 import {getAdditionalPropertiesConfig} from "./NodeDetailsContent/selectors"
 import {useTestResults} from "./TestResultsWrapper"
+import {useDiffMark} from "./PathsToMark"
 
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
@@ -43,7 +44,6 @@ export function Source(props: Pick<NodeDetailsContentProps3,
   | "parameterDefinitions"
   | "fieldErrors"> & NodeContentMethods): JSX.Element {
   const {
-    isMarked,
     renderFieldLabel,
     setProperty,
     showSwitch,
@@ -65,14 +65,24 @@ export function Source(props: Pick<NodeDetailsContentProps3,
       findAvailableVariables={findAvailableVariables}
       parameterDefinitions={parameterDefinitions}
       fieldErrors={fieldErrors}
-      isMarked={isMarked}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
     />
   )
 }
 
-export function Sink(props: Pick<NodeDetailsContentProps3,
+export function Sink({
+  renderFieldLabel,
+  setProperty,
+  showSwitch,
+  fieldErrors,
+  findAvailableVariables,
+  editedNode,
+  parameterDefinitions,
+  isEditMode,
+  originalNodeId,
+  showValidation,
+}: Pick<NodeDetailsContentProps3,
   | "originalNodeId"
   | "isEditMode"
   | "showValidation"
@@ -81,19 +91,6 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
   | "findAvailableVariables"
   | "parameterDefinitions"
   | "fieldErrors"> & NodeContentMethods): JSX.Element {
-  const {
-    isMarked,
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    fieldErrors,
-    findAvailableVariables,
-    editedNode,
-    parameterDefinitions,
-    isEditMode,
-    originalNodeId,
-    showValidation,
-  } = props
   return (
     <SourceSinkCommon
       originalNodeId={originalNodeId}
@@ -104,7 +101,6 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
       findAvailableVariables={findAvailableVariables}
       parameterDefinitions={parameterDefinitions}
       fieldErrors={fieldErrors}
-      isMarked={isMarked}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
     >
@@ -113,7 +109,6 @@ export function Sink(props: Pick<NodeDetailsContentProps3,
           isEditMode={isEditMode}
           showValidation={showValidation}
           editedNode={editedNode}
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -133,7 +128,6 @@ type SubprocessInputDefinitionProps =
   & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation" | "variableTypes">
 
 export function SubprocessInputDef({
-  isMarked,
   renderFieldLabel,
   setProperty,
   addElement,
@@ -149,7 +143,6 @@ export function SubprocessInputDef({
       addElement={addElement}
       onChange={setProperty}
       node={editedNode}
-      isMarked={isMarked}
       readOnly={!isEditMode}
       removeElement={removeElement}
       showValidation={showValidation}
@@ -170,7 +163,6 @@ export function SubprocessOutputDef(
     removeElement,
     setProperty,
     addElement,
-    isMarked,
     variableTypes,
     expressionType,
     nodeTypingInfo,
@@ -187,7 +179,6 @@ export function SubprocessOutputDef(
       onChange={setProperty}
       node={editedNode}
       addElement={addElement}
-      isMarked={isMarked}
       readOnly={!isEditMode}
       showValidation={showValidation}
       errors={fieldErrors || []}
@@ -199,10 +190,8 @@ export function SubprocessOutputDef(
 }
 
 export function Filter({
-  isMarked,
   renderFieldLabel,
   setProperty,
-  isCompareView,
   isEditMode,
   fieldErrors,
   originalNodeId,
@@ -213,11 +202,12 @@ export function Filter({
   parameterDefinitions,
   showSwitch,
   findAvailableVariables,
-}: { isCompareView?: boolean } & NodeContentMethods & Pick<NodeDetailsContentProps3, "editedEdges" | "setEditedEdges" | "isEditMode" | "fieldErrors" | "originalNodeId" | "showValidation" | "editedNode" | "parameterDefinitions" | "showSwitch" | "findAvailableVariables">): JSX.Element {
+}: NodeContentMethods & Pick<NodeDetailsContentProps3, "editedEdges" | "setEditedEdges" | "isEditMode" | "fieldErrors" | "originalNodeId" | "showValidation" | "editedNode" | "parameterDefinitions" | "showSwitch" | "findAvailableVariables">): JSX.Element {
+  const [, isCompareView] = useDiffMark()
+
   return (
     <NodeTableBody>
       <IdField
-        isMarked={isMarked}
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
@@ -226,7 +216,6 @@ export function Filter({
 
       />
       <StaticExpressionField
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
         fieldLabel={"Expression"}
@@ -244,7 +233,6 @@ export function Filter({
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -268,7 +256,6 @@ export function Filter({
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -277,7 +264,6 @@ export function Filter({
 }
 
 export function EnricherProcessor({
-  isMarked,
   renderFieldLabel,
   setProperty,
   ...props
@@ -303,7 +289,6 @@ export function EnricherProcessor({
   return (
     <NodeTableBody>
       <IdField
-        isMarked={isMarked}
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
@@ -323,7 +308,6 @@ export function EnricherProcessor({
               parameterDefinitions={parameterDefinitions}
               fieldErrors={fieldErrors}
 
-              isMarked={isMarked}
               renderFieldLabel={renderFieldLabel}
               setProperty={setProperty}
               parameter={param}
@@ -339,7 +323,6 @@ export function EnricherProcessor({
             showValidation={showValidation}
             editedNode={editedNode}
 
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
@@ -355,7 +338,6 @@ export function EnricherProcessor({
             editedNode={editedNode}
             isEditMode={isEditMode}
             showValidation={showValidation}
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
           />
@@ -365,7 +347,6 @@ export function EnricherProcessor({
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -384,7 +365,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
   | "originalNodeId"
   | "parameterDefinitions"> & NodeContentMethods): JSX.Element {
   const {
-    isMarked,
     renderFieldLabel,
     setProperty,
     editedNode,
@@ -404,7 +384,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -412,7 +391,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -433,7 +411,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
               editedNode={editedNode}
               isEditMode={isEditMode}
               showValidation={showValidation}
-              isMarked={isMarked}
               renderFieldLabel={renderFieldLabel}
               setProperty={setProperty}
               parameter={param}
@@ -459,7 +436,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -468,7 +444,6 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
 }
 
 export function JoinCustomNode({
-  isMarked,
   renderFieldLabel,
   setProperty,
   editedNode,
@@ -498,7 +473,6 @@ export function JoinCustomNode({
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -508,7 +482,6 @@ export function JoinCustomNode({
             editedNode={editedNode}
             isEditMode={isEditMode}
             showValidation={showValidation}
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
@@ -521,7 +494,6 @@ export function JoinCustomNode({
       {NodeUtils.nodeIsJoin(editedNode) && (
         <BranchParameters
           node={editedNode}
-          isMarked={isMarked}
           showValidation={showValidation}
           showSwitch={showSwitch}
           isEditMode={isEditMode}
@@ -545,7 +517,6 @@ export function JoinCustomNode({
               editedNode={editedNode}
               isEditMode={isEditMode}
               showValidation={showValidation}
-              isMarked={isMarked}
               renderFieldLabel={renderFieldLabel}
               setProperty={setProperty}
               parameter={param}
@@ -558,7 +529,6 @@ export function JoinCustomNode({
         editedNode={editedNode}
         isEditMode={isEditMode}
         showValidation={showValidation}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -571,7 +541,6 @@ export function VariableBuilder({
   removeElement,
   setProperty,
   addElement,
-  isMarked,
   variableTypes,
   expressionType,
   nodeTypingInfo,
@@ -594,7 +563,6 @@ export function VariableBuilder({
       onChange={setProperty}
       node={editedNode}
       addElement={addElement}
-      isMarked={isMarked}
       readOnly={!isEditMode}
       showValidation={showValidation}
       variableTypes={variableTypes}
@@ -607,7 +575,6 @@ export function VariableBuilder({
 export function VariableDef({
   renderFieldLabel,
   setProperty,
-  isMarked,
   variableTypes,
   isEditMode,
   nodeTypingInfo,
@@ -630,7 +597,6 @@ export function VariableDef({
       renderFieldLabel={renderFieldLabel}
       onChange={setProperty}
       node={editedNode}
-      isMarked={isMarked}
       readOnly={!isEditMode}
       showValidation={showValidation}
       variableTypes={variableTypes}
@@ -641,10 +607,8 @@ export function VariableDef({
 }
 
 export function Switch({
-  isMarked,
   renderFieldLabel,
   setProperty,
-  isCompareView,
   variableTypes,
   expressionType,
   findAvailableVariables,
@@ -675,13 +639,15 @@ export function Switch({
   | "fieldErrors"
   | "originalNodeId"
   | "editedEdges"
-  | "showValidation"> & { isCompareView?: boolean }): JSX.Element {
+  | "showValidation">): JSX.Element {
   const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
   const currentExpression = originalNode["expression"]
   const currentExprVal = originalNode["exprVal"]
   const exprValValidator = errorValidator(fieldErrors || [], "exprVal")
   const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
   const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
+  const [, isCompareView] = useDiffMark()
+
   return (
     <NodeTableBody>
       <IdField
@@ -689,7 +655,6 @@ export function Switch({
         showValidation={showValidation}
         editedNode={editedNode}
 
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -705,7 +670,6 @@ export function Switch({
             parameterDefinitions={parameterDefinitions}
             fieldErrors={fieldErrors}
 
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldLabel={"Expression (deprecated)"}
@@ -719,7 +683,6 @@ export function Switch({
             showValidation={showValidation}
             editedNode={editedNode}
 
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
@@ -757,7 +720,6 @@ export function Switch({
         showValidation={showValidation}
         editedNode={editedNode}
 
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -766,7 +728,6 @@ export function Switch({
 }
 
 export function Split({
-  isMarked,
   renderFieldLabel,
   setProperty,
   isEditMode,
@@ -779,7 +740,6 @@ export function Split({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -787,7 +747,6 @@ export function Split({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -796,7 +755,6 @@ export function Split({
 }
 
 export function Properties({
-  isMarked,
   renderFieldLabel,
   setProperty,
   isEditMode,
@@ -823,7 +781,6 @@ export function Properties({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -833,7 +790,6 @@ export function Properties({
             isEditMode={isEditMode}
             showValidation={showValidation}
             editedNode={editedNode}
-            isMarked={isMarked}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
@@ -850,7 +806,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -863,7 +818,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -875,7 +829,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
@@ -887,7 +840,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
@@ -904,7 +856,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -919,7 +870,6 @@ export function Properties({
                 isEditMode={isEditMode}
                 showValidation={showValidation}
                 editedNode={editedNode}
-                isMarked={isMarked}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -947,7 +897,6 @@ export function Properties({
         isEditMode={isEditMode}
         showValidation={showValidation}
         editedNode={editedNode}
-        isMarked={isMarked}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />

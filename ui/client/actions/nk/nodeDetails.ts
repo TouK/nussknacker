@@ -47,7 +47,7 @@ function validate(processId: string, validationRequestData: ValidationRequest, d
 //TODO: use sth better, how long should be timeout?
 const debouncedValidate = debounce(validate, 500)
 
-export function updateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
+export function validateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
   //Properties are "special types" which are not compatible with NodeData in BE
   const {nodeData} = validationRequestData
   if (nodeData.type && nodeData.type !== "Properties") {

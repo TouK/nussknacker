@@ -7,7 +7,6 @@ import {StaticExpressionFieldProps} from "./NodeDetailsContentProps3"
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
   fieldLabel,
-  isMarked,
   renderFieldLabel,
   setProperty,
   parameterDefinitions,
@@ -30,7 +29,6 @@ export function StaticExpressionField({
       exprPath={`${expressionProperty}`}
       isEditMode={isEditMode}
       editedNode={editedNode}
-      isMarked={isMarked}
       showValidation={showValidation}
       showSwitch={showSwitch}
       parameterDefinition={findParamDefinitionByName(parameterDefinitions, fieldName)}

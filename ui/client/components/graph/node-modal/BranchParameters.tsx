@@ -7,7 +7,6 @@ import {NodeResultsForContext} from "../../../common/TestResultUtils"
 
 export interface BranchParametersProps {
   node: NodeType,
-  isMarked: (path: string) => boolean,
   parameterDefinitions: UIParameter[],
   errors: Error[],
   setNodeDataAt: <T extends any>(propToMutate: string, newValue: T, defaultValue?: T) => void,
@@ -18,12 +17,10 @@ export interface BranchParametersProps {
   showSwitch?: boolean,
 }
 
-export default function BranchParameters(props: BranchParametersProps): JSX.Element {
-  const {
-    node, isMarked, showValidation, errors, showSwitch, isEditMode,
-    parameterDefinitions, setNodeDataAt, testResultsToShow, findAvailableVariables,
-  } = props
-
+export default function BranchParameters({
+  node, showValidation, errors, showSwitch, isEditMode,
+  parameterDefinitions, setNodeDataAt, testResultsToShow, findAvailableVariables,
+}: BranchParametersProps): JSX.Element {
   //TODO: maybe we can rely only on node?
   const branchParameters = parameterDefinitions?.filter(p => p.branchParam)
   return (
@@ -60,7 +57,6 @@ export default function BranchParameters(props: BranchParametersProps): JSX.Elem
                           exprPath={expressionPath}
                           isEditMode={isEditMode}
                           editedNode={node}
-                          isMarked={isMarked}
                           showValidation={showValidation}
                           showSwitch={showSwitch}
                           parameterDefinition={param}

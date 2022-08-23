@@ -27,7 +27,6 @@ export interface NodeDetailsContentProps3 {
   processDefinitionData?: ProcessDefinitionData,
   expressionType?,
   nodeTypingInfo?,
-  pathsToMark?: string[],
   variableTypes?: VariableTypes,
   parameterDefinitions: UIParameter[],
   fieldErrors?: NodeValidationError[],
@@ -37,7 +36,6 @@ export interface NodeDetailsContentProps3 {
 }
 
 export interface NodeContentMethods {
-  isMarked: (path?: string) => boolean,
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
 }

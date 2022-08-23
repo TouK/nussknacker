@@ -2,9 +2,9 @@ import {allValid, mandatoryValueValidator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React from "react"
 import {IdFieldProps} from "./NodeDetailsContentProps3"
+import {useDiffMark} from "./PathsToMark"
 
 export function IdField({
-  isMarked,
   isEditMode,
   showValidation,
   editedNode,
@@ -12,7 +12,7 @@ export function IdField({
   renderFieldLabel,
 }: IdFieldProps): JSX.Element {
   const validators = [mandatoryValueValidator]
-
+  const [isMarked] = useDiffMark()
   return (
     <Field
       type={FieldType.input}

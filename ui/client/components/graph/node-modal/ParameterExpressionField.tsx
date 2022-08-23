@@ -8,7 +8,7 @@ import {ParameterExpressionFieldProps} from "./NodeDetailsContentProps3"
 export function ParameterExpressionField({
   parameter,
   listFieldPath,
-  isMarked, renderFieldLabel, setProperty,
+  renderFieldLabel, setProperty,
   ...props
 }: ParameterExpressionFieldProps): JSX.Element {
   const expressionProperty = "expression"
@@ -21,7 +21,6 @@ export function ParameterExpressionField({
       exprPath={`${listFieldPath}.${expressionProperty}`}
       isEditMode={props.isEditMode}
       editedNode={props.editedNode}
-      isMarked={isMarked}
       showValidation={props.showValidation}
       showSwitch={props.showSwitch}
       parameterDefinition={findParamDefinitionByName(props.parameterDefinitions, parameter.name)}

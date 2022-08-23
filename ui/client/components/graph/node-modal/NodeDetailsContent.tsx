@@ -6,7 +6,7 @@ import {getParameterDefinitions} from "./NodeDetailsContentUtils"
 import {adjustParameters} from "./ParametersUtils"
 import {WithTempId} from "./EdgesDndComponent"
 import {useDispatch, useSelector} from "react-redux"
-import {nodeValidationDataClear, updateNodeData} from "../../../actions/nk"
+import {nodeValidationDataClear, validateNodeData} from "../../../actions/nk"
 import {
   getCurrentErrors,
   getDynamicParameterDefinitions,
@@ -26,6 +26,7 @@ import {isEqual, partition} from "lodash"
 import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
 import {NodeDetailsContent3} from "./NodeDetailsContent3"
+import {useDiffMark} from "./PathsToMark"
 
 export interface NodeDetailsContentProps {
   originalNodeId?: NodeId,
@@ -33,17 +34,24 @@ export interface NodeDetailsContentProps {
   edges?: Edge[],
   onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   nodeErrors?: NodeValidationError[],
-  pathsToMark?: string[],
   isEditMode?: boolean,
   showValidation?: boolean,
   showSwitch?: boolean,
 }
 
-export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element => {
+export const NodeDetailsContent = ({
+  node,
+  isEditMode,
+  originalNodeId,
+  nodeErrors,
+  onChange,
+  showValidation,
+  showSwitch,
+  edges,
+}: NodeDetailsContentProps): JSX.Element => {
   const dispatch = useDispatch()
-  const {node, isEditMode, originalNodeId, nodeErrors, onChange, pathsToMark, showValidation, showSwitch, edges} = props
 
-  const [originalNode] = useState(node)
+  const [originalNode, _setOriginalNode] = useState(node)
   const {id} = originalNode
   const nodeId = originalNodeId || id
 
@@ -60,17 +68,17 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   //used only here
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
-  const nodeDataUpdate = useCallback(
-    (node: NodeType, edges: WithTempId<Edge>[]) => {
 
+  const validate = useCallback(
+    (node: NodeType, edges?: WithTempId<Edge>[]) => {
       const validationRequestData = {
         variableTypes: findAvailableVariables(nodeId),
         branchVariableTypes: findAvailableBranchVariables(nodeId),
         nodeData: node,
         processProperties,
-        outgoingEdges: edges.map(e => ({...e, to: e._id || e.to})),
+        outgoingEdges: edges?.map(e => ({...e, to: e._id || e.to})),
       }
-      return dispatch(updateNodeData(processId, validationRequestData))
+      return dispatch(validateNodeData(processId, validationRequestData))
     },
     [dispatch, findAvailableBranchVariables, findAvailableVariables, nodeId, processId, processProperties]
   )
@@ -101,12 +109,25 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
   }, [adjustNode])
 
   useEffect(() => {
-    nodeDataUpdate(editedNode, editedEdges)
-  }, [editedEdges, editedNode, nodeDataUpdate])
+    if (isEditMode) {
+      validate(editedNode, editedEdges)
+    }
+  }, [editedEdges, editedNode, isEditMode, validate])
 
   useEffect(() => {
-    onChange?.(editedNode, editedEdges)
-  }, [editedEdges, editedNode, onChange])
+    if (isEditMode) {
+      onChange?.(editedNode, editedEdges)
+    }
+  }, [editedEdges, editedNode, isEditMode, onChange])
+
+  //fixme: workaround for compare view
+  const [, isCompareView] = useDiffMark()
+  useEffect(() => {
+    if (isCompareView) {
+      _setOriginalNode(node)
+      setEditedNode(node)
+    }
+  }, [isCompareView, node])
 
   return (
     <NodeTable editable={isEditMode}>
@@ -117,7 +138,6 @@ export const NodeDetailsContent = (props: NodeDetailsContentProps): JSX.Element 
           editedNode={editedNode}
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
-          pathsToMark={pathsToMark}
           showValidation={showValidation}
           showSwitch={showSwitch}
           parameterDefinitions={parameterDefinitions}

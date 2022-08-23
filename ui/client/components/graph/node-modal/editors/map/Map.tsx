@@ -7,9 +7,9 @@ import {Error, mandatoryValueValidator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
 import {isEqual} from "lodash"
+import {useDiffMark} from "../../PathsToMark"
 
 export interface MapCommonProps {
-  isMarked: (paths: string) => boolean,
   onChange: (path: string, newValue: unknown) => void,
   readOnly?: boolean,
   showValidation: boolean,
@@ -30,9 +30,11 @@ export type TypedField = Field & { typeInfo: string }
 
 export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   const {
-    label, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
+    label, onChange, addField, removeField, namespace, readOnly, showValidation,
     errors, variableTypes, expressionType,
   } = props
+
+  const [isMarked] = useDiffMark()
 
   const appendTypeInfo = useCallback((expressionObj: F): F & { typeInfo: string } => {
     const fields = expressionType?.fields

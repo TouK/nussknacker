@@ -1,10 +1,18 @@
 import React, {useCallback} from "react"
-import {Field, TypedObjectTypingResult, VariableTypes} from "../../../types"
+import {Field, NodeType, TypedObjectTypingResult, VariableTypes} from "../../../types"
 import {ExpressionLang} from "./editors/expression/types"
 import Map from "./editors/map/Map"
-import {NodeCommonDetailsDefinition, NodeDetailsProps} from "./NodeCommonDetailsDefinition"
+import {NodeCommonDetailsDefinition} from "./NodeCommonDetailsDefinition"
+import {Error} from "./editors/Validators"
 
-export interface MapVariableProps<F extends Field> extends NodeDetailsProps<F> {
+export interface MapVariableProps<F extends Field> {
+  node: NodeType<F>,
+  onChange: (propToMutate: string, newValue: unknown) => void,
+  readOnly?: boolean,
+  showValidation: boolean,
+  renderFieldLabel: (label: string) => React.ReactNode,
+  errors: Error[],
+
   removeElement: (namespace: string, ix: number) => void,
   addElement: (property: string, element: F) => void,
   variableTypes: VariableTypes,

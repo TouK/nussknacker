@@ -13,7 +13,7 @@ type Props = MapVariableProps<Parameter>
 
 export default function SubprocessInputDefinition(props: Props): JSX.Element {
   const {removeElement, addElement, ...passProps} = props
-  const {isMarked, node, onChange, readOnly, showValidation} = passProps
+  const {node, onChange, readOnly, showValidation} = passProps
 
   const definitionData = useSelector(getProcessDefinitionData)
   const typeOptions = useMemo(() => definitionData?.processDefinition?.typesInformation?.map(type => ({
@@ -41,7 +41,6 @@ export default function SubprocessInputDefinition(props: Props): JSX.Element {
         namespace={"parameters"}
         fields={fields}
         options={orderedTypeOptions}
-        isMarked={isMarked}
         showValidation={showValidation}
         readOnly={readOnly}
       />

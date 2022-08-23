@@ -9,7 +9,6 @@ export type DescriptionFieldProps = Omit<NodeFieldProps<"additionalFields.descri
 export const DescriptionField = ({
   autoFocus,
   defaultValue,
-  isMarked,
   renderFieldLabel,
   setProperty,
   editedNode,
@@ -22,7 +21,6 @@ export const DescriptionField = ({
     <NodeField
       autoFocus={autoFocus}
       defaultValue={defaultValue}
-      isMarked={isMarked}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
       editedNode={editedNode}

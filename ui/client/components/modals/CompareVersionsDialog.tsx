@@ -15,6 +15,7 @@ import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent"
 import {ProcessVersionType} from "../Process/types"
 import {SelectWithFocus} from "../withFocus"
 import {NodeDetailsContent} from "../graph/node-modal/NodeDetailsContent"
+import {PathsToMarkProvider} from "../graph/node-modal/PathsToMark"
 
 interface State {
   currentDiffId: string,
@@ -164,14 +165,16 @@ class VersionsForm extends React.Component<Props, State> {
     const differentPaths = this.differentPathsForObjects(currentElement, otherElement)
     return (
       <div className="compareContainer">
-        <div>
-          <div className="versionHeader">Current version</div>
-          {printElement(currentElement, differentPaths)}
-        </div>
-        <div>
-          <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
-          {printElement(otherElement, [])}
-        </div>
+        <PathsToMarkProvider value={differentPaths}>
+          <div>
+            <div className="versionHeader">Current version</div>
+            {printElement(currentElement)}
+          </div>
+          <div>
+            <div className="versionHeader">Version {this.versionDisplayString(this.state.otherVersion)}</div>
+            {printElement(otherElement)}
+          </div>
+        </PathsToMarkProvider>
       </div>
     )
   }
@@ -182,9 +185,9 @@ class VersionsForm extends React.Component<Props, State> {
     return Object.keys(flatObj)
   }
 
-  printNode(node, pathsToMark) {
+  printNode(node) {
     return node ?
-      <NodeDetailsContent node={node} pathsToMark={pathsToMark}/> :
+      <NodeDetailsContent node={node}/> :
       <div className="notPresent">Node not present</div>
   }
 
@@ -192,24 +195,25 @@ class VersionsForm extends React.Component<Props, State> {
     return
   }
 
-  printEdge = (edge, pathsToMark) => edge ?
-    (
-      <EdgeDetailsContent
-        edge={edge}
-        readOnly={true}
-        showValidation={false}
-        showSwitch={false}
-        changeEdgeTypeValue={this.stubOnChange}
-        changeEdgeTypeCondition={this.stubOnChange}
-        pathsToMark={pathsToMark}
-        variableTypes={{}}
-      />
-    ) :
-    (<div className="notPresent">Edge not present</div>)
+  printEdge = (edge) => {
+    return edge ?
+      (
+        <EdgeDetailsContent
+          edge={edge}
+          readOnly={true}
+          showValidation={false}
+          showSwitch={false}
+          changeEdgeTypeValue={this.stubOnChange}
+          changeEdgeTypeCondition={this.stubOnChange}
+          variableTypes={{}}
+        />
+      ) :
+      (<div className="notPresent">Edge not present</div>)
+  }
 
-  printProperties(property, pathsToMark) {
+  printProperties(property) {
     return property ?
-      <NodeDetailsContent node={property} pathsToMark={pathsToMark}/> :
+      <NodeDetailsContent node={property}/> :
       <div className="notPresent">Properties not present</div>
   }
 }

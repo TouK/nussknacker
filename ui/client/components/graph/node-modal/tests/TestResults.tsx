@@ -32,10 +32,9 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
       {
         results.testResultsToShow && !isEmpty(results.testResultsToShow.mockedResultsForCurrentContext) ?
           results.testResultsToShow.mockedResultsForCurrentContext.map((mockedValue, index) => (
-            <span className="testResultDownload">
+            <span key={index} className="testResultDownload">
               <a
                 download={`${nodeId}-single-input`}
-                key={index}
                 href={downloadableHref(stringifyMockedValue(mockedValue))}
               >
                 <span className="glyphicon glyphicon-download"/> Results for this input</a></span>

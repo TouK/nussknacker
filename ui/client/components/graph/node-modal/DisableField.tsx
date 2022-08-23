@@ -8,7 +8,6 @@ export type DisableFieldProps = Omit<NodeFieldProps<"isDisabled", string>, "fiel
 export function DisableField({
   autoFocus,
   defaultValue,
-  isMarked,
   renderFieldLabel,
   setProperty,
   editedNode,
@@ -21,7 +20,6 @@ export function DisableField({
     <NodeField
       autoFocus={autoFocus}
       defaultValue={defaultValue}
-      isMarked={isMarked}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
       editedNode={editedNode}

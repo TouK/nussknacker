@@ -17,8 +17,7 @@ interface Props {
   readOnly?: boolean,
 }
 
-export function NodeGroupContent(props: Props): JSX.Element {
-  const {currentNodeId, node, edges, onChange, readOnly} = props
+export function NodeGroupContent({currentNodeId, node, edges, onChange, readOnly}: Props): JSX.Element {
   const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
 
   return (

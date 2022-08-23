@@ -4,9 +4,9 @@ import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
 import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
+import {useDiffMark} from "./PathsToMark"
 
 export interface NodeDetailsProps<F extends Field> {
-  isMarked: (paths: string) => boolean,
   node: NodeType<F>,
   onChange: (propToMutate: string, newValue: unknown) => void,
   readOnly?: boolean,
@@ -25,7 +25,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({
   ...props
 }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
   const {
-    isMarked, node, onChange, readOnly,
+    node, onChange, readOnly,
     showValidation, renderFieldLabel, errors,
     outputField,
     outputName,
@@ -34,6 +34,8 @@ export function NodeCommonDetailsDefinition<F extends Field>({
   const onInputChange = useCallback((path: string, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     onChange(path, event.target.value)
   }, [onChange])
+
+  const [isMarked] = useDiffMark()
 
   return (
     <NodeTableBody className="node-variable-builder-body">

@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import {NodeType} from "../../../types"
 import React, {useCallback, useMemo} from "react"
-import {cloneDeep, set, startsWith} from "lodash"
+import {cloneDeep, set} from "lodash"
 import {FieldLabel} from "./FieldLabel"
 import NodeUtils from "../NodeUtils"
 import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
@@ -34,20 +34,12 @@ export function NodeDetailsContent3({
   originalNode,
   originalNodeId,
   parameterDefinitions,
-  pathsToMark,
   processDefinitionData,
   setEditedEdges,
   showSwitch,
   showValidation,
   updateNodeState,
 }: NodeDetailsContentProps3): JSX.Element {
-  const isMarked = useCallback((path = ""): boolean => {
-    return pathsToMark?.some(toMark => startsWith(toMark, path))
-  }, [pathsToMark])
-
-  //compare window uses legacy egde component
-  const isCompareView = useMemo(() => isMarked(), [isMarked])
-
   const removeElement = useCallback((property: keyof NodeType, index: number): void => {
     updateNodeState((currentNode) => ({
       ...currentNode,
@@ -95,7 +87,6 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -112,7 +103,6 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -125,7 +115,6 @@ export function NodeDetailsContent3({
           editedNode={editedNode}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
           addElement={addElement}
@@ -143,7 +132,6 @@ export function NodeDetailsContent3({
           nodeTypingInfo={nodeTypingInfo}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
           addElement={addElement}
@@ -165,10 +153,8 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
-          isCompareView={isCompareView}
         />
       )
     case "Enricher":
@@ -184,7 +170,6 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -202,7 +187,6 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -221,7 +205,6 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -235,7 +218,6 @@ export function NodeDetailsContent3({
           expressionType={expressionType}
           nodeTypingInfo={nodeTypingInfo}
           fieldErrors={fieldErrors}
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
           removeElement={removeElement}
@@ -252,7 +234,6 @@ export function NodeDetailsContent3({
           expressionType={expressionType}
           nodeTypingInfo={nodeTypingInfo}
           fieldErrors={fieldErrors}
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
           variableTypes={variableTypes}
@@ -276,10 +257,8 @@ export function NodeDetailsContent3({
           parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
-          isCompareView={isCompareView}
           variableTypes={variableTypes}
         />
       )
@@ -289,7 +268,6 @@ export function NodeDetailsContent3({
           isEditMode={isEditMode}
           showValidation={showValidation}
           editedNode={editedNode}
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -304,7 +282,6 @@ export function NodeDetailsContent3({
           processDefinitionData={processDefinitionData}
           fieldErrors={fieldErrors}
 
-          isMarked={isMarked}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
