@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
-import akka.Done
 import akka.actor.{Actor, ActorSystem, Props}
-import akka.http.scaladsl.model.Uri
+import akka.http.scaladsl.server.Route
 import akka.management.scaladsl.AkkaManagement
 import akka.pattern._
 import akka.util.Timeout
@@ -14,19 +13,13 @@ import pl.touk.nussknacker.engine.lite.kafka.RunnableScenarioInterpreterStatusCh
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class HealthCheckServerRunner(system: ActorSystem, scenarioInterpreter: RunnableScenarioInterpreter) {
+class HealthCheckRoutesProvider(system: ActorSystem, scenarioInterpreter: RunnableScenarioInterpreter) {
 
-  private  val management = AkkaManagement(system)
+  system.actorOf(RunnableScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), RunnableScenarioInterpreterStatusCheckerActor.actorName)
 
-  def start(): Future[Uri] = {
-    system.actorOf(RunnableScenarioInterpreterStatusCheckerActor.props(scenarioInterpreter), RunnableScenarioInterpreterStatusCheckerActor.actorName)
-    management.start()
-  }
+  private val management = AkkaManagement(system)
 
-  def stop(): Future[Done] = {
-    management.stop()
-  }
-
+  def routes(): Route = management.routes
 }
 
 class KafkaRuntimeRunningCheck(system: ActorSystem) extends (() => Future[Boolean]) with LazyLogging {

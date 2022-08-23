@@ -89,14 +89,14 @@ spec:
         livenessProbe:
           httpGet:
             path: /alive
-            port: 8558
+            port: 8080
             scheme: HTTP
         name: runtime
         readinessProbe:
           failureThreshold: 60
           httpGet:
             path: /ready
-            port: 8558
+            port: 8080
             scheme: HTTP
           periodSeconds: 1
         volumeMounts:
@@ -191,10 +191,12 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 
 `request-response-embedded` Deployment Manager has the following configuration options:
 
-| Parameter                 | Type    | Default value | Description                                              |
-|---------------------------|---------|---------------|----------------------------------------------------------|
-| interface                 | string  | 0.0.0.0       | Interface on which REST API of scenarios will be exposed |
-| port                      | int     | 8181          | Port on which REST API of scenarios will be exposed      | 
+| Parameter                                              | Type   | Default value | Description                                                  |
+|--------------------------------------------------------|--------|---------------|--------------------------------------------------------------|
+| http.interface                                         | string | 0.0.0.0       | Interface on which REST API of scenarios will be exposed     |
+| http.port                                              | int    | 8181          | Port on which REST API of scenarios will be exposed          | 
+| request-response.definitionMetadata.server.url         | string |               | For purpose of scenario OpenApi definition. Optional config. | 
+| request-response.definitionMetadata.server.description | string |               | For purpose of scenario OpenApi definition. Optional config. | 
 
 ## Streaming-Flink 
 

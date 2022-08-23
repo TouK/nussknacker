@@ -22,7 +22,7 @@ class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntime
   }
 
   private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend()
-  private val baseManagementUrl = uri"http://localhost:$mappedRuntimeManagementPort"
+  private val baseManagementUrl = uri"http://localhost:$mappedRuntimeApiPort"
 
   test("readiness probe") {
     eventually {

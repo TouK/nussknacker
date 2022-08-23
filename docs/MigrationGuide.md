@@ -12,6 +12,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 * [#3436](https://github.com/TouK/nussknacker/pull/3436) Division by zero will cause validation error. Tests that rely on `1/0` to generate exceptions should have it changed to code like `1/{0, 1}[0]`
 
+### Configuration changes
+* [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
+  * `interface` -> `http.interface`
+  * `port` -> `http.port`
+  * `definitionMetadata` -> `request-response.definitionMetadata`
+
 ## In version 1.5.0
 
 ### Configuration changes

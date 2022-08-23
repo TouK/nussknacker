@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite
 
 import akka.actor.ActorSystem
+import akka.http.scaladsl.server.Route
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -13,7 +14,8 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProv
 import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-
+import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
+import scala.concurrent.Future
 import java.net.URL
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {
@@ -36,8 +38,8 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
       case _: LiteStreamMetaData =>
         KafkaTransactionalScenarioInterpreter(scenario, jobData, liteKafkaJobData, modelData, preparer)
       case _: RequestResponseMetaData =>
-        val httpConfig = runtimeConfig.as[RequestResponseConfig]("http")
-        new RequestResponseRunnableScenarioInterpreter(jobData, scenario, modelData, preparer, httpConfig)
+        val requestResponseConfig = runtimeConfig.as[RequestResponseConfig]("request-response")
+        new RequestResponseRunnableScenarioInterpreter(jobData, scenario, modelData, preparer, requestResponseConfig)
       case other =>
         throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }
@@ -48,4 +50,10 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     new LiteMetricRegistryFactory(instanceId).prepareRegistry(engineConfig)
   }
 
+}
+
+trait RunnableScenarioInterpreter extends AutoCloseable {
+  def routes(): Option[Route]
+  def run(): Future[Unit]
+  def status(): TaskStatus
 }

@@ -74,8 +74,8 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
@@ -163,8 +163,8 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive"))),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"))),
                 resources = Some(
                   skuber.Resource.Requirements(
                     limits = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi")),
@@ -246,8 +246,8 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
