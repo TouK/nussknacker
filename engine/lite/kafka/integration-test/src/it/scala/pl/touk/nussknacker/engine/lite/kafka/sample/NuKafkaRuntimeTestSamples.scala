@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.lite.kafka.sample
 
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
@@ -12,22 +13,16 @@ object NuKafkaRuntimeTestSamples {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val jsonPingPongScenarioId = "json-ping-pong"
-  val avroPingPongScenarioId = "avro-ping-pong"
+  val pingPongScenarioId = "universal-ping-pong"
 
-  def jsonPingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
-    .streamingLite(jsonPingPongScenarioId)
-    .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-    .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
-    .toCanonicalProcess
-
-  def avroPingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
-    .streamingLite(avroPingPongScenarioId)
-    .source("source", "kafka-avro", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+  def pingPongScenario(inputTopic: String, outputTopic: String): CanonicalProcess = ScenarioBuilder
+    .streamingLite(pingPongScenarioId)
+    .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
     .emptySink("sink",
-      "kafka-avro-raw",
+      "kafka",
       TopicParamName -> s"'$outputTopic'",
       SchemaVersionParamName -> "'latest'",
+      SinkRawEditorParamName -> s"true",
       SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
       SinkKeyParamName -> "",
       SinkValueParamName -> "#input"
@@ -44,6 +39,16 @@ object NuKafkaRuntimeTestSamples {
       |      { "name" : "foo" , "type" : "string" }
       |   ]
       |}""".stripMargin
+
+  val jsonPingSchema: JsonSchema = new JsonSchema(
+    """{
+      |   "type" : "object",
+      |   "name" : "Ping",
+      |   "properties" : {
+      |      "foo" : { "type" : "string" }
+      |   },
+      |   "required": ["foo"]
+      |}""".stripMargin)
 
   val avroPingSchema: Schema = AvroUtils.parseSchema(avroPingSchemaString)
 

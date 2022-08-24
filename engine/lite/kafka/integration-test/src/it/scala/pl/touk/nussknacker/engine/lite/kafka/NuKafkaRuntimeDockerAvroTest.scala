@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -13,40 +12,20 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 class NuKafkaRuntimeDockerAvroTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with PatientScalaFutures with LazyLogging {
 
-  private val schemaRegistryHostname = "schemaregistry"
-  private val schemaRegistryPort = 8081
-
-  private val schemaRegistryContainer = {
-    val container = GenericContainer(
-      "confluentinc/cp-schema-registry:7.2.1",
-      exposedPorts = Seq(schemaRegistryPort),
-      env = Map(
-        "SCHEMA_REGISTRY_HOST_NAME" -> schemaRegistryHostname,
-        "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" -> dockerNetworkKafkaBoostrapServer)
-    )
-    configureNetwork(container, schemaRegistryHostname)
-    container
-  }
-
   private var inputSchemaId: Int = _
 
   private var outputSchemaId: Int = _
 
-  private def mappedSchemaRegistryAddress = s"http://localhost:${schemaRegistryContainer.mappedPort(schemaRegistryPort)}"
-
-  private def dockerNetworkSchemaRegistryAddress = s"http://$schemaRegistryHostname:$schemaRegistryPort"
-
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
     schemaRegistryContainer.start() // should be started after kafka
-    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.avroPingPongScenarioId, NuKafkaRuntimeTestSamples.avroPingPongScenario)
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
     startRuntimeContainer(fixture.scenarioFile, additionalEnvs = Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 
   private def registerSchemas(): Unit = {
-    val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
     val parsedAvroSchema = ConfluentUtils.convertToAvroSchema(NuKafkaRuntimeTestSamples.avroPingSchema)
     inputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), parsedAvroSchema)
     outputSchemaId = schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), parsedAvroSchema)

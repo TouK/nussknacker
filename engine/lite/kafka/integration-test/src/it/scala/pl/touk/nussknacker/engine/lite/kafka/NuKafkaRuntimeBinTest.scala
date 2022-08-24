@@ -15,7 +15,7 @@ class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin w
   override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress
 
   test("should run scenario and pass data to output ") {
-    val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
+    val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.pingPongScenario)
 
     val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
     val shellScriptEnvs = Array(

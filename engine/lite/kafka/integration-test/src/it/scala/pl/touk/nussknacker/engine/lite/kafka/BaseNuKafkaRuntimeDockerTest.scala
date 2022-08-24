@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, GenericContainer, KafkaContainer, SingleContainer}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.client.CachedSchemaRegistryClient
 import org.scalatest.{BeforeAndAfterAll, TestSuite, TryValues}
 import org.testcontainers.containers.{Network, GenericContainer => JavaGenericContainer}
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -19,9 +20,28 @@ import scala.util.Try
 trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAfterAll with NuKafkaRuntimeTestMixin with TryValues {
   self: TestSuite with LazyLogging =>
 
-  private val kafkaHostname = "kafka"
+  private val schemaRegistryHostname = "schemaregistry"
+  private val schemaRegistryPort = 8081
 
   private val network = Network.newNetwork
+  private val kafkaHostname = "kafka"
+
+  protected val schemaRegistryContainer = {
+    val container = GenericContainer(
+      "confluentinc/cp-schema-registry:7.2.1",
+      exposedPorts = Seq(schemaRegistryPort),
+      env = Map(
+        "SCHEMA_REGISTRY_HOST_NAME" -> schemaRegistryHostname,
+        "SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS" -> dockerNetworkKafkaBoostrapServer)
+    )
+    configureNetwork(container, schemaRegistryHostname)
+    container
+  }
+
+  protected def mappedSchemaRegistryAddress = s"http://localhost:${schemaRegistryContainer.mappedPort(schemaRegistryPort)}"
+  protected def dockerNetworkSchemaRegistryAddress = s"http://$schemaRegistryHostname:$schemaRegistryPort"
+
+  protected lazy val schemaRegistryClient = new CachedSchemaRegistryClient(mappedSchemaRegistryAddress, 10)
 
   protected val kafkaContainer: KafkaContainer = {
     val container = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
