@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.{saveScenarioToT
 import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
 import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
+import sttp.model.StatusCode
 
 // depends on liteEngineKafkaRuntime / Universal / stage sbt task
 class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with LazyLogging {
@@ -22,10 +23,11 @@ class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin
     ) ++ akkaManagementEnvs
 
     withProcessExecutedInBackground(shellScriptArgs, shellScriptEnvs, {}, {
-      eventually { // TODO: check ready probe
-        val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", pingPongScenario.id))
-        request.body(jsonPingMessage("foo")).send().body shouldBe Right(jsonPongMessage("foo"))
+      eventually {
+        basicRequest.get(uri"http://localhost".port(port).path("alive")).send().code shouldEqual StatusCode.Ok
       }
+      val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", pingPongScenario.id))
+      request.body(jsonPingMessage("foo")).send().body shouldBe Right(jsonPongMessage("foo"))
     })
   }
 
