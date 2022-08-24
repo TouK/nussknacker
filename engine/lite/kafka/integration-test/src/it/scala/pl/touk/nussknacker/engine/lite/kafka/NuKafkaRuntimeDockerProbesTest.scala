@@ -16,7 +16,7 @@ class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntime
 
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
-    fixture = prepareTestCaseFixture("probes", NuKafkaRuntimeTestSamples.pingPongScenario)
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     startRuntimeContainer(fixture.scenarioFile, checkReady = false)
     MultipleContainers(kafkaContainer, runtimeContainer)
   }

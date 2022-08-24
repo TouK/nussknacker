@@ -1,26 +1,22 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
+import com.dimafeng.testcontainers.{Container, MultipleContainers}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.springframework.util.StreamUtils
-import pl.touk.nussknacker.engine.kafka.KafkaSpec
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 // depends on liteEngineKafkaRuntime / Universal / stage sbt task
-class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with KafkaSpec with NuKafkaRuntimeTestMixin with LazyLogging {
-
-  override protected def kafkaBoostrapServer: String = kafkaServer.kafkaAddress
+class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with BaseNuKafkaRuntimeDockerTest with LazyLogging {
 
   test("should run scenario and pass data to output ") {
-    val fixture = prepareTestCaseFixture("json-ping-pong", NuKafkaRuntimeTestSamples.pingPongScenario)
-
     val shellScriptArgs = Array(shellScriptPath.toString, fixture.scenarioFile.toString, NuRuntimeTestUtils.deploymentDataFile.toString)
     val shellScriptEnvs = Array(
       s"KAFKA_ADDRESS=$kafkaBoostrapServer",
       "KAFKA_AUTO_OFFSET_RESET=earliest",
+      s"SCHEMA_REGISTRY_URL=$mappedSchemaRegistryAddress",
       // random management port to avoid clashing of ports
       "CONFIG_FORCE_akka_management_http_port=0",
       "CONFIG_FORCE_kafka_lowLevelComponentsEnabled=true",
@@ -37,4 +33,16 @@ class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin w
       })
   }
 
+  override val container: Container = {
+    kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
+    schemaRegistryContainer.start() // should be started after kafka
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+    registerSchemas()
+    MultipleContainers(kafkaContainer, schemaRegistryContainer)
+  }
+
+  private def registerSchemas(): Unit = {
+    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+  }
 }
