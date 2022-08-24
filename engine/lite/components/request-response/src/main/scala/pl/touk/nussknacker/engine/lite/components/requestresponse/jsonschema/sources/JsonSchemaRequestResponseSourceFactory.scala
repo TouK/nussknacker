@@ -36,7 +36,7 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
 
   override def implementation(params: Map[String, Any],
                               dependencies: List[NodeDependencyValue],
-                              finalStateOpt: Option[Schema]): RequestResponseSource[TypedMap] = {
+                              finalStateOpt: Option[Schema]): RequestResponseSource[Any] = {
     val finalSchemaState = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
     val nodeId = nodeIdDependency.extract(dependencies)
     val metaData = metaDataDependency.extract(dependencies)

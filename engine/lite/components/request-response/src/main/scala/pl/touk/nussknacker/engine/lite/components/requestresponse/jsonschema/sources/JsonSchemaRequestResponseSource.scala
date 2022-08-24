@@ -2,36 +2,31 @@ package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.so
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-import org.everit.json.schema.{Schema, ValidationException}
-import org.json.{JSONException, JSONObject}
+import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
-import pl.touk.nussknacker.engine.api.typed.{CustomNodeValidationException, ReturningType, TypedMap, typing}
+import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.typing.JsonToTypedMapConverter
 
 import java.nio.charset.StandardCharsets
-import scala.collection.JavaConverters._
 
 class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, schema: Schema, val nodeId: NodeId)
-  extends RequestResponsePostSource[TypedMap] with LazyLogging with ReturningType with SourceTestSupport[TypedMap] {
+  extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] {
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
-  override def parse(parameters: Array[Byte]): TypedMap = {
+  override def parse(parameters: Array[Byte]): Any = {
     val parametersString = new String(parameters, StandardCharsets.UTF_8)
     validateAndReturnTypedMap(parametersString)
   }
 
-  private def validateAndReturnTypedMap(parameters: String): TypedMap = {
-    val jsonObject = new JSONObject(parameters)
-    catchValidationError(schema.validate(jsonObject))
-    val json = decodeJsonWithError(jsonObject.toString)
-    JsonToTypedMapConverter.jsonToTypedMap(json)
+  private def validateAndReturnTypedMap(parameters: String): Any = {
+    new CirceJsonDeserializer(schema).deserialize(parameters).valueOr(e => throw new RuntimeException("Deserialization error", e))
   }
 
 
@@ -44,16 +39,16 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
   }
 
-  override def testDataParser: TestDataParser[TypedMap] = {
-    new NewLineSplittedTestDataParser[TypedMap] {
-      override def parseElement(testElement: String): TypedMap = {
+  override def testDataParser: TestDataParser[Any] = {
+    new NewLineSplittedTestDataParser[Any] {
+      override def parseElement(testElement: String): Any = {
         validateAndReturnTypedMap(testElement)
       }
     }
   }
 
-  override def responseEncoder: Option[ResponseEncoder[TypedMap]] = Option(new ResponseEncoder[TypedMap] {
-    override def toJsonResponse(input: TypedMap, result: List[Any]): Json = {
+  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new ResponseEncoder[Any] {
+    override def toJsonResponse(input: Any, result: List[Any]): Json = {
       result.map(jsonEncoder.encode)
         .headOption
         .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
@@ -61,23 +56,6 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   })
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
-
-
-  protected def prepareValidationErrorMessage(exception: Throwable): String = {
-    exception match {
-      case ve: ValidationException => ve.getAllMessages.asScala.mkString("\n\n")
-      case je: JSONException => s"Invalid JSON: ${je.getMessage}"
-      case _ => "unknown error message"
-    }
-  }
-
-  protected def catchValidationError[T](action: => T): T = try {
-    action
-  } catch {
-    case ex: Throwable =>
-      val errorMsg = prepareValidationErrorMessage(ex)
-      throw CustomNodeValidationException(errorMsg, None)
-  }
 
 }
 
