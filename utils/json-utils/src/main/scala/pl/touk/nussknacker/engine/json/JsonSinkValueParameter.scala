@@ -32,7 +32,7 @@ object JsonSinkValueParameter {
   }
 
   private def createJsonSinkSingleValueParameter(schema: Schema, paramName: String, defaultValue: Option[Expression], isRequired: Option[Boolean]): SinkSingleValueParameter = {
-    val typing = JsonSchemaTypeDefinitionExtractor.typeDefinition(schema)
+    val typing = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
     //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
     val isOptional = !isRequired.getOrElse(false)
     val parameter = (

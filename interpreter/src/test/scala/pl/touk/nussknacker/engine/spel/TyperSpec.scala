@@ -24,9 +24,9 @@ class TyperSpec extends AnyFunSuite with Matchers {
     println(typeExpression("#x + 2", "x" -> 2).toOption.get.finalResult)
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
       PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
-      PositionRange(3, 4) -> TypingResultWithContext(Typed[Int]),
+      PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),
       PositionRange(5, 6) -> TypingResultWithContext(Typed.fromInstance(2))
-    ), TypingResultWithContext(Typed[Int])))
+    ), TypingResultWithContext(Typed.fromInstance(4))))
   }
 
   test("template") {
@@ -59,28 +59,6 @@ class TyperSpec extends AnyFunSuite with Matchers {
   test("restricting simple type selection") {
     typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
-  }
-
-  test("should remove values from types in operators") {
-    def checkFinalResult(expr: String, expected: TypingResult): Unit = {
-      typeExpression(expr).toOption.get.finalResult.typingResult shouldBe expected
-    }
-
-    val table = Table(
-      ("expr", "expected"),
-      ("--2", Typed[Int]),
-      ("++2", Typed[Int]),
-      ("2 / 2", Typed[Int]),
-      ("2 - 2", Typed[Int]),
-      ("-2", Typed[Int]),
-      ("2 % 2", Typed[Int]),
-      ("2 * 2", Typed[Int]),
-      ("2 ^ 2", Typed(Typed[Int], Typed[Long])),
-      ("2 + 2", Typed[Int]),
-      ("+5", Typed.fromInstance(5)),
-      ("'a' + 'a'", Typed[String])
-    )
-    forAll(table)(checkFinalResult)
   }
 
   private val strictTypeChecking = false

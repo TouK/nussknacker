@@ -280,7 +280,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .emptySink("out", "sinkForInts", "value" -> "15 / 0")
+        .emptySink("out", "sinkForInts", "value" -> "15 / {0, 1}[0]")
 
     val results = runFlinkTest(process, TestData.newLineSeparated("2|2|2|3|4|5|6"))
 

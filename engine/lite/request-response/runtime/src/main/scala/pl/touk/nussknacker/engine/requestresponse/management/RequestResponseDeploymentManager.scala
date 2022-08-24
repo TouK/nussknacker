@@ -73,7 +73,7 @@ class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider
 
   override def name: String = "requestResponse"
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
 
   override def supportsSignals: Boolean = false
 

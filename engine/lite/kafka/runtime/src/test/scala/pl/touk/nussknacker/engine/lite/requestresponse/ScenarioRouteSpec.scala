@@ -24,8 +24,8 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
 
   import spel.Implicits._
 
-  private val inputSchema = """{"properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
-  private val outputSchema = """{"properties": {"place": {"type": "string"}}}"""
+  private val inputSchema = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
+  private val outputSchema = """{"type" : "object", "properties": {"place": {"type": "string"}}}"""
   private val process = ScenarioBuilder
     .requestResponse("test")
     .additionalFields(description = Some("description"), properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
@@ -96,6 +96,7 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
       |          "content" : {
       |            "application/json" : {
       |              "schema" : {
+      |                "type" : "object",
       |                "nullable" : false,
       |                "properties" : {
       |                  "city" : {
@@ -120,6 +121,7 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
       |            "content" : {
       |              "application/json" : {
       |                "schema" : {
+      |                  "type" : "object",
       |                  "properties" : {
       |                    "place" : {
       |                      "type" : "string"

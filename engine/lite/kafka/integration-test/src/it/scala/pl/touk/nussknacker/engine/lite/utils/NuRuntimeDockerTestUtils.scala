@@ -16,19 +16,18 @@ object NuRuntimeDockerTestUtils {
   private val liteKafkaRuntimeDockerName = s"touk/nussknacker-lite-kafka-runtime:$dockerTag"
 
   val runtimeApiPort = 8080
-  val runtimeManagementPort = 8558
 
   def startRuntimeContainer(scenarioFile: File, logger: Logger, networkOpt: Option[Network] = None, checkReady: Boolean = true, additionalEnvs: Map[String, String] = Map.empty): GenericContainer = {
     val runtimeContainer = GenericContainer(
       liteKafkaRuntimeDockerName,
-      exposedPorts = Seq(runtimeApiPort, runtimeManagementPort),
+      exposedPorts = Seq(runtimeApiPort),
       env = sys.env.get("NUSSKNACKER_LOG_LEVEL").map("NUSSKNACKER_LOG_LEVEL" -> _).toMap ++ additionalEnvs)
     networkOpt.foreach(runtimeContainer.underlyingUnsafeContainer.withNetwork)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(scenarioFile.toString, "/opt/nussknacker/conf/scenario.json", BindMode.READ_ONLY)
     runtimeContainer.underlyingUnsafeContainer.withFileSystemBind(
       NuRuntimeTestUtils.deploymentDataFile.toString,
       "/opt/nussknacker/conf/deploymentConfig.conf", BindMode.READ_ONLY)
-    val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeManagementPort) else DumbWaitStrategy
+    val waitStrategy = if (checkReady) Wait.forHttp("/ready").forPort(runtimeApiPort) else DumbWaitStrategy
     runtimeContainer.underlyingUnsafeContainer.setWaitStrategy(waitStrategy)
     runtimeContainer.start()
     runtimeContainer.underlyingUnsafeContainer.followOutput(new Slf4jLogConsumer(logger))

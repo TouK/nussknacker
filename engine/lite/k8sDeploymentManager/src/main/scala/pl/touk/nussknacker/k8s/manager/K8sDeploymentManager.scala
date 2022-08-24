@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -22,12 +22,14 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, K8sScalingConfig, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
+import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, Service, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -41,6 +43,7 @@ import scala.util.Using
   ConfigMap contains: model config with overrides for execution and scenario
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
+
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
@@ -50,11 +53,21 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
+  private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
+
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
+    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
+    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
+    config.getString("mode") match {
+      case "streaming" => steamingInitialMetData
+      case "request-response" => TypeSpecificInitialData(RequestResponseMetaData(None)) // TODO: default path based on scenario name
+      case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
+    }
+  }
 
   override def supportsSignals: Boolean = false
 
-  override def name: String = "streaming-lite-k8s"
+  override def name: String = "lite-k8s"
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-kafka-runtime",
@@ -65,7 +78,7 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       nussknackerInstanceName: Option[String] = None,
                                       logbackConfigPath: Option[String] = None,
                                       commonConfigMapForLogback: Option[String] = None,
-                                     )
+                                      servicePort: Int = 80)
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -74,7 +87,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
   private val deploymentPreparer = new DeploymentPreparer(config)
-  private val scalingOptionsDeterminer = K8sScalingOptionsDeterminer(config.scalingConfig)
+  private val servicePreparer = new ServicePreparer(config)
+  private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -112,6 +126,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
       deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, mountableResources, scalingOptions.replicasCount))
+      serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -123,16 +138,32 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         secretIdLabel isNot secret.name
       ))
     } yield {
-      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}")
-      logger.trace(s"K8s deployment name: ${deployment.name}: $deployment")
+      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}")
       logger.trace(s"K8s deployment name: ${deployment.name}: K8sDeploymentConfig: ${config.k8sDeploymentConfig}")
       None
     }
   }
 
   private def determineScalingOptions(canonicalProcess: CanonicalProcess) = {
-    val parallelism = canonicalProcess.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(defaultParallelism)
-    scalingOptionsDeterminer.determine(parallelism)
+    canonicalProcess.metaData.typeSpecificData match {
+      case stream: LiteStreamMetaData =>
+        val determiner = scalingOptionsDeterminerOpt.getOrElse(defaultKafkaScalingDeterminer)
+        determiner.determine(stream.parallelism.getOrElse(defaultParallelism))
+      case _: RequestResponseMetaData =>
+        val replicasCount = scalingOptionsDeterminerOpt match {
+          case Some(fixed: FixedReplicasCountK8sScalingOptionsDeterminer) =>
+            fixed.replicasCount
+          case Some(_) =>
+            logger.debug(s"Not supported scaling config for request-response scenario type: ${config.scalingConfig}. Will be used default replicase count: $defaultReqRespReplicaseCount instead")
+            defaultReqRespReplicaseCount
+          case None =>
+            defaultReqRespReplicaseCount
+        }
+        // TODO: noOfTasksInReplica currently has no effect in req-resp, maybe we would like to have some options to tune http throughput instead?
+        K8sScalingOptions(replicasCount = replicasCount, noOfTasksInReplica = 1)
+      case other =>
+        throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
+    }
   }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
@@ -140,11 +171,12 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     //We wait for deployment removal before removing configmaps,
     //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
+      services <- k8s.deleteAllSelected[ListResource[Service]](selector)
       deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
       configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
       secrets <- k8s.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
-      logger.debug(s"Canceled ${name.value}, removed deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
+      logger.debug(s"Canceled ${name.value}, removed services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
       ()
     }
   }
@@ -214,6 +246,14 @@ object K8sDeploymentManager {
 
   val defaultParallelism = 1
 
+  // 4 because it is quite normal number of cpus reserved for one container
+  val defaultKafkaTasksPerReplica = 4
+
+  val defaultKafkaScalingDeterminer: K8sScalingOptionsDeterminer = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(defaultKafkaTasksPerReplica))
+
+  // 2 for HA purpose
+  val defaultReqRespReplicaseCount = 2
+
   val nussknackerInstanceNameLabel: String = "nussknacker.io/nussknackerInstanceName"
 
   val scenarioNameLabel: String = "nussknacker.io/scenarioName"
@@ -266,9 +306,12 @@ object K8sDeploymentManager {
     //we simulate (more or less) --append-hash kubectl behaviour...
     val hashToAppend = hashInput.map(input => "-" + shortHash(input)).getOrElse("")
     val plainScenarioName = s"scenario-${processVersion.processId.value}-${processVersion.processName.value}"
-    val scenarioName = nussknackerInstanceName.map(in => s"$in-$plainScenarioName").getOrElse(plainScenarioName)
+    val scenarioName = objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName, plainScenarioName)
     sanitizeObjectName(scenarioName, hashToAppend)
   }
+
+  private[manager] def objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName: Option[String], objectName: String) =
+    sanitizeObjectName(nussknackerInstanceName.map(in => s"$in-$objectName").getOrElse(objectName))
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
     deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)

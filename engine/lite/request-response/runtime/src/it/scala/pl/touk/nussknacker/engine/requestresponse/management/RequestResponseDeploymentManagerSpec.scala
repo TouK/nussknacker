@@ -30,8 +30,8 @@ class RequestResponseDeploymentManagerSpec extends AnyFunSuite with VeryPatientS
 
     val manager = new RequestResponseDeploymentManager(modelData, null)
 
-    val inputSchema = """{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
-    val outputSchema = """{ "properties": { "value": {"type":"string"} }}"""
+    val inputSchema = """{"type" : "object", "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
+    val outputSchema = """{"type" : "object", "properties": { "value": {"type":"string"} }}"""
 
     val process = ScenarioBuilder
       .requestResponse("tst")
