@@ -234,7 +234,7 @@ class ProcessUtils {
     return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
-  humanReadableType = (typingResult: TypingResult): string => isEmpty(typingResult) ? null : typingResult.display
+  humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null
 
   _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
     const nodeEdge = process.edges.find((edge) => edge.to === nodeId)

@@ -7,27 +7,23 @@ import {
   ProcessDefinitionData,
   UIParameter,
 } from "../../../types"
-import {Dispatch, SetStateAction} from "react"
 import {WithTempId} from "./EdgesDndComponent"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {FieldType} from "./editors/field/Field"
 import {Validator} from "./editors/Validators"
 
-type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
+export type UpdateState<T> = (updateState: (currentState: Readonly<T>) => T) => void
 
 export interface NodeDetailsContentProps3 {
   editedEdges: WithTempId<Edge>[],
   editedNode: NodeType,
-  expressionType?,
   fieldErrors?: NodeValidationError[],
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
-  nodeTypingInfo?,
-  originalNode: NodeType,
   originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   processDefinitionData?: ProcessDefinitionData,
-  setEditedEdges: Dispatch<SetStateAction<WithTempId<Edge>[]>>,
+  setEditedEdges: (edges: Edge[]) => void,
   showSwitch?: boolean,
   showValidation?: boolean,
   updateNodeState: UpdateState<NodeType>,

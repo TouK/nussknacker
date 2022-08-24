@@ -1,3 +1,4 @@
+/* eslint-disable i18next/no-literal-string */
 import React, {useCallback} from "react"
 import {Field, NodeType, TypedObjectTypingResult, VariableTypes} from "../../../types"
 import {ExpressionLang} from "./editors/expression/types"
@@ -16,7 +17,7 @@ export interface MapVariableProps<F extends Field> {
   removeElement: (namespace: string, ix: number) => void,
   addElement: (property: string, element: F) => void,
   variableTypes: VariableTypes,
-  expressionType?: TypedObjectTypingResult,
+  expressionType?: Partial<TypedObjectTypingResult>,
 }
 
 function MapVariable<F extends Field>(props: MapVariableProps<F>): JSX.Element {

@@ -33,7 +33,11 @@ export function calculateProcessAfterChange(process: Process, before: NodeType, 
     let changedProcess = process
     if (outputEdges) {
       const processDefinitionData = getProcessDefinitionData(getState())
-      changedProcess = replaceNodeOutputEdges(process, processDefinitionData, outputEdges, before.id)
+      const filtered = outputEdges.map(({to, ...e}) => changedProcess.nodes.find(n => n.id === to) ? {...e, to} : {
+        ...e,
+        to: ""
+      })
+      changedProcess = replaceNodeOutputEdges(process, processDefinitionData, filtered, before.id)
     }
 
     return mapProcessWithNewNode(changedProcess, before, after)

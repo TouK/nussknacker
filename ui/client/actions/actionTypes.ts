@@ -46,7 +46,6 @@ export type ActionTypes =
   | "DISPLAY_PROCESS_COUNTS"
   | "HIDE_RUN_PROCESS_DETAILS"
   | "DISPLAY_TEST_RESULTS_DETAILS"
-  | "EDIT_EDGE"
   | "UNDO"
   | "REDO"
   | "CLEAR"

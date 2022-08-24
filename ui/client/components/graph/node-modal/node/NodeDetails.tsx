@@ -125,8 +125,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
           currentNodeId={currentNodeId}
           node={editedNode}
           edges={outputEdges}
-          onChange={onChange}
-          readOnly={readOnly}
+          onChange={!readOnly && onChange}
         />
       </ErrorBoundary>
     </WindowContent>

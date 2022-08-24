@@ -23,7 +23,7 @@ interface MapProps<F extends Field> extends MapCommonProps {
   namespace: string,
   addField: (namespace: string, field?: F) => void,
   removeField: (namespace: string, index: number) => void,
-  expressionType?: TypedObjectTypingResult,
+  expressionType?: Partial<TypedObjectTypingResult>,
 }
 
 export type TypedField = Field & { typeInfo: string }

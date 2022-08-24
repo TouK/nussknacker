@@ -26,12 +26,9 @@ import {
 export function NodeDetailsContent3({
   editedEdges,
   editedNode,
-  expressionType,
   fieldErrors,
   findAvailableVariables,
   isEditMode,
-  nodeTypingInfo,
-  originalNode,
   originalNodeId,
   parameterDefinitions,
   processDefinitionData,
@@ -75,7 +72,7 @@ export function NodeDetailsContent3({
   const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
 
   function extracted() {
-    switch (NodeUtils.nodeType(originalNode)) {
+    switch (NodeUtils.nodeType(editedNode)) {
       case "Source":
         return (
           <Source
@@ -129,8 +126,6 @@ export function NodeDetailsContent3({
             isEditMode={isEditMode}
             showValidation={showValidation}
             editedNode={editedNode}
-            expressionType={expressionType}
-            nodeTypingInfo={nodeTypingInfo}
             fieldErrors={fieldErrors}
 
             renderFieldLabel={renderFieldLabel}
@@ -216,8 +211,6 @@ export function NodeDetailsContent3({
             isEditMode={isEditMode}
             showValidation={showValidation}
             editedNode={editedNode}
-            expressionType={expressionType}
-            nodeTypingInfo={nodeTypingInfo}
             fieldErrors={fieldErrors}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -230,10 +223,9 @@ export function NodeDetailsContent3({
         return (
           <VariableDef
             isEditMode={isEditMode}
+            originalNodeId={originalNodeId}
             showValidation={showValidation}
             editedNode={editedNode}
-            expressionType={expressionType}
-            nodeTypingInfo={nodeTypingInfo}
             fieldErrors={fieldErrors}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -247,17 +239,13 @@ export function NodeDetailsContent3({
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}
-            originalNode={originalNode}
             editedNode={editedNode}
             editedEdges={editedEdges}
             setEditedEdges={setEditedEdges}
             findAvailableVariables={findAvailableVariables}
             processDefinitionData={processDefinitionData}
-            expressionType={expressionType}
-            nodeTypingInfo={nodeTypingInfo}
             parameterDefinitions={parameterDefinitions}
             fieldErrors={fieldErrors}
-
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             variableTypes={variableTypes}

@@ -3,7 +3,7 @@ import {NodeContentMethods, NodeDetailsContentProps3} from "./NodeDetailsContent
 import {SourceSinkCommon} from "./SourceSinkCommon"
 import {DisableField} from "./DisableField"
 import React, {useCallback, useMemo} from "react"
-import {EdgeKind, NodeType, VariableTypes} from "../../../types"
+import {EdgeKind, NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes} from "../../../types"
 import SubprocessInputDefinition from "./subprocess-input-definition/SubprocessInputDefinition"
 import {IdField} from "./IdField"
 import {NodeField} from "./NodeField"
@@ -16,7 +16,6 @@ import {StaticExpressionField} from "./StaticExpressionField"
 import {EdgesDndComponent} from "./EdgesDndComponent"
 import {serviceParameters} from "./NodeDetailsContent/helpers"
 import {ParameterExpressionField} from "./ParameterExpressionField"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
 import Variable from "./Variable"
 import ProcessUtils from "../../../common/ProcessUtils"
 import SubprocessOutputDefinition from "./SubprocessOutputDefinition"
@@ -27,9 +26,20 @@ import {InputWithFocus} from "../../withFocus"
 import MapVariable from "./MapVariable"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useSelector} from "react-redux"
-import {getAdditionalPropertiesConfig} from "./NodeDetailsContent/selectors"
+import {getAdditionalPropertiesConfig, getExpressionType, getNodeTypingInfo} from "./NodeDetailsContent/selectors"
 import {useTestResults} from "./TestResultsWrapper"
 import {useDiffMark} from "./PathsToMark"
+import {RootState} from "../../../reducers"
+
+export const DEFAULT_EXPRESSION_ID = "$expression"
+
+function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
+  return expressionType || nodeTypingInfo?.[DEFAULT_EXPRESSION_ID]
+}
+
+function getNodeExpressionType(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): Pick<TypedObjectTypingResult, "fields"> {
+  return {fields: expressionType?.fields || nodeTypingInfo}
+}
 
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
@@ -124,7 +134,7 @@ interface AddRemoveMethods {
 type SubprocessInputDefinitionProps =
   AddRemoveMethods
   & NodeContentMethods
-  & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation">
+  & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation" | "originalNodeId">
   & { variableTypes?: VariableTypes }
 
 export function SubprocessInputDef({
@@ -153,9 +163,10 @@ export function SubprocessInputDef({
   )
 }
 
-type SubprocessOutputDefinitionProps =
-  SubprocessInputDefinitionProps
-  & Pick<NodeDetailsContentProps3, "expressionType" | "nodeTypingInfo">
+export interface NodeTypingInfo {
+  expressionType: TypedObjectTypingResult,
+  nodeTypingInfo: TypingInfo,
+}
 
 export function SubprocessOutputDef(
   {
@@ -164,14 +175,16 @@ export function SubprocessOutputDef(
     setProperty,
     addElement,
     variableTypes,
-    expressionType,
-    nodeTypingInfo,
     showValidation,
     fieldErrors,
     isEditMode,
     editedNode,
-  }: SubprocessOutputDefinitionProps
+    originalNodeId,
+  }: SubprocessInputDefinitionProps
 ): JSX.Element {
+  const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
+  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
+
   return (
     <SubprocessOutputDefinition
       renderFieldLabel={renderFieldLabel}
@@ -184,7 +197,7 @@ export function SubprocessOutputDef(
       errors={fieldErrors || []}
 
       variableTypes={variableTypes}
-      expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
+      expressionType={getNodeExpressionType(expressionType, nodeTypingInfo)}
     />
   )
 }
@@ -546,19 +559,19 @@ export function VariableBuilder({
   setProperty,
   addElement,
   variableTypes,
-  expressionType,
-  nodeTypingInfo,
   showValidation,
   fieldErrors,
   isEditMode,
   editedNode,
+  originalNodeId,
 }: Pick<NodeDetailsContentProps3,
-  | "expressionType"
-  | "nodeTypingInfo"
+  | "originalNodeId"
   | "showValidation"
   | "fieldErrors"
   | "isEditMode"
   | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
+  const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
+  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
   return (
     <MapVariable
       renderFieldLabel={renderFieldLabel}
@@ -570,7 +583,7 @@ export function VariableBuilder({
       showValidation={showValidation}
       variableTypes={variableTypes}
       errors={fieldErrors || []}
-      expressionType={expressionType || nodeTypingInfo && {fields: nodeTypingInfo}}
+      expressionType={getNodeExpressionType(expressionType, nodeTypingInfo)}
     />
   )
 }
@@ -580,19 +593,19 @@ export function VariableDef({
   setProperty,
   variableTypes,
   isEditMode,
-  nodeTypingInfo,
   showValidation,
   fieldErrors = [],
-  expressionType,
+  originalNodeId,
   editedNode,
 }: Pick<NodeDetailsContentProps3,
+  | "originalNodeId"
   | "isEditMode"
-  | "nodeTypingInfo"
   | "showValidation"
   | "fieldErrors"
-  | "expressionType"
   | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods): JSX.Element {
-  const varExprType = expressionType || (nodeTypingInfo || {})[DEFAULT_EXPRESSION_ID]
+  const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
+  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
+  const varExprType = getTypingResult(expressionType, nodeTypingInfo)
   const inferredVariableType = ProcessUtils.humanReadableType(varExprType)
   return (
     <Variable
@@ -612,14 +625,11 @@ export function Switch({
   renderFieldLabel,
   setProperty,
   variableTypes,
-  expressionType,
   findAvailableVariables,
   editedNode,
   setEditedEdges,
-  nodeTypingInfo,
   showSwitch,
   isEditMode,
-  originalNode,
   parameterDefinitions,
   processDefinitionData,
   fieldErrors,
@@ -627,14 +637,11 @@ export function Switch({
   editedEdges,
   showValidation,
 }: NodeContentMethods & Pick<NodeDetailsContentProps3,
-  | "expressionType"
   | "findAvailableVariables"
   | "editedNode"
   | "setEditedEdges"
-  | "nodeTypingInfo"
   | "showSwitch"
   | "isEditMode"
-  | "originalNode"
   | "parameterDefinitions"
   | "processDefinitionData"
   | "fieldErrors"
@@ -642,12 +649,14 @@ export function Switch({
   | "editedEdges"
   | "showValidation"> & { variableTypes?: VariableTypes }): JSX.Element {
   const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
-  const currentExpression = originalNode["expression"]
-  const currentExprVal = originalNode["exprVal"]
+  const currentExpression = editedNode["expression"]
+  const currentExprVal = editedNode["exprVal"]
   const exprValValidator = errorValidator(fieldErrors || [], "exprVal")
   const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
   const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
   const [, isCompareView] = useDiffMark()
+  const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
+  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
 
   return (
     <NodeTableBody>
@@ -709,7 +718,7 @@ export function Switch({
             variableTypes={editedNode["exprVal"] ?
               {
                 ...variableTypes,
-                [editedNode["exprVal"]]: expressionType || nodeTypingInfo && {fields: nodeTypingInfo},
+                [editedNode["exprVal"]]: getNodeExpressionType(expressionType, nodeTypingInfo),
               } :
               variableTypes}
             fieldErrors={fieldErrors || []}

@@ -13,11 +13,10 @@ interface Props {
   currentNodeId: NodeId,
   node: NodeType,
   edges: Edge[],
-  onChange: (node: NodeType, edges: Edge[]) => void,
-  readOnly?: boolean,
+  onChange?: (node: NodeType, edges: Edge[]) => void,
 }
 
-export function NodeGroupContent({currentNodeId, node, edges, onChange, readOnly}: Props): JSX.Element {
+export function NodeGroupContent({currentNodeId, node, edges, onChange}: Props): JSX.Element {
   const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
 
   return (
@@ -29,7 +28,6 @@ export function NodeGroupContent({currentNodeId, node, edges, onChange, readOnly
           edges={edges}
           onChange={onChange}
           nodeErrors={nodeErrors}
-          isEditMode={!readOnly}
           showValidation
           showSwitch
         />

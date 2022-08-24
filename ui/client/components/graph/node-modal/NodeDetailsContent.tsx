@@ -1,18 +1,15 @@
 /* eslint-disable i18next/no-literal-string */
-import React, {useCallback, useEffect, useMemo, useState} from "react"
+import React, {useCallback, useEffect, useMemo} from "react"
 import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {adjustParameters} from "./ParametersUtils"
-import {WithTempId} from "./EdgesDndComponent"
 import {useDispatch, useSelector} from "react-redux"
 import {nodeValidationDataClear, validateNodeData} from "../../../actions/nk"
 import {
   getCurrentErrors,
   getDynamicParameterDefinitions,
-  getExpressionType,
   getFindAvailableBranchVariables,
   getFindAvailableVariables,
-  getNodeTypingInfo,
   getProcessId,
   getProcessProperties,
 } from "./NodeDetailsContent/selectors"
@@ -24,8 +21,8 @@ import {isEqual, partition} from "lodash"
 import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
 import {NodeDetailsContent3} from "./NodeDetailsContent3"
-import {useDiffMark} from "./PathsToMark"
 import ProcessUtils from "../../../common/ProcessUtils"
+import {UpdateState} from "./NodeDetailsContentProps3"
 
 export interface NodeDetailsContentProps {
   originalNodeId?: NodeId,
@@ -33,14 +30,12 @@ export interface NodeDetailsContentProps {
   edges?: Edge[],
   onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
   nodeErrors?: NodeValidationError[],
-  isEditMode?: boolean,
   showValidation?: boolean,
   showSwitch?: boolean,
 }
 
 export const NodeDetailsContent = ({
   node,
-  isEditMode,
   originalNodeId,
   nodeErrors,
   onChange,
@@ -50,48 +45,66 @@ export const NodeDetailsContent = ({
 }: NodeDetailsContentProps): JSX.Element => {
   const dispatch = useDispatch()
 
-  const [originalNode, _setOriginalNode] = useState(node)
-  const {id} = originalNode
-  const nodeId = originalNodeId || id
-
-  //used here and passed
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
+
+  const isEditMode = !!onChange
+  const nodeId = originalNodeId || node.id
   const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(nodeId, nodeErrors))
   const dynamicParameterDefinitions = useSelector((state: RootState) => getDynamicParameterDefinitions(state)(nodeId))
-  const [editedNode, setEditedNode] = useState<NodeType>(originalNode)
-  const [editedEdges, setEditedEdges] = useState<WithTempId<Edge>[]>(edges)
 
-  //used only here
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
 
   const validate = useCallback(
-    (node: NodeType, edges?: WithTempId<Edge>[]) => {
-      const validationRequestData = {
-        variableTypes: findAvailableVariables(nodeId),
-        branchVariableTypes: findAvailableBranchVariables(nodeId),
-        nodeData: node,
+    (nodeData: NodeType, outgoingEdges?: Edge[]) => dispatch(
+      validateNodeData(processId, {
+        outgoingEdges,
+        nodeData,
         processProperties,
-        outgoingEdges: edges?.map(e => ({...e, to: e._id || e.to})),
-      }
-      return dispatch(validateNodeData(processId, validationRequestData))
-    },
+        branchVariableTypes: findAvailableBranchVariables(nodeId),
+        variableTypes: findAvailableVariables(nodeId),
+      })
+    ),
     [dispatch, findAvailableBranchVariables, findAvailableVariables, nodeId, processId, processProperties]
   )
 
-  //passed only
-  const expressionType = useSelector((state: RootState) => getExpressionType(state)(nodeId))
-  const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(nodeId))
+  const validateAndChange = useCallback(
+    (node: NodeType, edges: Edge[]) => {
+      validate(node, edges)
+      onChange(node, edges)
+    },
+    [onChange, validate]
+  )
+
+  const setEditedNode = useCallback<UpdateState<NodeType>>(
+    (nodeChange) => {
+      if (isEditMode) {
+        const changedNode = nodeChange(node)
+        validateAndChange(changedNode, edges)
+      }
+    },
+    [edges, isEditMode, node, validateAndChange]
+  )
+
+  const setEditedEdges = useCallback(
+    (edges: Edge[]) => {
+      if (isEditMode) {
+        validateAndChange(node, edges)
+      }
+    },
+    [isEditMode, node, validateAndChange]
+  )
+
   const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
   const parameterDefinitions = useMemo(() => {
     if (!dynamicParameterDefinitions) {
-      return ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.parameters
+      return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.parameters
     }
     return dynamicParameterDefinitions
-  }, [dynamicParameterDefinitions, editedNode, processDefinitionData])
+  }, [dynamicParameterDefinitions, node, processDefinitionData])
 
   const adjustNode = useCallback((node: NodeType) => {
     const {adjustedNode} = adjustParameters(node, parameterDefinitions)
@@ -107,52 +120,28 @@ export const NodeDetailsContent = ({
       const adjustedNode = adjustNode(node)
       return isEqual(adjustedNode, node) ? node : adjustedNode
     })
-  }, [adjustNode])
-
-  useEffect(() => {
-    if (isEditMode) {
-      validate(editedNode, editedEdges)
-    }
-  }, [editedEdges, editedNode, isEditMode, validate])
-
-  useEffect(() => {
-    if (isEditMode) {
-      onChange?.(editedNode, editedEdges)
-    }
-  }, [editedEdges, editedNode, isEditMode, onChange])
-
-  //fixme: workaround for node change (in compare view)
-  const [, isCompareView] = useDiffMark()
-  useEffect(() => {
-    if (isCompareView) {
-      _setOriginalNode(node)
-      setEditedNode(node)
-    }
-  }, [isCompareView, node])
+  }, [adjustNode, setEditedNode])
 
   return (
     <NodeTable editable={isEditMode}>
       <NodeErrors errors={otherErrors} message="Node has errors"/>
-      <TestResultsWrapper nodeId={id}>
+      <TestResultsWrapper nodeId={originalNodeId}>
         <NodeDetailsContent3
-          originalNode={originalNode}
-          editedNode={editedNode}
+          editedNode={node}
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
           showValidation={showValidation}
           showSwitch={showSwitch}
           parameterDefinitions={parameterDefinitions}
-          editedEdges={editedEdges}
+          editedEdges={edges}
           setEditedEdges={setEditedEdges}
           processDefinitionData={processDefinitionData}
           findAvailableVariables={findAvailableVariables}
-          expressionType={expressionType}
-          nodeTypingInfo={nodeTypingInfo}
           updateNodeState={setEditedNode}
           fieldErrors={fieldErrors}
         />
       </TestResultsWrapper>
-      <NodeAdditionalInfoBox node={originalNode}/>
+      <NodeAdditionalInfoBox node={node}/>
     </NodeTable>
   )
 }

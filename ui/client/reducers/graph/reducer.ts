@@ -104,21 +104,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
         testResults: null,
       }
     }
-
-    case "EDIT_EDGE": {
-      const processToDisplay = GraphUtils.mapProcessWithNewEdge(
-        state.processToDisplay,
-        action.before,
-        action.after,
-      )
-      return {
-        ...state,
-        processToDisplay: {
-          ...processToDisplay,
-          validationResult: updateValidationResult(state, action),
-        },
-      }
-    }
     case "EDIT_NODE": {
       const stateAfterNodeRename = {
         ...state,
