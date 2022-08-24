@@ -10,7 +10,7 @@ latest-staging - developer build with latest, not released yet features
 
 # How to use
 
-Follow steps described in [Quickstart](https://docs.nussknacker.io/quickstart/docker)
+Follow steps described in [Quickstart](https://nussknacker.io/documentation/quickstart/docker)
 
 Repository with docker-compose presenting typical usage: [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
