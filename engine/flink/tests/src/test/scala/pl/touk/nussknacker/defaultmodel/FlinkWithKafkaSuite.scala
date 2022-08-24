@@ -2,6 +2,7 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.serializers.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import org.apache.avro.Schema
 import org.apache.flink.api.common.ExecutionConfig
@@ -97,36 +98,41 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
       case ExistingSchemaVersion(version) => s"'$version'"
     }
 
+  protected def createAndRegisterAvroTopicConfig(name: String, schemas: List[Schema]) =
+    createAndRegisterTopicConfig(name, schemas.map(s => ConfluentUtils.convertToAvroSchema(s)))
+
   /**
     * We should register difference input topic and output topic for each tests, because kafka topics are not cleaned up after test,
     * and we can have wrong results of tests..
     */
-  protected def createAndRegisterTopicConfig(name: String, schemas: List[Schema]): TopicConfig = {
+  protected def createAndRegisterTopicConfig(name: String, schemas: List[ParsedSchema]): TopicConfig = {
     val topicConfig = TopicConfig(name, schemas)
 
     schemas.foreach(schema => {
       val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
       val outputSubject = ConfluentUtils.topicSubject(topicConfig.output, topicConfig.isKey)
-      val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
-      schemaRegistryMockClient.register(inputSubject, parsedSchema)
-      schemaRegistryMockClient.register(outputSubject, parsedSchema)
+      schemaRegistryMockClient.register(inputSubject, schema)
+      schemaRegistryMockClient.register(outputSubject, schema)
     })
 
     topicConfig
   }
 
-  protected def createAndRegisterTopicConfig(name: String, schema: Schema): TopicConfig =
+  protected def createAndRegisterAvroTopicConfig(name: String, schema: Schema): TopicConfig =
+    createAndRegisterAvroTopicConfig(name, List(schema))
+
+  protected def createAndRegisterTopicConfig(name: String, schema: ParsedSchema): TopicConfig =
     createAndRegisterTopicConfig(name, List(schema))
 }
 
 
-case class TopicConfig(input: String, output: String, schemas: List[Schema], isKey: Boolean)
+case class TopicConfig(input: String, output: String, schemas: List[ParsedSchema], isKey: Boolean)
 
 object TopicConfig {
   private final val inputPrefix = "test.generic.avro.input."
   private final val outputPrefix = "test.generic.avro.output."
 
-  def apply(testName: String, schemas: List[Schema]): TopicConfig =
+  def apply(testName: String, schemas: List[ParsedSchema]): TopicConfig =
     new TopicConfig(inputPrefix + testName, outputPrefix + testName, schemas, isKey = false)
 }
 

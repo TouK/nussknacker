@@ -132,7 +132,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   test("should read avro object from kafka, filter and save it to kafka, passing timestamp") {
     val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
 
-    val topicConfig = createAndRegisterTopicConfig("read-filter-save-avro", RecordSchemas)
+    val topicConfig = createAndRegisterAvroTopicConfig("read-filter-save-avro", RecordSchemas)
 
     sendAvro(givenNotMatchingAvroObj, topicConfig.input)
     sendAvro(givenMatchingAvroObj, topicConfig.input, timestamp = timeAgo)
@@ -146,7 +146,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
 
   test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
     val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
-    val topicConfig = createAndRegisterTopicConfig("read-filter-save-json", RecordSchemas)
+    val topicConfig = createAndRegisterAvroTopicConfig("read-filter-save-json", RecordSchemas)
 
     val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
     logger.info(s"Message sent successful: $sendResult")
@@ -160,7 +160,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read avro object from kafka and save new one created from scratch") {
-    val topicConfig = createAndRegisterTopicConfig("read-save-scratch", RecordSchemaV1)
+    val topicConfig = createAndRegisterAvroTopicConfig("read-save-scratch", RecordSchemaV1)
     sendAvro(givenMatchingAvroObj, topicConfig.input)
 
     run(avroFromScratchProcess(topicConfig, ExistingSchemaVersion(1))) {
@@ -170,7 +170,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read avro object in v1 from kafka and deserialize it to v2, filter and save it to kafka in v2") {
-    val topicConfig = createAndRegisterTopicConfig("v1.v2.v2", RecordSchemas)
+    val topicConfig = createAndRegisterAvroTopicConfig("v1.v2.v2", RecordSchemas)
     val result = avroEncoder.encodeRecordOrError(
       Map("first" -> givenMatchingAvroObj.get("first"), "middle" -> null, "last" -> givenMatchingAvroObj.get("last")),
       RecordSchemaV2
@@ -185,7 +185,7 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should read avro object in v2 from kafka and deserialize it to v1, filter and save it to kafka in v2") {
-    val topicConfig = createAndRegisterTopicConfig("v2.v1.v1", RecordSchemas)
+    val topicConfig = createAndRegisterAvroTopicConfig("v2.v1.v1", RecordSchemas)
     sendAvro(givenMatchingAvroObjV2, topicConfig.input)
 
     val converted = GenericData.get().deepCopy(RecordSchemaV2, givenMatchingAvroObjV2)
@@ -198,8 +198,8 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   }
 
   test("should throw exception when record doesn't match to schema") {
-    val topicConfig = createAndRegisterTopicConfig("error-record-matching", RecordSchemas)
-    val secondTopicConfig = createAndRegisterTopicConfig("error-second-matching", SecondRecordSchemaV1)
+    val topicConfig = createAndRegisterAvroTopicConfig("error-record-matching", RecordSchemas)
+    val secondTopicConfig = createAndRegisterAvroTopicConfig("error-second-matching", SecondRecordSchemaV1)
 
     sendAvro(givenSecondMatchingAvroObj, secondTopicConfig.input)
 
