@@ -1,19 +1,30 @@
 import {FieldType} from "./editors/field/Field"
 import React from "react"
 import {NodeField} from "./NodeField"
-import {NodeFieldProps} from "./NodeDetailsContentProps3"
+import {NodeType} from "../../../types"
+import {Validator} from "./editors/Validators"
 
-export type DisableFieldProps = Omit<NodeFieldProps<"isDisabled", string>, "fieldType" | "fieldLabel" | "fieldProperty">
+interface DisableFieldProps {
+  autoFocus?: boolean,
+  defaultValue?: string,
+  isEditMode?: boolean,
+  node: NodeType,
+  readonly?: boolean,
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+  showValidation?: boolean,
+  validators?: Validator[],
+}
 
 export function DisableField({
   autoFocus,
   defaultValue,
+  isEditMode,
+  node,
+  readonly,
   renderFieldLabel,
   setProperty,
-  editedNode,
-  isEditMode,
   showValidation,
-  readonly,
   validators,
 }: DisableFieldProps): JSX.Element {
   return (
@@ -22,7 +33,7 @@ export function DisableField({
       defaultValue={defaultValue}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
-      editedNode={editedNode}
+      node={node}
       isEditMode={isEditMode}
       showValidation={showValidation}
       readonly={readonly}

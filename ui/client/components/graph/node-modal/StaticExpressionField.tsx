@@ -2,22 +2,35 @@ import {useTestResults} from "./TestResultsWrapper"
 import ExpressionField from "./editors/expression/ExpressionField"
 import {findParamDefinitionByName} from "./FieldLabel"
 import React from "react"
-import {StaticExpressionFieldProps} from "./NodeDetailsContentProps3"
+import {NodeId, NodeType, NodeValidationError, UIParameter} from "../../../types"
+import ProcessUtils from "../../../common/ProcessUtils"
 
 //this is for "static" fields like expressions in filters, switches etc.
 export function StaticExpressionField({
+  fieldErrors,
   fieldLabel,
+  findAvailableVariables,
+  isEditMode,
+  node,
+  originalNodeId,
+  parameterDefinitions,
   renderFieldLabel,
   setProperty,
-  parameterDefinitions,
   showSwitch,
-  findAvailableVariables,
   showValidation,
-  fieldErrors,
-  originalNodeId,
-  isEditMode,
-  editedNode,
-}: StaticExpressionFieldProps): JSX.Element {
+}: {
+  fieldErrors?: NodeValidationError[],
+  fieldLabel: string,
+  findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
+  isEditMode?: boolean,
+  node: NodeType,
+  originalNodeId?: NodeId,
+  parameterDefinitions: UIParameter[],
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+  showSwitch?: boolean,
+  showValidation?: boolean,
+}): JSX.Element {
   const fieldName = "expression"
   const expressionProperty = "expression"
   const testResultsState = useTestResults()
@@ -28,7 +41,7 @@ export function StaticExpressionField({
       fieldLabel={fieldLabel}
       exprPath={`${expressionProperty}`}
       isEditMode={isEditMode}
-      editedNode={editedNode}
+      editedNode={node}
       showValidation={showValidation}
       showSwitch={showSwitch}
       parameterDefinition={findParamDefinitionByName(parameterDefinitions, fieldName)}

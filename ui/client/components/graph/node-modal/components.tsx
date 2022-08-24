@@ -43,34 +43,30 @@ function getNodeExpressionType(expressionType: TypedObjectTypingResult, nodeTypi
 
 export type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
-export function Source(props: Pick<NodeDetailsContentProps3,
+export function Source({
+  renderFieldLabel,
+  setProperty,
+  showSwitch,
+  fieldErrors,
+  findAvailableVariables,
+  node,
+  parameterDefinitions,
+  isEditMode,
+  originalNodeId,
+  showValidation,
+}: Pick<NodeDetailsContentProps3,
   | "originalNodeId"
-  | "isEditMode"
-  | "showValidation"
   | "showSwitch"
-  | "editedNode"
   | "findAvailableVariables"
   | "parameterDefinitions"
   | "fieldErrors"> & NodeContentMethods): JSX.Element {
-  const {
-    renderFieldLabel,
-    setProperty,
-    showSwitch,
-    fieldErrors,
-    findAvailableVariables,
-    editedNode,
-    parameterDefinitions,
-    isEditMode,
-    originalNodeId,
-    showValidation,
-  } = props
   return (
     <SourceSinkCommon
       originalNodeId={originalNodeId}
       isEditMode={isEditMode}
       showValidation={showValidation}
       showSwitch={showSwitch}
-      editedNode={editedNode}
+      node={node}
       findAvailableVariables={findAvailableVariables}
       parameterDefinitions={parameterDefinitions}
       fieldErrors={fieldErrors}
@@ -86,17 +82,14 @@ export function Sink({
   showSwitch,
   fieldErrors,
   findAvailableVariables,
-  editedNode,
+  node,
   parameterDefinitions,
   isEditMode,
   originalNodeId,
   showValidation,
 }: Pick<NodeDetailsContentProps3,
   | "originalNodeId"
-  | "isEditMode"
-  | "showValidation"
   | "showSwitch"
-  | "editedNode"
   | "findAvailableVariables"
   | "parameterDefinitions"
   | "fieldErrors"> & NodeContentMethods): JSX.Element {
@@ -106,7 +99,7 @@ export function Sink({
       isEditMode={isEditMode}
       showValidation={showValidation}
       showSwitch={showSwitch}
-      editedNode={editedNode}
+      node={node}
       findAvailableVariables={findAvailableVariables}
       parameterDefinitions={parameterDefinitions}
       fieldErrors={fieldErrors}
@@ -117,7 +110,7 @@ export function Sink({
         <DisableField
           isEditMode={isEditMode}
           showValidation={showValidation}
-          editedNode={editedNode}
+          node={node}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
         />
@@ -134,7 +127,7 @@ interface AddRemoveMethods {
 type SubprocessInputDefinitionProps =
   AddRemoveMethods
   & NodeContentMethods
-  & Pick<NodeDetailsContentProps3, "isEditMode" | "fieldErrors" | "editedNode" | "showValidation" | "originalNodeId">
+  & Pick<NodeDetailsContentProps3, "fieldErrors" | "originalNodeId">
   & { variableTypes?: VariableTypes }
 
 export function SubprocessInputDef({
@@ -144,7 +137,7 @@ export function SubprocessInputDef({
   removeElement,
   isEditMode,
   fieldErrors,
-  editedNode,
+  node,
   showValidation,
   variableTypes,
 }: SubprocessInputDefinitionProps): JSX.Element {
@@ -152,12 +145,12 @@ export function SubprocessInputDef({
     <SubprocessInputDefinition
       addElement={addElement}
       onChange={setProperty}
-      node={editedNode}
+      node={node}
       readOnly={!isEditMode}
       removeElement={removeElement}
       showValidation={showValidation}
       renderFieldLabel={renderFieldLabel}
-      errors={fieldErrors || []}
+      errors={fieldErrors}
       variableTypes={variableTypes}
     />
   )
@@ -178,7 +171,7 @@ export function SubprocessOutputDef(
     showValidation,
     fieldErrors,
     isEditMode,
-    editedNode,
+    node,
     originalNodeId,
   }: SubprocessInputDefinitionProps
 ): JSX.Element {
@@ -190,7 +183,7 @@ export function SubprocessOutputDef(
       renderFieldLabel={renderFieldLabel}
       removeElement={removeElement}
       onChange={setProperty}
-      node={editedNode}
+      node={node}
       addElement={addElement}
       readOnly={!isEditMode}
       showValidation={showValidation}
@@ -208,14 +201,21 @@ export function Filter({
   isEditMode,
   fieldErrors,
   originalNodeId,
-  editedEdges,
+  edges,
   setEditedEdges,
   showValidation,
-  editedNode,
+  node,
   parameterDefinitions,
   showSwitch,
   findAvailableVariables,
-}: NodeContentMethods & Pick<NodeDetailsContentProps3, "editedEdges" | "setEditedEdges" | "isEditMode" | "fieldErrors" | "originalNodeId" | "showValidation" | "editedNode" | "parameterDefinitions" | "showSwitch" | "findAvailableVariables">): JSX.Element {
+}: NodeContentMethods & Pick<NodeDetailsContentProps3,
+  | "edges"
+  | "setEditedEdges"
+  | "fieldErrors"
+  | "originalNodeId"
+  | "parameterDefinitions"
+  | "showSwitch"
+  | "findAvailableVariables">): JSX.Element {
   const [, isCompareView] = useDiffMark()
 
   return (
@@ -223,7 +223,7 @@ export function Filter({
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         setProperty={setProperty}
         renderFieldLabel={renderFieldLabel}
 
@@ -239,11 +239,11 @@ export function Filter({
         fieldErrors={fieldErrors}
         originalNodeId={originalNodeId}
         isEditMode={isEditMode}
-        editedNode={editedNode}
+        node={node}
 
       />
       <DisableField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -254,7 +254,7 @@ export function Filter({
           <EdgesDndComponent
             label={"Outputs"}
             nodeId={originalNodeId}
-            value={editedEdges}
+            value={edges}
             onChange={setEditedEdges}
             edgeTypes={[
               {value: EdgeKind.filterTrue, onlyOne: true},
@@ -266,7 +266,7 @@ export function Filter({
         ) :
         null}
       <DescriptionField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -279,44 +279,38 @@ export function Filter({
 export function EnricherProcessor({
   renderFieldLabel,
   setProperty,
-  ...props
+  showSwitch,
+  fieldErrors,
+  findAvailableVariables,
+  node,
+  parameterDefinitions,
+  originalNodeId,
+  isEditMode,
+  showValidation,
 }: Pick<NodeDetailsContentProps3,
   | "showSwitch"
   | "fieldErrors"
   | "findAvailableVariables"
-  | "editedNode"
   | "parameterDefinitions"
-  | "originalNodeId"
-  | "isEditMode"
-  | "showValidation"> & NodeContentMethods): JSX.Element {
-  const {
-    showSwitch,
-    fieldErrors,
-    findAvailableVariables,
-    editedNode,
-    parameterDefinitions,
-    originalNodeId,
-    isEditMode,
-    showValidation,
-  } = props
+  | "originalNodeId"> & NodeContentMethods): JSX.Element {
   return (
     <NodeTableBody>
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         setProperty={setProperty}
         renderFieldLabel={renderFieldLabel}
       />
-      {serviceParameters(editedNode).map((param, index) => {
+      {serviceParameters(node).map((param, index) => {
         return (
-          <div className="node-block" key={editedNode.id + param.name + index}>
+          <div className="node-block" key={node.id + param.name + index}>
             <ParameterExpressionField
               originalNodeId={originalNodeId}
               isEditMode={isEditMode}
               showValidation={showValidation}
               showSwitch={showSwitch}
-              editedNode={editedNode}
+              node={node}
               findAvailableVariables={findAvailableVariables}
               parameterDefinitions={parameterDefinitions}
               fieldErrors={fieldErrors}
@@ -329,12 +323,12 @@ export function EnricherProcessor({
           </div>
         )
       })}
-      {editedNode.type === "Enricher" ?
+      {node.type === "Enricher" ?
         (
           <NodeField
             isEditMode={isEditMode}
             showValidation={showValidation}
-            editedNode={editedNode}
+            node={node}
 
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -345,10 +339,10 @@ export function EnricherProcessor({
           />
         ) :
         null}
-      {editedNode.type === "Processor" ?
+      {node.type === "Processor" ?
         (
           <DisableField
-            editedNode={editedNode}
+            node={node}
             isEditMode={isEditMode}
             showValidation={showValidation}
             renderFieldLabel={renderFieldLabel}
@@ -357,7 +351,7 @@ export function EnricherProcessor({
         ) :
         null}
       <DescriptionField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -368,9 +362,6 @@ export function EnricherProcessor({
 }
 
 export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
-  | "editedNode"
-  | "isEditMode"
-  | "showValidation"
   | "processDefinitionData"
   | "fieldErrors"
   | "showSwitch"
@@ -380,7 +371,7 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
   const {
     renderFieldLabel,
     setProperty,
-    editedNode,
+    node,
     isEditMode,
     showValidation,
     processDefinitionData,
@@ -394,14 +385,14 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
   return (
     <NodeTableBody>
       <IdField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
       <DisableField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -409,8 +400,8 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
       />
       <ParameterList
         processDefinitionData={processDefinitionData}
-        editedNode={editedNode}
-        savedNode={editedNode}
+        editedNode={node}
+        savedNode={node}
         setNodeState={setNodeState}
         createListField={(param, index) => {
           return (
@@ -421,7 +412,7 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
               parameterDefinitions={parameterDefinitions}
               fieldErrors={fieldErrors}
 
-              editedNode={editedNode}
+              node={node}
               isEditMode={isEditMode}
               showValidation={showValidation}
               renderFieldLabel={renderFieldLabel}
@@ -446,7 +437,7 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
         )}
       />
       <DescriptionField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -459,7 +450,7 @@ export function SubprocessInput(props: Pick<NodeDetailsContentProps3,
 export function JoinCustomNode({
   renderFieldLabel,
   setProperty,
-  editedNode,
+  node,
   isEditMode,
   showValidation,
   parameterDefinitions,
@@ -469,9 +460,6 @@ export function JoinCustomNode({
   originalNodeId,
   processDefinitionData,
 }: Pick<NodeDetailsContentProps3,
-  | "editedNode"
-  | "isEditMode"
-  | "showValidation"
   | "parameterDefinitions"
   | "showSwitch"
   | "findAvailableVariables"
@@ -480,14 +468,14 @@ export function JoinCustomNode({
   | "processDefinitionData"> & NodeContentMethods): JSX.Element {
   const testResultsState = useTestResults()
   const hasOutputVar = useMemo((): boolean => {
-      return !!ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.returnType || !!editedNode.outputVar
+      return !!ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.returnType || !!node.outputVar
     },
-    [editedNode, processDefinitionData.processDefinition])
+    [node, processDefinitionData.processDefinition])
 
   return (
     <NodeTableBody>
       <IdField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -496,7 +484,7 @@ export function JoinCustomNode({
       {
         hasOutputVar && (
           <NodeField
-            editedNode={editedNode}
+            node={node}
             isEditMode={isEditMode}
             showValidation={showValidation}
             renderFieldLabel={renderFieldLabel}
@@ -508,9 +496,9 @@ export function JoinCustomNode({
           />
         )
       }
-      {NodeUtils.nodeIsJoin(editedNode) && (
+      {NodeUtils.nodeIsJoin(node) && (
         <BranchParameters
-          node={editedNode}
+          node={node}
           showValidation={showValidation}
           showSwitch={showSwitch}
           isEditMode={isEditMode}
@@ -521,9 +509,9 @@ export function JoinCustomNode({
           findAvailableVariables={findAvailableVariables}
         />
       )}
-      {editedNode.parameters?.map((param, index) => {
+      {node.parameters?.map((param, index) => {
         return (
-          <div className="node-block" key={editedNode.id + param.name + index}>
+          <div className="node-block" key={node.id + param.name + index}>
             <ParameterExpressionField
               originalNodeId={originalNodeId}
               showSwitch={showSwitch}
@@ -531,7 +519,7 @@ export function JoinCustomNode({
               parameterDefinitions={parameterDefinitions}
               fieldErrors={fieldErrors}
 
-              editedNode={editedNode}
+              node={node}
               isEditMode={isEditMode}
               showValidation={showValidation}
               renderFieldLabel={renderFieldLabel}
@@ -543,7 +531,7 @@ export function JoinCustomNode({
         )
       })}
       <DescriptionField
-        editedNode={editedNode}
+        node={node}
         isEditMode={isEditMode}
         showValidation={showValidation}
         renderFieldLabel={renderFieldLabel}
@@ -562,14 +550,11 @@ export function VariableBuilder({
   showValidation,
   fieldErrors,
   isEditMode,
-  editedNode,
+  node,
   originalNodeId,
 }: Pick<NodeDetailsContentProps3,
   | "originalNodeId"
-  | "showValidation"
-  | "fieldErrors"
-  | "isEditMode"
-  | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
+  | "fieldErrors"> & { variableTypes?: VariableTypes } & NodeContentMethods & { removeElement: (property: keyof NodeType, index: number) => void, addElement: (...args: any[]) => any }): JSX.Element {
   const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
   const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
   return (
@@ -577,7 +562,7 @@ export function VariableBuilder({
       renderFieldLabel={renderFieldLabel}
       removeElement={removeElement}
       onChange={setProperty}
-      node={editedNode}
+      node={node}
       addElement={addElement}
       readOnly={!isEditMode}
       showValidation={showValidation}
@@ -596,13 +581,8 @@ export function VariableDef({
   showValidation,
   fieldErrors = [],
   originalNodeId,
-  editedNode,
-}: Pick<NodeDetailsContentProps3,
-  | "originalNodeId"
-  | "isEditMode"
-  | "showValidation"
-  | "fieldErrors"
-  | "editedNode"> & { variableTypes?: VariableTypes } & NodeContentMethods): JSX.Element {
+  node,
+}: Pick<NodeDetailsContentProps3, "originalNodeId" | "fieldErrors"> & { variableTypes?: VariableTypes } & NodeContentMethods): JSX.Element {
   const expressionType = useSelector((state: RootState) => getExpressionType(state)(originalNodeId))
   const nodeTypingInfo = useSelector((state: RootState) => getNodeTypingInfo(state)(originalNodeId))
   const varExprType = getTypingResult(expressionType, nodeTypingInfo)
@@ -611,7 +591,7 @@ export function VariableDef({
     <Variable
       renderFieldLabel={renderFieldLabel}
       onChange={setProperty}
-      node={editedNode}
+      node={node}
       readOnly={!isEditMode}
       showValidation={showValidation}
       variableTypes={variableTypes}
@@ -626,7 +606,7 @@ export function Switch({
   setProperty,
   variableTypes,
   findAvailableVariables,
-  editedNode,
+  node,
   setEditedEdges,
   showSwitch,
   isEditMode,
@@ -634,23 +614,20 @@ export function Switch({
   processDefinitionData,
   fieldErrors,
   originalNodeId,
-  editedEdges,
+  edges,
   showValidation,
 }: NodeContentMethods & Pick<NodeDetailsContentProps3,
   | "findAvailableVariables"
-  | "editedNode"
   | "setEditedEdges"
   | "showSwitch"
-  | "isEditMode"
   | "parameterDefinitions"
   | "processDefinitionData"
   | "fieldErrors"
   | "originalNodeId"
-  | "editedEdges"
-  | "showValidation"> & { variableTypes?: VariableTypes }): JSX.Element {
-  const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === editedNode.type)
-  const currentExpression = editedNode["expression"]
-  const currentExprVal = editedNode["exprVal"]
+  | "edges"> & { variableTypes?: VariableTypes }): JSX.Element {
+  const {node: definition} = processDefinitionData.componentGroups?.flatMap(g => g.components).find(c => c.node.type === node.type)
+  const currentExpression = node["expression"]
+  const currentExprVal = node["exprVal"]
   const exprValValidator = errorValidator(fieldErrors || [], "exprVal")
   const showExpression = definition["expression"] ? !isEqual(definition["expression"], currentExpression) : currentExpression?.expression
   const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
@@ -663,8 +640,7 @@ export function Switch({
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
-
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -675,7 +651,7 @@ export function Switch({
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}
-            editedNode={editedNode}
+            node={node}
             findAvailableVariables={findAvailableVariables}
             parameterDefinitions={parameterDefinitions}
             fieldErrors={fieldErrors}
@@ -691,7 +667,7 @@ export function Switch({
           <NodeField
             isEditMode={isEditMode}
             showValidation={showValidation}
-            editedNode={editedNode}
+            node={node}
 
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
@@ -707,7 +683,7 @@ export function Switch({
           <EdgesDndComponent
             label={"Conditions"}
             nodeId={originalNodeId}
-            value={editedEdges}
+            value={edges}
             onChange={setEditedEdges}
             edgeTypes={[
               {value: EdgeKind.switchNext},
@@ -715,10 +691,10 @@ export function Switch({
             ]}
             ordered
             readOnly={!isEditMode}
-            variableTypes={editedNode["exprVal"] ?
+            variableTypes={node["exprVal"] ?
               {
                 ...variableTypes,
-                [editedNode["exprVal"]]: getNodeExpressionType(expressionType, nodeTypingInfo),
+                [node["exprVal"]]: getNodeExpressionType(expressionType, nodeTypingInfo),
               } :
               variableTypes}
             fieldErrors={fieldErrors || []}
@@ -728,7 +704,7 @@ export function Switch({
       <DescriptionField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
 
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
@@ -742,21 +718,21 @@ export function Split({
   setProperty,
   isEditMode,
   showValidation,
-  editedNode,
-}: Pick<NodeDetailsContentProps3, "isEditMode" | "showValidation" | "editedNode"> & NodeContentMethods): JSX.Element {
+  node,
+}: NodeContentMethods): JSX.Element {
   return (
     <NodeTableBody>
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
       <DescriptionField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
@@ -769,19 +745,16 @@ export function Properties({
   setProperty,
   isEditMode,
   showValidation,
-  editedNode,
+  node,
   processDefinitionData,
   fieldErrors,
   showSwitch,
 }: Pick<NodeDetailsContentProps3,
-  | "isEditMode"
-  | "showValidation"
-  | "editedNode"
   | "processDefinitionData"
   | "fieldErrors"
   | "showSwitch"> & NodeContentMethods): JSX.Element {
   const additionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig)
-  const type = editedNode.typeSpecificProperties.type
+  const type = node.typeSpecificProperties.type
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
   const sorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
@@ -790,16 +763,16 @@ export function Properties({
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
-      {editedNode.isSubprocess ?
+      {node.isSubprocess ?
         (
           <NodeField
             isEditMode={isEditMode}
             showValidation={showValidation}
-            editedNode={editedNode}
+            node={node}
             renderFieldLabel={renderFieldLabel}
             setProperty={setProperty}
             fieldType={FieldType.input}
@@ -815,7 +788,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -827,7 +800,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -838,7 +811,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
@@ -849,7 +822,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.checkbox}
@@ -865,7 +838,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -879,7 +852,7 @@ export function Properties({
               <NodeField
                 isEditMode={isEditMode}
                 showValidation={showValidation}
-                editedNode={editedNode}
+                node={node}
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
@@ -899,14 +872,14 @@ export function Properties({
           propertyErrors={fieldErrors || []}
           onChange={setProperty}
           renderFieldLabel={renderFieldLabel}
-          editedNode={editedNode}
+          editedNode={node}
           readOnly={!isEditMode}
         />
       ))}
       <DescriptionField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />

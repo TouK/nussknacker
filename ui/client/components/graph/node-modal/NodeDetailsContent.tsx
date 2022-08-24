@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import React, {useCallback, useEffect, useMemo} from "react"
+import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
 import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {adjustParameters} from "./ParametersUtils"
@@ -17,103 +17,171 @@ import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {RootState} from "../../../reducers"
 import {NodeTable} from "./NodeDetailsContent/NodeTable"
 import {generateUUIDs} from "./nodeUtils"
-import {isEqual, partition} from "lodash"
+import {cloneDeep, isEqual, partition, set} from "lodash"
 import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
-import {NodeDetailsContent3} from "./NodeDetailsContent3"
-import ProcessUtils from "../../../common/ProcessUtils"
-import {UpdateState} from "./NodeDetailsContentProps3"
+import {FieldLabel} from "./FieldLabel"
+import {
+  ArrayElement,
+  EnricherProcessor,
+  Filter,
+  JoinCustomNode,
+  Properties,
+  Sink,
+  Source,
+  Split,
+  SubprocessInput,
+  SubprocessInputDef,
+  SubprocessOutputDef,
+  Switch,
+  VariableBuilder,
+  VariableDef,
+} from "./components"
+import NodeUtils from "../NodeUtils"
+import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
 
-export interface NodeDetailsContentProps {
+export const NodeDetailsContent = ({
+  originalNodeId,
+  node,
+  edges,
+  onChange,
+  nodeErrors,
+  showValidation,
+  showSwitch,
+}: {
   originalNodeId?: NodeId,
   node: NodeType,
   edges?: Edge[],
-  onChange?: (node: NodeType, outputEdges?: Edge[]) => void,
+  onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void,
   nodeErrors?: NodeValidationError[],
   showValidation?: boolean,
   showSwitch?: boolean,
+}): JSX.Element => {
+  const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(originalNodeId, nodeErrors))
+  const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
+
+  return (
+    <NodeTable editable={!!onChange}>
+      <NodeErrors errors={otherErrors} message="Node has errors"/>
+      <TestResultsWrapper nodeId={originalNodeId}>
+        <NodeDetailsContent2
+          originalNodeId={originalNodeId}
+          node={node}
+          edges={edges}
+          onChange={onChange}
+          fieldErrors={fieldErrors}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+        />
+      </TestResultsWrapper>
+      <NodeAdditionalInfoBox node={node}/>
+    </NodeTable>
+  )
 }
 
-export const NodeDetailsContent = ({
-  node,
+export const NodeDetailsContent2 = ({
   originalNodeId,
-  nodeErrors,
+  node,
+  edges,
   onChange,
+  fieldErrors,
   showValidation,
   showSwitch,
-  edges,
-}: NodeDetailsContentProps): JSX.Element => {
+}: {
+  originalNodeId?: NodeId,
+  node: NodeType,
+  edges?: Edge[],
+  onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void,
+  showValidation?: boolean,
+  showSwitch?: boolean,
+  fieldErrors?: NodeValidationError[],
+}): JSX.Element => {
   const dispatch = useDispatch()
+
+  const isEditMode = !!onChange
 
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
-  const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
+  const parameterDefinitions = useSelector((state: RootState) => {
+    return getDynamicParameterDefinitions(state)(node)
+  })
 
-  const isEditMode = !!onChange
-  const nodeId = originalNodeId || node.id
-  const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(nodeId, nodeErrors))
-  const dynamicParameterDefinitions = useSelector((state: RootState) => getDynamicParameterDefinitions(state)(nodeId))
-
+  const _branchVariableTypes = useSelector((state: RootState) => getFindAvailableBranchVariables(state))
+  const branchVariableTypes = useMemo(() => _branchVariableTypes(originalNodeId), [_branchVariableTypes, originalNodeId])
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
 
-  const validate = useCallback(
-    (nodeData: NodeType, outgoingEdges?: Edge[]) => dispatch(
-      validateNodeData(processId, {
-        outgoingEdges,
-        nodeData,
-        processProperties,
-        branchVariableTypes: findAvailableBranchVariables(nodeId),
-        variableTypes: findAvailableVariables(nodeId),
-      })
-    ),
-    [dispatch, findAvailableBranchVariables, findAvailableVariables, nodeId, processId, processProperties]
-  )
+  const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
 
-  const validateAndChange = useCallback(
-    (node: NodeType, edges: Edge[]) => {
-      validate(node, edges)
-      onChange(node, edges)
-    },
-    [onChange, validate]
-  )
-
-  const setEditedNode = useCallback<UpdateState<NodeType>>(
-    (nodeChange) => {
+  const change = useCallback(
+    (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
       if (isEditMode) {
-        const changedNode = nodeChange(node)
-        validateAndChange(changedNode, edges)
+        onChange(node, edges)
       }
     },
-    [edges, isEditMode, node, validateAndChange]
+    [isEditMode, onChange]
+  )
+
+  const setEditedNode = useCallback(
+    (n: SetStateAction<NodeType>) => change(n, edges),
+    [edges, change]
   )
 
   const setEditedEdges = useCallback(
-    (edges: Edge[]) => {
-      if (isEditMode) {
-        validateAndChange(node, edges)
-      }
-    },
-    [isEditMode, node, validateAndChange]
+    (e: SetStateAction<Edge[]>) => change(node, e),
+    [node, change]
   )
-
-  const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
-
-  const parameterDefinitions = useMemo(() => {
-    if (!dynamicParameterDefinitions) {
-      return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.parameters
-    }
-    return dynamicParameterDefinitions
-  }, [dynamicParameterDefinitions, node, processDefinitionData])
 
   const adjustNode = useCallback((node: NodeType) => {
     const {adjustedNode} = adjustParameters(node, parameterDefinitions)
     return generateUUIDs(adjustedNode, ["fields", "parameters"])
   }, [parameterDefinitions])
 
+  const renderFieldLabel = useCallback((paramName: string): JSX.Element => {
+    return (
+      <FieldLabel
+        nodeId={originalNodeId}
+        parameterDefinitions={parameterDefinitions}
+        paramName={paramName}
+      />
+    )
+  }, [originalNodeId, parameterDefinitions])
+
+  const removeElement = useCallback((property: keyof NodeType, index: number): void => {
+    setEditedNode((currentNode) => ({
+      ...currentNode,
+      [property]: currentNode[property]?.filter((_, i) => i !== index) || [],
+    }))
+  }, [setEditedNode])
+
+  const addElement = useCallback(<K extends keyof NodeType>(property: K, element: ArrayElement<NodeType[K]>): void => {
+    setEditedNode((currentNode) => ({
+      ...currentNode,
+      [property]: [...currentNode[property], element],
+    }))
+  }, [setEditedNode])
+
+  const setProperty = useCallback(<K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]): void => {
+    setEditedNode((currentNode) => {
+      const value = newValue == null && defaultValue != undefined ? defaultValue : newValue
+      const node = cloneDeep(currentNode)
+      return set(node, property, value)
+    })
+  }, [setEditedNode])
+
   useEffect(() => {
-    dispatch(nodeValidationDataClear(nodeId))
-  }, [dispatch, nodeId])
+    dispatch(nodeValidationDataClear(originalNodeId))
+  }, [dispatch, originalNodeId])
+
+  useEffect(() => {
+    dispatch(validateNodeData(processId, {
+      outgoingEdges: edges,
+      nodeData: node,
+      processProperties,
+      branchVariableTypes,
+      variableTypes,
+    }))
+  }, [branchVariableTypes, dispatch, edges, node, processId, processProperties, variableTypes])
 
   useEffect(() => {
     setEditedNode((node) => {
@@ -122,27 +190,204 @@ export const NodeDetailsContent = ({
     })
   }, [adjustNode, setEditedNode])
 
-  return (
-    <NodeTable editable={isEditMode}>
-      <NodeErrors errors={otherErrors} message="Node has errors"/>
-      <TestResultsWrapper nodeId={originalNodeId}>
-        <NodeDetailsContent3
-          editedNode={node}
+  switch (NodeUtils.nodeType(node)) {
+    case "Source":
+      return (
+        <Source
           originalNodeId={originalNodeId}
           isEditMode={isEditMode}
           showValidation={showValidation}
           showSwitch={showSwitch}
-          parameterDefinitions={parameterDefinitions}
-          editedEdges={edges}
-          setEditedEdges={setEditedEdges}
-          processDefinitionData={processDefinitionData}
+          node={node}
           findAvailableVariables={findAvailableVariables}
-          updateNodeState={setEditedNode}
+          parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
         />
-      </TestResultsWrapper>
-      <NodeAdditionalInfoBox node={node}/>
-    </NodeTable>
-  )
+      )
+    case "Sink":
+      return (
+        <Sink
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          findAvailableVariables={findAvailableVariables}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "SubprocessInputDefinition":
+      return (
+        <SubprocessInputDef
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          node={node}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          addElement={addElement}
+          removeElement={removeElement}
+          variableTypes={variableTypes}
+        />
+      )
+    case "SubprocessOutputDefinition":
+      return (
+        <SubprocessOutputDef
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          node={node}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          addElement={addElement}
+          removeElement={removeElement}
+          variableTypes={variableTypes}
+        />
+      )
+    case "Filter":
+      return (
+        <Filter
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          edges={edges}
+          setEditedEdges={setEditedEdges}
+          findAvailableVariables={findAvailableVariables}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "Enricher":
+    case "Processor":
+      return (
+        <EnricherProcessor
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          findAvailableVariables={findAvailableVariables}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "SubprocessInput":
+      return (
+        <SubprocessInput
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          findAvailableVariables={findAvailableVariables}
+          processDefinitionData={processDefinitionData}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "Join":
+    case "CustomNode":
+      return (
+        <JoinCustomNode
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          findAvailableVariables={findAvailableVariables}
+          processDefinitionData={processDefinitionData}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "VariableBuilder":
+      return (
+        <VariableBuilder
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          node={node}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          removeElement={removeElement}
+          addElement={addElement}
+          variableTypes={variableTypes}
+        />
+      )
+    case "Variable":
+      return (
+        <VariableDef
+          isEditMode={isEditMode}
+          originalNodeId={originalNodeId}
+          showValidation={showValidation}
+          node={node}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          variableTypes={variableTypes}
+        />
+      )
+    case "Switch":
+      return (
+        <Switch
+          originalNodeId={originalNodeId}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          edges={edges}
+          setEditedEdges={setEditedEdges}
+          findAvailableVariables={findAvailableVariables}
+          processDefinitionData={processDefinitionData}
+          parameterDefinitions={parameterDefinitions}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          variableTypes={variableTypes}
+        />
+      )
+    case "Split":
+      return (
+        <Split
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          node={node}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    case "Properties":
+      return (
+        <Properties
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          showSwitch={showSwitch}
+          node={node}
+          processDefinitionData={processDefinitionData}
+          fieldErrors={fieldErrors}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+        />
+      )
+    default:
+      return (
+        <NodeDetailsFallback node={node}/>
+      )
+  }
 }
 

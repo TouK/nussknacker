@@ -16,35 +16,32 @@ export const SourceSinkCommon = ({
   isEditMode,
   findAvailableVariables,
   setProperty,
-  editedNode,
+  node,
   originalNodeId,
 }: PropsWithChildren<NodeContentMethods
   & Pick<NodeDetailsContentProps3,
   | "showSwitch"
   | "fieldErrors"
-  | "showValidation"
   | "parameterDefinitions"
-  | "isEditMode"
   | "findAvailableVariables"
-  | "editedNode"
   | "originalNodeId">>): JSX.Element => {
   return (
     <NodeTableBody>
       <IdField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />
-      {editedNode.ref.parameters?.map((param, index) => (
-        <div className="node-block" key={editedNode.id + param.name + index}>
+      {node.ref.parameters?.map((param, index) => (
+        <div className="node-block" key={node.id + param.name + index}>
           <ParameterExpressionField
             originalNodeId={originalNodeId}
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}
-            editedNode={editedNode}
+            node={node}
             findAvailableVariables={findAvailableVariables}
             parameterDefinitions={parameterDefinitions}
             fieldErrors={fieldErrors}
@@ -60,7 +57,7 @@ export const SourceSinkCommon = ({
       <DescriptionField
         isEditMode={isEditMode}
         showValidation={showValidation}
-        editedNode={editedNode}
+        node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
       />

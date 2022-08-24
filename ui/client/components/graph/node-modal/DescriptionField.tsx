@@ -2,28 +2,39 @@
 import {NodeField} from "./NodeField"
 import {FieldType} from "./editors/field/Field"
 import React from "react"
-import {NodeFieldProps} from "./NodeDetailsContentProps3"
+import {NodeType} from "../../../types"
+import {Validator} from "./editors/Validators"
 
-export type DescriptionFieldProps = Omit<NodeFieldProps<"additionalFields.description", string>, "fieldLabel" | "fieldType" | "fieldProperty">
+interface DescriptionFieldProps {
+  autoFocus?: boolean,
+  defaultValue?: string,
+  isEditMode?: boolean,
+  node: NodeType,
+  readonly?: boolean,
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+  showValidation?: boolean,
+  validators?: Validator[],
+}
 
-export const DescriptionField = ({
+export function DescriptionField({
   autoFocus,
   defaultValue,
+  isEditMode,
+  node,
+  readonly,
   renderFieldLabel,
   setProperty,
-  editedNode,
-  isEditMode,
   showValidation,
-  readonly,
   validators,
-}: DescriptionFieldProps): JSX.Element => {
+}: DescriptionFieldProps): JSX.Element {
   return (
     <NodeField
       autoFocus={autoFocus}
       defaultValue={defaultValue}
       renderFieldLabel={renderFieldLabel}
       setProperty={setProperty}
-      editedNode={editedNode}
+      node={node}
       isEditMode={isEditMode}
       showValidation={showValidation}
       readonly={readonly}

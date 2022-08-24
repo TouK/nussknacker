@@ -1,26 +1,41 @@
-import Field from "./editors/field/Field"
-import {allValid} from "./editors/Validators"
+import Field, {FieldType} from "./editors/field/Field"
+import {allValid, Validator} from "./editors/Validators"
 import {get} from "lodash"
 import React from "react"
-import {NodeFieldProps} from "./NodeDetailsContentProps3"
 import {useDiffMark} from "./PathsToMark"
+import {NodeType} from "../../../types"
+
+type NodeFieldProps<N extends string, V> = {
+  autoFocus?: boolean,
+  defaultValue?: V,
+  fieldLabel: string,
+  fieldProperty: N,
+  fieldType: FieldType,
+  isEditMode?: boolean,
+  node: NodeType,
+  readonly?: boolean,
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+  showValidation?: boolean,
+  validators?: Validator[],
+}
 
 export function NodeField<N extends string, V>({
-  fieldType,
+  autoFocus,
+  defaultValue,
   fieldLabel,
   fieldProperty,
-  autoFocus,
+  fieldType,
+  isEditMode,
+  node,
   readonly,
-  defaultValue,
-  validators = [],
   renderFieldLabel,
   setProperty,
-  editedNode,
-  isEditMode,
   showValidation,
+  validators = [],
 }: NodeFieldProps<N, V>): JSX.Element {
   const readOnly = !isEditMode || readonly
-  const value = get(editedNode, fieldProperty, null) ?? defaultValue
+  const value = get(node, fieldProperty, null) ?? defaultValue
   const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
   const onChange = (newValue) => setProperty(fieldProperty, newValue, defaultValue)
   const [isMarked] = useDiffMark()

@@ -1,6 +1,6 @@
 import {css} from "@emotion/css"
 import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
-import React, {useCallback, useEffect, useMemo, useState} from "react"
+import React, {SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
 import {editNode} from "../../../../actions/nk"
@@ -38,7 +38,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     setEditedNode(node)
   }, [node])
 
-  const onChange = useCallback((node: NodeType, edges: Edge[]) => {
+  const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
     setEditedNode(node)
     setOutputEdges(edges)
   }, [])

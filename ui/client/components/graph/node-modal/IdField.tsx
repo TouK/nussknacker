@@ -1,16 +1,16 @@
 import {allValid, mandatoryValueValidator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React from "react"
-import {IdFieldProps} from "./NodeDetailsContentProps3"
+import {NodeContentMethods} from "./NodeDetailsContentProps3"
 import {useDiffMark} from "./PathsToMark"
 
 export function IdField({
   isEditMode,
   showValidation,
-  editedNode,
+  node,
   setProperty,
   renderFieldLabel,
-}: IdFieldProps): JSX.Element {
+}: NodeContentMethods): JSX.Element {
   const validators = [mandatoryValueValidator]
   const [isMarked] = useDiffMark()
   return (
@@ -20,9 +20,9 @@ export function IdField({
       showValidation={showValidation}
       onChange={(newValue) => setProperty("id", newValue.toString())}
       readOnly={!isEditMode}
-      className={!showValidation || allValid(validators, [editedNode.id]) ? "node-input" : "node-input node-input-with-error"}
+      className={!showValidation || allValid(validators, [node.id]) ? "node-input" : "node-input node-input-with-error"}
       validators={validators}
-      value={editedNode.id}
+      value={node.id}
       autoFocus
     >
       {renderFieldLabel("Name")}

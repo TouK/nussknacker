@@ -3,7 +3,7 @@ import {getProcessCategory, getProcessToDisplay} from "../../../../reducers/sele
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {RootState} from "../../../../reducers"
-import {AdditionalPropertiesConfig, NodeId, NodeValidationError} from "../../../../types"
+import {AdditionalPropertiesConfig, NodeId, NodeType, NodeValidationError, UIParameter} from "../../../../types"
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, s => s.processDefinition)
 export const getAdditionalPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig)
@@ -19,7 +19,7 @@ export const getNodeDetails = (state: RootState) => (nodeId) => {
 }
 export const getValidationPerformed = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => nodeDetails(nodeId).validationPerformed
+  (nodeDetails) => (nodeId): boolean => nodeDetails(nodeId).validationPerformed
 )
 const getValidationErrors = createSelector(
   getNodeDetails,
@@ -27,7 +27,7 @@ const getValidationErrors = createSelector(
 )
 export const getDetailsParameters = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => {
+  (nodeDetails) => (nodeId): UIParameter[] => {
     const parameters = nodeDetails(nodeId)?.parameters
     return parameters || null
   }
@@ -52,12 +52,13 @@ export const getCurrentErrors = createSelector(
   (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
-  getValidationPerformed, getDetailsParameters, getResultParameters,
-  (validationPerformed, detailsParameters, resultParameters) => (nodeId) => {
-    if (validationPerformed(nodeId)) {
-      return detailsParameters(nodeId)
+  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData,
+  (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
+    const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id)
+    if (!dynamicParameterDefinitions) {
+      return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters
     }
-    return resultParameters(nodeId) || null
+    return dynamicParameterDefinitions || null
   }
 )
 

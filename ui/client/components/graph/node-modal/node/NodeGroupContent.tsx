@@ -1,5 +1,5 @@
 import {css} from "@emotion/css"
-import React from "react"
+import React, {SetStateAction} from "react"
 import {useSelector} from "react-redux"
 import {Edge, NodeId, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
@@ -13,7 +13,7 @@ interface Props {
   currentNodeId: NodeId,
   node: NodeType,
   edges: Edge[],
-  onChange?: (node: NodeType, edges: Edge[]) => void,
+  onChange?: (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => void,
 }
 
 export function NodeGroupContent({currentNodeId, node, edges, onChange}: Props): JSX.Element {

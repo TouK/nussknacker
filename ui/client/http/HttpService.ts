@@ -3,7 +3,7 @@ import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
-import {SettingsData} from "../actions/nk"
+import {SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
@@ -366,7 +366,7 @@ class HttpService {
       })
   }
 
-  validateNode(processId, node) {
+  validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"),
