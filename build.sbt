@@ -1103,7 +1103,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   ).dependsOn(
   liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
   liteKafkaComponents % "test", liteRequestResponseComponents % "test", componentsUtils % "test",
-  testUtils % "test", kafkaTestUtils % "test")
+  testUtils % "test", kafkaTestUtils % "test", schemedKafkaComponentsUtils % "test->test")
 
 lazy val developmentTestsDeploymentManager = (project in development("deploymentManager")).
   enablePlugins().

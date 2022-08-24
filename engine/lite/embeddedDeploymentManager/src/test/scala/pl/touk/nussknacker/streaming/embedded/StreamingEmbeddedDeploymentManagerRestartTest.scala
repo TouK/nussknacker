@@ -15,8 +15,9 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)

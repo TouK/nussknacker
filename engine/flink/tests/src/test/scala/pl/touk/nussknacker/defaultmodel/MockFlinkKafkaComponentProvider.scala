@@ -1,10 +1,8 @@
 package pl.touk.nussknacker.defaultmodel
 
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.util.transformer.FlinkKafkaComponentProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 
 class MockFlinkKafkaComponentProvider extends FlinkKafkaComponentProvider {
 
