@@ -1,6 +1,6 @@
 import React, {useCallback} from "react"
 import {useTranslation} from "react-i18next"
-import {useSelector} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/archive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
@@ -12,27 +12,32 @@ import {CapabilitiesToolbarButton} from "../../../toolbarComponents/Capabilities
 import {ToolbarButtonProps} from "../../types"
 import {ArchivedPath} from "../../../../containers/paths"
 import {getFeatureSettings} from "../../../../reducers/selectors/settings";
+import {displayCurrentProcessVersion, loadProcessToolbarsConfiguration} from "../../../../actions/nk";
 
 function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const processId = useSelector(getProcessId)
   const archivePossible = useSelector(isArchivePossible)
-  const featuresSettings = useSelector(getFeatureSettings)
+  const {skipArchiveRedirect} = useSelector(getFeatureSettings)
   const available = !disabled && archivePossible
   const {t} = useTranslation()
   const {confirm} = useWindows()
+  const dispatch = useDispatch()
 
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.archiveProcess(processId),
       onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => {
-          if(!featuresSettings.skipArchiveRedirect) history.push(ArchivedPath)
-          else window.location.reload()
+          if(!skipArchiveRedirect) history.push(ArchivedPath)
+          else {
+              dispatch(loadProcessToolbarsConfiguration(processId))
+              dispatch(displayCurrentProcessVersion(processId))
+          }
       }),
       confirmText: t("panels.actions.process-archive.yes", "Yes"),
       denyText: t("panels.actions.process-archive.no", "No"),
     },
     {category: events.categories.rightPanel, action: events.actions.buttonClick, name: `archive`},
-  ), [available, confirm, processId, t])
+  ), [dispatch, available, confirm, processId, t, skipArchiveRedirect])
 
   return (
     <CapabilitiesToolbarButton
