@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.k8s.manager
 
-import akka.Done
-import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.k8s.manager.KafkaK8sSupport.kafkaService
@@ -11,7 +9,7 @@ import skuber.api.client.KubernetesClient
 import skuber.json.format._
 import skuber.{Container, EnvVar, ObjectMeta, Pod, Service}
 
-import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.concurrent.{ExecutionContext, Future}
 
 object KafkaK8sSupport {
 
@@ -21,6 +19,8 @@ object KafkaK8sSupport {
 
 //TODO: would it be faster if we run e.g. kcat as k8s job instead of exec into kafka pod?
 class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFutures with LazyLogging with Matchers {
+
+  private val k8sUtils = new K8sTestUtils(k8s)
 
   //set to false in development to reuse existing kafka pod
   private val cleanupKafka = true
@@ -75,36 +75,18 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
 
   def readFromTopic(name: String, count: Int): List[String] = {
     val command = s"/kafka/bin/kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic $name --max-messages $count --from-beginning"
-    val messages = runInKafka(command, _.lines.toArray.length == count, None)
+    val messages = k8sUtils.execPodWithLogs(kafkaPod, command, _.lines.toArray.length == count, None)
     messages.split("\n").take(count).toList
-  }
-
-  private def runInKafka(command: String, end: String => Boolean, input: Option[String] = None): String = {
-    val close = Promise[Unit]()
-    val output = new StringBuilder
-    val sink: Sink[String, Future[Done]] = Sink.foreach { s =>
-      logger.debug(s"received: $s")
-      output.append(s)
-      if (end(output.toString())) {
-        close.success(())
-      }
-    }
-    val inputSource = input.map(Source.single)
-    k8s.exec(kafkaPod, command.split(" "),
-      maybeStdout = Some(sink),
-      maybeStdin = inputSource,
-      maybeClose = Some(close)).futureValue
-    output.toString()
   }
 
   def sendToTopic(name: String, value: String): Unit = {
     val command = s"/kafka/bin/kafka-console-producer.sh --bootstrap-server localhost:9092 --topic $name"
-    runInKafka(command, _ => true, Some(value))
+    k8sUtils.execPodWithLogs(kafkaPod, command, _ => true, Some(value))
   }
 
   def createTopic(name: String): Unit = {
     val command = s"/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --topic $name --partitions 1 --replication-factor 1"
-    runInKafka(command, _.contains(s"Created topic $name"))
+    k8sUtils.execPodWithLogs(kafkaPod, command, _.contains(s"Created topic $name"))
   }
 
 }

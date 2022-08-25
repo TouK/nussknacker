@@ -1,5 +1,8 @@
 package pl.touk.nussknacker.k8s.manager
 
+import akka.Done
+import akka.stream.scaladsl.{Sink, Source}
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.{AvailablePortFinder, ProcessUtils, VeryPatientScalaFutures}
@@ -10,10 +13,11 @@ import skuber.{ConfigMap, Container, ObjectMeta, ObjectResource, Pod, Service, V
 
 import java.io.File
 import java.net.Socket
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
-class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues with VeryPatientScalaFutures {
+class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues with VeryPatientScalaFutures with LazyLogging {
 
   val reverseProxyPodRemotePort = 8080
 
@@ -21,10 +25,38 @@ class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues wit
 
   private val reverseProxyConfConfigMapName = "reverse-proxy-conf"
 
+  def execPodWithLogs(podName: String, command: String, end: String => Boolean, input: Option[String] = None): String = {
+    val closePromise = Promise[Unit]()
+    val output = new mutable.StringBuilder
+    val stdoutSink: Sink[String, Future[Done]] = Sink.foreach { s =>
+      logger.debug(s"$podName exec stdout: $s")
+      output.append(s)
+      if (end(output.toString())) {
+        closePromise.success(())
+      }
+    }
+    val stderrSink: Sink[String, _] = Sink.foreach { s =>
+      logger.debug(s"$podName exec stderr: $s")
+      output.append(s)
+    }
+    val inputSource = input.map(Source.single)
+    k8s.exec(podName, command.split(" "),
+      maybeStdout = Some(stdoutSink),
+      maybeStderr = Some(stderrSink),
+      maybeStdin = inputSource,
+      maybeClose = Some(closePromise)).futureValue
+    output.toString()
+  }
+
   def withForwardedProxyPod(targetUrl: String)(action: Int => Unit): Unit = {
     withRunningProxyPod(targetUrl) { reverseProxyPod =>
       withPortForwarded(reverseProxyPod, reverseProxyPodRemotePort)(action)
     }
+  }
+
+  def clusterInfoDump(): Unit = {
+    val dumpProcess = new ProcessBuilder("kubectl", "cluster-info", "dump").start()
+    ProcessUtils.attachLoggingAndReturnWaitingFuture(dumpProcess).futureValue shouldBe 0
   }
 
   def withPortForwarded(obj: ObjectResource, remotePort:Int)(action: Int => Unit): Unit = {
