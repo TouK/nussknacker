@@ -385,6 +385,10 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
       //should not fail
       assertNoGarbageLeft()
     }
+
+    override protected def onException(ex: Throwable): Unit = {
+      k8sTestUtils.clusterInfoDump()
+    }
   }
 
 }

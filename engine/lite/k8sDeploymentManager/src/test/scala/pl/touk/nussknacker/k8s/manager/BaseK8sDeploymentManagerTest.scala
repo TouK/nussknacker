@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
@@ -19,6 +19,7 @@ import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
 
@@ -66,6 +67,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 }
 
 class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
+
   def withRunningScenario(action: => Unit): Unit = {
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     eventually {
@@ -76,6 +78,10 @@ class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val sce
 
     try {
       action
+    } catch {
+      case NonFatal(ex) =>
+        onException(ex)
+        throw ex
     } finally {
       manager.cancel(version.processName, DeploymentData.systemUser).futureValue
       eventually {
@@ -83,5 +89,7 @@ class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val sce
       }
     }
   }
+
+  protected def onException(ex: Throwable): Unit = {}
 
 }

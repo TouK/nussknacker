@@ -130,6 +130,10 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         assertNoGarbageLeft()
       }
     }
+
+    override protected def onException(ex: Throwable): Unit = {
+      k8sTestUtils.clusterInfoDump()
+    }
   }
 
 }
