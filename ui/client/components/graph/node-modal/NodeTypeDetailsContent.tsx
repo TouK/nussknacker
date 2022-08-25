@@ -62,8 +62,7 @@ export function NodeTypeDetailsContent({
     return getDynamicParameterDefinitions(state)(node)
   })
 
-  const _branchVariableTypes = useSelector((state: RootState) => getFindAvailableBranchVariables(state))
-  const branchVariableTypes = useMemo(() => _branchVariableTypes(originalNodeId), [_branchVariableTypes, originalNodeId])
+  const branchVariableTypes = useSelector((state: RootState) => getFindAvailableBranchVariables(state)(originalNodeId))
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
 
