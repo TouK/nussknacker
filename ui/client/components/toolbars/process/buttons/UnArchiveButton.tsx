@@ -24,7 +24,7 @@ function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.unArchiveProcess(processId),
-      onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => history.push(redirectPath)),
+      onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => window.location.reload()),
       confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
       denyText: t("panels.actions.process-unarchive.no", "No"),
     },

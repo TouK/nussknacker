@@ -680,6 +680,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 | intervalTimeSettings.healthCheck | Low        | int     | 30000         | How often frontend reloads checks scenarios states                                                                                                                                                                          |
 | developmentMode                  | Medium     | boolean | false         | For development mode we disable some security features like CORS. **Don't** use in production                                                                                                                               |
 | enableConfigEndpoint             | Medium     | boolean | false         | Expose config over http (GET /api/app/config/) - requires admin permission. Please mind, that config often contains password or other confidential data - this feature is meant to be used only on 'non-prod' envrionments. |
+| skipArchiveRedirect              | Low        | boolean |               | Preventing from redirect to scenarios list after doing archive oprtation                                                                                                                                                    |
 
 ## Scenario type, categories
 

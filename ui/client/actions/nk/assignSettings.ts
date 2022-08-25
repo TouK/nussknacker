@@ -18,8 +18,9 @@ export type FeaturesSettings = {
   deploymentCommentSettings?: { exampleComment: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
   tabs: DynamicTabData[],
-  testDataSettings?: TestDataSettings
-}
+  testDataSettings?: TestDataSettings,
+  skipArchiveRedirect?: boolean,
+};
 
 export type TestDataSettings = {
   maxSamplesCount: number,

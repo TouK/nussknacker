@@ -11,10 +11,12 @@ import {useWindows} from "../../../../windowManager"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
 import {ArchivedPath} from "../../../../containers/paths"
+import {getFeatureSettings} from "../../../../reducers/selectors/settings";
 
 function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const processId = useSelector(getProcessId)
   const archivePossible = useSelector(isArchivePossible)
+  const featuresSettings = useSelector(getFeatureSettings)
   const available = !disabled && archivePossible
   const {t} = useTranslation()
   const {confirm} = useWindows()
@@ -22,7 +24,10 @@ function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.archiveProcess(processId),
-      onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => history.push(ArchivedPath)),
+      onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => {
+          if(!featuresSettings.skipArchiveRedirect) history.push(ArchivedPath)
+          else window.location.reload()
+      }),
       confirmText: t("panels.actions.process-archive.yes", "Yes"),
       denyText: t("panels.actions.process-archive.no", "No"),
     },

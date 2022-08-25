@@ -18,7 +18,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings,
-                                enableConfigEndpoint: Boolean
+                                enableConfigEndpoint: Boolean,
+                                skipArchiveRedirect: Option[Boolean]
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -42,6 +43,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings = config.as[TestDataSettings]("testDataSettings")
+    val skipArchiveRedirect = config.getAs[Boolean]("skipArchiveRedirect")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -54,7 +56,8 @@ object FeatureTogglesConfig extends LazyLogging{
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       testDataSettings = testDataSettings,
-      enableConfigEndpoint = enableConfigEndpoint
+      enableConfigEndpoint = enableConfigEndpoint,
+      skipArchiveRedirect = skipArchiveRedirect
     )
   }
 
