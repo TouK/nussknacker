@@ -49,10 +49,10 @@ const validate = debounce(async (processId: string, validationRequestData: Valid
 }, 500)
 
 export function validateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
-  //Properties are "special types" which are not compatible with NodeData in BE
-  const {nodeData} = validationRequestData
-  if (nodeData.type && nodeData.type !== "Properties") {
-    return (dispatch) => {
+  return (dispatch) => {
+    //Properties are "special types" which are not compatible with NodeData in BE
+    const {nodeData} = validationRequestData
+    if (nodeData.type && nodeData.type !== "Properties") {
       validate(processId, validationRequestData, (data, nodeId) => {
         dispatch(nodeValidationDataUpdated(data, nodeId))
       })
