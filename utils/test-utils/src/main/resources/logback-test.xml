@@ -53,7 +53,5 @@
     <logger name="org.flywaydb.core.internal.sqlscript.DefaultSqlScriptExecutor" level="ERROR"/>
     <logger name="org.apache.flink.metrics.MetricGroup" level="ERROR"/>
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
-    <!-- skuber by default logs all requests to k8s on INFO -->
-    <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
 
 </configuration>
