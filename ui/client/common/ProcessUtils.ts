@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {flatten, get, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, reduce, transform} from "lodash"
+import {flatten, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, transform} from "lodash"
 import {
   GlobalVariables,
   NodeId,
@@ -8,8 +8,11 @@ import {
   NodeType,
   Process,
   ProcessDefinition,
+  ReturnedType,
   TypingResult,
   UIParameter,
+  ValidationResult,
+  VariableTypes,
 } from "../types"
 
 class ProcessUtils {
@@ -39,19 +42,24 @@ class ProcessUtils {
   }
 
   hasNoErrors = (process) => {
-    const result = (process.validationResult || {}).errors
+    const result = this.getValidationErrors(process)
     return !result || Object.keys(result.invalidNodes || {}).length == 0 &&
       (result.globalErrors || []).length == 0 && (result.processPropertiesErrors || []).length == 0
   }
 
+  getValidationResult = (process: Process): ValidationResult => process?.validationResult
+
   hasNoWarnings = (process) => {
-    const warnings = (process.validationResult || {}).warnings
+    const warnings = this.getValidationResult(process)?.warnings
     return isEmpty(warnings) || Object.keys(warnings.invalidNodes || {}).length == 0
   }
 
   hasNoPropertiesErrors = process => {
-    const result = (process.validationResult || {}).errors || {}
-    return isEmpty(result.processPropertiesErrors)
+    return isEmpty(this.getValidationErrors(process)?.processPropertiesErrors)
+  }
+
+  getValidationErrors(process) {
+    return this.getValidationResult(process)?.errors
   }
 
   //see BranchEndDefinition.artificialNodeId
@@ -71,20 +79,10 @@ class ProcessUtils {
     }, {})
   }
 
+  getNodeResults = (process: Process): NodeResults => this.getValidationResult(process)?.nodeResults
+
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
-
-  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition: UIParameter) => {
-    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
-    const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
-    const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
-    const variablesToHideForParam = parameterDefinition?.variablesToHide || []
-    const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
-    const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
-    const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
-    //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
-    return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1)
-  }
 
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
   _findGlobalVariablesWithMismatchCategory = (globalVariables: GlobalVariables, processCategory: string) => {
@@ -92,7 +90,7 @@ class ProcessUtils {
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
-  _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const filteredGlobalVariables = pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
     const globalVariables = mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
@@ -104,7 +102,22 @@ class ProcessUtils {
     }
   }
 
-  _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition?: UIParameter): VariableTypes => {
+    const nodeResults = this.getNodeResults(process)
+    const variablesFromValidation = this.getVariablesFromValidation(nodeResults, nodeId)
+    const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
+    const variablesToHideForParam = parameterDefinition?.variablesToHide || []
+    const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
+    const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
+    const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
+    //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
+    const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
+    return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1)
+  }
+
+  getVariablesFromValidation = (nodeResults: NodeResults, nodeId: string) => nodeResults?.[nodeId]?.variableTypes
+
+  _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): VariableTypes => {
     const previousNodes = this._findPreviousNodes(nodeId, process)
     const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
@@ -112,17 +125,17 @@ class ProcessUtils {
     return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
   }
 
-  _listOfObjectsToObject = (list) => {
-    return reduce(list, (memo, current) => {
+  _listOfObjectsToObject = <T>(list: Record<string, T>[]): Record<string, T> => {
+    return list.reduce((memo, current) => {
       return {...memo, ...current}
     }, {})
   }
 
-  _findVariablesDefinedInProcess = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+  _findVariablesDefinedInProcess = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition): Record<string, ReturnedType>[] => {
     const node = process.nodes.find((node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
-    const clazzName = get(nodeObjectTypeDefinition, "returnType")
-    const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
+    const clazzName = nodeObjectTypeDefinition?.returnType
+    const unknown: ReturnedType = {display: "Unknown", type: "Unknown", refClazzName: "java.lang.Object", params: []}
     switch (node.type) {
       case "Source": {
         return isEmpty(clazzName) ? [] : [{input: clazzName}]
@@ -135,9 +148,7 @@ class ProcessUtils {
       }
       case "CustomNode":
       case "Join": {
-        const outputVariableName = node.outputVar
-        const outputClazz = clazzName
-        return isEmpty(outputClazz) ? [] : [{[outputVariableName]: outputClazz}]
+        return isEmpty(clazzName) ? [] : [{[node.outputVar]: clazzName}]
       }
       case "VariableBuilder": {
         return [{[node.varName]: unknown}]
@@ -146,7 +157,7 @@ class ProcessUtils {
         return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [node.exprVal ? {[node.exprVal]: unknown} : {}]
+        return node.exprVal ? [{[node.exprVal]: unknown}] : []
       }
       default: {
         return []
@@ -178,7 +189,10 @@ class ProcessUtils {
         }
       }
     }
-    return {}
+    return {
+      parameters: null,
+      returnType: null,
+    }
   }
 
   //TODO: this should be done without these switches..
@@ -220,7 +234,7 @@ class ProcessUtils {
     return this.findNodeDefinitionId(node) || this.getNodeBaseTypeCamelCase(node) || "$properties"
   }
 
-  humanReadableType = (typingResult: TypingResult): string => isEmpty(typingResult) ? null : typingResult.display
+  humanReadableType = (typingResult?: Pick<TypingResult, "display">): string | null => typingResult?.display || null
 
   _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
     const nodeEdge = process.edges.find((edge) => edge.to === nodeId)

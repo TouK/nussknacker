@@ -7,14 +7,14 @@ import {Error, mandatoryValueValidator} from "../Validators"
 import MapKey from "./MapKey"
 import MapValue from "./MapValue"
 import {isEqual} from "lodash"
+import {useDiffMark} from "../../PathsToMark"
 
 export interface MapCommonProps {
-  isMarked: (paths: string) => boolean,
-  onChange: (path: string, newValue: unknown) => void,
+  setProperty: (path: string, newValue: unknown) => void,
   readOnly?: boolean,
   showValidation: boolean,
   variableTypes: VariableTypes,
-  errors: Error[],
+  fieldErrors: Error[],
 }
 
 interface MapProps<F extends Field> extends MapCommonProps {
@@ -23,16 +23,18 @@ interface MapProps<F extends Field> extends MapCommonProps {
   namespace: string,
   addField: (namespace: string, field?: F) => void,
   removeField: (namespace: string, index: number) => void,
-  expressionType?: TypedObjectTypingResult,
+  expressionType?: Partial<TypedObjectTypingResult>,
 }
 
 export type TypedField = Field & { typeInfo: string }
 
 export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   const {
-    label, onChange, addField, removeField, namespace, isMarked, readOnly, showValidation,
-    errors, variableTypes, expressionType,
+    label, setProperty, addField, removeField, namespace, readOnly, showValidation,
+    fieldErrors, variableTypes, expressionType,
   } = props
+
+  const [isMarked] = useDiffMark()
 
   const appendTypeInfo = useCallback((expressionObj: F): F & { typeInfo: string } => {
     const fields = expressionType?.fields
@@ -58,30 +60,29 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
             readOnly={readOnly}
             showValidation={showValidation}
             isMarked={isMarked(`${path}.name`)}
-            onChange={value => onChange(`${path}.name`, value)}
+            onChange={value => setProperty(`${path}.name`, value)}
             value={item.name}
             validators={validators}
-            autofocus={false}
           />
           <MapValue
             readOnly={readOnly}
             showValidation={showValidation}
             isMarked={isMarked(`${path}.expression.expression`)}
-            onChange={value => onChange(`${path}.expression.expression`, value)}
+            onChange={value => setProperty(`${path}.expression.expression`, value)}
             validationLabelInfo={item.typeInfo}
             value={item.expression}
-            errors={errors}
+            errors={fieldErrors}
             variableTypes={variableTypes}
           />
         </FieldsRow>
       )
     },
     // "variableTypes" ignored for reason
-    [isMarked, namespace, onChange, readOnly, showValidation, validators],
+    [isMarked, namespace, setProperty, readOnly, showValidation, validators],
   )
 
   const items = useMemo(
-    () => fields.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
+    () => fields?.map(appendTypeInfo).map((item, index) => ({item, el: <Item key={index} index={index} item={item}/>})),
     [Item, appendTypeInfo, fields],
   )
 

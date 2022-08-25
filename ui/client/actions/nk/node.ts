@@ -3,7 +3,6 @@ import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, Valida
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {layoutChanged, Position} from "./ui/layout"
-import {EditEdgeAction} from "./editEdge"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
@@ -141,5 +140,4 @@ export type NodeActions =
   | NodesWithEdgesAddedAction
   | ValidationResultAction
   | EditNodeAction
-  | EditEdgeAction
   | RenameProcessAction

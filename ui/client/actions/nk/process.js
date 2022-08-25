@@ -2,7 +2,6 @@ import {events} from "../../analytics/TrackingEvents"
 import HttpService from "../../http/HttpService"
 import * as UndoRedoActions from "../undoRedoActions"
 import {displayProcessActivity} from "./displayProcessActivity"
-import {displayProcessCounts} from "./displayProcessCounts"
 import {reportEvent} from "./reportEvent"
 
 export function fetchProcessToDisplay(processId, versionId) {
@@ -75,24 +74,6 @@ export function clearProcess() {
   }
 }
 
-export function testProcessFromFile(id, testDataFile, process) {
-  return (dispatch) => {
-    dispatch({
-      type: "PROCESS_LOADING",
-    })
-
-    dispatch(reportEvent({
-      category: events.categories.rightPanel,
-      action: events.actions.buttonClick,
-      name: "from file",
-    }))
-
-    HttpService.testProcess(id, testDataFile, process)
-      .then(response => dispatch(displayTestResults(response.data)))
-      .catch(error => dispatch({type: "LOADING_FAILED"}))
-  }
-}
-
 export function hideRunProcessDetails() {
   return (dispatch) => {
     dispatch(reportEvent({
@@ -104,16 +85,6 @@ export function hideRunProcessDetails() {
     return dispatch({
       type: "HIDE_RUN_PROCESS_DETAILS",
     })
-  }
-}
-
-function displayTestResults(testResults) {
-  return (dispatch) => {
-    dispatch({
-      type: "DISPLAY_TEST_RESULTS_DETAILS",
-      testResults: testResults.results,
-    })
-    dispatch(displayProcessCounts(testResults.counts))
   }
 }
 

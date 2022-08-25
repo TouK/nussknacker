@@ -3,12 +3,12 @@ import {useTranslation} from "react-i18next"
 import {RootState} from "../../../../reducers/index"
 import {connect} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
-import {testProcessFromFile} from "../../../../actions/nk/process"
 import {reportEvent} from "../../../../actions/nk/reportEvent"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
-import {getTestCapabilities, getProcessId, getProcessToDisplay} from "../../../../reducers/selectors/graph"
+import {getProcessId, getProcessToDisplay, getTestCapabilities} from "../../../../reducers/selectors/graph"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/from-file.svg"
 import {ToolbarButtonProps} from "../../types"
+import {testProcessFromFile} from "../../../../actions/nk/displayTestResults"
 
 type Props = StateProps & ToolbarButtonProps
 
@@ -19,7 +19,8 @@ function FromFileButton(props: Props) {
   const available = !disabled && testCapabilities.canBeTested
 
   return (
-    <CapabilitiesToolbarButton write
+    <CapabilitiesToolbarButton
+      write
       name={t("panels.actions.test-fromFile.button", "from file")}
       icon={<Icon/>}
       disabled={!available}
