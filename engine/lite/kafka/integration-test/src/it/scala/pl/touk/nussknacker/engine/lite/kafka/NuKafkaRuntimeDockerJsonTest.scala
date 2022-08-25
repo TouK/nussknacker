@@ -17,7 +17,7 @@ class NuKafkaRuntimeDockerJsonTest extends AnyFunSuite with BaseNuKafkaRuntimeDo
     schemaRegistryContainer.start() // should be started after kafka
     fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
     registerSchemas()
-    startRuntimeContainer(fixture.scenarioFile, additionalEnvs = Map("SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress))
+    startRuntimeContainer(fixture.scenarioFile)
     MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
   }
 

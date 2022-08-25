@@ -20,7 +20,6 @@ class KafkaJsonPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
 
   override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
 
-  // Use kafka-json serializers
   override protected def keySerializer: Serializer[Any] = SimpleKafkaJsonSerializer
 
   override protected def valueSerializer: Serializer[Any] = SimpleKafkaJsonSerializer
