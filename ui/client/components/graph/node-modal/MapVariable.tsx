@@ -13,7 +13,6 @@ export interface MapVariableProps<F extends Field> {
   showValidation: boolean,
   renderFieldLabel: (label: string) => React.ReactNode,
   errors: Error[],
-
   removeElement: (namespace: string, ix: number) => void,
   addElement: (property: string, element: F) => void,
   variableTypes: VariableTypes,

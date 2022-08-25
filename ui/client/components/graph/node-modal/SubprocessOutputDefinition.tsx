@@ -1,15 +1,22 @@
 import React, {useCallback} from "react"
-import {Field} from "../../../types"
+import {Field, NodeId} from "../../../types"
 import {ExpressionLang} from "./editors/expression/types"
 import Map from "./editors/map/Map"
 import {MapVariableProps} from "./MapVariable"
 import {NodeCommonDetailsDefinition} from "./NodeCommonDetailsDefinition"
+import {useSelector} from "react-redux"
+import {RootState} from "../../../reducers"
+import {getNodeExpressionType} from "./NodeDetailsContent/selectors"
 
-type Props<F extends Field> = MapVariableProps<F>
+interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionType"> {
+  originalNodeId: NodeId,
+}
 
 function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Element {
-  const {removeElement, addElement, variableTypes, expressionType, ...passProps} = props
+  const {removeElement, addElement, variableTypes, originalNodeId, ...passProps} = props
   const {node, ...mapProps} = passProps
+
+  const expressionType = useSelector((state: RootState) => getNodeExpressionType(state)(originalNodeId))
 
   const addField = useCallback((namespace: string, field) => {
     const newField: Field = {name: "", expression: {expression: "", language: ExpressionLang.SpEL}}

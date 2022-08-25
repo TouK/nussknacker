@@ -3,42 +3,56 @@ import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validato
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
-import {NodeType, VariableTypes} from "../../../types"
+import {NodeId, NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes} from "../../../types"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useDiffMark} from "./PathsToMark"
+import {useSelector} from "react-redux"
+import {RootState} from "../../../reducers"
+import {getExpressionType, getNodeTypingInfo} from "./NodeDetailsContent/selectors"
+import ProcessUtils from "../../../common/ProcessUtils"
 
-type Props = {
-  readOnly?: boolean,
+const DEFAULT_EXPRESSION_ID = "$expression"
+
+function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
+  return expressionType || nodeTypingInfo?.[DEFAULT_EXPRESSION_ID]
+}
+
+interface Props {
+  isEditMode?: boolean,
   node: NodeType,
-  onChange: (fieldName: string, value: string) => void,
+  setProperty: (fieldName: string, value: string) => void,
   showValidation: boolean,
   showSwitch?: boolean,
   variableTypes: VariableTypes,
-  inferredVariableType?: string,
   renderFieldLabel: (label: string) => React.ReactNode,
-  errors?: Error[],
+  fieldErrors?: Error[],
+  originalNodeId: NodeId,
 }
 
-export default function Variable(props: Props): JSX.Element {
-  const {
-    node,
-    onChange,
-    readOnly,
-    showValidation,
-    errors,
-    variableTypes,
-    renderFieldLabel,
-    inferredVariableType,
-  } = props
-
-  const onExpressionChange = useCallback((value: string) => onChange("value.expression", value), [onChange])
+export default function Variable({
+  node,
+  setProperty,
+  isEditMode,
+  showValidation,
+  fieldErrors,
+  variableTypes,
+  renderFieldLabel,
+  originalNodeId,
+}: Props): JSX.Element {
+  const onExpressionChange = useCallback((value: string) => setProperty("value.expression", value), [setProperty])
   const [isMarked] = useDiffMark()
-
+  const inferredVariableType = useSelector((state: RootState) => {
+    const expressionType = getExpressionType(state)(originalNodeId)
+    const nodeTypingInfo = getNodeTypingInfo(state)(originalNodeId)
+    const varExprType = getTypingResult(expressionType, nodeTypingInfo)
+    return ProcessUtils.humanReadableType(varExprType)
+  })
+  const readOnly = !isEditMode
   return (
     <NodeTableBody className="node-variable-builder-body">
       <LabeledInput
         value={node.id}
-        onChange={(event) => onChange("id", event.target.value)}
+        onChange={(event) => setProperty("id", event.target.value)}
         isMarked={isMarked("id")}
         readOnly={readOnly}
         showValidation={showValidation}
@@ -48,7 +62,7 @@ export default function Variable(props: Props): JSX.Element {
       </LabeledInput>
       <LabeledInput
         value={node.varName}
-        onChange={(event) => onChange("varName", event.target.value)}
+        onChange={(event) => setProperty("varName", event.target.value)}
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         showValidation={showValidation}
@@ -65,13 +79,13 @@ export default function Variable(props: Props): JSX.Element {
         readOnly={readOnly}
         showValidation={showValidation}
         showSwitch={false}
-        errors={errors}
+        errors={fieldErrors}
         variableTypes={variableTypes}
         validationLabelInfo={inferredVariableType}
       />
       <LabeledTextarea
         value={node?.additionalFields?.description || ""}
-        onChange={(event) => onChange("additionalFields.description", event.target.value)}
+        onChange={(event) => setProperty("additionalFields.description", event.target.value)}
         isMarked={isMarked("additionalFields.description")}
         readOnly={readOnly}
         className={"node-input"}

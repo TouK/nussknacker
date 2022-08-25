@@ -1,16 +1,24 @@
 import {allValid, mandatoryValueValidator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React from "react"
-import {NodeContentMethods} from "./NodeDetailsContentProps3"
 import {useDiffMark} from "./PathsToMark"
+import {NodeType} from "../../../types"
+
+interface IdFieldProps {
+  isEditMode?: boolean,
+  node: NodeType,
+  renderFieldLabel: (paramName: string) => JSX.Element,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
+  showValidation?: boolean,
+}
 
 export function IdField({
   isEditMode,
-  showValidation,
   node,
-  setProperty,
   renderFieldLabel,
-}: NodeContentMethods): JSX.Element {
+  setProperty,
+  showValidation,
+}: IdFieldProps): JSX.Element {
   const validators = [mandatoryValueValidator]
   const [isMarked] = useDiffMark()
   return (

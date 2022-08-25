@@ -44,6 +44,11 @@ export const getNodeTypingInfo = createSelector(
   getNodeResult,
   (nodeResult) => (nodeId) => nodeResult(nodeId)?.typingInfo
 )
+export const getNodeExpressionType = createSelector(
+  getExpressionType, getNodeTypingInfo, (expressionType, nodeTypingInfo) => (nodeId) => ({
+    fields: expressionType(nodeId)?.fields || nodeTypingInfo(nodeId),
+  })
+)
 export const getProcessProperties = createSelector(getProcessToDisplay, s => s.properties)
 export const getProcessId = createSelector(getProcessToDisplay, s => s.id)
 export const getCurrentErrors = createSelector(
@@ -52,8 +57,7 @@ export const getCurrentErrors = createSelector(
   (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
-  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData,
-  (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
+  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
     const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id)
     if (!dynamicParameterDefinitions) {
       return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters
