@@ -43,6 +43,19 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
   }
 
+  test("reads primitive body") {
+
+    val openApi = parseServicesFromResource("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+
+    openApi.name shouldBe "testService"
+    openApi.parameters shouldBe List(
+      UriParameter("param1", SwaggerLong),
+      SingleBodyParameter(SwaggerString)
+    )
+
+    openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
+  }
+
   test("reads only configured methods and patterns") {
 
     forAll(Table(
