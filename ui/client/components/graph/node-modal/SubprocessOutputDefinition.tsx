@@ -8,13 +8,15 @@ import {useSelector} from "react-redux"
 import {RootState} from "../../../reducers"
 import {getNodeExpressionType} from "./NodeDetailsContent/selectors"
 
-interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionType"> {
+interface Props<F extends Field> extends Omit<MapVariableProps<F>, "expressionType" | "readOnly"> {
   originalNodeId: NodeId,
+  isEditMode?: boolean,
 }
 
 function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Element {
-  const {removeElement, addElement, variableTypes, originalNodeId, ...passProps} = props
+  const {removeElement, addElement, variableTypes, originalNodeId, isEditMode, ...passProps} = props
   const {node, ...mapProps} = passProps
+  const readOnly = !isEditMode
 
   const expressionType = useSelector((state: RootState) => getNodeExpressionType(state)(originalNodeId))
 
@@ -24,9 +26,10 @@ function SubprocessOutputDefinition<F extends Field>(props: Props<F>): JSX.Eleme
   }, [addElement])
 
   return (
-    <NodeCommonDetailsDefinition {...passProps} outputName="Output name" outputField="outputName">
+    <NodeCommonDetailsDefinition {...passProps} readOnly={readOnly} outputName="Output name" outputField="outputName">
       <Map
         {...mapProps}
+        readOnly={readOnly}
         label="Fields"
         namespace="fields"
         fields={node.fields}

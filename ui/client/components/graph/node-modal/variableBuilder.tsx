@@ -34,7 +34,7 @@ export function VariableBuilder({
     <MapVariable
       renderFieldLabel={renderFieldLabel}
       removeElement={removeElement}
-      onChange={setProperty}
+      setProperty={setProperty}
       node={node}
       addElement={addElement}
       readOnly={!isEditMode}

@@ -9,7 +9,7 @@ import {NodeTable} from "./NodeDetailsContent/NodeTable"
 import {partition} from "lodash"
 import NodeErrors from "./NodeErrors"
 import {TestResultsWrapper} from "./TestResultsWrapper"
-import {NodeDetailsContent2} from "./NodeDetailsContent2"
+import {NodeTypeDetailsContent} from "./NodeTypeDetailsContent"
 
 export const NodeDetailsContent = ({
   originalNodeId,
@@ -35,7 +35,7 @@ export const NodeDetailsContent = ({
     <NodeTable editable={!!onChange}>
       <NodeErrors errors={otherErrors} message="Node has errors"/>
       <TestResultsWrapper nodeId={originalNodeId}>
-        <NodeDetailsContent2
+        <NodeTypeDetailsContent
           originalNodeId={originalNodeId}
           node={node}
           edges={edges}

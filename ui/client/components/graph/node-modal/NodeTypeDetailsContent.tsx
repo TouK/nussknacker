@@ -7,7 +7,7 @@ import {
   getFindAvailableBranchVariables,
   getFindAvailableVariables,
   getProcessId,
-  getProcessProperties
+  getProcessProperties,
 } from "./NodeDetailsContent/selectors"
 import {RootState} from "../../../reducers"
 import {adjustParameters} from "./ParametersUtils"
@@ -33,15 +33,7 @@ import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
-export const NodeDetailsContent2 = ({
-  originalNodeId,
-  node,
-  edges,
-  onChange,
-  fieldErrors,
-  showValidation,
-  showSwitch,
-}: {
+interface NodeTypeDetailsContentProps {
   originalNodeId?: NodeId,
   node: NodeType,
   edges?: Edge[],
@@ -49,7 +41,17 @@ export const NodeDetailsContent2 = ({
   showValidation?: boolean,
   showSwitch?: boolean,
   fieldErrors?: NodeValidationError[],
-}): JSX.Element => {
+}
+
+export function NodeTypeDetailsContent({
+  originalNodeId,
+  node,
+  edges,
+  onChange,
+  fieldErrors,
+  showValidation,
+  showSwitch,
+}: NodeTypeDetailsContentProps): JSX.Element {
   const dispatch = useDispatch()
 
   const isEditMode = !!onChange
@@ -148,31 +150,31 @@ export const NodeDetailsContent2 = ({
     case "Source":
       return (
         <Source
-          originalNodeId={originalNodeId}
-          isEditMode={isEditMode}
-          showValidation={showValidation}
-          showSwitch={showSwitch}
-          node={node}
-          findAvailableVariables={findAvailableVariables}
-          parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
+          findAvailableVariables={findAvailableVariables}
+          isEditMode={isEditMode}
+          node={node}
+          originalNodeId={originalNodeId}
+          parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
+          showSwitch={showSwitch}
+          showValidation={showValidation}
         />
       )
     case "Sink":
       return (
         <Sink
-          originalNodeId={originalNodeId}
-          isEditMode={isEditMode}
-          showValidation={showValidation}
-          showSwitch={showSwitch}
-          node={node}
-          findAvailableVariables={findAvailableVariables}
-          parameterDefinitions={parameterDefinitions}
           fieldErrors={fieldErrors}
+          findAvailableVariables={findAvailableVariables}
+          isEditMode={isEditMode}
+          node={node}
+          originalNodeId={originalNodeId}
+          parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
+          showSwitch={showSwitch}
+          showValidation={showValidation}
         />
       )
     case "SubprocessInputDefinition":
@@ -180,11 +182,11 @@ export const NodeDetailsContent2 = ({
         <SubprocessInputDefinition
           addElement={addElement}
           fieldErrors={fieldErrors}
+          isEditMode={isEditMode}
           node={node}
-          onChange={setProperty}
-          readOnly={!isEditMode}
           removeElement={removeElement}
           renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           showValidation={showValidation}
           variableTypes={variableTypes}
         />
@@ -194,12 +196,12 @@ export const NodeDetailsContent2 = ({
         <SubprocessOutputDefinition
           addElement={addElement}
           fieldErrors={fieldErrors}
+          isEditMode={isEditMode}
           node={node}
-          onChange={setProperty}
           originalNodeId={originalNodeId}
-          readOnly={!isEditMode}
           removeElement={removeElement}
           renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
           showValidation={showValidation}
           variableTypes={variableTypes}
         />

@@ -12,7 +12,7 @@ interface MapRowProps<F extends Field> extends MapCommonProps {
 }
 
 export default function MapRow<F extends TypedField>({field, path, ...props}: MapRowProps<F>): JSX.Element {
-  const {readOnly, showValidation, onChange, fieldErrors, variableTypes} = props
+  const {readOnly, showValidation, setProperty, fieldErrors, variableTypes} = props
   const validators = useMemo(() => [mandatoryValueValidator], [])
   const [isMarked] = useDiffMark()
 
@@ -22,7 +22,7 @@ export default function MapRow<F extends TypedField>({field, path, ...props}: Ma
         readOnly={readOnly}
         showValidation={showValidation}
         isMarked={isMarked(`${path}.name`)}
-        onChange={(value) => onChange(`${path}.name`, value)}
+        onChange={(value) => setProperty(`${path}.name`, value)}
         value={field.name}
         validators={validators}
       />
@@ -30,7 +30,7 @@ export default function MapRow<F extends TypedField>({field, path, ...props}: Ma
         readOnly={readOnly}
         showValidation={showValidation}
         isMarked={isMarked(`${path}.expression.expression`)}
-        onChange={value => onChange(`${path}.expression.expression`, value)}
+        onChange={value => setProperty(`${path}.expression.expression`, value)}
         validationLabelInfo={field.typeInfo}
         value={field.expression}
         errors={fieldErrors}

@@ -9,12 +9,15 @@ import {MapVariableProps} from "../MapVariable"
 import {NodeCommonDetailsDefinition} from "../NodeCommonDetailsDefinition"
 import FieldsSelect from "./FieldsSelect"
 
-type Props = MapVariableProps<Parameter>
+interface Props extends Omit<MapVariableProps<Parameter>, "readOnly"> {
+  isEditMode?: boolean,
+}
 
 export default function SubprocessInputDefinition(props: Props): JSX.Element {
   const {removeElement, addElement, ...passProps} = props
-  const {node, onChange, readOnly, showValidation} = passProps
+  const {node, setProperty, isEditMode, showValidation} = passProps
 
+  const readOnly = !isEditMode
   const definitionData = useSelector(getProcessDefinitionData)
   const typeOptions = useMemo(() => definitionData?.processDefinition?.typesInformation?.map(type => ({
     value: type.clazzName.refClazzName,
@@ -35,7 +38,7 @@ export default function SubprocessInputDefinition(props: Props): JSX.Element {
     <NodeCommonDetailsDefinition {...passProps}>
       <FieldsSelect
         label="Parameters"
-        onChange={onChange}
+        onChange={setProperty}
         addField={addField}
         removeField={removeElement}
         namespace={"parameters"}

@@ -8,7 +8,7 @@ import {Error} from "./editors/Validators"
 
 export interface MapVariableProps<F extends Field> {
   node: NodeType<F>,
-  onChange: (propToMutate: string, newValue: unknown) => void,
+  setProperty: (propToMutate: string, newValue: unknown) => void,
   readOnly?: boolean,
   showValidation: boolean,
   renderFieldLabel: (label: string) => React.ReactNode,

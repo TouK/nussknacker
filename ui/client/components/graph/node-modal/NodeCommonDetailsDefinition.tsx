@@ -8,7 +8,7 @@ import {useDiffMark} from "./PathsToMark"
 
 export interface NodeDetailsProps<F extends Field> {
   node: NodeType<F>,
-  onChange: (propToMutate: string, newValue: unknown) => void,
+  setProperty: (propToMutate: string, newValue: unknown) => void,
   readOnly?: boolean,
   showValidation: boolean,
   renderFieldLabel: (label: string) => React.ReactNode,
@@ -25,15 +25,15 @@ export function NodeCommonDetailsDefinition<F extends Field>({
   ...props
 }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
   const {
-    node, onChange, readOnly,
+    node, setProperty, readOnly,
     showValidation, renderFieldLabel, fieldErrors,
     outputField,
     outputName,
   } = props
 
   const onInputChange = useCallback((path: string, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    onChange(path, event.target.value)
-  }, [onChange])
+    setProperty(path, event.target.value)
+  }, [setProperty])
 
   const [isMarked] = useDiffMark()
 
