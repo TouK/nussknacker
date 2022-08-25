@@ -12,7 +12,7 @@ export interface NodeDetailsProps<F extends Field> {
   readOnly?: boolean,
   showValidation: boolean,
   renderFieldLabel: (label: string) => React.ReactNode,
-  errors: Error[],
+  fieldErrors: Error[],
 }
 
 interface NodeCommonDetailsDefinitionProps<F extends Field> extends PropsWithChildren<NodeDetailsProps<F>> {
@@ -26,7 +26,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({
 }: NodeCommonDetailsDefinitionProps<F>): JSX.Element {
   const {
     node, onChange, readOnly,
-    showValidation, renderFieldLabel, errors,
+    showValidation, renderFieldLabel, fieldErrors,
     outputField,
     outputName,
   } = props
@@ -57,7 +57,7 @@ export function NodeCommonDetailsDefinition<F extends Field>({
           isMarked={isMarked(outputField)}
           readOnly={readOnly}
           showValidation={showValidation}
-          validators={[mandatoryValueValidator, errorValidator(errors, outputField)]}
+          validators={[mandatoryValueValidator, errorValidator(fieldErrors, outputField)]}
         >
           {renderFieldLabel(outputName)}
         </LabeledInput>

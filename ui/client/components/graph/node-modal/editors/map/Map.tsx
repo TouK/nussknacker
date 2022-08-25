@@ -14,7 +14,7 @@ export interface MapCommonProps {
   readOnly?: boolean,
   showValidation: boolean,
   variableTypes: VariableTypes,
-  errors: Error[],
+  fieldErrors: Error[],
 }
 
 interface MapProps<F extends Field> extends MapCommonProps {
@@ -31,7 +31,7 @@ export type TypedField = Field & { typeInfo: string }
 export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
   const {
     label, onChange, addField, removeField, namespace, readOnly, showValidation,
-    errors, variableTypes, expressionType,
+    fieldErrors, variableTypes, expressionType,
   } = props
 
   const [isMarked] = useDiffMark()
@@ -71,7 +71,7 @@ export function Map<F extends Field>(props: MapProps<F>): JSX.Element {
             onChange={value => onChange(`${path}.expression.expression`, value)}
             validationLabelInfo={item.typeInfo}
             value={item.expression}
-            errors={errors}
+            errors={fieldErrors}
             variableTypes={variableTypes}
           />
         </FieldsRow>

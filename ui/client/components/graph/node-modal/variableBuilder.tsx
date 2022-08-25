@@ -40,7 +40,7 @@ export function VariableBuilder({
       readOnly={!isEditMode}
       showValidation={showValidation}
       variableTypes={variableTypes}
-      errors={fieldErrors || []}
+      fieldErrors={fieldErrors || []}
       expressionType={nodeExpressionType}
     />
   )

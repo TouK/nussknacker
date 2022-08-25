@@ -179,7 +179,7 @@ export const NodeDetailsContent2 = ({
       return (
         <SubprocessInputDefinition
           addElement={addElement}
-          errors={fieldErrors}
+          fieldErrors={fieldErrors}
           node={node}
           onChange={setProperty}
           readOnly={!isEditMode}
@@ -193,7 +193,7 @@ export const NodeDetailsContent2 = ({
       return (
         <SubprocessOutputDefinition
           addElement={addElement}
-          errors={fieldErrors}
+          fieldErrors={fieldErrors}
           node={node}
           onChange={setProperty}
           originalNodeId={originalNodeId}

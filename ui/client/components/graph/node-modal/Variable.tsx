@@ -66,7 +66,7 @@ export default function Variable({
         isMarked={isMarked("varName")}
         readOnly={readOnly}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator, errorValidator(errors, "varName")]}
+        validators={[mandatoryValueValidator, errorValidator(fieldErrors, "varName")]}
       >
         {renderFieldLabel("Variable Name")}
       </LabeledInput>
