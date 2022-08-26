@@ -14,7 +14,7 @@ This image is not designed to be used from command line at first place. The main
 
 If you want to check it manually, the invocation will look like:
 ```
-docker run -it --network host -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 -v /tmp/scenario.json:/opt/nussknacker/conf/scenario.json -v /tmp/deploymentConfig.conf:/opt/nussknacker/conf/deploymentConfig.conf touk/nussknacker-lite-kafka-runtime:latest
+docker run -it --network host -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 -v /tmp/scenario.json:/opt/nussknacker/conf/scenario.json -v /tmp/deploymentConfig.conf:/opt/nussknacker/conf/deploymentConfig.conf touk/nussknacker-lite-runtime-app:latest
 ```
 where:
 - /tmp/scenario.json - file with scenario json. You can get some by creating scenario in Streaming-Lite mode using Nussknacker and after that exporting it to file

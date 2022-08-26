@@ -168,7 +168,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
           fromIterable(List(
             fromMap(Map(
               "name" -> "runtime",
-              "image" -> s"touk/nussknacker-lite-kafka-runtime:$dockerTag",
+              "image" -> s"touk/nussknacker-lite-runtime-app:$dockerTag",
               "env" -> fromIterable(List(
                 fromMap(
                   Map(

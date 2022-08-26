@@ -21,7 +21,7 @@ import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
 // TODO: get rid of kafka specific things: class name, LiteKafkaJobData
-object NuKafkaRuntimeApp extends App with LazyLogging {
+object NuRuntimeApp extends App with LazyLogging {
 
   JavaClassVersionChecker.check()
   SLF4JBridgeHandlerRegistrar.register()
@@ -79,7 +79,7 @@ object NuKafkaRuntimeApp extends App with LazyLogging {
     try {
       Await.result(Future.sequence(List(runFuture, boundRoutesFuture)), Duration.Inf)
     } finally {
-      logger.info("Closing application NuKafkaRuntimeApp")
+      logger.info("Closing application NuRuntimeApp")
       scenarioInterpreter.close() // in case of exception during binding
       if (server != null) Await.ready(server.terminate(akkaHttpCloseTimeout), akkaHttpCloseTimeout)
     }

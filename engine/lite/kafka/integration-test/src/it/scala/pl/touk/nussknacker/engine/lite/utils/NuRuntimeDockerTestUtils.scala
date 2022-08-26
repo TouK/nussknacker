@@ -13,7 +13,7 @@ import java.time.Duration
 object NuRuntimeDockerTestUtils {
 
   private val dockerTag: String = sys.env.getOrElse("dockerTagName", BuildInfo.version)
-  private val liteKafkaRuntimeDockerName = s"touk/nussknacker-lite-kafka-runtime:$dockerTag"
+  private val liteKafkaRuntimeDockerName = s"touk/nussknacker-lite-runtime-app:$dockerTag"
 
   val runtimeApiPort = 8080
 
