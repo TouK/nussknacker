@@ -13,7 +13,7 @@ class FlinkKafkaComponentProviderTest extends AnyFunSuite {
     val provider = new FlinkKafkaComponentProvider
     val config: Config = ConfigFactory.load()
       .withValue("config.kafkaAddress", fromAnyRef("not_used"))
-      .withValue("config.lowLevelComponentsEnabled", fromAnyRef(true))
+      .withValue("config.lowLevelComponentsEnabled", fromAnyRef(false))
 
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))

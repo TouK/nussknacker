@@ -62,7 +62,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
     val kafkaEnvs = Map(
       "KAFKA_ADDRESS" -> dockerNetworkKafkaBoostrapServer,
       "KAFKA_AUTO_OFFSET_RESET" -> "earliest",
-      "CONFIG_FORCE_kafka_lowLevelComponentsEnabled" -> "true",
+      "CONFIG_FORCE_kafka_lowLevelComponentsEnabled" -> "false",
       "KAFKA_ERROR_TOPIC" -> fixture.errorTopic,
       "SCHEMA_REGISTRY_URL" -> dockerNetworkSchemaRegistryAddress)
     runtimeContainer = NuRuntimeDockerTestUtils.startRuntimeContainer(scenarioFile, logger.underlying, Some(network), checkReady, kafkaEnvs ++ additionalEnvs)

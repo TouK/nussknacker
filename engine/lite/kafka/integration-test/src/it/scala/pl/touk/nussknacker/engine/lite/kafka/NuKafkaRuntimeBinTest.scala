@@ -19,7 +19,7 @@ class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin w
       s"SCHEMA_REGISTRY_URL=$mappedSchemaRegistryAddress",
       // random management port to avoid clashing of ports
       "CONFIG_FORCE_akka_management_http_port=0",
-      "CONFIG_FORCE_kafka_lowLevelComponentsEnabled=true",
+      "CONFIG_FORCE_kafka_lowLevelComponentsEnabled=false",
       // It looks like github-actions doesn't look binding to 0.0.0.0, was problems like: Bind failed for TCP channel on endpoint [/10.1.0.183:0]
       "CONFIG_FORCE_akka_management_http_hostname=127.0.0.1",
       "KAFKA_AUTO_OFFSET_RESET=earliest") ++ akkaManagementEnvs

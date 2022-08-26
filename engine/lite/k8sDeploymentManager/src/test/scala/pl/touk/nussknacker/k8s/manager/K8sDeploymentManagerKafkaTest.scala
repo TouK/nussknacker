@@ -361,7 +361,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
     //e.g. when we want to run Designer locally with some proxy?
     .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
-    .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
+    .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
     .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
 
