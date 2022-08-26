@@ -1,16 +1,16 @@
 import React, {useCallback} from "react"
 import {useTranslation} from "react-i18next"
-import {useSelector} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {events} from "../../../../analytics/TrackingEvents"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/unarchive.svg"
 import * as DialogMessages from "../../../../common/DialogMessages"
-import {ProcessesTabDataPath, SubProcessesTabDataPath} from "../../../../containers/paths"
 import history from "../../../../history"
 import HttpService from "../../../../http/HttpService"
-import {getProcessId, isArchived, isSubprocess} from "../../../../reducers/selectors/graph"
+import {getProcessId, isArchived} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
 import {CapabilitiesToolbarButton} from "../../../toolbarComponents/CapabilitiesToolbarButton"
 import {ToolbarButtonProps} from "../../types"
+import {displayCurrentProcessVersion, loadProcessToolbarsConfiguration} from "../../../../actions/nk";
 
 function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const processId = useSelector(getProcessId)
@@ -18,18 +18,20 @@ function UnArchiveButton({disabled}: ToolbarButtonProps) {
   const available = !disabled || !archived
   const {t} = useTranslation()
   const {confirm} = useWindows()
-
-  const redirectPath = isSubprocess ? ProcessesTabDataPath : SubProcessesTabDataPath
+  const dispatch = useDispatch()
 
   const onClick = useCallback(() => available && confirm(
     {
       text: DialogMessages.unArchiveProcess(processId),
-      onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => history.push(redirectPath)),
+      onConfirmCallback: () => HttpService.unArchiveProcess(processId).then(() => {
+          dispatch(loadProcessToolbarsConfiguration(processId))
+          dispatch(displayCurrentProcessVersion(processId))
+      }),
       confirmText: t("panels.actions.process-unarchive.yes", "Yes"),
       denyText: t("panels.actions.process-unarchive.no", "No"),
     },
     {category: events.categories.rightPanel, action: events.actions.buttonClick, name: `unarchive`},
-  ), [available, confirm, processId, redirectPath, t])
+  ), [available, confirm, processId, t])
 
   return (
     <CapabilitiesToolbarButton
