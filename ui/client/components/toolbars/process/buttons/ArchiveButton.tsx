@@ -17,7 +17,7 @@ import {displayCurrentProcessVersion, loadProcessToolbarsConfiguration} from "..
 function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
   const processId = useSelector(getProcessId)
   const archivePossible = useSelector(isArchivePossible)
-  const {skipArchiveRedirect} = useSelector(getFeatureSettings)
+  const {redirectAfterArchive} = useSelector(getFeatureSettings)
   const available = !disabled && archivePossible
   const {t} = useTranslation()
   const {confirm} = useWindows()
@@ -27,7 +27,7 @@ function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
     {
       text: DialogMessages.archiveProcess(processId),
       onConfirmCallback: () => HttpService.archiveProcess(processId).then(() => {
-          if(!skipArchiveRedirect) history.push(ArchivedPath)
+          if(redirectAfterArchive) history.push(ArchivedPath)
           else {
               dispatch(loadProcessToolbarsConfiguration(processId))
               dispatch(displayCurrentProcessVersion(processId))
@@ -37,7 +37,7 @@ function ArchiveButton({disabled}: ToolbarButtonProps): JSX.Element {
       denyText: t("panels.actions.process-archive.no", "No"),
     },
     {category: events.categories.rightPanel, action: events.actions.buttonClick, name: `archive`},
-  ), [dispatch, available, confirm, processId, t, skipArchiveRedirect])
+  ), [dispatch, available, confirm, processId, t, redirectAfterArchive])
 
   return (
     <CapabilitiesToolbarButton

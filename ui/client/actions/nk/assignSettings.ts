@@ -19,7 +19,7 @@ export type FeaturesSettings = {
   intervalTimeSettings: { processes: number, healthCheck: number },
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings,
-  skipArchiveRedirect?: boolean,
+  redirectAfterArchive: boolean,
 };
 
 export type TestDataSettings = {
