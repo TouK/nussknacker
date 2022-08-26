@@ -26,7 +26,7 @@ object UniversalKafkaSinkFactory {
 
 
   private val paramsDeterminedAfterSchema = List(
-    Parameter.optional[CharSequence](SinkKeyParamName).copy(isLazyParameter = true, defaultValue = Some("null")),
+    Parameter.optional[CharSequence](SinkKeyParamName).copy(isLazyParameter = true),
     Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some("false"), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   )
 
