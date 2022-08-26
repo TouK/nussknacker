@@ -10,9 +10,7 @@
 2. `npm start` or `NU_FE_CORE_URL=http://... npm start` 
 3. read logs
 
-Note: `NU_FE_CORE_URL` should point to:
-- NU backend (e.g. `http://localhost:8080`) if you want to use definitions from production build in NU Backend 
-- `http://localhost:3000` if you want to use definitions from development mode
+Note: `NU_FE_CORE_URL` should point to NU backend (be default it is `/static` which is a good option for both production build and main client app ran in dev mode)
 
 
 ## prod

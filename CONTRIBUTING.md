@@ -52,15 +52,7 @@ should be documented (with type, default values etc.) in appropriate sections of
 
 ### Running
 
-#### Running Designer with embedded model and stubbed DeploymentManager
-
-You can run Nussknacker UI with your model in IDE via
-helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to
-test classpath and prepare class similar to `RunDefaultModelLocally`.
-It can be run from e.g. Intellij without special configuration and it will run sample
-Nussknacker UI config with your model.
-
-#### Running full version of Designer from IntelliJ
+#### Running Designer from IntelliJ
 
 Before running from IDE you have to manually build:
 - build fronted using [Building frontend instruction](#building-frontend) below (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
