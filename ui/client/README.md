@@ -114,15 +114,14 @@ To run cypress test in mode that would update image snapshots, use the same comm
 npm run test:e2e:linux:update
 ```
 
-#### Submodules (e.g. components)
+#### Submodules (e.g. scenarios and components tabs)
 
-Currently we are testing "components" app here - like every other view. In **dev mode** it's expected that
-submodules will be running (ensure NU is running first) in dev mode also.
+To render views using submodules in dev mode you need to run submodules app in dev mode as well (available on port 5001). To make it happen just: 
 ```
-NU_FE_CORE_URL=http://localhost:3000 npm run start
+cd ../submodules
+npm start
 ```
-> WARNING: When using **unified linux environment** ensure to replace `localhost` with `host.docker.internal` and add entry in `/etc/hosts` leading to `127.0.0.1`
-
+> WARNING: When using **unified linux environment** prefix npm start invocation with NU_FE_CORE_URL=http://host.docker.internal:3000 and add entry in `/etc/hosts` leading to `127.0.0.1`
 
 ### Fixing cypress tests
 
