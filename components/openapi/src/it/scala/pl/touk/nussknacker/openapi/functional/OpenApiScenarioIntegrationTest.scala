@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.openapi.functional
 
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.{fromAnyRef, fromIterable}
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
+import org.scalatest.BeforeAndAfterAll
 import org.scalatest.flatspec.AnyFlatSpec
-import org.scalatest.{BeforeAndAfterAll, Outcome}
-import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -17,6 +16,7 @@ import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances.{toFicusConfig, urlValueReader}
+import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
 import pl.touk.nussknacker.openapi.OpenAPIsConfig.openAPIServicesConfigVR
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
@@ -25,12 +25,10 @@ import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client.Response
 import sttp.client.testing.SttpBackendStub
-import pl.touk.nussknacker.engine.util.test.RunResult
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
 import java.util
-import scala.compat.java8.FunctionConverters.enrichAsJavaFunction
 import scala.concurrent.{ExecutionContext, Future}
 
 class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
