@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
 import org.apache.avro.generic.GenericData
-import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
@@ -12,45 +10,16 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVer
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures
 
-import java.nio.charset.StandardCharsets
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
+class KafkaAvroItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with LazyLogging {
 
   import KafkaTestUtils._
   import MockSchemaRegistry._
   import spel.Implicits._
 
   private val secondsToWaitForAvro = 30
-
-  val JsonInTopic: String = "name.json.input"
-  val JsonOutTopic: String = "name.json.output"
-
-
-  private val givenNotMatchingJsonObj =
-    """{
-      |  "first": "Zenon",
-      |  "last": "Nowak",
-      |  "nestMap": { "nestedField": "empty" },
-      |  "list1": [ {"listField": "full" } ],
-      |  "list2": [ 123 ]
-      |}""".stripMargin
-  private val givenMatchingJsonObj =
-    """{
-      |  "first": "Jan",
-      |  "last": "Kowalski",
-      |  "nestMap": { "nestedField": "empty" },
-      |  "list1": [ {"listField": "full" } ],
-      |  "list2": [ 123 ]
-      |}""".stripMargin
-
-  private val givenMatchingJsonSchemedObj =
-    """{
-      |  "first": "Jan",
-      |  "middle": null,
-      |  "last": "Kowalski"
-      |}""".stripMargin
 
   private val givenMatchingAvroObjConvertedToV2 = avroEncoder.encodeRecordOrError(
     Map("first" -> "Jan", "middle" -> null, "last" -> "Kowalski"), RecordSchemaV2
@@ -63,27 +32,6 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
   private val givenSecondMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("firstname" -> "Jan"), SecondRecordSchemaV1
   )
-
-  private def jsonSchemedProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
-    ScenarioBuilder
-      .streaming("json-schemed-test")
-      .parallelism(1)
-      .source(
-        "start",
-        "kafka-registry-typed-json",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.input}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(versionOption)
-      )
-      .filter("name-filter", "#input.first == 'Jan'")
-      .emptySink(
-        "end",
-        "kafka-registry-typed-json-raw",
-        KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
-        KafkaUniversalComponentTransformer.SinkValueParamName -> "#input",
-        KafkaUniversalComponentTransformer.TopicParamName -> s"'${topicConfig.output}'",
-        KafkaUniversalComponentTransformer.SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
-        KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${validationMode.name}'"
-      )
 
   private def avroProcess(topicConfig: TopicConfig, versionOption: SchemaVersionOption, validationMode: ValidationMode = ValidationMode.strict) =
     ScenarioBuilder
@@ -144,21 +92,6 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     }
   }
 
-  test("should read schemed json from kafka, filter and save it to kafka, passing timestamp") {
-    val timeAgo = Instant.now().minus(10, ChronoUnit.HOURS).toEpochMilli
-    val topicConfig = createAndRegisterAvroTopicConfig("read-filter-save-json", RecordSchemas)
-
-    val sendResult = sendAsJson(givenMatchingJsonObj, topicConfig.input, timeAgo).futureValue
-    logger.info(s"Message sent successful: $sendResult")
-
-    run(jsonSchemedProcess(topicConfig, ExistingSchemaVersion(1), validationMode = ValidationMode.lax)) {
-      val consumer = kafkaClient.createConsumer()
-      val processedMessage = consumer.consume(topicConfig.output, secondsToWaitForAvro).head
-      processedMessage.timestamp shouldBe timeAgo
-      decodeJsonUnsafe[Json](processedMessage.message()) shouldEqual parseJson(givenMatchingJsonSchemedObj)
-    }
-  }
-
   test("should read avro object from kafka and save new one created from scratch") {
     val topicConfig = createAndRegisterAvroTopicConfig("read-save-scratch", RecordSchemaV1)
     sendAvro(givenMatchingAvroObj, topicConfig.input)
@@ -211,8 +144,6 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
     }
   }
 
-  private def parseJson(str: String) = io.circe.parser.parse(str).right.get
-
   private def consumeOneRawAvroMessage(topic: String) = {
     val consumer = kafkaClient.createConsumer()
     consumer.consume(topic, secondsToWaitForAvro).head
@@ -220,8 +151,4 @@ class GenericItSpec extends FlinkWithKafkaSuite with PatientScalaFutures with La
 
   private def consumeOneAvroMessage(topic: String) = valueDeserializer.deserialize(topic, consumeOneRawAvroMessage(topic).message())
 
-  private def sendAsJson(jsonString: String, topic: String, timestamp: java.lang.Long = null) = {
-    val serializedObj = jsonString.getBytes(StandardCharsets.UTF_8)
-    kafkaClient.sendRawMessage(topic, Array.empty, serializedObj, timestamp = timestamp)
-  }
 }

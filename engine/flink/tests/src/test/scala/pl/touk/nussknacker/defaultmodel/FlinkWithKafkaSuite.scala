@@ -57,6 +57,8 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
     )
   }
 
+  protected val avroAsJsonSerialization = false
+
   override lazy val config: Config = ConfigFactory.load()
     .withValue("components.mockKafka.config.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
     .withValue("components.mockKafka.config.lowLevelComponentsEnabled", fromAnyRef(false))
@@ -65,6 +67,7 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
     .withValue("components.mockKafka.config.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
     //For tests we want to read from the beginning...
     .withValue("components.mockKafka.config.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
+    .withValue("components.mockKafka.config.avroAsJsonSerialization", fromAnyRef(avroAsJsonSerialization))
     // we turn off auto registration to do it on our own passing mocked schema registry client
     .withValue(s"components.mockKafka.config.kafkaEspProperties.${AvroSerializersRegistrar.autoRegisterRecordSchemaIdSerializationProperty}", fromAnyRef(false))
 

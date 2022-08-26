@@ -51,4 +51,3 @@ services:
 networks:
   default:
     name: nussknacker_e2e_network
-
