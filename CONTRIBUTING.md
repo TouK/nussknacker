@@ -73,6 +73,16 @@ Run `./runServer.sh` in `ui`
 - Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
 
+#### Running Designer with model classes on the same classses as designer
+
+To shorten loopback loop during testing of your locally developed components, you can run Nussknacker UI 
+in IDE with model classes on the same classpath. Thanks to that, you can skip (re)building of components jars stage.
+To test flink-streaming components just run `RunFlinkStreamingModelLocally` from your IDE.
+Be aware that it uses stubbed version of DeploymentManager so it won't be possible to deploy scenarios.
+
+If you want to test other components, just extends helper class `LocalNussknackerWithSingleModel`
+and add dependency to `ui` module like in flink-streaming case.
+
 #### Setting up Kubernetes environment
 
 To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with

@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalM
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
 
 //Sample app to simplify local development.
-object RunDefaultModelLocally extends App {
+object RunFlinkStreamingModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
     // TODO: Fix: Idea loads kafka lite component provider
