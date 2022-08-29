@@ -129,6 +129,10 @@ describe("Components list", () => {
     cy.contains(/^≥ 1$/i).click()
     cy.get("body").click()
 
+    cy.get("#app-container>main").toMatchImageSnapshot({
+      screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
+    })
+    
     cy.get("[role=row] a")
       // this number is two times larger than number of components with some usages because it handle also links to documentation
       .should("have.length", 4)
