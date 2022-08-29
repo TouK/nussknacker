@@ -1,4 +1,4 @@
-import {NodeId, NodeType, NodeValidationError, VariableTypes} from "../../../types"
+import {NodeType, NodeValidationError, VariableTypes} from "../../../types"
 import {useSelector} from "react-redux"
 import {RootState} from "../../../reducers"
 import {getNodeExpressionType} from "./NodeDetailsContent/selectors"
@@ -10,7 +10,6 @@ export function VariableBuilder({
   fieldErrors,
   isEditMode,
   node,
-  originalNodeId,
   removeElement,
   renderFieldLabel,
   setProperty,
@@ -21,14 +20,13 @@ export function VariableBuilder({
   fieldErrors?: NodeValidationError[],
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   removeElement: (property: keyof NodeType, index: number) => void,
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
   showValidation?: boolean,
   variableTypes?: VariableTypes,
 }): JSX.Element {
-  const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(originalNodeId))
+  const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id))
 
   return (
     <MapVariable

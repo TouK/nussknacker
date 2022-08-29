@@ -43,7 +43,6 @@ export const SourceSinkCommon = ({
       {node.ref.parameters?.map((param, index) => (
         <div className="node-block" key={node.id + param.name + index}>
           <ParameterExpressionField
-            originalNodeId={node.id}
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}
