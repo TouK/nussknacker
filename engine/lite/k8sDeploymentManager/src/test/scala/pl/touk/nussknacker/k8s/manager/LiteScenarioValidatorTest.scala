@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
 
   private val validPath = "asdf"
-  private val invalidK8sServiceName = (1 to 70).map(_ => "a").mkString // 63 is the limit
+  private val invalidK8sServiceName = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
   private val noInstanceNameValidator = new LiteScenarioValidator(None)
 
   test("return ok for streaming scenarios") {
@@ -32,7 +32,8 @@ class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
   }
 
   test("validate against service name for defined instance name") {
-    val longInstanceNameValidator = new LiteScenarioValidator(Some((1 to 60).map(_ => "a").mkString)) // 63 is the limit
+    val nussknackerInstanceName = (1 to (K8sUtils.maxObjectNameLength - 3)).map(_ => "a").mkString
+    val longInstanceNameValidator = new LiteScenarioValidator(Some(nussknackerInstanceName))
     longInstanceNameValidator.validateRequestResponse(ProcessName("a"), RequestResponseMetaData(None)) shouldBe 'valid
     longInstanceNameValidator.validateRequestResponse(ProcessName("aaaa"), RequestResponseMetaData(None)) shouldBe 'invalid
   }

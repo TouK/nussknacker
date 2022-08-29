@@ -6,15 +6,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionLabel}
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerUnitTest.maxK8sLength
 
 import scala.collection.immutable.Stream.continually
-
-object K8sDeploymentManagerUnitTest {
-
-  private val maxK8sLength = 63
-
-}
 
 class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
@@ -42,7 +35,7 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
     forAll(names) { (scenarioName: String, nameLabel: String) =>
       val generated = labelsForScenario(versionForName(scenarioName), None)
       generated.values.foreach { value =>
-        value.length should be <= maxK8sLength
+        value.length should be <= K8sUtils.maxObjectNameLength
       }
       generated shouldBe commonLabels +
         (scenarioNameLabel -> nameLabel)
@@ -74,7 +67,7 @@ class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 
     forAll(names) { (scenarioName: String, hashInput: Option[String], expectedId: String) =>
       val generated = objectNameForScenario(versionForName(scenarioName), None, hashInput)
-      generated.length should be <= maxK8sLength
+      generated.length should be <= K8sUtils.maxObjectNameLength
       generated shouldBe expectedId
     }
   }
@@ -89,7 +82,7 @@ test("should generate correct object id for scenario names with nussknacker inst
 
     forAll(names) { (scenarioName: String, hashInput: Option[String], expectedId: String, nussknackerInstanceName: Option[String]) =>
       val generated = objectNameForScenario(versionForName(scenarioName), nussknackerInstanceName, hashInput)
-      generated.length should be <= maxK8sLength
+      generated.length should be <= K8sUtils.maxObjectNameLength
       generated shouldBe expectedId
     }
   }

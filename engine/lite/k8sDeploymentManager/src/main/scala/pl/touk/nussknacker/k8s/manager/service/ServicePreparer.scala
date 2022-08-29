@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization, scenarioIdLabel, scenarioVersionAnnotation}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import pl.touk.nussknacker.k8s.manager.K8sUtils.sanitizeObjectName
-import pl.touk.nussknacker.k8s.manager.PathUtils.determinePath
+import pl.touk.nussknacker.k8s.manager.RequestResponsePathUtils.determinePath
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer.{runtimePodTargetPort, serviceName}
 import skuber.Service.Port
 import skuber.{ObjectMeta, Service}

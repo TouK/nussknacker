@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.PathUtils.defaultPath
+import pl.touk.nussknacker.k8s.manager.RequestResponsePathUtils.defaultPath
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
@@ -324,7 +324,10 @@ object K8sDeploymentManager {
     sanitizeObjectName(objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, objectName))
 
   private[manager] def objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName: Option[String], objectName: String) =
-    nussknackerInstanceName.map(in => s"$in-$objectName").getOrElse(objectName)
+    nussknackerInstanceNamePrefix(nussknackerInstanceName) + objectName
+
+  private[manager] def nussknackerInstanceNamePrefix(nussknackerInstanceName: Option[String]) =
+    nussknackerInstanceName.map(_ + "-").getOrElse("")
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
     deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)
