@@ -1,9 +1,15 @@
-import {createSelector} from "reselect"
+import {createSelector, createSelectorCreator, defaultMemoize} from "reselect"
 import {getProcessCategory, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import ProcessUtils from "../../../../common/ProcessUtils"
 import {RootState} from "../../../../reducers"
 import {AdditionalPropertiesConfig, NodeId, NodeType, NodeValidationError, UIParameter} from "../../../../types"
+import {isEqual} from "lodash"
+
+const createDeepEqualSelector = createSelectorCreator(
+  defaultMemoize,
+  isEqual
+)
 
 const getProcessDefinition = createSelector(getProcessDefinitionData, s => s.processDefinition)
 export const getAdditionalPropertiesConfig = createSelector(getProcessDefinitionData, s => (s.additionalPropertiesConfig || {}) as AdditionalPropertiesConfig)
@@ -13,17 +19,18 @@ export const getFindAvailableBranchVariables = createSelector(
   nodeResults => ProcessUtils.findVariablesForBranches(nodeResults)
 )
 const getNodeResult = createSelector(getNodeResults, s => (nodeId) => s?.[nodeId])
-export const getNodeDetails = (state: RootState) => (nodeId) => {
-  const nodeDetails = state.nodeDetails
-  return nodeDetails[nodeId] || {}
-}
+const getNodeDetails = createDeepEqualSelector(
+  (state: RootState) => state.nodeDetails,
+  (nodeDetails) => (nodeId) => nodeDetails[nodeId]
+)
+
 export const getValidationPerformed = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId): boolean => nodeDetails(nodeId).validationPerformed
+  (nodeDetails) => (nodeId): boolean => nodeDetails(nodeId)?.validationPerformed
 )
 const getValidationErrors = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => nodeDetails(nodeId).validationErrors
+  (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.validationErrors
 )
 export const getDetailsParameters = createSelector(
   getNodeDetails,
@@ -38,7 +45,7 @@ export const getResultParameters = createSelector(
 )
 export const getExpressionType = createSelector(
   getNodeDetails,
-  (nodeDetails) => (nodeId) => nodeDetails(nodeId).expressionType
+  (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.expressionType
 )
 export const getNodeTypingInfo = createSelector(
   getNodeResult,
@@ -57,8 +64,9 @@ export const getCurrentErrors = createSelector(
   (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
-  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
-    const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id)
+  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType, originalNodeId: NodeId) => {
+    //fallback to unchanged (saved) node id as process validation results doesn't contain changes
+    const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(originalNodeId)
     if (!dynamicParameterDefinitions) {
       return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters
     }

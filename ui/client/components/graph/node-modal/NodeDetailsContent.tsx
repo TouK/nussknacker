@@ -28,7 +28,7 @@ export const NodeDetailsContent = ({
   showValidation?: boolean,
   showSwitch?: boolean,
 }): JSX.Element => {
-  const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(originalNodeId, nodeErrors))
+  const currentErrors = useSelector((state: RootState) => getCurrentErrors(state)(node.id, nodeErrors))
   const [fieldErrors, otherErrors] = useMemo(() => partition(currentErrors, error => !!error.fieldName), [currentErrors])
 
   return (

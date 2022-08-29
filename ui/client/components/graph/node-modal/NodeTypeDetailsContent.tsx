@@ -9,7 +9,6 @@ import {
   getProcessId,
   getProcessProperties,
 } from "./NodeDetailsContent/selectors"
-import {RootState} from "../../../reducers"
 import {adjustParameters} from "./ParametersUtils"
 import {generateUUIDs} from "./nodeUtils"
 import {FieldLabel} from "./FieldLabel"
@@ -58,11 +57,8 @@ export function NodeTypeDetailsContent({
 
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
-  const parameterDefinitions = useSelector((state: RootState) => {
-    return getDynamicParameterDefinitions(state)(node)
-  })
-
-  const branchVariableTypes = useSelector((state: RootState) => getFindAvailableBranchVariables(state)(originalNodeId))
+  const getParameterDefinitions = useSelector(getDynamicParameterDefinitions)
+  const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables)
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
 
@@ -85,6 +81,11 @@ export function NodeTypeDetailsContent({
   const setEditedEdges = useCallback(
     (e: SetStateAction<Edge[]>) => change(node, e),
     [node, change]
+  )
+
+  const parameterDefinitions = useMemo(
+    () => getParameterDefinitions(node, originalNodeId),
+    [getParameterDefinitions, node, originalNodeId]
   )
 
   const adjustNode = useCallback((node: NodeType) => {
@@ -133,10 +134,10 @@ export function NodeTypeDetailsContent({
       outgoingEdges: edges,
       nodeData: node,
       processProperties,
-      branchVariableTypes,
+      branchVariableTypes: getBranchVariableTypes(node.id),
       variableTypes,
     }))
-  }, [branchVariableTypes, dispatch, edges, node, processId, processProperties, variableTypes])
+  }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
 
   useEffect(() => {
     setEditedNode((node) => {
