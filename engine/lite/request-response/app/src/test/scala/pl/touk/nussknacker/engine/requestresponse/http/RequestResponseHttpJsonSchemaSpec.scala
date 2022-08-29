@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpe
 import pl.touk.nussknacker.engine.spel.Implicits._
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSinkFactory.SinkValueParamName
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.{SinkRawEditorParamName, SinkRawValueParamName}
 
 class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
 
@@ -31,7 +31,7 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
       .requestResponse(procId.value)
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
       .source("start", "request")
-      .emptySink("endNodeIID", "response-raw", SinkValueParamName -> outputValue)
+      .emptySink("endNodeIID", "response", SinkRawValueParamName -> outputValue, SinkRawEditorParamName -> "true")
       .toCanonicalProcess
   }
 
@@ -127,7 +127,7 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
             |"age": {"type": "integer"},
             |"address": {"type": "object", "properties": {"street": {"type": "string"}}}
             |}}""".stripMargin,
-        outputValueParams = "name"-> "'John Casey'", "age" -> "36", "address.street" -> "'Sesame'"
+        outputValueParams = "name"-> "'John Casey'", "age" -> "36", "address.street" -> "'Sesame'", SinkRawEditorParamName -> "false"
       )
     ))) ~> managementRoute ~> check {
       status shouldBe StatusCodes.OK
