@@ -78,6 +78,18 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
     req.body.asInstanceOf[StringBody].s shouldBe "{\"offers\":[{\"accountId\":123},{\"accountId\":44}],\"otherField\":\"terefere\"}"
   }
 
+  test("primitive body extraction") {
+
+    val paramInputs: Map[String, Any] = Map(
+      "param1" -> 185,
+      "body" -> "123"
+    )
+    val req = prepareRequest("swagger/enricher-primitive-body-param.yml", paramInputs, Map())
+
+    req.uri.toString() shouldBe "http://baseUrl/someService/185"
+    req.body.asInstanceOf[StringBody].s shouldBe """"123""""
+  }
+
   test("fixed parameters extraction") {
     val fixedParams = Map("System-Name" -> (() => "fixed"), "X-Correlation-ID" -> (() => "54321"))
     val paramInputs: Map[String, Any] = Map(

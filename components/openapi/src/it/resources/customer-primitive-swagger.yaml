@@ -1,0 +1,33 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://petstore.swagger.io/v1
+paths:
+  /customer:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Customer'
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+        id:
+          type: integer

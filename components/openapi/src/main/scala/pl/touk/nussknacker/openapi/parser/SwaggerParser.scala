@@ -15,7 +15,8 @@ object SwaggerParser extends LazyLogging {
 
   def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
     val openapi = parseToSwagger(rawSwagger)
-    val securitySchemas = Option(openapi.getComponents.getSecuritySchemes).map(_.asScala.toMap)
+    val maybeSecuritySchemas = Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes))
+    val securitySchemas = maybeSecuritySchemas.map(_.asScala.toMap)
     val allServices = ParseToSwaggerServices(
       paths = openapi.getPaths.asScala.toMap,
       swaggerRefSchemas = ParseSwaggerRefSchemas(openapi),
@@ -25,7 +26,7 @@ object SwaggerParser extends LazyLogging {
       openAPIsConfig.security.getOrElse(Map.empty)
     )
     val (acceptedServices, droppedServices)
-      = allServices.partition(service => openAPIsConfig.allowedMethods.contains(service.method) && service.name.matches(openAPIsConfig.namePattern.regex))
+    = allServices.partition(service => openAPIsConfig.allowedMethods.contains(service.method) && service.name.matches(openAPIsConfig.namePattern.regex))
     if (droppedServices.nonEmpty) {
       logger.info(s"Following services were filtered out by rules (name must match: ${openAPIsConfig.namePattern}, allowed HTTP methods: ${openAPIsConfig.allowedMethods.mkString(", ")}): " +
         s"${droppedServices.map(_.name).mkString(", ")}")
