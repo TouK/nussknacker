@@ -41,11 +41,11 @@ class ComponentResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fai
 
   it("should return component usages") {
     val processName = ProcessName("someTest")
-    val sourceComponentName = "real-kafka-avro" //it's real component name from DevProcessConfigCreator
+    val sourceComponentName = "kafka" //it's real component name from DevProcessConfigCreator
     val process = ScenarioBuilder
       .streaming(processName.value)
       .source("source", sourceComponentName)
-      .emptySink("sink", "kafka-avro")
+      .emptySink("sink", "kafka")
 
     val processId = createProcess(process, TestCategories.Category1, TestProcessingTypes.Streaming)
     val componentId = defaultComponentIdProvider.createComponentId(TestProcessingTypes.Streaming, sourceComponentName, ComponentType.Source)

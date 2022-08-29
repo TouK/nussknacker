@@ -778,7 +778,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
       )
     }
   )
-  .dependsOn(schemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
+  .dependsOn(schemedKafkaComponentsUtils % "compile;test->test", flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
     kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")).
@@ -1103,7 +1103,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   ).dependsOn(
   liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
   liteKafkaComponents % "test", liteRequestResponseComponents % "test", componentsUtils % "test",
-  testUtils % "test", kafkaTestUtils % "test")
+  testUtils % "test", kafkaTestUtils % "test", schemedKafkaComponentsUtils % "test->test")
 
 lazy val developmentTestsDeploymentManager = (project in development("deploymentManager")).
   enablePlugins().

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.streaming.embedded
 
-import io.circe.Json.{fromString, obj}
+import io.circe.Json.{fromInt, fromString, obj}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.engine.api.deployment._
@@ -26,8 +26,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)
@@ -37,7 +38,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
-    val input = obj("key" -> fromString("dummy"))
+    val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
     kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
 
@@ -53,8 +54,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenario)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
@@ -63,7 +65,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)
     }
 
-    val input = obj("key" -> fromString("dummy"))
+    val input = obj("productId" -> fromInt(10))
     kafkaClient.sendMessage(inputTopic, input.noSpaces).futureValue
     kafkaClient.createConsumer().consumeWithJson(outputTopic).head shouldBe input
 
@@ -79,14 +81,15 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
     val scenarioWithIncompatibleParameters = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     val deployedScenarioData = DeployedScenarioData(ProcessVersion.empty.copy(processName = name), DeploymentData.empty, scenarioWithIncompatibleParameters)
     val FixtureParam(manager, _, _, _) = prepareFixture(inputTopic, outputTopic, List(deployedScenarioData))
 
     manager.findJobStatus(name).futureValue.map(_.status) should matchPattern {
-      case Some(DetailedFailedStateStatus(msg)) if msg.contains("topic") =>
+      case Some(DetailedFailedStateStatus(msg)) if msg.contains("Topic") =>
     }
   }
 
@@ -96,8 +99,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     // We simulate scenario json incompatible with component API by replacing parameter name with some other name
     val scenarioWithIncompatibleParameters = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "old-topic-param" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Old Topic param" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     an [Exception] shouldBe thrownBy {
       fixture.deployScenario(scenarioWithIncompatibleParameters)
@@ -105,13 +109,30 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
   }
 
   test("Redeploys scenario") {
-    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
+    val schema =
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "message": {
+        |      "type": "string"
+        |    },
+        |    "prefix": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "required": [ "message" ]
+        |}
+        |""".stripMargin
+
+    val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
 
     val name = ProcessName("testName")
     def scenarioForOutput(outputPrefix: String) = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> s"{message: #input.message, prefix: '$outputPrefix'}")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'",  "Value" -> s"{message: #input.message, prefix: '$outputPrefix'}")
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
     def prefixMessage(prefix: String, message: String) = obj("message" -> fromString(message), "prefix" -> fromString(prefix))
 
@@ -143,7 +164,23 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
   }
 
   test("Performs test from file") {
-    val fixture@FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture()
+    val schema =
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "message": {
+        |      "type": "string"
+        |    },
+        |    "other": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "required": [ "message" ]
+        |}
+        |""".stripMargin
+
+    val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 
@@ -151,9 +188,9 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
       .parallelism(1)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'",
-        "value" -> s"{message: #input.message, other: '1'}")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> s"{message: #input.message, other: '1'}")
 
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
@@ -167,9 +204,13 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     results.nodeResults("sink") should have length 2
     val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")
     val invocationResults = results.invocationResults("sink")
+    val id1 = idGenerator.nextContextId()
+    val id2 = idGenerator.nextContextId()
     invocationResults.toSet shouldBe Set(
-      ExpressionInvocationResult(idGenerator.nextContextId(), "value", Map("message" -> "1", "other" -> "1").asJava),
-      ExpressionInvocationResult(idGenerator.nextContextId(), "value", Map("message" -> "2", "other" -> "1").asJava)
+      ExpressionInvocationResult(id1, "Key", null),
+      ExpressionInvocationResult(id1, "Value", Map("message" -> "1", "other" -> "1").asJava),
+      ExpressionInvocationResult(id2, "Key", null),
+      ExpressionInvocationResult(id2, "Value", Map("message" -> "2", "other" -> "1").asJava)
     )
 
   }

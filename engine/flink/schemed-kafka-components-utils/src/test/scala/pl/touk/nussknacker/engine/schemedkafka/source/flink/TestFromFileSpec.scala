@@ -49,7 +49,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
     val process = ScenarioBuilder.streaming("test")
       .source(
-        "start", "kafka-avro", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        "start", "kafka", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
       .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
 

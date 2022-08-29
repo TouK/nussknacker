@@ -16,11 +16,11 @@ SEED=`date +%s`
 
   prepare_deployed_scenario $name $SEED
 
-  message="{\"clientId\":\"1\",\"amount\":2}"
+  message="{\"amount\":2,\"clientId\":\"1\"}"
 
   send_message $input_topic $message
+  sleep 5
   output_read=$(read_message $output_topic)
-
   #TODO: metryki
   [ "$output_read" = "$message" ]
 }

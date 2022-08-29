@@ -28,7 +28,9 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
 
   protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
 
-    val modelData = LocalModelData(ConfigFactory.empty().withValue("components.kafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty()
+      .withValue("components.kafka.disabled", fromAnyRef(true))
+      .withValue("components.mockKafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     implicit val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     implicit val dummyBackend: SttpBackend[Future, Nothing, NothingT] = null

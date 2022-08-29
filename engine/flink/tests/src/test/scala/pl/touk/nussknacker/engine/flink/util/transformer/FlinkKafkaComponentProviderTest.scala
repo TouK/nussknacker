@@ -9,23 +9,21 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 class FlinkKafkaComponentProviderTest extends AnyFunSuite {
 
-  test("should add low level kafka components by default") {
+  test("should add low level kafka components when enabled") {
     val provider = new FlinkKafkaComponentProvider
     val config: Config = ConfigFactory.load()
       .withValue("config.kafkaAddress", fromAnyRef("not_used"))
       .withValue("config.lowLevelComponentsEnabled", fromAnyRef(true))
-
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
     components.size shouldBe 11
   }
 
-  test("should not add low level kafka components when disabled") {
+  test("should not add low level kafka components by default") {
     val provider = new FlinkKafkaComponentProvider
     val config: Config = ConfigFactory.load()
       .withValue("config.kafkaAddress", fromAnyRef("not_used"))
-      .withValue("config.lowLevelComponentsEnabled", fromAnyRef(false))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 

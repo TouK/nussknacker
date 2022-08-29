@@ -247,15 +247,16 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val process = ScenarioBuilder
       .streaming("avro-test-timestamp-flink-kafka").parallelism(1)
       .source(
-        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        "start", "kafka", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
       "timestampToSet" -> (timeToSetInProcess.toString + "L"))
       .emptySink(
         "end",
-        "kafka-avro-raw",
+        "kafka",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
+        SinkRawEditorParamName -> "true",
         SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )
@@ -276,15 +277,16 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
     val process = ScenarioBuilder
       .streaming("avro-test-timestamp-kafka-flink").parallelism(1)
       .source(
-        "start", "kafka-avro", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+        "start", "kafka", TopicParamName -> s"'${topicConfig.input}'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp",
       "timestampToSet" -> "10000")
       .emptySink(
         "end",
-        "kafka-avro-raw",
+        "kafka",
         TopicParamName -> s"'${topicConfig.output}'",
         SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "",
+        SinkRawEditorParamName -> "true",
         SinkValidationModeParameterName -> validationModeParam(ValidationMode.strict),
         SinkValueParamName -> s"{field: #extractedTimestamp}"
       )

@@ -5,14 +5,18 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
+import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolutionException, FullNameV1, PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.serialization
+import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -117,6 +121,11 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
       providerSetup.consumeAndVerifyMessage(topicConfig.output, expectedObj)
 
     }
+
+  private def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
+    val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
+    kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
+  }
 
   private def toRuntimeSchemaData(topic: String, valueSchema: Schema): RuntimeSchemaData[ParsedSchema] =  RuntimeSchemaData(valueSchema, Option(schemaRegistryClient.getId(s"$topic-value", new AvroSchema(valueSchema)))).toParsedSchemaData
 }
