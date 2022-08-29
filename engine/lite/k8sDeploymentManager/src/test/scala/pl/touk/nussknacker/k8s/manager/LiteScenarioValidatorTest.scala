@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 
 class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
 
-  private val validPath = "asdf"
+  private val validSlug = "asdf"
   private val invalidK8sServiceName = (1 to (K8sUtils.maxObjectNameLength + 10)).map(_ => "a").mkString
   private val noInstanceNameValidator = new LiteScenarioValidator(None)
 
@@ -26,9 +26,9 @@ class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
       .emptySink("sink", "dumb")
       .toCanonicalProcess
     noInstanceNameValidator.validate(scenarioWithLongName) shouldBe 'invalid
-    noInstanceNameValidator.validateRequestResponse(ProcessName(validPath), RequestResponseMetaData(None)) shouldBe 'valid
+    noInstanceNameValidator.validateRequestResponse(ProcessName(validSlug), RequestResponseMetaData(None)) shouldBe 'valid
     noInstanceNameValidator.validateRequestResponse(ProcessName(invalidK8sServiceName), RequestResponseMetaData(None)) shouldBe 'invalid
-    noInstanceNameValidator.validateRequestResponse(ProcessName(validPath), RequestResponseMetaData(Some(invalidK8sServiceName))) shouldBe 'invalid
+    noInstanceNameValidator.validateRequestResponse(ProcessName(validSlug), RequestResponseMetaData(Some(invalidK8sServiceName))) shouldBe 'invalid
   }
 
   test("validate against service name for defined instance name") {

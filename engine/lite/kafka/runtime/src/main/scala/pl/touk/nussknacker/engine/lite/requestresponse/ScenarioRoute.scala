@@ -88,7 +88,7 @@ class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestRes
 object ScenarioRoute {
 
   def pathForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
-    case RequestResponseMetaData(path) => Valid(path.getOrElse(metaData.id))
+    case RequestResponseMetaData(slug) => Valid(slug.getOrElse(metaData.id))
     case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
   }
 

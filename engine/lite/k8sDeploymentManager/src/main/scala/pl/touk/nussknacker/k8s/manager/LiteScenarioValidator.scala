@@ -21,11 +21,11 @@ class LiteScenarioValidator(nussknackerInstanceName: Option[String]) {
   }
 
   private[manager] def validateRequestResponse(scenarioName: ProcessName, rrMetaData: RequestResponseMetaData): Validated[Throwable, Unit] = {
-    val path = RequestResponsePathUtils.determinePath(scenarioName, rrMetaData)
+    val slug = RequestResponseSlugUtils.determineSlug(scenarioName, rrMetaData)
     // We don't sanitize / validate against url because k8s object names are more restrictively validated than urls, see https://datatracker.ietf.org/doc/html/rfc3986
-    val withoutSanitization = ServicePreparer.serviceNameWithoutSanitization(nussknackerInstanceName, path)
-    val withSanitization = ServicePreparer.serviceName(nussknackerInstanceName, path)
-    Validated.cond(withSanitization == withoutSanitization, (), IllegalRequestResponsePath(nussknackerInstanceName, path))
+    val withoutSanitization = ServicePreparer.serviceNameWithoutSanitization(nussknackerInstanceName, slug)
+    val withSanitization = ServicePreparer.serviceName(nussknackerInstanceName, slug)
+    Validated.cond(withSanitization == withoutSanitization, (), IllegalRequestResponseSlug(nussknackerInstanceName, slug))
   }
 
 }
@@ -36,5 +36,5 @@ object LiteScenarioValidator {
 
 }
 
-case class IllegalRequestResponsePath(nussknackerInstanceName: Option[String], path: String)
-  extends RuntimeException(s"Illegal path: $path. Path ${nussknackerInstanceName.map(i => s"after prefixation by instance name: '$i-' ").getOrElse("")}should match url path pattern and kubernetes object name pattern")
+case class IllegalRequestResponseSlug(nussknackerInstanceName: Option[String], slug: String)
+  extends RuntimeException(s"Illegal slug: $slug. Slug ${nussknackerInstanceName.map(i => s"after prefixation by instance name: '$i-' ").getOrElse("")}should match url path pattern and kubernetes object name pattern")

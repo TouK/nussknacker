@@ -570,14 +570,14 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                 ] :
                 [this.createField(
                   "input",
-                  "Query path",
-                  "typeSpecificProperties.path",
+                  "Slug",
+                  "typeSpecificProperties.slug",
                   false,
-                  [errorValidator(fieldErrors, "path")],
-                  "path",
+                  [errorValidator(fieldErrors, "slug")],
+                  "slug",
                   null,
-                    node.typeSpecificProperties.path,
-                  "query-path",
+                    node.typeSpecificProperties.slug,
+                  "slug",
                 )]
         //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
         const additionalFields = sortBy(Object.entries(additionalPropertiesConfig), e => e[0]).map(

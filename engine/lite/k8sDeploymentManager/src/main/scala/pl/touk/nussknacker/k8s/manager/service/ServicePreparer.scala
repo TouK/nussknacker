@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization, scenarioIdLabel, scenarioVersionAnnotation}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import pl.touk.nussknacker.k8s.manager.K8sUtils.sanitizeObjectName
-import pl.touk.nussknacker.k8s.manager.RequestResponsePathUtils.determinePath
+import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.determineSlug
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer.{runtimePodTargetPort, serviceName}
 import skuber.Service.Port
 import skuber.{ObjectMeta, Service}
@@ -25,7 +25,7 @@ class ServicePreparer(config: K8sDeploymentManagerConfig) {
   }
 
   private def prepareRequestResponseService(processVersion: ProcessVersion, rrMetaData: RequestResponseMetaData): Service = {
-    val objectName = serviceName(config.nussknackerInstanceName, determinePath(processVersion.processName, rrMetaData))
+    val objectName = serviceName(config.nussknackerInstanceName, determineSlug(processVersion.processName, rrMetaData))
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion, config.nussknackerInstanceName)
     val selectors = Map(
@@ -49,10 +49,10 @@ object ServicePreparer {
   // see http.port in runtimes image's application.conf
   val runtimePodTargetPort = 8080
 
-  private[manager] def serviceName(nussknackerInstanceName: Option[String], path: String): String =
-    sanitizeObjectName(serviceNameWithoutSanitization(nussknackerInstanceName, path))
+  private[manager] def serviceName(nussknackerInstanceName: Option[String], slug: String): String =
+    sanitizeObjectName(serviceNameWithoutSanitization(nussknackerInstanceName, slug))
 
-  private[manager] def serviceNameWithoutSanitization(nussknackerInstanceName: Option[String], path: String): String =
-    objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, path)
+  private[manager] def serviceNameWithoutSanitization(nussknackerInstanceName: Option[String], slug: String): String =
+    objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, slug)
 
 }

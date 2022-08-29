@@ -17,6 +17,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 * [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
 
+### Scenario API changes
+* [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
+  `V1_033__RequestResponseUrlToSlug` migration is ready for that.
+
 ### Configuration changes
 * [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
   * `interface` -> `http.interface`

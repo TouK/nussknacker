@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.RequestResponsePathUtils.defaultPath
+import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
@@ -66,7 +66,7 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
       case "streaming" => steamingInitialMetData
       case "request-response" => new TypeSpecificInitialData {
         override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = {
-          RequestResponseMetaData(Some(defaultPath(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+          RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
         }
       }
       case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
