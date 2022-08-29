@@ -21,13 +21,13 @@
     {
       "id" : "kafka-json-source",
       "ref" : {
-        "typ" : "kafka",
+        "typ" : "boundedSource",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "elements",
             "expression" : {
               "language" : "spel",
-              "expression" : "'aaaa'"
+              "expression" : "{'', 'b'}"
             }
           }
         ]
@@ -172,16 +172,8 @@
         {
           "id" : "kafka-json-sink (copy 1)",
           "ref" : {
-            "typ" : "kafka",
-            "parameters" : [
-              {
-                "name" : "topic",
-                "expression" : {
-                  "language" : "spel",
-                  "expression" : "'bbbb'"
-                }
-              }
-            ]
+            "typ" : "monitor",
+            "parameters" : []
           },
           "isDisabled" : null,
           "additionalFields" : {
@@ -240,16 +232,8 @@
             {
               "id" : "kafka-json-sink",
               "ref" : {
-                "typ" : "kafka",
-                "parameters" : [
-                  {
-                    "name" : "topic",
-                    "expression" : {
-                      "language" : "spel",
-                      "expression" : "'bbbb'"
-                    }
-                  }
-                ]
+                "typ" : "monitor",
+                "parameters" : []
               },
               "isDisabled" : null,
               "additionalFields" : {
