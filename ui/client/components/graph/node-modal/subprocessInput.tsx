@@ -1,4 +1,4 @@
-import {NodeId, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, ProcessDefinitionData, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 import React, {useCallback} from "react"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
@@ -14,7 +14,6 @@ export function SubprocessInput({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   processDefinitionData,
   renderFieldLabel,
@@ -26,7 +25,6 @@ export function SubprocessInput({
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   processDefinitionData?: ProcessDefinitionData,
   renderFieldLabel: (paramName: string) => JSX.Element,
@@ -59,7 +57,6 @@ export function SubprocessInput({
         createListField={(param, index) => {
           return (
             <ParameterExpressionField
-              originalNodeId={originalNodeId}
               showSwitch={showSwitch}
               findAvailableVariables={findAvailableVariables}
               parameterDefinitions={parameterDefinitions}

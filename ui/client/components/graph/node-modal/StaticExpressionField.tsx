@@ -2,7 +2,7 @@ import {useTestResults} from "./TestResultsWrapper"
 import ExpressionField from "./editors/expression/ExpressionField"
 import {findParamDefinitionByName} from "./FieldLabel"
 import React from "react"
-import {NodeId, NodeType, NodeValidationError, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 
 //this is for "static" fields like expressions in filters, switches etc.
@@ -12,7 +12,6 @@ export function StaticExpressionField({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   renderFieldLabel,
   setProperty,
@@ -24,7 +23,6 @@ export function StaticExpressionField({
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
@@ -34,7 +32,6 @@ export function StaticExpressionField({
   const fieldName = "expression"
   const expressionProperty = "expression"
   const testResultsState = useTestResults()
-
   return (
     <ExpressionField
       fieldName={fieldName}
@@ -48,7 +45,7 @@ export function StaticExpressionField({
       setNodeDataAt={setProperty}
       testResultsToShow={testResultsState.testResultsToShow}
       renderFieldLabel={renderFieldLabel}
-      variableTypes={findAvailableVariables(originalNodeId, undefined)}
+      variableTypes={findAvailableVariables(node.id, undefined)}
       errors={fieldErrors || []}
     />
   )

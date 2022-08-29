@@ -3,13 +3,14 @@ import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validato
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
-import {NodeId, NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes} from "../../../types"
+import {NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes} from "../../../types"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useDiffMark} from "./PathsToMark"
 import {useSelector} from "react-redux"
 import {RootState} from "../../../reducers"
 import {getExpressionType, getNodeTypingInfo} from "./NodeDetailsContent/selectors"
 import ProcessUtils from "../../../common/ProcessUtils"
+import {IdField} from "./IdField"
 
 const DEFAULT_EXPRESSION_ID = "$expression"
 
@@ -20,13 +21,12 @@ function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo
 interface Props {
   isEditMode?: boolean,
   node: NodeType,
-  setProperty: (fieldName: string, value: string) => void,
+  setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
   showValidation: boolean,
   showSwitch?: boolean,
   variableTypes: VariableTypes,
-  renderFieldLabel: (label: string) => React.ReactNode,
+  renderFieldLabel: (paramName: string) => JSX.Element,
   fieldErrors?: Error[],
-  originalNodeId: NodeId,
 }
 
 export default function Variable({
@@ -37,29 +37,25 @@ export default function Variable({
   fieldErrors,
   variableTypes,
   renderFieldLabel,
-  originalNodeId,
 }: Props): JSX.Element {
   const onExpressionChange = useCallback((value: string) => setProperty("value.expression", value), [setProperty])
   const [isMarked] = useDiffMark()
   const inferredVariableType = useSelector((state: RootState) => {
-    const expressionType = getExpressionType(state)(originalNodeId)
-    const nodeTypingInfo = getNodeTypingInfo(state)(originalNodeId)
+    const expressionType = getExpressionType(state)(node.id)
+    const nodeTypingInfo = getNodeTypingInfo(state)(node.id)
     const varExprType = getTypingResult(expressionType, nodeTypingInfo)
     return ProcessUtils.humanReadableType(varExprType)
   })
   const readOnly = !isEditMode
   return (
     <NodeTableBody className="node-variable-builder-body">
-      <LabeledInput
-        value={node.id}
-        onChange={(event) => setProperty("id", event.target.value)}
-        isMarked={isMarked("id")}
-        readOnly={readOnly}
+      <IdField
+        node={node}
+        isEditMode={isEditMode}
         showValidation={showValidation}
-        validators={[mandatoryValueValidator]}
-      >
-        {renderFieldLabel("Name")}
-      </LabeledInput>
+        renderFieldLabel={renderFieldLabel}
+        setProperty={setProperty}
+      />
       <LabeledInput
         value={node.varName}
         onChange={(event) => setProperty("varName", event.target.value)}

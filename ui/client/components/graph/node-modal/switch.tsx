@@ -1,7 +1,6 @@
 import {
   Edge,
   EdgeKind,
-  NodeId,
   NodeType,
   NodeValidationError,
   ProcessDefinitionData,
@@ -30,7 +29,6 @@ export function Switch({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   processDefinitionData,
   renderFieldLabel,
@@ -45,7 +43,6 @@ export function Switch({
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   processDefinitionData?: ProcessDefinitionData,
   renderFieldLabel: (paramName: string) => JSX.Element,
@@ -63,7 +60,7 @@ export function Switch({
   const showExprVal = !exprValValidator.isValid() || definition["exprVal"] ? definition["exprVal"] !== currentExprVal : currentExprVal
   const [, isCompareView] = useDiffMark()
 
-  const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(originalNodeId))
+  const nodeExpressionType = useSelector((state: RootState) => getNodeExpressionType(state)(node.id))
 
   return (
     <NodeTableBody>
@@ -77,7 +74,6 @@ export function Switch({
       {showExpression ?
         (
           <StaticExpressionField
-            originalNodeId={originalNodeId}
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}
@@ -112,7 +108,7 @@ export function Switch({
         (
           <EdgesDndComponent
             label={"Conditions"}
-            nodeId={originalNodeId}
+            nodeId={node.id}
             value={edges}
             onChange={setEditedEdges}
             edgeTypes={[

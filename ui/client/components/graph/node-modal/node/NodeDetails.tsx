@@ -18,7 +18,7 @@ import {getReadOnly} from "./selectors"
 import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
-import {getNodeId} from "../nodeUtils"
+import {applyIdFromFakeName} from "../IdField"
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType, process: Process }> {
   readOnly?: boolean,
@@ -29,10 +29,8 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
   const {node, process = defaultProcess} = props.data.meta
-  const currentNodeId = getNodeId(process, node)
-
-  const [editedNode, setEditedNode] = useState(node)
-  const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === currentNodeId))
+  const [editedNode, setEditedNode] = useState<NodeType>(node)
+  const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === node.id))
 
   useEffect(() => {
     setEditedNode(node)
@@ -46,12 +44,12 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    replaceWindowsQueryParams({nodeId: currentNodeId})
-    return () => replaceWindowsQueryParams({}, {nodeId: currentNodeId})
-  }, [currentNodeId])
+    replaceWindowsQueryParams({nodeId: node.id})
+    return () => replaceWindowsQueryParams({}, {nodeId: node.id})
+  }, [node.id])
 
   const performNodeEdit = useCallback(async () => {
-    await dispatch(editNode(process, node, editedNode, outputEdges))
+    await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges))
     props.close()
   }, [process, node, editedNode, outputEdges, dispatch, props])
 
@@ -122,7 +120,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     >
       <ErrorBoundary>
         <NodeGroupContent
-          currentNodeId={currentNodeId}
           node={editedNode}
           edges={outputEdges}
           onChange={!readOnly && onChange}

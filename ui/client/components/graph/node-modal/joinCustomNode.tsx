@@ -1,4 +1,4 @@
-import {NodeId, NodeType, NodeValidationError, ProcessDefinitionData, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, ProcessDefinitionData, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {useTestResults} from "./TestResultsWrapper"
 import React, {useMemo} from "react"
@@ -17,7 +17,6 @@ export function JoinCustomNode({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   processDefinitionData,
   renderFieldLabel,
@@ -29,7 +28,6 @@ export function JoinCustomNode({
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   processDefinitionData?: ProcessDefinitionData,
   renderFieldLabel: (paramName: string) => JSX.Element,
@@ -38,11 +36,10 @@ export function JoinCustomNode({
   showValidation?: boolean,
 }): JSX.Element {
   const testResultsState = useTestResults()
-  const hasOutputVar = useMemo((): boolean => {
-      return !!ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.returnType || !!node.outputVar
-    },
-    [node, processDefinitionData.processDefinition])
-
+  const hasOutputVar = useMemo(
+    (): boolean => !!ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)?.returnType || !!node.outputVar,
+    [node, processDefinitionData.processDefinition]
+  )
   return (
     <NodeTableBody>
       <IdField
@@ -84,7 +81,6 @@ export function JoinCustomNode({
         return (
           <div className="node-block" key={node.id + param.name + index}>
             <ParameterExpressionField
-              originalNodeId={originalNodeId}
               showSwitch={showSwitch}
               findAvailableVariables={findAvailableVariables}
               parameterDefinitions={parameterDefinitions}

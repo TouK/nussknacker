@@ -4,7 +4,7 @@ import {ParameterExpressionField} from "./ParameterExpressionField"
 import {IdField} from "./IdField"
 import {DescriptionField} from "./DescriptionField"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
-import {NodeId, NodeType, NodeValidationError, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 
 interface SourceSinkCommonProps {
@@ -12,7 +12,6 @@ interface SourceSinkCommonProps {
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
@@ -26,7 +25,6 @@ export const SourceSinkCommon = ({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   renderFieldLabel,
   setProperty,
@@ -45,7 +43,7 @@ export const SourceSinkCommon = ({
       {node.ref.parameters?.map((param, index) => (
         <div className="node-block" key={node.id + param.name + index}>
           <ParameterExpressionField
-            originalNodeId={originalNodeId}
+            originalNodeId={node.id}
             isEditMode={isEditMode}
             showValidation={showValidation}
             showSwitch={showSwitch}

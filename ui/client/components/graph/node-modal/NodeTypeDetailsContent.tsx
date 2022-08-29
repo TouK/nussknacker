@@ -1,4 +1,4 @@
-import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
+import {Edge, NodeType, NodeValidationError} from "../../../types"
 import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
@@ -24,16 +24,15 @@ import {EnricherProcessor} from "./enricherProcessor"
 import {SubprocessInput} from "./subprocessInput"
 import {JoinCustomNode} from "./joinCustomNode"
 import {VariableBuilder} from "./variableBuilder"
-import Variable from "./Variable"
 import {Switch} from "./switch"
 import {Split} from "./split"
 import {Properties} from "./properties"
 import {NodeDetailsFallback} from "./NodeDetailsContent/NodeDetailsFallback"
+import Variable from "./Variable"
 
 type ArrayElement<A extends readonly unknown[]> = A extends readonly (infer E)[] ? E : never
 
 interface NodeTypeDetailsContentProps {
-  originalNodeId?: NodeId,
   node: NodeType,
   edges?: Edge[],
   onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void,
@@ -43,7 +42,6 @@ interface NodeTypeDetailsContentProps {
 }
 
 export function NodeTypeDetailsContent({
-  originalNodeId,
   node,
   edges,
   onChange,
@@ -52,7 +50,6 @@ export function NodeTypeDetailsContent({
   showSwitch,
 }: NodeTypeDetailsContentProps): JSX.Element {
   const dispatch = useDispatch()
-
   const isEditMode = !!onChange
 
   const processDefinitionData = useSelector(getProcessDefinitionData)
@@ -62,7 +59,7 @@ export function NodeTypeDetailsContent({
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
 
-  const variableTypes = useMemo(() => findAvailableVariables?.(originalNodeId), [findAvailableVariables, originalNodeId])
+  const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id])
 
   const change = useCallback(
     (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
@@ -84,8 +81,8 @@ export function NodeTypeDetailsContent({
   )
 
   const parameterDefinitions = useMemo(
-    () => getParameterDefinitions(node, originalNodeId),
-    [getParameterDefinitions, node, originalNodeId]
+    () => getParameterDefinitions(node),
+    [getParameterDefinitions, node]
   )
 
   const adjustNode = useCallback((node: NodeType) => {
@@ -96,12 +93,12 @@ export function NodeTypeDetailsContent({
   const renderFieldLabel = useCallback((paramName: string): JSX.Element => {
     return (
       <FieldLabel
-        nodeId={originalNodeId}
+        nodeId={node.id}
         parameterDefinitions={parameterDefinitions}
         paramName={paramName}
       />
     )
-  }, [originalNodeId, parameterDefinitions])
+  }, [node.id, parameterDefinitions])
 
   const removeElement = useCallback((property: keyof NodeType, index: number): void => {
     setEditedNode((currentNode) => ({
@@ -126,8 +123,8 @@ export function NodeTypeDetailsContent({
   }, [setEditedNode])
 
   useEffect(() => {
-    dispatch(nodeValidationDataClear(originalNodeId))
-  }, [dispatch, originalNodeId])
+    dispatch(nodeValidationDataClear(node.id))
+  }, [dispatch, node.id])
 
   useEffect(() => {
     dispatch(validateNodeData(processId, {
@@ -154,7 +151,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
@@ -169,7 +165,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
@@ -198,7 +193,6 @@ export function NodeTypeDetailsContent({
           fieldErrors={fieldErrors}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           removeElement={removeElement}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
@@ -214,7 +208,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setEditedEdges={setEditedEdges}
@@ -231,7 +224,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
@@ -246,7 +238,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           processDefinitionData={processDefinitionData}
           renderFieldLabel={renderFieldLabel}
@@ -263,7 +254,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           processDefinitionData={processDefinitionData}
           renderFieldLabel={renderFieldLabel}
@@ -292,7 +282,6 @@ export function NodeTypeDetailsContent({
           fieldErrors={fieldErrors}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}
           showValidation={showValidation}
@@ -307,7 +296,6 @@ export function NodeTypeDetailsContent({
           findAvailableVariables={findAvailableVariables}
           isEditMode={isEditMode}
           node={node}
-          originalNodeId={originalNodeId}
           parameterDefinitions={parameterDefinitions}
           processDefinitionData={processDefinitionData}
           renderFieldLabel={renderFieldLabel}
@@ -343,7 +331,13 @@ export function NodeTypeDetailsContent({
       )
     default:
       return (
-        <NodeDetailsFallback node={node}/>
+        <NodeDetailsFallback
+          node={node}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+        />
       )
   }
 }

@@ -21,13 +21,13 @@ export function Properties({
   showSwitch,
   showValidation,
 }: {
-  fieldErrors?: NodeValidationError[],
   isEditMode?: boolean,
   node: NodeType,
   processDefinitionData?: ProcessDefinitionData,
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
   showSwitch?: boolean,
+  fieldErrors?: NodeValidationError[],
   showValidation?: boolean,
 }): JSX.Element {
   const additionalPropertiesConfig = useSelector(getAdditionalPropertiesConfig)

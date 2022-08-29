@@ -1,6 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import React, {SetStateAction, useMemo} from "react"
-import {Edge, NodeId, NodeType, NodeValidationError} from "../../../types"
+import {Edge, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"
 import {useSelector} from "react-redux"
 import {getCurrentErrors,} from "./NodeDetailsContent/selectors"
@@ -12,7 +12,6 @@ import {TestResultsWrapper} from "./TestResultsWrapper"
 import {NodeTypeDetailsContent} from "./NodeTypeDetailsContent"
 
 export const NodeDetailsContent = ({
-  originalNodeId,
   node,
   edges,
   onChange,
@@ -20,7 +19,6 @@ export const NodeDetailsContent = ({
   showValidation,
   showSwitch,
 }: {
-  originalNodeId?: NodeId,
   node: NodeType,
   edges?: Edge[],
   onChange?: (node: SetStateAction<NodeType>, edges?: SetStateAction<Edge[]>) => void,
@@ -34,9 +32,8 @@ export const NodeDetailsContent = ({
   return (
     <NodeTable editable={!!onChange}>
       <NodeErrors errors={otherErrors} message="Node has errors"/>
-      <TestResultsWrapper nodeId={originalNodeId}>
+      <TestResultsWrapper nodeId={node.id}>
         <NodeTypeDetailsContent
-          originalNodeId={originalNodeId}
           node={node}
           edges={edges}
           onChange={onChange}

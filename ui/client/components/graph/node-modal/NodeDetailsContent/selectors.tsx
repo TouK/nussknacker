@@ -64,9 +64,8 @@ export const getCurrentErrors = createSelector(
   (validationPerformed, validationErrors) => (originalNodeId: NodeId, nodeErrors: NodeValidationError[] = []) => validationPerformed(originalNodeId) ? validationErrors(originalNodeId) : nodeErrors
 )
 export const getDynamicParameterDefinitions = createSelector(
-  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType, originalNodeId: NodeId) => {
-    //fallback to unchanged (saved) node id as process validation results doesn't contain changes
-    const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(originalNodeId)
+  getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
+    const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id)
     if (!dynamicParameterDefinitions) {
       return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.parameters
     }

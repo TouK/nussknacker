@@ -2,7 +2,7 @@ import {useTestResults} from "./TestResultsWrapper"
 import ExpressionField from "./editors/expression/ExpressionField"
 import {findParamDefinitionByName} from "./FieldLabel"
 import React from "react"
-import {NodeId, NodeType, NodeValidationError, Parameter, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, Parameter, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 
 //this is for "dynamic" parameters in sources, sinks, services etc.
@@ -12,7 +12,6 @@ export function ParameterExpressionField({
   isEditMode,
   listFieldPath,
   node,
-  originalNodeId,
   parameter,
   parameterDefinitions,
   renderFieldLabel,
@@ -25,7 +24,6 @@ export function ParameterExpressionField({
   isEditMode?: boolean,
   listFieldPath: string,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameter: Parameter,
   parameterDefinitions: UIParameter[],
   renderFieldLabel: (paramName: string) => JSX.Element,
@@ -35,7 +33,6 @@ export function ParameterExpressionField({
 }): JSX.Element {
   const expressionProperty = "expression"
   const testResultsState = useTestResults()
-
   return (
     <ExpressionField
       fieldName={parameter.name}
@@ -49,7 +46,7 @@ export function ParameterExpressionField({
       setNodeDataAt={setProperty}
       testResultsToShow={testResultsState.testResultsToShow}
       renderFieldLabel={renderFieldLabel}
-      variableTypes={findAvailableVariables(originalNodeId, parameterDefinitions?.find(p => p.name === parameter.name))}
+      variableTypes={findAvailableVariables(node.id, parameterDefinitions?.find(p => p.name === parameter.name))}
       errors={fieldErrors || []}
     />
   )

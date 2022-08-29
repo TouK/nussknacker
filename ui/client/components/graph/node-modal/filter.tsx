@@ -1,4 +1,4 @@
-import {Edge, EdgeKind, NodeId, NodeType, NodeValidationError, UIParameter} from "../../../types"
+import {Edge, EdgeKind, NodeType, NodeValidationError, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {useDiffMark} from "./PathsToMark"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
@@ -15,7 +15,6 @@ export function Filter({
   findAvailableVariables,
   isEditMode,
   node,
-  originalNodeId,
   parameterDefinitions,
   renderFieldLabel,
   setEditedEdges,
@@ -28,7 +27,6 @@ export function Filter({
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
   isEditMode?: boolean,
   node: NodeType,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   renderFieldLabel: (paramName: string) => JSX.Element,
   setEditedEdges: (edges: Edge[]) => void,
@@ -37,7 +35,6 @@ export function Filter({
   showValidation?: boolean,
 }): JSX.Element {
   const [, isCompareView] = useDiffMark()
-
   return (
     <NodeTableBody>
       <IdField
@@ -57,7 +54,6 @@ export function Filter({
         findAvailableVariables={findAvailableVariables}
         showValidation={showValidation}
         fieldErrors={fieldErrors}
-        originalNodeId={originalNodeId}
         isEditMode={isEditMode}
         node={node}
 
@@ -73,7 +69,7 @@ export function Filter({
         (
           <EdgesDndComponent
             label={"Outputs"}
-            nodeId={originalNodeId}
+            nodeId={node.id}
             value={edges}
             onChange={setEditedEdges}
             edgeTypes={[

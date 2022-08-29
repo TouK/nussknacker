@@ -1,12 +1,11 @@
 import {SourceSinkCommon} from "./SourceSinkCommon"
 import React from "react"
-import {NodeId, NodeType, NodeValidationError, UIParameter} from "../../../types"
+import {NodeType, NodeValidationError, UIParameter} from "../../../types"
 import ProcessUtils from "../../../common/ProcessUtils"
 
 interface SourceProps {
   fieldErrors?: NodeValidationError[],
   findAvailableVariables?: ReturnType<typeof ProcessUtils.findAvailableVariables>,
-  originalNodeId?: NodeId,
   parameterDefinitions: UIParameter[],
   showSwitch?: boolean,
   node: NodeType,
@@ -25,12 +24,10 @@ export function Source({
   node,
   parameterDefinitions,
   isEditMode,
-  originalNodeId,
   showValidation,
 }: SourceProps): JSX.Element {
   return (
     <SourceSinkCommon
-      originalNodeId={originalNodeId}
       isEditMode={isEditMode}
       showValidation={showValidation}
       showSwitch={showSwitch}
