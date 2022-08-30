@@ -13,6 +13,9 @@
 * [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
 * [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor
 * [#3451](https://github.com/TouK/nussknacker/pull/3451) SwaggerEnrichers as well as RequestResponse support now primitive schemas
+* [#3483](https://github.com/TouK/nussknacker/pull/3483) Fix for: errors were flickering in newly used dynamic components - 
+  after entering to node edition they were disappearing. Now this transient situation is replaced by well-prepared form
+  with whole necessary parameters.
 
 1.5.0 (16 Aug 2022)
 ------------------------

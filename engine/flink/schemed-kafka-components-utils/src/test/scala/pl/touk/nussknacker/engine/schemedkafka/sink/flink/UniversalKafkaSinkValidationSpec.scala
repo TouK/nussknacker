@@ -38,7 +38,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
     implicit val meta: MetaData = MetaData("processId", StreamMetaData())
     implicit val nodeId: NodeId = NodeId("id")
     val paramsList = params.toList.map(p => Parameter(p._1, p._2))
-    validator.validateNode(universalSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get
+    validator.validateNode(universalSinkFactory, paramsList, Nil, Some(VariableConstants.InputVariableName), SingleComponentConfig.zero)(ValidationContext()).toOption.get.transformationResult
   }
 
   test("should validate specific version") {
