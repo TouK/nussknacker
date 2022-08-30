@@ -11,8 +11,9 @@ import React, {
 } from "react"
 import {useNkTheme} from "../containers/theme"
 
+export type InputWithFocusProps = DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>
 export const InputWithFocus = forwardRef(function InputWithFocus(
-  {className, ...props}: DetailedHTMLProps<InputHTMLAttributes<HTMLInputElement>, HTMLInputElement>,
+  {className, ...props}: InputWithFocusProps,
   ref: React.Ref<HTMLInputElement>,
 ): JSX.Element {
   const {withFocus} = useNkTheme()
@@ -21,10 +22,12 @@ export const InputWithFocus = forwardRef(function InputWithFocus(
   )
 })
 
+export type TextAreaWithFocusProps = DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>
+
 export function TextAreaWithFocus({
   className,
   ...props
-}: DetailedHTMLProps<TextareaHTMLAttributes<HTMLTextAreaElement>, HTMLTextAreaElement>): JSX.Element {
+}: TextAreaWithFocusProps): JSX.Element {
   const {withFocus} = useNkTheme()
   return (
     <textarea {...props} className={cx(withFocus, className)}/>

@@ -1,29 +1,29 @@
-import React, {useState, useEffect} from "react"
+import React, {useEffect, useState} from "react"
 import HttpService from "../../../http/HttpService"
 import ReactMarkdown from "react-markdown/with-html"
 import "../../../stylesheets/markdown.styl"
 import {useDebounce} from "use-debounce"
 import {NodeType} from "../../../types"
+import {useSelector} from "react-redux"
+import {getProcessId} from "./NodeDetailsContent/selectors"
 
-type Props = {
-  processId: string,
+interface Props {
   node: NodeType,
 }
 
 //Types should match implementations of NodeAdditionalInfo on Backend!
-type NodeAdditionalInfo = MarkdownNodeAdditionalInfo
+export type NodeAdditionalInfo = MarkdownNodeAdditionalInfo
 
-type MarkdownNodeAdditionalInfo = {
-    type: "MarkdownNodeAdditionalInfo",
-    content: string,
+interface MarkdownNodeAdditionalInfo {
+  type: "MarkdownNodeAdditionalInfo",
+  content: string,
 }
 
-export default function NodeAdditionalInfoBox(props: Props) {
+export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
+  const {node} = props
+  const processId = useSelector(getProcessId)
 
   const [additionalData, setAdditionalData] = useState<NodeAdditionalInfo>(null)
-  const {
-    processId, node,
-  } = props
 
   //We don't use redux here since this additionalData is local to this component. We use debounce, as
   //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
@@ -34,11 +34,11 @@ export default function NodeAdditionalInfoBox(props: Props) {
     }
   }, [processId, debouncedNode])
 
-  const type = additionalData?.type
-  if (!type) {
+  if (!additionalData?.type) {
     return null
   }
-  switch (type){
+
+  switch (additionalData.type) {
     case "MarkdownNodeAdditionalInfo":
       // eslint-disable-next-line i18next/no-literal-string
       const linkTarget = "_blank"

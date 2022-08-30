@@ -5,7 +5,7 @@ import PropTypes from "prop-types"
 import React from "react"
 import {TextAreaWithFocus} from "../../../../withFocus"
 
-export const Textarea = (props) => {
+export default function Textarea(props) {
   const {
     isMarked, showValidation, className, placeholder, autoFocus, onChange, value, validators, readOnly,
     formattedValue, type, inputClassName, onFocus,
@@ -30,7 +30,7 @@ export const Textarea = (props) => {
         }
       </div>
       {showValidation &&
-      <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]}/>}
+        <ValidationLabels validators={validators} values={[formattedValue ? formattedValue : value]}/>}
     </div>
   )
 }
@@ -55,5 +55,3 @@ Textarea.propTypes = {
 }
 
 Textarea.defaultProps = { }
-
-export default Textarea

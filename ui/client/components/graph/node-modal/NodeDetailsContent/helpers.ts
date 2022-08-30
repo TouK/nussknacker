@@ -1,9 +1,5 @@
-import {NodeType} from "../../../../types"
+import {NodeType, Parameter} from "../../../../types"
 
-export function refParameters(editedNode: NodeType): { name: string }[] {
-  return editedNode.ref.parameters || []
-}
-
-export function serviceParameters(editedNode: NodeType): { name: string }[] {
+export function serviceParameters(editedNode: NodeType): Parameter[] {
   return editedNode.service.parameters || []
 }

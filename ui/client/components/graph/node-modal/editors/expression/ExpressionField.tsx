@@ -6,6 +6,8 @@ import ExpressionTestResults from "../../tests/ExpressionTestResults"
 import EditableEditor from "../EditableEditor"
 import {Error} from "../Validators"
 import {EditorType} from "./Editor"
+import {NodeResultsForContext} from "../../../../../common/TestResultUtils"
+import {useDiffMark} from "../../PathsToMark"
 
 type Props = {
   fieldName: string,
@@ -13,14 +15,11 @@ type Props = {
   exprPath: string,
   isEditMode: boolean,
   editedNode: NodeType,
-  isMarked: (...args: unknown[]) => boolean,
   showValidation: boolean,
   showSwitch: boolean,
   parameterDefinition: UIParameter,
-  setNodeDataAt: UnknownFunction,
-  testResultsToShow: $TodoType,
-  testResultsToHide: $TodoType,
-  toggleTestResult: UnknownFunction,
+  setNodeDataAt: <T extends any>(propToMutate: string, newValue: T, defaultValue?: T) => void,
+  testResultsToShow: NodeResultsForContext,
   renderFieldLabel: UnknownFunction,
   errors: Array<Error>,
   variableTypes: VariableTypes,
@@ -28,15 +27,14 @@ type Props = {
 
 function ExpressionField(props: Props): JSX.Element {
   const {
-    fieldName, fieldLabel, exprPath, isEditMode, editedNode, isMarked, showValidation, showSwitch,
-    parameterDefinition, setNodeDataAt, testResultsToShow, testResultsToHide, toggleTestResult, renderFieldLabel,
+    fieldName, fieldLabel, exprPath, isEditMode, editedNode, showValidation, showSwitch,
+    parameterDefinition, setNodeDataAt, testResultsToShow, renderFieldLabel,
     errors, variableTypes,
   } = props
-
+  const [isMarked] = useDiffMark()
   const readOnly = !isEditMode
   const exprTextPath = `${exprPath}.expression`
   const expressionObj = _.get(editedNode, exprPath)
-  const marked = isMarked(exprTextPath)
   const editor = parameterDefinition?.editor || {}
 
   const onValueChange = useCallback((newValue) => setNodeDataAt(exprTextPath, newValue), [exprTextPath, setNodeDataAt])
@@ -49,7 +47,7 @@ function ExpressionField(props: Props): JSX.Element {
         param={parameterDefinition}
         expressionObj={expressionObj}
         renderFieldLabel={renderFieldLabel}
-        isMarked={marked}
+        isMarked={isMarked(exprTextPath)}
         showSwitch={showSwitch}
         readOnly={readOnly}
         onValueChange={onValueChange}
@@ -64,8 +62,6 @@ function ExpressionField(props: Props): JSX.Element {
     <ExpressionTestResults
       fieldName={fieldName}
       resultsToShow={testResultsToShow}
-      resultsToHide={testResultsToHide}
-      toggleResult={toggleTestResult}
     >
       <EditableEditor
         param={parameterDefinition}
@@ -73,7 +69,7 @@ function ExpressionField(props: Props): JSX.Element {
         fieldLabel={fieldLabel}
         fieldName={fieldName}
         expressionObj={expressionObj}
-        isMarked={marked}
+        isMarked={isMarked(exprTextPath)}
         showValidation={showValidation}
         showSwitch={showSwitch}
         readOnly={readOnly}

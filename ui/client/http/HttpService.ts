@@ -3,16 +3,18 @@ import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
-import {SettingsData} from "../actions/nk"
+import {SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
-import {API_URL} from "../config"
 import {AuthenticationSettings} from "../reducers/settings"
-import {ProcessDefinitionData} from "../types"
+import {Process, ProcessDefinitionData, ProcessId} from "../types"
 import {WithId} from "../types/common"
-import {BackendNotification} from "../containers/Notifications";
+import {BackendNotification} from "../containers/Notifications"
+import {ProcessCounts} from "../reducers/graph"
+import {TestResults} from "../common/TestResultUtils"
+import {NodeAdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -73,10 +75,10 @@ export type ComponentType = {
   actions: ComponentActionType[],
   usageCount: number,
   links: Array<{
-      id: string,
-      title: string,
-      icon: string,
-      url: string,
+    id: string,
+    title: string,
+    icon: string,
+    url: string,
   }>,
 }
 
@@ -96,8 +98,13 @@ export type ComponentUsageType = {
 }
 
 type NotificationActions = {
-    success(message: string): void
-    error(message: string, error: any, showErrorText: boolean): void
+  success(message: string): void,
+  error(message: string, error: any, showErrorText: boolean): void,
+}
+
+export interface TestProcessResponse {
+  results: TestResults,
+  counts: ProcessCounts,
 }
 
 class HttpService {
@@ -111,30 +118,11 @@ class HttpService {
 
   loadBackendNotifications(): Promise<BackendNotification[]> {
     return api.get<BackendNotification[]>("/notifications")
-        .then(d => d.data)
-        .catch(error => {
-            this.#addError(i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"), error)
-            return []
-        })
-  }
-
-  #addInfo(message: string) {
-    if (this.#notificationActions) {
-      this.#notificationActions.success(message)
-    }
-  }
-
-  #addErrorMessage(message: string, error: any, showErrorText: boolean) {
-    if (this.#notificationActions) {
-      this.#notificationActions.error(message, error, showErrorText)
-    }
-  }
-
-  #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
-    console.warn(message, error)
-    const errorMessage = error?.response?.data || error.message
-    this.#addErrorMessage(message, errorMessage, showErrorText)
-    return Promise.resolve(error)
+      .then(d => d.data)
+      .catch(error => {
+        this.#addError(i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"), error)
+        return []
+      })
   }
 
   availableQueryableStates() {
@@ -263,15 +251,15 @@ class HttpService {
         .map(({performedAt}) => performedAt))
   }
 
-  deploy(processId, comment?): Promise<{isSuccess: boolean}> {
+  deploy(processId, comment?): Promise<{ isSuccess: boolean }> {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
       return {isSuccess: true}
     }).catch(error => {
       if (error?.response?.status != 400) {
         return this.#addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
-            .then((error) => {
-              return {isSuccess: false}
-            })
+          .then((error) => {
+            return {isSuccess: false}
+          })
       } else {
         throw error
       }
@@ -299,12 +287,12 @@ class HttpService {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
       .catch(error => {
         if (error?.response?.status != 400) {
-        return this.#addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
+          return this.#addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
             .then((error) => {
-                return {isSuccess: false}
+              return {isSuccess: false}
             })
         } else {
-            throw error
+          throw error
         }
       })
   }
@@ -369,17 +357,16 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
   }
 
-  //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess({edges,...process}) {
-    return api.post("/processValidation", {...process, edges: edges.filter(e => e.to)})
+  validateProcess({id, nodes, edges, properties, processingType}: Omit<Process, "validationResult">) {
+    return api.post("/processValidation", {id, nodes, properties, processingType, edges: edges.filter(e => e.to)})
       .catch(error => {
         this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)
       })
   }
 
-  validateNode(processId, node) {
+  validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"),
@@ -389,8 +376,8 @@ class HttpService {
     return promise
   }
 
-  getNodeAdditionalData(processId, node) {
-    const promise = api.post(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
+  getNodeAdditionalData(processId, node): Promise<AxiosResponse<NodeAdditionalInfo>> {
+    const promise = api.post<NodeAdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToFetchState", "Failed to get node additional data"),
       error,
@@ -399,18 +386,22 @@ class HttpService {
     return promise
   }
 
+  //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
+
   getTestCapabilities(process) {
     return api.post("/testInfo/capabilities", process)
       .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
   }
 
-  generateTestData(processId, testSampleSize, data) {
-    return api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+  generateTestData(processId, testSampleSize, data): Promise<AxiosResponse<any>> {
+    const promise = api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
+    promise
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error))
+    return promise
   }
 
-  fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment) {
+  fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment): Promise<AxiosResponse<ProcessCounts>> {
     //we use offset date time instead of timestamp to pass info about user time zone to BE
     const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ")
 
@@ -421,7 +412,6 @@ class HttpService {
     return promise
   }
 
-  //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
   //to prevent closing edit node modal and corrupting graph display
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
@@ -442,6 +432,8 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true))
   }
 
+  //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
+
   createProcess(processId: string, processCategory: string, isSubprocess = false) {
     return api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`)
       .catch(error => this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true))
@@ -455,13 +447,14 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
   }
 
-  testProcess(processId, file, processJson) {
+  testProcess(processId: ProcessId, file: File, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
     const data = new FormData()
     data.append("testData", file)
     data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
 
-    return api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
+    const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
+    promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
+    return promise
   }
 
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
@@ -514,6 +507,25 @@ class HttpService {
     return responses
       .reduce((result, {data}) => result.concat(data), [])
       .map(process => process.name)
+  }
+
+  #addInfo(message: string) {
+    if (this.#notificationActions) {
+      this.#notificationActions.success(message)
+    }
+  }
+
+  #addErrorMessage(message: string, error: any, showErrorText: boolean) {
+    if (this.#notificationActions) {
+      this.#notificationActions.error(message, error, showErrorText)
+    }
+  }
+
+  #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false): Promise<AxiosError<T>> {
+    console.warn(message, error)
+    const errorMessage = error?.response?.data || error.message
+    this.#addErrorMessage(message, errorMessage, showErrorText)
+    return Promise.resolve(error)
   }
 }
 
