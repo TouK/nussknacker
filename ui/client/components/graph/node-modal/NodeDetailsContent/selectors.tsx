@@ -28,6 +28,10 @@ export const getValidationPerformed = createSelector(
   getNodeDetails,
   (nodeDetails) => (nodeId): boolean => nodeDetails(nodeId)?.validationPerformed
 )
+export const getHasValidationResult = createSelector(
+  getValidationPerformed,
+  (isValidationPerformed) => (nodeId): boolean => isValidationPerformed(nodeId) !== undefined
+)
 const getValidationErrors = createSelector(
   getNodeDetails,
   (nodeDetails) => (nodeId) => nodeDetails(nodeId)?.validationErrors
@@ -53,7 +57,7 @@ export const getNodeTypingInfo = createSelector(
 )
 export const getNodeExpressionType = createSelector(
   getExpressionType, getNodeTypingInfo, (expressionType, nodeTypingInfo) => (nodeId) => ({
-    fields: expressionType(nodeId)?.fields || nodeTypingInfo(nodeId),
+    fields: expressionType(nodeId)?.["fields"] || nodeTypingInfo(nodeId),
   })
 )
 export const getProcessProperties = createSelector(getProcessToDisplay, s => s.properties)

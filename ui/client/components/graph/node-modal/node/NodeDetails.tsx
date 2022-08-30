@@ -20,7 +20,7 @@ import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
 import {applyIdFromFakeName} from "../IdField"
 import LoaderSpinner from "../../../Spinner"
-import {getProcessId, getValidationPerformed} from "../NodeDetailsContent/selectors"
+import {getHasValidationResult, getProcessId} from "../NodeDetailsContent/selectors"
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType, process: Process }> {
   readOnly?: boolean,
@@ -111,7 +111,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     return {HeaderTitle}
   }, [originalNode])
 
-  const isValidationPerformed = useSelector(getValidationPerformed)
   const processId = useSelector(getProcessId)
 
   useEffect(() => {
@@ -128,7 +127,8 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }))
   }, [dispatch, editedNode, outputEdges, processId])
 
-  return isValidationPerformed(editedNode?.id) ?
+  const hasValidationResult = useSelector(getHasValidationResult)
+  return hasValidationResult(editedNode?.id) ?
     (
       <WindowContent
         {...props}

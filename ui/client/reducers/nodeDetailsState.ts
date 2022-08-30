@@ -1,17 +1,14 @@
 import {Action} from "../actions/reduxTypes"
-import {NodeValidationError, TypingResult, UIParameter} from "../types"
+import {NodeId, NodeValidationError, TypingResult, UIParameter} from "../types"
 
-export type NodeDetailsState = {
+export type NodeDetailsState = Record<NodeId, {
   parameters?: UIParameter[],
   expressionType?: TypingResult,
   validationErrors: NodeValidationError[],
   validationPerformed: boolean,
-}
+}>
 
-const initialState: NodeDetailsState = {
-  validationErrors: [],
-  validationPerformed: false,
-}
+const initialState: NodeDetailsState = {}
 
 export function reducer(state: NodeDetailsState = initialState, action: Action): NodeDetailsState {
   switch (action.type) {
@@ -32,9 +29,8 @@ export function reducer(state: NodeDetailsState = initialState, action: Action):
       const {nodeId} = action
       return {
         ...state,
-        [nodeId]: initialState,
+        [nodeId]: undefined,
       }
-
     }
     //TODO: do we need to react on other actions?
     case "CLOSE_MODALS":

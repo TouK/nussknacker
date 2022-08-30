@@ -1,22 +1,17 @@
-import React, {useCallback} from "react"
+import React, {useCallback, useMemo} from "react"
 import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
-import {NodeType, TypedObjectTypingResult, TypingInfo, TypingResult, VariableTypes} from "../../../types"
+import {NodeType, VariableTypes} from "../../../types"
 import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {useDiffMark} from "./PathsToMark"
 import {useSelector} from "react-redux"
-import {RootState} from "../../../reducers"
 import {getExpressionType, getNodeTypingInfo} from "./NodeDetailsContent/selectors"
 import ProcessUtils from "../../../common/ProcessUtils"
 import {IdField} from "./IdField"
 
 const DEFAULT_EXPRESSION_ID = "$expression"
-
-function getTypingResult(expressionType: TypedObjectTypingResult, nodeTypingInfo: TypingInfo): TypedObjectTypingResult | TypingResult {
-  return expressionType || nodeTypingInfo?.[DEFAULT_EXPRESSION_ID]
-}
 
 interface Props {
   isEditMode?: boolean,
@@ -40,12 +35,12 @@ export default function Variable({
 }: Props): JSX.Element {
   const onExpressionChange = useCallback((value: string) => setProperty("value.expression", value), [setProperty])
   const [isMarked] = useDiffMark()
-  const inferredVariableType = useSelector((state: RootState) => {
-    const expressionType = getExpressionType(state)(node.id)
-    const nodeTypingInfo = getNodeTypingInfo(state)(node.id)
-    const varExprType = getTypingResult(expressionType, nodeTypingInfo)
+  const expressionType = useSelector(getExpressionType)
+  const nodeTypingInfo = useSelector(getNodeTypingInfo)
+  const inferredVariableType = useMemo(() => {
+    const varExprType = expressionType(node.id) || nodeTypingInfo(node.id)?.[DEFAULT_EXPRESSION_ID]
     return ProcessUtils.humanReadableType(varExprType)
-  })
+  }, [expressionType, node.id, nodeTypingInfo])
   const readOnly = !isEditMode
   return (
     <NodeTableBody className="node-variable-builder-body">
