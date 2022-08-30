@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
@@ -34,9 +33,6 @@ class FlinkTestMain(val modelData: ModelData,
 
   def runTest[T](variableEncoder: Any => T): TestResults[T] = {
     val env = createEnv
-    //we want to fail fast if we cannot be bounded...
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
     try {
       val registrar: FlinkProcessRegistrar = prepareRegistrar(collectingListener, testData)

@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
@@ -54,7 +54,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       case source: SourcePart => source.obj
     }
     sources should matchPattern {
-      case (_: CollectionSource[_]) :: (_: CollectionSource[_]) :: Nil =>
+      case (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
     }
   }
 

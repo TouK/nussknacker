@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus, RuntimeExecutionMode}
+import org.apache.flink.api.common.{JobExecutionResult, JobID, JobStatus}
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.runtime.executiongraph.AccessExecutionGraph
@@ -27,7 +27,6 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   def withJobRunning[T](jobName: String)(actionToInvokeWithJobRunning: => T): T = withJobRunning(jobName, _ => actionToInvokeWithJobRunning)
 
   def withJobRunning[T](jobName: String, actionToInvokeWithJobRunning: JobExecutionResult => T): T = {
-    setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val executionResult: JobExecutionResult = executeAndWaitForStart(jobName)
     try {
       val res = actionToInvokeWithJobRunning(executionResult)
@@ -55,7 +54,6 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   def executeAndWaitForFinished(jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
-    setRuntimeMode(RuntimeExecutionMode.AUTOMATIC)
     val res = execute(jobName)
     waitForJobState(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
     res

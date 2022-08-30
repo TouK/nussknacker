@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.api.common.RuntimeExecutionMode
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import pl.touk.nussknacker.engine.ModelData
@@ -25,7 +24,6 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
 
   def runTest(): Unit = {
     val env = createEnv
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
     val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
