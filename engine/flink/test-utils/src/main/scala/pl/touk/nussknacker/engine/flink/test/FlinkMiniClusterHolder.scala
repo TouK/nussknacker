@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import java.util.concurrent.CompletableFuture
-import org.apache.flink.api.common.{JobID, JobStatus, RuntimeExecutionMode}
+
+import org.apache.flink.api.common.{JobID, JobStatus}
 import org.apache.flink.client.program.ClusterClient
 import org.apache.flink.configuration._
 import org.apache.flink.runtime.client.JobStatusMessage
@@ -38,10 +39,7 @@ trait FlinkMiniClusterHolder {
   def listJobs(): Iterable[JobStatusMessage]
 
   def createExecutionEnvironment(): MiniClusterExecutionEnvironment = {
-    val env = new MiniClusterExecutionEnvironment(this, userFlinkClusterConfig, envConfig)
-    //we want to fail fast if we cannot be bounded...
-    env.setRuntimeMode(RuntimeExecutionMode.BATCH)
-    env
+    new MiniClusterExecutionEnvironment(this, userFlinkClusterConfig, envConfig)
   }
 
   // We access miniCluster because ClusterClient doesn't expose getExecutionGraph and getJobStatus doesn't satisfy us
