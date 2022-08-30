@@ -121,6 +121,7 @@ object UIProcessObjectsFactory {
         val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
 
+        //Figure outputs parameter
         val outputParameters = fragment.canonical.nodes.flatMap {
           case canonicalnode.SplitNode(_, nextParts) => nextParts.flatten
           case node => List(node)
