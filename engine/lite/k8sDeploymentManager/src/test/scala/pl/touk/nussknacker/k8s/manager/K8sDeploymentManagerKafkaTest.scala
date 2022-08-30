@@ -36,7 +36,6 @@ import scala.util.Random
 class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage with LazyLogging {
 
-  private lazy val k8sTestUtils = new K8sTestUtils(k8s)
   private lazy val kafka = new KafkaK8sSupport(k8s)
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
@@ -384,10 +383,6 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
       super.withRunningScenario(action)
       //should not fail
       assertNoGarbageLeft()
-    }
-
-    override protected def onException(ex: Throwable): Unit = {
-      k8sTestUtils.clusterInfoDump()
     }
   }
 
