@@ -43,6 +43,9 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
         validation.evaluatePart(Nil, None, Nil)
       }
       evaluatePart(parametersFromNode) andThen {
+        // In case of missing parameters we assume that it is the case when component is firstly used in scenario. In this case it won't have
+        // all parameters filled so we need to ask for initial parameters list definition and after that, enrich input node parameters with missing parameters
+        // and validate node one more time
         case TransformationResult(errors, parametersFromDynamicDefinition, _, _) if errors.exists(_.isInstanceOf[MissingParameters]) =>
           val enrichedParameters = InitialParametersGenericNodeEnricher.enrichWithInitialParameters(parametersFromNode, parametersFromDynamicDefinition)
           evaluatePart(enrichedParameters).map(TransformationResultForImplementationInvocation(_, enrichedParameters))
