@@ -3,15 +3,16 @@ package pl.touk.nussknacker.k8s.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
+import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, BeforeAndAfterAll}
+import org.scalatest.{Args, Assertion, BeforeAndAfterAll, FailedStatus, Status}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
@@ -19,12 +20,14 @@ import skuber.json.format._
 import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
-class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
+class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll { self: LazyLogging =>
 
   protected implicit val system: ActorSystem = ActorSystem()
   import system.dispatcher
   protected lazy val k8s: KubernetesClient = k8sInit
+  protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
   protected val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
@@ -63,9 +66,34 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
     cleanup()
   }
 
+  override def run(testName: Option[String], args: Args): Status = {
+    try {
+      val status = super.run(testName, args)
+      if (status == FailedStatus) {
+        logger.error(s"Test: $testName failed. Dumping cluster-info")
+        dumpClusterInfoSupressExceptions()
+      }
+      status
+    } catch {
+      case NonFatal(ex) =>
+        dumpClusterInfoSupressExceptions()
+        throw ex
+    }
+  }
+
+  private def dumpClusterInfoSupressExceptions(): Unit = {
+    try {
+      k8sTestUtils.dumpClusterInfo()
+    } catch {
+      case NonFatal(ex) =>
+        logger.warn("Some error during cluster-info dump occurred", ex)
+    }
+  }
+
 }
 
 class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
+
   def withRunningScenario(action: => Unit): Unit = {
     manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     eventually {

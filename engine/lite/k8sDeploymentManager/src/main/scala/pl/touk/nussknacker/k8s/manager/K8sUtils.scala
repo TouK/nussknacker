@@ -23,6 +23,8 @@ class K8sUtils(client: KubernetesClient) {
 
 object K8sUtils {
 
+  val maxObjectNameLength = 63
+
   //Object names cannot have underscores in name...
   def sanitizeObjectName(original: String, append: String = ""): String = {
     sanitizeName(original, canHaveUnderscore = false, append = append)
@@ -41,7 +43,7 @@ object K8sUtils {
       //need to have alphanumeric at beginning and end...
       .replaceAll("^([^a-zA-Z0-9])", "x$1")
       .replaceAll("([^a-zA-Z0-9])$", "$1x")
-      .take(63 - append.length) + append
+      .take(maxObjectNameLength - append.length) + append
   }
 
   //https://github.com/kubernetes/kubectl/blob/master/pkg/util/hash/hash.go#L105 - we don't care about bad words...

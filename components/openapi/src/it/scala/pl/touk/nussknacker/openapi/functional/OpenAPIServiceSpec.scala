@@ -36,7 +36,7 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
 
     val client = new DefaultAsyncHttpClient()
     try {
-      StubService.withCustomerService { port =>
+      new StubService().withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
         val config = OpenAPIServicesConfig(security = Some(securities),
           rootUrl = Some(new URL(s"http://localhost:$port")))

@@ -1,4 +1,3 @@
-/* eslint-disable i18next/no-literal-string */
 import React, {SetStateAction, useMemo} from "react"
 import {Edge, NodeType, NodeValidationError} from "../../../types"
 import NodeAdditionalInfoBox from "./NodeAdditionalInfoBox"

@@ -51,7 +51,7 @@ val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
 val requestResponseDockerPackageName = propOrEnv("requestResponseDockerPackageName", "nussknacker-request-response-app")
 
-val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-kafka-runtime")
+val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-runtime-app")
 
 // `publishArtifact := false` should be enough to keep sbt from publishing root module,
 // unfortunately it does not work, so we resort to hack by publishing root module to Resolver.defaultLocal
@@ -778,7 +778,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
       )
     }
   )
-  .dependsOn(schemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
+  .dependsOn(schemedKafkaComponentsUtils % "compile;test->test", flinkKafkaComponentsUtils, flinkExtensionsApi % Provided, flinkComponentsUtils % Provided, componentsUtils % Provided,
     kafkaTestUtils % "test", flinkTestUtils % "test", flinkExecutor % "test")
 
 lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")).
@@ -1068,7 +1068,7 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(liteEngineKafkaRuntimeDockerSettings).
   enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
   settings(
-    name := "nussknacker-lite-kafka-runtime",
+    name := "nussknacker-lite-runtime-app",
     Universal / mappings ++= Seq(
       (defaultModel / assembly).value -> "model/defaultModel.jar",
       (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
@@ -1103,7 +1103,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   ).dependsOn(
   liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
   liteKafkaComponents % "test", liteRequestResponseComponents % "test", componentsUtils % "test",
-  testUtils % "test", kafkaTestUtils % "test")
+  testUtils % "test", kafkaTestUtils % "test", schemedKafkaComponentsUtils % "test->test")
 
 lazy val developmentTestsDeploymentManager = (project in development("deploymentManager")).
   enablePlugins().
@@ -1140,7 +1140,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     },
     buildAndImportRuntimeImageToK3d := {
       (liteEngineKafkaRuntime / Docker / publishLocal).value
-      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-kafka-runtime:${version.value}" #|| "echo 'No k3d installed!'" !
+      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}" #|| "echo 'No k3d installed!'" !
     },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
       buildAndImportRuntimeImageToK3d
@@ -1361,7 +1361,6 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   ).dependsOn(flinkComponentsApi % Provided, flinkKafkaComponentsUtils, flinkSchemedKafkaComponentsUtils, commonUtils % Provided, componentsUtils % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
-lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
 
 lazy val restmodel = (project in file("ui/restmodel"))
   .settings(commonSettings)
@@ -1402,8 +1401,6 @@ lazy val ui = (project in file("ui/server"))
       val feDistDirectory = file("ui/client/dist")
       val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
       IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
-    },
-    copyUiSubmodulesDist := {
       val feSubmodulesDistDirectory = file("ui/submodules/dist")
       val feSubmodulesDistFiles: Seq[File] = (feSubmodulesDistDirectory ** "*").get()
       IO.copy(feSubmodulesDistFiles pair Path.rebase(feSubmodulesDistDirectory, (compile / crossTarget).value / "classes" / "web" / "submodules"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
@@ -1418,17 +1415,13 @@ lazy val ui = (project in file("ui/server"))
       flinkExecutor / Compile / assembly
     ).value,
     /*
-      We depend on copyUiDist and copyUiSubmodulesDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyUiDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists (copyUiDist, copyUiSubmodulesDist) outside sbt and
+      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists copyUiDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
-    Compile / packageBin := (Compile / packageBin).dependsOn(
-      copyUiDist, copyUiSubmodulesDist
-    ).value,
-    assembly in ThisScope := (assembly in ThisScope).dependsOn(
-      copyUiDist, copyUiSubmodulesDist
-    ).value,
+    Compile / packageBin := (Compile / packageBin).dependsOn(copyUiDist).value,
+    assembly in ThisScope := (assembly in ThisScope).dependsOn(copyUiDist).value,
     assembly / assemblyMergeStrategy := uiMergeStrategy,
     libraryDependencies ++= {
       Seq(
@@ -1582,7 +1575,6 @@ prepareDev := {
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (ui / copyUiDist).value
-  (ui / copyUiSubmodulesDist).value
 }
 
 lazy val buildClient = taskKey[Unit]("Build client")

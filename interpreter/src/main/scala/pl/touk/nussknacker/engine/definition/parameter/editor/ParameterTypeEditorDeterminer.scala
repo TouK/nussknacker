@@ -13,14 +13,13 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
       case s: SingleTypingResult => s.objType
     }.map(_.klass).collect {
       case klazz if klazz.isEnum =>
-        // We can pick here simple editor, but for compatibility reasons we choose dual editor instead
-        // - to be able to provide some other expression
         DualParameterEditor(FixedValuesParameterEditor(
           possibleValues = klazz.getEnumConstants.toList.map(ParameterTypeEditorDeterminer.extractEnumValue(klazz))
         ), DualEditorMode.SIMPLE)
-      case klazz if klazz == classOf[java.lang.String] =>
+      case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
         DualParameterEditor(
           simpleEditor = StringParameterEditor,
+          // For compatibility reasons we choose raw editor - otherwise users could write expressions in simple mode
           defaultMode = DualEditorMode.RAW
         )
       case klazz if klazz == classOf[java.time.LocalDateTime] =>

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.k8s.manager
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
@@ -22,7 +23,7 @@ object K8sDeploymentStatusMapper {
 }
 
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
-class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager) {
+class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager) extends LazyLogging {
 
   private[manager] def findStatusForDeploymentsAndPods(deployments: List[Deployment], pods: List[Pod]): Option[ProcessState] = {
     deployments match {
@@ -50,7 +51,9 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
 
     (condition(availableCondition), condition(progressingCondition), condition(replicaFailureCondition)) match {
       case (Some(available), _, _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
-      case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) => (SimpleStateStatus.Restarting, None, Nil)
+      case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) =>
+        logger.debug(s"Some containers are in waiting state with CrashLoopBackOff reason - returning Restarting status. Pods: $pods")
+        (SimpleStateStatus.Restarting, None, Nil)
       case (_, Some(progressing), _) if isTrue(progressing) => (SimpleStateStatus.DuringDeploy, None, Nil)
       case (_, _, Some(replicaFailure)) if isTrue(replicaFailure) => (SimpleStateStatus.Failed, None, replicaFailure.message.toList)
       case (a, b, _) => (SimpleStateStatus.Failed, None, a.flatMap(_.message).toList ++ b.flatMap(_.message).toList)

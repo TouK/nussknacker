@@ -6,7 +6,7 @@ import org.apache.http.protocol.{HttpContext, HttpRequestHandler}
 import org.apache.http.{HttpRequest, HttpResponse}
 import pl.touk.nussknacker.test.AvailablePortFinder
 
-object StubService {
+class StubService(val swaggerDefinition: String = "/customer-swagger.json") {
 
   def withCustomerService[T](action: Int => T): T = {
     AvailablePortFinder.withAvailablePortsBlocked(1) { ports =>
@@ -16,7 +16,7 @@ object StubService {
         .registerHandler("/swagger", new HttpRequestHandler {
           override def handle(request: HttpRequest, response: HttpResponse, context: HttpContext): Unit = {
             response.setStatusCode(200)
-            response.setEntity(new InputStreamEntity(getClass.getResourceAsStream("/customer-swagger.json")))
+            response.setEntity(new InputStreamEntity(getClass.getResourceAsStream(swaggerDefinition)))
           }
         })
         .registerHandler("/customers/*", new HttpRequestHandler {

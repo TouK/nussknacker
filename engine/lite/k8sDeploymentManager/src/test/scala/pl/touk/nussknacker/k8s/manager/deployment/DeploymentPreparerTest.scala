@@ -58,7 +58,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
@@ -147,7 +147,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
@@ -229,7 +229,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),

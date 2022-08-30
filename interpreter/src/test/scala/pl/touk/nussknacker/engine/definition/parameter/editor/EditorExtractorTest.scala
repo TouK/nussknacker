@@ -42,7 +42,8 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
   private def rawEditorAnnotatedLazy(@RawEditor param: LazyParameter[String]) {}
 
   private def simpleParams(javaEnum: JavaSampleEnum, localDateTime: LocalDateTime,
-                           localDate: LocalDate, localTime: LocalTime, duration: Duration, period: Period, cron: Cron) {}
+                           localDate: LocalDate, localTime: LocalTime, duration: Duration, period: Period, cron: Cron,
+                           str: String, charseq: CharSequence) {}
 
   private val paramNotAnnotated = getFirstParam("notAnnotated", classOf[String])
 
@@ -165,6 +166,18 @@ class EditorExtractorTest extends AnyFunSuite with Matchers {
       simpleEditor = CronParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     ))
+  }
+
+  test("determine editor by type Charsequence") {
+    val charseqParam = getSimpleParamByType[CharSequence]
+    val stringParam = getSimpleParamByType[String]
+
+    val expectedEditor = Some(DualParameterEditor(
+      simpleEditor = StringParameterEditor,
+      defaultMode = DualEditorMode.RAW
+    ))
+    EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
+    EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor
   }
 
   private def getFirstParam(name: String, params: Class[_]*) = {

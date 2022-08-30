@@ -1,36 +1,33 @@
 package pl.touk.nussknacker.engine.schemedkafka.helpers
 
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
-import org.scalatest.{Assertion}
+import org.scalatest.Assertion
+import org.scalatest.concurrent.{Eventually, ScalaFutures}
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
+import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaClient, KafkaTestUtils, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.{AbstractConfluentKafkaAvroDeserializer, AbstractConfluentKafkaAvroSerializer}
-import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaClient, KafkaTestUtils, serialization}
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.nio.charset.StandardCharsets
 
-trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFutures {
+trait KafkaWithSchemaRegistryOperations extends Matchers with ScalaFutures with Eventually {
 
   import KafkaTestUtils._
+
+  override implicit def patienceConfig: PatienceConfig = PatienceConfig(timeout = scaled(Span(5, Seconds)), interval = scaled(Span(50, Millis)))
 
   def pushMessage(obj: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): RecordMetadata = {
     val serializedObj = valueSerializer.serialize(topicToSerialize, obj)
     kafkaClient.sendRawMessage(topicToSend.getOrElse(topicToSerialize), null, serializedObj, None, timestamp, headers).futureValue
-  }
-
-  def pushMessage(kafkaSerializer: serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], obj: AnyRef, topic: String): RecordMetadata = {
-    val record = kafkaSerializer.serialize(StringKeyedValue(null, obj), Predef.Long2long(null))
-    kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
   }
 
   def pushMessageWithKey(key: Any, value: Any, topicToSerialize: String, topicToSend: Option[String] = None, timestamp: java.lang.Long = null, useStringForKey: Boolean = false): RecordMetadata = {
@@ -113,6 +110,12 @@ trait KafkaWithSchemaRegistryOperations extends Matchers with PatientScalaFuture
   protected def registerSchema(name: String, schema: Schema, isKey: Boolean): Int = {
     val subject = ConfluentUtils.topicSubject(name, isKey)
     val parsedSchema = ConfluentUtils.convertToAvroSchema(schema)
+    schemaRegistryClient.register(subject, parsedSchema)
+  }
+
+  protected def registerJsonSchema(name: String, schema: String, isKey: Boolean): Int = {
+    val subject = ConfluentUtils.topicSubject(name, isKey)
+    val parsedSchema = new JsonSchema(schema)
     schemaRegistryClient.register(subject, parsedSchema)
   }
 

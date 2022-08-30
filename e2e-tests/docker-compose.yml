@@ -9,7 +9,7 @@ services:
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
-      CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "true"
+      CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "false"
     expose:
       - 8080
     ports:
@@ -51,4 +51,3 @@ services:
 networks:
   default:
     name: nussknacker_e2e_network
-

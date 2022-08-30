@@ -19,7 +19,7 @@ If you want to read events from output topics in transactional manner your kafka
 
 ### Runtime container
 Nussknacker scenario is deployed as k8s [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/). 
-By default, it creates [nussknacker-lite-kafka-runtime](https://hub.docker.com/r/touk/nussknacker-lite-kafka-runtime) runtime container with scenario json representation passed as config map.
+By default, it creates [nussknacker-lite-runtime-app](https://hub.docker.com/r/touk/nussknacker-lite-runtime-app) runtime container with scenario json representation passed as config map.
 Runtime container executes infinite loop responsible for polling events from kafka topic.
 
 ### Startup probes

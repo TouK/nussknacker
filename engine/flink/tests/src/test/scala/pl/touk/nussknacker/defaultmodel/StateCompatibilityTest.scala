@@ -2,6 +2,7 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
+import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
@@ -62,18 +63,49 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     }
   }
 
-  private def stateCompatibilityProcess(inTopic: String) = ScenarioBuilder
+  private def stateCompatibilityProcess(inTopic: String, outTopic: String) = ScenarioBuilder
     .streaming("stateCompatibilityTest")
     .parallelism(1)
-    .source("start", "kafka-avro",
+    .source("start", "kafka",
       KafkaUniversalComponentTransformer.TopicParamName -> s"'$inTopic'",
       KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionParam(ExistingSchemaVersion(1))
     )
     .customNode("previousValue", "previousValue", "previousValue", "groupBy" -> "'constant'", "value" -> "#input")
-    .emptySink("sink", "kafka-json", "topic" -> s"'$outTopic'", "value" -> s"{input: #input, previousInput: #previousValue}")
+    .emptySink("sink", "kafka",
+      KafkaUniversalComponentTransformer.TopicParamName -> s"'$outTopic'",
+      KafkaUniversalComponentTransformer.SchemaVersionParamName -> "'latest'",
+      KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
+      KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
+      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> "'strict'",
+      KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }")
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")
   private val event2 = InputEvent("Zenon", "Nowak")
+
+  private val JsonSchemaV1 = new JsonSchema(
+    """|{
+       |  "type": "object",
+       |  "properties": {
+       |    "input" :  {
+       |      "type": "object",
+       |      "properties": {
+       |        "first" : { "type": "string" },
+       |        "last" : { "type": "string" }
+       |      },
+       |      "required": ["first", "last"]
+       |    },
+       |    "previousInput" :  {
+       |      "type": "object",
+       |      "properties": {
+       |        "first" : { "type": "string" },
+       |        "last" : { "type": "string" }
+       |      },
+       |      "required": ["first", "last"]
+       |    }
+       |  },
+       |  "required": ["input"]
+       |}
+       |""".stripMargin)
 
   /**
     * When previous snapshot compatibility breaks - (read 'should restore from snapshot' fails):
@@ -82,13 +114,14 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     * 3. go back to ignore :)
     */
   ignore("should create savepoint and save to disk") {
-    val topicConfig = createAndRegisterTopicConfig(inTopic, RecordSchemaV1)
+    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
+    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
     val clusterClient = flinkMiniCluster.asInstanceOf[FlinkMiniClusterHolderImpl].getClusterClient
-    sendAvro(givenMatchingAvroObj, topicConfig.input)
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
 
-    run(stateCompatibilityProcess(topicConfig.input), { jobExecutionResult =>
-      verifyOutputEvent(input = event1, previousInput = event1)
+    run(stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output), { jobExecutionResult =>
+      verifyOutputEvent(outputTopicConfig.output, input = event1, previousInput = event1)
 
       val savepointLocation = eventually {
         clusterClient.triggerSavepoint(jobExecutionResult.getJobID, savepointDir.toString).get()
@@ -99,27 +132,28 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   }
 
   test("should restore from snapshot") {
-    val topicConfig = createAndRegisterTopicConfig(inTopic, RecordSchemaV1)
+    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
+    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
     val env = flinkMiniCluster.createExecutionEnvironment()
-    val process1 = stateCompatibilityProcess(topicConfig.input)
+    val process1 = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
     registrar.register(new StreamExecutionEnvironment(env), process1, ProcessVersion.empty, DeploymentData.empty)
     val streamGraph = env.getStreamGraph
     val allowNonRestoredState = false
     streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState))
     // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(givenMatchingAvroObj, topicConfig.input)
+    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
 
     val jobExecutionResult = env.execute(streamGraph)
     env.waitForStart(jobExecutionResult.getJobID, process1.id)()
-    sendAvro(givenNotMatchingAvroObj, topicConfig.input)
+    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
 
-    verifyOutputEvent(input = event2, previousInput = event1)
+    verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
     env.stopJob(process1.id, jobExecutionResult)
   }
 
-  private def verifyOutputEvent(input: InputEvent, previousInput: InputEvent): Unit = {
+  private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
     val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
     val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).right.get
     outputEvent.input shouldBe input

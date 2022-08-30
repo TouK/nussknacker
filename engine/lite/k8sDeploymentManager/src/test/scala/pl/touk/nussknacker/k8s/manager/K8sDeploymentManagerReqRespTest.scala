@@ -28,7 +28,6 @@ import scala.language.reflectiveCalls
 @Network
 class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with OptionValues with EitherValuesDetailedMessage with LazyLogging {
 
-  private lazy val k8sTestUtils = new K8sTestUtils(k8s)
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
   test("deployment of req-resp ping-pong") {

@@ -17,7 +17,7 @@
     {
       "id" : "ping",
       "ref" : {
-        "typ" : "kafka-registry-typed-json",
+        "typ" : "kafka",
         "parameters" : [
           {
             "name" : "Topic",
@@ -47,7 +47,7 @@
     {
       "id" : "pong",
       "ref" : {
-        "typ" : "kafka-registry-typed-json-raw",
+        "typ" : "kafka",
         "parameters" : [
           {
             "name" : "Topic",
@@ -61,6 +61,13 @@
             "expression" : {
               "language" : "spel",
               "expression" : "'latest'"
+            }
+          },
+          {
+            "name" : "Raw editor",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "true"
             }
           },
           {

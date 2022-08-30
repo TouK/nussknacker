@@ -32,7 +32,7 @@ object ParametersExtractor {
           prepareParameter(propertyName, swaggerType, isBodyPart = true)
         }.toList
       case swaggerType =>
-        prepareParameter(bodyParameter.name, swaggerType, isBodyPart = false) :: Nil
+        prepareParameter(bodyParameter.name, swaggerType, isBodyPart = true) :: Nil
     }
   }
 
