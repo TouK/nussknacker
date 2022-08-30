@@ -22,6 +22,7 @@
 * [#3505](https://github.com/TouK/nussknacker/pull/3505) Bump node version to 16.5.1
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Fix date formatting to use client timezone
 * [#3545](https://github.com/TouK/nussknacker/pull/3545) Testkit refactor: unification of flinkBased TestScenarioRunner and kafkaLiteBased, easier usage of kafkaLiteBased
+* [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment outputs
 
 1.5.0 (16 Aug 2022)
 ------------------------
