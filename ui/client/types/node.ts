@@ -41,7 +41,7 @@ export type NodeType<F extends Field = Field> = {
   },
   typeSpecificProperties?: {
     type: $TodoType,
-    path?: string
+    slug?: string
   },
   nodeType: string,
   [key: string]: any,

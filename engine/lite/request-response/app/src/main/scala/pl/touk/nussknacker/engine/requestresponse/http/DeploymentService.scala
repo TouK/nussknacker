@@ -67,8 +67,8 @@ class DeploymentService(context: LiteEngineRuntimeContextPreparer, modelData: Mo
 
     ProcessCanonizer.uncanonize(deploymentData.processJson).leftMap(_.map(fromUncanonizationError).map(DeploymentError(_))).andThen { process =>
       process.metaData.typeSpecificData match {
-        case RequestResponseMetaData(path) =>
-          val pathToDeploy = path.getOrElse(processName.value)
+        case RequestResponseMetaData(slug) =>
+          val pathToDeploy = slug.getOrElse(processName.value)
           val currentAtPath = pathToHolder.get(pathToDeploy).map(_.id)
           currentAtPath match {
             case Some(oldId) if oldId != processName =>
