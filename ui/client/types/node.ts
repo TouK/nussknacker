@@ -1,3 +1,5 @@
+import {ReturnedType} from "./process"
+
 type Type = "Properties" | "SubprocessInput" | string
 
 export type LayoutData = { x: number, y: number }
@@ -41,7 +43,7 @@ export type NodeType<F extends Field = Field> = {
   },
   typeSpecificProperties?: {
     type: $TodoType,
-    slug?: string
+    slug?: string,
   },
   nodeType: string,
   [key: string]: any,
@@ -57,7 +59,7 @@ export type Field = {
 export interface Parameter {
   name: string,
   expression: Expression,
-  typ?: unknown,
+  typ?: ReturnedType,
 }
 
 export interface Expression {

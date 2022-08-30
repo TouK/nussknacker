@@ -93,7 +93,7 @@ export function EdgesDndComponent(props: Props): JSX.Element {
   }, [availableTypes, nodeId])
 
   useEffect(() => {
-    onChange?.(edges)
+    onChange?.(edges?.map(e => ({...e, to: e._id || e.to})))
   }, [edges, onChange])
 
   const edgeItems = useMemo(() => {

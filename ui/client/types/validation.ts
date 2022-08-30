@@ -1,4 +1,4 @@
-import {TypingResult, UIParameter} from "./definition"
+import {TypingInfo, TypingResult, UIParameter} from "./definition"
 import {Error} from "../components/graph/node-modal/editors/Validators"
 
 export type ValidationResult = {
@@ -14,7 +14,7 @@ export type NodeResults = Record<string, NodeTypingData>
 export type NodeTypingData = {
   variableTypes: VariableTypes,
   parameters?: UIParameter[],
-  typingInfo: Record<string, TypingResult>,
+  typingInfo: TypingInfo,
 }
 
 export type VariableTypes = Record<string, TypingResult>

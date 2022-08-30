@@ -13,17 +13,15 @@ type Props = {
 }
 
 const StringEditor: SimpleEditor<Props> = (props: Props) => {
-
-  const {expressionObj, onValueChange, className, formatter} = props
+  const {expressionObj, onValueChange, formatter, ...passProps} = props
   const stringFormatter = formatter == null ? typeFormatters[FormatterType.String] : formatter
 
   return (
     <Input
-      {...props}
+      {...passProps}
       onChange={(event) => onValueChange(stringFormatter.encode(event.target.value))}
       value={stringFormatter.decode(expressionObj.expression)}
       formattedValue={expressionObj.expression}
-      className={className}
     />
   )
 }

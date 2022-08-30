@@ -11,8 +11,10 @@ interface TypedClass {
   params: Array<TypingResult>,
 }
 
+export type TypingInfo = Record<string, TypingResult>
+
 export interface TypedObjectTypingResult extends TypingResultBase, TypedClass {
-  fields: Record<string, TypingResult>,
+  fields: TypingInfo,
 }
 
 interface TypedDict extends TypingResultBase {
@@ -43,7 +45,7 @@ export interface UIParameter {
   editor: $TodoType,
   validators: $TodoType,
   defaultValue: string,
-  additionalVariables: Record<string, TypingResult>,
+  additionalVariables: TypingInfo,
   variablesToHide: Array<string>,
   branchParam: boolean,
 }

@@ -1,12 +1,13 @@
 // provide parents css classes to dragged clone - temporary.
-import React from "react"
+import React, {PropsWithChildren} from "react"
+import {NodeTable} from "../NodeDetailsContent/NodeTable"
 
-export function FakeFormWindow({children}): JSX.Element {
+export function FakeFormWindow({children}: PropsWithChildren<unknown>): JSX.Element {
   return (
     <div className="modalContentDark">
-      <div className="node-table fieldsControl">
+      <NodeTable className="fieldsControl">
         {children}
-      </div>
+      </NodeTable>
     </div>
   )
 }

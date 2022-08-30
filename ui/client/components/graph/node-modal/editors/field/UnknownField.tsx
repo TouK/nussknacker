@@ -1,11 +1,9 @@
 import React from "react"
 
-export const UnknownField = () => {
+export default function UnknownField(): JSX.Element {
   return (
     <div>
       Field type not known...
     </div>
   )
 }
-
-export default UnknownField

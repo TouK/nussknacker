@@ -1,8 +1,8 @@
-import {includes} from "lodash"
 import React, {useCallback} from "react"
 import {Edge, EdgeKind, EdgeType} from "../../../../types"
 import BaseModalContent from "../BaseModalContent"
 import EditableEditor from "../editors/EditableEditor"
+import {useDiffMark} from "../PathsToMark"
 
 interface Props {
   edge: Edge,
@@ -13,7 +13,6 @@ interface Props {
   showSwitch?: boolean,
   variableTypes,
   edgeErrors?,
-  pathsToMark?,
 }
 
 export default function EdgeDetailsContent(props: Props): JSX.Element | null {
@@ -26,10 +25,9 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
     showSwitch,
     changeEdgeTypeValue,
     variableTypes,
-    pathsToMark,
   } = props
 
-  const isMarked = useCallback((path) => includes(pathsToMark, path), [pathsToMark])
+  const [isMarked] = useDiffMark()
   const renderFieldLabel = useCallback((label) => <div className="node-label">{label}</div>, [])
 
   switch (edge.edgeType?.type) {

@@ -2,16 +2,13 @@ import React, {useEffect, useState} from "react"
 import {useSelector} from "react-redux"
 import HttpService from "../../../../http/HttpService"
 import {getProcessCounts, getProcessToDisplay} from "../../../../reducers/selectors/graph"
-import {NodeId, SubprocessNodeType} from "../../../../types"
+import {SubprocessNodeType} from "../../../../types"
 import ErrorBoundary from "../../../common/ErrorBoundary"
 import {ProcessType} from "../../../Process/types"
 import NodeUtils from "../../NodeUtils"
 import {SubProcessGraph as BareGraph} from "../../SubProcessGraph"
 
-export function SubprocessContent({
-  nodeToDisplay,
-  currentNodeId,
-}: { nodeToDisplay: SubprocessNodeType, currentNodeId: NodeId }): JSX.Element {
+export function SubprocessContent({nodeToDisplay}: { nodeToDisplay: SubprocessNodeType }): JSX.Element {
   const {properties: {subprocessVersions}} = useSelector(getProcessToDisplay)
   const processCounts = useSelector(getProcessCounts)
 
@@ -30,7 +27,7 @@ export function SubprocessContent({
     [nodeToDisplay, subprocessVersions],
   )
 
-  const subprocessCounts = (processCounts[currentNodeId] || {}).subprocessCounts || {}
+  const subprocessCounts = (processCounts[nodeToDisplay.id] || {}).subprocessCounts || {}
 
   return (
     <ErrorBoundary>

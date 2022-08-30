@@ -7,6 +7,7 @@ import {Validator} from "./graph/node-modal/editors/Validators"
 import ValidationLabels from "./modals/ValidationLabels"
 import {InputWithFocus, SelectWithFocus} from "./withFocus"
 import "../stylesheets/graph.styl"
+import {NodeTable, NodeTableBody} from "./graph/node-modal/NodeDetailsContent/NodeTable"
 
 type FormValue = { processId: string, processCategory: string }
 
@@ -36,8 +37,8 @@ export function AddProcessForm({nameValidators, value, onChange}: AddProcessForm
         paddingBottom: 20,
       }))}
     >
-      <div className={cx("node-table")}>
-        <div className="node-table-body">
+      <NodeTable>
+        <NodeTableBody>
           <div className="node-row">
             <div className="node-label">Name</div>
             <div className="node-value">
@@ -67,8 +68,8 @@ export function AddProcessForm({nameValidators, value, onChange}: AddProcessForm
               </SelectWithFocus>
             </div>
           </div>
-        </div>
-      </div>
+        </NodeTableBody>
+      </NodeTable>
     </div>
   )
 }

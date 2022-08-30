@@ -1,30 +1,18 @@
 import React from "react"
 import {NodeValue} from "../../subprocess-input-definition/NodeValue"
-import Input from "../field/Input"
-import {Validator} from "../Validators"
+import Input, {InputProps} from "../field/Input"
 
-interface MapKeyProps {
-  value: string,
+interface MapKeyProps extends Omit<InputProps, "onChange"> {
   onChange?: (value: string) => void,
-  isMarked?: boolean,
-  readOnly?: boolean,
-  showValidation?: boolean,
-  autofocus?: boolean,
-  validators?: Validator[],
 }
 
 export default function MapKey(props: MapKeyProps): JSX.Element {
-  const {value, autofocus, isMarked, showValidation, validators, readOnly, onChange} = props
+  const {onChange, ...passProps} = props
   return (
     <NodeValue className="fieldName">
       <Input
-        isMarked={isMarked}
-        readOnly={readOnly}
-        value={value}
+        {...passProps}
         placeholder="Field name"
-        autofocus={autofocus}
-        showValidation={showValidation}
-        validators={validators}
         onChange={(e) => onChange(e.target.value)}
       />
     </NodeValue>
