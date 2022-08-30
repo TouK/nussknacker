@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.Expressi
 import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichment
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -35,10 +36,19 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
                    branchParametersFromNode: List[evaluatedparam.BranchParameters],
                    outputVariable: Option[String],
                    componentConfig: SingleComponentConfig)(inputContext: transformer.InputContext)
-                  (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResult] = {
+                  (implicit nodeId: NodeId, metaData: MetaData): ValidatedNel[ProcessCompilationError, TransformationResultForImplementationInvocation] = {
     NodeValidationExceptionHandler.handleExceptionsInValidation {
-      val validation = new NodeInstanceValidation(transformer, parametersFromNode, branchParametersFromNode, outputVariable, componentConfig)(inputContext)
-      validation.evaluatePart(Nil, None, Nil)
+      def evaluatePart(inputParams: List[evaluatedparam.Parameter]) = {
+        val validation = new NodeInstanceValidation(transformer, inputParams, branchParametersFromNode, outputVariable, componentConfig)(inputContext)
+        validation.evaluatePart(Nil, None, Nil)
+      }
+      evaluatePart(parametersFromNode) andThen {
+        case TransformationResult(errors, parametersFromDynamicDefinition, _, _) if errors.exists(_.isInstanceOf[MissingParameters]) =>
+          val enrichedParameters = InitialParametersGenericNodeEnricher.enrichWithInitialParameters(parametersFromNode, parametersFromDynamicDefinition)
+          evaluatePart(enrichedParameters).map(TransformationResultForImplementationInvocation(_, enrichedParameters))
+        case other =>
+          Valid(TransformationResultForImplementationInvocation(other, parametersFromNode))
+      }
     }
   }
 
@@ -140,3 +150,5 @@ case class TransformationResult(errors: List[ProcessCompilationError],
                                 parameters: List[Parameter],
                                 outputContext: ValidationContext,
                                 finalState: Option[Any])
+
+case class TransformationResultForImplementationInvocation(transformationResult: TransformationResult, nodeParameters: List[evaluatedparam.Parameter])
