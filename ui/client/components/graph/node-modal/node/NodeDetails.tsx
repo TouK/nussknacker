@@ -127,8 +127,9 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     }))
   }, [dispatch, editedNode, outputEdges, processId])
 
+  //avoid flickering with wrong errors
   const hasValidationResult = useSelector(getHasValidationResult)
-  return hasValidationResult(editedNode?.id) ?
+  return hasValidationResult(editedNode?.id) || NodeUtils.nodeType(originalNode) === "Properties" ?
     (
       <WindowContent
         {...props}
