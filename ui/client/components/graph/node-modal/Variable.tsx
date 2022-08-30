@@ -1,6 +1,5 @@
-import React from "react"
-import {DEFAULT_EXPRESSION_ID} from "../../../common/graph/constants"
-import {errorValidator, mandatoryValueValidator, Validator, Error} from "./editors/Validators"
+import React, {useCallback} from "react"
+import {Error, errorValidator, mandatoryValueValidator} from "./editors/Validators"
 import EditableEditor from "./editors/EditableEditor"
 import LabeledInput from "./editors/field/LabeledInput"
 import LabeledTextarea from "./editors/field/LabeledTextarea"
@@ -22,6 +21,8 @@ type Props = {
 const Variable = (props: Props) => {
 
   const {node, onChange, isMarked, readOnly, showValidation, errors, variableTypes, renderFieldLabel, inferredVariableType} = props
+
+  const onExpressionChange = useCallback((value: string) => onChange("value.expression", value), [onChange])
 
   return (
     <div className="node-table-body node-variable-builder-body">
@@ -48,7 +49,7 @@ const Variable = (props: Props) => {
         fieldLabel={"Expression"}
         renderFieldLabel={renderFieldLabel}
         expressionObj={node.value}
-        onValueChange={((value: string) => onChange("value.expression", value))}
+        onValueChange={onExpressionChange}
         readOnly={readOnly}
         showValidation={showValidation}
         showSwitch={false}
@@ -71,7 +72,5 @@ const Variable = (props: Props) => {
 Variable.defaultProps = {
   readOnly: false,
 }
-
-Variable.availableFields = ["id", "varName", DEFAULT_EXPRESSION_ID]
 
 export default Variable

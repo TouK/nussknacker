@@ -1,33 +1,50 @@
 package pl.touk.nussknacker.engine.spel.typer
 
-import pl.touk.nussknacker.engine.TypeDefinitionSet
+import cats.data.NonEmptyList
+import cats.data.Validated.{Invalid, Valid}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.definition.TypeInfos.{ClazzDefinition, MethodInfo}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, OverloadedFunctionError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.IllegalInvocationError
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.UnknownMethodError
 import pl.touk.nussknacker.engine.types.EspTypeUtils
 
 object TypeMethodReference {
-  def apply(methodName: String, invocationTarget: TypingResult, params: List[TypingResult], isStatic: Boolean, methodExecutionForUnknownAllowed: Boolean)(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+  def apply(methodName: String,
+            invocationTarget: TypingResult,
+            params: List[TypingResult],
+            isStatic: Boolean,
+            methodExecutionForUnknownAllowed: Boolean)
+           (implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
     new TypeMethodReference(methodName, invocationTarget, params, isStatic, methodExecutionForUnknownAllowed).call
 }
 
-class TypeMethodReference(methodName: String, invocationTarget: TypingResult, calledParams: List[TypingResult], isStatic: Boolean, methodExecutionForUnknownAllowed: Boolean) {
-  def call(implicit settings: ClassExtractionSettings): Either[String, TypingResult] =
+class TypeMethodReference(methodName: String,
+                          invocationTarget: TypingResult,
+                          calledParams: List[TypingResult],
+                          isStatic: Boolean,
+                          methodExecutionForUnknownAllowed: Boolean) {
+  def call(implicit settings: ClassExtractionSettings): Either[ExpressionParseError, TypingResult] =
     invocationTarget match {
       case tc: SingleTypingResult =>
         typeFromClazzDefinitions(extractClazzDefinitions(Set(tc)))
       case TypedUnion(nestedTypes) =>
         typeFromClazzDefinitions(extractClazzDefinitions(nestedTypes))
+      case TypedNull =>
+        Left(IllegalInvocationError(TypedNull))
       case Unknown =>
-        if(methodExecutionForUnknownAllowed) Right(Unknown) else Left("Method invocation on Unknown is not allowed")
+        if(methodExecutionForUnknownAllowed) Right(Unknown) else Left(IllegalInvocationError(Unknown))
     }
 
-  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])(implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
+  private def extractClazzDefinitions(typedClasses: Set[SingleTypingResult])
+                                     (implicit settings: ClassExtractionSettings): List[ClazzDefinition] =
     typedClasses.map(typedClass =>
       EspTypeUtils.clazzDefinition(typedClass.objType.klass)
     ).toList
 
-  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[String, TypingResult] = {
+  private def typeFromClazzDefinitions(clazzDefinitions: List[ClazzDefinition]): Either[ExpressionParseError, TypingResult] = {
     val validatedType = for {
       nonEmptyClassDefinitions <- validateClassDefinitionsNonEmpty(clazzDefinitions).right
       nonEmptyMethods <- validateMethodsNonEmpty(nonEmptyClassDefinitions).right
@@ -41,10 +58,10 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
     }
   }
 
-  private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[ClazzDefinition]] =
+  private def validateClassDefinitionsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[ClazzDefinition]] =
     if (clazzDefinitions.isEmpty) Left(None) else Right(clazzDefinitions)
 
-  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[String], List[MethodInfo]] = {
+  private def validateMethodsNonEmpty(clazzDefinitions: List[ClazzDefinition]): Either[Option[ExpressionParseError], List[MethodInfo]] = {
     def displayableType = clazzDefinitions.map(k => k.clazzName).map(_.display).mkString(", ")
     def isClass = clazzDefinitions.map(k => k.clazzName).exists(_.canBeSubclassOf(Typed[Class[_]]))
 
@@ -54,41 +71,45 @@ class TypeMethodReference(methodName: String, invocationTarget: TypingResult, ca
     clazzMethods match {
       //Static method can be invoked - we cannot find them ATM
       case Nil if isClass => Left(None)
-      case Nil => Left(Some(s"Unknown method '$methodName' in $displayableType"))
-      case methodInfoes => Right(methodInfoes)
+      case Nil => Left(Some(UnknownMethodError(methodName, displayableType)))
+      case methodInfos => Right(methodInfos)
     }
   }
 
-  private def validateMethodParameterTypes(methodInfoes: List[MethodInfo]): Either[Option[String], List[TypingResult]] = {
-    val returnTypesForMatchingMethods = methodInfoes.flatMap { m =>
-      lazy val allMatching = m.parameters.map(_.refClazz).zip(calledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      if (m.parameters.size == calledParams.size && allMatching) Some(m.refClazz) else checkForVarArgs(m)
-    }
-    returnTypesForMatchingMethods match {
-      case Nil =>
-        def toSignature(params: List[TypingResult]) = params.map(_.display).mkString(s"$methodName(", ", ", ")")
-        val methodVariances = methodInfoes.map(_.parameters.map(_.refClazz))
-        Left(Some(s"Mismatch parameter types. Found: ${toSignature(calledParams)}. Required: ${methodVariances.map(toSignature).mkString(" or ")}"))
-      case nonEmpty =>
-        Right(nonEmpty)
-    }
-  }
-
-  private def checkForVarArgs(method: MethodInfo): Option[TypingResult] = {
-    val nonVarArgSize = method.parameters.size - 1
-    if (method.varArgs && calledParams.size >= nonVarArgSize) {
-      val nonVarArgParams = method.parameters.take(nonVarArgSize)
-      val nonVarArgCalledParams = calledParams.take(nonVarArgSize)
-      val nonVarArgMatching = nonVarArgParams.map(_.refClazz).zip(nonVarArgCalledParams).forall {
-        case (declaredType, passedType) => passedType.canBeSubclassOf(declaredType)
-      }
-      //TODO: we do not check var arg parameter types
-      if (nonVarArgMatching) Some(method.refClazz) else None
-    } else {
-      None
+  private def validateMethodParameterTypes(methodInfos: List[MethodInfo]): Either[Option[ExpressionParseError], List[TypingResult]] = {
+    // We combine MethodInfo with errors so we can use it to decide which
+    // error to display.
+    val infosWithValidationResults = methodInfos.map(x => (x, x.computeResultType(calledParams)))
+    val returnTypes = infosWithValidationResults.map{case (info, typ) => typ.leftMap(_.map((info, _)))}
+    val combinedReturnTypes = returnTypes.map(x => x.map(List(_))).reduce((x, y) => (x, y) match {
+      case (Valid(xs), Valid(ys)) => Valid(xs ::: ys)
+      case (Valid(xs), Invalid(_)) => Valid(xs)
+      case (Invalid(_), Valid(ys)) => Valid(ys)
+      case (Invalid(xs), Invalid(ys)) => Invalid(xs ::: ys)
+    })
+    combinedReturnTypes match {
+      case Valid(Nil) => Left(None)
+      case Valid(xs) => Right(xs)
+      case Invalid(xs) => Left(Some(combineErrors(xs)))
     }
   }
 
+  private def combineArgumentTypeErrors(left: ArgumentTypeError, right: ArgumentTypeError): ArgumentTypeError = {
+    if (left.name != right.name || left.found != right.found)
+      throw new IllegalArgumentException("Cannot combine ArgumentTypeErrors where found signatures differ.")
+    ArgumentTypeError(left.name, left.found, left.possibleSignatures ::: right.possibleSignatures)
+  }
+
+  // We try to combine ArgumentTypeErrors into one error. If we fail
+  // then we return GenericFunctionError. All regular functions return
+  // only ArgumentTypeError, so we will lose information about errors
+  // only when there is more than one generic function.
+  private def combineErrors(errors: NonEmptyList[(MethodInfo, ExpressionParseError)]): ExpressionParseError = errors match {
+    case xs if xs.forall(_._2.isInstanceOf[ArgumentTypeError]) =>
+      xs.map(_._2.asInstanceOf[ArgumentTypeError]).toList.reduce(combineArgumentTypeErrors)
+    case NonEmptyList(head, Nil) =>
+      head._2
+    case _ =>
+      OverloadedFunctionError
+  }
 }

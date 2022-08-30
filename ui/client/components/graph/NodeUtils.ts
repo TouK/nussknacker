@@ -4,6 +4,7 @@ import * as ProcessDefinitionUtils from "../../common/ProcessDefinitionUtils"
 import ProcessUtils from "../../common/ProcessUtils"
 import {
   Edge,
+  EdgeKind,
   EdgeType,
   NodeId,
   NodeType,
@@ -91,7 +92,7 @@ class NodeUtils {
     }
   }
 
-  edgesForNode = (node: NodeType, processDefinitionData, forInput?) => {
+  edgesForNode = (node: NodeType, processDefinitionData: ProcessDefinitionData, forInput?: boolean) => {
     const nodeObjectTypeDefinition = ProcessUtils.findNodeDefinitionId(node)
     //TODO: when we add more configuration for joins, probably more complex logic will be needed
     const data = processDefinitionData.edgesForNodes
@@ -103,43 +104,62 @@ class NodeUtils {
 
   edgeLabel = (edge: Edge) => {
     const edgeType = edge?.edgeType
-
-    //TODO: should this map be here??
-    const edgeTypeToLabel = {
-      FilterFalse: "false",
-      FilterTrue: "true",
-      SwitchDefault: "default",
-      SubprocessOutput: edgeType?.name,
-      NextSwitch: edgeType?.condition?.expression,
+    const type = edgeType?.type
+    switch (type) {
+      case EdgeKind.subprocessOutput:
+        return edgeType?.name
+      case EdgeKind.switchNext:
+        return edgeType?.condition?.expression
     }
-    return edgeTypeToLabel[edgeType?.type] || ""
+    return this.edgeTypeLabel(type)
+  }
+
+  //TODO: i18next
+  edgeTypeLabel = (type: string) => {
+    switch (type) {
+      case EdgeKind.filterFalse:
+        return "🔴 false"
+      case EdgeKind.filterTrue:
+        return "🟢 true"
+      case EdgeKind.switchDefault:
+        return "default (deprecated)"
+      case EdgeKind.switchNext:
+        return "condition"
+      default:
+        return ""
+    }
   }
 
   //we don't allow multi outputs other than split, filter, switch and no multiple inputs
   //TODO remove type (Source, Sink) comparisons
-  canMakeLink = (fromId: string, toId: string, process: Process, processDefinitionData: ProcessDefinitionData, previousEdge?: Edge) => {
+  canMakeLink = (fromId: NodeId, toId: NodeId, process: Process, processDefinitionData: ProcessDefinitionData, previousEdge?: Edge): boolean => {
     const nodeInputs = this._nodeInputs(toId, process)
     //we do not want to include currently edited edge
     const nodeOutputs = this._nodeOutputs(fromId, process)
-      .filter(e=> e.from !== previousEdge?.from && e.to !== previousEdge?.to)
+      .filter(e => e.from !== previousEdge?.from && e.to !== previousEdge?.to)
 
     const to = this.getNodeById(toId, process)
     const from = this.getNodeById(fromId, process)
-    return fromId !== toId &&
-      this._canHaveMoreInputs(to, nodeInputs, processDefinitionData) &&
-      this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+    if (fromId !== toId) {
+      const canHaveMoreInputs = this.canHaveMoreInputs(to, nodeInputs, processDefinitionData)
+      const canHaveMoreOutputs = this._canHaveMoreOutputs(from, nodeOutputs, processDefinitionData)
+      const isUniqe = !nodeInputs.find(e => e.from === fromId)
+      return canHaveMoreInputs && canHaveMoreOutputs && isUniqe
+    }
+
+    return false
   }
 
-  _canHaveMoreInputs = (nodeTo, nodeInputs, processDefinitionData) => {
-    const edgesForNode = this.edgesForNode(nodeTo, processDefinitionData, true)
+  canHaveMoreInputs = (node: NodeType, nodeInputs: Edge[], processDefinitionData: ProcessDefinitionData): boolean => {
+    const edgesForNode = this.edgesForNode(node, processDefinitionData, true)
     const maxEdgesForNode = edgesForNode.edges.length
-    return this.hasInputs(nodeTo) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
+    return this.hasInputs(node) && (edgesForNode.canChooseNodes || nodeInputs.length < maxEdgesForNode)
   }
 
-  _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData) => {
+  _canHaveMoreOutputs = (node, nodeOutputs, processDefinitionData): boolean => {
     const edgesForNode = this.edgesForNode(node, processDefinitionData, false)
     const maxEdgesForNode = edgesForNode.edges.length
-    return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.length < maxEdgesForNode)
+    return this.hasOutputs(node) && (edgesForNode.canChooseNodes || nodeOutputs.filter(e => e.to).length < maxEdgesForNode)
   }
 
   _nodeInputs = (nodeId: NodeId, process: Process) => {

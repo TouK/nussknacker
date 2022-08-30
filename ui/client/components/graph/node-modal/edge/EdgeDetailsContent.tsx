@@ -1,6 +1,6 @@
 import {includes} from "lodash"
 import React, {useCallback} from "react"
-import {Edge, EdgeType} from "../../../../types"
+import {Edge, EdgeKind, EdgeType} from "../../../../types"
 import BaseModalContent from "../BaseModalContent"
 import EditableEditor from "../editors/EditableEditor"
 
@@ -17,13 +17,23 @@ interface Props {
 }
 
 export default function EdgeDetailsContent(props: Props): JSX.Element | null {
-  const {edge, edgeErrors, readOnly, changeEdgeTypeCondition, showValidation, showSwitch, changeEdgeTypeValue, variableTypes, pathsToMark} = props
+  const {
+    edge,
+    edgeErrors,
+    readOnly,
+    changeEdgeTypeCondition,
+    showValidation,
+    showSwitch,
+    changeEdgeTypeValue,
+    variableTypes,
+    pathsToMark,
+  } = props
 
   const isMarked = useCallback((path) => includes(pathsToMark, path), [pathsToMark])
   const renderFieldLabel = useCallback((label) => <div className="node-label">{label}</div>, [])
 
   switch (edge.edgeType?.type) {
-    case "SwitchDefault": {
+    case EdgeKind.switchDefault: {
       return (
         <BaseModalContent
           edge={edge}
@@ -34,7 +44,7 @@ export default function EdgeDetailsContent(props: Props): JSX.Element | null {
         />
       )
     }
-    case "NextSwitch": {
+    case EdgeKind.switchNext: {
       const expressionObj = {
         expression: edge.edgeType.condition.expression,
         language: edge.edgeType.condition.language,

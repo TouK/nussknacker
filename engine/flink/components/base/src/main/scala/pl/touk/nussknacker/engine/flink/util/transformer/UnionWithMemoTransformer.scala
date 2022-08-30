@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -69,7 +69,19 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
   def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])
                                  (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
-    ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
+    val ids = valueByBranchId.keySet
+
+    val validatedIdentical = NonEmptyList
+      .fromList(ContextTransformation.checkIdenticalSanitizedNodeNames(ids.toList))
+      .map(Validated.invalid)
+      .getOrElse(Validated.validNel(Unit))
+
+    val validatedBranches = NonEmptyList
+      .fromList(ContextTransformation.checkNotAllowedNodeNames(ids.toList, Set(KeyField)))
+      .map(Validated.invalid)
+      .getOrElse(Validated.validNel(Unit))
+
+    val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(
         (KeyField -> Typed[String]) :: inputContexts.map {
           case (branchId, _) =>
@@ -78,6 +90,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       )
       ValidationContext(Map(variableName -> newType), Map.empty, parent)
     }
+    validatedIdentical.product(validatedBranches).product(validatedContext).map(_._2)
   }
 }
 

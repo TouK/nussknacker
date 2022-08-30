@@ -1,14 +1,18 @@
 package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.apache.commons.io.FileUtils
-import org.scalatest._
+import org.scalatest.{Assertion, BeforeAndAfterEach}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.withAllPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
@@ -16,11 +20,15 @@ import java.time.LocalDateTime
 import java.time.chrono.ChronoLocalDateTime
 import scala.language.higherKinds
 
-class ProcessActivityResourceSpec extends FlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
+class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
+
+  private val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
+  private val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)
+  private val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
   it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess

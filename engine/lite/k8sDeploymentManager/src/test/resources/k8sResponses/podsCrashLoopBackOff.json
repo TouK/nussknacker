@@ -34,7 +34,7 @@
         "containers": [
           {
             "name": "runtime",
-            "image": "touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "image": "touk/nussknacker-lite-runtime-app:1.3.0-SNAPSHOT",
             "env": [
               {
                 "name": "SCENARIO_FILE",
@@ -72,7 +72,7 @@
             ],
             "livenessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/alive",
                 "scheme": "HTTP"
               },
@@ -83,7 +83,7 @@
             },
             "readinessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/ready",
                 "scheme": "HTTP"
               },
@@ -203,7 +203,7 @@
             "name": "runtime",
             "ready": false,
             "restartCount": 5,
-            "image": "docker.io/touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "image": "docker.io/touk/nussknacker-lite-runtime-app:1.3.0-SNAPSHOT",
             "imageID": "sha256:76ee8c606134056b6e67f6f02641d2631c0c4602010fd5a9109f5485c070f5c8",
             "state": {
               "waiting": {
@@ -254,7 +254,7 @@
         "containers": [
           {
             "name": "runtime",
-            "image": "touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "image": "touk/nussknacker-lite-runtime-app:1.3.0-SNAPSHOT",
             "env": [
               {
                 "name": "SCENARIO_FILE",
@@ -292,7 +292,7 @@
             ],
             "livenessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/alive",
                 "scheme": "HTTP"
               },
@@ -303,7 +303,7 @@
             },
             "readinessProbe": {
               "httpGet": {
-                "port": 8558,
+                "port": 8080,
                 "path": "/ready",
                 "scheme": "HTTP"
               },
@@ -423,7 +423,7 @@
             "name": "runtime",
             "ready": false,
             "restartCount": 5,
-            "image": "docker.io/touk/nussknacker-lite-kafka-runtime:1.3.0-SNAPSHOT",
+            "image": "docker.io/touk/nussknacker-lite-runtime-app:1.3.0-SNAPSHOT",
             "imageID": "sha256:76ee8c606134056b6e67f6f02641d2631c0c4602010fd5a9109f5485c070f5c8",
             "state": {
               "waiting": {

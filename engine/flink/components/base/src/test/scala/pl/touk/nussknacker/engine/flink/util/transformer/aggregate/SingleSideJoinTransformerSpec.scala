@@ -8,7 +8,8 @@ import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -36,7 +37,7 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-class SingleSideJoinTransformerSpec extends FunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
+class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
   import SingleSideJoinTransformerSpec._
   import pl.touk.nussknacker.engine.spel.Implicits._

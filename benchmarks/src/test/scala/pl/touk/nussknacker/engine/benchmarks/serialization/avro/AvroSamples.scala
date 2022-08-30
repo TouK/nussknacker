@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
-import pl.touk.nussknacker.engine.avro.{AvroUtils, LogicalTypesGenericRecordBuilder}
-import pl.touk.nussknacker.engine.avro.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 
 object AvroSamples {
 

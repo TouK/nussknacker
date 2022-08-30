@@ -2,8 +2,8 @@ package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.circe.syntax.EncoderOps
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.convertToAnyShouldWrapper
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
@@ -15,9 +15,13 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod,
 import scala.collection.JavaConverters._
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
-class DeploymentPreparerTest extends FunSuite {
+class DeploymentPreparerTest extends AnyFunSuite {
 
   val configMapId = "fooConfigMap"
+  val loggingConfigMapId = "barConfigMap"
+  val secretId = "fooSecret"
+  val resources = MountableResources(configMapId, loggingConfigMapId, secretId)
+
   val processVersion: ProcessVersion = ProcessVersion.empty
 
   val nussknackerInstanceName = "foo-release"
@@ -31,7 +35,7 @@ class DeploymentPreparerTest extends FunSuite {
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
     val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
-    val preparedDeployment = deploymentPreparer.prepare(processVersion, configMapId, 2)
+    val preparedDeployment = deploymentPreparer.prepare(processVersion, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -54,25 +58,29 @@ class DeploymentPreparerTest extends FunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
-                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
-                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
+                  EnvVar("SCENARIO_FILE", "/config/scenario.json"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "common-conf", mountPath = "/config"),
+                  Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
+                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
+                Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
+                Volume("model-conf", Volume.Secret(secretId))
               )
             ))
         )
@@ -116,7 +124,7 @@ class DeploymentPreparerTest extends FunSuite {
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -139,22 +147,24 @@ class DeploymentPreparerTest extends FunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
-                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
-                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
+                  EnvVar("SCENARIO_FILE", "/config/scenario.json"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "common-conf", mountPath = "/config"),
+                  Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
+                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive"))),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"))),
                 resources = Some(
                   skuber.Resource.Requirements(
                     limits = Map("cpu"-> Quantity("20m"), "memory" -> Quantity("256Mi")),
@@ -169,7 +179,9 @@ class DeploymentPreparerTest extends FunSuite {
             ),
               volumes = List(
                 Volume("my-volume", Volume.GenericVolumeSource("{\"name\":\"my-volume\"}")),
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
+                Volume("model-conf", Volume.Secret(secretId))
               )
             ))
         )
@@ -194,7 +206,7 @@ class DeploymentPreparerTest extends FunSuite {
         ).asJava))
     )
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -217,26 +229,30 @@ class DeploymentPreparerTest extends FunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-kafka-runtime:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
-                  EnvVar("SCENARIO_FILE", "/data/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"),
-                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/data/deploymentConfig.conf"),
-                  EnvVar("LOGBACK_FILE", "/data/logback.xml"),
+                  EnvVar("SCENARIO_FILE", "/config/scenario.json"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
+                  EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
                   // Hash will be extracted on entrypoint side.
                   EnvVar("POD_NAME", FieldRef("metadata.name"))
                 ),
                 volumeMounts = List(
-                  Volume.Mount(name = "configmap", mountPath = "/data")
+                  Volume.Mount(name = "common-conf", mountPath = "/config"),
+                  Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
+                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8558), path = "/alive")))
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
               )),
               volumes = List(
-                Volume("configmap", Volume.ConfigMapVolumeSource(configMapId))
+                Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
+                Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
+                Volume("model-conf", Volume.Secret(secretId))
               )
             ))
         )
@@ -260,7 +276,7 @@ class DeploymentPreparerTest extends FunSuite {
 
     val deploymentPreparer = new DeploymentPreparer(config)
     assertThrows[IllegalStateException] {
-      deploymentPreparer.prepare(ProcessVersion.empty, configMapId, 2)
+      deploymentPreparer.prepare(ProcessVersion.empty, resources, 2)
     }
   }
 }

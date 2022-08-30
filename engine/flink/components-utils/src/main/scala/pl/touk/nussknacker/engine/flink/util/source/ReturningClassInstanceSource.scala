@@ -14,7 +14,7 @@ class ReturningClassInstanceSource extends SourceFactory  {
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
              )  additionalClass: String) =
-    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig, List.empty, None, Typed.typedClass(Class.forName(additionalClass)))
+    new CollectionSource[Any](List.empty, None, Typed.typedClass(Class.forName(additionalClass)))
 
 }
 case class ReturningTestCaseClass(someMethod: String)

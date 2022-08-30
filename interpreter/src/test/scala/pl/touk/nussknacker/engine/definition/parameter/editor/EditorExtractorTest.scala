@@ -4,7 +4,8 @@ import java.time.temporal.ChronoUnit
 import java.time.{Duration, LocalDate, LocalDateTime, LocalTime, Period}
 
 import com.cronutils.model.Cron
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.editor._
@@ -15,7 +16,7 @@ import pl.touk.nussknacker.engine.types.JavaSampleEnum
 
 import scala.reflect.ClassTag
 
-class EditorExtractorTest extends FunSuite with Matchers {
+class EditorExtractorTest extends AnyFunSuite with Matchers {
 
   private def notAnnotated(param: String) {}
 
@@ -41,7 +42,8 @@ class EditorExtractorTest extends FunSuite with Matchers {
   private def rawEditorAnnotatedLazy(@RawEditor param: LazyParameter[String]) {}
 
   private def simpleParams(javaEnum: JavaSampleEnum, localDateTime: LocalDateTime,
-                           localDate: LocalDate, localTime: LocalTime, duration: Duration, period: Period, cron: Cron) {}
+                           localDate: LocalDate, localTime: LocalTime, duration: Duration, period: Period, cron: Cron,
+                           str: String, charseq: CharSequence) {}
 
   private val paramNotAnnotated = getFirstParam("notAnnotated", classOf[String])
 
@@ -164,6 +166,18 @@ class EditorExtractorTest extends FunSuite with Matchers {
       simpleEditor = CronParameterEditor,
       defaultMode = DualEditorMode.SIMPLE
     ))
+  }
+
+  test("determine editor by type Charsequence") {
+    val charseqParam = getSimpleParamByType[CharSequence]
+    val stringParam = getSimpleParamByType[String]
+
+    val expectedEditor = Some(DualParameterEditor(
+      simpleEditor = StringParameterEditor,
+      defaultMode = DualEditorMode.RAW
+    ))
+    EditorExtractor.extract(charseqParam, ParameterConfig.empty) shouldBe expectedEditor
+    EditorExtractor.extract(stringParam, ParameterConfig.empty) shouldBe expectedEditor
   }
 
   private def getFirstParam(name: String, params: Class[_]*) = {

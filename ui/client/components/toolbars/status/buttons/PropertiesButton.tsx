@@ -2,7 +2,12 @@ import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {ReactComponent as Icon} from "../../../../assets/img/toolbarButtons/properties.svg"
-import {getProcessToDisplay, getProcessUnsavedNewName, hasError, hasPropertiesErrors} from "../../../../reducers/selectors/graph"
+import {
+  getProcessToDisplay,
+  getProcessUnsavedNewName,
+  hasError,
+  hasPropertiesErrors
+} from "../../../../reducers/selectors/graph"
 import {useWindows} from "../../../../windowManager"
 import NodeUtils from "../../../graph/NodeUtils"
 import ToolbarButton from "../../../toolbarComponents/ToolbarButton"
@@ -20,8 +25,8 @@ function PropertiesButton(props: ToolbarButtonProps): JSX.Element {
   const processProperties = useMemo(() => NodeUtils.getProcessProperties(processToDisplay, name), [name, processToDisplay])
 
   const onClick = useCallback(
-    () => openNodeWindow(processProperties),
-    [openNodeWindow, processProperties],
+    () => openNodeWindow(processProperties, processToDisplay),
+    [openNodeWindow, processProperties, processToDisplay],
   )
 
   return (

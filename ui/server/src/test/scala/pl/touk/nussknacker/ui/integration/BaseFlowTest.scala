@@ -9,8 +9,11 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
+import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
@@ -32,25 +35,26 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErr
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
-import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, MultipartUtils}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, SecurityHeadersSupport, CorsSupport, MultipartUtils}
 
 import scala.concurrent.duration._
 import scala.util.Properties
 
-class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
 
   import io.circe.syntax._
 
-  override def testConfig: Config = ConfigWithScalaVersion.config
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
     system.settings.config,
-    NussknackerAppInitializer.initDb(system.settings.config)
+    NussknackerAppInitializer.initDb(system.settings.config),
+    new MetricRegistry
   )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
@@ -175,17 +179,17 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
   }
 
   test("validate process additional properties") {
-    Post(
-      "/api/processValidation",
-      HttpEntity(ContentTypes.`application/json`, TestFactory.processWithInvalidAdditionalProperties.asJson.spaces2)
-    ) ~> addCredentials(credentials) ~> mainRoute ~> check {
-      status shouldEqual StatusCodes.OK
-      val entity = responseAs[String]
+    val scenario = ProcessTestData.processWithInvalidAdditionalProperties
+    Post(s"/api/processes/${scenario.id}/Category1?isSubprocess=${scenario.metaData.isSubprocess}") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      Post("/api/processValidation", HttpEntity(ContentTypes.`application/json`, scenario.asJson.spaces2)) ~> addCredentials(credentials) ~> mainRoute ~> check {
+        status shouldEqual StatusCodes.OK
+        val entity = responseAs[String]
 
-      entity should include("Configured property environment (Environment) is missing")
-      entity should include("This field value has to be an integer number")
-      entity should include("Unknown property unknown")
-      entity should include("Property numberOfThreads (Number of threads) has invalid value")
+        entity should include("Configured property environment (Environment) is missing")
+        entity should include("This field value has to be an integer number")
+        entity should include("Unknown property unknown")
+        entity should include("Property numberOfThreads (Number of threads) has invalid value")
+      }
     }
   }
 
@@ -270,7 +274,7 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
       .flatMap(_.asString)
 
     def dynamicServiceParameters: Option[List[String]] = {
-      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None).asJson
+      val request = NodeValidationRequest(Processor(nodeUsingDynamicServiceId, ServiceRef("dynamicService", List.empty)), ProcessProperties(StreamMetaData()), Map.empty, None, None).asJson
       Post(s"/api/nodes/$processId/validation", request) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
         status shouldEqual StatusCodes.OK
         val responseJson = responseAs[Json]
@@ -310,6 +314,20 @@ class BaseFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSu
     updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
     firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
+  }
+
+  test("should return response with required headers") {
+    Get("/api/app/buildInfo") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
+    }
+  }
+
+  test("should handle OPTIONS method request") {
+    Options("/") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.OK
+      headers should contain allElementsOf (CorsSupport.headers ::: SecurityHeadersSupport.headers)
+    }
   }
 
   test("should reload model config") {

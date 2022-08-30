@@ -1,5 +1,4 @@
-import React, {useEffect, useState} from "react"
-import {UnknownFunction} from "../../../../../../types/common"
+import React, {useCallback, useEffect, useState} from "react"
 import {Period} from "./PeriodEditor"
 import TimeRangeSection from "./TimeRangeSection"
 import {Validator} from "../../Validators"
@@ -7,9 +6,9 @@ import {TimeRange} from "./TimeRangeComponent"
 import {Duration} from "./DurationEditor"
 
 type Props = {
-  encode: UnknownFunction,
-  decode: ((exp: string) => Duration)|((exp: string) => Period),
-  onValueChange: UnknownFunction,
+  encode: (value: Duration | Period) => string,
+  decode: ((exp: string) => Duration) | ((exp: string) => Period),
+  onValueChange: (value: string) => void,
   editorConfig: $TodoType,
   readOnly: boolean,
   showValidation: boolean,
@@ -18,27 +17,41 @@ type Props = {
   isMarked: boolean,
 }
 
-export default function TimeRangeEditor(props: Props) {
+export default function TimeRangeEditor(props: Props): JSX.Element {
 
-  const {encode, decode, onValueChange, editorConfig, readOnly, showValidation, validators, expression, isMarked} = props
+  const {
+    encode,
+    decode,
+    onValueChange,
+    editorConfig,
+    readOnly,
+    showValidation,
+    validators,
+    expression,
+    isMarked,
+  } = props
 
   const components = editorConfig.timeRangeComponents as Array<TimeRange>
-  const [value, setValue] = useState(decode(expression))
+  const [value, setValue] = useState(() => decode(expression))
 
-  const onComponentChange = (fieldName: string, fieldValue: number) => {
-    setValue(
-      {
+  const onComponentChange = useCallback(
+    (fieldName: string, fieldValue: number) => {
+      setValue({
         ...value,
         [fieldName]: isNaN(fieldValue) ? null : fieldValue,
-      }
-    )
-  }
+      })
+    },
+    [value]
+  )
 
   useEffect(
     () => {
-      onValueChange(encode(value))
+      const encoded = encode(value)
+      if (encoded !== expression) {
+        onValueChange(encoded)
+      }
     },
-    [value],
+    [encode, expression, onValueChange, value],
   )
 
   return (

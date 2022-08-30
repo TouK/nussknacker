@@ -3,14 +3,15 @@ package pl.touk.nussknacker.engine.management
 import com.typesafe.config.ConfigFactory
 import io.circe.Json.fromString
 import org.apache.flink.api.common.JobStatus
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
@@ -21,16 +22,15 @@ import java.net.NoRouteToHostException
 import java.util.concurrent.TimeoutException
 import java.util.{Collections, UUID}
 import scala.collection.mutable
-import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Future
 
 //TODO move some tests to FlinkHttpClientTest
-class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutures {
+class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits._
 
   //We don't test scenario's json here
-  private val config = FlinkConfig("http://test.pl", None, shouldVerifyBeforeDeploy = false, shouldCheckAvailableSlots = false)
+  private val config = FlinkConfig("http://test.pl", None, shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
 
@@ -45,26 +45,18 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
 
   private val returnedJobId = "jobId"
 
-  private val canonicalProcess: CanonicalProcess = ProcessMarshaller.fromJsonUnsafe(
-    """
-      |{
-      |  "metaData" : {
-      |    "id" : "p1",
-      |    "typeSpecificData" : {
-      |      "type" : "StreamMetaData"
-      |    }
-      |  },
-      |  "nodes" : []
-      |}
-      |""".stripMargin)
+  private val canonicalProcess: CanonicalProcess = CanonicalProcess(MetaData("p1", StreamMetaData(Some(1))), Nil, Nil)
 
   private def createManager(statuses: List[JobOverview] = List(),
                             acceptSavepoint: Boolean = false,
                             acceptDeploy: Boolean = false,
                             acceptStop: Boolean = false,
                             acceptCancel: Boolean = true,
-                            statusCode: StatusCode = StatusCode.Ok, exceptionOnDeploy: Option[Exception] = None): FlinkRestManager =
-    createManagerWithHistory(statuses, acceptSavepoint, acceptDeploy, acceptStop, acceptCancel, statusCode, exceptionOnDeploy)._1
+                            statusCode: StatusCode = StatusCode.Ok,
+                            exceptionOnDeploy: Option[Exception] = None,
+                            freeSlots: Int = 1
+                           ): FlinkRestManager =
+    createManagerWithHistory(statuses, acceptSavepoint, acceptDeploy, acceptStop, acceptCancel, statusCode, exceptionOnDeploy, freeSlots)._1
 
   private case class HistoryEntry(operation: String, jobId: Option[String])
 
@@ -75,7 +67,8 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
                                        acceptStop: Boolean = false,
                                        acceptCancel: Boolean = true,
                                        statusCode: StatusCode = StatusCode.Ok,
-                                       exceptionOnDeploy: Option[Exception] = None
+                                       exceptionOnDeploy: Option[Exception] = None,
+                                       freeSlots: Int = 1
                                       ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
   = {
     import scala.collection.JavaConverters._
@@ -114,6 +107,10 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
         case (List("jars", "upload"), Method.POST) if acceptDeploy =>
           history.append(HistoryEntry("uploadJar", None))
           UploadJarResponse(uploadedJarPath)
+        case (List("overview"), Method.GET) =>
+          ClusterOverview(1, `slots-available` = freeSlots)
+        case (List("jobmanager", "config"), Method.GET) =>
+          List()
       }
       Response(Right(toReturn), statusCode)
     })
@@ -151,12 +148,12 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
-    Await.ready(manager.deploy(
+    expectException(manager.deploy(
         defaultVersion,
         defaultDeploymentData,
         canonicalProcess,
         None
-      ), 1 second).eitherValue.flatMap(_.left.toOption) shouldBe 'defined
+      ), "java.net.NoRouteToHostException: heeelo?")
   }
 
   private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
@@ -164,9 +161,20 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   test("refuse to deploy if process is failing") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RESTARTING.name(), tasksOverview()))
 
-    createManager(statuses)
-      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
-      .failed.futureValue.getMessage shouldBe "Job p1 cannot be deployed, status: RESTARTING"
+    val manager = createManager(statuses)
+
+    val message = "Job p1 cannot be deployed, status: RESTARTING"
+    expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
+    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
+  }
+
+  test("refuse to deploy if slots exceeded") {
+    statuses = Nil
+    val manager = createManager(statuses, freeSlots = 0)
+
+    val message = "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
+    expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
+    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
   }
 
   test("allow deploy if process is failed") {
@@ -330,4 +338,7 @@ class FlinkRestManagerSpec extends FunSuite with Matchers with PatientScalaFutur
   private def buildFinishedSavepointResponse(savepointPath: String): GetSavepointStatusResponse = {
     GetSavepointStatusResponse(status = SavepointStatus("COMPLETED"), operation = Some(SavepointOperation(location = Some(savepointPath), `failure-cause` = None)))
   }
+
+  private def expectException(future: Future[_], message: String) = future.failed.futureValue.getMessage shouldBe message
+
 }

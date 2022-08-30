@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.security.api
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.prop.{TableFor3, TableFor4}
 import pl.touk.nussknacker.security.Permission.Permission
 import pl.touk.nussknacker.ui.security.api.AuthenticationConfiguration.ConfigRule
 
-class LoggedUserTest extends FunSuite with Matchers {
+class LoggedUserTest extends AnyFunSuite with Matchers {
   import pl.touk.nussknacker.security.Permission._
   test("Admin permission grants other permissions") {
     def admin(cp: Map[String, Set[Permission]]) = LoggedUser("1", "admin", cp, Nil, true)

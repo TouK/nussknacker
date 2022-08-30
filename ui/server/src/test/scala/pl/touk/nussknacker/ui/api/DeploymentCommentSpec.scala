@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.ui.api
 
 import cats.data.Validated.{Invalid, Valid}
-import org.scalatest._
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.process.repository.{CommentValidationError, DeploymentComment}
 
-class DeploymentCommentSpec extends FunSuite with Matchers {
+class DeploymentCommentSpec extends AnyFunSuite with Matchers {
 
   private val mockDeploymentCommentSettings: DeploymentCommentSettings = DeploymentCommentSettings.unsafe(
     validationPattern = "(issues/[0-9]*)",

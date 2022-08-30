@@ -23,7 +23,7 @@ object InMemPeriodicProcessesRepository {
   private val DeploymentIdSequence = new AtomicLong(0)
 }
 
-class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
+class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicProcessesRepository {
 
   var processEntities: mutable.ListBuffer[PeriodicProcessEntity] = ListBuffer.empty
   var deploymentEntities: mutable.ListBuffer[PeriodicProcessDeploymentEntity] = ListBuffer.empty
@@ -39,20 +39,21 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
   def addActiveProcess(processName: ProcessName,
                        deploymentStatus: PeriodicProcessDeploymentStatus,
                        scheduleProperty: SingleScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
-                       deployMaxRetries: Int = 0): PeriodicProcessDeploymentId = {
-    val periodicProcessId = addOnlyProcess(processName, scheduleProperty)
+                       deployMaxRetries: Int = 0,
+                       processingType: String = processingType): PeriodicProcessDeploymentId = {
+    val periodicProcessId = addOnlyProcess(processName, scheduleProperty, processingType)
     addOnlyDeployment(periodicProcessId, deploymentStatus, deployMaxRetries = deployMaxRetries)
   }
 
   def addOnlyProcess(processName: ProcessName,
-                     scheduleProperty: ScheduleProperty = CronScheduleProperty("0 0 * * * ?")): PeriodicProcessId = {
-    import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
-
+                     scheduleProperty: ScheduleProperty = CronScheduleProperty("0 0 * * * ?"),
+                     processingType: String = processingType): PeriodicProcessId = {
     val id = PeriodicProcessId(ProcessIdSequence.incrementAndGet())
     val entity = PeriodicProcessEntity(
       id = id,
       processName = processName,
       processVersionId = VersionId.initialVersionId,
+      processingType = processingType,
       processJson = ScenarioBuilder
         .streaming(processName.value)
         .source("start", "source")
@@ -104,6 +105,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
       id = id,
       processName = deploymentWithJarData.processVersion.processName,
       processVersionId = deploymentWithJarData.processVersion.versionId,
+      processingType = processingType,
       processJson = deploymentWithJarData.canonicalProcess,
       inputConfigDuringExecutionJson = deploymentWithJarData.inputConfigDuringExecutionJson,
       jarFileName = deploymentWithJarData.jarFileName,
@@ -204,7 +206,7 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
 
   private def findActive(statusList: Seq[PeriodicProcessDeploymentStatus]): Seq[PeriodicProcessDeployment] =
     for {
-      p <- processEntities if p.active
+      p <- processEntities if p.active && p.processingType == processingType
       d <- deploymentEntities if d.periodicProcessId == p.id && statusList.contains(d.status)
     } yield createPeriodicProcessDeployment(p, d)
 
@@ -213,5 +215,6 @@ class InMemPeriodicProcessesRepository extends PeriodicProcessesRepository {
     deployments.filter(d => d.runAt.isBefore(now) || d.runAt.isEqual(now))
   }
 
-  private def activeProcess(processName: ProcessName) = (process: PeriodicProcessEntity) => process.active && process.processName == processName
+  private def activeProcess(processName: ProcessName): PeriodicProcessEntity => Boolean = (process: PeriodicProcessEntity) =>
+    process.active && process.processName == processName && process.processingType == processingType
 }

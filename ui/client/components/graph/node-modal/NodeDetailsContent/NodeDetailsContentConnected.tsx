@@ -1,14 +1,8 @@
 import {useDispatch, useSelector} from "react-redux"
-import {nodeValidationDataClear, updateNodeData} from "../../../../actions/nk"
-import React, {useEffect} from "react"
-import {NodeDetailsContent} from "../NodeDetailsContent"
-import {
-  AdditionalPropertiesConfig,
-  DynamicParameterDefinitions,
-  NodeType,
-  PropertiesType,
-  VariableTypes,
-} from "../../../../types"
+import {nodeValidationDataClear, updateNodeData, ValidationRequest} from "../../../../actions/nk"
+import React, {useCallback, useEffect} from "react"
+import {NodeDetailsContent, NodeDetailsContentProps} from "../NodeDetailsContent"
+import {AdditionalPropertiesConfig, DynamicParameterDefinitions} from "../../../../types"
 import classNames from "classnames"
 import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
 import {
@@ -23,12 +17,9 @@ import {
   getProcessProperties,
   getVariableTypes,
 } from "./selectors"
+import {useUserSettings} from "../../../../common/userSettings"
 
-interface Props {
-  node: NodeType,
-  onChange: (node: NodeType) => void,
-  originalNodeId?: string,
-
+interface Props extends Omit<NodeDetailsContentProps, "userSettings"> {
   [k: string]: unknown,
 }
 
@@ -47,6 +38,7 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
   const findAvailableBranchVariables = useSelector(getFindAvailableBranchVariables)
   const processProperties = useSelector(getProcessProperties)
   const processId = useSelector(getProcessId)
+  const [userSettings] = useUserSettings()
 
   const dispatch = useDispatch()
 
@@ -56,7 +48,11 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
 
   const nodeClass = classNames("node-table", {"node-editable": isEditMode})
 
-  const onNodeDataUpdate = (processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType) => dispatch(updateNodeData(processId, variableTypes, branchVariableTypes, nodeData, processProperties))
+  const onNodeDataUpdate = useCallback(
+    (processId: string, validationRequestData: ValidationRequest) => dispatch(updateNodeData(processId, validationRequestData)),
+    [dispatch]
+  )
+
   return (
     <div className={nodeClass}>
       <NodeDetailsContent
@@ -75,6 +71,7 @@ function NodeDetailsContentConnected({node, ...passProps}: Props): JSX.Element {
         processProperties={processProperties}
         processId={processId}
         updateNodeData={onNodeDataUpdate}
+        userSettings={userSettings}
       />
     </div>
   )

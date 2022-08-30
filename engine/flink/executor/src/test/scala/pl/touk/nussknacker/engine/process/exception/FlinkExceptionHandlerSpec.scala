@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.process.exception
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.{Context, MetaData, StreamMetaData}
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.test.ClassLoaderWithServices
 
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class FlinkExceptionHandlerSpec extends FunSuite with Matchers {
+class FlinkExceptionHandlerSpec extends AnyFunSuite with Matchers {
 
   private val config = ConfigFactory.parseMap(Map[String, Any](
     "exceptionHandler.type" -> TestExceptionConsumerProvider.typeName,

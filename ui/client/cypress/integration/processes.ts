@@ -40,6 +40,47 @@ describe("Processes list", () => {
   })
 })
 
+describe.skip("Processes list (new table)", () => {
+  const NAME = "process-list"
+
+  before(() => {
+    cy.deleteAllTestProcesses({filter: NAME, force: true})
+    cy.createTestProcessName(NAME).as("processName")
+  })
+
+  after(() => {
+    cy.deleteAllTestProcesses({filter: NAME})
+  })
+
+  beforeEach(() => {
+    cy.visit("/")
+    cy.url().should("match", /scenarios/)
+    cy.get("[placeholder='Search...']", {timeout: 60000}).should("be.visible")
+  })
+
+  it("should have no process matching filter", () => {
+    cy.get("[placeholder='Search...']").type(NAME)
+    cy.contains(/^no rows$/i).should("be.visible")
+  })
+
+  it("should allow creating new process", function () {
+    cy.contains(/^new scenario$/i).should("be.visible").click()
+    cy.get("#newProcessId", {timeout: 30000}).type(this.processName)
+    cy.contains(/^create$/i).should("be.enabled").click()
+    cy.url().should("contain", `visualization\/${this.processName}`)
+  })
+
+  it("should have test process on list", function () {
+    cy.get("[placeholder='Search...']").type(NAME)
+    cy.url().should("contain", NAME)
+    cy.wait(200) // wait for highlight
+    cy.contains(this.processName).should("be.visible")
+    cy.get("#app-container").toMatchImageSnapshot()
+    cy.contains(this.processName).click({x: 10, y: 10})
+    cy.url().should("contain", `visualization\/${this.processName}`)
+  })
+})
+
 describe("Processes list (legacy)", () => {
   const NAME = "process-list"
 

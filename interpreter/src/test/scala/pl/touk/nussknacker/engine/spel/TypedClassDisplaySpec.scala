@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.spel
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 
 import java.util
 import scala.language.implicitConversions
 
-class TypedClassDisplaySpec extends FunSuite with Matchers {
+class TypedClassDisplaySpec extends AnyFunSuite with Matchers {
   test("parsing array display") {
     Typed.typedClass(classOf[Array[String]]).display should equal("Array[String]")
   }
@@ -16,7 +17,7 @@ class TypedClassDisplaySpec extends FunSuite with Matchers {
   }
 
   test("parsing nested class display") {
-    Typed.typedClass(classOf[util.AbstractMap.SimpleEntry[String, String]], List(Typed(classOf[String]), Typed(classOf[String]))).display should equal("SimpleEntry[String,String]")
+    Typed.genericTypeClass(classOf[util.AbstractMap.SimpleEntry[String, String]], List(Typed(classOf[String]), Typed(classOf[String]))).display should equal("SimpleEntry[String,String]")
   }
 
   test("parsing anonymous class display") {

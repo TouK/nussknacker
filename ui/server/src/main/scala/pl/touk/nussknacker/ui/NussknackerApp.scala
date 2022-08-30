@@ -1,16 +1,21 @@
 package pl.touk.nussknacker.ui
 
-import _root_.cors.CorsSupport
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import fr.davit.akka.http.metrics.core.HttpMetrics._
+import fr.davit.akka.http.metrics.core.{HttpMetricsRegistry, HttpMetricsSettings}
+import fr.davit.akka.http.metrics.dropwizard.{DropwizardRegistry, DropwizardSettings}
+import io.dropwizard.metrics5.MetricRegistry
+import io.dropwizard.metrics5.jmx.JmxReporter
+import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.dict.ProcessDictSubstitutor
-import pl.touk.nussknacker.engine.util.JavaClassVersionChecker
+import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.util.multiplicity.{Empty, Many, Multiplicity, One}
@@ -23,6 +28,8 @@ import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
 import pl.touk.nussknacker.ui.listener.services.NussknackerServices
+import pl.touk.nussknacker.ui.metrics.RepositoryGauges
+import pl.touk.nussknacker.ui.notifications.{ManagementActorCurrentDeployments, NotificationConfig, NotificationService, NotificationsListener}
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor, ScenarioResolver}
 import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelMigrations}
@@ -33,6 +40,7 @@ import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.util.{SecurityHeadersSupport, CorsSupport, OptionsMethodSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.{CustomProcessValidatorLoader, ProcessValidation}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
@@ -46,7 +54,7 @@ import scala.util.control.NonFatal
 
 trait NusskanckerAppRouter extends Directives with LazyLogging {
 
-  def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
+  def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable])
 
 }
 
@@ -70,7 +78,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
   }
 
-  override def create(config: Config, dbConfig: DbConfig)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
+  def initMetrics(metricsRegistry: MetricRegistry, processRepository: DBFetchingProcessRepository[Future] with BasicRepository): Unit = {
+    new RepositoryGauges(metricsRegistry, processRepository).prepareGauges()
+  }
+
+  override def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
     import system.dispatcher
 
     implicit val sttpBackend: SttpBackend[Future, Nothing, NothingT] = AkkaHttpBackend.usingActorSystem(system)
@@ -111,9 +123,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val processRepository = DBFetchingProcessRepository.create(dbConfig)
     val writeProcessRepository = ProcessRepository.create(dbConfig, modelData)
 
+    val notificationListener = new NotificationsListener(config.as[NotificationConfig]("notifications"), processRepository.fetchProcessName(_))
+    val processChangeListener = ProcessChangeListenerLoader
+      .loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)), notificationListener)
+
     val scenarioResolver = new ScenarioResolver(subprocessResolver)
     val actionRepository = DbProcessActionRepository.create(dbConfig, modelData)
-    deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver)
+    deploymentService = new DeploymentService(processRepository, actionRepository, scenarioResolver, processChangeListener)
     reload.init() // we need to init processing type data after deployment service creation to make sure that it will be done using correct classloader and that won't cause further delays during handling requests
     val processActivityRepository = new DbProcessActivityRepository(dbConfig)
 
@@ -124,22 +140,27 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     Initialization.init(modelData.mapValues(_.migrations), dbConfig, environment)
 
-    val processChangeListener = ProcessChangeListenerLoader.loadListeners(getClass.getClassLoader, config, NussknackerServices(new PullProcessRepository(processRepository)))
-
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
     val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
-    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, actionRepository, scenarioResolver, processChangeListener, deploymentService), "management")
-    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer, processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository, writeProcessRepository)
+    val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, scenarioResolver, deploymentService), "management")
+    val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
+      processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
+      writeProcessRepository
+    )
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService)
+    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService, exposeConfig = featureTogglesConfig.enableConfigEndpoint)
 
     val countsReporter = featureTogglesConfig.counts.flatMap(prepareCountsReporter(environment, _))
 
     val componentService = DefaultComponentService(config, typeToConfig, processService, processCategoryService)
+
+    val notificationService = new NotificationService(new ManagementActorCurrentDeployments(managementActor), notificationListener)
+
+    initMetrics(metricsRegistry, processRepository)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
@@ -148,7 +169,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
-          processValidation = processValidation,
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
@@ -156,12 +176,12 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService),
-        new ValidationResources(processResolving),
+        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
+        new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
-        new NotificationResources(managementActor),
+        new NotificationResources(notificationService),
         appResources,
         TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),
@@ -194,10 +214,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"))
-    val route = CorsSupport.cors(featureTogglesConfig.development) {
+    val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), SecurityHeadersSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route
-      } ~  pathPrefix("api") {
+      } ~ pathPrefix("api") {
         apiResourcesWithoutAuthentication.reduce(_ ~ _)
       } ~ authenticationResources.authenticate() { authenticatedUser =>
         pathPrefix("api") {
@@ -250,36 +270,50 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
     JavaClassVersionChecker.check()
+    SLF4JBridgeHandlerRegistrar.register()
 
     val db = initDb(config)
+    val metricsRegistry = new MetricRegistry
 
-    val (route, objectsToClose) = router.create(config, db)
+    val (route, objectsToClose) = router.create(config, db, metricsRegistry)
 
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
+
+    //JmxReporter does not allocate resources, safe to close
+    JmxReporter.forRegistry(metricsRegistry).build().start()
+
+
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
-        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route)
+        bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route, metricsRegistry)
       case None =>
-        bindHttp(interface, port, route)
+        bindHttp(interface, port, route, metricsRegistry)
     }
 
     (route, objectsToClose)
   }
 
-  def bindHttp(interface: String, port: Int, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttp(interface: String, port: Int, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    Http().newMeteredServerAt(
       interface = interface,
-      port = port
+      port = port,
+      prepareHttpMetricRegistry(metricsRegistry)
     ).bind(route)
   }
 
-  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
-    Http().newServerAt(
+  def bindHttps(interface: String, port: Int, httpsContext: HttpsConnectionContext, route: Route, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): Future[Http.ServerBinding] = {
+    Http().newMeteredServerAt(
       interface = interface,
       port = port,
+      prepareHttpMetricRegistry(metricsRegistry)
     ).enableHttps(httpsContext).bind(route)
+  }
+
+  private def prepareHttpMetricRegistry(metricsRegistry: MetricRegistry): HttpMetricsRegistry = {
+    val settings: HttpMetricsSettings = DropwizardSettings.default
+    new DropwizardRegistry(settings)(metricsRegistry)
   }
 
   def initDb(config: Config): DbConfig = {

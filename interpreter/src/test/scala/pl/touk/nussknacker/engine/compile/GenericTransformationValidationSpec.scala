@@ -3,16 +3,20 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParseError, MissingParameters}
+import org.scalatest.{Inside, OptionValues}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, MissingParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
+import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
@@ -20,7 +24,7 @@ import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
 import scala.collection.immutable.ListMap
 
-class GenericTransformationValidationSpec extends FunSuite with Matchers with OptionValues with Inside {
+class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   import spel.Implicits._
 
@@ -79,9 +83,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
-      "val1" -> Typed[String],
-      "val2" -> Typed[java.lang.Integer],
-      "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
+      "val1" -> Typed.fromInstance("aa"),
+      "val2" -> Typed.fromInstance(11),
+      "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
     ))
 
     result.parametersInNodes("generic") shouldBe expectedGenericParameters
@@ -102,9 +106,9 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
      val info1 = result.typing("end")
 
      info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(ListMap(
-       "val1" -> Typed[String],
-       "val2" -> Typed[java.lang.Integer],
-       "val3" -> Typed.fromDetailedType[java.util.List[Boolean]]
+       "val1" -> Typed.fromInstance("aa"),
+       "val2" -> Typed.fromInstance(11),
+       "val3" -> Typed.genericTypeClass(classOf[java.util.List[_]], List(Typed.fromInstance(false)))
      ))
 
     result.parametersInNodes("sourceId") shouldBe expectedGenericParameters
@@ -191,7 +195,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParserCompilationError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
@@ -214,7 +218,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
-      "val1" -> Typed[String],
+      "val1" -> Typed.fromInstance(""),
       "val2" -> Unknown
     ))
 
@@ -238,7 +242,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParseError("Bad expression type, expected: String, found: Integer",
+    result.result shouldBe Invalid(NonEmptyList.of(ExpressionParserCompilationError(s"Bad expression type, expected: String, found: ${Typed.fromInstance(12).display}",
       "generic", Some("par1"), "12")))
     val info1 = result.typing("end")
 
@@ -268,8 +272,8 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
     val validationResult = validator.validate(process)
 
     val varsInEnd = validationResult.variablesInNodes("end")
-    varsInEnd("outPutVar") shouldBe Typed[String]
-    varsInEnd("intVal") shouldBe Typed[Integer]
+    varsInEnd("outPutVar") shouldBe Typed.fromInstance("abcdd")
+    varsInEnd("intVal") shouldBe Typed.fromInstance(123)
     varsInEnd.get("strVal") shouldBe None
   }
 
@@ -283,7 +287,7 @@ class GenericTransformationValidationSpec extends FunSuite with Matchers with Op
 
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
-      Parameter.optional[CharSequence]("optionalParameter").copy(defaultValue = Some(""))
+      Parameter.optional[CharSequence]("optionalParameter").copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some(""))
     )
   }
 }

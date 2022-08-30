@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.spel
 import cats.data.Validated.Invalid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.springframework.core.convert.ConversionService
 import org.springframework.core.convert.support.DefaultConversionService
 import pl.touk.nussknacker.engine.Interpreter.IOShape
@@ -25,7 +27,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class SpelConversionServiceOverrideSpec extends FunSuite with Matchers with OptionValues {
+class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with OptionValues {
 
   private implicit class ValidatedValue[E, A](validated: ValidatedNel[E, A]) {
     def value: A = validated.valueOr(err => throw new ParseException(err.toList.mkString, -1))

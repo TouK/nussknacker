@@ -20,8 +20,9 @@ export function SubprocessContent({
   useEffect(
     () => {
       if (NodeUtils.nodeIsSubprocess(nodeToDisplay)) {
-        const subprocessVersion = subprocessVersions[nodeToDisplay.ref.id]
-        HttpService.fetchProcessDetails(nodeToDisplay.ref.id, subprocessVersion).then(response => {
+        const id = nodeToDisplay?.ref.id
+        const subprocessVersion = subprocessVersions?.[id]
+        HttpService.fetchProcessDetails(id, subprocessVersion).then(response => {
           setSubprocessContent(response.data.json)
         })
       }
@@ -37,6 +38,7 @@ export function SubprocessContent({
         <BareGraph
           processCounts={subprocessCounts}
           processToDisplay={subprocessContent}
+          nodeIdPrefixForSubprocessTests={`${subprocessContent.id}-`}
         />
       )}
     </ErrorBoundary>

@@ -29,12 +29,20 @@ class AppResources(config: Config,
                    modelData: ProcessingTypeDataProvider[ModelData],
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
-                   processService: ProcessService)(implicit ec: ExecutionContext)
+                   processService: ProcessService,
+                   exposeConfig: Boolean
+                  )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
   //We use duplicated pathPrefix("app") code - look at comment in NussknackerApp where routes are created
   def publicRoute(): Route = pathPrefix("app") {
-    path("buildInfo") {
+    path("healthCheck") {
+      get {
+        complete {
+          createHealthCheckHttpResponse(OK)
+        }
+      }
+    } ~ path("buildInfo") {
       get {
         complete {
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
@@ -58,13 +66,7 @@ class AppResources(config: Config,
 
   def securedRoute(implicit user: LoggedUser): Route =
     pathPrefix("app") {
-      path("healthCheck") {
-        get {
-          complete {
-            createHealthCheckHttpResponse(OK)
-          }
-        }
-      } ~ path("healthCheck" / "process" / "deployment") {
+      path("healthCheck" / "process" / "deployment") {
         get {
           complete {
             notRunningProcessesThatShouldRun.map[Future[HttpResponse]] { set =>
@@ -95,8 +97,9 @@ class AppResources(config: Config,
           }
         }
       } ~ path("config") {
+        if(!exposeConfig) reject
         //config can contain sensitive information, so only Admin can see it
-        authorize(user.isAdmin) {
+        else authorize(user.isAdmin) {
           get {
             complete {
               io.circe.parser.parse(config.root().render(ConfigRenderOptions.concise())).left.map(_.message)
@@ -132,8 +135,8 @@ class AppResources(config: Config,
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
     processRepository.fetchProcessesDetails[DisplayableProcess]().map { processes =>
-      val processesWithErrors = processes.map(_.json)
-        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
+      val processesWithErrors = processes
+        .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json, process.processCategory)))
         .filter(process => !process.validationResult.errors.isEmpty)
       processesWithErrors.map(_.id)
     }

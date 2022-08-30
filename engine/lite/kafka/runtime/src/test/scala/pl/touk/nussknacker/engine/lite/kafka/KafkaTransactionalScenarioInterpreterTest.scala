@@ -4,8 +4,8 @@ import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import io.dropwizard.metrics5.{Gauge, Histogram, Metric, MetricRegistry}
-import org.scalatest._
+import io.dropwizard.metrics5._
+import org.scalatest.{Assertion, OptionValues, Outcome}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
@@ -19,6 +19,8 @@ import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProvi
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
+import org.scalatest.funsuite.FixtureAnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -31,7 +33,7 @@ import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}
 
-class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
+class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with KafkaSpec with Matchers with LazyLogging with PatientScalaFutures with OptionValues {
 
   import KafkaTransactionalScenarioInterpreter._
 
@@ -287,17 +289,20 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
         }
       }
     }
-    val runResult = Using.resource(kafkaInterpreter) { interpreter =>
+    val (runResult, attemptGauges, restartingGauges) = Using.resource(kafkaInterpreter) { interpreter =>
       val result = interpreter.run()
       //TODO: figure out how to wait for restarting tasks after failure?
       Thread.sleep(2000)
-      result
+      //we have to get gauge here, as metrics are unregistered in close
+      (result, metricsForName[Gauge[Int]]("task.attempt"), metricsForName[Gauge[Int]]("task.restarting"))
     }
 
     Await.result(runResult, 10 seconds)
     initAttempts should be > 1
     // we check if there weren't any errors in init causing that run next run won't be executed anymore
     runAttempts should be > 1
+    attemptGauges.exists(_._2.getValue > 1)
+    restartingGauges.exists(_._2.getValue > 1)
   }
 
   test("detects source failure") { fixture =>
@@ -339,20 +344,24 @@ class KafkaTransactionalScenarioInterpreterTest extends fixture.FunSuite with Ka
   }
 
   private def forSomeMetric[T <: Metric : ClassTag](name: String)(action: T => Assertion): Unit = {
-    val results = metricsForName[T](name).map(m => Try(action(m)))
-    results should not be empty
+    val results = metricsForName[T](name).map(m => Try(action(m._2)))
+    withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
+      results should not be empty
+    }
     results.exists(_.isSuccess) shouldBe true
   }
 
   private def forEachNonEmptyMetric[T <: Metric : ClassTag](name: String)(action: T => Any): Unit = {
     val metrics = metricsForName[T](name)
-    metrics should not be empty
-    metrics.foreach(action)
+    withClue(s"Available metrics: ${metricRegistry.getMetrics.keySet()}") {
+      metrics should not be empty
+    }
+    metrics.map(_._2).foreach(action)
   }
 
-  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[T] = {
+  private def metricsForName[T <: Metric : ClassTag](name: String): Iterable[(MetricName, T)] = {
     metricRegistry.getMetrics.asScala.collect {
-      case (mName, metric: T) if mName.getKey == name => metric
+      case (mName, metric: T) if mName.getKey == name => (mName, metric)
     }
   }
 

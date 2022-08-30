@@ -2,10 +2,10 @@ package pl.touk.nussknacker.ui.process.processingtypedata
 
 import com.typesafe
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
-import org.scalatest.FunSuite
-import org.scalatest.Matchers.{convertToAnyShouldWrapper, include}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers.{convertToAnyShouldWrapper, include}
 
-class ProcessingTypeDataConfigurationReaderSpec extends FunSuite {
+class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
 
   private val oldConfiguration: Config = ConfigFactory.parseString(
     """

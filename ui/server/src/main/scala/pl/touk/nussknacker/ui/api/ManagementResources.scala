@@ -17,26 +17,27 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.parser.parse
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
+import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessIdWithNameAndCategory}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
+import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +52,8 @@ object ManagementResources {
             processRepository: FetchingProcessRepository[Future],
             featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
-            processService: ProcessService)
+            processService: ProcessService,
+            metricRegistry: MetricRegistry)
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -62,7 +64,8 @@ object ManagementResources {
       processRepository,
       featuresOptions.deploymentCommentSettings,
       processResolving,
-      processService
+      processService,
+      metricRegistry
     )
   }
 
@@ -110,7 +113,8 @@ class ManagementResources(processCounter: ProcessCounter,
                           val processRepository: FetchingProcessRepository[Future],
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processResolving: UIProcessResolving,
-                          processService: ProcessService)
+                          processService: ProcessService,
+                          metricRegistry: MetricRegistry)
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -173,9 +177,11 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                processService
-                  .deployProcess(processId, None, deploymentComment)
-                  .map(toResponse(StatusCodes.OK))
+                measureTime("deployment", metricRegistry) {
+                  processService
+                    .deployProcess(processId, None, deploymentComment)
+                    .map(toResponse(StatusCodes.OK))
+                }
               }
             }
           }
@@ -186,9 +192,11 @@ class ManagementResources(processCounter: ProcessCounter,
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
-                processService
-                  .cancelProcess(processId, deploymentComment)
-                  .map(toResponse(StatusCodes.OK))
+                measureTime("cancel", metricRegistry) {
+                  processService
+                    .cancelProcess(processId, deploymentComment)
+                    .map(toResponse(StatusCodes.OK))
+                }
               }
             }
           }
@@ -196,16 +204,18 @@ class ManagementResources(processCounter: ProcessCounter,
       } ~
       //TODO: maybe Write permission is enough here?
       path("processManagement" / "test" / Segment) { processName =>
-        (post & processId(processName)) { processId =>
-          canDeploy(processId) {
+        (post & processIdWithCategory(processName)) { idWithCategory =>
+          canDeploy(idWithCategory.id) {
             formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
               complete {
                 if (testData.length > testDataSettings.testDataMaxBytes) {
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
-                  performTest(processId, testData, displayableProcessJson).flatMap { results =>
-                    Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                  }.recover(EspErrorToHttp.errorToHttp)
+                  measureTime("test", metricRegistry) {
+                    performTest(idWithCategory, testData, displayableProcessJson).flatMap { results =>
+                      Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                    }.recover(EspErrorToHttp.errorToHttp)
+                  }
                 }
               }
             }
@@ -239,12 +249,12 @@ class ManagementResources(processCounter: ProcessCounter,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def performTest(id: ProcessIdWithName, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
+  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
       case Right(process) =>
-        val validationResult = processResolving.validateBeforeUiResolving(process)
+        val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        (managementActor ? Test(id, canonical, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))

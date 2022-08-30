@@ -1,18 +1,28 @@
 /* eslint-disable i18next/no-literal-string */
-import {isEmpty, isEqual, omit, flatten, transform, pickBy, indexOf, keys, find, map, concat, mapValues, flatMap, reduce, get} from "lodash"
-import {NodeResults, TypingResult} from "../types"
+import {flatten, get, isEmpty, isEqual, keys, map, mapValues, omit, pickBy, reduce, transform} from "lodash"
+import {
+  GlobalVariables,
+  NodeId,
+  NodeObjectTypeDefinition,
+  NodeResults,
+  NodeType,
+  Process,
+  ProcessDefinition,
+  TypingResult,
+  UIParameter,
+} from "../types"
 
 class ProcessUtils {
 
-  nothingToSave = (state) => {
+  nothingToSave = (state): boolean => {
     const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     const processToDisplay = state.graphReducer.processToDisplay
     //TODO: validationResult should be removed from processToDisplay...
-    const omitValidation = (details) => omit(details, ['validationResult'])
+    const omitValidation = (details) => omit(details, ["validationResult"])
     return !isEmpty(fetchedProcessDetails) ? isEqual(omitValidation(fetchedProcessDetails.json), omitValidation(processToDisplay)) : true
   }
 
-  canExport = (state) => {
+  canExport = (state): boolean => {
     const fetchedProcessDetails = state.graphReducer.fetchedProcessDetails
     return isEmpty(fetchedProcessDetails) ? false : !isEmpty(fetchedProcessDetails.json.nodes)
   }
@@ -53,7 +63,7 @@ class ProcessUtils {
   findVariablesForBranches = (nodeResults: NodeResults) => (nodeId) => {
     //we find all nodes matching pattern encoding branch and edge and extract branch id
     const escapedNodeId = this.escapeNodeIdForRegexp(nodeId)
-    return transform(nodeResults || {}, function(result, nodeResult, key: string) {
+    return transform(nodeResults || {}, function (result, nodeResult, key: string) {
       const branch = key.match(new RegExp(`^\\$edge-(.*)-${escapedNodeId}$`))
       if (branch && branch.length > 1) {
         result[branch[1]] = nodeResult.variableTypes
@@ -64,25 +74,25 @@ class ProcessUtils {
   //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions#Escaping
   escapeNodeIdForRegexp = (id) => id && id.replace(/[.*+\-?^${}()|[\]\\]/g, "\\$&")
 
-  findAvailableVariables = (processDefinition, processCategory, process) => (nodeId, parameterDefinition) => {
+  findAvailableVariables = (processDefinition: ProcessDefinition, processCategory: string, process: Process) => (nodeId: NodeId, parameterDefinition: UIParameter) => {
     const globalVariablesWithMismatchCategory = this._findGlobalVariablesWithMismatchCategory(processDefinition.globalVariables, processCategory)
     const variablesFromValidation = process?.validationResult?.nodeResults?.[nodeId]?.variableTypes
     const variablesForNode = variablesFromValidation || this._findVariablesBasedOnGraph(nodeId, process, processDefinition)
     const variablesToHideForParam = parameterDefinition?.variablesToHide || []
-    const withoutVariablesToHide =  pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
+    const withoutVariablesToHide = pickBy(variablesForNode, (va, key) => !variablesToHideForParam.includes(key))
     const additionalVariablesForParam = parameterDefinition?.additionalVariables || {}
     const variables = {...withoutVariablesToHide, ...additionalVariablesForParam}
     //Filtering by category - we show variables only with the same category as process, removing these which are in excludeList
-    return pickBy(variables, (va, key) => indexOf(globalVariablesWithMismatchCategory, key) === -1)
+    return pickBy(variables, (va, key) => globalVariablesWithMismatchCategory.indexOf(key) === -1)
   }
 
   //It's not pretty but works.. This should be done at backend with properly category hierarchy
-  _findGlobalVariablesWithMismatchCategory = (globalVariables, processCategory) => {
-    return keys(pickBy(globalVariables, variable => indexOf(variable.categories, processCategory) === -1))
+  _findGlobalVariablesWithMismatchCategory = (globalVariables: GlobalVariables, processCategory: string) => {
+    return keys(pickBy(globalVariables, variable => variable.categories.indexOf(processCategory) === -1))
   }
 
   //FIXME: handle source/sink/exceptionHandler properly here - we don't want to use #input etc here!
-  _findVariablesBasedOnGraph = (nodeId, process, processDefinition) => {
+  _findVariablesBasedOnGraph = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
     const filteredGlobalVariables = pickBy(processDefinition.globalVariables, variable => variable.returnType !== null)
     const globalVariables = mapValues(filteredGlobalVariables, (v) => {
       return v.returnType
@@ -94,9 +104,9 @@ class ProcessUtils {
     }
   }
 
-  _findVariablesDeclaredBeforeNode = (nodeId, process, processDefinition) => {
+  _findVariablesDeclaredBeforeNode = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
     const previousNodes = this._findPreviousNodes(nodeId, process)
-    const variablesDefinedBeforeNodeList = flatMap(previousNodes, (nodeId) => {
+    const variablesDefinedBeforeNodeList = previousNodes.flatMap((nodeId) => {
       return this._findVariablesDefinedInProcess(nodeId, process, processDefinition)
     })
     return this._listOfObjectsToObject(variablesDefinedBeforeNodeList)
@@ -108,8 +118,8 @@ class ProcessUtils {
     }, {})
   }
 
-  _findVariablesDefinedInProcess = (nodeId, process, processDefinition) => {
-    const node = find(process.nodes, (node) => node.id === nodeId)
+  _findVariablesDefinedInProcess = (nodeId: NodeId, process: Process, processDefinition: ProcessDefinition) => {
+    const node = process.nodes.find((node) => node.id === nodeId)
     const nodeObjectTypeDefinition = this.findNodeObjectTypeDefinition(node, processDefinition)
     const clazzName = get(nodeObjectTypeDefinition, "returnType")
     const unknown = {type: "Unknown", refClazzName: "java.lang.Object"}
@@ -118,7 +128,7 @@ class ProcessUtils {
         return isEmpty(clazzName) ? [] : [{input: clazzName}]
       }
       case "SubprocessInputDefinition": {
-        return node.parameters.map(param => ({[param.name]: param.typ}))
+        return node.parameters?.map(param => ({[param.name]: param.typ}))
       }
       case "Enricher": {
         return [{[node.output]: clazzName}]
@@ -136,7 +146,7 @@ class ProcessUtils {
         return [{[node.varName]: unknown}]
       }
       case "Switch": {
-        return [{[node.exprVal]: unknown}]
+        return [node.exprVal ? {[node.exprVal]: unknown} : {}]
       }
       default: {
         return []
@@ -145,39 +155,35 @@ class ProcessUtils {
   }
 
   //TODO: this should be done without these switches..
-  findNodeObjectTypeDefinition = (node, processDefinition) => {
-    if (node == null) {
-      return {}
-    }
-
-    const nodeDefinitionId = this.findNodeDefinitionId(node)
-    switch (node.type) {
-      case "Source": {
-        return get(processDefinition, `sourceFactories[${nodeDefinitionId}]`)
-      }
-      case "Sink": {
-        return get(processDefinition, `sinkFactories[${nodeDefinitionId}]`)
-      }
-      case "Enricher":
-      case "Processor": {
-        return get(processDefinition, `services[${nodeDefinitionId}]`)
-      }
-      case "Join":
-      case "CustomNode": {
-        return get(processDefinition, `customStreamTransformers[${nodeDefinitionId}]`)
-      }
-      case "SubprocessInput": {
-        return get(processDefinition, `subprocessInputs[${nodeDefinitionId}]`)
-      }
-      default: {
-        return {}
+  findNodeObjectTypeDefinition = (node: NodeType, processDefinition: ProcessDefinition): NodeObjectTypeDefinition => {
+    if (node) {
+      const nodeDefinitionId = this.findNodeDefinitionId(node)
+      switch (node.type) {
+        case "Source": {
+          return processDefinition.sourceFactories?.[nodeDefinitionId]
+        }
+        case "Sink": {
+          return processDefinition.sinkFactories?.[nodeDefinitionId]
+        }
+        case "Enricher":
+        case "Processor": {
+          return processDefinition.services?.[nodeDefinitionId]
+        }
+        case "Join":
+        case "CustomNode": {
+          return processDefinition.customStreamTransformers?.[nodeDefinitionId]
+        }
+        case "SubprocessInput": {
+          return processDefinition.subprocessInputs?.[nodeDefinitionId]
+        }
       }
     }
+    return {}
   }
 
   //TODO: this should be done without these switches..
-  findNodeDefinitionId = (node) => {
-    switch (get(node, "type")) {
+  findNodeDefinitionId = (node: NodeType): string | null => {
+    switch (node?.type) {
       case "Source":
       case "Sink": {
         return node.ref.typ
@@ -216,13 +222,13 @@ class ProcessUtils {
 
   humanReadableType = (typingResult: TypingResult): string => isEmpty(typingResult) ? null : typingResult.display
 
-  _findPreviousNodes = (nodeId, process) => {
-    const nodeEdge = find(process.edges, (edge) => isEqual(edge.to, nodeId))
+  _findPreviousNodes = (nodeId: NodeId, process: Process): NodeId[] => {
+    const nodeEdge = process.edges.find((edge) => edge.to === nodeId)
     if (isEmpty(nodeEdge)) {
       return []
     } else {
       const previousNodes = this._findPreviousNodes(nodeEdge.from, process)
-      return concat([nodeEdge.from], previousNodes)
+      return [nodeEdge.from].concat(previousNodes)
     }
   }
 

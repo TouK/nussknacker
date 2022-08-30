@@ -8,7 +8,9 @@ import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2AccessTokenRejection, OAuth2CompoundException}
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 
-import scala.concurrent.duration.Deadline
+import java.time.{Duration, Instant}
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Deadline, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Success
 
@@ -17,9 +19,9 @@ trait JwtStandardClaims {
   val subject: Option[String]
   val audience: Option[Either[List[String], String]]
   final val audienceAsList: List[String] = audience.map(_.fold(identity, List(_))).toList.flatten
-  val expirationTime: Option[Deadline]
-  val notBefore: Option[Deadline]
-  val issuedAt: Option[Deadline]
+  val expirationTime: Option[Instant]
+  val notBefore: Option[Instant]
+  val issuedAt: Option[Instant]
   val jwtId: Option[String]
 }
 
@@ -44,13 +46,14 @@ class JwtOAuth2Service[
     case Invalid(jwtError) => Future.failed(OAuth2CompoundException(one(jwtError)))
   }
 
-  override def introspectAccessToken(accessToken: String): Future[Option[Deadline]] = {
+  override def introspectAccessToken(accessToken: String): Future[Option[Instant]] = {
     if (accessTokenIsJwt) {
       Future(accessToken)
         .flatMap(accessToken => introspectJwtToken[AccessTokenClaims](accessToken))
         .flatMap(claims =>
-          if (requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains))
+          if (requiredAccessTokenAudience.isEmpty || claims.audienceAsList.exists(requiredAccessTokenAudience.contains)) {
             Future.successful(claims.expirationTime)
+          }
           else
             Future.failed(OAuth2CompoundException(one(OAuth2AccessTokenRejection("Invalid audience claim"))))
         )
@@ -69,12 +72,12 @@ class JwtOAuth2Service[
   @JsonKey("iss") issuer: Option[String],
   @JsonKey("sub") subject: Option[String],
   @JsonKey("aud") audience: Option[Either[List[String], String]],
-  @JsonKey("exp") expirationTime: Option[Deadline],
-  @JsonKey("nbf") notBefore: Option[Deadline],
-  @JsonKey("iat") issuedAt: Option[Deadline],
+  @JsonKey("exp") expirationTime: Option[Instant],
+  @JsonKey("nbf") notBefore: Option[Instant],
+  @JsonKey("iat") issuedAt: Option[Instant],
   @JsonKey("jti") jwtId: Option[String]
 ) extends JwtStandardClaims
 
-object DefaultJwtAccessToken extends EpochSecondsCodecs with EitherCodecs {
+object DefaultJwtAccessToken extends EitherCodecs with EpochSecondsCodecs {
   implicit val config: Configuration = Configuration.default
 }

@@ -4,15 +4,12 @@ import akka.http.scaladsl.marshalling.ToResponseMarshallable
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.server._
 import akka.stream.Materializer
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.ProcessingTypeData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessState}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
@@ -22,19 +19,16 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.EspErrorToHttp._
-import pl.touk.nussknacker.ui.api.ProcessesResources.{UnmarshallError, WrongProcessId}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process._
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
-import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -44,7 +38,6 @@ class ProcessesResources(
   subprocessRepository: SubprocessRepository,
   processService: ProcessService,
   processToolbarService: ProcessToolbarService,
-  processValidation: ProcessValidation,
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
@@ -145,12 +138,10 @@ class ProcessesResources(
             (canWrite(processId) & post) {
               fileUpload("process") { case (_, byteSource) =>
                 complete {
-                  MultipartUtils.readFile(byteSource).map[ToResponseMarshallable] { jsonString =>
-                    validateProcessForImport(processId, jsonString) match {
-                      case Valid(process) => importProcess(processId, process)
-                      case Invalid(error) => EspErrorToHttp.espErrorToHttp(error)
-                    }
-                  }
+                  MultipartUtils
+                    .readFile(byteSource)
+                    .flatMap(processService.importProcess(processId, _))
+                    .map(toResponseEither[ValidatedDisplayableProcess])
                 }
               }
             }
@@ -284,23 +275,6 @@ class ProcessesResources(
     implicit val listenerUser: User = ListenerApiUser(user)
     response.foreach(resp => processChangeListener.handle(eventAction(resp)))
   }
-  private def validateProcessForImport(processId: ProcessIdWithName, jsonString: String): Validated[EspError, CanonicalProcess] = {
-    ProcessMarshaller.fromJson(jsonString) match {
-      case Valid(process) if process.metaData.id != processId.name.value =>
-    Invalid(WrongProcessId(processId.name.value, process.metaData.id))
-      case Valid(process) => Valid(process)
-      case Invalid(unmarshallError) => Invalid(UnmarshallError(unmarshallError))
-    }
-  }
-
-  private def importProcess(processId: ProcessIdWithName, process: CanonicalProcess)(implicit user: LoggedUser): Future[ToResponseMarshallable] = {
-    processRepository.fetchLatestProcessDetailsForProcessIdEither[Unit](processId.id).map { detailsXor =>
-      val validatedProcess = detailsXor
-        .map(details => ProcessConverter.toDisplayable(process, details.processingType))
-        .map(process => new ValidatedDisplayableProcess(process, processValidation.validate(process)))
-      toResponseXor(validatedProcess)
-    }
-  }
 
   private def fetchProcessStatesForProcesses(processes: List[BaseProcessDetails[Unit]])(implicit user: LoggedUser): Future[Map[String, ProcessState]] = {
     import cats.instances.future._
@@ -336,7 +310,7 @@ class ProcessesResources(
   private def validateAndReverseResolve(processDetails: BaseProcessDetails[CanonicalProcess]): Future[ValidatedProcessDetails] = {
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
-      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType)
+      val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
       processResolving.reverseResolveExpressions(canonical, processingType, validationResult)
     }
     Future.successful(validatedDetails)

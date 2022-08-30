@@ -8,7 +8,7 @@ import {ExpressionLang} from "./types"
 
 type Props = {
     expressionObj: $TodoType,
-    onValueChange: UnknownFunction,
+    onValueChange: (value: string) => void,
     className: string,
     formatter: Formatter,
 }

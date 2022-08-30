@@ -1,16 +1,16 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import cats.data.NonEmptyList
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
-import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 import scala.concurrent.duration._
 
-class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
+class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
   private val scenarioWithSingleSource = ScenarioBuilder.streaming("test")
     .source("left-source", "test-source")
@@ -49,7 +49,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 
   test("stubbing for verification purpose should stub all sources") {
     val verificationCompiler = new VerificationFlinkProcessCompiler(scenarioWithMultipleSources, SampleConfigCreator, minimalFlinkConfig, DefaultNamespacedObjectNaming)
-    val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(getClass.getClassLoader).compileProcess()
+    val compiledProcess = verificationCompiler.compileProcess(scenarioWithMultipleSources, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
     }
@@ -65,7 +65,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
       case source: SourcePart => source.obj
     }
     sources should matchPattern {
-      case CollectionSource(_, List(1, 2, 3), _, _) :: Nil =>
+      case CollectionSource(List(1, 2, 3), _, _) :: Nil =>
     }
   }
 
@@ -78,8 +78,8 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
 
   private def testCompile(scenario: EspProcess, testData: TestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, testData, new ExecutionConfig, DefaultNamespacedObjectNaming)
-    testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(getClass.getClassLoader).compileProcess()
+      scenario, testData, DefaultNamespacedObjectNaming)
+    testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 
   object SampleConfigCreator extends BaseSampleConfigCreator[Int](List.empty) {
@@ -91,7 +91,7 @@ class StubbedFlinkProcessCompilerTest extends FunSuite with Matchers {
     }
   }
 
-  object SampleTestSupportSource extends CollectionSource[Int](new ExecutionConfig, List.empty, None, Typed.fromDetailedType[Int]) with FlinkSourceTestSupport[Int] {
+  object SampleTestSupportSource extends CollectionSource[Int](List.empty, None, Typed.fromDetailedType[Int]) with FlinkSourceTestSupport[Int] {
     override def timestampAssignerForTest: Option[TimestampWatermarkHandler[Int]] = None
     override def testDataParser: TestDataParser[Int] = (data: TestData) => data.testData.map(_.toInt).toList
   }

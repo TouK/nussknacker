@@ -3,7 +3,7 @@ import {dia, shapes} from "jointjs"
 export const isLink = (c: dia.Cell): c is dia.Link => c.isLink()
 export const isElement = (c: dia.Cell): c is dia.Element => c?.isElement()
 
-export function isModelElement(el: dia.Element): el is shapes.devs.Model {
+export function isModelElement(el: dia.Cell): el is shapes.devs.Model {
   return el instanceof shapes.devs.Model
 }
 

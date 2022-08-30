@@ -1,20 +1,21 @@
 package pl.touk.nussknacker.engine.requestresponse.test
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.BeforeAndAfterEach
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}
-import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
 
-class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndAfterEach {
+class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -65,7 +66,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .source("start", "request1-post-source")
-      .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/0 == 0 : true")
+      .filter("occasionallyThrowFilter", "#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true")
       .filter("filter1", "#input.field1() == 'a'")
       .enricher("enricher", "var1", "enricherService")
       .processor("processor", "processorService")
@@ -87,7 +88,7 @@ class RequestResponseTestMainSpec extends FunSuite with Matchers with BeforeAndA
     results.exceptions should have size 1
     results.exceptions.head.context shouldBe ResultContext(firstId, Map("input" -> Request1("a","b")))
     results.exceptions.head.nodeId shouldBe Some("occasionallyThrowFilter")
-    results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/0 == 0 : true] evaluation failed, message: / by zero"""
+    results.exceptions.head.throwable.getMessage shouldBe """Expression [#input.field1() == 'a' ? 1/{0, 1}[0] == 0 : true] evaluation failed, message: / by zero"""
   }
 
 

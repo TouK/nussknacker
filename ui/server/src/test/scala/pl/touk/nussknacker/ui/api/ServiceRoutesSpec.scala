@@ -3,7 +3,8 @@ package pl.touk.nussknacker.ui.api
 import akka.http.scaladsl.model.{HttpEntity, MediaTypes, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.ui.api.ServiceRoutes.JsonThrowable
 import pl.touk.nussknacker.ui.api.helpers.{TestPermissions, TestProcessingTypes}
@@ -16,12 +17,12 @@ import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, 
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 
-class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
+class ServiceRoutesSpec extends AnyFunSuite with Matchers with ScalatestRouteTest with FailFastCirceSupport with TestPermissions{
 
   private val category1Deploy = Map("Category1" -> Set(Permission.Deploy))
 
   private implicit val user: LoggedUser = LoggedUser("1", "admin", category1Deploy)
-  private val modelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.streamingProcessTypeConfig))
+  private val modelData = ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig))
   private val serviceRoutes = new ServiceRoutes(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> modelData))
 
   implicit val queryResultDecoder: Decoder[QueryResult] = Decoder.decodeJson
@@ -77,8 +78,27 @@ class ServiceRoutesSpec extends FunSuite with Matchers with ScalatestRouteTest w
       """.stripMargin)
     Post("/service/streaming/enricher", entity) ~> serviceRoutes.securedRoute ~> check {
       status shouldEqual StatusCodes.InternalServerError
-      entityAs[JsonThrowable].message shouldEqual Some("ExpressionParseError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',,Some(param),not valid spell expression)")
+      entityAs[JsonThrowable].message shouldEqual Some("ExpressionParserCompilationError(EL1041E: After parsing a valid expression, there is still more data in the expression: 'spell',,Some(param),not valid spell expression)")
       entityAs[JsonThrowable].className shouldEqual classOf[ServiceInvocationException].getCanonicalName
+    }
+  }
+  test("invoke service with null result") {
+    val entity = HttpEntity(MediaTypes.`application/json`,
+      """
+        |[
+        | {
+        |    "name": "param",
+        |    "expression": {
+        |       "language":"spel",
+        |       "expression":"'parameterValue'"
+        |    }
+        | }
+        |]
+      """.stripMargin)
+    Post("/service/streaming/enricherNullResult", entity) ~> serviceRoutes.securedRoute ~> check {
+      status shouldEqual StatusCodes.OK
+      val result = entityAs[io.circe.Json]
+      result.asObject.flatMap(_.apply("result")).get.isNull shouldEqual true
     }
   }
   test("display valuable error message for mismatching parameters") {

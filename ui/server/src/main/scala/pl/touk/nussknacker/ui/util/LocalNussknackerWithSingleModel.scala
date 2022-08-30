@@ -18,7 +18,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 //This is helper, which allows for starting UI with given model without having to build jar etc.
-// See pl.touk.nussknacker.engine.demo.LocalRun in demo/tests for sample usage
+// See pl.touk.nussknacker.defaultmodel.RunFlinkStreamingModelLocally for sample usage
 object LocalNussknackerWithSingleModel  {
 
   //default name in config

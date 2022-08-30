@@ -1,5 +1,5 @@
 import HttpService from "../../http/HttpService"
-import {NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
+import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
 import {Action, ThunkAction} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {layoutChanged, Position} from "./ui/layout"
@@ -9,7 +9,6 @@ import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 
 //TODO: identify
 type Edges = $TodoType[]
-type EdgeType = $TodoType
 
 export type NodesWithPositions = { node: NodeType, position: Position }[]
 
@@ -49,11 +48,6 @@ type ValidationResultAction = {
   validationResult: ValidationResult,
 }
 
-type DisplayNodeDetailsAction = {
-  type: "DISPLAY_NODE_DETAILS",
-  nodeToDisplay: NodeType,
-}
-
 type NodeAddedAction = {
   type: "NODE_ADDED",
   node: NodeType,
@@ -70,13 +64,6 @@ function runSyncActionsThenValidate<S extends RootState>(syncActions: (state: S)
   }
 }
 
-export function displayNodeDetails(node: NodeType): DisplayNodeDetailsAction {
-  return {
-    type: "DISPLAY_NODE_DETAILS",
-    nodeToDisplay: node,
-  }
-}
-
 export function deleteNodes(ids: NodeId[]): ThunkAction {
   return runSyncActionsThenValidate(() => [{
     type: "DELETE_NODES",
@@ -84,13 +71,14 @@ export function deleteNodes(ids: NodeId[]): ThunkAction {
   }])
 }
 
-export function nodesConnected(fromNode: NodeType, toNode: NodeType): ThunkAction {
+export function nodesConnected(fromNode: NodeType, toNode: NodeType, edgeType?: EdgeType): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_CONNECTED",
-      fromNode: fromNode,
-      toNode: toNode,
       processDefinitionData: state.settings.processDefinitionData,
+      fromNode,
+      toNode,
+      edgeType,
     },
   ])
 }
@@ -103,7 +91,7 @@ export function nodesDisconnected(from: NodeId, to: NodeId): ThunkAction {
   }])
 }
 
-export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeType: EdgeType): ThunkAction {
+export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edge: Edge): ThunkAction {
   return runSyncActionsThenValidate(state => [
     {
       type: "NODES_DISCONNECTED",
@@ -115,7 +103,7 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edgeT
       fromNode: from,
       toNode: middle,
       processDefinitionData: state.settings.processDefinitionData,
-      edgeType: edgeType,
+      edgeType: edge.edgeType,
     },
     {
       type: "NODES_CONNECTED",
@@ -146,7 +134,6 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
 }
 
 export type NodeActions =
-  | DisplayNodeDetailsAction
   | NodeAddedAction
   | DeleteNodesAction
   | NodesConnectedAction

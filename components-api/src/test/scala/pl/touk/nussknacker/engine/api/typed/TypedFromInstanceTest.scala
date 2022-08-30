@@ -1,24 +1,54 @@
 package pl.touk.nussknacker.engine.api.typed
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, LoneElement, Matchers}
+import org.scalatest.LoneElement
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
 import scala.collection.immutable.ListMap
 
-class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
+class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
   import scala.collection.JavaConverters._
 
   test("should type null") {
-    Typed.fromInstance(null: Any) shouldBe Typed.empty
+    Typed.fromInstance(null: Any) shouldBe TypedNull
+  }
+
+  test("should type string") {
+    Typed.fromInstance("t") shouldBe TypedObjectWithValue(Typed.typedClass[String], "t")
+  }
+
+  test("should type int") {
+    Typed.fromInstance(1547) shouldBe TypedObjectWithValue(Typed.typedClass[Int], 1547)
+  }
+
+  test("should type long") {
+    Typed.fromInstance(42L) shouldBe TypedObjectWithValue(Typed.typedClass[Long], 42L)
+  }
+
+  test("should type float") {
+    Typed.fromInstance(1.4f) shouldBe TypedObjectWithValue(Typed.typedClass[Float], 1.4f)
+  }
+
+  test("should type double") {
+    Typed.fromInstance(15.78d) shouldBe TypedObjectWithValue(Typed.typedClass[Double], 15.78d)
+  }
+
+  test("should type bool") {
+    Typed.fromInstance(true) shouldBe TypedObjectWithValue(Typed.typedClass[Boolean], true)
   }
 
   test("should type map types") {
-    val fieldTypes = ListMap("a" -> Typed(classOf[java.lang.Integer]), "b" -> Typed(classOf[java.lang.String]))
+    val fieldTypes = ListMap(
+      "a" -> TypedObjectWithValue(Typed.typedClass[Int], 1),
+      "b" -> TypedObjectWithValue(Typed.typedClass[String], "string")
+    )
 
     val data: List[(Object, TypedObjectTypingResult)] = List(
-      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
+      (Map("a" -> 1, "b" -> "string"), TypedObjectTypingResult(fieldTypes, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))),
       (Map("a" -> 1, "b" -> "string").asJava, TypedObjectTypingResult(fieldTypes)),
       (TypedMap(Map("a" -> 1, "b" -> "string")), TypedObjectTypingResult(fieldTypes))
     )
@@ -47,8 +77,8 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     }
 
     val listOfSimpleObjects = List[Any](1.1, 2)
-    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Integer]))
-    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Integer]))
+    checkTypingResult(listOfSimpleObjects, classOf[List[_]], Typed(classOf[Number]))
+    checkTypingResult(listOfSimpleObjects.asJava, classOf[java.util.List[_]], Typed(classOf[Number]))
 
     val listOfTypedMaps = List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 1)))
     val typedMapTypingResult = TypedObjectTypingResult(ListMap("a" -> Typed(classOf[Integer])))
@@ -59,7 +89,20 @@ class TypedFromInstanceTest extends FunSuite with Matchers with LoneElement with
     checkNotASubclassOfOtherParamTypingResult(listOfTypedMaps, TypedObjectTypingResult(ListMap("a" -> Typed(classOf[String]))))
   }
 
-  test("should fallback to object's class") {
-    Typed.fromInstance("abc") shouldBe Typed(classOf[java.lang.String])
+  test("should find element type for lists of different elements") {
+    Typed.fromInstance(List[Any](4L, 6.35, 8.47)) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Typed.typedClass[Number]))
+    Typed.fromInstance(List(3, "t")) shouldBe Typed.genericTypeClass(classOf[List[_]], List(Unknown))
   }
+
+  test("should fallback to object's class") {
+    Typed.fromInstance("abc") shouldBe TypedObjectWithValue(Typed.typedClass[String], "abc")
+  }
+
+  test("should not save types that cannot be encoded") {
+    Typed.fromInstance(Float.NaN) shouldBe Typed.typedClass[Float]
+    Typed.fromInstance(Double.PositiveInfinity) shouldBe Typed.typedClass[Double]
+    Typed.fromInstance(TestClass(8)) shouldBe Typed.typedClass[TestClass]
+  }
+
+  case class TestClass(value: Int)
 }

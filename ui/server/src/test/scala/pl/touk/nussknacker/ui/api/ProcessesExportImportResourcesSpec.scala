@@ -5,7 +5,6 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest._
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -14,24 +13,30 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.util.{FileUploadUtils, MultipartUtils}
+import pl.touk.nussknacker.ui.util.MultipartUtils
 import io.circe.syntax._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import scala.language.higherKinds
 
-class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
+class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with Inside with FailFastCirceSupport
   with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-
   import akka.http.scaladsl.server.RouteConcatenation._
+
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+  private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
+
+  private val processesExportResources = new ProcessesExportResources(fetchingProcessRepository, processActivityRepository, processResolving)
   private val routeWithAllPermissions = withAllPermissions(processesExportResources) ~ withAllPermissions(processesRoute)
   private val adminRoute = asAdmin(processesExportResources) ~ asAdmin(processesRoute)
-  private implicit val loggedUser: LoggedUser = LoggedUser("1", "lu", testPermissionEmpty)
 
   test("export process from displayable") {
     val processToExport = ProcessTestData.sampleDisplayableProcess
+    createEmptyProcess(ProcessTestData.sampleDisplayableProcess.processName)
 
     Post(s"/processesExport", processToExport) ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
@@ -40,7 +45,6 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
       
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
-
   }
 
   test("export process and import it (as common user)") {
@@ -102,25 +106,6 @@ class ProcessesExportImportResourcesSpec extends FunSuite with ScalatestRouteTes
 
     }
 
-  }
-
-  test("fail to import process with different id") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get(s"/processesExport/${processToSave.id}/2") ~> routeWithAllPermissions ~> check {
-      val response = responseAs[String]
-      val canonicalProcess = ProcessMarshaller.fromJson(response).toOption.get
-      val modified = canonicalProcess.copy(metaData = canonicalProcess.metaData.copy(id = "SOMEVERYFAKEID"))
-
-      val multipartForm = FileUploadUtils.prepareMultiPart(modified.asJson.spaces2, "process")
-
-      Post(s"/processes/import/${processToSave.id}", multipartForm) ~> routeWithAllPermissions ~> check {
-        status shouldEqual StatusCodes.BadRequest
-      }
-    }
   }
 
   test("export pdf") {

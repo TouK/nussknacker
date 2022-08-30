@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.management.periodic
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -42,7 +42,7 @@ object PeriodicDeploymentManager {
     val clock = Clock.systemDefaultZone()
 
     val (db: jdbc.JdbcBackend.DatabaseDef, dbProfile: JdbcProfile) = DbInitializer.init(periodicBatchConfig.db)
-    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock)
+    val scheduledProcessesRepository = new SlickPeriodicProcessesRepository(db, dbProfile, clock, periodicBatchConfig.processingType)
     val jarManager = FlinkJarManager(flinkConfig, periodicBatchConfig, modelData)
     val listener = listenerFactory.create(originalConfig)
     val processConfigEnricher = processConfigEnricherFactory(originalConfig)
@@ -79,17 +79,32 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
+
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    for {
+      scheduledProperty <- extractScheduleProperty(canonicalProcess)
+      _ <- Future.fromTry(service.prepareInitialScheduleDates(scheduledProperty).toTry)
+      _ <- delegate.validate(processVersion, deploymentData, canonicalProcess)
+    } yield ()
+  }
+
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+    extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
+      logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
+      // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
+      // but NK API does, so we need to handle this situation.
+      service.schedule(scheduleProperty, processVersion, canonicalProcess, cancelIfJobPresent(processVersion, deploymentData.user))
+        .map(_ => None)
+    }
+  }
+
+  private def extractScheduleProperty[T](canonicalProcess: CanonicalProcess): Future[ScheduleProperty] = {
     schedulePropertyExtractor(canonicalProcess) match {
       case Right(scheduleProperty) =>
-        logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
-        // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),
-        // but NK API does, so we need to handle this situation.
-        service.schedule(scheduleProperty, processVersion, canonicalProcess, cancelIfJobPresent(processVersion, deploymentData.user))
-          .map(_ => None)
+        Future.successful(scheduleProperty)
       case Left(error) =>
         Future.failed(new PeriodicProcessException(error))
     }

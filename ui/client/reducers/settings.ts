@@ -2,7 +2,6 @@ import {FeaturesSettings} from "../actions/nk"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
 import {DEV_TOOLBARS} from "../components/toolbarSettings/DEV_TOOLBARS"
-import {DynamicTabData} from "../containers/DynamicTab"
 import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
@@ -65,6 +64,7 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
       const {user} = action
       return {
         ...state,
+        //FIXME: remove class from store - plain data only
         loggedUser: user,
       }
     }

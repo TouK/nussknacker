@@ -5,13 +5,14 @@ import io.circe.Json._
 import io.circe.generic.JsonCodec
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.collection.JavaConverters._
 
-class InputMetaToJsonSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
+class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val encoder = BestEffortJsonEncoder.defaultForTests
 

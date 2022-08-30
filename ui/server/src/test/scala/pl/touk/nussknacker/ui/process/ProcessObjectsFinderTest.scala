@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 import java.time.LocalDateTime
 
-class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPropertyChecks {
+class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -76,7 +77,7 @@ class ProcessObjectsFinderTest extends FunSuite with Matchers with TableDrivenPr
         Case("'1'", GraphBuilder.emptySink("out1", existingSinkFactory)),
         Case("'2'", GraphBuilder.emptySink("out2", existingSinkFactory2))
       )
-    ))
+  ))
 
   private val processWithSomeBasesFraud = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder

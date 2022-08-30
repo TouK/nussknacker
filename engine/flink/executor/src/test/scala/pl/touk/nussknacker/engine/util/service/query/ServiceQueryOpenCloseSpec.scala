@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.util.service.query
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
@@ -18,7 +19,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import scala.concurrent.{ExecutionContext, Future}
 
 class ServiceQueryOpenCloseSpec
-  extends FunSuite
+  extends AnyFunSuite
     with Matchers
     with PatientScalaFutures {
 

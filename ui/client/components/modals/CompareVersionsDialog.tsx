@@ -1,18 +1,18 @@
 /* eslint-disable i18next/no-literal-string */
 import {css, cx} from "@emotion/css"
 import {WindowContentProps} from "@touk/window-manager"
-import _ from "lodash"
+import {keys} from "lodash"
 import React from "react"
 import {connect} from "react-redux"
 import {formatAbsolutely} from "../../common/DateUtils"
-import * as JsonUtils from "../../common/JsonUtils"
+import {flattenObj, objectDiff} from "../../common/JsonUtils"
 import HttpService from "../../http/HttpService"
 import {getProcessId, getProcessVersionId, getVersions} from "../../reducers/selectors/graph"
 import {getTargetEnvironmentId} from "../../reducers/selectors/settings"
 import "../../stylesheets/visualization.styl"
 import {WindowContent} from "../../windowManager"
 import EdgeDetailsContent from "../graph/node-modal/edge/EdgeDetailsContent"
-import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent"
+import NodeDetailsContent from "../graph/node-modal/NodeDetailsContent/NodeDetailsContentConnected"
 import {ProcessVersionType} from "../Process/types"
 import {SelectWithFocus} from "../withFocus"
 
@@ -82,7 +82,8 @@ class VersionsForm extends React.Component<Props, State> {
     const versionId = versionPrefix + version.processVersionId
     return (
       <option key={versionId} value={versionId}>
-        {this.versionDisplayString(versionId)} - created by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
+        {this.versionDisplayString(versionId)} - created
+        by {version.user} &nbsp; {formatAbsolutely(version.createDate)}</option>
     )
   }
 
@@ -117,10 +118,15 @@ class VersionsForm extends React.Component<Props, State> {
                     onChange={(e) => this.setState({currentDiffId: e.target.value})}
                   >
                     <option key="" value=""/>
-                    {_.keys(this.state.difference).map((diffId) => {
+                    {keys(this.state.difference).map((diffId) => {
                       const isLayoutOnly = this.isLayoutChangeOnly(diffId)
                       return (
-                        <option key={diffId} value={diffId} disabled={isLayoutOnly}>{diffId} {isLayoutOnly && "(position only)"}</option>)
+                        <option
+                          key={diffId}
+                          value={diffId}
+                          disabled={isLayoutOnly}
+                        >{diffId} {isLayoutOnly && "(position only)"}</option>
+                      )
                     })}
                   </SelectWithFocus>
                 </div>
@@ -171,9 +177,9 @@ class VersionsForm extends React.Component<Props, State> {
   }
 
   differentPathsForObjects(currentNode, otherNode) {
-    const diffObject = JsonUtils.objectDiff(currentNode, otherNode)
-    const flattenObj = JsonUtils.flattenObj(diffObject)
-    return _.keys(flattenObj)
+    const diffObject = objectDiff(currentNode, otherNode)
+    const flatObj = flattenObj(diffObject)
+    return Object.keys(flatObj)
   }
 
   printNode(node, pathsToMark) {
@@ -185,28 +191,29 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={node}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Node not present</div>)
   }
 
-  printEdge(edge, pathsToMark) {
-    return edge ?
-      (
-        <EdgeDetailsContent
-          edge={edge}
-          readOnly={true}
-          showValidation={false}
-          showSwitch={false}
-          changeEdgeTypeValue={() => {return}}
-          changeEdgeTypeCondition={() => {return}}
-          pathsToMark={pathsToMark}
-          variableTypes={{}}
-        />
-      ) :
-      (<div className="notPresent">Edge not present</div>)
+  stubOnChange = () => {
+    return
   }
+
+  printEdge = (edge, pathsToMark) => edge ?
+    (
+      <EdgeDetailsContent
+        edge={edge}
+        readOnly={true}
+        showValidation={false}
+        showSwitch={false}
+        changeEdgeTypeValue={this.stubOnChange}
+        changeEdgeTypeCondition={this.stubOnChange}
+        pathsToMark={pathsToMark}
+        variableTypes={{}}
+      />
+    ) :
+    (<div className="notPresent">Edge not present</div>)
 
   printProperties(property, pathsToMark) {
     return property ?
@@ -217,7 +224,6 @@ class VersionsForm extends React.Component<Props, State> {
           showSwitch={false}
           node={property}
           pathsToMark={pathsToMark}
-          onChange={() => {return}}
         />
       ) :
       (<div className="notPresent">Properties not present</div>)

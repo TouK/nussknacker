@@ -14,8 +14,7 @@ import pl.touk.nussknacker.engine.management.sample.transformer.DynamicParameter
 object DynamicParametersSource extends SourceFactory with DynamicParametersMixin {
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
-    new CollectionSource[Any](StreamExecutionEnvironment.getExecutionEnvironment.getConfig,
-      List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)
+    new CollectionSource[Any](List(TypedMap(params.filterNot(_._1 == choiceParamName))), None, Unknown)
   }
 
   override protected def result(validationContext: ValidationContext,

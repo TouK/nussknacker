@@ -2,7 +2,10 @@ package pl.touk.nussknacker.engine.lite.kafka
 
 import com.dimafeng.testcontainers._
 import com.typesafe.scalalogging.LazyLogging
-import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, ExtremelyPatientScalaFutures}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend, UriContext, asString, basicRequest}
@@ -10,17 +13,24 @@ import sttp.client.{NothingT, SttpBackend, UriContext, asString, basicRequest}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class NuKafkaRuntimeDockerProbesTest extends FunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with ExtremelyPatientScalaFutures with LazyLogging with EitherValuesDetailedMessage {
+class NuKafkaRuntimeDockerProbesTest extends AnyFunSuite with BaseNuKafkaRuntimeDockerTest with Matchers with ExtremelyPatientScalaFutures with LazyLogging with EitherValuesDetailedMessage {
 
   override val container: Container = {
     kafkaContainer.start() // must be started before prepareTestCaseFixture because it creates topic via api
-    fixture = prepareTestCaseFixture("probes", NuKafkaRuntimeTestSamples.jsonPingPongScenario)
+    schemaRegistryContainer.start() // should be started after kafka
+    fixture = prepareTestCaseFixture(NuKafkaRuntimeTestSamples.pingPongScenarioId, NuKafkaRuntimeTestSamples.pingPongScenario)
+    registerSchemas()
     startRuntimeContainer(fixture.scenarioFile, checkReady = false)
-    MultipleContainers(kafkaContainer, runtimeContainer)
+    MultipleContainers(kafkaContainer, schemaRegistryContainer, runtimeContainer)
+  }
+
+  private def registerSchemas(): Unit = {
+    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.inputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
+    schemaRegistryClient.register(ConfluentUtils.valueSubject(fixture.outputTopic), NuKafkaRuntimeTestSamples.jsonPingSchema)
   }
 
   private implicit val backend: SttpBackend[Future, Nothing, NothingT] = AsyncHttpClientFutureBackend()
-  private val baseManagementUrl = uri"http://localhost:$runtimeManagementMappedPort"
+  private val baseManagementUrl = uri"http://localhost:$mappedRuntimeApiPort"
 
   test("readiness probe") {
     eventually {

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api.helpers
 
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ProcessShapeFetchStrategy}
@@ -13,7 +14,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import java.util
 import scala.util.Try
 
-class MockFetchingProcessRepositorySpec extends FlatSpec with Matchers with ScalaFutures {
+class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with ScalaFutures {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 

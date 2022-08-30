@@ -8,7 +8,9 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.{Assertion}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
@@ -24,7 +26,7 @@ import java.nio.charset.StandardCharsets
 import java.util.Optional
 import scala.reflect.ClassTag
 
-trait KafkaSourceFactoryMixin extends FunSuite with Matchers with KafkaSpec with PatientScalaFutures {
+trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec with PatientScalaFutures {
 
   val sampleValue: SampleValue = SampleValue("first", "last")
   val sampleKey: SampleKey = SampleKey("one", 2L)
@@ -139,7 +141,8 @@ object KafkaSourceFactoryMixin {
   def createConsumerRecord[Key, Value](topic: String, partition: Int, offset: Long, timestamp: Long, timestampType: TimestampType, key: Key, value: Value, headers: Headers, leaderEpoch: Optional[Integer]): ConsumerRecord[Key, Value] = {
     new ConsumerRecord(topic, partition, offset,
       timestamp, timestampType,
-      ConsumerRecord.NULL_CHECKSUM.longValue(), ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
+      ConsumerRecord.NULL_CHECKSUM.longValue(),
+      ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
       key, value, headers,
       leaderEpoch
     )

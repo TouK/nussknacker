@@ -1,4 +1,4 @@
-import {reducer as notifications} from "react-notification-system-redux"
+import {NotificationsState, reducer as notifications} from "react-notification-system-redux"
 import {combineReducers} from "redux"
 import {GraphState, reducerWithUndo as graphReducer} from "./graph"
 import {reducer as httpErrorHandler} from "./httpErrorHandler"
@@ -10,6 +10,7 @@ import {reducer as ui, UiState} from "./ui"
 import {FeatureFlags, featureFlags} from "./featureFlags"
 import {UserSettings, userSettings} from "./userSettings"
 import {StateWithHistory} from "redux-undo"
+import {backendNotifications, BackendNotificationState} from "./notifications";
 
 export const reducer = combineReducers<RootState>({
   httpErrorHandler,
@@ -17,6 +18,7 @@ export const reducer = combineReducers<RootState>({
   settings,
   ui,
   processActivity,
+  backendNotifications,
   notifications,
   toolbars,
   featureFlags,
@@ -25,12 +27,13 @@ export const reducer = combineReducers<RootState>({
 })
 
 export type RootState = {
-  httpErrorHandler: unknown,
-  graphReducer: GraphState & {history: StateWithHistory<GraphState> },
+  httpErrorHandler: ReturnType<typeof httpErrorHandler>,
+  graphReducer: GraphState & { history: StateWithHistory<GraphState> },
   settings: SettingsState,
   ui: UiState,
   processActivity: ProcessActivityState,
-  notifications: unknown,
+  backendNotifications: BackendNotificationState,
+  notifications: NotificationsState,
   toolbars: ToolbarsStates,
   featureFlags: FeatureFlags,
   userSettings: UserSettings,

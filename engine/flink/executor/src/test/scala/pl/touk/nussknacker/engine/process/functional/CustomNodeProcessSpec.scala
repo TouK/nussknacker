@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.helpers.{LifecycleRecordingExceptionConsumer, LifecycleRecordingExceptionConsumerProvider, ProcessTestHelpers}
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.spel
 
 import java.util.Date
 
-class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpers {
+class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import spel.Implicits._
 
@@ -245,7 +246,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, data)
 
-    thrown.getMessage shouldBe "Compilation errors: ExpressionParseError(Unresolved reference 'input',proc2,Some(all),#input.id)"
+    thrown.getMessage shouldBe "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',proc2,Some(all),#input.id)"
   }
 
   test("should validate types in custom node output variable") {
@@ -258,7 +259,7 @@ class CustomNodeProcessSpec extends FunSuite with Matchers with ProcessTestHelpe
 
     val thrown = the [IllegalArgumentException] thrownBy processInvoker.invokeWithSampleData(process, List.empty)
 
-    thrown.getMessage shouldBe s"Compilation errors: ExpressionParseError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
+    thrown.getMessage shouldBe s"Compilation errors: ExpressionParserCompilationError(There is no property 'value999' in type: SimpleRecord,delta,Some($$expression),#outRec.record.value999 > #outRec.previous + 5)"
   }
 
 

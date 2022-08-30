@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.process
 
 import pl.touk.nussknacker.engine.{ProcessingTypeData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -19,11 +20,11 @@ class NewProcessPreparer(emptyProcessCreate: ProcessingTypeDataProvider[TypeSpec
                          additionalFields: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
   def prepareEmptyProcess(processId: String, processingType: ProcessingType, isSubprocess: Boolean): CanonicalProcess = {
     val creator = emptyProcessCreate.forTypeUnsafe(processingType)
-    val specificMetaData = if(isSubprocess) creator.forFragment else creator.forScenario
+    val specificMetaData = if(isSubprocess) creator.forFragment _ else creator.forScenario _
     val emptyCanonical = CanonicalProcess(
       metaData = MetaData(
         id = processId,
-        typeSpecificData = specificMetaData,
+        typeSpecificData = specificMetaData(ProcessName(processId), processingType),
         additionalFields = defaultAdditionalFields(processingType)
       ),
       nodes = List.empty,

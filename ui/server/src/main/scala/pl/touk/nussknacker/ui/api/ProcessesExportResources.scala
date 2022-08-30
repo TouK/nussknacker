@@ -15,6 +15,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
 import io.circe.syntax._
+import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -57,9 +58,11 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     } ~ path("processesExport") {
       post {
         entity(as[DisplayableProcess]) { process =>
-          complete {
-            // here we gets process from UI, so we need to resolve it before we export it
-            exportResolvedProcess(process)
+          processIdWithCategory(process.id) { idWithCategory =>
+            complete {
+              // here we gets process from UI, so we need to resolve it before we export it
+              exportResolvedProcess(process, idWithCategory.category)
+            }
           }
         }
       }
@@ -77,8 +80,8 @@ class ProcessesExportResources(val processRepository: FetchingProcessRepository[
     fileResponse(ProcessConverter.fromDisplayable(processDetails))
   }
 
-  private def exportResolvedProcess(processWithDictLabels: DisplayableProcess): HttpResponse = {
-    val validationResult = processResolving.validateBeforeUiResolving(processWithDictLabels)
+  private def exportResolvedProcess(processWithDictLabels: DisplayableProcess, category: Category): HttpResponse = {
+    val validationResult = processResolving.validateBeforeUiResolving(processWithDictLabels, category)
     val resolvedProcess = processResolving.resolveExpressions(processWithDictLabels, validationResult.typingInfo)
     fileResponse(resolvedProcess)
   }

@@ -1,15 +1,17 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDateTime, ZoneId, ZonedDateTime}
-
 import io.circe.Json
 import io.circe.Json.fromString
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.openapi._
-import org.scalatest.{FunSuite, Matchers}
+import pl.touk.nussknacker.engine.json.swagger._
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
 
-class JsonToObjectTest extends FunSuite
+import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
+import java.time.format.DateTimeFormatter
+
+class JsonToObjectTest extends AnyFunSuite
   with Matchers {
 
   private val json = Json.obj(
@@ -18,6 +20,8 @@ class JsonToObjectTest extends FunSuite
     //to jest zgodne z polską strefą - w lipcu jest +02:00...
     "field4" -> fromString("2020-07-10T12:12:30+02:00"),
     "field5" -> fromString(""),
+    "field6" -> fromString("12:12:30"),
+    "field7" -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
     "doubleField" -> Json.fromDoubleOrNull(1.55)
   )
@@ -29,6 +33,8 @@ class JsonToObjectTest extends FunSuite
       "field3" -> SwaggerLong,
       "field4" -> SwaggerDateTime,
       "field5" -> SwaggerDateTime,
+      "field6" -> SwaggerTime,
+      "field7" -> SwaggerDate,
       "decimalField" -> SwaggerBigDecimal,
       "doubleField" -> SwaggerDouble
     ), required = Set("field2"))
@@ -42,6 +48,8 @@ class JsonToObjectTest extends FunSuite
     Option(fields.get("field3")) shouldBe 'empty
     fields.get("field4") shouldBe LocalDateTime.ofInstant(ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME).toInstant, ZoneId.systemDefault())
     Option(fields.get("field5")) shouldBe 'empty
+    fields.get("field6") shouldBe LocalTime.of(12, 12, 30)
+    fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55
   }
@@ -50,7 +58,7 @@ class JsonToObjectTest extends FunSuite
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), required = Set("field3"))
 
     assertThrows[JsonToObject.JsonToObjectError] {
-      JsonToObject(json, definition)
+      extractor.JsonToObject(json, definition)
     }
   }
 }

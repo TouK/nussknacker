@@ -10,18 +10,20 @@ import scala.concurrent.{ExecutionContext, Future}
 class K8sUtils(client: KubernetesClient) {
 
   //TODO: use https://kubernetes.io/docs/reference/using-api/server-side-apply/ in the future
-  private[manager] def createOrUpdate[O<:ObjectResource](k8s: KubernetesClient, data: O)
+  private[manager] def createOrUpdate[O<:ObjectResource](data: O)
                                                (implicit fmt: Format[O], rd: ResourceDefinition[O],
                                                 lc: LoggingContext, ec: ExecutionContext): Future[O] = {
     client.getOption[O](data.name).flatMap {
-      case Some(_) => k8s.update(data)
-      case None => k8s.create(data)
+      case Some(_) => client.update(data)
+      case None => client.create(data)
     }
   }
 
 }
 
 object K8sUtils {
+
+  val maxObjectNameLength = 63
 
   //Object names cannot have underscores in name...
   def sanitizeObjectName(original: String, append: String = ""): String = {
@@ -41,7 +43,7 @@ object K8sUtils {
       //need to have alphanumeric at beginning and end...
       .replaceAll("^([^a-zA-Z0-9])", "x$1")
       .replaceAll("([^a-zA-Z0-9])$", "$1x")
-      .take(63 - append.length) + append
+      .take(maxObjectNameLength - append.length) + append
   }
 
   //https://github.com/kubernetes/kubectl/blob/master/pkg/util/hash/hash.go#L105 - we don't care about bad words...

@@ -12,6 +12,7 @@ import {API_URL} from "../config"
 import {AuthenticationSettings} from "../reducers/settings"
 import {ProcessDefinitionData} from "../types"
 import {WithId} from "../types/common"
+import {BackendNotification} from "../containers/Notifications";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -88,47 +89,51 @@ export type ComponentUsageType = {
   isSubprocess: boolean,
   processCategory: string,
   modificationDate: string,
+  modifiedBy: string,
   createdAt: string,
   createdBy: string,
   lastAction: ProcessActionType,
 }
 
-//TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
+type NotificationActions = {
+    success(message: string): void
+    error(message: string, error: any, showErrorText: boolean): void
+}
+
 class HttpService {
-  notificationActions = null
-  notificationReload = null
 
-  setNotificationActions(na) {
-    this.notificationActions = na
-    if (this.notificationReload) {
-      clearInterval(this.notificationReload)
-    }
-    //TODO: configuration?
-    this.notificationReload = setInterval(() => this._loadNotifications(), 10000)
+  //TODO: Move show information about error to another place. HttpService should avoid only action (get / post / etc..) - handling errors should be in another place.
+  #notificationActions: NotificationActions = null
+
+  setNotificationActions(na: NotificationActions) {
+    this.#notificationActions = na
   }
 
-  _loadNotifications() {
-    api.get("/notifications").then(response => response.data.forEach(notification => {
-      notification.type === "info" ? this.addInfo(notification.message) : this.addError(notification.message)
-    }))
+  loadBackendNotifications(): Promise<BackendNotification[]> {
+    return api.get<BackendNotification[]>("/notifications")
+        .then(d => d.data)
+        .catch(error => {
+            this.#addError(i18next.t("notification.error.cannotFetchBackendNotifications", "Cannot fetch backend notification"), error)
+            return []
+        })
   }
 
-  addInfo(message: string) {
-    if (this.notificationActions) {
-      this.notificationActions.success(message)
-    }
-  }
-
-  addErrorMessage(message: string, error: any, showErrorText: boolean) {
-    if (this.notificationActions) {
-      this.notificationActions.error(message, error, showErrorText)
+  #addInfo(message: string) {
+    if (this.#notificationActions) {
+      this.#notificationActions.success(message)
     }
   }
 
-  addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
+  #addErrorMessage(message: string, error: any, showErrorText: boolean) {
+    if (this.#notificationActions) {
+      this.#notificationActions.error(message, error, showErrorText)
+    }
+  }
+
+  #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
     console.warn(message, error)
     const errorMessage = error?.response?.data || error.message
-    this.addErrorMessage(message, errorMessage, showErrorText)
+    this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
 
@@ -139,7 +144,7 @@ class HttpService {
   queryState(processId, queryName, key) {
     const data = {processId, queryName, key}
     return api.get("/queryableState/fetch", {params: data})
-      .catch(error => this.addError(i18next.t("notification.error.cannotFetchState", "Cannot fetch state"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchState", "Cannot fetch state"), error))
   }
 
   fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
@@ -194,7 +199,7 @@ class HttpService {
 
         return response
       })
-    promise.catch((error) => this.addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true))
+    promise.catch((error) => this.#addError(i18next.t("notification.error.cannotFindChosenVersions", "Cannot find chosen versions"), error, true))
     return promise
   }
 
@@ -226,7 +231,7 @@ class HttpService {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
-  fetchProcessDetails(processId, versionId?) {
+  fetchProcessDetails(processId: string, versionId?: string) {
     const id = encodeURIComponent(processId)
     const url = versionId ? `/processes/${id}/${versionId}` : `/processes/${id}`
     return api.get(url)
@@ -234,12 +239,12 @@ class HttpService {
 
   fetchProcessesStates() {
     return api.get<StatusesType>("/processes/status")
-      .catch(error => Promise.reject(this.addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
+      .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
   }
 
   fetchProcessToolbarsConfiguration(processId) {
     const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${encodeURIComponent(processId)}/toolbars`)
-    promise.catch(error => this.addError(i18next.t(
+    promise.catch(error => this.#addError(i18next.t(
       "notification.error.cannotFetchToolbarConfiguration",
       "Cannot fetch toolbars configuration"
     ), error))
@@ -248,7 +253,7 @@ class HttpService {
 
   fetchProcessState(processId) {
     return api.get(`/processes/${encodeURIComponent(processId)}/status`)
-      .catch(error => this.addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
   }
 
   fetchProcessesDeployments(processId: string) {
@@ -260,11 +265,10 @@ class HttpService {
 
   deploy(processId, comment?): Promise<{isSuccess: boolean}> {
     return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
-      this.addInfo(i18next.t("notification.info.scenarioDeployed", "Scenario {{processId}} was deployed", {processId}))
       return {isSuccess: true}
     }).catch(error => {
       if (error?.response?.status != 400) {
-        return this.addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
+        return this.#addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
             .then((error) => {
               return {isSuccess: false}
             })
@@ -277,11 +281,11 @@ class HttpService {
   customAction(processId: string, actionName: string, params: Record<string, unknown>) {
     const data = {actionName: actionName, params: params}
     return api.post(`/processManagement/customAction/${encodeURIComponent(processId)}`, data).then(res => {
-      this.addInfo(res.data.msg)
+      this.#addInfo(res.data.msg)
       return {isSuccess: res.data.isSuccess}
     }).catch(error => {
       const msg = error.response.data.msg || error.response.data
-      return this.addError(msg, error, false).then(() => {
+      return this.#addError(msg, error, false).then(() => {
         return {isSuccess: false}
       })
     })
@@ -293,10 +297,9 @@ class HttpService {
 
   cancel(processId, comment?) {
     return api.post(`/processManagement/cancel/${encodeURIComponent(processId)}`, comment)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioCancelled", "Scenario {{processId}} was canceled", {processId})))
       .catch(error => {
         if (error?.response?.status != 400) {
-        return this.addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
+        return this.#addError(i18next.t("notification.error.failedToCancel", "Failed to cancel {{processId}}", {processId}), error, true)
             .then((error) => {
                 return {isSuccess: false}
             })
@@ -312,14 +315,14 @@ class HttpService {
 
   addComment(processId, versionId, data) {
     return api.post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/comments`, data)
-      .then(() => this.addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error))
+      .then(() => this.#addInfo(i18next.t("notification.info.commentAdded", "Comment added")))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToAddComment", "Failed to add comment"), error))
   }
 
   deleteComment(processId, commentId) {
     return api.delete(`/processes/${encodeURIComponent(processId)}/activity/comments/${commentId}`)
-      .then(() => this.addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error))
+      .then(() => this.#addInfo(i18next.t("notification.info.commendDeleted", "Comment deleted")))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToDeleteComment", "Failed to delete comment"), error))
   }
 
   addAttachment(processId, versionId, file) {
@@ -327,56 +330,58 @@ class HttpService {
     data.append("attachment", file)
 
     return api.post(`/processes/${encodeURIComponent(processId)}/${versionId}/activity/attachments`, data)
-      .then(() => this.addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true))
+      .then(() => this.#addInfo(i18next.t("notification.error.attachmentAdded", "Attachment added")))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToAddAttachment", "Failed to add attachment"), error, true))
   }
 
-  downloadAttachment(processId, processVersionId, attachmentId) {
-    window.open(`${API_URL}/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`)
+  downloadAttachment(processId, processVersionId, attachmentId, fileName) {
+    return api.get(`/processes/${encodeURIComponent(processId)}/${processVersionId}/activity/attachments/${attachmentId}`, {responseType: "blob"})
+      .then(response => FileSaver.saveAs(response.data, fileName))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToDownloadAttachment", "Failed to download attachment"), error))
   }
 
   changeProcessName(processName, newProcessName): Promise<boolean> {
     const failedToChangeNameMessage = i18next.t("notification.error.failedToChangeName", "Failed to change scenario name:")
     if (newProcessName == null || newProcessName === "") {
-      this.addErrorMessage(failedToChangeNameMessage, i18next.t("notification.error.newNameEmpty", "Name cannot be empty"), true)
+      this.#addErrorMessage(failedToChangeNameMessage, i18next.t("notification.error.newNameEmpty", "Name cannot be empty"), true)
       return Promise.resolve(false)
     }
 
     return api.put(`/processes/${encodeURIComponent(processName)}/rename/${encodeURIComponent(newProcessName)}`)
       .then(() => {
-        this.addInfo(i18next.t("notification.error.nameChanged", "Scenario name changed"))
+        this.#addInfo(i18next.t("notification.error.nameChanged", "Scenario name changed"))
         return true
       })
       .catch((error) => {
-        return this.addError(failedToChangeNameMessage, error, true).then(() => false)
+        return this.#addError(failedToChangeNameMessage, error, true).then(() => false)
       })
   }
 
   exportProcess(process, versionId) {
     return api.post("/processesExport", process, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
-      .catch(error => this.addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
   }
 
   exportProcessToPdf(processId, versionId, data) {
     return api.post(`/processesExport/pdf/${encodeURIComponent(processId)}/${versionId}`, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
-      .catch(error => this.addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
   }
 
   //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess(process) {
-    return api.post("/processValidation", process)
+  validateProcess({edges,...process}) {
+    return api.post("/processValidation", {...process, edges: edges.filter(e => e.to)})
       .catch(error => {
-        this.addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
+        this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)
       })
   }
 
   validateNode(processId, node) {
     const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node)
-    promise.catch(error => this.addError(
+    promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"),
       error,
       true
@@ -386,7 +391,7 @@ class HttpService {
 
   getNodeAdditionalData(processId, node) {
     const promise = api.post(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
-    promise.catch(error => this.addError(
+    promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToFetchState", "Failed to get node additional data"),
       error,
       true
@@ -396,13 +401,13 @@ class HttpService {
 
   getTestCapabilities(process) {
     return api.post("/testInfo/capabilities", process)
-      .catch(error => this.addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
   }
 
   generateTestData(processId, testSampleSize, data) {
     return api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
-      .catch(error => this.addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error))
   }
 
   fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment) {
@@ -412,7 +417,7 @@ class HttpService {
     const data = {dateFrom: format(dateFrom), dateTo: format(dateTo)}
     const promise = api.get(`/processCounts/${encodeURIComponent(processId)}`, {params: data})
 
-    promise.catch(error => this.addError(i18next.t("notification.error.failedToFetchCounts", "Cannot fetch process counts"), error, true))
+    promise.catch(error => this.#addError(i18next.t("notification.error.failedToFetchCounts", "Cannot fetch process counts"), error, true))
     return promise
   }
 
@@ -421,26 +426,25 @@ class HttpService {
   saveProcess(processId, processJson, comment) {
     const data = {process: processJson, comment: comment}
     return api.put(`/processes/${encodeURIComponent(processId)}`, data)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioSaved", "Scenario {{processId}} was saved", {processId})))
       .catch(error => {
-        this.addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
+        this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
         return Promise.reject(error)
       })
   }
 
   archiveProcess(processId) {
     return api.post(`/archive/${encodeURIComponent(processId)}`)
-      .catch(error => this.addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true))
   }
 
   unArchiveProcess(processId) {
     return api.post(`/unarchive/${encodeURIComponent(processId)}`)
-      .catch(error => this.addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true))
   }
 
   createProcess(processId: string, processCategory: string, isSubprocess = false) {
     return api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`)
-      .catch(error => this.addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true))
   }
 
   importProcess(processId, file) {
@@ -448,7 +452,7 @@ class HttpService {
     data.append("process", file)
 
     return api.post(`/processes/import/${encodeURIComponent(processId)}`, data)
-      .catch(error => this.addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
   }
 
   testProcess(processId, file, processJson) {
@@ -457,20 +461,20 @@ class HttpService {
     data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
 
     return api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
-      .catch(error => this.addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
   }
 
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
     const path = remoteEnv ? "remoteEnvironment" : "processes"
 
     const promise = api.get(`/${path}/${encodeURIComponent(processId)}/${thisVersion}/compare/${otherVersion}`)
-    promise.catch(error => this.addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
+    promise.catch(error => this.#addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
     return promise
   }
 
   fetchRemoteVersions(processId) {
     const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processId)}/versions`)
-    promise.catch(error => this.addError(i18next.t(
+    promise.catch(error => this.#addError(i18next.t(
       "notification.error.failedToGetVersions",
       "Failed to get versions from second environment"
     ), error))
@@ -479,19 +483,19 @@ class HttpService {
 
   migrateProcess(processId, versionId) {
     return api.post(`/remoteEnvironment/${encodeURIComponent(processId)}/${versionId}/migrate`)
-      .then(() => this.addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
-      .catch(error => this.addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
+      .then(() => this.#addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
   }
 
   fetchSignals() {
     return api.get("/signal")
-      .catch(error => this.addError(i18next.t("notification.error.failedToFetchSignals", "Failed to fetch signals"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToFetchSignals", "Failed to fetch signals"), error))
   }
 
   sendSignal(signalType, processId, params) {
     return api.post(`/signal/${signalType}/${encodeURIComponent(processId)}`, params)
-      .then(() => this.addInfo(i18next.t("notification.info.signalSent", "Signal sent")))
-      .catch(error => this.addError(i18next.t("notification.error.failedToSendSignal", "Failed to send signal"), error))
+      .then(() => this.#addInfo(i18next.t("notification.info.signalSent", "Signal sent")))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToSendSignal", "Failed to send signal"), error))
   }
 
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {

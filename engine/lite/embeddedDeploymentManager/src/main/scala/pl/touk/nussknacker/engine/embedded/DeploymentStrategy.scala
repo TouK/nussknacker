@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import scala.concurrent.ExecutionContext
 import scala.util.Try
 
+// TODO: replace with RunnableScenarioInterpreterFactory usage
 trait DeploymentStrategy {
 
   protected var contextPreparer: LiteEngineRuntimeContextPreparer = _
@@ -23,7 +24,7 @@ trait DeploymentStrategy {
   def close(): Unit
 
   def onScenarioAdded(jobData: JobData,
-                     parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[Deployment]
+                      parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[Deployment]
   
   def testRunner(implicit ec: ExecutionContext): TestRunner
 

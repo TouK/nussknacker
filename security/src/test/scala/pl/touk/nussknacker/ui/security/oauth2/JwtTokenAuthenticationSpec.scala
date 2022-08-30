@@ -6,7 +6,8 @@ import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{FunSpec, Matchers}
+import org.scalatest.funspec.AnyFunSpec
+import org.scalatest.matchers.should.Matchers
 import pdi.jwt.{JwtAlgorithm, JwtCirce, JwtClaim}
 import pl.touk.nussknacker.ui.security.api.AuthenticationResources
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
@@ -18,7 +19,7 @@ import java.security.KeyPairGenerator
 import java.time.Clock
 import java.util.Base64
 
-class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
+class JwtTokenAuthenticationSpec extends AnyFunSpec with Matchers with ScalatestRouteTest with Directives with FailFastCirceSupport {
 
   implicit val clock: Clock = Clock.systemUTC()
 
@@ -44,6 +45,7 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
        |}""".stripMargin)
 
   private val validAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
+  private val expiredAccessToken = JwtCirce.encode(JwtClaim().about("admin").to(audience).expiresNow, keyPair.getPrivate, JwtAlgorithm.RS256)
   private val accessTokenWithInvalidAudience = JwtCirce.encode(JwtClaim().about("admin").to("invalid").expiresIn(180), keyPair.getPrivate, JwtAlgorithm.RS256)
 
   implicit private val testingBackend: RecordingSttpBackend = new RecordingSttpBackend(SttpBackendStub.asynchronousFuture[Nothing]
@@ -76,6 +78,12 @@ class JwtTokenAuthenticationSpec extends FunSpec with Matchers with ScalatestRou
 
   it("should request authorization on a token with an invalid audience claim") {
     Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(accessTokenWithInvalidAudience)) ~> testRoute ~> check {
+      status shouldEqual StatusCodes.Unauthorized
+    }
+  }
+
+  it("should request authorization on expired token") {
+    Get("/config").addCredentials(HttpCredentials.createOAuth2BearerToken(expiredAccessToken)) ~> testRoute ~> check {
       status shouldEqual StatusCodes.Unauthorized
     }
   }

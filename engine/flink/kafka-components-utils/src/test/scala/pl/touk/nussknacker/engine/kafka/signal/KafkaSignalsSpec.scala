@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
 import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -24,7 +25,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import java.nio.charset.StandardCharsets
 import java.util.Date
 
-class KafkaSignalsSpec extends FunSuite with Matchers with FlinkSpec with KafkaSpec with VeryPatientScalaFutures {
+class KafkaSignalsSpec extends AnyFunSuite with Matchers with FlinkSpec with KafkaSpec with VeryPatientScalaFutures {
 
   test("signals don't cause watermarks to stop") {
     kafkaClient.createTopic(signalTopic)

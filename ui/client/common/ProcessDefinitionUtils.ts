@@ -19,9 +19,8 @@ export function getFlatCategoryComponents(processDefinitionData: ProcessDefiniti
   return flatMap(componentGroups, group => group.components)
 }
 
-export function filterComponentsByLabel(filter: string): (componentGroup: ComponentGroup) => ComponentGroup {
-  const searchText = filter.toLowerCase()
-  const predicate = ({label}: Component) => label.toLowerCase().includes(searchText)
+export function filterComponentsByLabel(filters: string[]): (componentGroup: ComponentGroup) => ComponentGroup {
+  const predicate = ({label}: Component) => filters.every(searchText => label.toLowerCase().includes(searchText))
   return (componentGroup: ComponentGroup): ComponentGroup => ({
     ...componentGroup,
     components: componentGroup.components.filter(predicate),

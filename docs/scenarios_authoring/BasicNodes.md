@@ -10,8 +10,7 @@ Most of the nodes, with source and sink nodes being notable exceptions, have inp
 
 Sinks and filters can be disabled by selecting `Disable` checkbox. 
 
-
-## Variable component
+## Variable 
 
 A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
 
@@ -49,19 +48,34 @@ The same can be achieved using a plain `Variable` component, just make sure to w
 
 ![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable component")
 
-## Filter 
-   
-Filter passes records which satisfy the filtering condition. It can have one or two outputs. 
-![filter graph](img/filter_graph.png)
+## Filter
 
-Records from the `source` which meet the filter's condition go to the `true sink`, and others go to the `false sink`. 
+Filter passes records which satisfy the filtering condition to `true sink`.
 
 ![filter graph single](img/filter_graph_single.png)
 
-Records from the `source` which meet the condition go to the `blue sink`, and others are filtered out. 
+You can additionally define `false sink`. Records from the `source` which meet the filter's condition go to the `true sink`, and others go to the `false sink`.
+
+![filter graph](img/filter_graph.png)
+
+The Expression field should contain the SpEL expression for the filtering conditions and should produce a boolean value.
 
 ![filter window](img/filter_window.png)
-The Expression field should contain the SpEL expression for the filtering conditions and should produce a boolean value
+
+## Choice
+
+Choice is more advanced variant of filter component - instead of one filtering condition, you can define multiple conditions in some defined order.
+It distributes incoming records among output branches in accordance with the filtering conditions configured for those branches.
+
+![choice graph](img/choice_graph.png)
+
+Each record from the `source` is tested against the condition defined for outgoing node. If `#input.color` is `blue` record goes to the `blue sink`.  
+If `#input.color` is `green` record goes to the `green sink`. For every other value record goes to the `sink for others` because condition `true` is always true.
+Order of evaluation of conditions is the same as visible in form. You can modify the order using drag & drop functionality.
+Order is also visible on graph in edges description as a number. Be aware that layout button can change displayed order of nodes, but it has no influence on order of evaluation.
+
+![choice window](img/choice_window.png)
+
 
 ## Split 
  
@@ -70,28 +84,6 @@ Split node logically splits processing into two or more parallel branches. Each 
 ![split graph](img/split_graph.png)
 
 Every record from the `source` goes to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
-
-
-
-## Switch
-   
-Switch distributes incoming records among output branches in accordance with the filtering criteria configured in those branches.
- 
-![switch graph](img/switch_graph.png)
-
-Each record from the `source` is tested against the condition defined on the edge. If `#color` is `blue` record goes to the `blue sink`.  If `#color` is `green` record goes to the `green sink`. For every other value record goes to the `sink for others`.
-
-![switch window](img/switch_window.png)
-
-The Switch node takes two parameters: `Expression` and `exprVal`. `Expression` contains expression which is evaluated for each record; result is assigned to the variable configured in `exprVal` entry field - `#color` in the example above.
- 
-![switch_edge_condition](img/switch_edge_condition.png)
-
-Each outgoing edge of `Switch` node has a boolean expression attached to it; if the expression evaluates to true the record is allowed to pass through this edge. Record goes to the first output with matching condition. *Order of matching outgoing edges is not guaranteed.*
-
-![switch_edge_default](img/switch_edge_default.png)
-
-There can be at most one edge of type `Default`, and it gets all records that don't match any `Condition` edge. 
 
 ## ForEach
 
@@ -184,8 +176,6 @@ Holds event in the node until
 The `key` parameter will be removed in the future release of Nussknacker, for the time being configure it to `#inputMeta.key`.
 
 ## DeadEnd
-
-**(Streaming-Flink only)**
 
 ![dead_end_window](img/dead_end.png)
 

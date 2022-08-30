@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.process.functional
 
 import java.util.Date
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 
-class SubprocessSpec extends FunSuite with Matchers with ProcessTestHelpers {
+class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   import pl.touk.nussknacker.engine.spel.Implicits._
 

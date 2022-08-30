@@ -7,31 +7,33 @@ import pl.touk.nussknacker.test.{AvailablePortFinder, WithConfig}
 
 trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
 
-  var kafkaZookeeperServer: KafkaZookeeperServer = _
+  var kafkaServer: EmbeddedKafkaServer = _
   var kafkaClient: KafkaClient = _
   val kafkaBrokerConfig = Map.empty[String, String]
 
   override protected def resolveConfig(config: Config): Config =
     super.resolveConfig(config)
-      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
+      //For tests we want to read from the beginning...
+      .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
     AvailablePortFinder.withAvailablePortsBlocked(2) {
-      case List(kafkaPort, zkPort) =>
-        kafkaZookeeperServer = KafkaZookeeperServer.run(
-          kafkaPort = kafkaPort,
-          zkPort = zkPort,
+      case List(controllerPort, brokerPort) =>
+        kafkaServer = EmbeddedKafkaServer.run(
+          brokerPort = brokerPort,
+          controllerPort = controllerPort,
           kafkaBrokerConfig = kafkaBrokerConfig
         )
     }
-    kafkaClient = new KafkaClient(kafkaAddress = kafkaZookeeperServer.kafkaAddress, self.suiteName)
+    kafkaClient = new KafkaClient(kafkaAddress = kafkaServer.kafkaAddress, self.suiteName)
   }
 
   override protected def afterAll(): Unit = {
     try {
       kafkaClient.shutdown()
-      kafkaZookeeperServer.shutdown()
+      kafkaServer.shutdown()
     } finally {
       super.afterAll()
     }

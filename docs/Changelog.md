@@ -1,10 +1,81 @@
 # Changelog
 
-1.5.0 (Not released yet)
+1.6.0 (Not released yet)
 ------------------------
-* [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
+* [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
+* [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
+* [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
+* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-response mode available for k8s deployment
+* [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
+* [#3436](https://github.com/TouK/nussknacker/pull/3436) Added types with value to results of operators
+* [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
+* [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-response mode publishes OpenApi specification for its services
+* [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
+* [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor
+* [#3451](https://github.com/TouK/nussknacker/pull/3451) SwaggerEnrichers as well as RequestResponse support now primitive schemas
 
-1.4.0 (Not released yet)
+1.5.0 (16 Aug 2022)
+------------------------
+* [#3099](https://github.com/TouK/nussknacker/pull/3099) Added validation for input nodes names in UnionMemo
+* [#2992](https://github.com/TouK/nussknacker/pull/2992) Moved DeploymentComment validation to backend. Deploy with invalid comment now returns error with validation information, which is shown below input like in case of node parameters.
+* [#3113](https://github.com/TouK/nussknacker/pull/3113) Moved last panel tab Services from Admin tab. Removed Admin tab. 
+* [#3121](https://github.com/TouK/nussknacker/pull/3121) Components and Component usages filters are more like those on Scenarios. Scenario status and editor is now visible on Component usages. Some performance issues fixed. Minor visual changes.   
+* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+* [#3178](https://github.com/TouK/nussknacker/pull/3178) Improvements: more complex test scenario runner result
+* [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.
+* [#3162](https://github.com/TouK/nussknacker/pull/3162) OAuth2 access token can be optionally set in cookie (useful e.g. for Grafana proxy authentication)             
+* [#3165](https://github.com/TouK/nussknacker/pull/3165) Added configuration `enableConfigEndpoint` which controls whether expose config over http (GET /api/app/config/). Default value is false.
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
+* [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
+* [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
+* [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
+* [#3192](https://github.com/TouK/nussknacker/pull/3192) Improvements: db enrichers measuring
+* [#3198](https://github.com/TouK/nussknacker/pull/3198) Fix: request response metrics
+* [#3149](https://github.com/TouK/nussknacker/pull/3149) Changed end bracket for SpEL in SQL to `}#`
+* [#3191](https://github.com/TouK/nussknacker/pull/3191) Fix: wrong value shown when removing row in MapVariable
+* [#3227](https://github.com/TouK/nussknacker/pull/3227) Allow TAB navigation from expression editors
+* [#3208](https://github.com/TouK/nussknacker/pull/3208) Fix: set maxAge in seconds in set-cookie header
+* [#3209](https://github.com/TouK/nussknacker/pull/3209) ConfigMap for K8 runtime has been split into two config maps (to separate logback conf) and one secret (with model config - which often contains confidential data)
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Switch component replaced by Choice component.
+  Moved choice/filter edges conditions configuration to form visible in node window, added few enhancements: ordered of switch edges, only false edge for filter component. 
+  "Default" choice edge type, exprVal and expression are now deprecated and disabled in new usages.
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) Fix: duplicated union edges.
+* [#3210](https://github.com/TouK/nussknacker/pull/3210) Expose UI metrics and scenario lite metrics via Prometheus
+* [#3045](https://github.com/TouK/nussknacker/pull/3045) json2avro bump 0.2.11 -> 0.2.15 + fix default values wasn't converted to logical types
+* [#3223](https://github.com/TouK/nussknacker/pull/3223) Fix for encoding/decoding JWT & OIDC tokens - correct handling fields representing epoch time (e.g. `exp` - which represents token expiration time). Also, CachingOAuth2Service was migrated to use sync cache instead of async (evicting data in async cache can be tricky - `expireAfterWriteFn` is not applied to not completed futures). Since, it was only usage of `DefaultAsyncCache` - it has been removed from the codebase.
+* [#3239](https://github.com/TouK/nussknacker/pull/3239) Added jul-to-slf4j to be sure that all logs going via logback
+* [#3238](https://github.com/TouK/nussknacker/pull/3238) K8 runtime's logback conf can be stored in single ConfigMap for all runtime pods
+* [#3201](https://github.com/TouK/nussknacker/pull/3201) Added literal types
+* [#3240](https://github.com/TouK/nussknacker/pull/3240) Error topic created by default if not exists
+* [#3245](https://github.com/TouK/nussknacker/pull/3245) [#3265](https://github.com/TouK/nussknacker/pull/3265)
+  [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
+  [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
+  [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3337](https://github.com/TouK/nussknacker/pull/3337) [#3287](https://github.com/TouK/nussknacker/pull/3287)
+  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned on by new lowLevelComponentsEnabled flag 
+  * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
+  * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
+  * [#3354](https://github.com/TouK/nussknacker/pull/3354) Universal source optimization - if message without schemaId, using cache when getting one
+  * [#3346](https://github.com/TouK/nussknacker/pull/3346) UniversalKafkaSink provides also 'raw editor'
+  * [#3345](https://github.com/TouK/nussknacker/pull/3345) Swagger 2.2.1, OpenAPI 3.1, jsonSchema typing and deserialization same as in openapi components
+  
+* [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
+* [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, Flink 1.14.4 -> 1.14.5
+* [#3270](https://github.com/TouK/nussknacker/pull/3270) Added type representing null
+* [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
+* [#3269](https://github.com/TouK/nussknacker/pull/3269) Fix populating cache in CachingOAuth2Service. It is fully synchronous now.
+* [#3264](https://github.com/TouK/nussknacker/pull/3264) Added support for generic functions
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
+* [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict avro schema validation: include optional fields validation, 
+  handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
+* [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
+* [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
+* [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
+* [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
+* [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling) 
+
+1.4.0 (14 Jun 2022)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
@@ -23,12 +94,11 @@
 * [#3063](https://github.com/TouK/nussknacker/pull/3063) [#3067](https://github.com/TouK/nussknacker/pull/3067) [#3070](https://github.com/TouK/nussknacker/pull/3070) Add integration with [JmxExporter Agent](https://github.com/prometheus/jmx_exporter).
 * [#3077](https://github.com/TouK/nussknacker/pull/3077) Change scenarios tab to use new UI by default
 * [#3084](https://github.com/TouK/nussknacker/pull/3084) Change `for-each` from `SingleElementComponent` to `LiteCustomComponent`
-
-1.3.1 (Not released yet)
-------------------------
+* [#3114](https://github.com/TouK/nussknacker/pull/3114) Add `flush` method to `WithSharedKafkaProducer`
 * [#3034](https://github.com/TouK/nussknacker/pull/3034) Fixed sorting on new scenarios list
+* [#3330](https://github.com/TouK/nussknacker/pull/3330) ConfluentUniversalKafkaDeserializer - deserialize using latest schema for topic if no headers or magic-byte/schemaId/payload
 
-1.3.0
+1.3.0 (22 Apr 2022)
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
 * [#2955](https://github.com/TouK/nussknacker/pull/2955) Add Json schema sink/source (with editor) for request/response. Move inputSchema to properties.

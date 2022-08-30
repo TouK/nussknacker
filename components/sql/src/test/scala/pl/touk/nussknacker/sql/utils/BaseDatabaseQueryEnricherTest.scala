@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.sql.utils
 
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.{BeforeAndAfterAll}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{FailedToDefineParameter, OutputVariableNameValue}
@@ -12,7 +14,7 @@ import pl.touk.nussknacker.sql.service.DatabaseQueryEnricher
 
 import scala.concurrent.ExecutionContext
 
-trait BaseDatabaseQueryEnricherTest extends FunSuite with Matchers with BeforeAndAfterAll {
+trait BaseDatabaseQueryEnricherTest extends AnyFunSuite with Matchers with BeforeAndAfterAll {
 
   implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
   implicit val contextId: ContextId = ContextId("")

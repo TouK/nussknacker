@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
-import org.scalatest.{BeforeAndAfterEach, FunSuite, Inside, Matchers}
+import org.scalatest.{BeforeAndAfterEach, Inside}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -11,7 +13,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 //We want to make sure that scenario with Kafka signal is testable from UI
-class KafkaSignalInTestSpec extends FunSuite with Matchers with Inside with BeforeAndAfterEach with KafkaSpec {
+class KafkaSignalInTestSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach with KafkaSpec {
 
   test("be able to test process with signals") {
     val process =

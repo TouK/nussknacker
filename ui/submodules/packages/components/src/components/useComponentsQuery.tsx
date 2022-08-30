@@ -4,6 +4,8 @@ import { useQuery } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
 import { NkApiContext, NkIconsContext } from "../settings/nkApiProvider";
 import { DateTime } from "luxon";
+import { ProcessStateType, ProcessType } from "nussknackerUi/components/Process/types";
+import { useScenariosStatusesQuery } from "../scenarios/useScenariosQuery";
 
 export function useComponentsQuery(): UseQueryResult<ComponentType[]> {
     const api = useContext(NkApiContext);
@@ -50,4 +52,20 @@ export function useComponentQuery(componentId: string): UseQueryResult<Component
     }, [componentId, query.data]);
 
     return { ...query, data: component } as UseQueryResult<ComponentType>;
+}
+
+type UsageWithStatus = ComponentUsageType & { data: ProcessStateType };
+
+export function useComponentUsagesWithStatus(componentId: string): UseQueryResult<Array<UsageWithStatus>> {
+    const { data: usages = [], ...usagesQuery } = useComponentUsagesQuery(componentId);
+    const { data: statuses, ...statusesQuery } = useScenariosStatusesQuery();
+    return useMemo(() => {
+        return {
+            ...usagesQuery,
+            data: usages.map((el) => ({
+                ...el,
+                state: statuses?.[el.id],
+            })),
+        } as UseQueryResult<UsageWithStatus[]>;
+    }, [usagesQuery, usages, statuses]);
 }

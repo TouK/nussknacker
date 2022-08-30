@@ -9,6 +9,7 @@ services:
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
+      CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "false"
     expose:
       - 8080
     ports:
@@ -34,7 +35,7 @@ services:
     - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
     - --advertise-kafka-addr
     - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
-    image: docker.vectorized.io/vectorized/redpanda:v21.9.5
+    image: vectorized/redpanda:v22.1.4
     ports:
       - "3032:3032"
 
@@ -50,4 +51,3 @@ services:
 networks:
   default:
     name: nussknacker_e2e_network
-

@@ -20,7 +20,7 @@ object CollectTransformer extends CustomStreamTransformer {
             (implicit nodeId: NodeId): ContextTransformation = {
     ContextTransformation
       .definedBy { context =>
-        val outputType = Typed.typedClass(classOf[java.util.List[_]], inputExpression.returnType :: Nil)
+        val outputType = Typed.genericTypeClass(classOf[java.util.List[_]], inputExpression.returnType :: Nil)
         context.withVariable(OutputVar.variable(outputVariable), outputType)
       }.implementedBy(
       new CollectTransformer(outputVariable, inputExpression)

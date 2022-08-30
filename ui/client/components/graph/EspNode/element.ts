@@ -10,11 +10,13 @@ import {isConnected, isModelElement} from "../GraphPartialsInTS"
 import {Events} from "../joint-events"
 import NodeUtils from "../NodeUtils"
 import {EspNodeShape} from "./esp"
+import millify from "millify"
+import {UserSettings} from "../../../reducers/userSettings"
 
 const maxLineLength = 24
 const maxLineCount = 2
 
-function getBodyContent(bodyContent = ""): {text: string, multiline?: boolean} {
+function getBodyContent(bodyContent = ""): { text: string, multiline?: boolean } {
   if (bodyContent.length <= maxLineLength) {
     return {
       text: bodyContent,
@@ -67,11 +69,12 @@ export function getStringWidth(str = "", pxPerChar = 8, padding = 7): number {
   return toString(str).length * pxPerChar + 2 * padding
 }
 
-export const updateNodeCounts = (processCounts :ProcessCounts) => (node: shapes.devs.Model): void => {
+export const updateNodeCounts = (processCounts: ProcessCounts, userSettings: UserSettings) => (node: shapes.devs.Model): void => {
+  const shortCounts = userSettings["node.shortCounts"]
   const count = processCounts[node.id]
   const hasCounts = !isEmpty(count)
   const hasErrors = hasCounts && count?.errors > 0
-  const testCounts = hasCounts ? count?.all.toString() || "0" : ""
+  const testCounts = hasCounts ? shortCounts ? millify(count.all) : count.all.toLocaleString() || "0" : ""
   const testResultsWidth = getStringWidth(testCounts)
 
   const testResultsSummary: attributes.SVGTextAttributes = {
@@ -81,8 +84,8 @@ export const updateNodeCounts = (processCounts :ProcessCounts) => (node: shapes.
   }
   const testResults: attributes.SVGRectAttributes = {
     display: hasCounts ? "block" : "none",
-    fill: hasErrors ? "#662222": "#4d4d4d",
-    stroke: hasErrors ? "red": "#4d4d4d",
+    fill: hasErrors ? "#662222" : "#4d4d4d",
+    stroke: hasErrors ? "red" : "#4d4d4d",
     strokeWidth: hasErrors ? 3 : 0,
     width: testResultsWidth,
   }

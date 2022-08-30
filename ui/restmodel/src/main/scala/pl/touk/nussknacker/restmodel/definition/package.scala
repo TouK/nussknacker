@@ -9,9 +9,8 @@ import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleCompo
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterEditor, ParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment.CustomAction
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.graph.evaluatedparam
+import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.node.NodeData
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
 
 import java.net.URI
 

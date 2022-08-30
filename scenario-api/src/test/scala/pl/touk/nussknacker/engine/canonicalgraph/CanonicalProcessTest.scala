@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.canonicalgraph
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, Case, FilterNode, FlatNode, SplitNode, Subprocess, SwitchNode}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -11,7 +12,7 @@ import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
 import scala.language.implicitConversions
 
-class CanonicalProcessTest extends FunSuite with Matchers {
+class CanonicalProcessTest extends AnyFunSuite with Matchers {
 
   val source1 = FlatNode(Source("in", SourceRef("sourceType", Nil)))
 
@@ -98,7 +99,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1", "''", ""),
+          data = Switch("switch1"),
           nexts = List(
             Case("''", List(disabledFilter1)),
             Case("''", List(sink1))
@@ -109,7 +110,7 @@ class CanonicalProcessTest extends FunSuite with Matchers {
       List(
         source1,
         SwitchNode(
-          data = Switch("switch1", "''", ""),
+          data = Switch("switch1"),
           nexts = List(
             Case("''", List(sink1))
           ),

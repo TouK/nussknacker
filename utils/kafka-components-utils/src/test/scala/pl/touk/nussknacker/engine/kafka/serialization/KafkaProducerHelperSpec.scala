@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.kafka.serialization
 
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
 import java.nio.charset.Charset
 import java.time.{LocalDateTime, ZoneId}
 
-class KafkaProducerHelperSpec extends FunSuite with Matchers {
+class KafkaProducerHelperSpec extends AnyFunSuite with Matchers {
 
   test("should process timestamp") {
     val timestamp = LocalDateTime.of(2021, 3, 29, 11,11).atZone(ZoneId.systemDefault()).toEpochSecond

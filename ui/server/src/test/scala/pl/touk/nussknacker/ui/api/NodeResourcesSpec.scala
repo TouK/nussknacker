@@ -4,9 +4,11 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.additionalInfo.{MarkdownNodeAdditionalInfo, NodeAdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParseError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
 
-class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData))
@@ -60,13 +62,13 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = Some(typing.Unknown),
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
           validationPerformed = true)
       }
     }
@@ -79,13 +81,13 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
         Parameter("value", Expression("spel", "notvalidspelexpression")),
         Parameter("topic", Expression("spel", "'test-topic'")))),
         None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
           parameters = None,
           expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParseError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
             data.id, Some("value"), "notvalidspelexpression"))),
           validationPerformed = true)
       }
@@ -96,7 +98,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None)
+      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeValidationResult] shouldBe NodeValidationResult(
@@ -125,7 +127,7 @@ class NodeResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCi
           "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
           "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
         )
-      ))
+      ), None)
 
       Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         val res = responseAs[NodeValidationResult]

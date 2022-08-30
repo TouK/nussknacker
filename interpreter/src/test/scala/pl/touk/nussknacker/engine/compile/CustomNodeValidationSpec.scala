@@ -3,11 +3,14 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers, OptionValues}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParseError, InvalidTailOfBranch, MissingParameters}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError, InvalidTailOfBranch, MissingParameters}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api.{process, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -22,7 +25,7 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import scala.collection.Set
 import scala.collection.immutable.ListMap
 
-class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues {
+class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValues {
 
   import spel.Implicits._
 
@@ -154,7 +157,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .emptySink("out", "dummySink")
 
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'nonExisitngVar'", "custom1", Some("stringVal"), "#nonExisitngVar"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'nonExisitngVar'", "custom1", Some("stringVal"), "#nonExisitngVar"), _)) =>
     }
   }
 
@@ -163,8 +166,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       .customNode("custom1", "outPutVar", "myCustomStreamTransformer", "stringVal" -> "42")
       .emptySink("out", "dummySink")
 
+    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(42).display}"
     validator.validate(invalidProcess).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: String, found: Integer", "custom1", Some("stringVal"), "42"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(`expectedMsg`, "custom1", Some("stringVal"), "42"), _)) =>
     }
   }
 
@@ -208,7 +212,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val redundantOutErrors = redundantOutValidationResult.swap.toOption.value.toList
     redundantOutErrors should have size 1
     redundantOutErrors.head should matchPattern {
-      case ExpressionParseError(message, _, _, _) if message.startsWith("Unresolved reference 'input'") =>
+      case ExpressionParserCompilationError(message, _, _, _) if message.startsWith("Unresolved reference 'input'") =>
     }
   }
 
@@ -233,7 +237,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
-      case ExpressionParseError(message, _, _, _) if message.startsWith("There is no property 'field22' in type: {field1: String, field2: String}") =>
+      case ExpressionParserCompilationError(message, _, _, _) if message.startsWith("There is no property 'field22' in type: {field1: String, field2: String}") =>
     }
   }
 
@@ -255,7 +259,7 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
     val errors = validationResult2.swap.toOption.value.toList
     errors should have size 1
     errors.head should matchPattern {
-      case ExpressionParseError(
+      case ExpressionParserCompilationError(
       "Bad expression type, expected: String, found: Integer",
       "stringService", Some("stringParam"), _) =>
     }
@@ -340,12 +344,13 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       "sourceId2" -> Map.empty,
       "$edge-branch2-join1" -> Map.empty,
       "join1" -> Map(
-        "key-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String]), Typed[String]),
-        "key-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed[String]), Typed[String]),
-        "value-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]),
-        "value-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[Integer]), Typed[Integer])
+        "key-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed.fromInstance("key1")), Typed.fromInstance("key1")),
+        "key-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 6) -> Typed.fromInstance("key2")), Typed.fromInstance("key2")),
+        "value-branch1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("ala")), Typed.fromInstance("ala")),
+        "value-branch2" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed.fromInstance(123)), Typed.fromInstance(123))
       ),
-      "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
+      "stringService" -> Map("stringParam" -> SpelExpressionTypingInfo(
+        Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123")))
     )
   }
 
@@ -369,8 +374,9 @@ class CustomNodeValidationSpec extends FunSuite with Matchers with OptionValues 
       ))
 
     val validationResult = validator.validate(process)
+    val expectedMsg = s"Bad expression type, expected: CharSequence, found: ${Typed.fromInstance(123).display}"
     validationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Bad expression type, expected: CharSequence, found: Integer", "join1" , Some("key for branch branch2"), "123"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(`expectedMsg`, "join1", Some("key for branch branch2"), "123"), Nil)) =>
     }
   }
 

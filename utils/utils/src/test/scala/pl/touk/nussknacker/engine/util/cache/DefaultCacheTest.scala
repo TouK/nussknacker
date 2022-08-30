@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.util.cache
 
 import com.github.benmanes.caffeine.cache.Ticker
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import scala.concurrent.Future
-import scala.concurrent.duration.{DAYS, Deadline, Duration, FiniteDuration, HOURS, MINUTES}
+import scala.concurrent.duration.{DAYS, Deadline, FiniteDuration, HOURS, MINUTES}
 
-class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutures{
+class DefaultCacheTest extends AnyFlatSpec with Matchers with VeryPatientScalaFutures{
 
   private var currentTime = Deadline.now
   private val ticker = new Ticker {
@@ -89,12 +90,12 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
   }
 
   it should "allow setting expiration time depending on a value" in {
-    case class Value(sub: String, exp: Deadline)
+    case class Value(sub: String, expireAt: Deadline)
     val cache = new DefaultCache[String, Value](
       cacheConfig = CacheConfig(
         expiry = new ExpiryConfig[String, Value] {
           override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.exp)
+            Some(value.expireAt)
         }),
       ticker)
 
@@ -107,33 +108,5 @@ class DefaultCacheTest extends FlatSpec with Matchers with VeryPatientScalaFutur
 
     currentTime += FiniteDuration(2, MINUTES)
     cache.getOrCreate("key2")(Value("newValue", currentTime + FiniteDuration(1, HOURS))) should have ('sub ("newValue"))
-  }
-
-  it should "allow setting expiration time depending on a value for an async cache" in {
-    import scala.concurrent.ExecutionContext.Implicits.global
-    case class Value(sub: String, exp: Deadline)
-    val cache = new DefaultAsyncCache[String, Value](
-      cacheConfig = CacheConfig(
-        expiry = new ExpiryConfig[String, Value] {
-          override def expireAfterWriteFn(key: String, value: Value, now: Deadline): Option[Deadline] =
-            Some(value.exp)
-        }),
-      ticker)(global)
-
-    cache.getOrCreate("key1")(Future.successful(Value("value1", currentTime + FiniteDuration(1, MINUTES))))
-    cache.getOrCreate("key2")(Future.successful(Value("value2", currentTime + FiniteDuration(3, MINUTES))))
-
-    currentTime += FiniteDuration(2, MINUTES)
-    whenReady(cache.getOrCreate("key1")(Future.successful(Value("newValue1", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should have ('sub("newValue1"))
-    }
-    whenReady(cache.getOrCreate("key2")(Future.successful(Value("newValue2", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should /*still*/ have ('sub ("value2"))
-    }
-
-    currentTime += FiniteDuration(2, MINUTES)
-    whenReady(cache.getOrCreate("key2")(Future.successful(Value("newValue2", currentTime + FiniteDuration(1, HOURS))))) {
-      _ should have ('sub ("newValue2"))
-    }
   }
 }

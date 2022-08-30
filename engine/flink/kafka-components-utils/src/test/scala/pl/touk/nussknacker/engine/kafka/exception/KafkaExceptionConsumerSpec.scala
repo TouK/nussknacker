@@ -2,7 +2,8 @@ package pl.touk.nussknacker.engine.kafka.exception
 
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -20,7 +21,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
 
 import java.util.Date
 
-class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
+class KafkaExceptionConsumerSpec extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
 
   private val topicName = "testingErrors"
 
@@ -42,7 +43,7 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
     val process = ScenarioBuilder
       .streaming("testProcess")
       .source("source", "source")
-      .filter("shouldFail", "1/0 != 10")
+      .filter("shouldFail", "1/{0, 1}[0] != 10")
       .emptySink("end", "sink")
 
     val env = flinkMiniCluster.createExecutionEnvironment()
@@ -56,8 +57,8 @@ class KafkaExceptionConsumerSpec extends FunSuite with FlinkSpec with KafkaSpec 
       val decoded = CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](consumed.message())
       decoded.nodeId shouldBe Some("shouldFail")
       decoded.processName shouldBe "testProcess"
-      decoded.message shouldBe Some("Expression [1/0 != 10] evaluation failed, message: / by zero")
-      decoded.exceptionInput shouldBe Some("1/0 != 10")
+      decoded.message shouldBe Some("Expression [1/{0, 1}[0] != 10] evaluation failed, message: / by zero")
+      decoded.exceptionInput shouldBe Some("1/{0, 1}[0] != 10")
       decoded.additionalData shouldBe Map("configurableKey" -> "sampleValue")
 
     }

@@ -7,7 +7,10 @@ import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
-import org.scalatest._
+import io.dropwizard.metrics5.MetricRegistry
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
@@ -20,21 +23,22 @@ import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitia
 import java.util.UUID
 import scala.concurrent.duration._
 
-class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with VeryPatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EitherValuesDetailedMessage with OptionValues {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val (mainRoute, _) = NusskanckerDefaultAppRouter.create(
     system.settings.config,
-    NussknackerAppInitializer.initDb(system.settings.config)
+    NussknackerAppInitializer.initDb(system.settings.config),
+    new MetricRegistry
   )
 
   private val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
 
   implicit val timeout: RouteTestTimeout = RouteTestTimeout(2.minutes)
 
-  override def testConfig: Config = ConfigWithScalaVersion.config
+  override def testConfig: Config = ConfigWithScalaVersion.TestsConfig
 
   private val DictId = "dict"
   private val VariableNodeId = "variableCheck"
@@ -77,16 +81,19 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithInvalidLabel)
 
     val processRootResource = s"/api/processes/${process.id}"
+
+    createEmptyScenario(processRootResource)
+
     Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       val invalidNodes = extractInvalidNodes
       invalidNodes.asObject.value should have size 1
-      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+      invalidNodes.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
     }
 
-    val invalidNodesAfterSave = saveProcessAndExtractValidationResult(processRootResource, process)
+    val invalidNodesAfterSave = extractValidationResult(processRootResource, process)
     invalidNodesAfterSave.asObject.value should have size 1
-    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+    invalidNodesAfterSave.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
@@ -94,7 +101,7 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       returnedEndResultExpression shouldEqual expressionUsingDictWithInvalidLabel
       val invalidNodesAfterGet = extractInvalidNodesFromValidationResult
       invalidNodesAfterGet.asObject.value should have size 1
-      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParseError"
+      invalidNodesAfterGet.hcursor.downField(VariableNodeId).downN(0).downField("typ").as[String].rightValue shouldEqual "ExpressionParserCompilationError"
     }
   }
 
@@ -114,6 +121,11 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     val expressionUsingDictWithLabel = s"#DICT.$Label"
     val expressionUsingDictWithKey = s"#DICT.$Key"
     val process = sampleProcessWithExpression(UUID.randomUUID().toString, expressionUsingDictWithLabel)
+
+    Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
+      status shouldEqual StatusCodes.Created
+    }
+
     Post(s"/api/processesExport", TestProcessUtil.toJson(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       val returnedEndResultExpression = extractVariableExpression(responseAs[Json].hcursor)
@@ -140,15 +152,17 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
       .emptySink(EndNodeId, "monitor")
 
-  private def saveProcessAndExtractValidationResult(process: EspProcess,
-                                                    endResultExpressionToPost: String): Json = {
+  private def saveProcessAndExtractValidationResult(process: EspProcess, endResultExpressionToPost: String): Json = {
     val processRootResource = s"/api/processes/${process.id}"
+
+    createEmptyScenario(processRootResource)
+
     Post("/api/processValidation", TestFactory.posting.toEntity(process))~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       extractInvalidNodes.asObject.value shouldBe empty
     }
 
-    saveProcessAndExtractValidationResult(processRootResource, process).asObject.value shouldBe empty
+    extractValidationResult(processRootResource, process).asObject.value shouldBe empty
 
     Get(processRootResource) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
@@ -158,16 +172,16 @@ class DictsFlowTest extends FunSuite with ScalatestRouteTest with FailFastCirceS
     }
   }
 
-  private def saveProcessAndExtractValidationResult(processRootResource: String, process: EspProcess): Json = {
+  private def createEmptyScenario(processRootResource: String) =
     Post(s"$processRootResource/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
     }
 
+  private def extractValidationResult(processRootResource: String, process: EspProcess): Json =
     Put(processRootResource, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       extractInvalidNodes
     }
-  }
 
   private def extractVariableExpression(cursor: ACursor) = {
       cursor.downField("nodes")

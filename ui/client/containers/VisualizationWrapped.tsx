@@ -10,14 +10,13 @@ export interface VisualizationProps {
 
 // Visualization wrapped to make partial (for now) refactor to TS and hooks
 export default function VisualizationWrapped(props: VisualizationProps): JSX.Element {
-  const {openNodeWindow, editEdge, close} = useWindows()
+  const {openNodeWindow, close} = useWindows()
 
   const fetchedProcessDetails = useSelector(getFetchedProcessDetails)
 
   return (
     <Visualization
       showModalNodeDetails={openNodeWindow}
-      showModalEdgeDetails={editEdge}
       fetchedProcessDetails={fetchedProcessDetails}
       closeModals={close}
       {...props}

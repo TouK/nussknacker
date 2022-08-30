@@ -11,7 +11,9 @@ import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnap
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.api.scala.typeutils.ScalaCaseClassSerializer
 import org.scalatest.Inside.inside
-import org.scalatest.{Assertion, FunSuite, Matchers}
+import org.scalatest.{Assertion}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
@@ -27,7 +29,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
-class TypingResultAwareTypeInformationDetectionSpec extends FunSuite with Matchers with FlinkTypeInformationSerializationMixin {
+class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin {
 
   private val informationDetection = new TypingResultAwareTypeInformationDetection(new TypingResultAwareTypeInformationCustomisation {
     override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {

@@ -1,23 +1,21 @@
-import {get} from "lodash"
 import {createSelector} from "reselect"
-import ProcessUtils from "../../../../common/ProcessUtils"
-import {getNodeToDisplay, getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {getCapabilities} from "../../../../reducers/selectors/other"
-import {getProcessDefinitionData} from "../../../../reducers/selectors/settings"
+import {RootState} from "../../../../reducers"
+import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
+import {NodeId} from "../../../../types"
 
 export const getErrors = createSelector(
   getProcessToDisplay,
-  getNodeToDisplay,
-  (process, node) => {
+  (state: RootState, nodeId: NodeId) => nodeId,
+  (process, nodeId) => {
     const errors = process?.validationResult?.errors
-    const validationErrors = node.id ? errors?.invalidNodes[node.id] : errors?.processPropertiesErrors
+    const validationErrors = nodeId ? errors?.invalidNodes[nodeId] : errors?.processPropertiesErrors
     return validationErrors || []
   },
 )
 
 export const getReadOnly = createSelector(
-  (state, fromProps?: boolean) => fromProps,
-  // _ needed for wierd reselect typings ;)
-  (state, _) => getCapabilities(state),
+  (state: RootState, fromProps?: boolean) => fromProps,
+  (state: RootState) => getCapabilities(state),
   (fromProps, capabilities) => fromProps || !capabilities.editFrontend,
 )

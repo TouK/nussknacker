@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.variables
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, typing}
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.MethodDefinitionExtractor.{MethodDefinition, OrderedDependencies}
 
-class GlobalVariablesPreparerTest extends FunSuite with Matchers {
+class GlobalVariablesPreparerTest extends AnyFunSuite with Matchers {
 
   test("should resolve real value and return type for typed variable") {
     val metaData = MetaData("test", StreamMetaData())

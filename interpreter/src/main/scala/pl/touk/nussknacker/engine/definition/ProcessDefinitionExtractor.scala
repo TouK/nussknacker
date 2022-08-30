@@ -109,6 +109,7 @@ object ProcessDefinitionExtractor {
                                                     signalsWithTransformers: Map[String, (T, Set[TransformerId])],
                                                     expressionConfig: ExpressionDefinition[T],
                                                     settings: ClassExtractionSettings) {
+
     def componentIds: List[String] = {
       val ids = services.keys ++
         sourceFactories.keys ++
@@ -117,6 +118,15 @@ object ProcessDefinitionExtractor {
         signalsWithTransformers.keys
       ids.toList
     }
+
+    def forCategory(category: String): ProcessDefinition[T] = copy(
+      services.filter(_._2.availableForCategory(category)),
+      sourceFactories.filter(_._2.availableForCategory(category)),
+      sinkFactories.filter(_._2.availableForCategory(category)),
+      customStreamTransformers.filter(_._2._1.availableForCategory(category)),
+      signalsWithTransformers.filter(_._2._1.availableForCategory(category)),
+      expressionConfig.copy(globalVariables = expressionConfig.globalVariables.filter(_._2.availableForCategory(category)))
+    )
   }
 
   def toObjectDefinition(definition: ProcessDefinition[ObjectWithMethodDef]): ProcessDefinition[ObjectDefinition] = {

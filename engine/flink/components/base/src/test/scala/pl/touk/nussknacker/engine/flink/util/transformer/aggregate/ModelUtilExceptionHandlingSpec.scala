@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.util.UUID
 
-class ModelUtilExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec {
+class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
   override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)

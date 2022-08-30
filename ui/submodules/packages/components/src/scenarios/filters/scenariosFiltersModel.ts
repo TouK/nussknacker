@@ -1,6 +1,6 @@
-import { SortKey } from "../list/itemsList";
+import { SortableFiltersModel } from "./common/sortableFiltersModel";
 
-export interface ScenariosFiltersModel {
+export interface ScenariosFiltersModel extends SortableFiltersModel {
     NAME?: string;
     CATEGORY?: string[];
     SHOW_ARCHIVED?: boolean;
@@ -11,5 +11,4 @@ export interface ScenariosFiltersModel {
     HIDE_NOT_DEPLOYED?: boolean;
     CREATED_BY?: string[];
     STATUS?: string[];
-    SORT_BY?: SortKey;
 }

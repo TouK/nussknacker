@@ -20,10 +20,15 @@ import java.util.concurrent.TimeUnit
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{ExecutionContext, Future, Promise}
+import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
   import SimpleStateStatus._
+
+  //Use these "magic" description values to simulate deployment/validation failure
+  private val descriptionForValidationFail = "validateFail"
+  private val descriptionForDeploymentFail = "deployFail"
 
   private val MinSleepTimeSeconds = 5
   private val MaxSleepTimeSeconds = 12
@@ -54,12 +59,40 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     }
   }
 
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
+    if (description(canonicalProcess).contains(descriptionForValidationFail)) {
+      Future.failed(new IllegalArgumentException("Scenario validation failed as description contains 'fail'"))
+    } else {
+      Future.successful(())
+    }
+  }
+
+  private def description(canonicalProcess: CanonicalProcess) = {
+    canonicalProcess.metaData.additionalFields.flatMap(_.description)
+  }
+
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
+    val previous = memory.get(processVersion.processName)
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)
-    asyncChangeState(processVersion.processName, Running)
-    logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
-    Future.successful(duringDeployStateStatus.deploymentId)
+    val result = Promise[Option[ExternalDeploymentId]]()
+    actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
+      override def run(): Unit = {
+        logger.debug(s"Finished deploying scenario: ${processVersion.processName}.")
+        if (description(canonicalProcess).contains(descriptionForDeploymentFail)) {
+          result.complete(Failure(new RuntimeException("Failed miserably during runtime")))
+          previous match {
+            case Some(state) => memory.update(processVersion.processName, state)
+            case None => changeState(processVersion.processName, NotDeployed)
+          }
+        } else {
+          result.complete(Success(duringDeployStateStatus.deploymentId))
+          asyncChangeState(processVersion.processName, Running)
+        }
+      }
+    })
+    logger.debug(s"Finished preliminary deployment part of scenario: ${processVersion.processName}.")
+    result.future
   }
 
   override def stop(name: ProcessName, savepointDir: Option[String], user: User): Future[SavepointResult] = {
@@ -123,7 +156,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     }
 
   private def asyncChangeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach{ processState =>
+    memory.get(name).foreach { processState =>
       logger.debug(s"Starting async changing state for $name from ${processState.status.name} to ${stateStatus.name}..")
       actorSystem.scheduler.scheduleOnce(sleepingTimeSeconds, new Runnable {
         override def run(): Unit =
@@ -157,7 +190,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
     new DevelopmentDeploymentManager(actorSystem)
   override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
   override def supportsSignals: Boolean = false
 

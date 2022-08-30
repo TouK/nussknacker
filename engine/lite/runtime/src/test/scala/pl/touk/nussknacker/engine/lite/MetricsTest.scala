@@ -2,22 +2,24 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.NonEmptyList
 import io.dropwizard.metrics5.{MetricFilter, MetricRegistry}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.Case
+import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.lite.sample.SampleInput
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
 
 import scala.jdk.CollectionConverters.mapAsScalaMapConverter
 
-class MetricsTest extends FunSuite with Matchers {
+class MetricsTest extends AnyFunSuite with Matchers {
 
   private val scenarioId = "metrics"
   private val sourceId = "start"
@@ -96,13 +98,31 @@ class MetricsTest extends FunSuite with Matchers {
     }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
+
+  test("initializes counts, ends, dead ends") {
+    val metricRegistry = new MetricRegistry
+
+    val scenario = ScenarioBuilder.streaming(scenarioId)
+      .source("source1", "start")
+      .filter("filter1", "false")
+      .processor("processor1", "noOpProcessor", "value" -> "0")
+      .emptySink("sink1", "end", "value" -> "''")
+    val allNodes = NodesCollector.collectNodesInScenario(scenario).map(_.data)
+
+    runScenario(scenario, Nil, metricRegistry)
+
+    allNodes.map(_.id).foreach(metricRegistry.nodeCountForNode)
+    allNodes.filter(_.isInstanceOf[EndingNodeData]).map(_.id).foreach(metricRegistry.endCountForNode)
+    allNodes.filter(_.isInstanceOf[DeadEndingData]).map(_.id).foreach(metricRegistry.deadEndCountForNode)
+  }
+
   implicit class MetricsTestHelper(metricRegistry: MetricRegistry) {
 
-    def counterForNode(counterName: String)(nodeId: String): Long = {
+    def counterForNode(counterName: String)(nodeId: String): Long = withClue(s"counter: $counterName, nodeId: $nodeId") {
       metricRegistry.getCounters(nodeFilter(counterName, nodeId)).asScala.loneElement._2.getCount
     }
 
-    def gaugeForNode(gaugeName: String)(nodeId: String): Double = {
+    def gaugeForNode(gaugeName: String)(nodeId: String): Double = withClue(s"gauge: $gaugeName, nodeId: $nodeId"){
       metricRegistry.getGauges(nodeFilter(gaugeName, nodeId)).asScala.loneElement._2.getValue.asInstanceOf[Double]
     }
 

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.initialization
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.flatspec.AnyFlatSpec
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
@@ -9,7 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPro
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
-class InitializationOnHsqlItSpec extends FlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
+class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
 
   import Initialization.nussknackerUser
 

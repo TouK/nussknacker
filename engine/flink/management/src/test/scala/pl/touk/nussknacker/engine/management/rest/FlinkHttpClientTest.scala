@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.management.rest
 import io.circe.syntax.EncoderOps
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.Span.convertSpanToDuration
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
@@ -21,7 +22,7 @@ import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
 
-class FlinkHttpClientTest extends FunSuite
+class FlinkHttpClientTest extends AnyFunSuite
   with Matchers
   with ScalaFutures
   with PatientScalaFutures {

@@ -12,6 +12,11 @@ export enum SelectionMode {
   toggle = "toggle",
 }
 
+export interface RangeSelectedEventData {
+  mode: SelectionMode,
+  elements: dia.Element[],
+}
+
 export class RangeSelectPlugin {
   private readonly cursorMask = new CursorMask()
   private readonly rectangle = new shapes.standard.Rectangle()
@@ -96,7 +101,8 @@ export class RangeSelectPlugin {
       const elements = this.paper.model.findModelsInArea(this.rectangle.getBBox(), {strict})
       if (this.isActive) {
         event.stopPropagation()
-        this.paper.trigger("rangeSelect:selected", {elements, mode: this.mode})
+        const eventData: RangeSelectedEventData = {elements, mode: this.mode}
+        this.paper.trigger("rangeSelect:selected", eventData)
       }
     }
     this.cleanup(event.data)

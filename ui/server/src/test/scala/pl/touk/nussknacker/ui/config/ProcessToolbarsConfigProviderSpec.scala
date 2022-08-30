@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.ui.config
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.config.processtoolbar._
 
 import java.util.UUID
 
-class ProcessToolbarsConfigProviderSpec extends FlatSpec with Matchers {
+class ProcessToolbarsConfigProviderSpec extends AnyFlatSpec with Matchers {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import ToolbarButtonsConfigVariant._

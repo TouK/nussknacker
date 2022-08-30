@@ -2,12 +2,14 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import akka.actor.ActorSystem
 import akka.testkit.{TestKit, TestKitBase, TestProbe}
-import org.scalatest.{BeforeAndAfterAll, FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll}
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-class RescheduleFinishedActorTest extends FunSuite
+class RescheduleFinishedActorTest extends AnyFunSuite
   with TestKitBase
   with Matchers
   with BeforeAndAfterAll {

@@ -5,11 +5,13 @@ import React, { memo, PropsWithChildren, useCallback, useMemo } from "react";
 import { CustomPagination } from "./customPagination";
 import { FilterRules, useFilterContext } from "../common/filters";
 import { useTranslation } from "react-i18next";
-import { FiltersContextType } from "../common/filters/filtersContext";
+import { useDebouncedValue } from "rooks";
 
-type ColumnDef<R, K = unknown> = GridColDef & {
+export type CellRendererParams<R = any, K = unknown> = GridRenderCellParams<K extends keyof R ? R[K] : any, R>;
+
+export type ColumnDef<R = unknown, K = unknown> = GridColDef & {
     field?: K;
-    renderCell?: (params: GridRenderCellParams<K extends keyof R ? R[K] : never, R>) => React.ReactNode;
+    renderCell?: (params: CellRendererParams<R, K>) => React.ReactNode;
 };
 export type Column<R> = ColumnDef<R, keyof R> | ColumnDef<R, string> | GridActionsColDef;
 export type Columns<R> = Column<R>[];
@@ -24,23 +26,23 @@ interface TableViewProps<T, M> extends TableViewData<T>, Pick<BoxProps, "sx"> {
     filterRules?: FilterRules<T, M>;
 }
 
-export interface CellRendererParams<M> extends GridRenderCellParams {
-    filtersContext: FiltersContextType<M>;
-}
-
 export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
-    const { data = [], filterRules, isLoading, sx, ...passProps } = props;
+    const { data = [], filterRules, isLoading, ...passProps } = props;
     const { t } = useTranslation();
 
     const { getFilter } = useFilterContext<M>();
-
-    const filtered = useMemo(() => {
-        return data.filter((row) => {
-            return filterRules.every(({ key, rule }) => {
-                return rule(row, getFilter(key));
-            });
-        });
-    }, [data, filterRules, getFilter]);
+    const filters = useMemo(
+        () =>
+            filterRules.map(
+                ({ key, rule }) =>
+                    (row) =>
+                        rule(row, getFilter(key)),
+            ),
+        [filterRules, getFilter],
+    );
+    const filtered = useMemo(() => data.filter((row) => filters.every((f) => f(row))), [data, filters]);
+    const [rows] = useDebouncedValue(filtered, 100);
+    const [loading] = useDebouncedValue(isLoading || rows.length !== filtered.length, 200);
 
     const rowSelectable = useCallback(() => false, []);
     const localeText = useMemo(
@@ -71,8 +73,8 @@ export function TableWrapper<T, M>(props: TableViewProps<T, M>): JSX.Element {
             <DataGrid
                 isRowSelectable={rowSelectable}
                 autoPageSize
-                rows={filtered}
-                loading={isLoading}
+                rows={rows}
+                loading={loading}
                 localeText={localeText}
                 disableColumnFilter
                 disableSelectionOnClick

@@ -15,6 +15,7 @@ export type UserData = {
   id: string,
 }
 
+//FIXME: remove class from store - plain data only
 export default class User {
   readonly categories: PermissionCategory[]
   private readonly categoryPermissions: CategoryPermissions

@@ -1,25 +1,34 @@
 import {ThunkAction, ThunkDispatch} from "../reduxTypes"
 import HttpService from "../../http/HttpService"
-import {NodeValidationError, PropertiesType, VariableTypes, NodeType, UIParameter, TypingResult} from "../../types"
+import {
+  Edge,
+  NodeType,
+  NodeValidationError,
+  PropertiesType,
+  TypingResult,
+  UIParameter,
+  VariableTypes,
+} from "../../types"
 
 import {debounce} from "lodash"
 
-export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string}
-export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string}
+export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string }
+export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string }
 export type NodeDetailsActions = NodeValidationUpdated | NodeValidationClear
 
-export type ValidationData = {
-    parameters? : UIParameter[],
-    expressionType?: TypingResult,
-    validationErrors: NodeValidationError[],
-    validationPerformed: boolean,
+export interface ValidationData {
+  parameters?: UIParameter[],
+  expressionType?: TypingResult,
+  validationErrors: NodeValidationError[],
+  validationPerformed: boolean,
 }
 
-type ValidationRequest = {
-    nodeData: NodeType,
-    variableTypes: VariableTypes,
-    branchVariableTypes: Record<string, VariableTypes>,
-    processProperties: PropertiesType,
+export interface ValidationRequest {
+  nodeData: NodeType,
+  variableTypes: VariableTypes,
+  branchVariableTypes: Record<string, VariableTypes>,
+  processProperties: PropertiesType,
+  outgoingEdges: Edge[],
 }
 
 function nodeValidationDataUpdated(validationData: ValidationData, nodeId: string): NodeValidationUpdated {
@@ -31,20 +40,21 @@ export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
 }
 
 //we don't return ThunkAction here as it would not work correctly with debounce
-function validate(processId: string, request: ValidationRequest, dispatch: ThunkDispatch) {
-  HttpService.validateNode(processId, request).then(data => dispatch(nodeValidationDataUpdated(data.data, request.nodeData.id)))
+function validate(processId: string, validationRequestData: ValidationRequest, dispatch: ThunkDispatch) {
+  HttpService.validateNode(processId, validationRequestData).then(data => dispatch(nodeValidationDataUpdated(data.data, validationRequestData.nodeData.id)))
 }
 
 //TODO: use sth better, how long should be timeout?
 const debouncedValidate = debounce(validate, 500)
 
-export function updateNodeData(processId: string, variableTypes: VariableTypes, branchVariableTypes: Record<string, VariableTypes>, nodeData: NodeType, processProperties: PropertiesType): ThunkAction {
+export function updateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
   //Properties are "special types" which are not compatible with NodeData in BE
+  const {nodeData} = validationRequestData
   if (nodeData.type && nodeData.type !== "Properties") {
-    return (dispatch) => debouncedValidate(processId, {
-      nodeData, variableTypes, processProperties, branchVariableTypes}, dispatch)
+    return (dispatch) => debouncedValidate(processId, validationRequestData, dispatch)
   } else {
-    return () => {/* ignore invocation */}
+    return () => {/* ignore invocation */
+    }
   }
 
 }

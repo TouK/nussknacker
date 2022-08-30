@@ -3,7 +3,8 @@ package pl.touk.nussknacker.streaming.embedded
 import akka.actor.ActorSystem
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -21,20 +22,22 @@ import sttp.model.StatusCode
 
 import scala.concurrent.Future
 
-class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matchers with PatientScalaFutures {
+class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
   protected def prepareFixture(initiallyDeployedScenarios: List[DeployedScenarioData] = List.empty): FixtureParam = {
 
-    val modelData = LocalModelData(ConfigFactory.empty().withValue("components.kafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
+    val modelData = LocalModelData(ConfigFactory.empty()
+      .withValue("components.kafka.disabled", fromAnyRef(true))
+      .withValue("components.mockKafka.disabled", fromAnyRef(true)), new EmptyProcessConfigCreator)
     implicit val deploymentService: ProcessingTypeDeploymentServiceStub = new ProcessingTypeDeploymentServiceStub(initiallyDeployedScenarios)
     implicit val as: ActorSystem = ActorSystem(getClass.getSimpleName)
     implicit val dummyBackend: SttpBackend[Future, Nothing, NothingT] = null
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new RequestResponseEmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
-      ConfigFactory.empty().withValue("port", fromAnyRef(port)).withValue("interface", fromAnyRef("localhost")))
+      ConfigFactory.empty().withValue("http.port", fromAnyRef(port)).withValue("http.interface", fromAnyRef("localhost")))
     FixtureParam(manager, modelData, port)
   }
 
@@ -84,7 +87,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends FunSuite with Matcher
     }
 
     request.body("""{ productId: 15 }""").send().body shouldBe Right("""{"transformed":15}""")
-    request.body("""Not a correct json""").send().body shouldBe Left("""[{"message":"A JSONObject text must begin with '{' at 1 [character 2 line 1]","nodeId":"source"}]""")
+    request.body("""Not a correct json""").send().body shouldBe Left("""[{"message":"#: expected type: JSONObject, found: String","nodeId":"source"}]""")
     request.body("""{ productId: "11"}""").send().body shouldBe Left("""[{"message":"#/productId: expected type: Integer, found: String","nodeId":"source"}]""")
 
     manager.cancel(name, User("a", "b")).futureValue

@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.component
 
 import org.scalatest.Inside.inside
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId, ComponentType, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
@@ -11,15 +13,15 @@ import pl.touk.nussknacker.engine.graph.node.WithParameters
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, NodeTypeId}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType._
+import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPermissions with OptionValues {
+class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with TestPermissions with OptionValues {
 
-  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.config)
+  private val processCategoryService = new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig)
 
   test("return groups sorted in order: inputs, base, other, outputs and then sorted by name within group") {
     val groups = prepareGroups(Map(), Map(ComponentGroupName("custom") -> Some(ComponentGroupName("CUSTOM")), ComponentGroupName("sinks") -> Some(ComponentGroupName("BAR"))))
@@ -34,8 +36,8 @@ class ComponentDefinitionPreparerSpec extends FunSuite with Matchers with TestPe
   test("return objects sorted by label case insensitive") {
     val groups = prepareGroupsOfNodes(List("foo","alaMaKota","BarFilter"))
     groups.map(_.components.map(n=>n.label)) shouldBe List(
-      List("filter", "mapVariable","split","switch","variable"),
-      List("alaMaKota","BarFilter","foo")
+      List("choice", "filter", "mapVariable", "split", "variable"),
+      List("alaMaKota", "BarFilter", "foo")
     )
   }
 

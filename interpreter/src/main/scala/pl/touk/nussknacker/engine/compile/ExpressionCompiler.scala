@@ -153,7 +153,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
       .getOrElse(invalid(NotSupportedExpressionLanguage(n.language))).toValidatedNel
 
     validParser andThen { parser =>
-      parser.parse(n.expression, validationCtx, expectedType).leftMap(errs => errs.map(err => ProcessCompilationError.ExpressionParseError(err.message, fieldName, n.expression)))
+      parser.parse(n.expression, validationCtx, expectedType).leftMap(errs => errs.map(err => ProcessCompilationError.ExpressionParserCompilationError(err.message, fieldName, n.expression)))
     }
   }
 
@@ -168,7 +168,7 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
     validParser andThen { parser =>
       parser.parseWithoutContextValidation(n.expression, expectedType)
-        .leftMap(errs => errs.map(err => ProcessCompilationError.ExpressionParseError(err.message, Some(fieldName), n.expression)))
+        .leftMap(errs => errs.map(err => ProcessCompilationError.ExpressionParserCompilationError(err.message, Some(fieldName), n.expression)))
     }
   }
 

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import org.scalatest.FunSuite
+import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, WithCategories}
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class UnionTransformersExceptionHandlingSpec extends FunSuite with CorrectExceptionHandlingSpec {
+class UnionTransformersExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
   override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 

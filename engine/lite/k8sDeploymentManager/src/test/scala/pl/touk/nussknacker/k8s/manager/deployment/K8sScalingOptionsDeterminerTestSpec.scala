@@ -2,10 +2,11 @@ package pl.touk.nussknacker.k8s.manager.deployment
 
 import com.typesafe.config.ConfigFactory
 import net.ceedubs.ficus.Ficus.toFicusConfig
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig._
 
-class K8sScalingOptionsDeterminerTestSpec extends FunSuite with Matchers {
+class K8sScalingOptionsDeterminerTestSpec extends AnyFunSuite with Matchers {
 
   test("round dividing") {
     val determiner = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(tasksPerReplica = 4))
@@ -19,12 +20,12 @@ class K8sScalingOptionsDeterminerTestSpec extends FunSuite with Matchers {
   }
 
   test("fixed replicas round dividing") {
-    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(FixedReplicasCountConfig(fixedReplicasCount = 2))
+    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(2)
     determiner.determine(parallelism = 8) shouldEqual K8sScalingOptions(replicasCount = 2, noOfTasksInReplica = 4)
   }
 
   test("fixed replicas dividing with remainder") {
-    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(FixedReplicasCountConfig(fixedReplicasCount = 2))
+    val determiner = new FixedReplicasCountK8sScalingOptionsDeterminer(2)
     determiner.determine(parallelism = 9) shouldEqual K8sScalingOptions(replicasCount = 2, noOfTasksInReplica = 5)
   }
 

@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.requestresponse.management
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -16,7 +17,7 @@ import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.io.File
 
-class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScalaFutures with Matchers {
+class RequestResponseDeploymentManagerSpec extends AnyFunSuite with VeryPatientScalaFutures with Matchers {
 
   import scala.concurrent.ExecutionContext.Implicits._
 
@@ -29,8 +30,8 @@ class RequestResponseDeploymentManagerSpec extends FunSuite with VeryPatientScal
 
     val manager = new RequestResponseDeploymentManager(modelData, null)
 
-    val inputSchema = """{ "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
-    val outputSchema = """{ "properties": { "value": {"type":"string"} }}"""
+    val inputSchema = """{"type" : "object", "properties": { "field1": {"type":"string"}, "field2": {"type":"string"} }}"""
+    val outputSchema = """{"type" : "object", "properties": { "value": {"type":"string"} }}"""
 
     val process = ScenarioBuilder
       .requestResponse("tst")

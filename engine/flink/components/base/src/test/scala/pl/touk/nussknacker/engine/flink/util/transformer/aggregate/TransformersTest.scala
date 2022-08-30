@@ -5,9 +5,11 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.flink.streaming.api.scala._
-import org.scalatest.{FunSuite, Inside, Matchers}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParseError}
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -18,11 +20,11 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEdito
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -36,12 +38,12 @@ import java.util.Arrays.asList
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
-class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside {
+class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
   def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
     .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
 
-  val validator: ProcessValidator = modelData().validator
+  private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality","#input.str",  Typed[Long])
@@ -132,10 +134,10 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
     val testProcess = sliding("#AGG.sum",
       "#input.eId", emitWhenEventLeft = true, afterAggregateExpression = "#input.eId")
 
-    val result = validator.validate(testProcess)
+    val result = processValidator.validate(testProcess)
 
     inside(result.result) {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "after-aggregate-expression-", _, _), Nil)) =>
     }
   }
 
@@ -197,7 +199,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
 
     lazy val run = runProcess(model, resolvedScenario, ResultsCollectingListenerHolder.registerRun(identity))
 
-    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParseError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
+    the [IllegalArgumentException] thrownBy run should have message "Compilation errors: ExpressionParserCompilationError(Unresolved reference 'input',inputVarAccessTest,Some($expression),#input)"
   }
 
 
@@ -390,8 +392,9 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
-      override protected def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
-        List(collectingListener) ++ super.listeners(processObjectDependencies)
+      override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
+        collectingListener :: defaults
+      }
     }, ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
@@ -418,7 +421,7 @@ class TransformersTest extends FunSuite with FlinkSpec with Matchers with Inside
   }
 
   private def validateConfig(aggregator: String, aggregateBy: String): CompilationResult[Unit] = {
-    validator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
+    processValidator.validate(sliding(aggregator, aggregateBy, emitWhenEventLeft = false))
   }
 
   private def tumbling(aggregator: String, aggregateBy: String, emitWhen: TumblingWindowTrigger, afterAggregateExpression: String = "") = {

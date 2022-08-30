@@ -5,6 +5,7 @@ import { ProcessType } from "nussknackerUi/components/Process/types";
 import { StatusesType } from "nussknackerUi/HttpService";
 import { useQuery } from "react-query";
 import { UseQueryResult } from "react-query/types/react/types";
+import { DateTime } from "luxon";
 
 function useScenariosQuery(): UseQueryResult<ProcessType[]> {
     const api = useContext(NkApiContext);
@@ -12,14 +13,19 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
         queryKey: ["scenarios"],
         queryFn: async () => {
             const results = await Promise.all([api.fetchProcesses(), api.fetchProcesses({ isArchived: true })]);
-            return results.flatMap(({ data }) => data);
+            return results.flatMap(({ data }) => data).map(({ createdAt, modificationDate, ...row }) => ({
+                ...row,
+                createdAt: createdAt && DateTime.fromISO(createdAt).toFormat("yyyy-MM-dd HH:mm:ss"),
+                modificationDate: modificationDate && DateTime.fromISO(modificationDate).toFormat("yyyy-MM-dd HH:mm:ss"),
+            }))
+;
         },
         enabled: !!api,
         refetchInterval: 60000,
     });
 }
 
-function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
+export function useScenariosStatusesQuery(): UseQueryResult<StatusesType> {
     const api = useContext(NkApiContext);
     return useQuery({
         queryKey: ["scenariosStatuses"],

@@ -4,7 +4,9 @@ import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -21,7 +23,7 @@ import java.time.{Clock, LocalDate, LocalDateTime}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
-class PeriodicProcessServiceTest extends FunSuite
+class PeriodicProcessServiceTest extends AnyFunSuite
   with Matchers
   with OptionValues
   with ScalaFutures
@@ -44,7 +46,7 @@ class PeriodicProcessServiceTest extends FunSuite
       .toCanonicalProcess
 
   class Fixture {
-    val repository = new db.InMemPeriodicProcessesRepository
+    val repository = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
@@ -85,6 +87,13 @@ class PeriodicProcessServiceTest extends FunSuite
     val failedId2 = fWithRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.FailedOnDeploy, deployMaxRetries = 1)
     val scheduledId2 = fWithRetries.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, deployMaxRetries = 1)
     fWithRetries.periodicProcessService.findToBeDeployed.futureValue.map(_.id) shouldBe List(scheduledId2, failedId2)
+  }
+
+  test("findToBeDeployed - should not return scenarios with different processing type") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
+
+    f.periodicProcessService.findToBeDeployed.futureValue shouldBe 'empty
   }
 
   // Flink job could disappear from Flink console.
@@ -145,6 +154,19 @@ class PeriodicProcessServiceTest extends FunSuite
 
     f.repository.processEntities.loneElement.active shouldBe true
     f.repository.deploymentEntities.map(_.status) should contain only (PeriodicProcessDeploymentStatus.Finished, PeriodicProcessDeploymentStatus.Scheduled)
+  }
+
+  test("handleFinished - should not reschedule scenario with different processing type") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Deployed, processingType = "other")
+
+    f.periodicProcessService.handleFinished.futureValue
+
+    val processEntity = f.repository.processEntities.loneElement
+    processEntity.active shouldBe true
+    f.repository.deploymentEntities should have size 1
+    f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed)
+    f.events.toList shouldBe 'empty
   }
 
   test("handle first schedule") {

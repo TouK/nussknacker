@@ -37,11 +37,16 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
     producer.close()
   }
 
+  override def flush(): Unit = {
+    producer.flush()
+  }
 }
 
 trait SharedKafkaProducer {
 
   def close(): Unit
+
+  def flush(): Unit
 
   def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit]
 
@@ -58,6 +63,9 @@ trait WithSharedKafkaProducer extends Lifecycle {
     sharedProducer.sendToKafka(producerRecord)
   }
 
+  def flush(): Unit = {
+    sharedProducer.flush()
+  }
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)

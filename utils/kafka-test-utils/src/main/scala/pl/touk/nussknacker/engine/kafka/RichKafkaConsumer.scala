@@ -1,42 +1,49 @@
 package pl.touk.nussknacker.engine.kafka
 
+import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
-
-import java.time.Duration
-import java.util.concurrent.TimeoutException
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, ConsumerRecords}
 import org.apache.kafka.common.TopicPartition
 import org.scalatest.concurrent.Eventually.{eventually, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.kafka.RichKafkaConsumer.defaultSecondsToWait
 
-class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
+import java.time.Duration
+import java.util.concurrent.TimeoutException
+
+class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
   import scala.collection.JavaConverters._
 
-  def consume(topic: String, secondsToWait: Int = 20): Stream[KeyMessage[K, M]] =
+  def consume(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
 
-  def consumeWithString(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[String] =
+  def consumeWithString(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[String] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => new String(record.value()))
 
-  def consumeWithJson(topic: String, secondsToWait: Int = 20)(implicit ev: M =:= Array[Byte]): Stream[Json] =
+  def consumeWithJson(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[Json] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
-  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = 20): Stream[ConsumerRecord[K, M]] = {
-    implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
+  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[ConsumerRecord[K, M]] = {
+    val partitions = fetchTopicPartitions(topic, secondsToWait)
+    consumer.assign(partitions.asJava)
+    logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
+    logger.debug(s"Consumer offsets: beginning: ${consumer.beginningOffsets(consumer.assignment())}, end: ${consumer.endOffsets(consumer.assignment())}")
 
+    Stream.continually(()).flatMap(new Poller(secondsToWait))
+  }
+
+  private def fetchTopicPartitions(topic: String, secondsToWait: Int) = {
+    implicit val patienceConfig: PatienceConfig = PatienceConfig(Span(secondsToWait, Seconds), Span(100, Millis))
+    // We have to repeat it in eventually - partitionsFor with duration parameter sometimes just returns empty list
     val partitionsInfo = eventually {
       consumer.listTopics.asScala.getOrElse(topic, throw new IllegalStateException(s"Topic: $topic not exists"))
     }
-
-    val partitions = partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
-    consumer.assign(partitions.asJava)
-
-    Stream.continually(()).flatMap(new Poller(secondsToWait))
+    partitionsInfo.asScala.map(no => new TopicPartition(topic, no.partition()))
   }
 
   //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent
@@ -61,6 +68,10 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) {
     }
 
   }
+}
+
+object RichKafkaConsumer {
+  val defaultSecondsToWait = 30
 }
 
 case class KeyMessage[K, V](k: K, msg: V, timestamp: Long) {

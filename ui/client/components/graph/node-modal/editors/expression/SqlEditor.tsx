@@ -29,8 +29,10 @@ function useAliasUsageHighlight(token = "alias") {
   )
 
   const toggleClassname = useCallback(debounce((classname: string, enabled: boolean): void => {
-    const el = ref.current.refEditor
-    el.className = classnames(el.className, {[classname]: enabled})
+    const el = ref.current?.refEditor
+    if (el) {
+      el.className = classnames(el.className, {[classname]: enabled})
+    }
   }, 1000, {trailing: true, leading: true}), [])
 
   useEffect(() => {
@@ -66,7 +68,7 @@ const SqlEditor: SimpleEditor<Props> = (props: Props) => {
 
   const valueChange = useCallback(
     (value: string) => {
-      const encoded = sqlFormatter.encode(value.trim())
+      const encoded = sqlFormatter.encode(value)
       if (encoded !== value) {
         return onValueChange(encoded)
       }

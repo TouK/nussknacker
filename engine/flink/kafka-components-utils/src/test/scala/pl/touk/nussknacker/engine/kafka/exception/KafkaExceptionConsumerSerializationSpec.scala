@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.engine.kafka.exception
 
 import org.apache.kafka.clients.producer.MockProducer
-import org.scalatest.{FunSuite, Matchers}
+import org.apache.kafka.common.serialization.ByteArraySerializer
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.{NonTransientException, NuExceptionInfo}
 import pl.touk.nussknacker.engine.api.{CirceUtil, Context, MetaData, StreamMetaData}
@@ -10,9 +12,9 @@ import pl.touk.nussknacker.engine.kafka.MockProducerCreator
 import java.time.Instant
 import scala.jdk.CollectionConverters.asScalaBufferConverter
 
-class KafkaExceptionConsumerSerializationSpec extends FunSuite with Matchers {
+class KafkaExceptionConsumerSerializationSpec extends AnyFunSuite with Matchers {
 
-  private val mockProducer = new MockProducer[Array[Byte], Array[Byte]]()
+  private val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
 
   private val metaData = MetaData("test", StreamMetaData())
 
@@ -26,7 +28,8 @@ class KafkaExceptionConsumerSerializationSpec extends FunSuite with Matchers {
 
   private val serializationSchema = new KafkaJsonExceptionSerializationSchema(metaData, consumerConfig)
 
-  private val consumer = TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer))
+  //null as we don't test open here...
+  private val consumer = TempProducerKafkaExceptionConsumer(serializationSchema, MockProducerCreator(mockProducer), null)
 
   test("records event") {
     consumer.consume(exception)

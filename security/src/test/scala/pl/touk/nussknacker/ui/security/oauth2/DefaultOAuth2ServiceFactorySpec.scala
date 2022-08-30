@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
-import org.scalatest.{FlatSpec, Matchers, Suite}
+import org.scalatest.{Suite}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -12,7 +14,7 @@ import sttp.model.{StatusCode, Uri}
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Random, Success}
 
-class DefaultOAuth2ServiceFactorySpec extends FlatSpec with Matchers with PatientScalaFutures with Suite  {
+class DefaultOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global

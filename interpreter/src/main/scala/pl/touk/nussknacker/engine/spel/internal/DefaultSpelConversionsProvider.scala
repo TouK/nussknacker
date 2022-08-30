@@ -7,8 +7,8 @@ import org.springframework.util.{NumberUtils, StringUtils}
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 
 import java.nio.charset.Charset
-import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.time._
+import java.time.chrono.{ChronoLocalDate, ChronoLocalDateTime}
 import java.util.{Currency, Locale, UUID}
 
 /**
@@ -35,6 +35,10 @@ class DefaultSpelConversionsProvider extends SpelConversionsProvider {
     service.addConverter(classOf[String], classOf[LocalDateTime], (source: String) => LocalDateTime.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDate], (source: String) => LocalDate.parse(source))
     service.addConverter(classOf[String], classOf[ChronoLocalDateTime[_]], (source: String) => LocalDateTime.parse(source))
+    // This is used only to prevent errors when calling function with
+    // varArgs with exactly one argument.
+    // TODO: Remove it once Spring is updated; it should work with version 5.3.22
+    service.addConverter(new ObjectToArrayConverter(service))
     // For purpose of concise usage of numbers in spel templates
     service.addConverter(classOf[Number], classOf[String], (source: Number) => source.toString)
     service

@@ -1,13 +1,13 @@
 package db.migration
 
-import db.migration.V1_032__StandaloneToRequestResponseDefinition.migrateMetadata
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, RequestResponseMetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import io.circe.syntax._
 
-class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
+class V1_032__StandaloneToRequestResponseSpec extends AnyFlatSpec with Matchers {
 
   private val id = "id1"
 
@@ -57,6 +57,8 @@ class V1_032__StandaloneToRequestResponseSpec extends FlatSpec with Matchers {
   private def toJson(metaData: MetaData) = Some(CanonicalProcess(metaData, Nil).asJson)
 
   it should "convert standalone type" in {
+    // we need to apply both migrations because both has influence on shape of expected metadata
+    val migrateMetadata = V1_032__StandaloneToRequestResponseDefinition.migrateMetadata _ andThen { o => o.flatMap(V1_033__RequestResponseUrlToSlug.migrateMetadata) }
     migrateMetadata(legacyStandaloneMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))
     migrateMetadata(requestResponseMetaData) shouldBe toJson(MetaData(id, RequestResponseMetaData(Some("/main"))))
     migrateMetadata(streamMetaData) shouldBe toJson(MetaData(id, StreamMetaData(parallelism = Some(2))))

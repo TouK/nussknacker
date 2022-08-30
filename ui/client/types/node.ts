@@ -2,6 +2,11 @@ type Type = "Properties" | "SubprocessInput" | string
 
 export type LayoutData = { x: number, y: number }
 
+export interface BranchParams {
+  branchId: string,
+  parameters: Field[],
+}
+
 export type BranchParametersTemplate = $TodoType
 
 //FIXME: something wrong here, process and node mixed?
@@ -18,20 +23,28 @@ export type NodeType<F extends Field = Field> = {
     },
   },
   parameters?: Parameter[],
-  branchParameters?: $TodoType,
+  branchParameters?: BranchParams[],
   branchParametersTemplate?: BranchParametersTemplate,
   subprocessVersions?: $TodoType,
-  ref?: $TodoType,
+  ref?: {
+    id: string,
+    typ: string,
+    parameters: $TodoType[],
+  },
   varName?: string,
   value?: $TodoType,
   fields?: Array<F>,
   outputName?: string,
   service?: {
+    id: string,
     parameters?: $TodoType[],
   },
-  typeSpecificProperties?:{
+  typeSpecificProperties?: {
     type: $TodoType,
+    slug?: string
   },
+  nodeType: string,
+  [key: string]: any,
 }
 
 export type SubprocessNodeType = NodeType
@@ -41,12 +54,13 @@ export type Field = {
   expression: Expression,
 }
 
-export type Parameter = {
+export interface Parameter {
   name: string,
   expression: Expression,
+  typ?: unknown,
 }
 
-export type Expression = {
+export interface Expression {
   language: string,
   expression: string,
 }

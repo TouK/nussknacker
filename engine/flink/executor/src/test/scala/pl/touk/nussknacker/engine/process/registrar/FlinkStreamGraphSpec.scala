@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -16,7 +18,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.collection.JavaConverters._
 
-trait FlinkStreamGraphSpec extends FunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
+trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
 
   protected def streamGraph(process: EspProcess,
                             config: Config = ConfigFactory.load()): StreamGraph = {

@@ -11,15 +11,18 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment.{ProcessActionType, ProcessState}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
+import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
+import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
-import pl.touk.nussknacker.ui.process.exception.{ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager, UpdateProcessComment}
@@ -70,6 +73,8 @@ trait ProcessService {
   def getArchivedProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser): Future[List[BaseProcessDetails[PS]]]
 
   def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]]
+
+  def importProcess(processId: ProcessIdWithName, processData: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]]
 }
 
 /**
@@ -120,11 +125,22 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
-  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
-    doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment]) =>
-      (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
-        .map(_ => ().asRight)
+  override def deployProcess(processIdWithName: ProcessIdWithName, savepointPath: Option[String], deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] = {
+    def withValidProcess(callback: => Future[EmptyResponse]): Future[EmptyResponse] = getProcess[DisplayableProcess](processIdWithName)
+      .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json, pd.processCategory))) // validating the same way, as UI does
+      .flatMap {
+        case l@Left(_) => Future(l.map(_ => ()))
+        case Right(value) if !value.isOk => Future(Left(DeployingInvalidScenarioError))
+        case _ => callback
+      }
+
+    withValidProcess {
+      doAction(ProcessActionType.Deploy, processIdWithName, savepointPath, deploymentComment) { (processIdWithName: ProcessIdWithName, savepointPath: Option[ProcessingType], deploymentComment: Option[DeploymentComment]) =>
+        (managerActor ? Deploy(processIdWithName, user, savepointPath, deploymentComment))
+          .map(_ => ().asRight)
+      }
     }
+  }
 
   override def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse] =
     doAction(ProcessActionType.Cancel, processIdWithName, None, deploymentComment) { (processIdWithName: ProcessIdWithName, _: Option[String], deploymentComment: Option[DeploymentComment]) =>
@@ -210,7 +226,9 @@ class DBProcessService(managerActor: ActorRef,
   override def updateProcess(processIdWithName: ProcessIdWithName, action: UpdateProcessCommand)(implicit user: LoggedUser): Future[XError[UpdateProcessResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't update graph archived scenario.") { process =>
       val result = for {
-        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(processResolving.validateBeforeUiResolving(action.process)))
+        validation <- EitherT.fromEither[Future](FatalValidationError.saveNotAllowedAsError(
+          processResolving.validateBeforeUiResolving(action.process, process.processCategory)
+        ))
         substituted = {
           processResolving.resolveExpressions(action.process, validation.typingInfo)
         }
@@ -250,6 +268,20 @@ class DBProcessService(managerActor: ActorRef,
       .map(processes => processes.map(sub => {
         SubprocessDetails(sub.json, sub.processCategory)
       }).toSet)
+  }
+
+  def importProcess(processId: ProcessIdWithName, jsonString: String)(implicit user: LoggedUser): Future[XError[ValidatedDisplayableProcess]] = {
+    withNotArchivedProcess(processId, "Import is not allowed for archived process.") { process =>
+      val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
+        .map{ jsonCanonicalProcess =>
+          val canonical = jsonCanonicalProcess.withProcessId(processId.name)
+          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
+          val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
+          new ValidatedDisplayableProcess(displayable, validationResult)
+        }
+
+      Future.successful(result)
+    }
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

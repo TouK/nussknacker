@@ -5,7 +5,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -15,7 +14,8 @@ import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -27,6 +27,8 @@ object RequestResponseDeploymentManager {
 
 class RequestResponseDeploymentManager(modelData: BaseModelData, client: RequestResponseClient)(implicit ec: ExecutionContext)
   extends BaseDeploymentManager with LazyLogging {
+
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
@@ -71,7 +73,7 @@ class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider
 
   override def name: String = "requestResponse"
 
-  override def typeSpecificInitialData: TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
 
   override def supportsSignals: Boolean = false
 

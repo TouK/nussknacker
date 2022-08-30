@@ -3,7 +3,9 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
@@ -35,7 +37,7 @@ import java.util.Collections
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
 
-class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
+class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
 
   private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)
@@ -124,7 +126,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Property access on Unknown is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Property access on Unknown is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
     }
 
   }
@@ -162,7 +164,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unknown method 'copyValueOf' in String", "filter1", Some(DefaultExpressionId), "T(String).copyValueOf('test')"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unknown method 'copyValueOf' in String", "filter1", Some(DefaultExpressionId), "T(String).copyValueOf('test')"), _)) =>
     }
 
   }
@@ -181,7 +183,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(testProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("class java.lang.System is not allowed to be passed as TypeReference", "filter1", Some(DefaultExpressionId), "T(System).exit()"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("class java.lang.System is not allowed to be passed as TypeReference", "filter1", Some(DefaultExpressionId), "T(System).exit()"), _)) =>
     }
 
   }
@@ -215,7 +217,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(correctProcess, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "filter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -264,8 +266,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "bv1" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord]),
       "id2" -> Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(correctProcess.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "out" -> Typed[SimpleRecord],
         "vars" -> TypedObjectTypingResult(ListMap(
-          "v1" -> Typed[Integer],
-          "mapVariable" -> TypedObjectTypingResult(ListMap("Field1" -> Typed[String], "Field2" -> Typed[String], "Field3" -> Typed[BigDecimal])),
+          "v1" -> Typed.fromInstance(42),
+          "mapVariable" -> TypedObjectTypingResult(ListMap(
+            "Field1" -> Typed.fromInstance("Field1Value"),
+            "Field2" -> Typed.fromInstance("Field2Value"),
+            "Field3" -> Typed[BigDecimal]
+          )),
           "spelVariable" ->  Typed[Boolean]
         ))
       )
@@ -316,7 +322,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
        .buildSimpleVariable("result-id2", "result", "wtf!!!").emptySink("end-id2", "sink")
 
     validate(processWithInvalidExpression, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError(_, _, _, _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(_, _, _, _), _)) =>
     }
   }
 
@@ -516,7 +522,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.variablesInNodes("id2") shouldBe Map(
       "input" -> Unknown,
       "meta" -> MetaVariables.typingResult(processWithRefToMissingService.metaData),
-      "simpleVar" -> Typed[String]
+      "simpleVar" -> Typed.fromInstance("simple")
     )
 
   }
@@ -543,8 +549,8 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Unresolved reference 'doesNotExist1'", "sampleFilter", Some(DefaultExpressionId), _),
-      List(ExpressionParseError("Unresolved reference 'doesNotExist2'", "sampleFilter", Some(DefaultExpressionId), _)))) =>
+      ExpressionParserCompilationError("Unresolved reference 'doesNotExist1'", "sampleFilter", Some(DefaultExpressionId), _),
+      List(ExpressionParserCompilationError("Unresolved reference 'doesNotExist2'", "sampleFilter", Some(DefaultExpressionId), _)))) =>
     }
   }
 
@@ -556,7 +562,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter2", "input.plainValue > 10")
       .emptySink("id2", "sink")
     validate(process, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -568,7 +574,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter2", "#input.value1.value3 > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -583,7 +589,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -600,7 +606,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     val compilationResult = validate(process, definitionWithCustomNode)
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'value3' in type: AnotherSimpleRecord", "sampleFilter2", Some(DefaultExpressionId), _), _)) =>
     }
     compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
     compilationResult.variablesInNodes("id3") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass))
@@ -618,7 +624,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: AnotherSimpleRecord",
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'terefere' in type: AnotherSimpleRecord",
       "sampleFilter2", Some(DefaultExpressionId), "#out1.terefere"), _)) =>
     }
   }
@@ -632,7 +638,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val definitionWithCustomNode = definitionWithTypedSourceAndTransformNode
 
     validate(process, definitionWithCustomNode).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'strangeVar'", "cNode1", Some("par1"), "#strangeVar"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'strangeVar'", "cNode1", Some("par1"), "#strangeVar"), _)) =>
     }
   }
 
@@ -655,7 +661,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .filter("sampleFilter1", "#input.plainValueOpt.terefere > 10")
       .emptySink("id2", "sink")
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("There is no property 'terefere' in type: BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("There is no property 'terefere' in type: BigDecimal", "sampleFilter1", Some(DefaultExpressionId), _), _)) =>
     }
   }
 
@@ -673,10 +679,10 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     //sortBy is for having defined order
     validate(process, definitionWithTypedSource).result.leftMap(_.sortBy(_.toString)) should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
+      ExpressionParserCompilationError("Expression [{] @0: EL1044E: Unexpectedly ran out of input", "c1", Some("par1"), _),
       List(
-      ExpressionParseError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
-      ExpressionParseError("Unresolved reference 'terefere22'", "v1", Some("par1"), _))
+      ExpressionParserCompilationError("Unresolved reference 'terefere'", "p1", Some("par1"), _),
+      ExpressionParserCompilationError("Unresolved reference 'terefere22'", "v1", Some("par1"), _))
       )) =>
     }
   }
@@ -692,7 +698,12 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.result should matchPattern {
       case Invalid(NonEmptyList(OverwrittenVariable("var1", "var1overwrite", _), _)) =>
     }
-    compilationResult.variablesInNodes("id2") shouldBe Map("input" -> Typed[SimpleRecord], "meta" -> MetaVariables.typingResult(process.metaData), "processHelper" -> Typed(ProcessHelper.getClass), "var1" -> Typed[String])
+    compilationResult.variablesInNodes("id2") shouldBe Map(
+      "input" -> Typed[SimpleRecord],
+      "meta" -> MetaVariables.typingResult(process.metaData),
+      "processHelper" -> Typed(ProcessHelper.getClass),
+      "var1" -> Typed.fromInstance("")
+    )
   }
 
   test("not allow to overwrite variable by switch node") {
@@ -742,7 +753,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       .emptySink("id2", "sink")
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Wrong part types", "notWorking", Some(DefaultExpressionId), "#var1.a > 10"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Wrong part types", "notWorking", Some(DefaultExpressionId), "#var1.a > 10"), _)) =>
     }
   }
 
@@ -775,13 +786,13 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed[String],
-      "var3" -> Typed[String])
+      "var2" -> Typed.fromInstance(""),
+      "var3" -> Typed.fromInstance(""))
     compilationResult.variablesInNodes("id3") shouldBe Map(
       "input" -> Typed[SimpleRecord],
       "meta" -> MetaVariables.typingResult(process.metaData),
       "processHelper" -> Typed(ProcessHelper.getClass),
-      "var2" -> Typed[String],
+      "var2" -> Typed.fromInstance(""),
       "var3" -> Typed[Int]
     )
   }
@@ -795,7 +806,18 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
          Case("false", GraphBuilder.buildSimpleVariable("id3", "result", "#var3").emptySink("end3", "sink")))
 
     validate(process, definitionWithTypedSource).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'var3'", "id3", Some(DefaultExpressionId), "#var3"), _)) =>
+    }
+  }
+
+  test("validates case expressions in switch") {
+    val process = ScenarioBuilder
+      .streaming("process1")
+      .source("id1", "source")
+      .switch("switch", "''", "var2", Case("#notExist", GraphBuilder.emptySink("end1", "sink")))
+
+    validate(process, definitionWithTypedSource).result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'notExist'", "switch", Some("end1"), "#notExist"), _)) =>
     }
   }
 
@@ -940,7 +962,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
         .emptySink("id2", "sink")
 
     validate(processWithLocalVarInEagerParam, baseDefinition).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'input'", "custom", Some("par1"), "#input.toString()"), Nil)) =>
     }
   }
 
@@ -1001,7 +1023,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     validate(process, baseDefinition.copy(expressionConfig = baseDefinition.expressionConfig.copy(hideMetaVariable = true))).result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Unresolved reference 'meta'", _, _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Unresolved reference 'meta'", _, _, _), Nil)) =>
     }
   }
 
@@ -1021,7 +1043,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed[Boolean]), Typed[Boolean])),
+      "filter" -> Map(DefaultExpressionId -> SpelExpressionTypingInfo(Map(PositionRange(0, 4) -> Typed.fromInstance(true)), Typed.fromInstance(true))),
       "sink" -> Map.empty
     )
   }
@@ -1040,7 +1062,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     }
 
     compilationResult.expressionsInNodes shouldEqual Map(
-      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed[java.lang.Integer]), Typed[java.lang.Integer])),
+      "source" -> Map("param" -> SpelExpressionTypingInfo(Map(PositionRange(0, 3) -> Typed.fromInstance(123)), Typed.fromInstance(123))),
       "sink" -> Map.empty
     )
   }
@@ -1050,7 +1072,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
       ScenarioBuilder
         .streaming("process")
         .source("source","source")
-        .emptySink("sink", "sinkWithLazyParam", ("lazyString" -> "'123'"))
+        .emptySink("sink", "sinkWithLazyParam", "lazyString" -> "'123'")
 
     val compilationResult = validate(process, baseDefinition)
 
@@ -1061,7 +1083,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
       "sink" -> Map(
-        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String]))
+        "lazyString" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123")))
     )
   }
 
@@ -1081,7 +1103,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     compilationResult.expressionsInNodes shouldEqual Map(
       "source" -> Map.empty,
-      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed[String]), Typed[String])),
+      "customNode" -> Map("par1" -> SpelExpressionTypingInfo(Map(PositionRange(0, 5) -> Typed.fromInstance("123")), Typed.fromInstance("123"))),
       "sink" -> Map.empty
     )
   }
@@ -1096,7 +1118,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     val compilationResult = validate(process, baseDefinition)
 
     compilationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ExpressionParseError("Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)", _, _, _), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError("Mismatch parameter types. Found: identity(Future[String]). Required: identity(String)", _, _, _), Nil)) =>
     }
   }
 
@@ -1153,7 +1175,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
 
     validate(processWithValidExpression, baseDefinition).result should matchPattern {
       case Invalid(NonEmptyList(
-      ExpressionParseError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
+      ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
       Nil)) =>
     }
   }
@@ -1185,11 +1207,11 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
   case class AnotherSimpleRecord(value2: Long)
 
   class SampleEnricher extends Service {
-    def invoke()(implicit ec: ExecutionContext) = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
+    def invoke()(implicit ec: ExecutionContext): Future[SimpleRecord] = Future.successful(SimpleRecord(AnotherSimpleRecord(1), 2, Option(2), 1, Collections.emptyList[SimpleRecord]))
   }
 
   object ProcessHelper {
-    def add(a: Int, b: Int) = a + b
+    def add(a: Int, b: Int): Int = a + b
 
     def identity(nullableVal: String): String = nullableVal
 
@@ -1240,7 +1262,7 @@ class ProcessValidatorSpec extends FunSuite with Matchers with Inside {
     override def parameters: List[Parameter] = List(
       Parameter.optional(
         name = "definition",
-        typ = Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
+        typ = Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)),
       ),
       Parameter.optional(
         name = "inRealTime",

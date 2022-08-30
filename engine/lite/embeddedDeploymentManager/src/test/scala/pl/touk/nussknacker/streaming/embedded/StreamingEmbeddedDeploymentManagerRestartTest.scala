@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
@@ -16,15 +15,16 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka-json", "topic" -> s"'$inputTopic'")
-      .emptySink("sink", "kafka-json", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
+      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
+        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)
     }
 
-    kafkaZookeeperServer.kafkaServer.shutdown()
-    kafkaZookeeperServer.kafkaServer.awaitShutdown()
+    kafkaServer.kafkaServer.shutdown()
+    kafkaServer.kafkaServer.awaitShutdown()
 
     eventually {
       val jobStatus = manager.findJobStatus(name).futureValue
@@ -32,7 +32,7 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
       jobStatus.map(_.allowedActions).get should contain only (ProcessActionType.Cancel)
     }
 
-    kafkaZookeeperServer.kafkaServer.startup()
+    kafkaServer.kafkaServer.startup()
 
     eventually {
       manager.findJobStatus(name).futureValue.map(_.status) shouldBe Some(SimpleStateStatus.Running)

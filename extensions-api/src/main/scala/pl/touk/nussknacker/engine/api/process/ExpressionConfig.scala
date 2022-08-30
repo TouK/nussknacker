@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.dict.DictDefinition
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
-import pl.touk.nussknacker.engine.api.process.ExpressionConfig.defaultAdditionalClasses
+import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.{ConversionsProvider, SpelExpressionExcludeList}
 
 import java.time._
@@ -14,21 +14,22 @@ case class ExpressionConfig(globalProcessVariables: Map[String, WithCategories[A
                             additionalClasses: List[Class[_]] = defaultAdditionalClasses,
                             languages: LanguageConfiguration = LanguageConfiguration.default,
                             optimizeCompilation: Boolean = true,
-                            strictTypeChecking: Boolean = true,
+                            strictTypeChecking: Boolean = defaultStrictTypeChecking,
                             // TODO After moving categories on root level of all objects, we should consider replacing
                             //      this map with list and adding dictId into DictDefinition. Then we will be sure that
                             //      DictInstance have the same dictId as DictDefinition
                             dictionaries: Map[String, WithCategories[DictDefinition]] = Map.empty,
                             hideMetaVariable: Boolean = false,
-                            strictMethodsChecking: Boolean = true,
-                            staticMethodInvocationsChecking: Boolean = true,
-                            methodExecutionForUnknownAllowed: Boolean = false,
-                            dynamicPropertyAccessAllowed: Boolean = false,
+                            strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
+                            staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
+                            methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
+                            dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed,
                             spelExpressionExcludeList: SpelExpressionExcludeList = SpelExpressionExcludeList.default,
                             customConversionsProviders: List[ConversionsProvider] = List.empty
                            )
 
 object ExpressionConfig {
+
   val empty = ExpressionConfig(Map.empty, Nil)
 
   val standardClasses: List[Class[_]] = List(classOf[UUID])
@@ -37,6 +38,12 @@ object ExpressionConfig {
   val standardEditorClasses: List[Class[_]] = List(classOf[LocalDate], classOf[LocalTime], classOf[LocalDateTime], classOf[Duration], classOf[Period])
 
   val defaultAdditionalClasses: List[Class[_]] = standardClasses ++ standardEditorClasses
+
+  val defaultStrictTypeChecking = true
+  val defaultStrictMethodsChecking = true
+  val defaultStaticMethodInvocationsChecking = true
+  val defaultMethodExecutionForUnknownAllowed = false
+  val defaultDynamicPropertyAccessAllowed = false
 }
 
 object LanguageConfiguration {

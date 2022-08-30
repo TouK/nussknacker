@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.compile
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.scalatest.{FunSuite, Inside, Matchers}
+import org.scalatest.Inside
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -13,8 +15,10 @@ import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
+import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
+import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -28,7 +32,7 @@ import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
+class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
   private val config = List("genericParametersSource", "genericParametersSink", "genericTransformer")
     .foldLeft(ConfigFactory.empty())((c, n) =>
@@ -68,7 +72,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
@@ -91,8 +95,8 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "''"),
             par("a", "'a'"),
             par("b", "''")))), ValidationContext())) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, _, _) =>
-        error.message shouldBe "Bad expression type, expected: Long, found: String"
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, _, _) =>
+        error.message shouldBe s"Bad expression type, expected: Long, found: ${Typed.fromInstance("").display}"
     }
 
     validate(Source("tst1", SourceRef("doNotExist", Nil)), ValidationContext()) should matchPattern {
@@ -103,7 +107,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should validate filter") {
     inside(validate(Filter("filter", "#a > 3"), ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Wrong part types"
     }
   }
@@ -111,7 +115,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
   test("should validate service") {
     inside(validate(node.Enricher("stringService", ServiceRef("stringService", List(par("stringParam", "#a.length + 33"))), "out"),
       ValidationContext(Map("a" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Bad expression type, expected: String, found: Integer"
     }
 
@@ -126,7 +130,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
             par("lazyPar1", "#aVar + ''"),
             par("a", "'a'"),
             par("b", "''"))), ValidationContext(Map("aVar" -> Typed[String])))) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, Some(params), _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, Some(params), _) =>
         params shouldBe genericParameters
         error.message shouldBe "Bad expression type, expected: Long, found: String"
     }
@@ -176,7 +180,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(Variable("var1", "var1", "doNotExist", None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -197,7 +201,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
 
   test("should return expression type info for variable definition") {
     inside(validate(Variable("var1", "var1", "42L", None), ValidationContext(Map.empty))) {
-      case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe "Long"
+      case ValidationPerformed(Nil, _, Some(expressionType)) => expressionType.display shouldBe Typed.fromInstance(42L).display
     }
   }
 
@@ -205,7 +209,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     inside(
       validate(VariableBuilder("var1", "var1", List(Field("field1", "doNotExist")), None), ValidationContext(Map.empty))
     ) {
-      case ValidationPerformed((error:ExpressionParseError) :: Nil, None, _) =>
+      case ValidationPerformed((error:ExpressionParserCompilationError) :: Nil, None, _) =>
         error.message shouldBe "Non reference 'doNotExist' occurred. Maybe you missed '#' in front of it?"
     }
   }
@@ -223,7 +227,7 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       validate(VariableBuilder("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext(Map.empty))
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
@@ -232,23 +236,27 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
       validate(SubprocessOutputDefinition("var1", "var1", List(Field("field1", "42L"), Field("field2", "'some string'")), None), ValidationContext.empty)
     ) {
       case ValidationPerformed(Nil, None, Some(TypedObjectTypingResult(fields, _, _))) =>
-        fields.mapValues(_.display) shouldBe Map("field1" -> "Long", "field2" -> "String")
+        fields.mapValues(_.display) shouldBe Map("field1" -> Typed.fromInstance(42L).display, "field2" -> Typed.fromInstance("some string").display)
     }
   }
 
   test("should validate fragment") {
+    val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
-     validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
-   ) {
-     case ValidationPerformed(List(ExpressionParseError("Bad expression type, expected: String, found: Integer", "frInput", Some("param1"), "145")), None, None) =>
-   }
+      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
+    ) {
+      case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
+    }
   }
 
   test("should validate switch") {
     inside(
-     validate(Switch("switchId", "input", "value1"), ValidationContext.empty)
+     validate(Switch("switchId", Some("input"), Some("value1")), ValidationContext.empty, Map.empty, List(OutgoingEdge("caseTarget1", Some(NextSwitch("notExist")))))
    ) {
-     case ValidationPerformed(List(ExpressionParseError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input")), None, Some(Unknown)) =>
+     case ValidationPerformed(List(
+      ExpressionParserCompilationError("Non reference 'input' occurred. Maybe you missed '#' in front of it?", "switchId", Some("$expression"), "input"),
+      ExpressionParserCompilationError("Non reference 'notExist' occurred. Maybe you missed '#' in front of it?", "switchId", Some("caseTarget1"), "notExist")
+     ), None, Some(Unknown)) =>
    }
   }
 
@@ -260,12 +268,15 @@ class NodeDataValidatorSpec extends FunSuite with Matchers with Inside {
     definition.Parameter[Any]("b")
   )
 
-  private def validate(nodeData: NodeData, ctx: ValidationContext, branchCtxs: Map[String, ValidationContext] = Map.empty): ValidationResponse = {
+  private def validate(nodeData: NodeData,
+                       ctx: ValidationContext,
+                       branchCtxs: Map[String, ValidationContext] = Map.empty,
+                       outgoingEdges: List[OutgoingEdge] = Nil): ValidationResponse = {
     val fragmentDef = CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       FlatNode(SubprocessOutputDefinition("out", "out1", Nil)),
     ))
-    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get)(MetaData("id", StreamMetaData()))
+    NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
 
   private def par(name: String, expr: String): Parameter = Parameter(name, Expression("spel", expr))

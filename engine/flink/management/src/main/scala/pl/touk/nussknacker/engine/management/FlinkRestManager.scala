@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.JobStatus
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}
@@ -171,9 +171,9 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
   }
 
   override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] = {
-    if (config.shouldCheckAvailableSlots)
+    if (config.shouldCheckAvailableSlots) {
       slotsChecker.checkRequiredSlotsExceedAvailableSlots(canonicalProcess, currentlyDeployedJobId)
-    else
+    } else
       Future.successful(())
   }
 

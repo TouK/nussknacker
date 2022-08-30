@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.ui.api
 
-import java.time.LocalDateTime
 import akka.http.scaladsl.model.{ContentTypeRange, StatusCodes}
 import akka.http.scaladsl.server
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -10,29 +9,38 @@ import cats.syntax.semigroup._
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Json
 import io.circe.syntax._
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.matchers.BeMatcher
-import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
+import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails._
+import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, SampleProcess, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with FailFastCirceSupport
+import java.time.LocalDateTime
+
+class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
+  import TestCategories._
 
+  private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
+
+  private val processName: ProcessName = ProcessName(SampleProcess.process.id)
   private val fixedTime = LocalDateTime.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
@@ -45,11 +53,11 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getSampleProcess ~> check {
+      getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         updateProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
         deployProcess(SampleProcess.process.id) ~> check {
-          getSampleProcess ~> check {
+          getProcess(processName) ~> check {
             decodeDetails.lastAction shouldBe deployedWithVersions(2)
           }
         }
@@ -58,7 +66,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("process during deploy can be deployed again") {
-    createDeployedProcess(processName, testCategoryName, isSubprocess = false)
+    createDeployedProcess(processName, TestCat)
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.DuringDeploy) {
       deployProcess(processName.value) ~> check {
@@ -68,7 +76,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("canceled process can't be canceled again") {
-    createDeployedCanceledProcess(processName, testCategoryName, isSubprocess = false)
+    createDeployedCanceledProcess(processName, TestCat)
 
     deploymentManager.withProcessStateStatus(SimpleStateStatus.Canceled) {
       cancelProcess(processName.value) ~> check {
@@ -90,7 +98,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't deploy fragment") {
-    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -100,7 +108,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("can't cancel fragment") {
-    val id = createProcess(processName, testCategoryName, isSubprocess = true)
+    val id = createValidProcess(processName, TestCat, isSubprocess = true)
     val processIdWithName = ProcessIdWithName(id, processName)
 
     deployProcess(processName.value) ~> check {
@@ -112,6 +120,12 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   test("deploys and cancels with comment") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("deploy.*", Some("deployComment"))), comment = Some("deployComment")) ~> check {
+      eventually {
+        getProcess(processName) ~> check {
+          val processDetails = responseAs[ProcessDetails]
+          processDetails.isDeployed shouldBe true
+        }
+      }
       cancelProcess(SampleProcess.process.id, Some(DeploymentCommentSettings.unsafe("cancel.*", Some("cancelComment"))), comment = Some("cancelComment")) ~> check {
         status shouldBe StatusCodes.OK
         //TODO: remove Deployment:, Stop: after adding custom icons
@@ -144,7 +158,7 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
   }
 
   test("deploy technical process and mark it as deployed") {
-    createProcess(processName, testCategoryName, false)
+    createValidProcess(processName, TestCat, false)
 
     deployProcess(processName.value) ~> check { status shouldBe StatusCodes.OK }
 
@@ -159,10 +173,10 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getSampleProcess ~> check {
+      getProcess(processName) ~> check {
         decodeDetails.lastAction shouldBe deployedWithVersions(2)
         cancelProcess(SampleProcess.process.id) ~> check {
-          getSampleProcess ~> check {
+          getProcess(processName) ~> check {
             decodeDetails.lastAction should not be None
             decodeDetails.isCanceled shouldBe  true
           }
@@ -175,16 +189,17 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
-      getProcesses ~> check {
-        val process = findJsonProcess(responseAs[String])
-        process.value.lastActionVersionId shouldBe Some(2L)
-        process.value.isDeployed shouldBe true
+
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
+        val process = processes.find(_.name == SampleProcess.process.id).head
+        process.lastActionVersionId shouldBe Some(2L)
+        process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          getProcesses ~> check {
-            val reprocess = findJsonProcess(responseAs[String])
-            reprocess.value.lastActionVersionId shouldBe Some(2L)
-            reprocess.value.isCanceled shouldBe true
+          forScenariosReturned(ProcessesQuery.empty) { processes =>
+            val process = processes.find(_.name == SampleProcess.process.id).head
+            process.lastActionVersionId shouldBe Some(2L)
+            process.isCanceled shouldBe true
           }
         }
       }
@@ -198,17 +213,45 @@ class ManagementResourcesSpec extends FunSuite with ScalatestRouteTest with Fail
     }
   }
 
-  test("return error on deployment failure") {
-    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+  test("should return failure for not validating scenario") {
+    val invalidScenario = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("start", "not existing")
+      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+    saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
     deploymentManager.withFailingDeployment {
-      deployProcess(SampleProcess.process.id) ~> check {
-        status shouldBe StatusCodes.InternalServerError
+      deployProcess(invalidScenario.id) ~> check {
+        responseAs[String] shouldBe "Cannot deploy invalid scenario"
+        status shouldBe StatusCodes.Conflict
       }
     }
   }
 
-  test("snaphots process") {
+  test("should return failure for not validating deployment") {
+    val largeParallelismScenario = SampleProcess.process.copy(metaData = MetaData(SampleProcess.process.id, StreamMetaData(parallelism = Some(MockDeploymentManager.maxParallelism + 1))))
+    saveProcessAndAssertSuccess(largeParallelismScenario.id, largeParallelismScenario)
+
+    deploymentManager.withFailingDeployment {
+      deployProcess(largeParallelismScenario.id) ~> check {
+        status shouldBe StatusCodes.BadRequest
+        responseAs[String] shouldBe "Parallelism too large"
+      }
+    }
+  }
+
+  test("return from deploy before deployment manager proceeds") {
+    saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
+
+    deploymentManager.withWaitForDeployFinish {
+      deployProcess(SampleProcess.process.id) ~> check {
+        status shouldBe StatusCodes.OK
+      }
+    }
+  }
+
+  test("snapshots process") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     snapshot(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK

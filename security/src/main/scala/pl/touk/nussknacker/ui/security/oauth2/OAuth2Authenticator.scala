@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.directives.{Credentials, SecurityDirectives}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
+import pl.touk.nussknacker.engine.util.SensitiveDataMasker
 import pl.touk.nussknacker.engine.util.SensitiveDataMasker.JsonMasker
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.jwt.{ParsedJwtToken, RawJwtToken}
@@ -71,7 +72,11 @@ object OAuth2ErrorHandler {
   }
 
   case class OAuth2JwtDecodeClaimsJsonError(token: ParsedJwtToken, key: Key, tokenClaimsJson: Json, cause: Throwable) extends OAuth2JwtError {
-    override def msg: String = s"Failure in decoding token claims: ${cause.getLocalizedMessage}. Token: ${token.masked}, token claims: ${tokenClaimsJson.masked.noSpaces}"
+    override def msg: String = s"Failure in decoding token claims: ${mask(cause)}. Token: ${token.masked}, token claims: ${tokenClaimsJson.masked.noSpaces}"
+  }
+
+  private def mask(cause: Throwable) = {
+    cause.getLocalizedMessage.replaceAll("Got value '.*'", s"Got value '${SensitiveDataMasker.placeholder}'")
   }
 
   case class OAuth2AuthenticationRejection(msg: String) extends OAuth2Error

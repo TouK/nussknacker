@@ -22,10 +22,15 @@ object TypeEncoders {
   private val encodeUnknown = JsonObject("refClazzName" -> fromString(classOf[Object].getName),
     "params" -> fromValues(Nil))
 
+  // Object class is used because Null can represent any type.
+  private val encodeNull = JsonObject("refClazzName" -> fromString(classOf[Object].getName),
+    "params" -> fromValues(Nil))
+
   private def encodeTypingResult(result: TypingResult): JsonObject =
     (result match {
       case single: SingleTypingResult => encodeSingleTypingResult(single)
       case typing.Unknown => encodeUnknown
+      case typing.TypedNull => encodeNull
       case TypedUnion(classes) =>
         JsonObject("union" -> fromValues(classes.map(typ => fromJsonObject(encodeTypingResult(typ))).toList))
     })
@@ -50,6 +55,11 @@ object TypeEncoders {
       val objTypeEncoded = encodeTypingResult(underlying)
       val tagEncoded = "tag" -> fromString(tag)
       objTypeEncoded.+:(tagEncoded)
+    case TypedObjectWithValue(underlying, value) =>
+      val objTypeEncoded = encodeTypingResult(underlying)
+      val dataEncoded: (String, Json) = "value" -> SimpleObjectEncoder.encode(underlying, value)
+        .getOrElse(throw new IllegalStateException(s"Not supported data value: $value"))
+      objTypeEncoded.+:(dataEncoded)
     case cl: TypedClass => encodeTypedClass(cl)
   }
 
@@ -75,9 +85,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
   implicit val decodeTypingResults: Decoder[TypingResult] = Decoder.instance { hcursor =>
     hcursor.downField(typeField).as[TypingType].right.flatMap {
       case TypingType.Unknown => Right(Unknown)
+      case TypingType.TypedNull => Right(TypedNull)
       case TypingType.TypedUnion => typedUnion(hcursor)
       case TypingType.TypedDict => typedDict(hcursor)
       case TypingType.TypedTaggedValue => typedTaggedValue(hcursor)
+      case TypingType.TypedObjectWithValue => typedObjectWithValue(hcursor)
       case TypingType.TypedObjectTypingResult => typedObjectTypingResult(hcursor)
       case TypingType.TypedClass => typedClass(hcursor)
     }
@@ -99,6 +111,11 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
     valueClass <- typedClass(obj).right
     tag <- obj.downField("tag").as[String].right
   } yield TypedTaggedValue(valueClass, tag)
+
+  private def typedObjectWithValue(obj: HCursor): Decoder.Result[TypingResult] = for {
+    valueClass <- typedClass(obj).right
+    value <- SimpleObjectEncoder.decode(valueClass, obj.downField("value"))
+  } yield TypedObjectWithValue(valueClass, value)
 
   private def typedObjectTypingResult(obj: HCursor): Decoder.Result[TypingResult] = for {
     valueClass <- typedClass(obj).right
@@ -123,7 +140,7 @@ class TypingResultDecoder(loadClass: String => Class[_]) {
       refClazzName <- obj.downField("refClazzName").as[String].right
       clazz <- tryToLoadClass(refClazzName, obj).right
       params <- obj.downField("params").as[List[TypingResult]].right
-    } yield Typed.typedClass(clazz, params)
+    } yield Typed.genericTypeClass(clazz, params)
   }
 
   private def tryToLoadClass(name: String, obj: HCursor): Decoder.Result[Class[_]] = {
@@ -142,7 +159,7 @@ object TypingType extends Enumeration {
 
   type TypingType = Value
 
-  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, Unknown = Value
+  val TypedUnion, TypedDict, TypedObjectTypingResult, TypedTaggedValue, TypedClass, TypedObjectWithValue, TypedNull, Unknown = Value
 
   def forType(typingResult: TypingResult): TypingType.Value = typingResult match {
     case _: TypedClass => TypedClass
@@ -150,6 +167,8 @@ object TypingType extends Enumeration {
     case _: TypedDict => TypedDict
     case _: TypedObjectTypingResult => TypedObjectTypingResult
     case _: TypedTaggedValue => TypedTaggedValue
+    case _: TypedObjectWithValue => TypedObjectWithValue
+    case typing.TypedNull => TypedNull
     case typing.Unknown => Unknown
   }
 }

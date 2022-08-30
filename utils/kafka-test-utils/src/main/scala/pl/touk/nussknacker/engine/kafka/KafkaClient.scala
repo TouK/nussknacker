@@ -1,23 +1,24 @@
 package pl.touk.nussknacker.engine.kafka
 
-import org.apache.kafka.clients.admin.NewTopic
+import com.typesafe.scalalogging.LazyLogging
+import org.apache.kafka.clients.admin.{NewTopic, TopicDescription}
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.clients.producer.{Callback, KafkaProducer, ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
 
 import java.time.Duration
 import java.util
-import java.util.Collections
+import java.util.{Collections, UUID}
 import scala.concurrent.{Future, Promise}
 import scala.util.{Failure, Success, Try}
 
-class KafkaClient(kafkaAddress: String, id: String) {
+class KafkaClient(kafkaAddress: String, id: String) extends LazyLogging {
   val rawProducer: KafkaProducer[Array[Byte], Array[Byte]] = KafkaTestUtils.createRawKafkaProducer(kafkaAddress, id + "_raw")
   val producer: KafkaProducer[String, String] = KafkaTestUtils.createKafkaProducer(kafkaAddress, id)
 
   private val consumers = collection.mutable.HashSet[KafkaConsumer[Array[Byte], Array[Byte]]]()
 
-  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(kafkaAddress)
+  private lazy val adminClient = KafkaUtils.createKafkaAdminClient(KafkaConfig(kafkaAddress, None, None))
 
   def createTopic(name: String, partitions: Int = 5): Unit = {
     adminClient.createTopics(Collections.singletonList(new NewTopic(name, partitions, 1: Short))).all().get()
@@ -26,6 +27,8 @@ class KafkaClient(kafkaAddress: String, id: String) {
   def deleteTopic(name: String): Unit = {
     adminClient.deleteTopics(util.Arrays.asList(name)).all().get()
   }
+
+  def topic(name: String): Option[TopicDescription] = Try(adminClient.describeTopics(util.Arrays.asList(name)).all().get()).toOption.map(_.get(name))
 
   def sendRawMessage(topic: String, key: Array[Byte], content: Array[Byte], partition: Option[Int] = None, timestamp: java.lang.Long = null, headers: Headers = ConsumerRecordUtils.emptyHeaders): Future[RecordMetadata] = {
     val promise = Promise[RecordMetadata]()
@@ -48,17 +51,17 @@ class KafkaClient(kafkaAddress: String, id: String) {
     promise.future
   }
 
-  def sendMessage(topic: String, content: String, callback: Callback) = {
-    producer.send(new ProducerRecord[String, String](topic, content), callback)
-  }
-
   private def producerCallback(promise: Promise[RecordMetadata]): Callback =
     producerCallback(result => promise.complete(result))
 
   private def producerCallback(callback: Try[RecordMetadata] => Unit): Callback = (metadata: RecordMetadata, exception: Exception) => {
     val result =
-      if (exception == null) Success(metadata)
-      else Failure(exception)
+      if (exception == null) {
+        Success(metadata)
+      } else {
+        logger.error("Error while sending kafka message", exception)
+        Failure(exception)
+      }
     callback(result)
   }
 
@@ -73,8 +76,10 @@ class KafkaClient(kafkaAddress: String, id: String) {
     adminClient.close()
   }
 
-  def createConsumer(consumerTimeout: Long = 10000, groupId: String = "testGroup"): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
-    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, consumerTimeout, groupId)
+  def createConsumer(groupIdOpt: Option[String] = None): KafkaConsumer[Array[Byte], Array[Byte]] = synchronized {
+    // each consumer by default is in other consumer group to make sure that messages won't be stolen by other consumer consuming the same topic
+    val groupId = groupIdOpt.getOrElse(s"testGroup_${UUID.randomUUID()}")
+    val props = KafkaTestUtils.createConsumerConnectorProperties(kafkaAddress, groupId)
     val consumer = new KafkaConsumer[Array[Byte], Array[Byte]](props)
     consumers.add(consumer)
     consumer

@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.requestresponse.openapi
 
 import io.circe.Json
 import io.circe.syntax._
-import io.circe.generic.auto._
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OPEN_API_VERSION
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -13,12 +12,25 @@ object RequestResponseOpenApiGenerator {
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
+  def generateOpenApi[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])], oApiInfo: OApiInfo, serversDescription: Option[OApiServer]): String = {
+    val scenarioDefinitions: Json = generateScenarioDefinitions(pathWithInterpreter)
+    OApiDocumentation(OPEN_API_VERSION, oApiInfo, serversDescription.map(List(_)), scenarioDefinitions).asJson.spaces2
+  }
+
+  private def generateScenarioDefinitions[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])]): Json = {
+    pathWithInterpreter
+      .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
+      .map {
+        case (path, interpreter) => "/" + path -> interpreter
+      }.toMap.asJson
+  }
+
   private[requestresponse] def generateScenarioDefinition(processName: String,
                                                           requestDefinition: Json,
                                                           responseDefinition: Json,
                                                           description: String,
                                                           tags: List[String]
-                                                    ): Json = {
+                                                         ): Json = {
     val postOpenApiDefinition = generatePostOApiDefinition(
       tags,
       processName,
@@ -31,19 +43,6 @@ object RequestResponseOpenApiGenerator {
       Map(), //TODO generate openApi for GET sources
     )
     jsonEncoder.encode(openApiDefinition)
-  }
-
-  def generateScenarioDefinitions[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])]): Json = {
-    pathWithInterpreter
-      .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
-      .map {
-        case (path, interpreter) => "/" + path -> interpreter
-      }.toMap.asJson
-  }
-
-  def generateOpenApi[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])], oApiInfo: OApiInfo, serverDescription: OApiServer): String = {
-    val scenarioDefinitions: Json = generateScenarioDefinitions(pathWithInterpreter)
-    OApiDocumentation(OPEN_API_VERSION, oApiInfo, List(serverDescription), scenarioDefinitions).asJson.spaces2
   }
 
   private def generateOApiRequestBody(schema: Json) = Map(

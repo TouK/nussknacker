@@ -2,10 +2,12 @@ package pl.touk.nussknacker.engine.api.typed
 
 import cats.implicits._
 import cats.data.NonEmptyList
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import org.scalatest.{Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing._
 
-class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionValues with Inside {
+class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private def typeMap(args: (String, TypingResult)*) = TypedObjectTypingResult(args.toList)
 
@@ -38,5 +40,17 @@ class TypingResultErrorMessagesSpec extends FunSuite with Matchers with OptionVa
 
     canBeSubclassOf(Typed.typedClass[String], Typed.tagged(Typed.typedClass[String], "tag1")) shouldBe
     "The type is not a tagged value".invalidNel
+  }
+
+  test("determine if can be subclass for object with value") {
+    canBeSubclassOf(Typed.fromInstance(2), Typed.fromInstance(3)) shouldBe
+      "Types with value have different values: 2 and 3".invalidNel
+  }
+
+  test("determine if can be subclass for null") {
+    canBeSubclassOf(Typed[String], TypedNull) shouldBe
+      "No type can be subclass of Null".invalidNel
+    canBeSubclassOf(TypedNull, Typed.fromInstance(1)) shouldBe
+      "Null cannot be subclass of type with value".invalidNel
   }
 }

@@ -2,7 +2,7 @@ package pl.touk.nussknacker.restmodel.displayedgraph
 
 import io.circe.Encoder
 import io.circe.generic.JsonCodec
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, TypeSpecificData}
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode._
@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 
   val metaData: MetaData = properties.toMetaData(id)
 
+  val processName: ProcessName = ProcessName(id)
 }
 
 @JsonCodec case class ValidatedDisplayableProcess(id: String,

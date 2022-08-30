@@ -24,6 +24,8 @@ trait CanBeSubclassDeterminer {
     (givenType, superclassCandidate) match {
       case (_, Unknown) => ().validNel
       case (Unknown, _) => ().validNel
+      case (TypedNull, other) => canNullBeSubclassOf(other)
+      case (_, TypedNull) => s"No type can be subclass of ${TypedNull.display}".invalidNel
       case (given: SingleTypingResult, superclass: TypedUnion) => canBeSubclassOf(Set(given), superclass.possibleTypes)
       case (given: TypedUnion, superclass: SingleTypingResult) => canBeSubclassOf(given.possibleTypes, Set(superclass))
       case (given: SingleTypingResult, superclass: SingleTypingResult) => singleCanBeSubclassOf(given, superclass)
@@ -31,8 +33,13 @@ trait CanBeSubclassDeterminer {
     }
   }
 
-  protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): ValidatedNel[String, Unit] = {
+  private def canNullBeSubclassOf(result: TypingResult): ValidatedNel[String, Unit] = result match {
+    // TODO: Null should not be subclass of typed map that has all values assigned.
+    case TypedObjectWithValue(_, _) => s"${TypedNull.display} cannot be subclass of type with value".invalidNel
+    case _ => ().validNel
+  }
 
+  protected def singleCanBeSubclassOf(givenType: SingleTypingResult, superclassCandidate: SingleTypingResult): ValidatedNel[String, Unit] = {
     val typedObjectRestrictions = (_: Unit) => superclassCandidate match {
       case superclass: TypedObjectTypingResult =>
         val givenTypeFields = givenType match {
@@ -40,7 +47,7 @@ trait CanBeSubclassDeterminer {
           case _ => Map.empty[String, TypingResult]
         }
 
-        (superclass.fields.toList.map {
+        superclass.fields.toList.map {
           case (name, typ) => givenTypeFields.get(name) match {
             case None =>
               s"Field '$name' is lacking".invalidNel
@@ -49,7 +56,7 @@ trait CanBeSubclassDeterminer {
                 s"Field '$name' is of the wrong type. Expected: ${givenFieldType.display}, actual: ${typ.display}"
               )
           }
-        }).foldLeft(().validNel[String])(_.combine(_))
+        }.foldLeft(().validNel[String])(_.combine(_))
       case _ =>
         ().validNel
     }
@@ -77,8 +84,21 @@ trait CanBeSubclassDeterminer {
         case _ => ().validNel
       }
     }
+    // Type like Integer can be subclass of Integer{5}, because Integer could
+    // possibly have value of 5, that would make it subclass of Integer{5}.
+    // This allows us to supply unknown Integer to function that requires
+    // Integer{5}.
+    val dataValueRestriction = (_: Unit) => {
+      (givenType, superclassCandidate) match {
+        case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue)) if givenValue == candidateValue =>
+          ().validNel
+        case (TypedObjectWithValue(_, givenValue), TypedObjectWithValue(_, candidateValue)) =>
+          s"Types with value have different values: $givenValue and $candidateValue".invalidNel
+        case _ => ().validNel
+      }
+    }
     classCanBeSubclassOf(givenType.objType, superclassCandidate.objType) andThen
-      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction)
+      (typedObjectRestrictions combine dictRestriction combine taggedValueRestriction combine dataValueRestriction)
   }
 
   protected def classCanBeSubclassOf(givenClass: TypedClass, superclassCandidate: TypedClass): ValidatedNel[String, Unit] = {
@@ -102,6 +122,10 @@ trait CanBeSubclassDeterminer {
   }
 
   private def canBeSubclassOf(givenTypes: Set[SingleTypingResult], superclassCandidates: Set[SingleTypingResult]): ValidatedNel[String, Unit] = {
+    // Would be more safety to do givenTypes.forAll(... superclassCandidates.exists ...) - we wil protect against
+    // e.g. (String | Int).canBeSubclassOf(String) which can fail in runtime for Int, but on the other hand we can't block user's intended action.
+    // He/she could be sure that in this type, only String will appear. He/she also can't easily downcast (String | Int) to String so leaving here
+    // "double exists" looks like a good tradeoff
     condNel(givenTypes.exists(given => superclassCandidates.exists(singleCanBeSubclassOf(given, _).isValid)), (),
       s"""None of the following types:
          |${givenTypes.map(" - " + _.display).mkString(",\n")}

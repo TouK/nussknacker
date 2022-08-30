@@ -38,5 +38,6 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(jobStatus)
 
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 }
 

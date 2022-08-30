@@ -1,6 +1,6 @@
 {
   "metaData" : {
-    "id" : "test",
+    "id" : "f",
     "typeSpecificData" : {
       "parallelism" : null,
       "spillStateToDisk" : true,
@@ -16,7 +16,6 @@
       }
     },
     "subprocessVersions" : {
-
     }
   },
   "nodes" : [

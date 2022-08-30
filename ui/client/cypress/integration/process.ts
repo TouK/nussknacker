@@ -32,9 +32,17 @@ describe("Process", () => {
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
-      cy.contains(/was saved$/i).should("be.visible")
       cy.contains(/scenario name changed/i).should("be.visible")
       cy.location("href").should("contain", "-renamed")
+    })
+
+    it("should allow archive with redirect to list", function () {
+      cy.contains(/^archive/i).should("be.enabled").click()
+      cy.contains("want to archive").should("be.visible")
+      cy.contains(/^yes$/i).should("be.enabled").click()
+      cy.contains(/^archived visible$/i, {timeout: 60000}).should("be.visible")
+      cy.contains(this.processName).should("be.visible").click({force: true})
+      cy.contains(/scenario was archived/i).should("be.visible")
     })
 
     it("should open properites from tips panel", () => {
@@ -46,6 +54,7 @@ describe("Process", () => {
         cy.wrap(inputs).eq(6).click().type("wrong data")
       })
       cy.contains(/^apply/i).should("be.enabled").click()
+      cy.get("[data-testid=window]").should("not.exist")
       cy.contains(/^tips.*errors in/i).contains(/^properties/i).should("be.visible").click()
       cy.get("[data-testid=window]").toMatchImageSnapshot()
     })
@@ -72,7 +81,6 @@ describe("Process", () => {
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
-      cy.contains(/was saved$/i).should("be.visible")
       cy.get("#nk-graph-main").wait(200).toMatchImageSnapshot()
     })
   })
@@ -127,12 +135,14 @@ describe("Process", () => {
     })
 
     it("should not have \"latest deploy\" button by default", () => {
+      //FIXME: temporary fix for notifications race (?)
+      cy.reload()
       cy.viewport("macbook-15")
       cy.contains(/^deploy$/i).click()
       cy.intercept("POST", "/api/processManagement/deploy/*").as("deploy")
       cy.get("[data-testid=window] textarea").click().type("issues/123")
       cy.contains(/^ok$/i).should("be.enabled").click()
-      cy.wait(["@deploy", "@fetch"], {timeout: 20000}).each(res => {
+      cy.wait(["@deploy", "@fetch"], {timeout: 20000, log: true}).each(res => {
         cy.wrap(res).its("response.statusCode").should("eq", 200)
       })
       cy.contains(/^counts$/i).click()
@@ -190,5 +200,84 @@ describe("Process", () => {
     cy.wait("@validation")
     cy.wait(200)
     cy.contains("[data-testid=window]", "Invalid end of scenario").should("be.visible")
+  })
+
+  it("should preserve condition on link move (switch)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 3) {
+        req.alias = "validation"
+      }
+    })
+    cy.visitNewProcess(seed, "switch")
+    cy.viewport(1500, 800)
+
+    cy.getNode("switch")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.contains(/^sinks$/)
+      .should("be.visible").click()
+    const x = 900
+    const y = 630
+    cy.get("[data-testid='component:dead-end']")
+      .should("be.visible")
+      .drag("#nk-graph-main", {x, y, position: "right", force: true})
+
+    cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
+      .trigger("mousedown")
+    cy.get("#nk-graph-main")
+      .trigger("mousemove", {clientX: x, clientY: y})
+      .trigger("mouseup", {force: true})
+
+    cy.wait("@validation")
+    cy.wait(500)
+
+    cy.getNode("switch")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.get(`[model-id$="false"] .label`).dblclick()
+    cy.get("[data-testid=window]").should("be.visible")
+    cy.contains(/^Conditions:$/).parent().toMatchImageSnapshot({screenshotConfig: {padding: 8}})
+  })
+
+  it("should preserve condition on link move (filter)", () => {
+    cy.intercept("POST", "/api/*Validation", (req) => {
+      if (req.body.edges.length == 2) {
+        req.alias = "validation"
+      }
+    })
+    cy.visitNewProcess(seed, "filter")
+    cy.viewport(1500, 800)
+
+    cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
+    cy.getNode("filter")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+
+    cy.contains(/^sinks$/)
+      .should("be.visible").click()
+    const x = 700
+    const y = 600
+    cy.get("[data-testid='component:dead-end']")
+      .should("be.visible")
+      .drag("#nk-graph-main", {x, y, position: "right", force: true})
+
+    cy.get(`[model-id$="false"] [end="target"].marker-arrowhead`)
+      .trigger("mousedown")
+    cy.get("#nk-graph-main")
+      .trigger("mousemove", {clientX: x, clientY: y})
+      .trigger("mouseup", {force: true})
+
+    cy.wait("@validation")
+    cy.wait(500)
+
+    cy.getNode("filter")
+      .click()
+      .parent()
+      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
   })
 })

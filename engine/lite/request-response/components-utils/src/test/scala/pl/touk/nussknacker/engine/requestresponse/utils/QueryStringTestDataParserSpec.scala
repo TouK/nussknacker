@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.requestresponse.utils
 
 import java.nio.charset.StandardCharsets
 import java.util
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 
-class QueryStringTestDataParserSpec extends FunSuite with Matchers {
+class QueryStringTestDataParserSpec extends AnyFunSuite with Matchers {
 
   test("should parse query") {
     val parser = new QueryStringTestDataParser

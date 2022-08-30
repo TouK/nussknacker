@@ -1,8 +1,14 @@
-import {Reducer as ReduxReducer, AnyAction} from "redux"
-import {ThunkAction as TA,ThunkDispatch as TD} from "redux-thunk"
+import {AnyAction, Reducer as ReduxReducer} from "redux"
+import {ThunkAction as TA, ThunkDispatch as TD} from "redux-thunk"
 
 import {ActionTypes} from "./actionTypes"
-import {DisplayProcessActivityAction, ReportEventAction, NodeActions, SelectionActions} from "./nk"
+import {
+  DisplayProcessActivityAction,
+  HandleHTTPErrorAction,
+  NodeActions,
+  ReportEventAction,
+  SelectionActions
+} from "./nk"
 import {FeatureFlagsActions} from "./nk/featureFlags"
 import {UserSettingsActions} from "./nk/userSettings"
 import {UiActions} from "./nk/ui/uiActions"
@@ -11,8 +17,10 @@ import {ToolbarActions} from "./nk/toolbars"
 import {RootState} from "../reducers"
 import {UndoRedoActions} from "./undoRedoActions"
 import {NodeDetailsActions} from "./nk/nodeDetails"
+import {NotificationActions} from "./nk/notifications";
 
 type TypedAction =
+  | HandleHTTPErrorAction
   | ReportEventAction
   | UiActions
   | SettingsActions
@@ -24,6 +32,7 @@ type TypedAction =
   | FeatureFlagsActions
   | UserSettingsActions
   | SelectionActions
+  | NotificationActions
 
 interface UntypedAction extends AnyAction {
   type: Exclude<ActionTypes, TypedAction["type"]>,

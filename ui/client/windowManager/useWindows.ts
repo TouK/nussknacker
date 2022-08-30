@@ -5,13 +5,11 @@ import {useCallback, useMemo} from "react"
 import {useDispatch} from "react-redux"
 import {EventInfo, reportEvent} from "../actions/nk"
 import {ensureArray} from "../common/arrayUtils"
-
-import {isEdgeEditable} from "../common/EdgeUtils"
 import {useUserSettings} from "../common/userSettings"
 import {defaultArrayFormat, setAndPreserveLocationParams} from "../common/VisualizationUrl"
 import {ConfirmDialogData} from "../components/modals/GenericConfirmDialog"
 import history from "../history"
-import {Edge, NodeType} from "../types"
+import {NodeType, Process} from "../types"
 import {WindowKind} from "./WindowKind"
 
 export function parseWindowsQueryParams<P extends Record<string, string | string[]>>(append: P, remove?: P): Record<string, string[]> {
@@ -51,26 +49,16 @@ export function useWindows(parent?: WindowId) {
 
   const openNodeWindow = useCallback((
     node: NodeType,
+    process: Process,
     readonly?: boolean,
   ) => {
     open({
       title: node.id,
       isResizable: true,
       kind: readonly ? WindowKind.viewNode : WindowKind.editNode,
-      meta: node,
+      meta: {node, process},
     })
 
-  }, [open])
-
-  const editEdge = useCallback((edge: Edge) => {
-    if (isEdgeEditable(edge)) {
-      open({
-        title: `${edge.from} -> ${edge.to}`,
-        isResizable: true,
-        kind: WindowKind.editEdge,
-        meta: edge,
-      })
-    }
   }, [open])
 
   const confirm = useCallback((data: ConfirmDialogData, event?: EventInfo) => {
@@ -89,7 +77,6 @@ export function useWindows(parent?: WindowId) {
     open,
     confirm,
     openNodeWindow,
-    editEdge,
     close: closeAll,
-  }), [confirm, editEdge, open, openNodeWindow, closeAll])
+  }), [confirm, open, openNodeWindow, closeAll])
 }

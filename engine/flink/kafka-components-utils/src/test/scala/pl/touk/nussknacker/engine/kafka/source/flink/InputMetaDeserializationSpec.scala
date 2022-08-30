@@ -5,7 +5,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
@@ -17,7 +18,7 @@ import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeI
 
 import scala.collection.JavaConverters._
 
-class InputMetaDeserializationSpec extends FunSuite with Matchers with FlinkTypeInformationSerializationMixin{
+class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin{
 
   test("should serialize and deserialize input metadata with TypeInformation serializer") {
     val typeInformation = InputMetaTypeInformationProvider.typeInformation[SampleKey](sampleKeyTypeInformation)

@@ -1,19 +1,19 @@
-import React, {createContext, PropsWithChildren, useCallback, useContext, useMemo} from "react"
+import React, {createContext, PropsWithChildren, useContext, useMemo} from "react"
 import {FieldsControl} from "./FieldsControl"
 import {NodeRow} from "./NodeRow"
 import {NodeValue} from "./NodeValue"
 
 interface FieldsContext {
-  add: () => void,
-  remove: (index: number) => void,
+  add?: () => void,
+  remove?: (index: number) => void,
   readOnly: boolean,
 }
 
 interface NodeRowFieldsProps {
   label: string,
   path: string,
-  onFieldAdd: (namespace: string) => void,
-  onFieldRemove: (namespace: string, index: number) => void,
+  onFieldAdd?: (namespace: string) => void,
+  onFieldRemove?: (namespace: string, index: number) => void,
   readOnly?: boolean,
 }
 
@@ -30,10 +30,16 @@ export function useFieldsContext(): FieldsContext {
 export function NodeRowFields({children, ...props}: PropsWithChildren<NodeRowFieldsProps>): JSX.Element {
   const {label, path, onFieldAdd, onFieldRemove, readOnly} = props
 
-  const remove = useCallback((index: number) => onFieldRemove(path, index), [onFieldRemove, path])
+  const remove = useMemo(() => {
+    if (onFieldRemove) {
+      return (index: number) => onFieldRemove(path, index)
+    }
+  }, [onFieldRemove, path])
 
-  const add = useCallback(() => {
-    onFieldAdd(path)
+  const add = useMemo(() => {
+    if (onFieldAdd) {
+      return () => onFieldAdd(path)
+    }
   }, [onFieldAdd, path])
 
   const ctx = useMemo(

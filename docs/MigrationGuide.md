@@ -3,19 +3,103 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.5.0 (Not released yet)
+## In version 1.6.0 (Not released yet)
+
+### Scenario authoring changes
+* [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
+  From now import scenario with nodes from other categories than scenario category will be not allowed.
+* [#3436](https://github.com/TouK/nussknacker/pull/3436) Division by zero will cause validation error. Tests that rely on `1/0` to generate exceptions should have it changed to code like `1/{0, 1}[0]`
+
+### Code API changes
+* [#3406](https://github.com/TouK/nussknacker/pull/3406) Migration from Scalatest 3.0.8 to Scalatest 3.2.10 - if necessary, see the Scalatest migration guides, https://www.scalatest.org/release_notes/3.1.0 and https://www.scalatest.org/release_notes/3.2.0
+* [#3431](https://github.com/TouK/nussknacker/pull/3431) Renamed 
+  `helper-utils` to `default-helpers`, separated `MathUtils` from
+  `components-utils` to `math-utils`, removed dependencies from `helper-utils`
+* [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
+
+### Scenario API changes
+* [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
+  `V1_033__RequestResponseUrlToSlug` migration is ready for that.
+
+### Configuration changes
+* [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
+  * `interface` -> `http.interface`
+  * `port` -> `http.port`
+  * `definitionMetadata` -> `request-response.definitionMetadata`
+
+## In version 1.5.0
 
 ### Configuration changes
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) deploySettings changed to deploymentCommentSettings, now when specified require you to also specify field validationPattern, specifying exampleComment is optional.
 * commentSettings fields modified. matchExpression changed to substitutionPattern, link changed to substitutionLink.
+* [#3165](https://github.com/TouK/nussknacker/pull/3165) Config is not exposed over http (GET /api/app/config/) by default. To enable it set configuration `enableConfigEndpoint` to `true`.
+* [#3223](https://github.com/TouK/nussknacker/pull/3223) OAuth2 configuration `defaultTokenExpirationTime` changed to `defaultTokenExpirationDuration`
+* [#3263](https://github.com/TouK/nussknacker/pull/3263) Batch periodic scenarios carry processing type to distinguish scenarios with different categories.
+  For existing scenarios processing type is migrated to `default`. Set `deploymentManager.processingType` to `default`
+  or update periodic scenarios table with actual processing type value - ideally it should be same value as the periodic engine key in `scenarioTypes`.
 
 ### Code API changes
 
 * [#2992](https://github.com/TouK/nussknacker/pull/2992) OnDeployActionSuccess in ProcessChangeEvent now requires instance of Option[Comment] instead of Option[String] as parameter with deploymentComment information. Added abstract class Comment in listener-api.
+* [#3136](https://github.com/TouK/nussknacker/pull/3136) Improvements: Lite Kafka testkit
+  * `ConfluentUtils.serializeRecordToBytesArray` replaced by `ConfluentUtils.serializeDataToBytesArray`
+  * `ConfluentUtils.deserializeSchemaIdAndRecord` replaced by `ConfluentUtils.deserializeSchemaIdAndData`
+* [#3178](https://github.com/TouK/nussknacker/pull/3178) Improvements: more complex test scenario runner result:
+  * Right now each method from `TestScenarioRunner` should return `ValidatedNel[ProcessCompilationError, RunResult[R]]` where:
+    * Invalid is representation of process compilation errors
+    * Valid is representation of positive and negative scenario running result
+* [#3255](https://github.com/TouK/nussknacker/pull/3255) `TestReporter` util class is safer to use in parallel tests, methods require passing scenario name
+* [#3265](https://github.com/TouK/nussknacker/pull/3265) [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3297](https://github.com/TouK/nussknacker/pull/3297) [#3299](https://github.com/TouK/nussknacker/pull/3299)[#3309](https://github.com/TouK/nussknacker/pull/3309) 
+  [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
+  * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
+  * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema`
+  * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+  * `SchemaRegistryProvider` refactoring:
+    * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
+    * decouple `SchemaRegistryClientFactory` from `SchemaBasedSerdeProvider`
+  * `KafkaAvroKeyValueDeserializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueDeserializationSchemaFactory`
+  * `KafkaAvroValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedValueSerializationSchemaFactory`
+  * `KafkaAvroKeyValueSerializationSchemaFactory` renamed to `KafkaSchemaBasedKeyValueSerializationSchemaFactory`
+* [#3253](https://github.com/TouK/nussknacker/pull/3253) `DeploymentManager` has separate `validate` method, which should perform initial scenario validation and return reasonably quickly (while deploy can e.g. make Flink savepoint etc.)
+* [#3313](https://github.com/TouK/nussknacker/pull/3313) Generic types handling changes:
+  * `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead
+  * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
+  * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation:
+  * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
+  * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
+  * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) `FlinkKafkaSource.flinkSourceFunction`, `FlinkKafkaSource.createFlinkSource` and `DelayedFlinkKafkaConsumer.apply` takes additional argument, `FlinkCustomNodeContext` now
+* [#3272](https://github.com/TouK/nussknacker/pull/3272) `KafkaZookeeperServer` renamed to `EmbeddedKafkaServer`, `zooKeeperServer` field changed type to `Option` and is hidden now.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Numerous renames:
+  * module `nussknacker-avro-components-utils` -> `nussknacker-schemed-kafka-components-utils`
+  * module `nussknacker-flink-avro-components-utils` -> `nussknacker-flink-schemed-kafka-components-utils`
+  * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
+  * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
+* [#3412](https://github.com/TouK/nussknacker/pull/3412) More strict filtering method types. Methods with parameters or result like `Collection[IllegalType]` are no longer available in SpEl.
 
+### REST API changes
 
-## In version 1.4.0 (Not released yet)
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
+
+### Scenario authoring changes
+
+* [#3187](https://github.com/TouK/nussknacker/pull/3187) [#3224](https://github.com/TouK/nussknacker/pull/3224) Choice component replaces Switch component. "Default" choice edge type, exprVal and expression are now deprecated. 
+  For existing usages, you don't need to change anything. For new usages, if you want extract value e.g. to simplify choice conditions, you need to define new local variable before choice using variable component.
+  "Default" choice edge type can be replaced by adding "true" condition at the end of list of conditions
+
+### Breaking changes
+* [#3328](https://github.com/TouK/nussknacker/pull/3328) Due to addition of support for different schema type (AvroSchema and JsonSchema for now) serialization format of `NkSerializableParsedSchema` has changed. Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
+* [#3365](https://github.com/TouK/nussknacker/pull/3365) Due to renames (see section `Code API changes`) Flink state compatibility of scenarios which use Avro sources or sinks has been broken.
+
+### Other changes
+
+* [#3249](https://github.com/TouK/nussknacker/pull/3249)[#3250](https://github.com/TouK/nussknacker/pull/3250) Some kafka related libraries were bumped: Confluent 5.5->7.2, avro 1.9->1.11, kafka 2.4 -> 3.2. 
+  It may have influence on your custom components if you depend on `kafka-components-utils` or `avro-components-utils` module
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) Behavior of Flink's Kafka deserialization errors handling was changed - now instead of job failure, invalid message is omitted and configured `exceptionHandler` mechanism is used.
+
+## In version 1.4.0
                  
 ### Configuration changes
 
@@ -28,13 +112,15 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
   * Moved `pl.touk.nussknacker.ui.security.api.Permission` (security module) to `pl.touk.nussknacker.security.Permission` (extension-api module)
-* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`.
 * [#3040](https://github.com/TouK/nussknacker/pull/3040) Deprecated `pl.touk.nussknacker.engine.api.ProcessListener.sinkInvoked` method. Switch to more general `endEncountered` method.
 * [#3076](https://github.com/TouK/nussknacker/pull/3076) new implicit parameter `componentUseCase: ComponentUseCase` was added to `invoke()` method of all services extending `EagerServiceWithStaticParameters`  
 
 ### Other changes
 * [#3031](https://github.com/TouK/nussknacker/pull/3031) Attachments are now stored in database. As this feature was rarely used, automatic migration of attachments from disk to db is not provided. To stay consistent db table `process_attachments` had to be truncated.
-
+### Breaking changes
+* [#3029](https://github.com/TouK/nussknacker/pull/3029) `KafkaConfig` has new field `schemaRegistryCacheConfig: SchemaRegistryCacheConfig`. Flink state compatibility has been broken.
+* [#3116](https://github.com/TouK/nussknacker/pull/3116) Refactor `SchemaRegistryClientFactory` so it takes dedicated config object instead of KafkaConfig. This change minimizes chance of future Flink state compatibility break. `SchemaIdBasedAvroGenericRecordSerializer` is serialized in Flink state, so we provide it now with as little dependencies as necessary. Flink state compatibility has been broken again.
+* [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. For default configuration files, you can use `KAFKA_AUTO_OFFSET_RESET` env variable to easily change this setting.               
 
 ## In version 1.3.0
 

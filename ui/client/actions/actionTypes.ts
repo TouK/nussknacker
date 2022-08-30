@@ -12,7 +12,6 @@ export type ActionTypes =
   | "ZOOM_IN"
   | "ZOOM_OUT"
   | "HANDLE_HTTP_ERROR"
-  | "DISPLAY_NODE_DETAILS"
   | "DELETE_NODES"
   | "NODES_CONNECTED"
   | "NODES_DISCONNECTED"
@@ -52,3 +51,5 @@ export type ActionTypes =
   | "REDO"
   | "CLEAR"
   | "PROCESS_STATE_LOADED"
+  | "UPDATE_BACKEND_NOTIFICATIONS"
+  | "MARK_BACKEND_NOTIFICATION_READ"

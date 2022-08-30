@@ -5,7 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.api.java.typeutils.GenericTypeInfo
 import org.apache.flink.streaming.api.scala._
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.{KafkaUsageKey, NamingContext, ObjectNaming, ObjectNamingParameters}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, WithCategories}
@@ -21,14 +22,14 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class NamespacedKafkaSourceSinkTest extends FunSuite with FlinkSpec with KafkaSpec with Matchers {
+class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
 
   import KafkaTestUtils._
   import spel.Implicits._
 
   override lazy val config = ConfigFactory.load()
-    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaZookeeperServer.kafkaAddress))
+    .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
     .withValue("namespace", fromAnyRef(namespaceName))
 
   private val namespaceName: String = "ns"

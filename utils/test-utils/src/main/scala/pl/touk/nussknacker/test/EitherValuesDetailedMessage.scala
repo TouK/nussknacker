@@ -28,3 +28,5 @@ trait EitherValuesDetailedMessage {
   }
 
 }
+
+object EitherValuesDetailedMessage extends EitherValuesDetailedMessage

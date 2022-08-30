@@ -7,7 +7,9 @@ import com.cronutils.model.field.expression.FieldExpressionFactory.{on, question
 import org.scalatest.LoneElement._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.exceptions.TestFailedException
-import org.scalatest.{FunSuite, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.{FinishedStateStatus, RunningStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
@@ -24,13 +26,15 @@ import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 
 //Integration test with in-memory hsql
-class PeriodicProcessServiceIntegrationTest extends FunSuite
+class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
   with Matchers
   with OptionValues
   with ScalaFutures
   with PatientScalaFutures {
 
   import scala.concurrent.ExecutionContext.Implicits.global
+
+  private val processingType = "testProcessingType"
 
   private val processName = ProcessName("test")
 
@@ -53,10 +57,10 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     val jarManagerStub = new JarManagerStub
     val events = new ArrayBuffer[PeriodicProcessEvent]()
     var failListener = false
-    def periodicProcessService(currentTime: Instant) = new PeriodicProcessService(
+    def periodicProcessService(currentTime: Instant, processingType: String = processingType) = new PeriodicProcessService(
       delegateDeploymentManager = delegateDeploymentManagerStub,
       jarManager = jarManagerStub,
-      scheduledProcessesRepository = hsqlRepo.forClock(fixedClock(currentTime)),
+      scheduledProcessesRepository = hsqlRepo.createRepository(fixedClock(currentTime), processingType),
       periodicProcessListener = new PeriodicProcessListener {
         override def onPeriodicProcessEvent: PartialFunction[PeriodicProcessEvent, Unit] = {
           case k if failListener => throw new Exception(s"$k was ordered to fail")
@@ -81,16 +85,20 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
 
     val f = new Fixture
     def service = f.periodicProcessService(currentTime)
+    def otherProcessingTypeService = f.periodicProcessService(currentTime, processingType = "other")
+    val otherProcessName = ProcessName("other")
 
     service.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = processName), sampleProcess).futureValue
-    service.schedule(cronEvery30Minutes, ProcessVersion.empty.copy(processName = every30MinutesProcessName), sampleProcess)
-    service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess)
+    service.schedule(cronEvery30Minutes, ProcessVersion.empty.copy(processName = every30MinutesProcessName), sampleProcess).futureValue
+    service.schedule(cronEvery4Hours, ProcessVersion.empty.copy(processName = every4HoursProcessName), sampleProcess).futureValue
+    otherProcessingTypeService.schedule(cronEveryHour, ProcessVersion.empty.copy(processName = otherProcessName), sampleProcess).futureValue
 
     val processScheduled = service.getLatestDeployment(processName).futureValue.get
 
     processScheduled.periodicProcess.processVersion.processName shouldBe processName
     processScheduled.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
     processScheduled.runAt shouldBe localTime(expectedScheduleTime)
+    service.getLatestDeployment(otherProcessName).futureValue shouldBe 'empty
 
     currentTime = timeToTriggerCheck
     
@@ -98,12 +106,18 @@ class PeriodicProcessServiceIntegrationTest extends FunSuite
     allToDeploy.map(_.periodicProcess.processVersion.processName) should contain only (processName, every30MinutesProcessName)
     val toDeploy = allToDeploy.find(_.periodicProcess.processVersion.processName == processName).value
     service.deploy(toDeploy).futureValue
+    otherProcessingTypeService.deploy(otherProcessingTypeService.findToBeDeployed.futureValue.loneElement).futureValue
 
     val processDeployed = service.getLatestDeployment(processName).futureValue.get
     processDeployed.id shouldBe processScheduled.id
     processDeployed.state shouldBe PeriodicProcessDeploymentState(Some(LocalDateTime.now(fixedClock(timeToTriggerCheck))), None, PeriodicProcessDeploymentStatus.Deployed)
     processDeployed.runAt shouldBe localTime(expectedScheduleTime)
 
+    f.delegateDeploymentManagerStub.setStateStatus(FinishedStateStatus("finished"))
+    service.handleFinished.futureValue
+
+    val toDeployAfterFinish = service.findToBeDeployed.futureValue
+    toDeployAfterFinish.map(_.periodicProcess.processVersion.processName) should contain only every30MinutesProcessName
     service.deactivate(processName).futureValue
     service.getLatestDeployment(processName).futureValue shouldBe None
   }

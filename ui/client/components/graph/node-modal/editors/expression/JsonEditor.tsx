@@ -1,16 +1,15 @@
 import React from "react"
-import {UnknownFunction} from "../../../../../types/common"
 
 import AceEditor from "./ace"
 import {ExpressionObj} from "./types"
 
 type Props = {
   expressionObj: ExpressionObj,
-  onValueChange: UnknownFunction,
+  onValueChange: (value: string) => void,
   className: string,
 }
 
-export default class JsonEditor extends React.Component<Props, {value: string}> {
+export default class JsonEditor extends React.Component<Props, { value: string }> {
 
   static switchableTo = (expressionObj) => true
   static switchableToHint = () => "TODO"
@@ -24,7 +23,7 @@ export default class JsonEditor extends React.Component<Props, {value: string}> 
     }
   }
 
-  onChange = (newValue) => {
+  onChange = (newValue: string) => {
     this.setState({
       value: newValue,
     })

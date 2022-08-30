@@ -52,15 +52,7 @@ should be documented (with type, default values etc.) in appropriate sections of
 
 ### Running
 
-#### Running Designer with embedded model and stubbed DeploymentManager
-
-You can run Nussknacker UI with your model in IDE via
-helper class `LocalNussknackerWithSingleModel`. To use it, add `nussknacker-ui` module to
-test classpath and prepare class similar to `RunDefaultModelLocally`.
-It can be run from e.g. Intellij without special configuration and it will run sample
-Nussknacker UI config with your model.
-
-#### Running full version of Designer from IntelliJ
+#### Running Designer from IntelliJ
 
 Before running from IDE you have to manually build:
 - build fronted using [Building frontend instruction](#building-frontend) below (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
@@ -81,6 +73,16 @@ Run `./runServer.sh` in `ui`
 - Clone [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart)
 - Run `docker-compose -f docker-compose-env.yml -f docker-compose-custom.yml up -d` inside it
 
+#### Running Designer with model classes on the same classses as designer
+
+To shorten loopback loop during testing of your locally developed components, you can run Nussknacker UI 
+in IDE with model classes on the same classpath. Thanks to that, you can skip (re)building of components jars stage.
+To test flink-streaming components just run `RunFlinkStreamingModelLocally` from your IDE.
+Be aware that it uses stubbed version of DeploymentManager so it won't be possible to deploy scenarios.
+
+If you want to test other components, just extends helper class `LocalNussknackerWithSingleModel`
+and add dependency to `ui` module like in flink-streaming case.
+
 #### Setting up Kubernetes environment
 
 To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
@@ -99,7 +101,6 @@ Service should be available at http://localhost:8080/api
 1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend instruction](#building-frontend) below and then execute:
 ```
 sbt copyUiDist
-sbt copyUiSubmodulesDist
 ```
 It will:
 - copy main application static files to `./ui/server/target/scala-XXX/classes/web/static/` and make them accessible via http://localhost:8080/

@@ -2,7 +2,9 @@ package pl.touk.nussknacker.openapi.functional
 
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
-import org.scalatest._
+import org.scalatest.{BeforeAndAfterAll, Outcome}
+import org.scalatest.funsuite.FixtureAnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.EmptyInvocationCollector.Instance
@@ -20,7 +22,7 @@ import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.io.Source
 
-class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
+class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with Matchers with LazyLogging with PatientScalaFutures {
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
@@ -34,7 +36,7 @@ class OpenAPIServiceSpec extends fixture.FunSuite with BeforeAndAfterAll with Ma
 
     val client = new DefaultAsyncHttpClient()
     try {
-      StubService.withCustomerService { port =>
+      new StubService().withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
         val config = OpenAPIServicesConfig(security = Some(securities),
           rootUrl = Some(new URL(s"http://localhost:$port")))

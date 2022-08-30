@@ -93,7 +93,7 @@
             "name" : "value",
             "expression" : {
               "language" : "spel",
-              "expression" : "''"
+              "expression" : "#mapVarName"
             }
           }
         ]

@@ -49,7 +49,9 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
-      val resource = IOUtils.toString(getClass.getResourceAsStream(s"/docker/$file"))
+     val clazz = getClass
+     val rezz = clazz.getResourceAsStream(s"/docker/$file")
+      val resource = IOUtils.toString(rezz)
       val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
       image.withFileFromString(file, withVersionReplaced)
     }
@@ -102,10 +104,11 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
   }
 
   def config: Config = ConfigFactory.load()
-    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getContainerIpAddress}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
-    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getContainerIpAddress}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
+    .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
+    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue("modelConfig.kafka.kafkaAddress", fromAnyRef(dockerKafkaAddress))
+    .withValue("modelConfig.kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
   //used for signals, etc.

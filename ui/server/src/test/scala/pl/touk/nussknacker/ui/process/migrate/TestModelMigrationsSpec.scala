@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.process.migrate
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -12,12 +13,14 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
+import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestFactory}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 
 import scala.reflect.ClassTag
 
-class TestModelMigrationsSpec extends FunSuite with Matchers {
+class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should perform test migration") {
     val testMigration = newTestModelMigrations(new TestMigrations(1, 2))
@@ -120,8 +123,13 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
   }
 
   test("should migrate scenario with fragment which does not require any migrations") {
-    val testMigration = newTestModelMigrations(new TestMigrations(8))
     val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
+
+    val testMigration = new TestModelMigrations(
+      mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),
+      TestFactory.processValidation
+    )
+
     val process =
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
@@ -136,15 +144,13 @@ class TestModelMigrationsSpec extends FunSuite with Matchers {
     processMigrationResult.converted.validationResult.isOk shouldBe true
   }
 
-  private def getFirst[T: ClassTag](result: TestMigrationResult): T = {
+  private def getFirst[T: ClassTag](result: TestMigrationResult): T =
     result.converted.nodes.collectFirst { case t: T => t }.get
-  }
 
-  private def errorTypes(validationResult: ValidationResult): Map[String, List[String]]
-  = validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
+  private def errorTypes(validationResult: ValidationResult): Map[String, List[String]] =
+    validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
 
-  private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations = {
-    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), processValidation)
+  private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
+    new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.processValidation)
 
-  }
 }

@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.management.periodic
 
 import java.time.{Clock, LocalDateTime, ZoneId, ZonedDateTime}
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 
-class CronSchedulePropertyTest extends FunSuite with Matchers {
+class CronSchedulePropertyTest extends AnyFunSuite with Matchers {
 
   private val clock_2020_07_28_12_20 = Clock.fixed(
     ZonedDateTime.of(2020, 7, 28, 12, 20, 10, 0, ZoneId.systemDefault()).toInstant, ZoneId.systemDefault())

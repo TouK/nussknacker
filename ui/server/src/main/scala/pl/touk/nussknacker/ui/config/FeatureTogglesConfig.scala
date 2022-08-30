@@ -17,7 +17,8 @@ case class FeatureTogglesConfig(development: Boolean,
                                 deploymentCommentSettings: Option[DeploymentCommentSettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
-                                testDataSettings: TestDataSettings
+                                testDataSettings: TestDataSettings,
+                                enableConfigEndpoint: Boolean
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -28,6 +29,7 @@ object FeatureTogglesConfig extends LazyLogging{
   def create(config: Config): FeatureTogglesConfig = {
     val environmentAlert = parseOptionalConfig[EnvironmentAlert](config, "environmentAlert")
     val isDevelopmentMode = config.hasPath("developmentMode") && config.getBoolean("developmentMode")
+    val enableConfigEndpoint = config.hasPath("enableConfigEndpoint") && config.getBoolean("enableConfigEndpoint")
     val metrics = parseOptionalConfig[MetricsSettings](config, "metricsSettings")
       .orElse(parseOptionalConfig[MetricsSettings](config, "grafanaSettings"))
     val counts = parseOptionalConfig[Config](config, "countsSettings")
@@ -52,6 +54,7 @@ object FeatureTogglesConfig extends LazyLogging{
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
       testDataSettings = testDataSettings,
+      enableConfigEndpoint = enableConfigEndpoint
     )
   }
 

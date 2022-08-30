@@ -3,7 +3,6 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {useCallback, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {displayCurrentProcessVersion, displayProcessActivity} from "../../actions/nk"
 import {getProcessId} from "../../reducers/selectors/graph"
 import {getFeatureSettings} from "../../reducers/selectors/settings"
 import {ProcessId} from "../../types"
@@ -11,7 +10,6 @@ import {PromptContent} from "../../windowManager"
 import {WindowKind} from "../../windowManager/WindowKind"
 import CommentInput from "../CommentInput"
 import ProcessDialogWarnings from "./ProcessDialogWarnings"
-import {useNkTheme} from "../../containers/theme"
 
 export type ToggleProcessActionModalData = {
   action: (processId: ProcessId, comment: string) => Promise<unknown>,
@@ -24,18 +22,14 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
   const processId = useSelector(getProcessId)
   const [comment, setComment] = useState("")
   const [validationError, setValidationError] = useState("")
+  const featureSettings = useSelector(getFeatureSettings)
+  const deploymentCommentSettings = featureSettings.deploymentCommentSettings
 
   const dispatch = useDispatch()
 
   const confirmAction = useCallback(
     async () => {
-      const deploymentPath = window.location.pathname
       await action(processId, comment).then(() => {
-        const currentPath = window.location.pathname
-        if (currentPath.startsWith(deploymentPath)) {
-          dispatch(displayCurrentProcessVersion(processId))
-          dispatch(displayProcessActivity(processId))
-        }
         props.close()
       }).catch(error => {
         setValidationError(error?.response?.data)
@@ -61,6 +55,7 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
         <CommentInput
           onChange={e => setComment(e.target.value)}
           value={comment}
+          defaultValue={deploymentCommentSettings?.exampleComment}
           className={cx(css({
             minWidth: 600,
             minHeight: 80,

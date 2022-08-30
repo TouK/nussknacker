@@ -20,6 +20,7 @@ import {parseWindowsQueryParams} from "../windowManager/useWindows"
 import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
+import {isEdgeEditable} from "../common/EdgeUtils"
 
 const PROCESS_STATE_INTERVAL_TIME = 10000
 
@@ -61,23 +62,22 @@ class Visualization extends React.Component {
   }
 
   showModalDetailsIfNeeded(process) {
-    const {showModalEdgeDetails, showModalNodeDetails, history} = this.props
+    const {showModalNodeDetails, history} = this.props
     const params = parseWindowsQueryParams({nodeId: [], edgeId: []})
 
+    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(isEdgeEditable)
     const nodes = params.nodeId
+      .concat(edges.map(e => e.from))
       .map(id => NodeUtils.getNodeById(id, process) ?? (process.id === id && NodeUtils.getProcessProperties(process)))
       .filter(Boolean)
-    nodes.forEach(showModalNodeDetails)
+    nodes.forEach(node => showModalNodeDetails(node, process))
 
     this.getGraphInstance()?.highlightNodes(nodes)
-
-    const edges = params.edgeId.map(id => NodeUtils.getEdgeById(id, process)).filter(Boolean)
-    edges.forEach(showModalEdgeDetails)
 
     history.replace({
       search: VisualizationUrl.setAndPreserveLocationParams({
         nodeId: nodes.map(node => node.id).map(encodeURIComponent),
-        edgeId: edges.map(NodeUtils.edgeId).map(encodeURIComponent),
+        edgeId: [],
       }),
     })
   }
@@ -90,9 +90,9 @@ class Visualization extends React.Component {
     }
   }
 
-  componentWillUnmount() {
+  async componentWillUnmount() {
     clearInterval(this.processStateIntervalId)
-    this.props.closeModals()
+    await this.props.closeModals()
     this.props.actions.clearProcess()
   }
 
@@ -135,7 +135,6 @@ class Visualization extends React.Component {
               <Graph
                 ref={this.graphRef}
                 capabilities={this.props.capabilities}
-                showModalEdgeDetails={this.props.showModalEdgeDetails}
               />
             ) :
             null}

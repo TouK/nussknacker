@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.requestresponse.http
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResponseInterpreterTest {
+class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestResponseInterpreterTest {
 
   test("render schema for process") {
-    val inputSchema = "{\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
-    val outputSchema = "{\"properties\": {\"place\": {\"type\": \"string\"}}}"
+    val inputSchema = "{\"type\":\"object\",\"properties\": {\"city\": {\"type\": \"string\", \"default\": \"Warsaw\"}}}"
+    val outputSchema = "{\"type\":\"object\",\"properties\": {\"place\": {\"type\": \"string\"}}}"
     val process = ScenarioBuilder
       .requestResponse("proc1")
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
@@ -30,6 +31,7 @@ class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResp
         |      "content" : {
         |        "application/json" : {
         |          "schema" : {
+        |            "type" : "object",
         |            "nullable" : false,
         |            "properties" : {
         |              "city" : {
@@ -54,6 +56,7 @@ class RequestResponseHttpOpenApi extends FunSuite with Matchers with RequestResp
         |        "content" : {
         |          "application/json" : {
         |            "schema" : {
+        |              "type" : "object",
         |              "properties" : {
         |                "place" : {
         |                  "type" : "string"

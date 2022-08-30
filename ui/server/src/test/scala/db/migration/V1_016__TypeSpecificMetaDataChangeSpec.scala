@@ -1,11 +1,12 @@
 package db.migration
 
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
-class V1_016__TypeSpecificMetaDataChangeSpec extends FlatSpec with Matchers {
+class V1_016__TypeSpecificMetaDataChangeSpec extends AnyFlatSpec with Matchers {
 
   it should "convert json" in {
 

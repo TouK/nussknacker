@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.security.oauth2
 
 import io.circe.Json
-import org.scalatest.{FlatSpec, Matchers, Suite}
+import org.scalatest.Suite
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.oauth2.ExampleOAuth2ServiceFactory.{TestAccessTokenResponse, TestProfileClearanceResponse, TestProfileResponse}
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
@@ -10,9 +12,10 @@ import sttp.client.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import java.net.URI
+import scala.concurrent.duration.{FiniteDuration, SECONDS}
 import scala.concurrent.{ExecutionContext, Future}
 
-class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with PatientScalaFutures with Suite  {
+class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with PatientScalaFutures with Suite  {
   import io.circe.syntax._
 
   import ExecutionContext.Implicits.global
@@ -29,12 +32,13 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
   }
 
   it should ("properly parse data from authentication") in {
-    val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer")
+    val tokenResponse = TestAccessTokenResponse(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", expirationPeriod = Some(FiniteDuration(86400, SECONDS)))
     val userInfo = TestProfileResponse("some@e.mail", "uid", TestProfileClearanceResponse(Set("User")))
+    val authorizeJson = tokenResponse.asJson.toString
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
-      .thenRespond(tokenResponse.asJson.toString)
+      .thenRespond(authorizeJson)
       .whenRequestMatches(_.uri.equals(Uri(config.profileUri)))
       .thenRespond(userInfo.asJson.toString)
     val service = ExampleOAuth2ServiceFactory.service(config)
@@ -44,6 +48,7 @@ class ExampleOAuth2ServiceFactorySpec extends FlatSpec with Matchers with Patien
     data shouldBe a[OAuth2AuthorizationData]
     data.accessToken shouldBe tokenResponse.accessToken
     data.tokenType shouldBe tokenResponse.tokenType
+    data.expirationPeriod shouldBe tokenResponse.expirationPeriod
   }
 
   it should ("handling BadRequest response from authenticate request") in {

@@ -1,8 +1,10 @@
 package pl.touk.nussknacker.ui.initialization
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.tags.Slow
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
@@ -14,7 +16,7 @@ import scala.concurrent.ExecutionContextExecutor
 
 @Slow
 class InitializationOnPostgresItSpec
-  extends FlatSpec
+  extends AnyFlatSpec
     with ScalatestRouteTest
     with Matchers
     with PatientScalaFutures

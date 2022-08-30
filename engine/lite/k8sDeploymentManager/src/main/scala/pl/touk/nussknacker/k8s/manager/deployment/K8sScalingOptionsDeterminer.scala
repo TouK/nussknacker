@@ -16,26 +16,21 @@ case class K8sScalingOptions(replicasCount: Int, noOfTasksInReplica: Int)
 
 object K8sScalingOptionsDeterminer {
 
-  // 4 because it is quite normal number of cpus reserved for one container
-  val defaultTasksPerReplica = 4
-
-  val defaultScalingDeterminer: K8sScalingOptionsDeterminer = new DividingParallelismK8sScalingOptionsDeterminer(DividingParallelismConfig(defaultTasksPerReplica))
-
-  def apply(config: Option[K8sScalingConfig]): K8sScalingOptionsDeterminer = {
+  def create(config: Option[K8sScalingConfig]): Option[K8sScalingOptionsDeterminer] = {
     config match {
-      case None | Some(NotDefinedConfig) => defaultScalingDeterminer
-      case Some(fixedReplicas: FixedReplicasCountConfig) => new FixedReplicasCountK8sScalingOptionsDeterminer(fixedReplicas)
-      case Some(dividingParallelism: DividingParallelismConfig) => new DividingParallelismK8sScalingOptionsDeterminer(dividingParallelism)
+      case None | Some(NotDefinedConfig) => None
+      case Some(fixedReplicas: FixedReplicasCountConfig) => Some(new FixedReplicasCountK8sScalingOptionsDeterminer(fixedReplicas.fixedReplicasCount))
+      case Some(dividingParallelism: DividingParallelismConfig) => Some(new DividingParallelismK8sScalingOptionsDeterminer(dividingParallelism))
     }
   }
 
 }
 
-class FixedReplicasCountK8sScalingOptionsDeterminer(config: FixedReplicasCountConfig) extends K8sScalingOptionsDeterminer {
+class FixedReplicasCountK8sScalingOptionsDeterminer(val replicasCount: Int) extends K8sScalingOptionsDeterminer {
 
   override def determine(parallelism: Int): K8sScalingOptions = {
-    val noOfTasksInReplica = Math.ceil(parallelism.toDouble / config.fixedReplicasCount).toInt
-    K8sScalingOptions(config.fixedReplicasCount, noOfTasksInReplica)
+    val noOfTasksInReplica = Math.ceil(parallelism.toDouble / replicasCount).toInt
+    K8sScalingOptions(replicasCount, noOfTasksInReplica)
   }
 
 }

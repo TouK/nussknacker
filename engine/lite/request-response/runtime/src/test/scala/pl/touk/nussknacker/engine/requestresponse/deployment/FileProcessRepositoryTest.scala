@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.requestresponse.deployment
 
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 
-class FileProcessRepositoryTest extends FunSuite with Matchers {
+class FileProcessRepositoryTest extends AnyFunSuite with Matchers {
 
   private val processesDirectory = Files.createTempDirectory("fileProcessRepositoryTest")
 
@@ -15,7 +16,7 @@ class FileProcessRepositoryTest extends FunSuite with Matchers {
 
   private val processId = 54544L
 
-  private val canonicalProcessJson = """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"path":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
+  private val canonicalProcessJson = """{"additionalBranches":[],"nodes":[{"ref":{"parameters":[],"typ":"request1-post-source"},"id":"start","type":"Source"},{"ref":{"parameters":[],"typ":"response-sink"},"id":"endNodeIID","type":"Sink"}],"metaData":{"typeSpecificData":{"slug":"alamakota","type":"RequestResponseMetaData"},"id":"process1"}}"""
   private val deploymentJson =
     s"""
       |{

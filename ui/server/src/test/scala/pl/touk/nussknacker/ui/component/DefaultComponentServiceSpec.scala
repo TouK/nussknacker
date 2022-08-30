@@ -2,22 +2,22 @@ package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
 import com.typesafe.config.{Config, ConfigFactory}
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.engine.{BaseModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.MockDeploymentManager
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{MockFetchingProcessRepository, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.{MockDeploymentManager, MockFetchingProcessRepository, TestFactory}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 import pl.touk.nussknacker.ui.component.ComponentTestProcessData._
 import pl.touk.nussknacker.ui.component.DefaultsComponentGroupName._
@@ -34,7 +34,7 @@ import sttp.client.{NothingT, SttpBackend}
 import java.time.Duration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientScalaFutures {
+class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
   import org.scalatest.prop.TableDrivenPropertyChecks._
 
@@ -227,7 +227,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     List(
       baseComponent(Filter, overriddenIcon, BaseGroupName, AllCategories),
       baseComponent(Split, SplitIcon, BaseGroupName, AllCategories),
-      baseComponent(Switch, SwitchIcon, BaseGroupName, AllCategories),
+      baseComponent(Switch, componentName = "choice", SwitchIcon, BaseGroupName, AllCategories),
       baseComponent(Variable, VariableIcon, BaseGroupName, AllCategories),
       baseComponent(MapVariable, MapVariableIcon, BaseGroupName, AllCategories),
     )
@@ -310,11 +310,14 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
     ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, links, usageCount)
   }
 
-  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]) = {
+  private def baseComponent(componentType: ComponentType, icon: String, componentGroupName: ComponentGroupName, categories: List[String]): ComponentListElement =
+    baseComponent(componentType, componentType.toString, icon, componentGroupName, categories)
+
+  private def baseComponent(componentType: ComponentType, componentName: String, icon: String, componentGroupName: ComponentGroupName, categories: List[String]): ComponentListElement = {
     val componentId = bid(componentType)
     val docsLinks = if (componentType == Filter) List(filterDocsLink) else Nil
-    val links = docsLinks ++ createLinks(componentId, componentType.toString, componentType)
-    ComponentListElement(componentId, componentType.toString, icon, componentType, componentGroupName, categories, links, 0)
+    val links = docsLinks ++ createLinks(componentId, componentName, componentType)
+    ComponentListElement(componentId, componentName, icon, componentType, componentGroupName, categories, links, 0)
   }
 
   private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentLink] =
@@ -359,8 +362,8 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
   private val processingTypeDataProvider = new MapBasedProcessingTypeDataProvider(Map(
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
-  ).map{ case (processingType, config) =>
-    processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
+  ).map { case (processingType, modelData) =>
+    processingType -> ProcessingTypeData(new MockDeploymentManager, modelData, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), None, supportsSignals = false)
   })
 
   it should "return components for each user" in {
@@ -430,7 +433,7 @@ class DefaultComponentServiceSpec extends FlatSpec with Matchers with PatientSca
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>
-      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData, None, supportsSignals = false)
+      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), None, supportsSignals = false)
     })
 
     val processService = createDbProcessService(categoryService, List(MarketingProcess))

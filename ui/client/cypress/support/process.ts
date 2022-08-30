@@ -16,6 +16,7 @@ declare global {
       visitNewFragment: typeof visitNewFragment,
       postFormData: typeof postFormData,
       visitProcess: typeof visitProcess,
+      getNode: typeof getNode,
     }
   }
 }
@@ -90,8 +91,7 @@ function postFormData(url: string, auth: {username: string, password: string}, b
 function importTestProcess(name: string, fixture = "testProcess") {
   return cy.fixture(fixture).then(json => {
     const formData = new FormData()
-    const blob = jsonToBlob({...json, metaData: {...json.metaData, id: name}})
-    formData.set("process", blob, "data.json")
+    formData.set("process", jsonToBlob(json), "data.json")
     const auth = {
       username: Cypress.env("testUserUsername"),
       password: Cypress.env("testUserPassword"),
@@ -117,6 +117,10 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
   })
 }
 
+function getNode(name: string, end?: boolean) {
+  return cy.get(`[model-id${end?"$=":"="}"${name}"]`, {timeout: 30000})
+}
+
 Cypress.Commands.add("createTestProcess", createTestProcess)
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess)
 Cypress.Commands.add("getTestProcesses", getTestProcesses)
@@ -128,3 +132,4 @@ Cypress.Commands.add("visitNewProcess", visitNewProcess)
 Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
 Cypress.Commands.add("visitProcess", visitProcess)
+Cypress.Commands.add("getNode", getNode)

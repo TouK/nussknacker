@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.{ParameterValidationError, ProcessCompilationError}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType}
 
@@ -16,13 +16,13 @@ object PrettyValidationErrors {
              description: String,
              errorType: NodeValidationErrorType.Value = NodeValidationErrorType.SaveAllowed,
              fieldName: Option[String] = None): NodeValidationError
-     = NodeValidationError(typ, message, description, fieldName, errorType)
+    = NodeValidationError(typ, message, description, fieldName, errorType)
 
     def handleParameterValidationError(error: ParameterValidationError): NodeValidationError =
       node(error.message, error.description, fieldName = Some(error.paramName))
 
     error match {
-      case ExpressionParseError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
+      case ExpressionParserCompilationError(message, _, fieldName, _) => node(s"Failed to parse expression: $message",
         s"There is problem with expression in field $fieldName - it could not be parsed.", fieldName = fieldName)
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
@@ -45,7 +45,7 @@ object PrettyValidationErrors {
       case WrongParameters(requiredParameters, passedParameters, _) =>
         node(s"Wrong parameters", s"Please provide ${requiredParameters.mkString(", ")} instead of ${passedParameters.mkString(", ")}")
       case OverwrittenVariable(varName, _, paramName) => node(s"Variable output name '$varName' is already defined.", "You cannot overwrite variables", fieldName = paramName)
-      case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' contains unsupported chars.", "Please use only letters, numbers or '_'.", fieldName = paramName)
+      case InvalidVariableOutputName(varName, _, paramName) => node(s"Variable output name '$varName' is not a valid identifier (only letters, numbers or '_', cannot be empty)", "Please use only letters, numbers or '_', also identifier cannot be empty.", fieldName = paramName)
       case NotSupportedExpressionLanguage(languageId, _) => node(s"Language $languageId is not supported", "Currently only SPEL expressions are supported")
       case MissingPart(id) => node("MissingPart", s"Node $id has missing part")
       case UnsupportedPart(id) => node("UnsupportedPart", s"Type of node $id is unsupported right now")
@@ -79,6 +79,12 @@ object PrettyValidationErrors {
     NodeValidationError(typ, "Two nodes cannot have same id", s"Duplicate node ids: ${duplicates.mkString(", ")}", fieldName = None,
       errorType = NodeValidationErrorType.RenderNotAllowed)
   }
+
+  def emptyNodeId(typ: String): NodeValidationError = {
+    NodeValidationError(typ, "Nodes cannot have empty id", "Nodes cannot have empty id", fieldName = None,
+      errorType = NodeValidationErrorType.RenderNotAllowed)
+  }
+
 
   def nonuniqeEdgeType(typ: String, etype: EdgeType): NodeValidationError = {
     NodeValidationError(typ, "Edges are not unique",

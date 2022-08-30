@@ -24,6 +24,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             remoteEnvironment = config.remoteEnvironment.map(c => RemoteEnvironmentConfig(c.targetEnvironmentId)),
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
+            deploymentCommentSettings = config.deploymentCommentSettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
@@ -49,7 +50,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
-case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+@JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
 object DeploymentCommentSettings {
   def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
@@ -77,13 +78,19 @@ object TopTabType extends Enumeration {
   val Local, Remote, IFrame, Url = Value
 }
 
-@JsonCodec case class TopTab(id: String, title: String, `type`: TopTabType.Value, url: String, requiredPermission: Option[String])
+@JsonCodec case class TopTab(id: String,
+                             title: String,
+                             `type`: TopTabType.Value,
+                             url: String,
+                             requiredPermission: Option[String],
+                             addAccessTokenInQueryParam: Option[Boolean])
 
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
                                             remoteEnvironment: Option[RemoteEnvironmentConfig],
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
+                                            deploymentCommentSettings: Option[DeploymentCommentSettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings)

@@ -6,7 +6,9 @@ import akka.http.scaladsl.Http
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers.Authorization
 import akka.stream.Materializer
-import org.scalatest._
+import io.dropwizard.metrics5.MetricRegistry
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.ui.security.ssl.{HttpsConnectionContextFactory, KeyStoreConfig}
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -15,21 +17,22 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.higherKinds
 
-class SslBindingSpec extends FlatSpec with Matchers {
+class SslBindingSpec extends AnyFlatSpec with Matchers {
 
   it should "connect to api via SSL" in {
-    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.config)
+    implicit val system: ActorSystem = ActorSystem("SslBindingSpec", ConfigWithScalaVersion.TestsConfig)
     implicit val materializer: Materializer = Materializer(system)
 
     val (route, closeables) = NusskanckerDefaultAppRouter.create(
       system.settings.config,
-      NussknackerAppInitializer.initDb(system.settings.config)
+      NussknackerAppInitializer.initDb(system.settings.config),
+      new MetricRegistry
     )
     val keyStoreConfig = KeyStoreConfig(getClass.getResource("/localhost.p12").toURI, "foobar".toCharArray)
     val serverContext = HttpsConnectionContextFactory.createServerContext(keyStoreConfig)
     val clientContext = HttpsConnectionContextFactory.createClientContext(keyStoreConfig)
 
-    val binding = Await.result(NussknackerAppInitializer.bindHttps("localhost", 0, serverContext, route), 10.seconds) // port = 0 - random port
+    val binding = Await.result(NussknackerAppInitializer.bindHttps("localhost", 0, serverContext, route, new MetricRegistry), 10.seconds) // port = 0 - random port
     try {
       val credentials = HttpCredentials.createBasicHttpCredentials("admin", "admin")
       val request = HttpRequest(

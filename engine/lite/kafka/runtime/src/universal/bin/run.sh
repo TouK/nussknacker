@@ -37,18 +37,18 @@ mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
-  echo -e "JVM: `java --version`\n" >> $LOG_FILE 2>&1
+  echo -e "JVM: `java -version`\n" >> $LOG_FILE 2>&1
   echo "Starting Nussknacker Kafka Runtime in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@" >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuRuntimeApp "$@" >> $LOG_FILE 2>&1 &
   set +x
   echo $! > $PID_FILE
   echo "Nussknacker Kafka Runtime up and running"
 else
-  echo -e "JVM: `java --version`\n"
+  echo -e "JVM: `java -version`\n"
   echo "Starting Nussknacker Kafka Runtime"
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuKafkaRuntimeApp "$@"
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuRuntimeApp "$@"
   set +x
 fi

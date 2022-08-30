@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{FirstAggregator, LastAggregator, ListAggregator, MapAggregator, MaxAggregator, MinAggregator, SetAggregator, SumAggregator}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{FirstAggregator, LastAggregator, ListAggregator, MapAggregator, MaxAggregator, MinAggregator, OptionAggregator, SetAggregator, SumAggregator}
+
 import java.lang.{Integer => JInt, Long => JLong}
 import java.util.{List => JList, Map => JMap, Set => JSet}
-
 import scala.collection.JavaConverters._
 
-class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matchers {
+class AggregatesSpec extends AnyFunSuite with TableDrivenPropertyChecks with Matchers {
 
   private val justAnyObject = new JustAnyClass
   private val aggregators = Table(
@@ -20,7 +21,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (MinAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (MaxAggregator, Typed[Int], 1, Typed[JInt], Typed[JInt]),
     (FirstAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
-    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed[JustAnyClass], Typed[JustAnyClass]),
+    (LastAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Option[JustAnyClass]], Typed[JustAnyClass]),
     (SetAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[Set[JustAnyClass]], Typed.fromDetailedType[JSet[JustAnyClass]]),
     (ListAggregator, Typed[JustAnyClass], justAnyObject, Typed.fromDetailedType[List[JustAnyClass]], Typed.fromDetailedType[JList[JustAnyClass]])
   )
@@ -44,7 +45,7 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
       //when e.g. e == null we want to compare as to Unknown
       case e if e == Typed.empty => Unknown
       //when e.g. e == empty list we want to compare as to Unknown
-      case TypedClass(obj, param :: Nil) if param == Typed.empty => Typed.typedClass(obj, List(Unknown))
+      case TypedClass(obj, param :: Nil) if param == Typed.empty => Typed.genericTypeClass(obj, List(Unknown))
       case a => a
     }
     val canBeSubclassCase = typeFromInstance.canBeSubclassOf(typ)
@@ -52,6 +53,15 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     (canBeSubclassCase || typedObjectCase) shouldBe true
   }
 
+  test("should calculate correct results for first aggregator") {
+    val agg = FirstAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 5
+  }
+
+  test("should calculate correct results for last aggregator") {
+    val agg = LastAggregator
+    agg.result(agg.addElement(8.asInstanceOf[agg.Element], agg.addElement(5.asInstanceOf[agg.Element], agg.zero))) shouldEqual 8
+  }
 
   test("should compute output and stored type for simple aggregators") {
     forAll(aggregators)(checkAggregator)
@@ -64,9 +74,21 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     val mapAggregator = new MapAggregator(namedAggregators.mapValues(_._1.asInstanceOf[Aggregator]).asJava)
     val input = TypedObjectTypingResult(namedAggregators.mapValues(_._2).toList, objType = Typed.typedClass[JMap[_, _]])
     val el = namedAggregators.mapValues(_._3).asJava
-    val stored = TypedObjectTypingResult(namedAggregators.mapValues(_._4).toList, objType = Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
-    val output = TypedObjectTypingResult(namedAggregators.mapValues(_._5).toList, objType = Typed.typedClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
+    val stored = TypedObjectTypingResult(namedAggregators.mapValues(_._4).toList, objType = Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+    val output = TypedObjectTypingResult(namedAggregators.mapValues(_._5).toList, objType = Typed.genericTypeClass(classOf[JMap[_, _]], List(Typed[String], Unknown)))
     checkAggregator(mapAggregator, input, el, stored, output)
+  }
+
+  test("should compute output and store type for option aggregate") {
+    val aggregator = ListAggregator
+
+    val optionAggregator = new OptionAggregator(aggregator)
+    val input = Typed.fromDetailedType[Option[Double]]
+    val elem: Option[Double] = Some(1.0)
+    val stored = Typed.fromDetailedType[Option[List[Double]]]
+    val output = Typed.fromDetailedType[java.util.List[Double]]
+
+    checkAggregator(optionAggregator, input, elem, stored, output)
   }
 
   test("MapAggregator manages field add/removal") {
@@ -133,6 +155,13 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe true
   }
 
+  test("Neutral elements for accumulator should be detected for last") {
+    val aggregator = LastAggregator
+
+    aggregator.isNeutralForAccumulator("aaa", aggregator.zero) shouldBe false
+    aggregator.isNeutralForAccumulator("bbb", Some("aaa")) shouldBe false
+  }
+
   test("Neutral elements for accumulator should be detected for map") {
     val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
 
@@ -143,14 +172,59 @@ class AggregatesSpec extends FunSuite with TableDrivenPropertyChecks with Matche
     aggregator.isNeutralForAccumulator(Map[String, AnyRef]("sumField" -> (0: java.lang.Integer), "maxField" -> (124: java.lang.Integer)).asJava, oldState) shouldBe false
   }
 
-  test("Neutral elements for accumulator should be detected for cardinality") {
-    val aggregator = HyperLogLogPlusAggregator()
-    val oldState = List("1", "2", "3").foldLeft(aggregator.zero)((agg, el) => aggregator.addElement(el, agg))
+  test("Neutral elements for accumulator should be detected for option") {
+    val aggregatorInner = SumAggregator
 
-    aggregator.isNeutralForAccumulator("1", oldState) shouldBe true
-    aggregator.isNeutralForAccumulator("4", oldState) shouldBe false
+    val aggregator = new OptionAggregator(aggregatorInner)
+
+    val oldState = Some(45)
+
+    aggregator.isNeutralForAccumulator(Some(8).asInstanceOf[aggregator.Element], oldState.asInstanceOf[aggregator.Aggregate]) shouldBe false
+    aggregator.isNeutralForAccumulator(None.asInstanceOf[aggregator.Element], oldState.asInstanceOf[aggregator.Aggregate]) shouldBe true
+    aggregator.isNeutralForAccumulator(Some(0).asInstanceOf[aggregator.Element], oldState.asInstanceOf[aggregator.Aggregate]) shouldBe true
+  }
+
+  test("Zeros should be neutral for simple aggregators") {
+    forAll(aggregators)({(aggregator, _, el, _, _) => {
+      val elem = el.asInstanceOf[aggregator.Element]
+      val elemAggregator = aggregator.addElement(elem, aggregator.zero)
+
+      // There is no generic way of checking if val.add(0) == val
+      // or 0.add(val) == 0.
+
+      aggregator.mergeAggregates(elemAggregator, aggregator.zero) shouldBe elemAggregator
+      aggregator.mergeAggregates(aggregator.zero, elemAggregator) shouldBe elemAggregator
+    }})
+  }
+
+  test("Zeros should be neutral for map aggregator") {
+    val aggregator = new MapAggregator(Map[String, Aggregator]("sumField" -> SumAggregator, "maxField" -> MaxAggregator).asJava)
+
+    val state = Map[String, AnyRef]("sumField" -> (5: java.lang.Integer), "maxField" -> (123: java.lang.Integer))
+
+    aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
+    aggregator.mergeAggregates(state, aggregator.zero) shouldBe state
+  }
+
+  test("Zeros should be neutral for option aggregator"){
+    val aggregatorInner = SumAggregator
+
+    val aggregator = new OptionAggregator(aggregatorInner)
+    val state = Some(65).asInstanceOf[aggregator.Aggregate]
+
+    aggregator.mergeAggregates(aggregator.zero, state) shouldBe state
+    aggregator.mergeAggregates(state, aggregator.zero) shouldBe state
+
+
+    val leftElem = Some(15).asInstanceOf[aggregator.Element]
+    val leftElemState = aggregator.addElement(leftElem, aggregator.zero)
+    val rightElem = Some(11).asInstanceOf[aggregator.Element]
+    val rightElemState = aggregator.addElement(rightElem, aggregator.zero)
+    val combinedState = aggregator.addElement(rightElem, leftElemState)
+
+    aggregator.mergeAggregates(leftElemState, rightElemState) shouldBe combinedState
+    aggregator.mergeAggregates(rightElemState, leftElemState) shouldBe combinedState
   }
 
   class JustAnyClass
-
 }

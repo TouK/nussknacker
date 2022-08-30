@@ -87,6 +87,7 @@ object DefinitionExtractor {
     // TODO: Use ContextTransformation API to check if custom node is adding some output variable
     def hasNoReturn: Boolean = Set[TypingResult](Typed[Void], Typed[Unit], Typed[BoxedUnit]).contains(returnType)
 
+    def availableForCategory(category: String): Boolean = categories.isEmpty || categories.exists(_.contains(category))
   }
 
   case class ObjectWithType(obj: Any, typ: TypingResult)
@@ -182,7 +183,6 @@ object DefinitionExtractor {
                               categories: Option[List[String]],
                               componentConfig: SingleComponentConfig) extends ObjectMetadata
 
-
   object ObjectWithMethodDef {
 
     import cats.syntax.semigroup._
@@ -210,7 +210,7 @@ object DefinitionExtractor {
     }
 
     def extractFromClassList(objectToExtractClassesFromCollection: Iterable[Class[_]])
-                       (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
+                            (implicit settings: ClassExtractionSettings): Set[TypeInfos.ClazzDefinition] = {
       val ref = objectToExtractClassesFromCollection.map(Typed.apply)
       TypesInformationExtractor.clazzAndItsChildrenDefinition(ref)
     }
@@ -242,32 +242,6 @@ object DefinitionExtractor {
     def apply(parameters: List[Parameter], returnType: TypingResult): ObjectDefinition = {
       ObjectDefinition(parameters, returnType, None, SingleComponentConfig.zero)
     }
-  }
-
-}
-
-object TypeInfos {
-  //a bit sad that it isn't derived automatically, but...
-  private implicit val tce: Encoder[TypedClass] = TypeEncoders.typingResultEncoder.contramap[TypedClass](identity)
-
-  @JsonCodec(encodeOnly = true) case class Parameter(name: String, refClazz: TypingResult)
-
-  @JsonCodec(encodeOnly = true) case class MethodInfo(parameters: List[Parameter], refClazz: TypingResult, description: Option[String], varArgs: Boolean)
-
-  @JsonCodec(encodeOnly = true) case class ClazzDefinition(clazzName: TypedClass, methods: Map[String, List[MethodInfo]], staticMethods: Map[String, List[MethodInfo]]) {
-
-    def getPropertyOrFieldType(methodName: String): Option[TypingResult] = {
-      val filtered = methods.get(methodName).toList
-        .flatMap(_.filter(_.parameters.isEmpty))
-        .map(_.refClazz) ++ staticMethods.get(methodName).toList
-        .flatMap(_.filter(_.parameters.isEmpty))
-        .map(_.refClazz)
-      filtered match {
-        case Nil => None
-        case nonEmpty => Some(Typed(nonEmpty.toSet))
-      }
-    }
-
   }
 
 }

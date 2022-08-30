@@ -15,7 +15,7 @@ import scala.collection.JavaConverters._
 class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
 
   private val ValidationErrorMessageBase = "Provided value does not match scenario output JSON schema"
-  private val jsonTypeDefinitionExtractor = new JsonSchemaTypeDefinitionExtractor
+  private val jsonTypeDefinitionExtractor = SwaggerBasedJsonSchemaTypeDefinitionExtractor
 
   def validateTypingResultToSchema(typingResult: TypingResult, schemaParamName: String)(implicit nodeId: NodeId): Validated[CustomNodeError, Unit] =
     validateTypingResultToSchema(typingResult, parentSchema, schemaParamName)
@@ -80,7 +80,7 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
       case (tc@TypedClass(cl, _), arrSchema: ArraySchema) if classOf[java.util.List[_]].isAssignableFrom(cl) =>
         validateTypingResultToSchema(extractListParameter(tc), arrSchema.getAllItemSchema, fieldName)
       case (anyTypingResult, anySchema) =>
-        val schemaAsTypedResult = jsonTypeDefinitionExtractor.resolveJsonTypingResult(anySchema)
+        val schemaAsTypedResult = jsonTypeDefinitionExtractor.swaggerType(anySchema).typingResult
         canBeSubclassOf(anyTypingResult, schemaAsTypedResult, fieldName)
     }
   }

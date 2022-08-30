@@ -1,18 +1,10 @@
-import {cloneDeep, map, reject, without, zipWith} from "lodash"
+import {cloneDeep, map, reject, zipWith} from "lodash"
 import {Layout, NodePosition, NodesWithPositions} from "../../actions/nk"
 import ProcessUtils from "../../common/ProcessUtils"
 import {ExpressionLang} from "../../components/graph/node-modal/editors/expression/types"
 import NodeUtils from "../../components/graph/NodeUtils"
 import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
-
-
-export function displayNode(state: GraphState, node: NodeType): GraphState {
-  return {
-    ...state,
-    nodeToDisplay: node,
-  }
-}
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
   return map(layout, (n) => oldId === n.id ? {...n, id: newId} : n)
@@ -31,7 +23,7 @@ export function updateAfterNodeDelete(state: GraphState, idToDelete: NodeId) {
     ...state,
     processToDisplay: {
       ...state.processToDisplay,
-      nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete)
+      nodes: state.processToDisplay.nodes.filter((n) => n.id !== idToDelete),
     },
     layout: state.layout.filter(n => n.id !== idToDelete),
   }
@@ -77,7 +69,10 @@ export function prepareNewNodesWithLayout(
   }
 }
 
-export function addNodesWithLayout(state: GraphState, {nodes, layout}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
+export function addNodesWithLayout(state: GraphState, {
+  nodes,
+  layout,
+}: ReturnType<typeof prepareNewNodesWithLayout>): GraphState {
   return {
     ...state,
     processToDisplay: {
@@ -100,7 +95,7 @@ export function createEdge(
   return adjustedEdgeType ? {...baseEdge, edgeType: adjustedEdgeType} : baseEdge
 }
 
-function removeBranchParameter(node: NodeType, branchId: NodeId) {
+export function removeBranchParameter(node: NodeType, branchId: NodeId) {
   const {branchParameters, ...clone} = cloneDeep(node)
   return {
     ...clone,
@@ -108,45 +103,59 @@ function removeBranchParameter(node: NodeType, branchId: NodeId) {
   }
 }
 
-export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdgeFrom: NodeId, removedEdgeTo: NodeId): NodeType[] {
-  const node = nodes.find(n => n.id === removedEdgeTo)
-  if (node && NodeUtils.nodeIsJoin(node)) {
-    const newToNode = removeBranchParameter(node, removedEdgeFrom)
-    return nodes.map((n) => { return n.id === removedEdgeTo ? newToNode : n })
-  } else {
-    return nodes
-  }
+export function adjustBranchParametersAfterDisconnect(nodes: NodeType[], removedEdges: Pick<Edge, "from" | "to">[]): NodeType[] {
+  return removedEdges.reduce(
+    (resultNodes, {from, to}) => {
+      const node = resultNodes.find(n => n.id === to)
+      if (node && NodeUtils.nodeIsJoin(node)) {
+        const newToNode = removeBranchParameter(node, from)
+        return resultNodes.map((n) => {
+          return n.id === to ? newToNode : n
+        })
+      } else {
+        return resultNodes
+      }
+    },
+    nodes
+  )
 }
 
-export function enrichNodeWithProcessDependentData(originalNode: NodeType, processDefinitionData: ProcessDefinitionData, edges: Edge[]) {
+export function enrichNodeWithProcessDependentData(originalNode: NodeType, processDefinitionData: ProcessDefinitionData, edges: Edge[]): NodeType {
   const node = cloneDeep(originalNode)
-  if (NodeUtils.nodeIsJoin(node)) {
-    const nodeObjectDetails = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
-    const declaredBranchParameters = nodeObjectDetails.parameters.filter(p => p.branchParam)
-    const incomingEdges = edges.filter(e => e.to === node.id)
 
-    node.branchParameters = incomingEdges.map((edge) => {
-      const branchId = edge.from
-      const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
-      const newBranchParams = declaredBranchParameters.map((branchParamDef) => {
-        const existingParamValue = ((existingBranchParams || {}).parameters || []).find(p => p.name === branchParamDef.name)
-        const templateParamValue = (node.branchParametersTemplate || []).find(p => p.name === branchParamDef.name)
-        return existingParamValue || cloneDeep(templateParamValue) ||
-          // We need to have this fallback to some template for situation when it is existing node and it has't got
-          // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
-          cloneDeep({
-            name: branchParamDef.name,
-            expression: {
-              expression: `#${branchParamDef.name}`,
-              language: ExpressionLang.SpEL,
-            },
-          })
+  switch (NodeUtils.nodeType(node)) {
+    case "Join":
+      const {parameters} = ProcessUtils.findNodeObjectTypeDefinition(node, processDefinitionData.processDefinition)
+      const declaredBranchParameters = parameters.filter(p => p.branchParam)
+      const incomingEdges = edges.filter(e => e.to === node.id)
+      const branchParameters = incomingEdges.map((edge) => {
+        const branchId = edge.from
+        const existingBranchParams = node.branchParameters.find(p => p.branchId === branchId)
+        const parameters = declaredBranchParameters.map((branchParamDef) => {
+          const existingParamValue = existingBranchParams?.parameters?.find(p => p.name === branchParamDef.name)
+          if (!existingParamValue) {
+            const templateParamValue = node.branchParametersTemplate?.find(p => p.name === branchParamDef.name)
+            if (!templateParamValue) {
+              // We need to have this fallback to some template for situation when it is existing node and it has't got
+              // defined parameters filled. see note in DefinitionPreparer on backend side TODO: remove it after API refactor
+              return {
+                name: branchParamDef.name,
+                expression: {
+                  expression: `#${branchParamDef.name}`,
+                  language: ExpressionLang.SpEL,
+                },
+              }
+            }
+            return cloneDeep(templateParamValue)
+          }
+          return existingParamValue
+        })
+
+        return {branchId, parameters}
       })
-      return {
-        branchId: branchId,
-        parameters: newBranchParams,
-      }
-    })
+
+      return {...node, branchParameters}
   }
+
   return node
 }

@@ -3,7 +3,6 @@ export enum WindowKind {
   confirm,
   viewNode,
   editNode,
-  editEdge,
   addProcess,
   addSubProcess,
   saveProcess,

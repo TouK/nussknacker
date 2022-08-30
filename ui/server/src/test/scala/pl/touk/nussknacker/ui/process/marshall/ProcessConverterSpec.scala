@@ -2,39 +2,38 @@ package pl.touk.nussknacker.ui.process.marshall
 
 import cats.data.NonEmptyList
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Matchers}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.compile.ProcessValidator
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.graph.{EdgeType, EspProcess}
+import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.variables.MetaVariables
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.{Edge, EdgeType}
-import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
+import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestFactory, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
-import pl.touk.nussknacker.engine.spel.Implicits._
 
-class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenPropertyChecks {
+class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
   private val metaData = StreamMetaData(Some(2), Some(false))
 
   lazy val validation: ProcessValidation = {
+
     val processDefinition = ProcessDefinition[ObjectDefinition](
       services = Map("ref" -> ObjectDefinition.noParam),
       sourceFactories = Map("sourceRef" -> ObjectDefinition.noParam),
@@ -47,8 +46,12 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         customConversionsProviders = List.empty),
       settings = ClassExtractionSettings.Default
     )
-    val validator =  ProcessValidator.default(ProcessDefinitionBuilder.withEmptyObjects(processDefinition), new SimpleDictRegistry(Map.empty))
-    new ProcessValidation(mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> validator), mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()), sampleResolver, emptyProcessingTypeDataProvider)
+
+    ProcessValidation(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+      sampleResolver, emptyProcessingTypeDataProvider
+    )
   }
 
   def canonicalDisplayable(canonicalProcess: CanonicalProcess): CanonicalProcess = {
@@ -59,7 +62,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming)
-    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable, TestCategories.TestCat))
   }
 
   test("be able to convert empty process") {
@@ -84,7 +87,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
     forAll(Table(
       "unexpectedEnd",
       Filter("e", Expression("spel", "0")),
-      Switch("e", Expression("spel", "0"), "a"),
+      Switch("e"),
       Enricher("e", ServiceRef("ref", List()), "out"),
       Split("e")
     )) { unexpectedEnd =>
@@ -123,7 +126,7 @@ class ProcessConverterSpec extends FunSuite with Matchers with TableDrivenProper
         List.empty).copy(nodeResults = Map(
           "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
           "v" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta)), None, Map.empty),
-          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed[String]), None, Map.empty))
+          "e" -> NodeTypingData(Map("input" -> Unknown, "meta" -> MetaVariables.typingResult(meta), "test" -> Typed.fromInstance("")), None, Map.empty))
       )
     )
 

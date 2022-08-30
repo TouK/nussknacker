@@ -43,6 +43,12 @@ case object Enricher extends Service {
     Future.successful(RichObject(param, 123L, Optional.of("rrrr")))
 }
 
+case object EnricherNullResult extends Service {
+  @MethodToInvoke
+  def invoke(@ParamName("param") param: String): Future[RichObject] =
+    Future.successful(null)
+}
+
 case object ListReturnObjectService extends Service {
 
   @MethodToInvoke

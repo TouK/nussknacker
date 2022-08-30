@@ -2,7 +2,9 @@ package pl.touk.nussknacker.engine.management.periodic
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.prop.TableDrivenPropertyChecks
-import org.scalatest.{FunSuite, Inside, Matchers, OptionValues}
+import org.scalatest.{Inside, OptionValues}
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -14,11 +16,9 @@ import pl.touk.nussknacker.engine.management.FlinkStateStatus
 import pl.touk.nussknacker.engine.management.periodic.model.PeriodicProcessDeploymentStatus
 import pl.touk.nussknacker.engine.management.periodic.service.{DefaultAdditionalDeploymentDataProvider, EmptyListener, ProcessConfigEnricher}
 import pl.touk.nussknacker.test.PatientScalaFutures
-
 import java.time.Clock
-import scala.concurrent.Await
 
-class PeriodicDeploymentManagerTest extends FunSuite
+class PeriodicDeploymentManagerTest extends AnyFunSuite
   with Matchers
   with ScalaFutures
   with OptionValues
@@ -34,7 +34,7 @@ class PeriodicDeploymentManagerTest extends FunSuite
   private val processVersion = ProcessVersion(versionId = VersionId(42L), processName = processName, processId = ProcessId(1), user = "test user", modelVersion = None)
 
   class Fixture(executionConfig: PeriodicExecutionConfig = PeriodicExecutionConfig()) {
-    val repository = new db.InMemPeriodicProcessesRepository
+    val repository = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")
     val delegateDeploymentManagerStub = new DeploymentManagerStub
     val jarManagerStub = new JarManagerStub
     val periodicProcessService = new PeriodicProcessService(
@@ -61,6 +61,15 @@ class PeriodicDeploymentManagerTest extends FunSuite
 
   test("findJobStatus - should return none for no job") {
     val f = new Fixture
+
+    val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
+
+    state shouldBe 'empty
+  }
+
+  test("findJobStatus - should return none for scenario with different processing type") {
+    val f = new Fixture
+    f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
 
     val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
 
@@ -129,9 +138,15 @@ class PeriodicDeploymentManagerTest extends FunSuite
   test("deploy - should fail for invalid periodic property") {
     val f = new Fixture
 
-    val deploymentResult = f.periodicDeploymentManager.deploy(processVersion, DeploymentData.empty, CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty), None)
+    val emptyScenario = CanonicalProcess(MetaData("fooId", StreamMetaData()), List.empty)
 
-    intercept[PeriodicProcessException](Await.result(deploymentResult, patienceConfig.timeout))
+    val validateResult = f.periodicDeploymentManager
+          .validate(processVersion, DeploymentData.empty, emptyScenario).failed.futureValue
+    validateResult shouldBe a [PeriodicProcessException]
+
+    val deploymentResult = f.periodicDeploymentManager
+      .deploy(processVersion, DeploymentData.empty, emptyScenario, None).failed.futureValue
+    deploymentResult shouldBe a [PeriodicProcessException]
   }
 
   test("deploy - should schedule periodic scenario") {

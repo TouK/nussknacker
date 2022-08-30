@@ -118,7 +118,6 @@ object aggregates {
   }
 
   object FirstAggregator extends Aggregator {
-
     override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
@@ -128,36 +127,35 @@ object aggregates {
     override def isNeutralForAccumulator(element: FirstAggregator.Element, currentAggregate: Option[AnyRef]): Boolean =
       currentAggregate.isDefined
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = if (agg.isEmpty) Some(el) else agg
+    override def addElement(el: Element, agg: Aggregate): Aggregate = agg.orElse(Some(el))
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg1.orElse(agg2)
 
     override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.orNull
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.typedClass(classOf[Option[_]], List(input)))
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.genericTypeClass(classOf[Option[_]], List(input)))
   }
 
   object LastAggregator extends Aggregator {
-
-    override type Aggregate = AnyRef
+    override type Aggregate = Option[AnyRef]
 
     override type Element = AnyRef
 
-    override def zero: Aggregate = null
+    override def zero: Aggregate = None
 
     override def isNeutralForAccumulator(element: LastAggregator.Element, currentAggregate: LastAggregator.Aggregate): Boolean = false
 
-    override def addElement(el: Element, agg: Aggregate): Aggregate = el
+    override def addElement(el: Element, agg: Aggregate): Aggregate = Some(el)
 
-    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2
+    override def mergeAggregates(agg1: Aggregate, agg2: Aggregate): Aggregate = agg2.orElse(agg1)
 
-    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate
+    override def result(finalAggregate: Aggregate): AnyRef = finalAggregate.orNull
 
     override def computeOutputType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
 
-    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(input)
+    override def computeStoredType(input: TypingResult): Validated[String, TypingResult] = Valid(Typed.genericTypeClass(classOf[Option[_]], List(input)))
 
   }
 
@@ -213,10 +211,10 @@ object aggregates {
     }
 
     override def computeOutputType(input: TypingResult): Validated[String, TypedObjectTypingResult]
-      = computeTypeByFields(input, Typed.typedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)), _.computeOutputType(_))
+      = computeTypeByFields(input, Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)), _.computeOutputType(_))
 
     override def computeStoredType(input: TypingResult): Validated[String, TypingResult]
-      = computeTypeByFields(input, Typed.typedClass(classOf[Map[_, _]], List(Typed[String], Unknown)), _.computeStoredType(_))
+      = computeTypeByFields(input, Typed.genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)), _.computeStoredType(_))
 
     private def computeTypeByFields(input: TypingResult,
                                     objType: TypedClass,
@@ -234,6 +232,52 @@ object aggregates {
         case _ =>
           Invalid("aggregateBy should be declared as fixed map")
       }
+    }
+  }
+
+  /*
+    Aggregator that wraps around another aggregator. Adds values to inner
+    aggregator when it receives Some(val) and does nothing when it receives
+    none.
+   */
+  class OptionAggregator(val agg: Aggregator) extends Aggregator {
+    override type Aggregate = Option[agg.Aggregate]
+    override type Element = Option[agg.Element]
+
+    override def zero: Aggregate = None
+
+    override def isNeutralForAccumulator(element: Element, aggregate: Aggregate): Boolean =
+      element.forall(agg.isNeutralForAccumulator(_, aggregate.getOrElse(agg.zero)))
+
+    override def addElement(element: Element, aggregate: Aggregate): Aggregate =
+      element.map(agg.addElement(_, aggregate.getOrElse(agg.zero))).orElse(aggregate)
+
+    override def mergeAggregates(aggregate1: Aggregate, aggregate2: Aggregate): Aggregate = (aggregate1, aggregate2) match {
+      case (Some(a1), Some(a2)) => Some(agg.mergeAggregates(a1, a2))
+      case (a1@Some(_), None) => a1
+      case (None, a2@Some(_)) => a2
+      case (None, None) => None
+    }
+
+    override def result(finalAggregate: Aggregate): AnyRef =
+      agg.result(finalAggregate.getOrElse(agg.zero))
+
+    override def computeOutputType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
+      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+        agg.computeOutputType(input)
+      case TypedClass(input_type, _) =>
+        Invalid(s"input type must be Option")
+      case _ =>
+        Invalid(s"input has invalid type")
+    }
+
+    override def computeStoredType(input: typing.TypingResult): Validated[String, typing.TypingResult] = input match {
+      case TypedClass(input_type, input :: Nil) if input_type == classOf[Option[_]] =>
+        agg.computeStoredType(input).map(t => Typed.genericTypeClass[Option[_]](List(t)))
+      case TypedClass(input_type, _) =>
+        Invalid(s"input type must be Option")
+      case _ =>
+        Invalid(s"input has invalid type")
     }
   }
 

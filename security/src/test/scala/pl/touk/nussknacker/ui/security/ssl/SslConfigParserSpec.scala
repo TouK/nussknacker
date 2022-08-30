@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.ui.security.ssl
 
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{FlatSpec, Matchers, OptionValues}
+import org.scalatest.OptionValues
+import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.matchers.should.Matchers
 
-class SslConfigParserSpec extends FlatSpec with Matchers with OptionValues {
+class SslConfigParserSpec extends AnyFlatSpec with Matchers with OptionValues {
 
   it should "parse implicitly disabled ssl configuration" in {
     val config = ConfigFactory.parseString(
