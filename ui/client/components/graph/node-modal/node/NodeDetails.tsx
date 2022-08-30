@@ -3,7 +3,7 @@ import {WindowButtonProps, WindowContentProps} from "@touk/window-manager"
 import React, {SetStateAction, useCallback, useEffect, useMemo, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useDispatch, useSelector} from "react-redux"
-import {editNode} from "../../../../actions/nk"
+import {editNode, nodeValidationDataClear, validateNodeData} from "../../../../actions/nk"
 import {visualizationUrl} from "../../../../common/VisualizationUrl"
 import {alpha, tint, useNkTheme} from "../../../../containers/theme"
 import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
@@ -19,6 +19,8 @@ import urljoin from "url-join"
 import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
 import {applyIdFromFakeName} from "../IdField"
+import LoaderSpinner from "../../../Spinner"
+import {getProcessId, getValidationPerformed} from "../NodeDetailsContent/selectors"
 
 interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeType, process: Process }> {
   readOnly?: boolean,
@@ -28,9 +30,13 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   const defaultProcess = useSelector(getProcessToDisplay)
   const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
-  const {node, process = defaultProcess} = props.data.meta
-  const [editedNode, setEditedNode] = useState<NodeType>(node)
-  const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === node.id))
+  const {node: originalNode, process = defaultProcess} = props.data.meta
+  const [editedNode, setEditedNode] = useState<NodeType>(originalNode)
+  const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === originalNode.id))
+
+  useEffect(() => {
+    setEditedNode(originalNode)
+  }, [originalNode])
 
   const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
     setEditedNode(node)
@@ -40,14 +46,14 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    replaceWindowsQueryParams({nodeId: node.id})
-    return () => replaceWindowsQueryParams({}, {nodeId: node.id})
-  }, [node.id])
+    replaceWindowsQueryParams({nodeId: originalNode.id})
+    return () => replaceWindowsQueryParams({}, {nodeId: originalNode.id})
+  }, [originalNode.id])
 
   const performNodeEdit = useCallback(async () => {
-    await dispatch(editNode(process, node, applyIdFromFakeName(editedNode), outputEdges))
+    await dispatch(editNode(process, originalNode, applyIdFromFakeName(editedNode), outputEdges))
     props.close()
-  }, [process, node, editedNode, outputEdges, dispatch, props])
+  }, [process, originalNode, editedNode, outputEdges, dispatch, props])
 
   const {t} = useTranslation()
   const {theme} = useNkTheme()
@@ -57,7 +63,7 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
       {
         title: t("dialog.button.apply", "apply"),
         action: () => performNodeEdit(),
-        disabled: !editedNode.id?.length,
+        disabled: !editedNode?.id?.length,
         classname: css({
           //increase (x4) specificity over ladda
           "&&&&": {
@@ -74,20 +80,20 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
         }),
       } :
       null,
-    [editedNode.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
+    [editedNode?.id?.length, performNodeEdit, readOnly, t, theme.colors.accent],
   )
 
   const openSubprocessButtonData: WindowButtonProps | null = useMemo(
-    () => NodeUtils.nodeIsSubprocess(editedNode) ?
+    () => NodeUtils.nodeIsSubprocess(originalNode) ?
       {
         title: t("dialog.button.fragment.edit", "edit fragment"),
         action: () => {
-          window.open(urljoin(BASE_PATH, visualizationUrl(editedNode.ref.id)))
+          window.open(urljoin(BASE_PATH, visualizationUrl(originalNode.ref.id)))
         },
       } :
       null
     ,
-    [editedNode, t],
+    [originalNode, t],
   )
 
   const cancelButtonData = useMemo(
@@ -101,28 +107,49 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   )
 
   const components = useMemo(() => {
-    const HeaderTitle = () => <NodeDetailsModalHeader node={node}/>
+    const HeaderTitle = () => <NodeDetailsModalHeader node={originalNode}/>
     return {HeaderTitle}
-  }, [node])
+  }, [originalNode])
 
-  return (
-    <WindowContent
-      {...props}
-      buttons={buttons}
-      components={components}
-      classnames={{
-        content: css({minHeight: "100%", display: "flex", ">div": {flex: 1}}),
-      }}
-    >
-      <ErrorBoundary>
-        <NodeGroupContent
-          node={editedNode}
-          edges={outputEdges}
-          onChange={!readOnly && onChange}
-        />
-      </ErrorBoundary>
-    </WindowContent>
-  )
+  const isValidationPerformed = useSelector(getValidationPerformed)
+  const processId = useSelector(getProcessId)
+
+  useEffect(() => {
+    return () => {
+      dispatch(nodeValidationDataClear(originalNode.id))
+    }
+  }, [dispatch, originalNode.id])
+
+  useEffect(() => {
+    if (!editedNode) return
+    dispatch(validateNodeData(processId, {
+      outgoingEdges: outputEdges,
+      nodeData: editedNode,
+    }))
+  }, [dispatch, editedNode, outputEdges, processId])
+
+  return isValidationPerformed(editedNode?.id) ?
+    (
+      <WindowContent
+        {...props}
+        buttons={buttons}
+        components={components}
+        classnames={{
+          content: css({minHeight: "100%", display: "flex", ">div": {flex: 1}}),
+        }}
+      >
+        <ErrorBoundary>
+          <NodeGroupContent
+            node={editedNode}
+            edges={outputEdges}
+            onChange={!readOnly && onChange}
+          />
+        </ErrorBoundary>
+      </WindowContent>
+    ) :
+    (
+      <LoaderSpinner show/>
+    )
 }
 
 export default NodeDetails

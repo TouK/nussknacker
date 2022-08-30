@@ -2,18 +2,11 @@ import {Edge, NodeType, NodeValidationError} from "../../../types"
 import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
-import {
-  getDynamicParameterDefinitions,
-  getFindAvailableBranchVariables,
-  getFindAvailableVariables,
-  getProcessId,
-  getProcessProperties,
-} from "./NodeDetailsContent/selectors"
+import {getDynamicParameterDefinitions, getFindAvailableVariables} from "./NodeDetailsContent/selectors"
 import {adjustParameters} from "./ParametersUtils"
 import {generateUUIDs} from "./nodeUtils"
 import {FieldLabel} from "./FieldLabel"
 import {cloneDeep, isEqual, set} from "lodash"
-import {nodeValidationDataClear, validateNodeData} from "../../../actions/nk"
 import NodeUtils from "../NodeUtils"
 import {Source} from "./source"
 import {Sink} from "./sink"
@@ -55,9 +48,6 @@ export function NodeTypeDetailsContent({
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const getParameterDefinitions = useSelector(getDynamicParameterDefinitions)
-  const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables)
-  const processId = useSelector(getProcessId)
-  const processProperties = useSelector(getProcessProperties)
 
   const variableTypes = useMemo(() => findAvailableVariables?.(node.id), [findAvailableVariables, node.id])
 
@@ -123,25 +113,11 @@ export function NodeTypeDetailsContent({
   }, [setEditedNode])
 
   useEffect(() => {
-    dispatch(nodeValidationDataClear(node.id))
-  }, [dispatch, node.id])
-
-  useEffect(() => {
-    dispatch(validateNodeData(processId, {
-      outgoingEdges: edges,
-      nodeData: node,
-      processProperties,
-      branchVariableTypes: getBranchVariableTypes(node.id),
-      variableTypes,
-    }))
-  }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
-
-  useEffect(() => {
     setEditedNode((node) => {
       const adjustedNode = adjustNode(node)
       return isEqual(adjustedNode, node) ? node : adjustedNode
     })
-  }, [adjustNode, setEditedNode])
+  }, [adjustNode, dispatch, node, setEditedNode])
 
   switch (NodeUtils.nodeType(node)) {
     case "Source":
