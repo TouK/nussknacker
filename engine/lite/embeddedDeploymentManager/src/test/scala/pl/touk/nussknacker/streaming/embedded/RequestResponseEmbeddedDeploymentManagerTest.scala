@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
 import pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
 import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
@@ -76,7 +77,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
         "outputSchema" -> outputSchema
       ))
       .source("source", "request")
-      .emptySink("sink", "response", "transformed" -> "#input.productId")
+      .emptySink("sink", "response", SinkRawEditorParamName -> "false", "transformed" -> "#input.productId")
 
     request.body("""{ productId: 15 }""").send().code shouldBe StatusCode.NotFound
     

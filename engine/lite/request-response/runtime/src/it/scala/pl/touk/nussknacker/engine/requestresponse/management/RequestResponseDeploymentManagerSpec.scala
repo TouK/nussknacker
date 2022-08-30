@@ -4,13 +4,13 @@ import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testmode.TestProcess.{NodeResult, ResultContext}
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
@@ -41,7 +41,7 @@ class RequestResponseDeploymentManagerSpec extends AnyFunSuite with VeryPatientS
       ))
       .source("source", "request")
       .filter("ddd", "#input != null")
-      .emptySink("sink", "response", "value" -> "#input.field1")
+      .emptySink("sink", "response", "Raw editor" -> "false", "value" -> "#input.field1")
 
     val results = manager.test(ProcessName("test1"), process.toCanonicalProcess,
       TestData.newLineSeparated("""{ "field1": "a", "field2": "b" }"""), identity).futureValue

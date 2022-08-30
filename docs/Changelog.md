@@ -13,6 +13,7 @@
 * [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
 * [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor
 * [#3451](https://github.com/TouK/nussknacker/pull/3451) SwaggerEnrichers as well as RequestResponse support now primitive schemas
+* [#3473](https://github.com/TouK/nussknacker/pull/3473) JsonRequestResponseSinkFactory provides also 'raw editor'
 
 1.5.0 (16 Aug 2022)
 ------------------------

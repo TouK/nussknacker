@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
+import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
@@ -18,7 +19,6 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.concurrent.Future
-
 
 class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers {
 
@@ -30,7 +30,7 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
     .requestResponse("test")
     .additionalFields(description = Some("description"), properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
     .source("start", "request")
-    .emptySink("end", "response", "place" -> "#input.city")
+    .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
   private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
 
