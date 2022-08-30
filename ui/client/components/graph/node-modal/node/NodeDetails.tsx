@@ -32,10 +32,6 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
   const [editedNode, setEditedNode] = useState<NodeType>(node)
   const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === node.id))
 
-  useEffect(() => {
-    setEditedNode(node)
-  }, [node])
-
   const onChange = useCallback((node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => {
     setEditedNode(node)
     setOutputEdges(edges)
