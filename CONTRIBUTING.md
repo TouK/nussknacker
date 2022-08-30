@@ -101,7 +101,6 @@ Service should be available at http://localhost:8080/api
 1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend instruction](#building-frontend) below and then execute:
 ```
 sbt copyUiDist
-sbt copyUiSubmodulesDist
 ```
 It will:
 - copy main application static files to `./ui/server/target/scala-XXX/classes/web/static/` and make them accessible via http://localhost:8080/
