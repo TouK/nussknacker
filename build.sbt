@@ -1361,7 +1361,6 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
   ).dependsOn(flinkComponentsApi % Provided, flinkKafkaComponentsUtils, flinkSchemedKafkaComponentsUtils, commonUtils % Provided, componentsUtils % Provided)
 
 lazy val copyUiDist = taskKey[Unit]("copy ui")
-lazy val copyUiSubmodulesDist = taskKey[Unit]("copy ui submodules")
 
 lazy val restmodel = (project in file("ui/restmodel"))
   .settings(commonSettings)
@@ -1402,8 +1401,6 @@ lazy val ui = (project in file("ui/server"))
       val feDistDirectory = file("ui/client/dist")
       val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
       IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
-    },
-    copyUiSubmodulesDist := {
       val feSubmodulesDistDirectory = file("ui/submodules/dist")
       val feSubmodulesDistFiles: Seq[File] = (feSubmodulesDistDirectory ** "*").get()
       IO.copy(feSubmodulesDistFiles pair Path.rebase(feSubmodulesDistDirectory, (compile / crossTarget).value / "classes" / "web" / "submodules"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
@@ -1418,17 +1415,13 @@ lazy val ui = (project in file("ui/server"))
       flinkExecutor / Compile / assembly
     ).value,
     /*
-      We depend on copyUiDist and copyUiSubmodulesDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyUiDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists (copyUiDist, copyUiSubmodulesDist) outside sbt and
+      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists copyUiDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
-    Compile / packageBin := (Compile / packageBin).dependsOn(
-      copyUiDist, copyUiSubmodulesDist
-    ).value,
-    assembly in ThisScope := (assembly in ThisScope).dependsOn(
-      copyUiDist, copyUiSubmodulesDist
-    ).value,
+    Compile / packageBin := (Compile / packageBin).dependsOn(copyUiDist).value,
+    assembly in ThisScope := (assembly in ThisScope).dependsOn(copyUiDist).value,
     assembly / assemblyMergeStrategy := uiMergeStrategy,
     libraryDependencies ++= {
       Seq(
@@ -1582,7 +1575,6 @@ prepareDev := {
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (ui / copyUiDist).value
-  (ui / copyUiSubmodulesDist).value
 }
 
 lazy val buildClient = taskKey[Unit]("Build client")
