@@ -9,6 +9,7 @@ export enum ValidatorType {
 export enum HandledErrorType {
   AlreadyExists = "AlreadyExists",
   EmptyMandatoryParameter = "EmptyMandatoryParameter",
+  UniqueParameter = "UniqueParameter",
   BlankParameter = "BlankParameter",
   WrongDateFormat = "WrongDateFormat",
   InvalidPropertyFixedValue = "InvalidPropertyFixedValue",
@@ -70,6 +71,14 @@ export const mandatoryValueValidator: Validator = {
   handledErrorType: HandledErrorType.EmptyMandatoryParameter,
   validatorType: ValidatorType.Frontend,
 }
+
+export const uniqueValueValidator: (values: string[]) => Validator = values => ({
+  isValid: value => !values.includes(value),
+  message: () => i18next.t("uniqueValueValidator.message", "This field has to be unique across scenario"),
+  description: () => i18next.t("validator.unique.description", "Please fill field with unique value"),
+  handledErrorType: HandledErrorType.UniqueParameter,
+  validatorType: ValidatorType.Frontend,
+})
 
 export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Validator => ({
   isValid: value => possibleValues.map(pv => pv.expression).includes(value),

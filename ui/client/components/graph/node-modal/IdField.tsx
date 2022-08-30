@@ -1,8 +1,10 @@
-import {allValid, mandatoryValueValidator} from "./editors/Validators"
+import {allValid, mandatoryValueValidator, uniqueValueValidator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React, {useMemo} from "react"
 import {useDiffMark} from "./PathsToMark"
 import {NodeType} from "../../../types"
+import {useSelector} from "react-redux"
+import {getProcessNodesIds} from "../../../reducers/selectors/graph"
 
 interface IdFieldProps {
   isEditMode?: boolean,
@@ -29,7 +31,10 @@ export function IdField({
   setProperty,
   showValidation,
 }: IdFieldProps): JSX.Element {
-  const validators = [mandatoryValueValidator]
+  const nodes = useSelector(getProcessNodesIds)
+  const otherNodes = useMemo(() => nodes.filter(n => n !== node.id), [node.id, nodes])
+
+  const validators = [mandatoryValueValidator, uniqueValueValidator(otherNodes)]
   const [isMarked] = useDiffMark()
   const propName = `id`
   const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName])

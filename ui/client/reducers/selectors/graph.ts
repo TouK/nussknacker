@@ -11,6 +11,7 @@ export const getGraph = (state: RootState): RootState["graphReducer"] => state.g
 
 export const getFetchedProcessDetails = createSelector(getGraph, g => g.fetchedProcessDetails)
 export const getProcessToDisplay = createSelector(getGraph, g => g.processToDisplay || {} as Process)
+export const getProcessNodesIds = createSelector(getProcessToDisplay, p => NodeUtils.nodesFromProcess(p).map(n => n.id))
 export const getProcessId = createSelector(getFetchedProcessDetails, d => d?.name)
 export const getProcessName = getProcessId
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName)
