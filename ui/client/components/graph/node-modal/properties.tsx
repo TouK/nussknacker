@@ -133,9 +133,9 @@ export function Properties({
                 renderFieldLabel={renderFieldLabel}
                 setProperty={setProperty}
                 fieldType={FieldType.input}
-                fieldLabel={"Query path"}
-                fieldProperty={"typeSpecificProperties.path"}
-                validators={[errorValidator(fieldErrors || [], "path")]}
+                fieldLabel={"Slug"}
+                fieldProperty={"typeSpecificProperties.slug"}
+                validators={[errorValidator(fieldErrors || [], "slug")]}
               />
             )
       }
