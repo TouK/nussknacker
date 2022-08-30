@@ -19,7 +19,7 @@ class ParameterTypeEditorDeterminer(val typ: TypingResult) extends ParameterEdit
       case klazz if classOf[java.lang.CharSequence].isAssignableFrom(klazz) =>
         DualParameterEditor(
           simpleEditor = StringParameterEditor,
-          // Ror compatibility reasons we choose raw editor - otherwise users could write expressions in simple mode
+          // For compatibility reasons we choose raw editor - otherwise users could write expressions in simple mode
           defaultMode = DualEditorMode.RAW
         )
       case klazz if klazz == classOf[java.time.LocalDateTime] =>
