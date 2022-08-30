@@ -12,6 +12,11 @@ import {
 } from "../../types"
 
 import {debounce} from "lodash"
+import {
+  getFindAvailableBranchVariables,
+  getFindAvailableVariables,
+  getProcessProperties
+} from "../../components/graph/node-modal/NodeDetailsContent/selectors"
 
 export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string }
 export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string }
@@ -46,14 +51,20 @@ const validate = debounce(async (processId: string, validationRequestData: Valid
   const nodeId = validationRequestData.nodeData.id
   const {data} = await HttpService.validateNode(processId, validationRequestData)
   callback(data, nodeId)
-}, 500)
+}, 500, {leading: true})
 
-export function validateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
-  return (dispatch) => {
+export function validateNodeData(processId: string, validationRequestData: Omit<ValidationRequest, "branchVariableTypes" | "processProperties" | "variableTypes">): ThunkAction {
+  return (dispatch, getState) => {
     //Properties are "special types" which are not compatible with NodeData in BE
     const {nodeData} = validationRequestData
     if (nodeData.type && nodeData.type !== "Properties") {
-      validate(processId, validationRequestData, (data, nodeId) => {
+      const state = getState()
+      validate(processId, {
+        ...validationRequestData,
+        branchVariableTypes: getFindAvailableBranchVariables(state)(nodeData.id),
+        processProperties: getProcessProperties(state),
+        variableTypes: getFindAvailableVariables(state)(nodeData.id),
+      }, (data, nodeId) => {
         dispatch(nodeValidationDataUpdated(data, nodeId))
       })
     }
