@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.k8s.manager
 
 import akka.actor.ActorSystem
-import cats.data.Validated
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
+import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -22,6 +21,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
+import pl.touk.nussknacker.k8s.manager.RequestResponsePathUtils.defaultPath
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
@@ -44,6 +44,10 @@ import scala.util.Using
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
+  import K8sScalingConfig.valueReader
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.Ficus._
+
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
@@ -60,7 +64,11 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
     //       and add scenarioType -> mode mapping with reasonable defaults to configuration
     config.getString("mode") match {
       case "streaming" => steamingInitialMetData
-      case "request-response" => TypeSpecificInitialData(RequestResponseMetaData(None)) // TODO: default path based on scenario name
+      case "request-response" => new TypeSpecificInitialData {
+        override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = {
+          RequestResponseMetaData(Some(defaultPath(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+        }
+      }
       case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
     }
   }
@@ -89,6 +97,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private val deploymentPreparer = new DeploymentPreparer(config)
   private val servicePreparer = new ServicePreparer(config)
   private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
+  private val scenarioValidator = LiteScenarioValidator(config)
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -106,8 +115,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     for {
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
-      validationResult: Validated[Throwable, Unit] = K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount)
-      _ <- Future.fromTry(validationResult.toEither.toTry)
+      _ <- Future.fromTry(K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount).toEither.toTry)
+      // TODO: it should be moved into CustomProcessValidator after refactor of it
+      _ <- Future.fromTry(scenarioValidator.validate(canonicalProcess).toEither.toTry)
     } yield ()
   }
 
@@ -241,8 +251,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 object K8sDeploymentManager {
 
   import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.Ficus._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+  import net.ceedubs.ficus.Ficus._
 
   val defaultParallelism = 1
 
@@ -311,7 +321,13 @@ object K8sDeploymentManager {
   }
 
   private[manager] def objectNamePrefixedWithNussknackerInstanceName(nussknackerInstanceName: Option[String], objectName: String) =
-    sanitizeObjectName(nussknackerInstanceName.map(in => s"$in-$objectName").getOrElse(objectName))
+    sanitizeObjectName(objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, objectName))
+
+  private[manager] def objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName: Option[String], objectName: String) =
+    nussknackerInstanceNamePrefix(nussknackerInstanceName) + objectName
+
+  private[manager] def nussknackerInstanceNamePrefix(nussknackerInstanceName: Option[String]) =
+    nussknackerInstanceName.map(_ + "-").getOrElse("")
 
   private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
     deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)

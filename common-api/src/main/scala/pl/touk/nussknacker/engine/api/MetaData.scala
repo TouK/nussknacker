@@ -44,6 +44,7 @@ case class StreamMetaData(parallelism: Option[Int] = None,
 // TODO: parallelism is fine? Maybe we should have other method to adjust number of workers?
 case class LiteStreamMetaData(parallelism: Option[Int] = None) extends ScenarioSpecificData
 
+// TODO: rename to slug
 case class RequestResponseMetaData(path: Option[String]) extends ScenarioSpecificData
 
 case class ProcessAdditionalFields(description: Option[String],

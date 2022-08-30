@@ -576,7 +576,7 @@ export class NodeDetailsContent extends React.Component<NodeDetailsContentProps,
                   [errorValidator(fieldErrors, "path")],
                   "path",
                   null,
-                  null,
+                    node.typeSpecificProperties.path,
                   "query-path",
                 )]
         //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
