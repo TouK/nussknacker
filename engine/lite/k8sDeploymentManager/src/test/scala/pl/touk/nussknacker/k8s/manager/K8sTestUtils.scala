@@ -5,7 +5,7 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.OptionValues
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.test.{AvailablePortFinder, ProcessUtils, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{AvailablePortFinder, ExtremelyPatientScalaFutures, ProcessUtils}
 import skuber.Pod.Phase
 import skuber.api.client.KubernetesClient
 import skuber.json.format._
@@ -17,7 +17,7 @@ import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
 
-class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues with VeryPatientScalaFutures with LazyLogging {
+class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues with ExtremelyPatientScalaFutures with LazyLogging {
 
   val reverseProxyPodRemotePort = 8080
 
@@ -54,7 +54,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends Matchers with OptionValues wit
     }
   }
 
-  def clusterInfoDump(): Unit = {
+  def dumpClusterInfo(): Unit = {
     val dumpProcess = new ProcessBuilder("kubectl", "cluster-info", "dump").start()
     ProcessUtils.attachLoggingAndReturnWaitingFuture(dumpProcess).futureValue shouldBe 0
   }
