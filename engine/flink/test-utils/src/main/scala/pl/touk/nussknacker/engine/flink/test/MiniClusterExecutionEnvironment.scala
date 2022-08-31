@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEn
 
 import scala.collection.JavaConverters._
 
-class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
-  with LazyLogging with Matchers {
+class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig)
+  extends StreamExecutionEnvironment(userFlinkClusterConfig) with LazyLogging with Matchers {
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
