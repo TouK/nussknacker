@@ -1,17 +1,14 @@
 package pl.touk.nussknacker.engine.lite.requestresponse
 
 import akka.event.Logging
-import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
 import akka.stream.Materializer
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{EitherT, NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.generic.JsonCodec
-import io.circe.syntax.EncoderOps
-import io.circe.{Encoder, Json}
+import io.circe.Json
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
@@ -21,67 +18,28 @@ import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
-import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class ScenarioRoute(processInterpreters: scala.collection.Map[String, RequestResponseAkkaHttpHandler], definitionConfig: OpenApiDefinitionConfig) extends Directives with LazyLogging {
+class ScenarioRoute(singleScenarioRoutes: scala.collection.Map[String, SingleScenarioRoute]) extends Directives with LazyLogging {
 
   protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
     path("scenario" / Segment) { scenarioPath =>
-      logDirective(scenarioPath) {
-        handleInvocationPath(scenarioPath)
-      }
+      handle(scenarioPath)(_.invocationRoute)
     } ~
       path("scenario" / Segment / "definition") { scenarioPath =>
-        //do we need requests logging?
-        get {
-          handleDefinitionPath(scenarioPath)
-        }
+        handle(scenarioPath)(_.definitionRoute)
       }
 
-  private def toEntity[T: Encoder](value: T): ResponseEntity = jsonStringToEntity(value.asJson.noSpacesSortKeys)
-
-  private def jsonStringToEntity(j: String): ResponseEntity = HttpEntity(contentType = `application/json`, string = j)
-
-  private def handleInvocationPath(scenarioPath: String): Route = handle(scenarioPath)(_.invoke {
-    case Left(errors) => complete {
-      logErrors(scenarioPath, errors)
-      HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
-    }
-    case Right(results) => complete {
-      HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
-    }
-  })
-
-  private def handleDefinitionPath(scenarioPath: String): Route = handle(scenarioPath)(handler => {
-    val interpreter = handler.requestResponseInterpreter
-    val oApiJson = RequestResponseOpenApiGenerator
-      .generateOpenApi(List((scenarioPath, interpreter)), interpreter.generateOpenApiInfoForScenario(), definitionConfig.server)
-
-    complete {
-      HttpResponse(status = StatusCodes.OK, entity = jsonStringToEntity(oApiJson))
-    }
-  })
-
-  private def handle(scenarioPath: String)(callback: RequestResponseAkkaHttpHandler => Route): Route = processInterpreters.get(scenarioPath) match {
+  private def handle(scenarioPath: String)(callback: SingleScenarioRoute => Route): Route = singleScenarioRoutes.get(scenarioPath) match {
     case None => complete {
       HttpResponse(status = StatusCodes.NotFound)
     }
     case Some(processInterpreter) => callback(processInterpreter)
   }
-
-  private def logErrors(scenarioPath: String, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
-    logger.info(s"Failed to invoke: $scenarioPath with errors: ${errors.map(_.throwable.getMessage)}")
-    errors.toList.foreach { error =>
-      logger.debug(s"Invocation failed $scenarioPath, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
-    }
-  }
-
-  @JsonCodec case class NuError(nodeId: Option[String], message: Option[String])
 
 }
 

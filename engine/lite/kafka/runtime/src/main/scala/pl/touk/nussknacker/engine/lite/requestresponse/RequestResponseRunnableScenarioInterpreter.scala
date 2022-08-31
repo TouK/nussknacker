@@ -69,7 +69,8 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
 
   override def routes(): Option[Route] = {
     val path = ScenarioRoute.pathForScenario(jobData.metaData).getOrElse(parsedResolvedScenario.id) // TODO: path should be required
-    val route = new ScenarioRoute(Map(path -> new RequestResponseAkkaHttpHandler(interpreter)), requestResponseConfig.definitionMetadata)
+    val singleRoute = new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, path)
+    val route = new ScenarioRoute(Map(path -> singleRoute))
     implicit val materializer: Materializer = Materializer(actorSystem)
     Some(route.route)
   }

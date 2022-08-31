@@ -41,9 +41,9 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
     modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
-  private val scenarioRoute = new ScenarioRoute(Map("test" -> new RequestResponseAkkaHttpHandler(interpreter)), OpenApiDefinitionConfig(
+  private val scenarioRoute = new ScenarioRoute(Map("test" -> new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), OpenApiDefinitionConfig(
     server = Some(OApiServer("https://nussknacker.io", "request response test"))
-  ))
+  ), ProcessName("test"), "test")))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
