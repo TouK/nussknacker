@@ -162,11 +162,11 @@ jobs:
     needs: [ build, setup ]
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-      - name: Cancel previous runs
-        if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
+#      - name: Cancel previous runs
+#        if: github.event_name != 'push'
+#        uses: styfle/cancel-workflow-action@0.8.0
+#        with:
+#          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:
