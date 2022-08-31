@@ -260,18 +260,15 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       case None => Valid(validationContext)
     }
 
-    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = {
-      val nodeParameters = InitialParametersGenericNodeEnricher.enrichWithInitialParameters(serviceRef.parameters, paramsDefs).map(p => p.name -> p).toMap
-      paramsDefs.collect {
-        case paramDef if paramDef.isLazyParameter =>
-          val compiledParam = (for {
-            param <- nodeParameters.get(paramDef.name)
-            compiled <- objectParametersExpressionCompiler
-              .compileParam(param, validationContext, paramDef, eager = false).toOption
-              .flatMap(_.typedValue.cast[TypedExpression])
-          } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
-          compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
-      }
+    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.collect {
+      case paramDef if paramDef.isLazyParameter =>
+        val compiledParam = (for {
+          param <- serviceRef.parameters.find(_.name == paramDef.name)
+          compiled <- objectParametersExpressionCompiler
+            .compileParam(param, validationContext, paramDef, eager = false).toOption
+            .flatMap(_.typedValue.cast[TypedExpression])
+        } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
+        compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
     }
 
     def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
