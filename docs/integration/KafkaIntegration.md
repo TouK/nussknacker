@@ -28,7 +28,7 @@ Nussknacker supports both JSON and AVRO schemas, and JSON and AVRO topic payload
 
 ## Schema and payload types
 
-By default Nussknacker supports two combinations of schema type and payload type:
+By default, Nussknacker supports two combinations of schema type and payload type:
 
 * AVRO schema + AVRO payload
 * JSON schema + JSON payload
@@ -46,16 +46,18 @@ At runtime Nussknacker determines the schema version of a message value and key 
 2. if there are no such headers, it looks for a magic byte and schema version in the message, [in a format used by Confluent](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format);
 3. if the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
 
+  
+# Configuration
 
-## Common Kafka configuration
+## Common part
+
+Both streaming Engines (Lite and Flink) share common Kafka configuration, see respective sections below for details on configuring Kafka for each of them.
 
 ### Kafka connection configuration
 
-Both engines share common Kafka configuration, see [Streaming-Lite](model/Lite#kafka-configuration) or [Streaming-Flink](model/Flink#kafka-configuration) docs for details on configuring sources/sinks.
-
 Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:
 - Nussknacker Designer host (to enable schema discovery and scenario testing)
-- Streaming-Lite runtime - to be able to run job
+- Streaming-Lite/Streaming-Flink runtime - to be able to run job
 
 | Name                                                                        | Importance | Type     | Default value    | Description                                                                                                                                                                                                                                                  |
 |-----------------------------------------------------------------------------|------------|----------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -74,8 +76,7 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 | lowLevelComponentsEnabled                                                   | Medium     | boolean  | false            | Add low level (deprecated) kafka components: 'kafka-json', 'kafka-avro', 'kafka-registry-typed-json'                                                                                                                                                         |
 | avroAsJsonSerialization                                                     | Low        | boolean  | false            | Send and receive json messages serialized using Avro schema                                                                                                                                                                                                  |
 
-### Kafka exception handling
-
+### Exception handling
 
 Errors can be sent to specified Kafka topic in following json format (see below for format configuration options): 
 ```json
@@ -95,7 +96,7 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 ```
 
 
-Following properties can be configured (please look at correct engine page : [Streaming-Lite](model/Lite#exception-handling) or [Streaming-Flink](model/Flink#configuring-exception-handling), 
+Following properties can be configured (please look at correct engine page : [Streaming-Lite](../installation_configuration_guide/model/Lite#exception-handling) or [Streaming-Flink](../installation_configuration_guide/model/Flink#configuring-exception-handling), 
 to see where they should be set):
 
 | Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |
@@ -106,10 +107,9 @@ to see where they should be set):
 | includeInputEvent      | false         | Should input event be serialized (can be large or contain sensitive data so use with care)                                                                                                                                                                                                                                 |
 | useSharedProducer      | false         | For better performance shared Kafka producer can be used (by default it's created and closed for each error), shared Producer is kind of experimental feature and should be used with care                                                                                                                                 |
 | additionalParams       | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                                                                                                                                                 |
-                         
 
 
-## Kafka configuration for Flink
+## Configuration for Streaming-Flink
 
 For Flink scenarios you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
 Below we give two example configurations, one for default setup with one Kafka cluster and standard component names:
@@ -163,10 +163,10 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 | avroKryoGenericRecordSchemaIdSerialization                                  | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                                                                           |
             
 
-## Kafka configuration for Lite
+## Configuration for Streaming-Lite
 
 Currently, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
-Kafka based sources and sinks. See [common config](../ModelConfiguration#kafka-connection-configuration) for the details.
+Kafka based sources and sinks. See [common config](#kafka-connection-configuration) for the details.
 ```
 modelConfig {
   kafka {
@@ -177,17 +177,3 @@ modelConfig {
   }
 }  
 ```
-      
-
-### Exception handling
-
-Errors are sent to Kafka, to a dedicated topic: 
-```
-modelConfig {
-  exceptionHandlingConfig: {
-    topic: "errors"
-  }
-}
-```
-please look at [common cofiguration](../ModelConfiguration#kafka-exception-handling) for the details of the configuration.
-                                  
