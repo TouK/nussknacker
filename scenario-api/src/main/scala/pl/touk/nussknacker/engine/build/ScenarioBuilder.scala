@@ -65,6 +65,9 @@ object ScenarioBuilder {
   def requestResponse(id: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
 
+  def requestResponse(id: String, slug: String) =
+    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))
+
 }
 
 @deprecated("use ScenarioBuilder streaming method", "1.3")
