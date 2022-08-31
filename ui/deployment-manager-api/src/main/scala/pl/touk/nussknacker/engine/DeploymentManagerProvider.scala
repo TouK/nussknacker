@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine
 
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -20,6 +21,8 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   def createQueryableClient(config: Config): Option[QueryableClient]
 
   def typeSpecificInitialData(config: Config): TypeSpecificInitialData
+
+  def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig]
 
   def supportsSignals: Boolean
 }

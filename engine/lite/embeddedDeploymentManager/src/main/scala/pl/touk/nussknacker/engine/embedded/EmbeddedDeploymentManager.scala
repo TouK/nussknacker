@@ -8,6 +8,7 @@ import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -36,6 +37,8 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
 
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
     = RequestResponseDeploymentStrategy(config)
+
+  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = ???
 }
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
@@ -46,6 +49,8 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
 
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
   = new StreamingDeploymentStrategy
+
+  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map.empty
 }
 
 

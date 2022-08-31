@@ -6,11 +6,12 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
@@ -23,7 +24,7 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
@@ -45,8 +46,8 @@ import scala.util.Using
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
@@ -72,6 +73,8 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
       case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
     }
   }
+
+  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = ???
 
   override def supportsSignals: Boolean = false
 
@@ -251,8 +254,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 object K8sDeploymentManager {
 
   import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1
 
