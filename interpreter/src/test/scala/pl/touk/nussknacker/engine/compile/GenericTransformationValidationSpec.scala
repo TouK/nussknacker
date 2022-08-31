@@ -7,7 +7,7 @@ import org.scalatest.{Inside, OptionValues}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, MissingParameters}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParserCompilationError, MissingParameters, RedundantParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
@@ -174,7 +174,9 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         "val1" -> "''"
       )
     )
-    result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("val2"), "end")))
+    result.result should matchPattern {
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "val2", "end"), Nil)) =>
+    }
 
     val parameters = result.parametersInNodes("end")
     parameters shouldBe List(
@@ -214,7 +216,10 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("val2"), "generic")))
+    result.result should matchPattern {
+      case Invalid(NonEmptyList(EmptyMandatoryParameter(_, _, "val2", "generic"), Nil)) =>
+    }
+
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
@@ -283,7 +288,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val result = validator.validate(process)
 
-    result.result shouldBe Invalid(NonEmptyList.of(MissingParameters(Set("optionalParameter"), "optionalParameters")))
+    result.result shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("wrongOptionalParameter"), "optionalParameters")))
 
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
