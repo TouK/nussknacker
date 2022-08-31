@@ -2,6 +2,7 @@ package pl.touk.nussknacker.k8s.manager
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.RequestResponseMetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 
@@ -28,6 +29,12 @@ class RequestResponseSlugUtilsTest extends AnyFunSuite with Matchers {
 
   test("replace special characters during default slug preparation") {
     RequestResponseSlugUtils.defaultSlug(ProcessName("a żółć"), None) shouldEqual "a-x"
+  }
+
+  test("lazy determineSlug method uses the same default slug logic sanitization as eager version (determined during scenario creation)") {
+    val longScenarioNameWithoutNuInstanceIdDefaultSlug = RequestResponseSlugUtils.determineSlug(ProcessName(invalidK8sServiceName), RequestResponseMetaData(None), None)
+    longScenarioNameWithoutNuInstanceIdDefaultSlug should contain only 'a'
+    longScenarioNameWithoutNuInstanceIdDefaultSlug should have length K8sUtils.maxObjectNameLength
   }
 
 }
