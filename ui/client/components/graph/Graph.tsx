@@ -25,6 +25,7 @@ import {UserSettings} from "../../reducers/userSettings"
 import {GraphProps} from "./GraphWrapped"
 import User from "../../common/models/User"
 import {updateLayout} from "./GraphPartialsInTS/updateLayout"
+import ProcessUtils from "../../common/ProcessUtils"
 
 interface Props extends GraphProps {
   processCategory: string,
@@ -363,7 +364,7 @@ export class Graph extends React.Component<Props> {
     }
   }
 
-  highlightNodes = (selectedNodeIds: string[] = [], data = this.props.processToDisplay): void => {
+  highlightNodes = (selectedNodeIds: string[] = [], process = this.props.processToDisplay): void => {
     this.processGraphPaper.freeze()
     this.graph.getCells().forEach(cell => {
       this.unhighlightCell(cell, "node-validation-error")
@@ -371,7 +372,7 @@ export class Graph extends React.Component<Props> {
       this.unhighlightCell(cell, "node-focused-with-validation-error")
     })
 
-    const invalidNodeIds = keys(data.validationResult?.errors?.invalidNodes)
+    const invalidNodeIds = keys(ProcessUtils.getValidationErrors(process)?.invalidNodes)
 
     invalidNodeIds.forEach(id => selectedNodeIds.includes(id) ?
       this.highlightNode(id, "node-focused-with-validation-error") :

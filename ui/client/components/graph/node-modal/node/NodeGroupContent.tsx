@@ -1,51 +1,37 @@
 import {css} from "@emotion/css"
-import React, {PropsWithChildren} from "react"
+import React, {SetStateAction} from "react"
 import {useSelector} from "react-redux"
-import TestResultUtils from "../../../../common/TestResultUtils"
-import {getTestResults} from "../../../../reducers/selectors/graph"
-import {Edge, NodeId, NodeType} from "../../../../types"
+import {Edge, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
-import NodeDetailsContent from "../NodeDetailsContent/NodeDetailsContentConnected"
 import {ContentSize} from "./ContentSize"
 import {SubprocessContent} from "./SubprocessContent"
 import {getErrors} from "./selectors"
 import {RootState} from "../../../../reducers"
+import {NodeDetailsContent} from "../NodeDetailsContent"
 
 interface Props {
-  editedNode: NodeType,
-  outputEdges: Edge[],
-  currentNodeId: NodeId,
-  readOnly?: boolean,
-  updateNodeState: (node: NodeType) => void,
-  updateEdgesState: (edges: Edge[]) => void,
+  node: NodeType,
+  edges: Edge[],
+  onChange?: (node: SetStateAction<NodeType>, edges: SetStateAction<Edge[]>) => void,
 }
 
-export function NodeGroupContent({children, ...props}: PropsWithChildren<Props>): JSX.Element {
-  const {editedNode, readOnly, currentNodeId, updateNodeState, updateEdgesState} = props
-  const nodeErrors = useSelector((state: RootState) => getErrors(state, currentNodeId))
-  const testResults = useSelector(getTestResults)
-  const nodeTestResults = (id: NodeId) => TestResultUtils.resultsForNode(testResults, id)
+export function NodeGroupContent({node, edges, onChange}: Props): JSX.Element {
+  const nodeErrors = useSelector((state: RootState) => getErrors(state, node.id))
 
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
       <ContentSize>
         <NodeDetailsContent
-          node={editedNode}
-          onChange={(node, edges) => {
-            updateEdgesState(edges)
-            updateNodeState(node)
-          }}
-          isEditMode={!readOnly}
-          testResults={nodeTestResults(currentNodeId)}
-          showValidation={true}
-          showSwitch={true}
-          originalNodeId={currentNodeId}
+          node={node}
+          edges={edges}
+          onChange={onChange}
           nodeErrors={nodeErrors}
-          edges={props.outputEdges}
+          showValidation
+          showSwitch
         />
       </ContentSize>
-      {NodeUtils.nodeIsSubprocess(editedNode) && (
-        <SubprocessContent nodeToDisplay={editedNode} currentNodeId={currentNodeId}/>
+      {NodeUtils.nodeIsSubprocess(node) && (
+        <SubprocessContent nodeToDisplay={node}/>
       )}
     </div>
   )

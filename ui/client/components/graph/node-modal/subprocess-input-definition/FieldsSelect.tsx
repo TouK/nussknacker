@@ -7,6 +7,7 @@ import {DndItems} from "./DndItems"
 import {FieldsRow} from "./FieldsRow"
 import {NodeRowFields} from "./NodeRowFields"
 import {TypeSelect} from "./TypeSelect"
+import {useDiffMark} from "../PathsToMark"
 
 export interface Option {
   value: string,
@@ -23,12 +24,12 @@ interface FieldsSelectProps {
   removeField: (path: string, index: number) => void,
   readOnly?: boolean,
 
-  isMarked: (path: string) => boolean,
   showValidation?: boolean,
 }
 
 function FieldsSelect(props: FieldsSelectProps): JSX.Element {
-  const {addField, fields, label, onChange, namespace, options, readOnly, removeField, isMarked, showValidation} = props
+  const {addField, fields, label, onChange, namespace, options, readOnly, removeField, showValidation} = props
+  const [isMarked] = useDiffMark()
 
   const validators = useMemo(() => [mandatoryValueValidator], [])
 
@@ -50,7 +51,6 @@ function FieldsSelect(props: FieldsSelectProps): JSX.Element {
             onChange={value => onChange(`${path}.name`, value)}
             value={item.name}
             validators={validators}
-            autofocus={false}
           />
           <TypeSelect
             readOnly={readOnly}

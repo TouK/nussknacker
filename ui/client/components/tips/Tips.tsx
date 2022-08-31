@@ -25,7 +25,7 @@ export default function Tips(): JSX.Element {
   const {isToolTipsHighlighted: isHighlighted} = useSelector(getUi)
   const testResults = useSelector(getTestResults)
 
-  const {errors, warnings} = currentProcess.validationResult || {}
+  const {errors, warnings} = ProcessUtils.getValidationResult(currentProcess) || {}
 
   return (
     <CollapsibleToolbar title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">

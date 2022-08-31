@@ -23,8 +23,12 @@ function combineReducers<S>(reducers: ReducersObj<S>, initialState = {} as S): R
     .keys(reducers)
     .reduce((nextState, key) => {
       const reducer = getter(reducers[key])
-      const newValue = reducer(nextState?.[key], action)
-      return {...nextState, [key]: newValue}
+      const currentValue = nextState?.[key]
+      const nextValue = reducer(currentValue, action)
+      if (currentValue !== nextValue) {
+        return {...nextState, [key]: nextValue}
+      }
+      return nextState
     }, state)
 }
 
