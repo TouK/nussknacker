@@ -9,9 +9,8 @@ const newFields = (oldParameters, newParameters) => _.differenceWith(newParamete
 const removedFields = (oldParameters, newParameters) => _.differenceWith(oldParameters, newParameters, parametersEquals)
 const unchangedFields = (oldParameters, newParameters) => _.intersectionWith(oldParameters, newParameters, parametersEquals)
 
-const nodeDefinitionParameters = node => node?.ref.parameters
-
 export default function ParameterList({
+  paramsFieldName,
   createListField,
   createReadOnlyField,
   editedNode,
@@ -19,6 +18,7 @@ export default function ParameterList({
   savedNode,
   setNodeState,
 }) {
+  const nodeDefinitionParameters = node => _.get(node?.ref, paramsFieldName, [])
   const nodeDefinitionByName = node => _(processDefinitionData.componentGroups)?.flatMap(c => c.components)?.find(n => n.node.type === node.type && n.label === node.ref.id)?.node
   const nodeId = savedNode.id
   const savedParameters = nodeDefinitionParameters(savedNode)

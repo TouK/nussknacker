@@ -8,6 +8,7 @@ import ParameterList from "./ParameterList"
 import {ParameterExpressionField} from "./ParameterExpressionField"
 import {InputWithFocus} from "../../withFocus"
 import {DescriptionField} from "./DescriptionField"
+import ParameterOutputList from "./ParameterOutputList";
 
 export function SubprocessInput({
   fieldErrors,
@@ -50,6 +51,7 @@ export function SubprocessInput({
         setProperty={setProperty}
       />
       <ParameterList
+        paramsFieldName="parameters"
         processDefinitionData={processDefinitionData}
         editedNode={node}
         savedNode={node}
@@ -61,7 +63,6 @@ export function SubprocessInput({
               findAvailableVariables={findAvailableVariables}
               parameterDefinitions={parameterDefinitions}
               fieldErrors={fieldErrors}
-
               node={node}
               isEditMode={isEditMode}
               showValidation={showValidation}
@@ -85,6 +86,20 @@ export function SubprocessInput({
             </div>
           </div>
         )}
+      />
+      <ParameterOutputList
+          processDefinitionData={processDefinitionData}
+          setNodeState={setNodeState}
+          editedNode={node}
+          savedNode={node}
+          parameterDefinitions={parameterDefinitions}
+          showSwitch={showSwitch}
+          findAvailableVariables={findAvailableVariables}
+          fieldErrors={fieldErrors}
+          isEditMode={isEditMode}
+          showValidation={showValidation}
+          renderFieldLabel={renderFieldLabel}
+          setProperty={setProperty}
       />
       <DescriptionField
         node={node}
