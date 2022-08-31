@@ -17,13 +17,13 @@ import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures}
+import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures, VeryPatientScalaFutures}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 
 import scala.concurrent.Future
 
-class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with PatientScalaFutures {
+class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matchers with VeryPatientScalaFutures {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
