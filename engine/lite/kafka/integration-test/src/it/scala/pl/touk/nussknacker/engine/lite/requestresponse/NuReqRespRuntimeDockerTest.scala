@@ -26,12 +26,12 @@ class NuReqRespRuntimeDockerTest extends AnyFunSuite with ForAllTestContainer wi
 
   test("docker image should handle ping pong via http") {
     val host = runtimeContainer.host
-    val request = basicRequest.post(uri"http://$host".port(mappedRuntimeApiPort).path("scenario", pingPongScenario.id))
+    val request = basicRequest.post(uri"http://$host".port(mappedRuntimeApiPort))
     request.body(jsonPingMessage("dockerFoo")).send().body shouldBe Right(jsonPongMessage("dockerFoo"))
   }
 
   test("should get scenario definition via http") {
-    val definitionReq = basicRequest.get(uri"http://${runtimeContainer.host}".port(mappedRuntimeApiPort).path("scenario", pingPongScenario.id, "definition"))
+    val definitionReq = basicRequest.get(uri"http://${runtimeContainer.host}".port(mappedRuntimeApiPort).path("definition"))
 
     val definition = definitionReq.send().body.rightValue
 
@@ -46,7 +46,7 @@ class NuReqRespRuntimeDockerTest extends AnyFunSuite with ForAllTestContainer wi
        |    "version" : "1"
        |  },
        |  "paths" : {
-       |    "/reqresp-ping-pong" : {
+       |    "/" : {
        |      "post" : {
        |        "description" : "**scenario name**: reqresp-ping-pong",
        |        "tags" : [

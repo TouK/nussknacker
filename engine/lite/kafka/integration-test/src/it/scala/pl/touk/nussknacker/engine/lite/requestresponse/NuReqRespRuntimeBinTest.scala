@@ -26,7 +26,7 @@ class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin
       eventually {
         basicRequest.get(uri"http://localhost".port(port).path("alive")).send().code shouldEqual StatusCode.Ok
       }
-      val request = basicRequest.post(uri"http://localhost".port(port).path("scenario", pingPongScenario.id))
+      val request = basicRequest.post(uri"http://localhost".port(port))
       request.body(jsonPingMessage("foo")).send().body shouldBe Right(jsonPongMessage("foo"))
     })
   }

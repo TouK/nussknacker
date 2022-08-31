@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.requestresponse
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
+import akka.http.scaladsl.server.{Directives, Route}
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
@@ -24,7 +24,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
                                                  modelData: ModelData,
                                                  contextPreparer: LiteEngineRuntimeContextPreparer,
                                                  requestResponseConfig: RequestResponseConfig)
-                                                (implicit actorSystem: ActorSystem, ec: ExecutionContext) extends RunnableScenarioInterpreter with LazyLogging {
+                                                (implicit actorSystem: ActorSystem, ec: ExecutionContext) extends RunnableScenarioInterpreter with LazyLogging with Directives {
 
   import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
@@ -67,11 +67,16 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
     interpreter.close()
   }
 
-  override def routes(): Option[Route] = {
-    val path = ScenarioRoute.pathForScenario(jobData.metaData).getOrElse(parsedResolvedScenario.id) // TODO: path should be required
-    val singleRoute = new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, path)
-    val route = new ScenarioRoute(Map(path -> singleRoute))
-    implicit val materializer: Materializer = Materializer(actorSystem)
-    Some(route.route)
+  override val routes: Option[Route] = {
+    val singleRoute = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, "/")
+    val route = path("definition") {
+      singleRoute.definitionRoute
+    } ~ {
+      pathEndOrSingleSlash {
+        singleRoute.invocationRoute
+      }
+    }
+    Some(route)
   }
+
 }

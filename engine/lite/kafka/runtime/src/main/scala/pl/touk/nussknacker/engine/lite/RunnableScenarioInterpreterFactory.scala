@@ -53,7 +53,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
 }
 
 trait RunnableScenarioInterpreter extends AutoCloseable {
-  def routes(): Option[Route]
+  def routes: Option[Route]
   def run(): Future[Unit]
   def status(): TaskStatus
 }

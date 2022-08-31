@@ -30,7 +30,10 @@ import scala.util.{Failure, Success, Try}
 
 class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = new TypeSpecificInitialData {
+    override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData =
+      RequestResponseMetaData(Some(RequestResponseDeploymentStrategy.defaultSlug(scenarioName)))
+  }
 
   override def name: String = "request-response-embedded"
 

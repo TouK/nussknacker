@@ -21,7 +21,7 @@ object RequestResponseOpenApiGenerator {
     pathWithInterpreter
       .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
       .map {
-        case (path, interpreter) => "/" + path -> interpreter
+        case (path, interpreter) => path -> interpreter
       }.toMap.asJson
   }
 

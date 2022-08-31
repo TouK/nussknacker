@@ -3,24 +3,19 @@ package pl.touk.nussknacker.engine.lite.requestresponse
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
-import org.scalatest.flatspec.AnyFlatSpec
+import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
-import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-import scala.concurrent.Future
-
-class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers {
+class RequestResponseRunnableScenarioInterpreterRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matchers {
 
   import spel.Implicits._
 
@@ -34,40 +29,21 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
 
   private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
 
-  private val interpreter = RequestResponseInterpreter[Future](
-    process,
-    ProcessVersion.empty.copy(processName = ProcessName(process.metaData.id)),
-    LiteEngineRuntimeContextPreparer.noOp,
-    modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-    .valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+  private val interpreter = new RequestResponseRunnableScenarioInterpreter(
+    JobData(process.metaData, ProcessVersion.empty.copy(processName = ProcessName(process.metaData.id))),
+    process, modelData, LiteEngineRuntimeContextPreparer.noOp, RequestResponseConfig(OpenApiDefinitionConfig(
+      server = Some(OApiServer("https://nussknacker.io", "request response test"))
+    )))
 
-  private val scenarioRoute = new ScenarioRoute(Map("test" -> new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), OpenApiDefinitionConfig(
-    server = Some(OApiServer("https://nussknacker.io", "request response test"))
-  ), ProcessName("test"), "test")))
+  private val routes = interpreter.routes.get
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
-    interpreter.open()
   }
 
   override protected def afterAll(): Unit = {
     super.afterAll()
     interpreter.close()
-  }
-
-  it should "get scenario openapi definition" in {
-    Get(s"/scenario/test/definition") ~> scenarioRoute.route ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] shouldBe expectedOApiDef
-    }
-  }
-
-  it should "handle post" in {
-    val msg = """{"city":"London"}"""
-    Post(s"/scenario/test", HttpEntity(ContentTypes.`application/json`, msg)) ~> scenarioRoute.route ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] shouldBe s"""{"place":"London"}"""
-    }
   }
 
   private val expectedOApiDef =
@@ -85,7 +61,7 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
       |    }
       |  ],
       |  "paths" : {
-      |    "/test" : {
+      |    "/" : {
       |      "post" : {
       |        "description" : "**scenario name**: test",
       |        "tags" : [
@@ -136,5 +112,21 @@ class ScenarioRouteSpec extends AnyFlatSpec with ScalatestRouteTest with Matcher
       |    }
       |  }
       |}""".stripMargin
+
+  test("get scenario openapi definition") {
+    Get("/definition") ~> routes ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldBe expectedOApiDef
+    }
+  }
+
+  test("handle post") {
+    val msg = """{"city":"London"}"""
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> routes ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldBe s"""{"place":"London"}"""
+    }
+  }
+
 }
 
