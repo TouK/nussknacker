@@ -21,7 +21,7 @@ class LiteScenarioValidator(nussknackerInstanceName: Option[String]) {
   }
 
   private[manager] def validateRequestResponse(scenarioName: ProcessName, rrMetaData: RequestResponseMetaData): Validated[Throwable, Unit] = {
-    val slug = RequestResponseSlugUtils.determineSlug(scenarioName, rrMetaData)
+    val slug = RequestResponseSlugUtils.determineSlug(scenarioName, rrMetaData, nussknackerInstanceName)
     // We don't sanitize / validate against url because k8s object names are more restrictively validated than urls, see https://datatracker.ietf.org/doc/html/rfc3986
     val withoutSanitization = ServicePreparer.serviceNameWithoutSanitization(nussknackerInstanceName, slug)
     val withSanitization = ServicePreparer.serviceName(nussknackerInstanceName, slug)

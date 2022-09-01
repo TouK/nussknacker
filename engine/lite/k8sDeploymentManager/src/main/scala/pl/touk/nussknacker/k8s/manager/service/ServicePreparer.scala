@@ -25,7 +25,7 @@ class ServicePreparer(config: K8sDeploymentManagerConfig) {
   }
 
   private def prepareRequestResponseService(processVersion: ProcessVersion, rrMetaData: RequestResponseMetaData): Service = {
-    val objectName = serviceName(config.nussknackerInstanceName, determineSlug(processVersion.processName, rrMetaData))
+    val objectName = serviceName(config.nussknackerInstanceName, determineSlug(processVersion.processName, rrMetaData, config.nussknackerInstanceName))
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion, config.nussknackerInstanceName)
     val selectors = Map(

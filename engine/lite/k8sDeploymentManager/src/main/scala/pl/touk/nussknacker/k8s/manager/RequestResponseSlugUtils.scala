@@ -6,8 +6,8 @@ import pl.touk.nussknacker.k8s.manager.service.ServicePreparer.serviceName
 
 object RequestResponseSlugUtils {
 
-  private[manager] def determineSlug(scenarioName: ProcessName, rrMetaData: RequestResponseMetaData) = {
-    rrMetaData.slug.getOrElse(scenarioName.value)
+  private[manager] def determineSlug(scenarioName: ProcessName, rrMetaData: RequestResponseMetaData, nussknackerInstanceName: Option[String]) = {
+    rrMetaData.slug.getOrElse(defaultSlug(scenarioName, nussknackerInstanceName))
   }
 
   // We don't encode url because k8s object names are more restrictively validated than urls, see https://datatracker.ietf.org/doc/html/rfc3986
