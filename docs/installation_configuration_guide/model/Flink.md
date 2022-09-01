@@ -24,59 +24,7 @@ sidebar_label: "Flink"
 | globalParameters.useTypingResultTypeInformation             | Low        | boolean  | true                   | Enables using Nussknacker additional typing information for state serialization. It makes serialization much faster, currently consider it as experimental                  |
 | globalParameters.forceSyncInterpretationForSyncScenarioPart | Low        | boolean  | true                   | Forces synchronous interpretation for scenario parts that does not contain any services (enrichers, processors). Applies for scenarios with async enabled                   |
 
-## Kafka configuration
-
-For Flink scenarios you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
-Below we give two example configurations, one for default setup with one Kafka cluster and standard component names:
-```
-components.kafka {
-  config: {
-    kafkaAddress: "kafakaBroker1.sample.pl:9092,kafkaBroker2.sample.pl:9092"
-    kafkaProperties {
-      "schema.registry.url": "http://schemaRegistry.pl:8081"
-    }
-  }
-}
-```
-And now - more complex, with two clusters. In the latter case, we configure prefix which will be added to component names, 
-resulting in `clusterA-kafka-avro` etc.
-
-```
-components.kafkaA {
-  providerType: "kafka"
-  componentPrefix: "clusterA-"
-  config: {
-    kafkaAddress: "clusterA-broker1.sample.pl:9092,clusterA-broker2.sample.pl:9092"
-    kafkaProperties {
-      "schema.registry.url": "http://clusterA-schemaRegistry.pl:8081"
-    }
-  }
-}
-components.kafkaA {
-  providerType: "kafka"
-  componentPrefix: "clusterB-"
-  config: {
-    kafkaAddress: "clusterB-broker1.sample.pl:9092,clusterB-broker2.sample.pl:9092"
-    kafkaProperties {
-      "schema.registry.url": "http://clusterB-schemaRegistry.pl:8081"
-    }
-  }
-}
-```
- 
-Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:
-- Nussknacker Designer host (to enable schema discovery and scenario testing)
-- Flink cluster (both jobmanagers and taskmanagers) hosts - to be able to run job
-
-See [common config](../ModelConfiguration#kafka-connection-configuration) for the details of Kafka configuration, the table below presents additional options available only in Streaming-Flink:
-      
-
-| Name                                                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                                                                  |
-| ----------                                                                        | ---------- | ----------------           | -------------    | ------------                                                                                                                                                                                                                                                 |
-| kafkaEspProperties.defaultMaxOutOfOrdernessMillis                           | Medium     | duration                   | 60s              | Configuration of [bounded of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources                                                  |
-| consumerGroupNamingStrategy                                                 | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                                                                              |
-| avroKryoGenericRecordSchemaIdSerialization                                  | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                                                                           |
-
+TODO: KAFKA
 
 ## Configuring exception handling 
 
@@ -105,7 +53,7 @@ exceptionHandler {
 Out of the box, Nussknacker provides following ExceptionHandler types:
 - BrieflyLogging - log error to Flink logs (on `info` level, with stacktrace on `debug` level)
 - VerboselyLogging - log error to Flink logs on `error` level, together with all variables (should be used mainly for debugging)
-- Kafka - send errors to Kafka topic, see [common config](../ModelConfiguration/#kafka-exception-handling) for the details.
+- Kafka - send errors to Kafka topic, see [common config](../../integration/KafkaIntegration/#kafka-exception-handling) for the details.
 
 ### Configuring restart strategies 
 

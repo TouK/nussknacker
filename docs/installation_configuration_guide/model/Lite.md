@@ -3,7 +3,9 @@ sidebar_label: "Lite"
 ---
 
 # Streaming-Lite specific model configuration
-                 
+
+
+
 ## Common configuration
 
 | Name                  | Importance | Type       | Default value | Description     |
@@ -14,31 +16,15 @@ sidebar_label: "Lite"
 | publishTimeout        | Low        | duration   | 10s           | Timeout on producing resulting event to Kafka |
 | waitAfterFailureDelay | Low        | duration   | 10s           | Processing delay after unexpected, transient error (does not include e.g. expression errors or 500 codes from OpenAPI) |
 
-## Kafka configuration
-
-Currently, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
-Kafka based sources and sinks. See [common config](../ModelConfiguration#kafka-connection-configuration) for the details.
-```
-modelConfig {
-  kafka {
-    kafkaAddress: "broker1:9092,broker2:9092"
-    kafkaProperties {
-      "schema.registry.url": "http://schemaregistry:8081"
-    }
-  }
-}  
-```
-      
-
-### Exception handling
-
-Errors are sent to Kafka, to a dedicated topic: 
-```
-modelConfig {
-  exceptionHandlingConfig: {
-    topic: "errors"
-  }
-}
-```
-please look at [common cofiguration](../ModelConfiguration#kafka-exception-handling) for the details of the configuration.
-                                  
+## Exception handling
+ 
+ Errors are sent to Kafka, to a dedicated topic: 
+ ```
+ modelConfig {
+   exceptionHandlingConfig: {
+     topic: "errors"
+   }
+ }
+ ```
+ please look at [common cofiguration](../../integration/KafkaIntegration/#kafka-exception-handling) for the details of the configuration.
+                                   
