@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.lite.requestresponse
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
-import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.ModelData
@@ -68,15 +67,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
   }
 
   override val routes: Option[Route] = {
-    val singleRoute = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, "/")
-    val route = path("definition") {
-      singleRoute.definitionRoute
-    } ~ {
-      pathEndOrSingleSlash {
-        singleRoute.invocationRoute
-      }
-    }
-    Some(route)
+    Some(new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, "/").combinedRoute)
   }
 
 }

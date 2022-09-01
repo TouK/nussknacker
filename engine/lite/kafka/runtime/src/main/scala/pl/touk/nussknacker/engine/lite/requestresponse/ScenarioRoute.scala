@@ -42,6 +42,16 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
     }
   }
 
+  val combinedRoute: Route = {
+    path("definition") {
+      definitionRoute
+    } ~ {
+      pathEndOrSingleSlash {
+        invocationRoute
+      }
+    }
+  }
+
   protected def logDirective: Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {

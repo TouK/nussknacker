@@ -5,23 +5,28 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
+import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class RequestResponseRunnableScenarioInterpreterRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matchers {
+import scala.concurrent.Future
+
+class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matchers {
 
   import spel.Implicits._
 
   private val inputSchema = """{"type" : "object", "properties": {"city": {"type": "string", "default": "Warsaw"}}}"""
   private val outputSchema = """{"type" : "object", "properties": {"place": {"type": "string"}}}"""
-  private val process = ScenarioBuilder
+  private val scenario = ScenarioBuilder
     .requestResponse("test")
     .additionalFields(description = Some("description"), properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
     .source("start", "request")
@@ -29,21 +34,24 @@ class RequestResponseRunnableScenarioInterpreterRouteSpec extends AnyFunSuite wi
 
   private val modelData = LocalModelData(ConfigFactory.load(), new EmptyProcessConfigCreator)
 
-  private val interpreter = new RequestResponseRunnableScenarioInterpreter(
-    JobData(process.metaData, ProcessVersion.empty.copy(processName = ProcessName(process.metaData.id))),
-    process, modelData, LiteEngineRuntimeContextPreparer.noOp, RequestResponseConfig(OpenApiDefinitionConfig(
-      server = Some(OApiServer("https://nussknacker.io", "request response test"))
-    )))
+  private val scenarioName: ProcessName = ProcessName(scenario.metaData.id)
 
-  private val routes = interpreter.routes.get
+  private val interpreter = RequestResponseInterpreter[Future](
+    scenario, ProcessVersion.empty.copy(processName = scenarioName), LiteEngineRuntimeContextPreparer.noOp, modelData,
+    Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime
+  ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
+
+  private val routes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter),
+    OpenApiDefinitionConfig(Some(OApiServer("https://nussknacker.io", "request response test"))), scenarioName, "/").combinedRoute
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
+    interpreter.open()
   }
 
   override protected def afterAll(): Unit = {
-    super.afterAll()
     interpreter.close()
+    super.afterAll()
   }
 
   private val expectedOApiDef =
