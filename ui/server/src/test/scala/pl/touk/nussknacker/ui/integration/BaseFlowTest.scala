@@ -11,12 +11,11 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -30,20 +29,19 @@ import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.restmodel.definition.UiAdditionalPropertyConfig
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, SecurityHeadersSupport, CorsSupport, MultipartUtils}
+import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, MultipartUtils, SecurityHeadersSupport}
 
 import scala.concurrent.duration._
 import scala.util.Properties
 
 class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
-  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll {
+  with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with OptionValues {
 
   import io.circe.syntax._
 
@@ -300,10 +298,10 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     dynamicServiceParametersBeforeReload.exists(_.contains(parameterUUID)) shouldBe false
     dynamicServiceParameters shouldBe dynamicServiceParametersBeforeReload
-    //service still does not accept parameter
-    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors(Map("end" -> List(
-      PrettyValidationErrors.formatErrorMessage(RedundantParameters(Set(parameterUUID), "end"))
-    )), List.empty, List.empty)
+    //service still does not accept parameter, redundant parameters for dynamic services are just skipped
+    val resultBeforeReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
+    resultBeforeReload.errors shouldBe ValidationErrors.success
+    resultBeforeReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set.empty
 
     reloadModel()
 
@@ -311,7 +309,9 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     beforeReload should not be afterReload
     //now parameter is known and required
     dynamicServiceParameters shouldBe Some(List(parameterUUID))
-    updateProcess(processWithService(parameterUUID -> "'emptyString'")).errors shouldBe ValidationErrors.success
+    val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
+    resultAfterReload.errors shouldBe ValidationErrors.success
+    resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(parameterUUID)
     firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
   }

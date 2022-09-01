@@ -354,9 +354,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
         case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
-          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, nodeParameters,
+          val computedParameterNames = computedParameters.filterNot(_.branchParam).map(p => p.name)
+          val withoutRedundant = nodeParameters.filter(p => computedParameterNames.contains(p.name))
+          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, withoutRedundant,
             branchParameters, outputVar, ctx, Some(computedParameters), Seq(FinalStateValue(finalState)))
-          (typingInfo, Some(computedParameters), outputContext, validProcessObject.map((_, nodeParameters)))
+          (typingInfo, Some(computedParameters), outputContext, validProcessObject.map((_, withoutRedundant)))
         case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))

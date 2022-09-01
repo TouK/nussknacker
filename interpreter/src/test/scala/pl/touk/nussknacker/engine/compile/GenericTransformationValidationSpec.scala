@@ -289,8 +289,6 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val result = validator.validate(process)
 
-    result.result shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("wrongOptionalParameter"), "optionalParameters")))
-
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
       Parameter.optional[CharSequence]("optionalParameter").copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some(""))
@@ -303,8 +301,20 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .customNodeNoOutput("generic", "twoStepsInOne")
         .emptySink("end", "dummySink"))
 
+    result.result shouldBe 'valid
+    val parameterNames = result.parametersInNodes("generic").map(_.name)
+    parameterNames shouldEqual List("moreParams", "extraParam")
+  }
+
+  test("should omit redundant parameters for generic transformations") {
+    val result = validator.validate(
+      processBase
+        .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''")
+        .emptySink("end", "dummySink"))
 
     result.result shouldBe 'valid
+    val parameterNames = result.parametersInNodes("generic").map(_.name)
+    parameterNames shouldEqual List("moreParams", "extraParam")
   }
 
 }
