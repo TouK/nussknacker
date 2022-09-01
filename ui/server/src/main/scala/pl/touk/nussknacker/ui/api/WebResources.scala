@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
+
 import java.nio.file.Files
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
@@ -29,9 +31,11 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
     pathPrefix(webSubfolder) {
       get {
         encodeResponse {
-          extractRequest { matched =>
-            logger.debug(s"Try to get static data from $webSubfolder for:  ${matched.uri.path}.")
-            getFromResourceDirectory(s"web/$webSubfolder")
+          respondWithHeader(`Cache-Control`(List(CacheDirectives.public, CacheDirectives.`max-age`(0)))) {
+            extractRequest { matched =>
+              logger.debug(s"Try to get static data from $webSubfolder for:  ${matched.uri.path}.")
+              getFromResourceDirectory(s"web/$webSubfolder")
+            }
           }
         }
       }
