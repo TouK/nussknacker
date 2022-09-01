@@ -197,7 +197,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
 
   override def supportsSignals: Boolean = false
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] =
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))
 
   override def name: String = "development-tests"

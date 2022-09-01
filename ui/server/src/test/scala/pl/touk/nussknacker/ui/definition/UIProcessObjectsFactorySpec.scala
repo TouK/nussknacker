@@ -77,6 +77,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
       Set(),
       false,
       new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig),
+      Map.empty,
       TestProcessingTypes.Streaming
     )
 
@@ -103,7 +104,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
 
     processObjects.componentGroups.filter(_.name == ComponentGroupName("hiddenCategory")) shouldBe empty
   }
@@ -119,7 +120,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
 
     val processObjects =
       UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"), Set(), false,
-        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
+        new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
 
     val componentsGroups = processObjects.componentGroups.filter(_.name == ComponentGroupName("someCategory"))
     componentsGroups should not be empty
@@ -133,7 +134,7 @@ class UIProcessObjectsFactorySpec extends AnyFunSuite with Matchers {
     val fragmentWithDocsUrl = fragment.copy(metaData = fragment.metaData.copy(typeSpecificData = FragmentSpecificData(Some(docsUrl))))
 
     val processObjects = UIProcessObjectsFactory.prepareUIProcessObjects(model, mockDeploymentManager, TestFactory.user("userId"),
-        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), TestProcessingTypes.Streaming)
+        Set(SubprocessDetails(fragmentWithDocsUrl, "Category1")), false, new ConfigProcessCategoryService(ConfigWithScalaVersion.TestsConfig), Map.empty, TestProcessingTypes.Streaming)
 
     processObjects.componentsConfig("sub1").docsUrl shouldBe Some(docsUrl)
   }

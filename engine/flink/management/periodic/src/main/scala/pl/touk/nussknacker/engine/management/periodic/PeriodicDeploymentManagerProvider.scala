@@ -55,5 +55,5 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
 
   override def supportsSignals: Boolean = delegate.supportsSignals
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig(config)
 }

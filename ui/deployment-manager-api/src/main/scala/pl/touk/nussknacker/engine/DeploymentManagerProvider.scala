@@ -22,7 +22,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def typeSpecificInitialData(config: Config): TypeSpecificInitialData
 
-  def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig]
+  def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]
 
   def supportsSignals: Boolean
 }

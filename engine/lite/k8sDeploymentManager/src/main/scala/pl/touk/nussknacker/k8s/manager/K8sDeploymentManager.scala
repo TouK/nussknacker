@@ -8,6 +8,7 @@ import io.circe.syntax._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.definition.{JsonParameterEditor, MandatoryParameterValidator}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -60,25 +61,28 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
-    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
-    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
-    config.getString("mode") match {
-      case "streaming" => steamingInitialMetData
-      case "request-response" => new TypeSpecificInitialData {
-        override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = {
-          RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-        }
-      }
-      case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
-    }
-  }
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(_ => steamingInitialMetData, config => (scenarioName: ProcessName, scenarioType: String) => {
+    RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+  })
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = ???
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(_ => Map.empty, _ => Map(
+    "inputSchema" -> AdditionalPropertyConfig(Some("{}"), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Input schema")),
+    "outputSchema" -> AdditionalPropertyConfig(Some("{}"), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Output schema")),
+  ))
 
   override def supportsSignals: Boolean = false
 
   override def name: String = "lite-k8s"
+
+  private def forMode[T](config: Config)(streaming: Config => T, requestResponse: Config => T): T = {
+    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
+    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
+    config.getString("mode") match {
+      case "streaming" => streaming(config)
+      case "request-response" => requestResponse(config)
+      case other => throw new IllegalArgumentException(s"Unsupported mode: $other")
+    }
+  }
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",

@@ -52,6 +52,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
                   subprocesses,
                   isSubprocess,
                   processCategoryService,
+                  processingTypeData.additionalPropertiesConfig,
                   processingType)
               )
             }

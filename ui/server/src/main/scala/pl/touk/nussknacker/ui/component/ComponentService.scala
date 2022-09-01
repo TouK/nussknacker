@@ -81,6 +81,7 @@ object DefaultComponentService {
         subprocessesDetails = Set.empty, // We don't check subprocesses, because these are dynamic components
         isSubprocess = false, // It excludes fragment's components: input / output
         categoryService,
+        processingTypeData.additionalPropertiesConfig,
         processingType
       )
 
@@ -203,6 +204,7 @@ class DefaultComponentService private(config: Config,
           subprocesses,
           isSubprocess = false, //It excludes fragment's components: input / output
           categoryService,
+          processingTypeData.additionalPropertiesConfig,
           processingType
         )
 
