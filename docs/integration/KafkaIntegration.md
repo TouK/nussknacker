@@ -26,7 +26,7 @@ Schemas are stored and managed by Confluent Schema Registry; it is [bundled with
 
 Nussknacker supports both JSON and AVRO schemas, and JSON and AVRO topic payloads. Detailed information on how AVRO data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format).
 
-## Schema and payload types
+### Schema and payload types
 
 By default, Nussknacker supports two combinations of schema type and payload type:
 
@@ -35,7 +35,7 @@ By default, Nussknacker supports two combinations of schema type and payload typ
 
 If you prefer using JSON payload with AVRO schema, you can use `avroAsJsonSerialization` configuration setting to change that behaviour ([see Configuration for details](/docs/installation_configuration_guide/ModelConfiguration#common-kafka-configuration)).
 
-## Schema ID
+### Schema ID
 
 Nussknacker supports schema evolution.
 
@@ -50,8 +50,8 @@ At runtime Nussknacker determines the schema version of a message value and key 
 # Configuration
 
 ## Common part
-
-Both streaming Engines (Lite and Flink) share common Kafka configuration, see respective sections below for details on configuring Kafka for each of them.
+The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key.  
+Both streaming Engines (Lite and Flink) share some of the common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at) 
 
 ### Kafka connection configuration
 
@@ -111,7 +111,8 @@ to see where they should be set):
 
 ## Configuration for Streaming-Flink
 
-For Flink scenarios you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
+With Streaming-Flink engine, the Kafka sources and sinks are configured as any other component. In particular,
+you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
 Below we give two example configurations, one for default setup with one Kafka cluster and standard component names:
 ```
 components.kafka {
@@ -165,8 +166,8 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 
 ## Configuration for Streaming-Lite
 
-Currently, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
-Kafka based sources and sinks. See [common config](#kafka-connection-configuration) for the details.
+The Streaming-Lite uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
+Kafka based sources and sinks (you don't need to configure them separately). See [common config](#kafka-connection-configuration) for the details.
 ```
 modelConfig {
   kafka {
