@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute}
+import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute, UrlUtils}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
@@ -43,8 +43,11 @@ object RequestResponseDeploymentStrategy {
     case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
   }
 
-  // TODO: make it compatible with k8s version
-  def defaultSlug(scenarioName: ProcessName): String = scenarioName.value
+  // should it be compatible with k8s version?
+  def determineSlug(scenarioName: ProcessName, metaData: RequestResponseMetaData): String =
+    metaData.slug.getOrElse(defaultSlug(scenarioName))
+
+  def defaultSlug(scenarioName: ProcessName): String = UrlUtils.sanitizeUrlSlug(scenarioName.value)
 
 }
 

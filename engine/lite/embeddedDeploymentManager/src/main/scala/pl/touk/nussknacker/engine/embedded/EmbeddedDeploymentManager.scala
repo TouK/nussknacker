@@ -94,7 +94,8 @@ class EmbeddedDeploymentManager(modelData: ModelData,
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    Future.successful(())
+    // TODO: it should be moved into CustomProcessValidator after refactor of it
+    Future.fromTry(EmbeddedLiteScenarioValidator.validate(canonicalProcess).toEither.toTry)
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {

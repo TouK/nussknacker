@@ -19,10 +19,7 @@ object RequestResponseOpenApiGenerator {
 
   private def generateScenarioDefinitions[Effect[_]](pathWithInterpreter: List[(String, RequestResponseScenarioInterpreter[Effect])]): Json = {
     pathWithInterpreter
-      .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi))
-      .map {
-        case (path, interpreter) => path -> interpreter
-      }.toMap.asJson
+      .flatMap(a => a._2.generateOpenApiDefinition().map(oApi => a._1 -> oApi)).toMap.asJson
   }
 
   private[requestresponse] def generateScenarioDefinition(processName: String,
