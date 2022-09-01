@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute}
+import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute, SingleScenarioRoute}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
@@ -41,7 +41,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val pathToRequestHandler = TrieMap[String, RequestResponseAkkaHttpHandler]()
+  private val pathToScenarioRoute = TrieMap[String, SingleScenarioRoute]()
 
   private var server: ServerBinding = _
 
@@ -49,7 +49,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${httpConfig.port}")
 
-    val route = new ScenarioRoute(pathToRequestHandler, config.definitionMetadata)
+    val route = new ScenarioRoute(pathToScenarioRoute)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
@@ -72,7 +72,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     val interpreterWithPath = ScenarioRoute.pathForScenario(jobData.metaData).product(interpreter)
     interpreterWithPath.foreach { case (path, interpreter) =>
-      pathToRequestHandler += (path -> new RequestResponseAkkaHttpHandler(interpreter))
+      pathToScenarioRoute += (path -> new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config.definitionMetadata, jobData.processVersion.processName, path))
       interpreter.open()
     }
     interpreterWithPath
@@ -87,7 +87,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
     override def status(): StateStatus = SimpleStateStatus.Running
 
     override def close(): Unit = {
-      pathToRequestHandler.remove(path)
+      pathToScenarioRoute.remove(path)
       interpreter.close()
     }
   }

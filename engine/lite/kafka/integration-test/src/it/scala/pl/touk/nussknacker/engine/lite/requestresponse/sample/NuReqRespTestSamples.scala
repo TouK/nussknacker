@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.requestresponse.sample
 
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkRawEditorParamName
 
 object NuReqRespTestSamples {
 
@@ -30,7 +31,7 @@ object NuReqRespTestSamples {
       "outputSchema" -> pongSchema
     ))
     .source("source", "request")
-    .emptySink("sink", "response", "pong" -> "#input.ping")
+    .emptySink("sink", "response", SinkRawEditorParamName -> "false", "pong" -> "#input.ping")
     .toCanonicalProcess
 
   def jsonPingMessage(msg: String) = s"""{"ping":"$msg"}"""

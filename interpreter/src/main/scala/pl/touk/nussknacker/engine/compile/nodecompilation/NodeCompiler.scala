@@ -260,15 +260,18 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       case None => Valid(validationContext)
     }
 
-    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = paramsDefs.collect {
-      case paramDef if paramDef.isLazyParameter =>
-        val compiledParam = (for {
-          param <- serviceRef.parameters.find(_.name == paramDef.name)
-          compiled <- objectParametersExpressionCompiler
-            .compileParam(param, validationContext, paramDef, eager = false).toOption
-            .flatMap(_.typedValue.cast[TypedExpression])
-        } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
-        compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
+    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = {
+      val nodeParameters = InitialParametersGenericNodeEnricher.enrichWithInitialParameters(serviceRef.parameters, paramsDefs).map(p => p.name -> p).toMap
+      paramsDefs.collect {
+        case paramDef if paramDef.isLazyParameter =>
+          val compiledParam = (for {
+            param <- nodeParameters.get(paramDef.name)
+            compiled <- objectParametersExpressionCompiler
+              .compileParam(param, validationContext, paramDef, eager = false).toOption
+              .flatMap(_.typedValue.cast[TypedExpression])
+          } yield compiled).getOrElse(throw new IllegalArgumentException(s"$paramDef is not defined as TypedExpression"))
+          compiledgraph.evaluatedparam.Parameter(compiledParam, paramDef)
+      }
     }
 
     def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
@@ -345,11 +348,11 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
     val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
-        case TransformationResult(Nil, computedParameters, outputContext, finalState) =>
-          val (typingInfo, validProcessObject) = createProcessObject(nodeDefinition, parameters,
+        case TransformationResultForImplementationInvocation(TransformationResult(Nil, computedParameters, outputContext, finalState), nodeParameters) =>
+          val (typingInfo, validProcessObject) = createProcessObject(nodeDefinition, nodeParameters,
             branchParameters, outputVar, ctx, Some(computedParameters), Seq(FinalStateValue(finalState)))
           (typingInfo, Some(computedParameters), outputContext, validProcessObject)
-        case TransformationResult(h :: t, computedParameters, outputContext, _) =>
+        case TransformationResultForImplementationInvocation(TransformationResult(h :: t, computedParameters, outputContext, _), _) =>
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
@@ -432,7 +435,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                             branchParameters: List[BranchParameters],
                                             outputVar: Option[String])
                                            (implicit metaData: MetaData, nodeId: NodeId):
-  PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
+  PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResultForImplementationInvocation]] = {
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
       nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.left.get)

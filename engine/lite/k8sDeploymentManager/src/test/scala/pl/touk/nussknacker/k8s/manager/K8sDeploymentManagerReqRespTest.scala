@@ -112,7 +112,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       ))
       .source("source", "request")
       .enricher("instanceId", "instanceId", "env", "name" -> "\"INSTANCE_ID\"")
-      .emptySink("sink", "response", "pong" -> "#input.ping", "instanceId" -> "#instanceId")
+      .emptySink("sink", "response", "Raw editor" -> "false", "pong" -> "#input.ping", "instanceId" -> "#instanceId")
     logger.info(s"Running req-resp test on ${scenario.id}")
     val version = ProcessVersion(VersionId(11), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
     new ReqRespTestFixture(manager = manager, scenario = scenario, version = version, extraClasses)
