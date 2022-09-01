@@ -135,7 +135,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       //modelConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
       secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
-      deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, mountableResources, scalingOptions.replicasCount))
+      deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, canonicalProcess, mountableResources, scalingOptions.replicasCount))
       serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753

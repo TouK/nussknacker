@@ -5,12 +5,15 @@ import io.circe.syntax.EncoderOps
 import monocle.Iso
 import monocle.macros.GenLens
 import monocle.std.option._
-import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, ScenarioSpecificData, StreamMetaData}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNameForScenario, scenarioIdLabel, scenarioVersionAnnotation}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
+import skuber.apps.v1.Deployment.Strategy
+import skuber.ext.DaemonSet.RollingUpdate
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
 case class MountableResources(commonConfigConfigMap: String,
@@ -23,12 +26,12 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
   private val LoggingConfigMountPath = "/logging-config"
   private val ModelConfigMountPath = "/model-config"
 
-  def prepare(processVersion: ProcessVersion, resourcesToMount: MountableResources, determinedReplicasCount: Int): Deployment = {
+  def prepare(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, resourcesToMount: MountableResources, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
-    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, resourcesToMount, determinedReplicasCount, config.nussknackerInstanceName)
+    applyDeploymentDefaults(userConfigurationBasedDeployment, processVersion, canonicalProcess, resourcesToMount, determinedReplicasCount, config.nussknackerInstanceName)
   }
 
-  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, resourcesToMount: MountableResources, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
+  private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, resourcesToMount: MountableResources, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
     val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
     val labels = labelsForScenario(processVersion, nussknackerInstanceName)
@@ -42,7 +45,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         GenLens[Deployment](_.metadata.annotations).modify(_ ++ annotations) andThen
         //here we use id to avoid sanitization problems
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.selector)).set(LabelSelector(IsEqualRequirement(scenarioIdLabel, processVersion.processId.value.toString))) andThen
-        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.strategy)).modify(maybeStrategy => maybeStrategy.orElse(Some(Deployment.Strategy.Recreate))) andThen
+        (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.strategy)).modify(maybeStrategy => maybeStrategy.orElse(Some(deploymentStrategy(canonicalProcess)))) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.replicas)).modify(modifyReplicasCount(determinedReplicasCount)) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.name)).set(objectName) andThen
         (deploymentSpecLens composeLens GenLens[Deployment.Spec](_.template.metadata.labels)).modify(_ ++ labels) andThen
@@ -53,6 +56,17 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         )) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
+  }
+
+  private def deploymentStrategy(canonicalProcess: CanonicalProcess): Strategy = {
+    canonicalProcess.metaData.typeSpecificData match {
+      case data: ScenarioSpecificData => data match {
+        case _: LiteStreamMetaData => Deployment.Strategy.Recreate
+        case _: RequestResponseMetaData => Deployment.Strategy(rollingUpdate = Deployment.RollingUpdate())
+        case _: StreamMetaData => throw new IllegalStateException("Deploying flink streaming unsupported on k8s")
+      }
+      case _:FragmentSpecificData => throw new IllegalStateException("Cannot deploy raw fragment")
+    }
   }
 
   private def modifyReplicasCount(determinedReplicasCount: Int)(maybeReplicasFromRawConfig: Option[Int]) =
