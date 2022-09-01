@@ -43,6 +43,9 @@ object NodeCompiler {
                                       compiledObject: ValidatedNel[ProcessCompilationError, T],
                                       expressionType: Option[TypingResult] = None) {
     def errors: List[ProcessCompilationError] = (validationContext.swap.toList ++ compiledObject.swap.toList).flatMap(_.toList)
+
+    def map[R](f: T => R): NodeCompilationResult[R] = copy(compiledObject = compiledObject.map(f))
+
   }
 
   private case class ExpressionCompilation[R](fieldName: String,
@@ -86,7 +89,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
             contextWithOnlyGlobalVariables.withVariable(VariableConstants.InputVariableName, compiled.flatMap(a => returnType(definition, a)).getOrElse(Unknown), paramName = None)
 
           compileObjectWithTransformation[Source](a.parameters, Nil,
-            Left(contextWithOnlyGlobalVariables), Some(VariableConstants.InputVariableName), definition, defaultContextTransformation)
+            Left(contextWithOnlyGlobalVariables), Some(VariableConstants.InputVariableName), definition, defaultContextTransformation).map(_._1)
         case None =>
           val error = Invalid(NonEmptyList.of(MissingSourceFactory(ref.typ)))
           //TODO: is this default behaviour ok?
@@ -111,7 +114,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       case Some((nodeDefinition, _)) =>
         val default = defaultContextAfter(data, ending, ctx, nodeDefinition)
         compileObjectWithTransformation(data.parameters,
-          data.cast[Join].map(_.branchParameters).getOrElse(Nil), ctx, outputVar.map(_.outputName), nodeDefinition, default)
+          data.cast[Join].map(_.branchParameters).getOrElse(Nil), ctx, outputVar.map(_.outputName), nodeDefinition, default).map(_._1)
       case None =>
         val error = Invalid(NonEmptyList.of(MissingCustomNodeExecutor(data.nodeType)))
         NodeCompilationResult(Map.empty, None, defaultCtxToUse, error)
@@ -125,7 +128,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
 
     definitions.sinkFactories.get(ref.typ) match {
       case Some(definition) =>
-        compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition, (_: Any) => Valid(ctx))
+        compileObjectWithTransformation[api.process.Sink](sink.parameters, Nil, Left(ctx), None, definition, (_: Any) => Valid(ctx)).map(_._1)
       case None =>
         val error = invalid(MissingSinkFactory(sink.ref.typ)).toValidatedNel
         NodeCompilationResult(Map.empty[String, ExpressionTypingInfo], None, Valid(ctx), error)
@@ -260,12 +263,12 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       case None => Valid(validationContext)
     }
 
-    def prepareCompiledLazyParameters(paramsDefs: List[Parameter]) = {
-      val nodeParameters = InitialParametersGenericNodeEnricher.enrichWithInitialParameters(serviceRef.parameters, paramsDefs).map(p => p.name -> p).toMap
+    def prepareCompiledLazyParameters(paramsDefs: List[Parameter], nodeParams: List[evaluatedparam.Parameter]) = {
+      val nodeParamsMap = nodeParams.map(p => p.name -> p).toMap
       paramsDefs.collect {
         case paramDef if paramDef.isLazyParameter =>
           val compiledParam = (for {
-            param <- nodeParameters.get(paramDef.name)
+            param <- nodeParamsMap.get(paramDef.name)
             compiled <- objectParametersExpressionCompiler
               .compileParam(param, validationContext, paramDef, eager = false).toOption
               .flatMap(_.typedValue.cast[TypedExpression])
@@ -274,12 +277,14 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       }
     }
 
-    def makeInvoker(service: ServiceInvoker, paramsDefs: List[Parameter])
-    = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs), resultCollector)
+    def makeInvoker(service: ServiceInvoker, nodeParams: List[evaluatedparam.Parameter], paramsDefs: List[Parameter])
+    = compiledgraph.service.ServiceRef(serviceRef.id, service, prepareCompiledLazyParameters(paramsDefs, nodeParams), resultCollector)
 
-    val compiled =
-      compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
-    compiled.copy(compiledObject = compiled.compiledObject.map(makeInvoker(_, compiled.parameters.getOrElse(objectWithMethodDef.parameters))))
+    val compilationResult = compileObjectWithTransformation[ServiceInvoker](serviceRef.parameters, Nil, Left(validationContext), outputVar.map(_.outputName), objectWithMethodDef, ctx)
+    compilationResult.map {
+      case (invoker, nodeParams) =>
+        makeInvoker(invoker, nodeParams, compilationResult.parameters.getOrElse(objectWithMethodDef.parameters))
+    }
   }
 
   def unwrapContextTransformation[T](value: Any): T = (value match {
@@ -344,15 +349,15 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                                  outputVar: Option[String],
                                                  nodeDefinition: ObjectWithMethodDef,
                                                  defaultCtxForCreatedObject: Option[T] => ValidatedNel[ProcessCompilationError, ValidationContext])
-                                                (implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[T] = {
+                                                (implicit metaData: MetaData, nodeId: NodeId): NodeCompilationResult[(T, List[evaluatedparam.Parameter])] = {
     val generic = validateGenericTransformer(ctx, parameters, branchParameters, outputVar)
     if (generic.isDefinedAt(nodeDefinition)) {
       val afterValidation = generic(nodeDefinition).map {
-        case TransformationResultForImplementationInvocation(TransformationResult(Nil, computedParameters, outputContext, finalState), nodeParameters) =>
-          val (typingInfo, validProcessObject) = createProcessObject(nodeDefinition, nodeParameters,
+        case TransformationResult(Nil, computedParameters, outputContext, finalState, nodeParameters) =>
+          val (typingInfo, validProcessObject) = createProcessObject[T](nodeDefinition, nodeParameters,
             branchParameters, outputVar, ctx, Some(computedParameters), Seq(FinalStateValue(finalState)))
-          (typingInfo, Some(computedParameters), outputContext, validProcessObject)
-        case TransformationResultForImplementationInvocation(TransformationResult(h :: t, computedParameters, outputContext, _), _) =>
+          (typingInfo, Some(computedParameters), outputContext, validProcessObject.map((_, nodeParameters)))
+        case TransformationResult(h :: t, computedParameters, outputContext, _, _) =>
           //TODO: typing info here??
           (Map.empty[String, ExpressionTypingInfo], Some(computedParameters), outputContext, Invalid(NonEmptyList(h, t)))
       }
@@ -363,7 +368,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
       val nextCtx = validProcessObject.fold(_ => defaultCtxForCreatedObject(None), cNode =>
         contextAfterNode(cNode, ctx, (c: T) => defaultCtxForCreatedObject(Some(c)))
       )
-      val unwrappedProcessObject = validProcessObject.map(unwrapContextTransformation[T](_))
+      val unwrappedProcessObject = validProcessObject.map(unwrapContextTransformation[T](_)).map((_, parameters))
       NodeCompilationResult(typingInfo, None, nextCtx, unwrappedProcessObject)
     }
   }
@@ -435,7 +440,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                             branchParameters: List[BranchParameters],
                                             outputVar: Option[String])
                                            (implicit metaData: MetaData, nodeId: NodeId):
-  PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResultForImplementationInvocation]] = {
+  PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
       nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.left.get)
