@@ -32,19 +32,18 @@ object ProcessingTypeData {
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
     val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
+    import net.ceedubs.ficus.Ficus._
+    import pl.touk.nussknacker.engine.util.config.FicusReaders._
+    val additionalProperties =
+      deploymentManagerProvider.additionalPropertiesConfig(managerConfig) ++ modelData.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
+
     ProcessingTypeData(
       manager,
       modelData,
       deploymentManagerProvider.typeSpecificInitialData(managerConfig),
-      prepareAdditionalPropertiesConfig(deploymentManagerProvider, modelData),
+      additionalProperties,
       queryableClient,
       deploymentManagerProvider.supportsSignals)
-  }
-
-  private def prepareAdditionalPropertiesConfig(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData): Map[String, AdditionalPropertyConfig] = {
-    import net.ceedubs.ficus.Ficus._
-    import pl.touk.nussknacker.engine.util.config.FicusReaders._
-    deploymentManagerProvider.additionalPropertiesConfig ++ modelData.processConfig.getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
   }
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, processTypeConfig: ProcessingTypeConfig)

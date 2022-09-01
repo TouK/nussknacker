@@ -1,14 +1,12 @@
 package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ParameterConfig}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
-import pl.touk.nussknacker.engine.api.generics
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, generics}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
@@ -41,6 +39,7 @@ object UIProcessObjectsFactory {
                               subprocessesDetails: Set[SubprocessDetails],
                               isSubprocess: Boolean,
                               processCategoryService: ProcessCategoryService,
+                              additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               processingType: String): UIProcessObjects = {
     val processConfig = modelDataForType.processConfig
 
@@ -62,9 +61,8 @@ object UIProcessObjectsFactory {
 
     val componentsGroupMapping = ComponentsGroupMappingConfigExtractor.extract(processConfig)
 
-    val additionalPropertiesConfig = processConfig
-      .getOrElse[Map[String, AdditionalPropertyConfig]]("additionalPropertiesConfig", Map.empty)
-      .filter(_ => !isSubprocess) // fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
+    val additionalPropertiesConfigForUi = additionalPropertiesConfig
+      .filter(_ => !isSubprocess)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
       .mapValues(createUIAdditionalPropertyConfig)
 
     val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
@@ -83,7 +81,7 @@ object UIProcessObjectsFactory {
       ),
       processDefinition = uiProcessDefinition,
       componentsConfig = finalComponentsConfig,
-      additionalPropertiesConfig = additionalPropertiesConfig,
+      additionalPropertiesConfig = additionalPropertiesConfigForUi,
       edgesForNodes = ComponentDefinitionPreparer.prepareEdgeTypes(
         processDefinition = chosenProcessDefinition,
         isSubprocess = isSubprocess,

@@ -6,7 +6,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
@@ -21,7 +20,9 @@ import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
@@ -38,7 +39,7 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
     = RequestResponseDeploymentStrategy(config)
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = ???
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = RequestResponseOpenApiSettings.additionalPropertiesConfig
 }
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
@@ -50,7 +51,7 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
   = new StreamingDeploymentStrategy
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map.empty
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 }
 
 

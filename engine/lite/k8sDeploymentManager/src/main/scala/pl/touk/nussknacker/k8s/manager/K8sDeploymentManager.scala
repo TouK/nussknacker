@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -60,25 +61,25 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
-    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
-    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
-    config.getString("mode") match {
-      case "streaming" => steamingInitialMetData
-      case "request-response" => new TypeSpecificInitialData {
-        override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = {
-          RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-        }
-      }
-      case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
-    }
-  }
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(_ => steamingInitialMetData, config => (scenarioName: ProcessName, _: String) => {
+    RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+  })
 
-  override def additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = ???
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(_ => Map.empty, _ => RequestResponseOpenApiSettings.additionalPropertiesConfig)
 
   override def supportsSignals: Boolean = false
 
   override def name: String = "lite-k8s"
+
+  private def forMode[T](config: Config)(streaming: Config => T, requestResponse: Config => T): T = {
+    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
+    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
+    config.getString("mode") match {
+      case "streaming" => streaming(config)
+      case "request-response" => requestResponse(config)
+      case other => throw new IllegalArgumentException(s"Unsupported mode: $other")
+    }
+  }
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
