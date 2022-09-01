@@ -50,8 +50,9 @@ At runtime Nussknacker determines the schema version of a message value and key 
 # Configuration
 
 ## Common part
-The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key.  
-Both streaming Engines (Lite and Flink) share some of the common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at) 
+The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](/docs/installation_configuration_guide/#configuration-areas)
+
+Both streaming Engines (Lite and Flink) share some of the common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
 
 ### Kafka connection configuration
 
@@ -96,7 +97,7 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 ```
 
 
-Following properties can be configured (please look at correct engine page : [Streaming-Lite](../installation_configuration_guide/model/Lite#exception-handling) or [Streaming-Flink](../installation_configuration_guide/model/Flink#configuring-exception-handling), 
+Following properties can be configured (please look at correct engine page : [Streaming-Lite](/docs/installation_configuration_guide/model/Lite#exception-handling) or [Streaming-Flink](/docs/installation_configuration_guide/model/Flink#configuring-exception-handling), 
 to see where they should be set):
 
 | Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |
