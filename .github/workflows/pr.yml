@@ -70,11 +70,11 @@ jobs:
       # We can't just use conditional jobs mechanism ('if' directive) because 'dockerTest' job depends on this one
       shouldPerformBackendBuild: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-#      - name: Cancel previous runs
-#        if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
       - uses: olafurpg/setup-scala@v10
@@ -113,11 +113,11 @@ jobs:
     env:
       NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - name: Cache npm
         id: cache-npm
@@ -162,11 +162,11 @@ jobs:
     needs: [ build, setup ]
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:
@@ -213,11 +213,11 @@ jobs:
     needs: [ build, setup ]
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:
@@ -246,11 +246,11 @@ jobs:
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     runs-on: ubuntu-latest
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:
@@ -288,11 +288,11 @@ jobs:
     needs: [ build, setup ]
     if: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v11
         with:
@@ -338,11 +338,11 @@ jobs:
       # We can't just use conditional jobs mechanism ('if' directive) because 'publish' job depends on this one.
       shouldPerformFrontendTests: ${{ needs.setup.outputs.fe_changes_count > 0 }}
     steps:
-#      - name: Cancel previous runs
-#        if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
       - name: Cache npm
@@ -390,11 +390,11 @@ jobs:
       shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - name: Cache npm
         id: cache-npm
@@ -560,11 +560,11 @@ jobs:
       NUSSKNACKER_VERSION: ${{ needs.setup.outputs.nk_snapshot_version }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
     steps:
-#      - name: Cancel previous runs
-#        if: github.event_name != 'push'
-#        uses: styfle/cancel-workflow-action@0.8.0
-#        with:
-#          access_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cancel previous runs
+        if: github.event_name != 'push'
+        uses: styfle/cancel-workflow-action@0.8.0
+        with:
+          access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
       - uses: olafurpg/setup-scala@v10
         with:

@@ -26,6 +26,10 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
     val env = createEnv
     val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
+
+    env.getCheckpointConfig.setCheckpointInterval(1000)
+    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(500)
+
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
 

@@ -34,8 +34,6 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
         .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
 
-      assert(env.getCheckpointConfig.getCheckpointInterval <= 3000)
-
       MockService.clear()
       SinkForStrings.clear()
       SinkForInts.clear()

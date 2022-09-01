@@ -86,7 +86,6 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
   }
 
   override def execute(streamGraph: StreamGraph): JobExecutionResult = {
-
     val jobGraph: JobGraph = streamGraph.getJobGraph
     logger.debug("Running job on local embedded Flink flinkMiniCluster cluster")
 
