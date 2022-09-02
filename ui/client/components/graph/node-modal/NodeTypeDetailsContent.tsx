@@ -3,6 +3,7 @@ import React, {SetStateAction, useCallback, useEffect, useMemo} from "react"
 import {useDispatch, useSelector} from "react-redux"
 import {getProcessDefinitionData} from "../../../reducers/selectors/settings"
 import {
+  getDynamicOutputParameterDefinitions,
   getDynamicParameterDefinitions,
   getFindAvailableBranchVariables,
   getFindAvailableVariables,
@@ -55,6 +56,7 @@ export function NodeTypeDetailsContent({
   const processDefinitionData = useSelector(getProcessDefinitionData)
   const findAvailableVariables = useSelector(getFindAvailableVariables)
   const getParameterDefinitions = useSelector(getDynamicParameterDefinitions)
+  const getOutputParameterDefinitions = useSelector(getDynamicOutputParameterDefinitions)
   const getBranchVariableTypes = useSelector(getFindAvailableBranchVariables)
   const processId = useSelector(getProcessId)
   const processProperties = useSelector(getProcessProperties)
@@ -83,6 +85,11 @@ export function NodeTypeDetailsContent({
   const parameterDefinitions = useMemo(
     () => getParameterDefinitions(node),
     [getParameterDefinitions, node]
+  )
+
+  const outputParameterDefinitions = useMemo(
+      () => getOutputParameterDefinitions(node),
+      [getOutputParameterDefinitions, node]
   )
 
   const adjustNode = useCallback((node: NodeType) => {
@@ -239,6 +246,7 @@ export function NodeTypeDetailsContent({
           isEditMode={isEditMode}
           node={node}
           parameterDefinitions={parameterDefinitions}
+          outputParameterDefinitions={outputParameterDefinitions}
           processDefinitionData={processDefinitionData}
           renderFieldLabel={renderFieldLabel}
           setProperty={setProperty}

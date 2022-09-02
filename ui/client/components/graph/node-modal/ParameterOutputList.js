@@ -21,9 +21,8 @@ export default function ParameterOutputList({
   setProperty,
 }) {
   const nodeDefinitionParameters = _.get(editedNode?.ref, paramsFieldName, [])
-
-  return nodeDefinitionParameters.length === 0 ? null : (
-    <div className="node-row" key="outputs">
+  return nodeDefinitionParameters && nodeDefinitionParameters.length === 0 ? null : (
+    <div className="node-row" key="outputParameters">
       <div className="node-label" title="Fragment outputs names">Outputs names:</div>
       <div className="node-value">
         <div className="fieldsControl">
