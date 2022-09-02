@@ -31,10 +31,10 @@ package object definition {
                                                                signalsWithTransformers: Map[String, UIObjectDefinition],
                                                                globalVariables: Map[String, UIObjectDefinition],
                                                                typesInformation: Set[UIClazzDefinition],
-                                                               subprocessInputs: Map[String, UIObjectDefinition]) {
+                                                               subprocessInputs: Map[String, UIFragmentObjectDefinition]) {
     // skipping exceptionHandlerFactory
     val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
-      customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs
+      customStreamTransformers ++ signalsWithTransformers ++ globalVariables ++ subprocessInputs.mapValues(_.toUIObjectDefinition)
   }
 
   @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, UIMethodInfo], staticMethods: Map[String, UIMethodInfo])
@@ -43,7 +43,7 @@ package object definition {
 
   @JsonCodec(encodeOnly = true) case class UIBasicParameter(name: String, refClazz: TypingResult)
 
-  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean, group: Option[String]) {
+  @JsonCodec(encodeOnly = true) case class UIParameter(name: String, typ: TypingResult, editor: ParameterEditor, validators: List[ParameterValidator], defaultValue: String, additionalVariables: Map[String, TypingResult], variablesToHide: Set[String], branchParam: Boolean) {
 
     def isOptional: Boolean = !validators.contains(MandatoryParameterValidator)
 
@@ -56,6 +56,14 @@ package object definition {
 
     def hasNoReturn: Boolean = returnType.isEmpty
 
+  }
+
+  @JsonCodec(encodeOnly = true) case class UIFragmentObjectDefinition(parameters: List[UIParameter],
+                                                                      outputParameters: List[UIParameter],
+                                                                      returnType: Option[TypingResult],
+                                                                      categories: List[String],
+                                                                      componentConfig: SingleComponentConfig) {
+    def toUIObjectDefinition: UIObjectDefinition = UIObjectDefinition(parameters, returnType, categories, componentConfig)
   }
 
   @JsonCodec case class NodeTypeId(`type`: String, id: Option[String] = None)

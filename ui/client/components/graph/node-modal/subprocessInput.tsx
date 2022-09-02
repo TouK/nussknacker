@@ -16,6 +16,7 @@ export function SubprocessInput({
   isEditMode,
   node,
   parameterDefinitions,
+  outputParameterDefinitions,
   processDefinitionData,
   renderFieldLabel,
   setProperty,
@@ -27,6 +28,7 @@ export function SubprocessInput({
   isEditMode?: boolean,
   node: NodeType,
   parameterDefinitions: UIParameter[],
+  outputParameterDefinitions: UIParameter[],
   processDefinitionData?: ProcessDefinitionData,
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
@@ -92,7 +94,7 @@ export function SubprocessInput({
           setNodeState={setNodeState}
           editedNode={node}
           savedNode={node}
-          parameterDefinitions={parameterDefinitions}
+          parameterDefinitions={outputParameterDefinitions}
           showSwitch={showSwitch}
           findAvailableVariables={findAvailableVariables}
           fieldErrors={fieldErrors}

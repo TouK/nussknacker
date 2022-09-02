@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -54,7 +54,7 @@ object UIProcessObjectsFactory {
 
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
 
-    val subprocessesComponentsConfig = subprocessInputs.mapValues(_.componentConfig)
+    val subprocessesComponentsConfig = subprocessInputs.mapValues(_.objectDefinition.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(subprocessesComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
@@ -113,40 +113,43 @@ object UIProcessObjectsFactory {
 
   private def fetchSubprocessInputs(subprocessesDetails: Set[SubprocessDetails],
                                     classLoader: ClassLoader,
-                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, ObjectDefinition] = {
+                                    fixedComponentsConfig: Map[String, SingleComponentConfig]): Map[String, FragmentObjectDefinition] = {
     val subprocessInputs = subprocessesDetails.collect {
       case fragment@SubprocessDetails(CanonicalProcess(MetaData(id, FragmentSpecificData(docsUrl), _, _), FlatNode(SubprocessInputDefinition(_, parameters, _)) :: _, _), category) =>
         val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
 
-        //Figure outputs parameter
-        val outputParameters = fragment.canonical.nodes.flatMap {
-          case canonicalnode.SplitNode(_, nextParts) => nextParts.flatten
+        def mapOutputs(nodes: List[CanonicalNode]): List[CanonicalNode] = nodes.flatMap {
+          case canonicalnode.SplitNode(_, nextParts) => mapOutputs(nextParts.flatten)
           case node => List(node)
-        }.collect{ case FlatNode(SubprocessOutputDefinition(_, name, fields, _)) if fields.nonEmpty => //when fragment doesn't contain params then output/result doesn't exist in context
+        }
+
+        //Figure outputs parameter
+        val outputParameters = mapOutputs(fragment.canonical.nodes).collect {
+          case FlatNode(SubprocessOutputDefinition(_, name, fields, _)) if fields.nonEmpty => //when fragment doesn't contain params then output/result doesn't exist in context
           extractSubprocessOutputParam(name)
         }
 
-        val allParameters = typedParameters ++ outputParameters
+        val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
 
-        (id, new ObjectDefinition(allParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config))
+        (id, FragmentObjectDefinition(objectDefinition, outputParameters))
     }.toMap
     subprocessInputs
   }
+
 
   private def extractSubprocessOutputParam(name: String) = Parameter(
     name = name,
     typ = Typed.apply[String],
     validators = List(MandatoryParameterValidator, NotBlankParameterValidator),
-    editor = None,
+    editor = Some(RawParameterEditor),
     defaultValue = None,
     additionalVariables = Map.empty,
     variablesToHide = Set.empty,
     branchParam = false,
     isLazyParameter = false,
     scalaOptionParameter = false,
-    javaOptionalParameter = false,
-    group = Some(ParameterGroup.Output)
+    javaOptionalParameter = false
   )
 
   private def extractSubprocessParam(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
@@ -172,25 +175,39 @@ object UIProcessObjectsFactory {
     )
   }
 
+  private case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[Parameter])
+
   def createUIObjectDefinition(objectDefinition: ObjectDefinition, processCategoryService: ProcessCategoryService): UIObjectDefinition = {
     UIObjectDefinition(
-      parameters = objectDefinition.parameters.map(param => createUIParameter(param)),
+      parameters = objectDefinition.parameters.map(createUIParameter),
       returnType = if (objectDefinition.hasNoReturn) None else Some(objectDefinition.returnType),
       categories = objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       componentConfig = objectDefinition.componentConfig
     )
   }
 
+  def createUIFragmentObjectDefinition(fragmentObjectDefinition: FragmentObjectDefinition, processCategoryService: ProcessCategoryService): UIFragmentObjectDefinition = {
+    UIFragmentObjectDefinition(
+      parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
+      outputParameters = fragmentObjectDefinition.outputsDefinition.map(createUIParameter),
+      returnType = if (fragmentObjectDefinition.objectDefinition.hasNoReturn) None else Some(fragmentObjectDefinition.objectDefinition.returnType),
+      categories = fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
+      componentConfig = fragmentObjectDefinition.objectDefinition.componentConfig
+    )
+  }
+
   def createUIProcessDefinition(processDefinition: ProcessDefinition[ObjectDefinition],
-                                subprocessInputs: Map[String, ObjectDefinition],
+                                subprocessInputs: Map[String, FragmentObjectDefinition],
                                 types: Set[UIClazzDefinition],
                                 processCategoryService: ProcessCategoryService): UIProcessDefinition = {
     def createUIObjectDef(objDef: ObjectDefinition) = createUIObjectDefinition(objDef, processCategoryService)
+    def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) = createUIFragmentObjectDefinition(objDef, processCategoryService)
+
     val uiProcessDefinition = UIProcessDefinition(
       services = processDefinition.services.mapValues(createUIObjectDef),
       sourceFactories = processDefinition.sourceFactories.mapValues(createUIObjectDef),
       sinkFactories = processDefinition.sinkFactories.mapValues(createUIObjectDef),
-      subprocessInputs = subprocessInputs.mapValues(createUIObjectDef),
+      subprocessInputs = subprocessInputs.mapValues(createUIFragmentObjectDef),
       customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => createUIObjectDef(e._1)),
       signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => createUIObjectDef(e._1)),
       globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(createUIObjectDef),
@@ -201,7 +218,7 @@ object UIProcessObjectsFactory {
 
   def createUIParameter(parameter: Parameter): UIParameter = {
     UIParameter(name = parameter.name, typ = parameter.typ, editor = parameter.editor.getOrElse(RawParameterEditor), validators = parameter.validators, defaultValue = parameter.defaultValue.getOrElse(""),
-      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult), variablesToHide = parameter.variablesToHide, branchParam = parameter.branchParam, group = parameter.group)
+      additionalVariables = parameter.additionalVariables.mapValuesNow(_.typingResult), variablesToHide = parameter.variablesToHide, branchParam = parameter.branchParam)
   }
 
   def createUIAdditionalPropertyConfig(config: AdditionalPropertyConfig): UiAdditionalPropertyConfig = {
