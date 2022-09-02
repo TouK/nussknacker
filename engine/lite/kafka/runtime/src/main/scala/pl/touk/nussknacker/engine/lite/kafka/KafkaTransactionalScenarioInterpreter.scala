@@ -113,6 +113,6 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
     new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, interpreter, sourceMetrics)
   }
 
-  override def routes(): Option[Route] = None
+  override def routes: Option[Route] = None
 }
 

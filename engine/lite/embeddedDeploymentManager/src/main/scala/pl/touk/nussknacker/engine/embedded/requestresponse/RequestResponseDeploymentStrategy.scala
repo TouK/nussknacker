@@ -4,18 +4,22 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.Materializer
+import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.JobData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute, SingleScenarioRoute}
+import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute, UrlUtils}
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
@@ -34,6 +38,17 @@ object RequestResponseDeploymentStrategy {
     new RequestResponseDeploymentStrategy(config.as[HttpConfig]("http"), config.as[RequestResponseConfig]("request-response"))
   }
 
+  def slugForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
+    case RequestResponseMetaData(slug) => Valid(slug.getOrElse(defaultSlug(ProcessName(metaData.id))))
+    case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
+  }
+
+  // should it be compatible with k8s version?
+  def determineSlug(scenarioName: ProcessName, metaData: RequestResponseMetaData): String =
+    metaData.slug.getOrElse(defaultSlug(scenarioName))
+
+  def defaultSlug(scenarioName: ProcessName): String = UrlUtils.sanitizeUrlSlug(scenarioName.value)
+
 }
 
 class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
@@ -41,7 +56,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val pathToScenarioRoute = TrieMap[String, SingleScenarioRoute]()
+  private val slugToScenarioRoute = TrieMap[String, ScenarioRoute]()
 
   private var server: ServerBinding = _
 
@@ -49,7 +64,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
     super.open(modelData, contextPreparer)
     logger.info(s"Serving request-response on ${httpConfig.port}")
 
-    val route = new ScenarioRoute(pathToScenarioRoute)
+    val route = new ScenarioDispatcherRoute(slugToScenarioRoute)
 
     implicit val materializer: Materializer = Materializer(as)
     server = Await.result(
@@ -70,13 +85,13 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
 
     val interpreter = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-    val interpreterWithPath = ScenarioRoute.pathForScenario(jobData.metaData).product(interpreter)
-    interpreterWithPath.foreach { case (path, interpreter) =>
-      pathToScenarioRoute += (path -> new SingleScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config.definitionMetadata, jobData.processVersion.processName, path))
+    val interpreterWithSlug = slugForScenario(jobData.metaData).product(interpreter)
+    interpreterWithSlug.foreach { case (slug, interpreter) =>
+      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config.definitionMetadata, jobData.processVersion.processName, ScenarioDispatcherRoute.invocationUrl(slug)))
       interpreter.open()
     }
-    interpreterWithPath
-      .map { case (path, deployment) => new RequestResponseDeployment(path, deployment) }
+    interpreterWithSlug
+      .map { case (slug, deployment) => new RequestResponseDeployment(slug, deployment) }
       .fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
   }
 
@@ -87,7 +102,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestR
     override def status(): StateStatus = SimpleStateStatus.Running
 
     override def close(): Unit = {
-      pathToScenarioRoute.remove(path)
+      slugToScenarioRoute.remove(path)
       interpreter.close()
     }
   }

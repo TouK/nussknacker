@@ -60,8 +60,8 @@ object NuRuntimeApp extends App with LazyLogging {
     val httpServer = Http().newServerAt(interface = httpConfig.interface, port = httpConfig.port)
 
     val runFuture = scenarioInterpreter.run()
-    val healthCheckRoutes = healthCheckProvider.routes()
-    val routes = Directives.concat(scenarioInterpreter.routes().toList ::: healthCheckRoutes :: Nil: _*)
+    val healthCheckRoutes = healthCheckProvider.routes
+    val routes = Directives.concat(scenarioInterpreter.routes.toList ::: healthCheckRoutes :: Nil: _*)
 
     Runtime.getRuntime.addShutdownHook(new Thread() {
       override def run(): Unit = {

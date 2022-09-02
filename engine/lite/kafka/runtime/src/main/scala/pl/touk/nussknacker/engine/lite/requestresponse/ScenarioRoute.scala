@@ -1,92 +1,70 @@
 package pl.touk.nussknacker.engine.lite.requestresponse
 
 import akka.event.Logging
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.MediaTypes.`application/json`
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
-import akka.http.scaladsl.server.{Directive0, Directive1, Directives, Route}
-import akka.stream.Materializer
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{EitherT, NonEmptyList, Validated}
+import akka.http.scaladsl.server.{Directive0, Directives, Route}
+import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.Json
-import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
+import io.circe.Encoder
+import io.circe.generic.JsonCodec
+import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.{Context, MetaData, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
-import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
-import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Try
+class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: OpenApiDefinitionConfig, scenarioName: ProcessName, exposedPath: String) extends Directives with LazyLogging {
 
-class ScenarioRoute(singleScenarioRoutes: scala.collection.Map[String, SingleScenarioRoute]) extends Directives with LazyLogging {
-
-  protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
-
-  def route(implicit ec: ExecutionContext, mat: Materializer): Route =
-    path("scenario" / Segment) { scenarioPath =>
-      handle(scenarioPath)(_.invocationRoute)
-    } ~
-      path("scenario" / Segment / "definition") { scenarioPath =>
-        handle(scenarioPath)(_.definitionRoute)
+  val invocationRoute: Route = {
+    logDirective {
+      handler.invoke {
+        case Left(errors) => complete {
+          logErrors(scenarioName, errors)
+          HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
+        }
+        case Right(results) => complete {
+          HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
+        }
       }
-
-  private def handle(scenarioPath: String)(callback: SingleScenarioRoute => Route): Route = singleScenarioRoutes.get(scenarioPath) match {
-    case None => complete {
-      HttpResponse(status = StatusCodes.NotFound)
     }
-    case Some(processInterpreter) => callback(processInterpreter)
   }
 
-}
+  val definitionRoute: Route = {
+    val interpreter = handler.requestResponseInterpreter
+    val oApiJson = RequestResponseOpenApiGenerator
+      .generateOpenApi(List((exposedPath, interpreter)), interpreter.generateOpenApiInfoForScenario(), definitionConfig.server)
 
-object ScenarioRoute {
-
-  def pathForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
-    case RequestResponseMetaData(slug) => Valid(slug.getOrElse(metaData.id))
-    case _ => Invalid(NonEmptyList.of(FatalUnknownError(s"Wrong scenario metadata: ${metaData.typeSpecificData}")))
-  }
-
-}
-
-//this class handles parsing, displaying and invoking interpreter. This is the only place we interact with model, hence
-//only here we care about context classloaders
-class RequestResponseAkkaHttpHandler(val requestResponseInterpreter: InterpreterType) extends Directives {
-
-  val invoke: Directive1[Either[NonEmptyList[ErrorType], Json]] =
-    extractExecutionContext.flatMap { implicit ec =>
-      extractInput.map(invokeWithEncoding).flatMap(onSuccess(_))
+    get {
+      complete {
+        HttpResponse(status = StatusCodes.OK, entity = jsonStringToEntity(oApiJson))
+      }
     }
-
-  private val source = requestResponseInterpreter.source
-  private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
-  private val invocationMetrics = new InvocationMetrics(requestResponseInterpreter.context)
-
-  private val extractInput: Directive1[() => Any] = source match {
-    case a: RequestResponsePostSource[Any] =>
-      post & entity(as[Array[Byte]]).map(k => () => a.parse(k))
-    case a: RequestResponseGetSource[Any] =>
-      get & parameterMultiMap.map(k => () => a.parse(k))
   }
 
-  //TODO: refactor responseEncoder/source API
-  private def invokeWithEncoding(inputParse: () => Any)(implicit ec: ExecutionContext) = {
-    (for {
-      input <- tryInvoke(inputParse())
-      rawResult <- EitherT(invokeInterpreter(input))
-      encoderResult <- tryInvoke(encoder.toJsonResponse(input, rawResult))
-    } yield encoderResult).value
+  val combinedRoute: Route = {
+    path("definition") {
+      definitionRoute
+    } ~ {
+      pathEndOrSingleSlash {
+        invocationRoute
+      }
+    }
   }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext) = invocationMetrics.measureTime {
-    requestResponseInterpreter.invokeToOutput(input)
-  }.map(_.toEither)
+  protected def logDirective: Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
-  private def tryInvoke[T](value: =>T)(implicit ec: ExecutionContext): EitherT[Future, NonEmptyList[ErrorType], T] =
-    EitherT.fromEither[Future](Try(value).toEither.left.map(ex => NonEmptyList.one(
-      NuExceptionInfo(Some(NodeComponentInfo(requestResponseInterpreter.sourceId.value, None)), ex, Context("")))))
+  private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
+    logger.info(s"Failed to invoke: $scenarioName with errors: ${errors.map(_.throwable.getMessage)}")
+    errors.toList.foreach { error =>
+      logger.debug(s"Invocation failed $scenarioName, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
+    }
+  }
+
+  private def toEntity[T: Encoder](value: T): ResponseEntity = jsonStringToEntity(value.asJson.noSpacesSortKeys)
+
+  private def jsonStringToEntity(j: String): ResponseEntity = HttpEntity(contentType = `application/json`, string = j)
+
+  @JsonCodec case class NuError(nodeId: Option[String], message: Option[String])
 
 }

@@ -30,7 +30,10 @@ import scala.util.{Failure, Success, Try}
 
 class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = new TypeSpecificInitialData {
+    override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData =
+      RequestResponseMetaData(Some(RequestResponseDeploymentStrategy.defaultSlug(scenarioName)))
+  }
 
   override def name: String = "request-response-embedded"
 
@@ -91,7 +94,8 @@ class EmbeddedDeploymentManager(modelData: ModelData,
 
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    Future.successful(())
+    // TODO: it should be moved into CustomProcessValidator after refactor of it
+    Future.fromTry(EmbeddedLiteScenarioValidator.validate(canonicalProcess).toEither.toTry)
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {

@@ -19,7 +19,7 @@ class HealthCheckRoutesProvider(system: ActorSystem, scenarioInterpreter: Runnab
 
   private val management = AkkaManagement(system)
 
-  def routes(): Route = management.routes
+  def routes: Route = management.routes
 }
 
 class KafkaRuntimeRunningCheck(system: ActorSystem) extends (() => Future[Boolean]) with LazyLogging {
