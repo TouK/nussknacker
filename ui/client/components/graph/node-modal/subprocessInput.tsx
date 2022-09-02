@@ -91,7 +91,6 @@ export function SubprocessInput({
       />
       <ParameterOutputList
           processDefinitionData={processDefinitionData}
-          setNodeState={setNodeState}
           editedNode={node}
           savedNode={node}
           parameterDefinitions={outputParameterDefinitions}

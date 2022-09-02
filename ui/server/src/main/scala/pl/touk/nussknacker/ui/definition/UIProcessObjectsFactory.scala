@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.definition
 
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
-import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ComponentGroupName, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, Parameter, RawParameterEditor}
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
@@ -137,12 +137,11 @@ object UIProcessObjectsFactory {
     subprocessInputs
   }
 
-
   private def extractSubprocessOutputParam(name: String) = Parameter(
     name = name,
     typ = Typed.apply[String],
     validators = List(MandatoryParameterValidator, NotBlankParameterValidator),
-    editor = Some(RawParameterEditor),
+    editor = Some(StringParameterEditor),
     defaultValue = None,
     additionalVariables = Map.empty,
     variablesToHide = Set.empty,
