@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
+import org.apache.flink.streaming.api.environment.ExecutionCheckpointingOptions
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -27,8 +28,9 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
     val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
 
-    env.getCheckpointConfig.setCheckpointInterval(1000)
-    env.getCheckpointConfig.setMinPauseBetweenCheckpoints(500)
+    val config = new Configuration()
+    config.set(ExecutionCheckpointingOptions.ENABLE_CHECKPOINTS_AFTER_TASKS_FINISH, true)
+    env.configure(config)
 
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
