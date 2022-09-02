@@ -97,40 +97,41 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
   }
 
   private def compileEndingNode(ctx: ValidationContext, data: EndingNodeData)(implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.node.Node] = {
-    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T], expressionsTypingInfo: Map[String, ExpressionTypingInfo]) =
-      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, None)), validated)
+    def toCompilationResult[T](validated: ValidatedNel[ProcessCompilationError, T],
+                               expressionsTypingInfo: Map[String, ExpressionTypingInfo], parameters: Option[List[Parameter]]) =
+      CompilationResult(Map(nodeId.id -> NodeTypingInfo(ctx, expressionsTypingInfo, parameters)), validated)
 
     data match {
       case processor@Processor(id, _, disabled, _) =>
-        val NodeCompilationResult(typingInfo, _, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
-        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo)
+        val NodeCompilationResult(typingInfo, parameters, _, validatedServiceRef, _) = nodeCompiler.compileProcessor(processor, ctx)
+        toCompilationResult(validatedServiceRef.map(ref => compiledgraph.node.EndingProcessor(id, ref, disabled.contains(true))), typingInfo, parameters)
 
       case Sink(id, ref, _, disabled, _) =>
-        toCompilationResult(Valid(compiledgraph.node.Sink(id, ref.typ, disabled.contains(true))), Map.empty)
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, ref.typ, disabled.contains(true))), Map.empty, None)
 
       case CustomNode(id, _, nodeType, _, _) =>
-        toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty)
+        toCompilationResult(Valid(compiledgraph.node.EndingCustomNode(id, nodeType)), Map.empty, None)
 
       //probably this shouldn't occur - otherwise we'd have empty subprocess?
-      case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty)
+      case SubprocessInput(id, _, _, _, _) => toCompilationResult(Invalid(NonEmptyList.of(UnresolvedSubprocess(id))), Map.empty, None)
 
       case SubprocessOutputDefinition(id, outputName, List(), _) =>
         //TODO: should we validate it's process?
         //TODO: does it make sense to validate SubprocessOutput?
-        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty)
+        toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty, None)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
-        val NodeCompilationResult(typingInfo, _, ctxV, compiledFields, _) =
+        val NodeCompilationResult(typingInfo, parameters, ctxV, compiledFields, _) =
           nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
         CompilationResult.map2(
           fa = CompilationResult(ctxV),
-          fb = toCompilationResult(compiledFields, typingInfo)
+          fb = toCompilationResult(compiledFields, typingInfo, parameters)
         ) { (_, _) =>
           compiledgraph.node.Sink(id, outputName, isDisabled = false)
         }
 
       //TODO JOIN: a lot of additional validations needed here - e.g. that join with that name exists, that it
       //accepts this join, maybe we should also validate the graph is connected?
-      case BranchEndData(definition) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(definition)), Map.empty)
+      case BranchEndData(definition) => toCompilationResult(Valid(compiledgraph.node.BranchEnd(definition)), Map.empty, None)
     }
   }
 

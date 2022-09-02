@@ -11,8 +11,6 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.validationHelpers.MissingParamHandleGenericNodeTransformation
-import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.concurrent.Future
 
@@ -357,6 +355,30 @@ object validationHelpers {
 
     override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[ComponentUseCase])
 
+  }
+
+  object GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep extends CustomStreamTransformer with SingleInputGenericNodeTransformation[String] {
+    override type State = String
+
+    val defaultExtraParamValue = "extraParamValue"
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) =>
+        NextParameters(List(
+          Parameter("moreParams", Typed[Boolean]).copy(defaultValue = Some("true"))
+        ))
+      case TransformationStep(("moreParams", DefinedEagerParameter(true, _)) :: Nil, _) =>
+        NextParameters(List(
+          Parameter("extraParam", Typed[String]).copy(defaultValue = Some(s"'$defaultExtraParamValue'")))
+        )
+      case TransformationStep(("moreParams", _) :: ("extraParam", DefinedEagerParameter(extraParamValue: String, _)) :: Nil, _) =>
+        FinalResults(context, state = Some(extraParamValue))
+    }
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): String = finalState.get
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
   }
 
   object DynamicParameterJoinTransformer extends CustomStreamTransformer with JoinGenericNodeTransformation[AnyRef] {

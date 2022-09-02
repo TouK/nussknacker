@@ -31,7 +31,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
   object MyProcessConfigCreator extends EmptyProcessConfigCreator {
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "genericParameters" -> WithCategories(GenericParametersTransformer),
-      "genericJoin" -> WithCategories(DynamicParameterJoinTransformer)
+      "genericJoin" -> WithCategories(DynamicParameterJoinTransformer),
+      "twoStepsInOne" -> WithCategories(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
@@ -288,11 +289,32 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
     val result = validator.validate(process)
 
-    result.result shouldBe Invalid(NonEmptyList.of(RedundantParameters(Set("wrongOptionalParameter"), "optionalParameters")))
-
     val parameters = result.parametersInNodes("optionalParameters")
     parameters shouldBe List(
       Parameter.optional[CharSequence]("optionalParameter").copy(editor = new ParameterTypeEditorDeterminer(Typed[CharSequence]).determine(), defaultValue = Some(""))
     )
   }
+
+  test("should be possible to perform two steps of validation in one step using defaults as node parameters") {
+    val result = validator.validate(
+      processBase
+        .customNodeNoOutput("generic", "twoStepsInOne")
+        .emptySink("end", "dummySink"))
+
+    result.result shouldBe 'valid
+    val parameterNames = result.parametersInNodes("generic").map(_.name)
+    parameterNames shouldEqual List("moreParams", "extraParam")
+  }
+
+  test("should omit redundant parameters for generic transformations") {
+    val result = validator.validate(
+      processBase
+        .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''")
+        .emptySink("end", "dummySink"))
+
+    result.result shouldBe 'valid
+    val parameterNames = result.parametersInNodes("generic").map(_.name)
+    parameterNames shouldEqual List("moreParams", "extraParam")
+  }
+
 }
