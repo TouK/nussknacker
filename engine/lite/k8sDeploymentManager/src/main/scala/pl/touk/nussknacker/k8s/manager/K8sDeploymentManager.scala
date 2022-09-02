@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -57,17 +56,17 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
     K8sDeploymentManager(modelData.asInvokableModelData, config)
   }
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(_ => steamingInitialMetData, config => (scenarioName: ProcessName, _: String) => {
-    RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-  })
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(
+    _ => steamingInitialMetData,
+    config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+  )
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(_ => Map.empty, _ => RequestResponseOpenApiSettings.additionalPropertiesConfig)
-
-  override def supportsSignals: Boolean = false
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
+    _ => Map.empty,
+    _ => RequestResponseOpenApiSettings.additionalPropertiesConfig
+  )
 
   override def name: String = "lite-k8s"
 

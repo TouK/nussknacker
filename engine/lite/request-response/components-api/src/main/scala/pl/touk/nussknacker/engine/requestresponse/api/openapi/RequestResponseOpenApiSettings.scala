@@ -9,8 +9,10 @@ object RequestResponseOpenApiSettings {
   val InputSchemaProperty = "inputSchema"
   val OPEN_API_VERSION = "3.1.0"
 
-  val additionalPropertiesConfig = Map(
-    InputSchemaProperty -> AdditionalPropertyConfig(Some("{}"), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Input schema")),
-    OutputSchemaProperty -> AdditionalPropertyConfig(Some("{}"), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Output schema")),
+  private val emptySchema = "{}"
+
+  val additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map(
+    InputSchemaProperty -> AdditionalPropertyConfig(Some(emptySchema), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Input schema")),
+    OutputSchemaProperty -> AdditionalPropertyConfig(Some(emptySchema), Some(JsonParameterEditor), Some(List(MandatoryParameterValidator)), Some("Output schema")),
   )
 }

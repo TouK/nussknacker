@@ -55,14 +55,8 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = new DeploymentManagerStub
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   override def name: String = "stub"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
-
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
-
-  override def supportsSignals: Boolean = false
 
 }

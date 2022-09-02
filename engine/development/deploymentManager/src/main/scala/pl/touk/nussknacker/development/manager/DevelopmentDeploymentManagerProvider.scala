@@ -191,11 +191,7 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
-
-  override def supportsSignals: Boolean = false
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
     Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))

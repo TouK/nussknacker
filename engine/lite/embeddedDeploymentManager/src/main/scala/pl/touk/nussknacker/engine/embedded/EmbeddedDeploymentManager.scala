@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -51,7 +50,6 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
   = new StreamingDeploymentStrategy
 
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 }
 
 
@@ -69,11 +67,6 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
     strategy.open(modelData.asInvokableModelData, contextPreparer)
     new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy)
   }
-
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
-
-  override def supportsSignals: Boolean = false
 
   protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
 

@@ -18,13 +18,14 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
                               sttpBackend: SttpBackend[Future, Nothing, NothingT],
                               deploymentService: ProcessingTypeDeploymentService): DeploymentManager
 
-  def createQueryableClient(config: Config): Option[QueryableClient]
-
   def typeSpecificInitialData(config: Config): TypeSpecificInitialData
 
-  def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig]
+  def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 
-  def supportsSignals: Boolean
+  def supportsSignals: Boolean = false
+
+  def createQueryableClient(config: Config): Option[QueryableClient] = None
+
 }
 
 trait TypeSpecificInitialData {

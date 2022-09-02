@@ -70,14 +70,8 @@ class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     RequestResponseDeploymentManager(modelData, config)
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   override def name: String = "requestResponse"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
-
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
-
-  override def supportsSignals: Boolean = false
 
 }
