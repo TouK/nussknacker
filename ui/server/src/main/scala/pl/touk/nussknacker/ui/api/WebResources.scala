@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.ui.api
 
+import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
+
 import java.nio.file.Files
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
@@ -20,23 +22,23 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
     tempMainContentFile
   }
 
-  val route: Route =
-    pathPrefix("submodules") {
+  val route: Route = handleAssets("submodules") ~ handleAssets("static") ~ get {
+    //main.html instead of index.html to not interfere with flink's static resources...
+    getFromFile(mainContentFile) //return UI page by default to make links work
+  }
+
+  private def handleAssets(webSubfolder: String) = {
+    pathPrefix(webSubfolder) {
       get {
-        extractRequest { matched =>
-          logger.debug(s"Try to get submodules data:  ${matched.uri.path}.")
-          getFromResourceDirectory("web/submodules")
+        encodeResponse {
+          respondWithHeader(`Cache-Control`(List(CacheDirectives.public, CacheDirectives.`max-age`(0)))) {
+            extractRequest { matched =>
+              logger.debug(s"Try to get static data from $webSubfolder for:  ${matched.uri.path}.")
+              getFromResourceDirectory(s"web/$webSubfolder")
+            }
+          }
         }
       }
-    } ~ pathPrefix("static") {
-      get {
-        extractRequest { matched =>
-          logger.debug(s"Try to get static data:  ${matched.uri.path}.")
-          getFromResourceDirectory("web/static")
-        }
-      }
-    } ~ get {
-      //main.html instead of index.html to not interfere with flink's static resources...
-      getFromFile(mainContentFile) //return UI page by default to make links work
     }
+  }
 }
