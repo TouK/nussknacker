@@ -21,9 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 /**
-  * This service should be responsible for wrapping deploying and cancelling task in persistent context.
-  * The purpose of it is not to handle any other things from ManagementActor - see comments there
-  */
+ * This service should be responsible for wrapping deploying and cancelling task in persistent context.
+ * The purpose of it is not to handle any other things from ManagementActor - see comments there
+ */
 class DeploymentService(processRepository: FetchingProcessRepository[Future],
                         actionRepository: DbProcessActionRepository,
                         scenarioResolver: ScenarioResolver,
@@ -46,7 +46,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         implicit val userFetchingDataFromRepository: LoggedUser = NussknackerInternalUser
         processRepository.fetchProcesses[CanonicalProcess](Some(false), Some(false), isDeployed = Some(true), None, Some(Seq(processingType)))
       }
-      dataList <- Future.sequence(deployedProcesses.map { details =>
+      dataList <- Future.sequence(deployedProcesses.flatMap { details =>
         val lastDeployAction = details.lastDeployedAction.get
         // TODO: is it created correctly? how to not create all this instances from scratch for different usages of deployment (by process.id or full process details)
         val processVersion = ProcessVersion(lastDeployAction.processVersionId, ProcessName(details.name), details.processId, details.createdBy, details.modelVersion)
@@ -58,7 +58,12 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         }).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
         }
-        Future.fromTry(deployedScenarioDataTry)
+        deployedScenarioDataTry match {
+          case Failure(exception) =>
+            logger.error(s"Exception during resolving deployed scenario ${details.id}", exception)
+            None
+          case Success(value) => Some(Future.successful(value))
+        }
       })
     } yield dataList
   }
@@ -70,9 +75,9 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
                     deploymentManager: ProcessingType => DeploymentManager)
                    (implicit user: LoggedUser): Future[Future[ProcessActionEntityData]] = {
     for {
-        maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
-        process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
-        result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager(process.processingType))
+      maybeProcess <- processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processIdWithName.id)
+      process <- processDataExistOrFail(maybeProcess, processIdWithName.id)
+      result <- deployAndSaveProcess(process, savepointPath, deploymentComment, deploymentManager(process.processingType))
     } yield result
   }
 
@@ -138,8 +143,8 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
   private def toManagerUser(loggedUser: LoggedUser) = User(loggedUser.id, loggedUser.username)
 
   private def withDeploymentActionNotification(processIdWithName: ProcessIdWithName,
-                               actionName: String,
-                               deploymentComment: Option[DeploymentComment])(action: => Future[ProcessActionEntityData])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
+                                               actionName: String,
+                                               deploymentComment: Option[DeploymentComment])(action: => Future[ProcessActionEntityData])(implicit user: LoggedUser): Future[ProcessActionEntityData] = {
     implicit val listenerUser: ListenerUser = ListenerApiUser(user)
     val actionToRun = action
     actionToRun.onComplete {
