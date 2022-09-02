@@ -17,6 +17,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `helper-utils` to `default-helpers`, separated `MathUtils` from
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 * [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
+* [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.              
 
 ### Scenario API changes
 * [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
