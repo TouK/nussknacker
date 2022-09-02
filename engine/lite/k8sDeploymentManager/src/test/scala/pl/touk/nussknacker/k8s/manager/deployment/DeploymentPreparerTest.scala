@@ -4,7 +4,7 @@ import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.circe.syntax.EncoderOps
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
-import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, MetaData, ProcessVersion, RequestResponseMetaData}
+import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, MetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
@@ -27,8 +27,8 @@ class DeploymentPreparerTest extends AnyFunSuite {
 
   val nussknackerInstanceName = "foo-release"
 
-  val liteKafka: CanonicalProcess = CanonicalProcess(MetaData("scenario", LiteStreamMetaData()), List())
-  val requestResponse: CanonicalProcess = CanonicalProcess(MetaData("scenario", RequestResponseMetaData(None)), List())
+  val liteStreamMetaData: TypeSpecificData = LiteStreamMetaData()
+  val requestResponseMetaData: TypeSpecificData = RequestResponseMetaData(None)
 
   private val labels = Map(
     "nussknacker.io/scenarioName" -> "-e3b0c44298",
@@ -39,7 +39,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
 
   test("should prepare deployment when k8sDeploymentConfig is empty") {
     val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
-    val preparedDeployment = deploymentPreparer.prepare(processVersion, liteKafka, resources, 2)
+    val preparedDeployment = deploymentPreparer.prepare(processVersion, liteStreamMetaData, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -128,7 +128,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
     )
 
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, liteKafka, resources, 2)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, liteStreamMetaData, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -210,7 +210,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
         ).asJava))
     )
     val deploymentPreparer = new DeploymentPreparer(config)
-    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, liteKafka, resources, 2)
+    val preparedDeployment = deploymentPreparer.prepare(ProcessVersion.empty, liteStreamMetaData, resources, 2)
 
     preparedDeployment shouldBe Deployment(
       metadata = ObjectMeta(
@@ -266,9 +266,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
 
   test("should chose rolling update deployment for request-response scenario") {
     val deploymentPreparer = new DeploymentPreparer(K8sDeploymentManagerConfig())
-    val preparedDeployment = deploymentPreparer.prepare(processVersion, requestResponse, resources, 2)
+    val preparedDeployment = deploymentPreparer.prepare(processVersion, requestResponseMetaData, resources, 2)
 
-    preparedDeployment.spec.get.strategy shouldBe Some(Deployment.Strategy(rollingUpdate = Deployment.RollingUpdate()))
+    preparedDeployment.spec.get.strategy shouldBe Some(Deployment.Strategy(rollingUpdate = Deployment.RollingUpdate(maxUnavailable = Right("25%"), maxSurge = Right("25%"))))
   }
 
   test("should throw when configured more than one 'runtime' container") {
@@ -288,7 +288,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
 
     val deploymentPreparer = new DeploymentPreparer(config)
     assertThrows[IllegalStateException] {
-      deploymentPreparer.prepare(ProcessVersion.empty, liteKafka, resources, 2)
+      deploymentPreparer.prepare(ProcessVersion.empty, liteStreamMetaData, resources, 2)
     }
   }
 }
