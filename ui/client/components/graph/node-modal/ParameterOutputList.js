@@ -1,5 +1,5 @@
 import _ from "lodash"
-import React from "react"
+import React, {useCallback} from "react"
 import {ParameterExpressionField} from "./ParameterExpressionField";
 import {InputWithFocus} from "../../withFocus";
 import ParameterList from "./ParameterList";
@@ -11,7 +11,6 @@ export default function ParameterOutputList({
   processDefinitionData,
   parameterDefinitions,
   savedNode,
-  setNodeState,
   showSwitch,
   findAvailableVariables,
   fieldErrors,
@@ -20,6 +19,7 @@ export default function ParameterOutputList({
   renderFieldLabel,
   setProperty,
 }) {
+  const setNodeState = useCallback(newParams => setProperty("ref.outputParameters", newParams), [setProperty])
   const nodeDefinitionParameters = _.get(editedNode?.ref, paramsFieldName, [])
   return nodeDefinitionParameters && nodeDefinitionParameters.length === 0 ? null : (
     <div className="node-row" key="outputParameters">
