@@ -25,10 +25,10 @@ interface NodeDetailsProps extends WindowContentProps<WindowKind, { node: NodeTy
 }
 
 export function NodeDetails(props: NodeDetailsProps): JSX.Element {
-  const defaultProcess = useSelector(getProcessToDisplay)
+  const processFromGlobalStore = useSelector(getProcessToDisplay)
   const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
-  const {node, process = defaultProcess} = props.data.meta
+  const {node, process = processFromGlobalStore} = props.data.meta
   const [editedNode, setEditedNode] = useState<NodeType>(node)
   const [outputEdges, setOutputEdges] = useState(() => process.edges.filter(({from}) => from === node.id))
 
@@ -104,6 +104,11 @@ export function NodeDetails(props: NodeDetailsProps): JSX.Element {
     const HeaderTitle = () => <NodeDetailsModalHeader node={node}/>
     return {HeaderTitle}
   }, [node])
+
+  //no process? no nodes? no window contents! no errors for whole tree!
+  if (!processFromGlobalStore?.nodes) {
+    return null
+  }
 
   return (
     <WindowContent
