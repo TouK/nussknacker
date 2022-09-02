@@ -6,11 +6,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
@@ -20,7 +19,9 @@ import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.testmode.TestProcess
+import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
@@ -39,6 +40,8 @@ class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymen
 
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
     = RequestResponseDeploymentStrategy(config)
+
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = RequestResponseOpenApiSettings.additionalPropertiesConfig
 }
 
 class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
@@ -49,6 +52,7 @@ class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManag
 
   override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
   = new StreamingDeploymentStrategy
+
 }
 
 
@@ -66,11 +70,6 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
     strategy.open(modelData.asInvokableModelData, contextPreparer)
     new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy)
   }
-
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
-
-  override def supportsSignals: Boolean = false
 
   protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
 

@@ -6,15 +6,16 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{CirceUtil, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, ScenarioSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
@@ -23,7 +24,7 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
-import pl.touk.nussknacker.k8s.manager.deployment.{DeploymentPreparer, DividingParallelismK8sScalingOptionsDeterminer, FixedReplicasCountK8sScalingOptionsDeterminer, K8sScalingConfig, K8sScalingOptions, K8sScalingOptionsDeterminer, MountableResources}
+import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
@@ -45,8 +46,8 @@ import scala.util.Using
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
@@ -55,27 +56,29 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
     K8sDeploymentManager(modelData.asInvokableModelData, config)
   }
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(
+    _ => steamingInitialMetData,
+    config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+  )
+
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
+    _ => Map.empty,
+    _ => RequestResponseOpenApiSettings.additionalPropertiesConfig
+  )
+
+  override def name: String = "lite-k8s"
+
+  private def forMode[T](config: Config)(streaming: Config => T, requestResponse: Config => T): T = {
     // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
     //       and add scenarioType -> mode mapping with reasonable defaults to configuration
     config.getString("mode") match {
-      case "streaming" => steamingInitialMetData
-      case "request-response" => new TypeSpecificInitialData {
-        override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData = {
-          RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-        }
-      }
-      case other => throw new IllegalArgumentException(s"Unsupported mode: ${other}")
+      case "streaming" => streaming(config)
+      case "request-response" => requestResponse(config)
+      case other => throw new IllegalArgumentException(s"Unsupported mode: $other")
     }
   }
-
-  override def supportsSignals: Boolean = false
-
-  override def name: String = "lite-k8s"
 }
 
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
@@ -251,8 +254,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 object K8sDeploymentManager {
 
   import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
   import net.ceedubs.ficus.Ficus._
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1
 

@@ -5,6 +5,7 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
@@ -69,12 +70,8 @@ class RequestResponseDeploymentManagerProvider extends DeploymentManagerProvider
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     RequestResponseDeploymentManager(modelData, config)
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
-
   override def name: String = "requestResponse"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(RequestResponseMetaData(None))
-
-  override def supportsSignals: Boolean = false
 
 }

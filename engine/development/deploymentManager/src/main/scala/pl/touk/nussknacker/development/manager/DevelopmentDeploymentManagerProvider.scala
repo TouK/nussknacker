@@ -3,6 +3,7 @@ package pl.touk.nussknacker.development.manager
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -24,6 +25,7 @@ import scala.concurrent.{ExecutionContext, Future, Promise}
 import scala.util.{Failure, Success}
 
 class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentManager with LazyLogging {
+
   import SimpleStateStatus._
 
   //Use these "magic" description values to simulate deployment/validation failure
@@ -131,10 +133,10 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
           val processName = actionRequest.processVersion.processName
           val processState = memory.getOrElse(processName, createAndSaveProcessState(NotDeployed, actionRequest.processVersion))
 
-          if(customAction.allowedStateStatusNames.contains(processState.status.name)) {
+          if (customAction.allowedStateStatusNames.contains(processState.status.name)) {
             customActionStatusMapping
               .get(customAction)
-              .map{ status =>
+              .map { status =>
                 asyncChangeState(processName, status)
                 Right(CustomActionResult(actionRequest, s"Done ${actionRequest.name}"))
               }
@@ -149,7 +151,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
   override def close(): Unit = {}
 
   private def changeState(name: ProcessName, stateStatus: StateStatus): Unit =
-    memory.get(name).foreach{ processState =>
+    memory.get(name).foreach { processState =>
       val newProcessState = processState.withStateStatus(stateStatus)
       memory.update(name, newProcessState)
       logger.debug(s"Changed scenario $name state from ${processState.status.name} to ${stateStatus.name}.")
@@ -172,7 +174,7 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
       startTime = Some(System.currentTimeMillis()),
     )
 
-    memory.update(processVersion.processName,processState)
+    memory.update(processVersion.processName, processState)
     processState
   }
 
@@ -188,11 +190,11 @@ class DevelopmentDeploymentManagerProvider extends DeploymentManagerProvider {
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager =
     new DevelopmentDeploymentManager(actorSystem)
-  override def createQueryableClient(config: Config): Option[QueryableClient] = None
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData())
 
-  override def supportsSignals: Boolean = false
+  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] =
+    Map("deploymentManagerProperty" -> AdditionalPropertyConfig(None, None, None, None))
 
   override def name: String = "development-tests"
 
