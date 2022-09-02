@@ -28,9 +28,7 @@ class FlinkVerificationMain(val modelData: ModelData, val process: EspProcess, p
     val registrar = prepareRegistrar()
     registrar.register(env, process, processVersion, deploymentData, Option(TestRunId("dummy")))
 
-    val config = new Configuration()
-    config.set[java.lang.Boolean](ExecutionCheckpointingOptions.ENABLE_CHECKPOINTS_AFTER_TASKS_FINISH, true)
-    env.configure(config)
+    env.getCheckpointConfig.setCheckpointInterval(1000)
 
     execute(env, SavepointRestoreSettings.forPath(savepointPath, true))
   }
