@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.{KafkaConfigProperties, PatientScalaFutures}
 import org.scalatest.funsuite.FixtureAnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
@@ -191,7 +191,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   test("starts without error without kafka") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
 
-    val configWithFakeAddress = ConfigFactory.parseMap(Collections.singletonMap("kafka.kafkaProperties.\"bootstrap.servers\"", "not_exist.pl:9092"))
+    val configWithFakeAddress = ConfigFactory.parseMap(Collections.singletonMap(KafkaConfigProperties.bootstrapServersProperty(), "not_exist.pl:9092"))
     runScenarioWithoutErrors(fixture, scenario, configWithFakeAddress) {
       //TODO: figure out how to wait for starting thread pool?
       Thread.sleep(100)

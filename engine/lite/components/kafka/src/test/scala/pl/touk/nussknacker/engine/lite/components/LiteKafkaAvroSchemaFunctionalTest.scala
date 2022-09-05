@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.test.{KafkaConfigProperties, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -52,7 +52,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
     val config = DefaultKafkaConfig
       // we disable default kafka components to replace them by mocked
       .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
-      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
+      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
 
     val mockSchemaRegistryClient = new MockSchemaRegistryClient
     val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))

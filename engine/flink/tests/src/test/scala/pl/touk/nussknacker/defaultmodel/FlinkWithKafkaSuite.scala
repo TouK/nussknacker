@@ -29,7 +29,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.LoggingListener
-import pl.touk.nussknacker.test.WithConfig
+import pl.touk.nussknacker.test.{KafkaConfigProperties, WithConfig}
 
 abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with KafkaSpec with BeforeAndAfterAll with BeforeAndAfter with WithConfig with Matchers {
 
@@ -60,9 +60,9 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
   protected val avroAsJsonSerialization = false
 
   override lazy val config: Config = ConfigFactory.load()
-    .withValue("components.mockKafka.config.kafkaProperties.\"bootstrap.servers\"", fromAnyRef(kafkaServer.kafkaAddress))
-    .withValue("components.mockKafka.config.kafkaProperties.\"schema.registry.url\"", fromAnyRef("not_used"))
-    .withValue("components.mockKafka.config.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty("components.mockKafka.config"), fromAnyRef(kafkaServer.kafkaAddress))
+    .withValue(KafkaConfigProperties.property("components.mockKafka.config", "schema.registry.url"), fromAnyRef("not_used"))
+    .withValue(KafkaConfigProperties.property("auto.offset.reset", "schema.registry.url"), fromAnyRef("earliest"))
     .withValue("components.mockKafka.config.lowLevelComponentsEnabled", fromAnyRef(false))
     .withValue("components.kafka.disabled", fromAnyRef(true))
     .withValue("components.mockKafka.disabled", fromAnyRef(false))

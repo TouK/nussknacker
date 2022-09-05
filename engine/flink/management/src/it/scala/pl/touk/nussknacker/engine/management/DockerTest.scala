@@ -16,14 +16,14 @@ import org.testcontainers.containers.Network
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
-import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
+import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProperties}
 
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import java.util.Arrays.asList
 import scala.collection.JavaConverters._
 
-trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with ExtremelyPatientScalaFutures {
+trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with ExtremelyPatientScalaFutures {
   self: Suite =>
 
   private val network: Network = Network.newNetwork
@@ -42,15 +42,15 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
 
   protected val userToAct: User = User("testUser", "Test User")
 
-  private val kafka =  KafkaContainer().configure { self =>
+  private val kafka = KafkaContainer().configure { self =>
     self.setNetwork(network)
     self.setNetworkAliases(asList(kafkaNetworkAlias))
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
     List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
-     val clazz = getClass
-     val rezz = clazz.getResourceAsStream(s"/docker/$file")
+      val clazz = getClass
+      val rezz = clazz.getResourceAsStream(s"/docker/$file")
       val resource = IOUtils.toString(rezz)
       val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
       image.withFileFromString(file, withVersionReplaced)
@@ -72,8 +72,8 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
       command = "jobmanager" :: Nil,
       exposedPorts = FlinkJobManagerRestPort :: Nil,
       env = Map("SAVEPOINT_DIR_NAME" -> savepointDir.getFileName.toString,
-                "FLINK_PROPERTIES" -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
-                "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
+        "FLINK_PROPERTIES" -> s"state.savepoints.dir: ${savepointDir.toFile.toURI.toString}",
+        "TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Recover all persisted job graphs.*"))
     ).configure { self =>
       self.withNetwork(network)
@@ -107,13 +107,13 @@ trait DockerTest extends BeforeAndAfterAll with  ForAllTestContainer with Extrem
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
     .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
-    .withValue("modelConfig.kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef(dockerKafkaAddress))
-    .withValue("modelConfig.kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
+    .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
   //used for signals, etc.
   def configWithHostKafka: Config = config
-    .withValue("modelConfig.kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef(hostKafkaAddress))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
 
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)

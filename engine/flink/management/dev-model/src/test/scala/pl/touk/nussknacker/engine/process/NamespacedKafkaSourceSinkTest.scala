@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.{process, spel}
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with KafkaSpec with Matchers {
   private implicit val stringTypeInfo: GenericTypeInfo[String] = new GenericTypeInfo(classOf[String])
@@ -29,7 +30,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
   import spel.Implicits._
 
   override lazy val config = ConfigFactory.load()
-    .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef(kafkaServer.kafkaAddress))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
     .withValue("namespace", fromAnyRef(namespaceName))
 
   private val namespaceName: String = "ns"

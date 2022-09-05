@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
 
 import java.io.ByteArrayOutputStream
 
@@ -110,7 +110,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     val config = DefaultKafkaConfig
       // we disable default kafka components to replace them by mocked
       .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
-      .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("schema-registry:666"))
+      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
 
     val mockSchemaRegistryClient = new MockSchemaRegistryClient
     val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))

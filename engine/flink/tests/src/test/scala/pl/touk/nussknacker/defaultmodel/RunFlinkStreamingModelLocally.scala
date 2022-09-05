@@ -4,6 +4,7 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import pl.touk.nussknacker.engine.DeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.{DeploymentManagerProviderStub, LocalModelData}
+import pl.touk.nussknacker.test.KafkaConfigProperties
 import pl.touk.nussknacker.ui.util.LocalNussknackerWithSingleModel
 
 //Sample app to simplify local development.
@@ -11,8 +12,8 @@ object RunFlinkStreamingModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
     // TODO: Fix: Idea loads kafka lite component provider
-    .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("notused:1111"))
-    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:1111"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
+    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:1111"))
   val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)
 
   val managerConfig = ConfigFactory.empty()
