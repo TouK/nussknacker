@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
 
@@ -23,7 +24,7 @@ object LiteKafkaTestScenarioRunner {
   val DefaultKafkaConfig: Config =
     ConfigFactory
       .empty()
-      .withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
 
   def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
     new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)

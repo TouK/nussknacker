@@ -26,6 +26,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.util.Collections
 
@@ -36,8 +37,8 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   }
 
   private lazy val config = ConfigFactory.empty()
-    .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
-    .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:2222"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
+    .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 
   test("Should pass correct timestamp from test data") {

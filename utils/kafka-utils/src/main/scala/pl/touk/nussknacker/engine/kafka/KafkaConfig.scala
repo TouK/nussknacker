@@ -11,8 +11,7 @@ case class SchemaRegistryClientKafkaConfig(
                                             avroAsJsonSerialization: Option[Boolean]
                                           )
 
-case class KafkaConfig(kafkaAddress: String,
-                       kafkaProperties: Option[Map[String, String]],
+case class KafkaConfig(kafkaProperties: Option[Map[String, String]],
                        kafkaEspProperties: Option[Map[String, String]],
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
                        // Probably better place for this flag would be configParameters inside global parameters but
@@ -25,8 +24,8 @@ case class KafkaConfig(kafkaAddress: String,
                        // and all topics related to this config require both key and value schema definitions.
                        useStringForKey: Boolean = true,
                        schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
-                       avroAsJsonSerialization: Option[Boolean] = None
-                      ) {
+                       avroAsJsonSerialization: Option[Boolean] = None,
+                       kafkaAddress: Option[String] = None) {
 
   def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroAsJsonSerialization)
 

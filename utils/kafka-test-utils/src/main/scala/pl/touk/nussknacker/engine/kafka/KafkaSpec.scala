@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.Config
 import org.scalatest.{BeforeAndAfterAll, Suite}
-import pl.touk.nussknacker.test.{AvailablePortFinder, WithConfig}
+import pl.touk.nussknacker.test.{AvailablePortFinder, KafkaConfigProperties, WithConfig}
 
 trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
 
@@ -13,9 +13,9 @@ trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
 
   override protected def resolveConfig(config: Config): Config =
     super.resolveConfig(config)
-      .withValue("kafka.kafkaAddress", fromAnyRef(kafkaServer.kafkaAddress))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
       //For tests we want to read from the beginning...
-      .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
+      .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

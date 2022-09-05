@@ -6,13 +6,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.{contain, convertToAnyShouldWrapper}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 class LiteKafkaComponentProviderTest extends AnyFunSuite {
 
   test("should not add low level kafka components by default") {
     val provider = new LiteKafkaComponentProvider
     val config: Config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef("not_used"))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("not_used"))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
@@ -22,7 +23,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
   test("should add low level kafka components when enabled") {
     val provider = new LiteKafkaComponentProvider
     val config: Config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef("not_used"))
+      .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("not_used"))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))

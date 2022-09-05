@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
-import pl.touk.nussknacker.test.VeryPatientScalaFutures
+import pl.touk.nussknacker.test.{KafkaConfigProperties, VeryPatientScalaFutures}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
@@ -31,7 +31,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
   private val config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
-    .withValue("modelConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), ConfigValueFactory.fromAnyRef("kafka:1234"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
 
   it should "run scenario in test mode" in {

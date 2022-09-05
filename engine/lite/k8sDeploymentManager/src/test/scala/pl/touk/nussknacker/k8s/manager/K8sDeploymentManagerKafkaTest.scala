@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.k8s.manager.K8sPodsResourceQuotaChecker.ResourceQuotaExceededException
-import pl.touk.nussknacker.test.EitherValuesDetailedMessage
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 import skuber.Container.Port
 import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
@@ -355,13 +355,13 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   private val kafkaDeployConfig: Config = baseDeployConfig("streaming")
-    .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
-    .withValue("configExecutionOverrides.modelConfig.kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty("configExecutionOverrides.modelConfig.kafka"), fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
+    .withValue(KafkaConfigProperties.property("configExecutionOverrides.modelConfig.kafka", "schema.registry.url"), fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081"))
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
     //e.g. when we want to run Designer locally with some proxy?
-    .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("localhost:19092"))
+    .withValue(KafkaConfigProperties.property("auto.offset.reset"), fromAnyRef("earliest"))
     .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
-    .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)
 
   private def prepareManager(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig): K8sDeploymentManager = {
@@ -370,7 +370,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
   val defaultSchema = """{"type":"object","properties":{"message":{"type":"string"}}}"""
 
-  private def createKafkaFixture(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig,  schema: String = defaultSchema) = {
+  private def createKafkaFixture(modelData: LocalModelData = modelData, deployConfig: Config = kafkaDeployConfig, schema: String = defaultSchema) = {
     val seed = new Random().nextInt()
     val input = s"ping-$seed"
     val output = s"pong-$seed"
