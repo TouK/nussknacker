@@ -21,7 +21,7 @@ class ConfluentKafkaAvroDeserializer[T](kafkaConfig: KafkaConfig, schemaData: Op
   schemaRegistry = confluentSchemaRegistryClient.client
   useSpecificAvroReader = _useSpecificAvroReader
 
-  configure(kafkaConfig.definedKafkaProperties.asJava, _isKey)
+  configure(kafkaConfig.kafkaProperties.getOrElse(Map.empty).asJava, isKey)
 
   override def configure(configs: util.Map[String, _], _isKey: Boolean): Unit = {
     val deserializerConfig = new KafkaAvroDeserializerConfig(configs)

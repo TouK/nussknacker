@@ -30,7 +30,6 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |}""".stripMargin)
     val expectedConfig = KafkaConfig(Some(Map("auto.offset.reset" -> "latest")), None, None, kafkaAddress = Some("localhost:9092"))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
-    expectedConfig.definedKafkaProperties.get("bootstrap.servers") shouldBe Some("localhost:9092")
   }
 
   test("parse config with topicExistenceValidation") {
@@ -46,20 +45,5 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |}""".stripMargin)
     val expectedConfig = KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None, None, TopicsExistenceValidationConfig(enabled = true))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
-  }
-
-  test("should throw when missing 'bootstrap.servers' property") {
-    val typesafeConfig = ConfigFactory.parseString(
-      """kafka {
-        |  lowLevelComponentsEnabled: false
-        |  kafkaProperties {
-        |    "auto.offset.reset": latest
-        |  }
-        |}""".stripMargin)
-
-    the [IllegalArgumentException] thrownBy {
-      KafkaConfig.parseConfig(typesafeConfig)
-    } should have message "requirement failed: Missing 'bootstrap.servers' property in kafkaProperties"
-
   }
 }

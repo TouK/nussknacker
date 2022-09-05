@@ -27,13 +27,7 @@ case class KafkaConfig(kafkaProperties: Option[Map[String, String]],
                        avroAsJsonSerialization: Option[Boolean] = None,
                        kafkaAddress: Option[String] = None) {
 
-  // delete this method, make `kafkaProperties` required and use it instead, when `kafkaAddress` is removed
-  def definedKafkaProperties = kafkaAddress.map(bs => Map("bootstrap.servers" -> bs)).getOrElse(Map.empty) ++ kafkaProperties.getOrElse(Map.empty)
-
-  //is that check needed? Sometimes we do not need this property eg. to create SchemaRegistryClient
-  require(definedKafkaProperties.contains("bootstrap.servers"), "Missing 'bootstrap.servers' property in kafkaProperties")
-
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(definedKafkaProperties, schemaRegistryCacheConfig, avroAsJsonSerialization)
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroAsJsonSerialization)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 
