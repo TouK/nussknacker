@@ -37,7 +37,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   }
 
   private lazy val config = ConfigFactory.empty()
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("components.mockKafka.config"), fromAnyRef("notused:1111"))
+    .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef("notused:1111"))
     .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("notused:2222"))
     .withValue("kafka.avroKryoGenericRecordSchemaIdSerialization", fromAnyRef(false))
 

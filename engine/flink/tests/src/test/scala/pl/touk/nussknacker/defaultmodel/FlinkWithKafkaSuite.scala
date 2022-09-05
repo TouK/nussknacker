@@ -62,7 +62,7 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
   override lazy val config: Config = ConfigFactory.load()
     .withValue(KafkaConfigProperties.bootstrapServersProperty("components.mockKafka.config"), fromAnyRef(kafkaServer.kafkaAddress))
     .withValue(KafkaConfigProperties.property("components.mockKafka.config", "schema.registry.url"), fromAnyRef("not_used"))
-    .withValue(KafkaConfigProperties.property("auto.offset.reset", "schema.registry.url"), fromAnyRef("earliest"))
+    .withValue(KafkaConfigProperties.property("components.mockKafka.config", "auto.offset.reset"), fromAnyRef("earliest"))
     .withValue("components.mockKafka.config.lowLevelComponentsEnabled", fromAnyRef(false))
     .withValue("components.kafka.disabled", fromAnyRef(true))
     .withValue("components.mockKafka.disabled", fromAnyRef(false))
