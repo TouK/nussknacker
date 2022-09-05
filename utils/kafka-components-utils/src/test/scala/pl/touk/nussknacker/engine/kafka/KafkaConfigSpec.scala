@@ -15,8 +15,22 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |    "auto.offset.reset": latest
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"), None, None)
+    val expectedConfig = KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None)
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
+  }
+
+  test("parse legacy config") {
+    val typesafeConfig = ConfigFactory.parseString(
+      """kafka {
+        |  lowLevelComponentsEnabled: false
+        |  kafkaAddress: "localhost:9092"
+        |  kafkaProperties {
+        |    "auto.offset.reset": latest
+        |  }
+        |}""".stripMargin)
+    val expectedConfig = KafkaConfig(Some(Map("auto.offset.reset" -> "latest")), None, None, kafkaAddress = Some("localhost:9092"))
+    KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
+    expectedConfig.definedKafkaProperties.get("bootstrap.servers") shouldBe Some("localhost:9092")
   }
 
   test("parse config with topicExistenceValidation") {
@@ -30,7 +44,7 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
         |     enabled: true
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"), None, None, None, TopicsExistenceValidationConfig(enabled = true))
+    val expectedConfig = KafkaConfig(Some(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest")), None, None, None, TopicsExistenceValidationConfig(enabled = true))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 

@@ -11,7 +11,7 @@ case class SchemaRegistryClientKafkaConfig(
                                             avroAsJsonSerialization: Option[Boolean]
                                           )
 
-case class KafkaConfig(kafkaProperties: Map[String, String],
+case class KafkaConfig(kafkaProperties: Option[Map[String, String]],
                        kafkaEspProperties: Option[Map[String, String]],
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
                        // Probably better place for this flag would be configParameters inside global parameters but
@@ -24,12 +24,16 @@ case class KafkaConfig(kafkaProperties: Map[String, String],
                        // and all topics related to this config require both key and value schema definitions.
                        useStringForKey: Boolean = true,
                        schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
-                       avroAsJsonSerialization: Option[Boolean] = None
-                      ) {
-  //is that check needed? Sometimes we do not need this property eg. to create SchemaRegistryClient
-  require(kafkaProperties.contains("bootstrap.servers"), "Missing 'bootstrap.servers' property in kafkaProperties")
+                       avroAsJsonSerialization: Option[Boolean] = None,
+                       kafkaAddress: Option[String] = None) {
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties, schemaRegistryCacheConfig, avroAsJsonSerialization)
+  // delete this method, make `kafkaProperties` required and use it instead, when `kafkaAddress` is removed
+  def definedKafkaProperties = kafkaAddress.map(bs => Map("bootstrap.servers" -> bs)).getOrElse(Map.empty) ++ kafkaProperties.getOrElse(Map.empty)
+
+  //is that check needed? Sometimes we do not need this property eg. to create SchemaRegistryClient
+  require(definedKafkaProperties.contains("bootstrap.servers"), "Missing 'bootstrap.servers' property in kafkaProperties")
+
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(definedKafkaProperties, schemaRegistryCacheConfig, avroAsJsonSerialization)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 

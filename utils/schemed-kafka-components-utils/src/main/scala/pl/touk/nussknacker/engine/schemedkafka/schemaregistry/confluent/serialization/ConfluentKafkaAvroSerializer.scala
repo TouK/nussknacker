@@ -20,7 +20,7 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
 
   schemaRegistry = confluentSchemaRegistryClient.client
 
-  configure(kafkaConfig.kafkaProperties.asJava, isKey)
+  configure(kafkaConfig.definedKafkaProperties.asJava, isKey)
 
   override def configure(configs: util.Map[String, _], isKey: Boolean): Unit = {
     val avroConfig = new KafkaAvroSerializerConfig(configs)
