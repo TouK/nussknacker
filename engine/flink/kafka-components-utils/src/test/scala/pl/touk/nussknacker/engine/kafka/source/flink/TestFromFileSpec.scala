@@ -28,7 +28,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
   private lazy val creator = new KafkaSourceFactoryProcessConfigCreator()
 
   private lazy val config = ConfigFactory.empty()
-    .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
+    .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("notused:1111"))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:2222"))
 
   test("Should pass correct timestamp from test data") {

@@ -28,6 +28,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `interface` -> `http.interface`
   * `port` -> `http.port`
   * `definitionMetadata` -> `request-response.definitionMetadata`
+* [#3502](https://github.com/TouK/nussknacker/pull/3502) Refactor of `KafkaProperties`. 
+  * `kafkaAddress` moved to `kafkaProperties."bootstrap.servers"`
+  * `kafkaProperties` is now required
 
 ## In version 1.5.0
 

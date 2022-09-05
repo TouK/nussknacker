@@ -23,7 +23,7 @@ object LiteKafkaTestScenarioRunner {
   val DefaultKafkaConfig: Config =
     ConfigFactory
       .empty()
-      .withValue("kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:666"))
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", ConfigValueFactory.fromAnyRef("kafka:666"))
 
   def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
     new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)

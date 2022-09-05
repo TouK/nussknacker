@@ -12,7 +12,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
   test("should not add low level kafka components by default") {
     val provider = new LiteKafkaComponentProvider
     val config: Config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef("not_used"))
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("not_used"))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
@@ -22,7 +22,7 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
   test("should add low level kafka components when enabled") {
     val provider = new LiteKafkaComponentProvider
     val config: Config = ConfigFactory.load()
-      .withValue("kafka.kafkaAddress", fromAnyRef("not_used"))
+      .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("not_used"))
       .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(true))
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))

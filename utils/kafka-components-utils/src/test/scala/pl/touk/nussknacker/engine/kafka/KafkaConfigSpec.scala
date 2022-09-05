@@ -10,28 +10,42 @@ class KafkaConfigSpec extends AnyFunSuite with Matchers {
     val typesafeConfig = ConfigFactory.parseString(
       """kafka {
         |  lowLevelComponentsEnabled: false
-        |  kafkaAddress: "localhost:9092"
         |  kafkaProperties {
+        |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig("localhost:9092", Some(Map("auto.offset.reset" -> "latest")), None, None)
+    val expectedConfig = KafkaConfig(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"), None, None)
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
   test("parse config with topicExistenceValidation") {
     val typesafeConfig = ConfigFactory.parseString(
       """kafka {
-        |  kafkaAddress: "localhost:9092"
         |  kafkaProperties {
+        |    "bootstrap.servers": "localhost:9092"
         |    "auto.offset.reset": latest
         |  }
         |  topicsExistenceValidationConfig: {
         |     enabled: true
         |  }
         |}""".stripMargin)
-    val expectedConfig = KafkaConfig("localhost:9092", Some(Map("auto.offset.reset" -> "latest")), None, None, None, TopicsExistenceValidationConfig(enabled = true))
+    val expectedConfig = KafkaConfig(Map("bootstrap.servers" -> "localhost:9092", "auto.offset.reset" -> "latest"), None, None, None, TopicsExistenceValidationConfig(enabled = true))
     KafkaConfig.parseConfig(typesafeConfig) shouldEqual expectedConfig
   }
 
+  test("should throw when missing 'bootstrap.servers' property") {
+    val typesafeConfig = ConfigFactory.parseString(
+      """kafka {
+        |  lowLevelComponentsEnabled: false
+        |  kafkaProperties {
+        |    "auto.offset.reset": latest
+        |  }
+        |}""".stripMargin)
+
+    the [IllegalArgumentException] thrownBy {
+      KafkaConfig.parseConfig(typesafeConfig)
+    } should have message "requirement failed: Missing 'bootstrap.servers' property in kafkaProperties"
+
+  }
 }

@@ -11,8 +11,7 @@ case class SchemaRegistryClientKafkaConfig(
                                             avroAsJsonSerialization: Option[Boolean]
                                           )
 
-case class KafkaConfig(kafkaAddress: String,
-                       kafkaProperties: Option[Map[String, String]],
+case class KafkaConfig(kafkaProperties: Map[String, String],
                        kafkaEspProperties: Option[Map[String, String]],
                        consumerGroupNamingStrategy: Option[ConsumerGroupNamingStrategy.Value] = None,
                        // Probably better place for this flag would be configParameters inside global parameters but
@@ -27,8 +26,10 @@ case class KafkaConfig(kafkaAddress: String,
                        schemaRegistryCacheConfig: SchemaRegistryCacheConfig = SchemaRegistryCacheConfig(),
                        avroAsJsonSerialization: Option[Boolean] = None
                       ) {
+  //is that check needed? Sometimes we do not need this property eg. to create SchemaRegistryClient
+  require(kafkaProperties.contains("bootstrap.servers"), "Missing 'bootstrap.servers' property in kafkaProperties")
 
-  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties.getOrElse(Map.empty), schemaRegistryCacheConfig, avroAsJsonSerialization)
+  def schemaRegistryClientKafkaConfig = SchemaRegistryClientKafkaConfig(kafkaProperties, schemaRegistryCacheConfig, avroAsJsonSerialization)
 
   def forceLatestRead: Option[Boolean] = kafkaEspProperties.flatMap(_.get("forceLatestRead")).map(_.toBoolean)
 

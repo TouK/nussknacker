@@ -31,7 +31,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
   private val config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://dummy:1234"))
-    .withValue("modelConfig.kafka.kafkaAddress", ConfigValueFactory.fromAnyRef("kafka:1234"))
+    .withValue("modelConfig.kafka.kafkaProperties.\"bootstrap.servers\"", ConfigValueFactory.fromAnyRef("kafka:1234"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
 
   it should "run scenario in test mode" in {

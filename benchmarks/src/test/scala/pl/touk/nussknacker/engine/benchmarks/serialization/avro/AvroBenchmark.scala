@@ -42,7 +42,7 @@ class AvroBenchmark {
           override protected def confluentClient(kafkaConfig: SchemaRegistryClientKafkaConfig): SchemaRegistryClient =
             schemaRegistryMockClient
         }
-      val serializer = SchemaIdBasedAvroGenericRecordSerializer(factory, KafkaConfig("fooKafkaAddress", None, None))
+      val serializer = SchemaIdBasedAvroGenericRecordSerializer(factory, KafkaConfig(Map("bootstrap.servers" -> "fooKafkaAddress"), None))
       config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
       config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
     })

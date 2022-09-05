@@ -355,11 +355,11 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   private val kafkaDeployConfig: Config = baseDeployConfig("streaming")
-    .withValue("configExecutionOverrides.modelConfig.kafka.kafkaAddress", fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
+    .withValue("configExecutionOverrides.modelConfig.kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef(s"${KafkaK8sSupport.kafkaServiceName}:9092"))
     .withValue("configExecutionOverrides.modelConfig.kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef(s"http://${KafkaK8sSupport.srServiceName}:8081"))
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty
     //e.g. when we want to run Designer locally with some proxy?
-    .withValue("kafka.kafkaAddress", fromAnyRef("localhost:19092"))
+    .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("localhost:19092"))
     .withValue("kafka.lowLevelComponentsEnabled", fromAnyRef(false))
     .withValue("kafka.kafkaProperties.\"auto.offset.reset\"", fromAnyRef("earliest"))
     .withValue("exceptionHandlingConfig.topic", fromAnyRef("errors")), new EmptyProcessConfigCreator)

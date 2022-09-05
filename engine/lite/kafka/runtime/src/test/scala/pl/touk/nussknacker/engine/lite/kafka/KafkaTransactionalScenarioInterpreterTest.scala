@@ -191,7 +191,7 @@ class KafkaTransactionalScenarioInterpreterTest extends FixtureAnyFunSuite with 
   test("starts without error without kafka") { fixture =>
     val scenario: EspProcess = passThroughScenario(fixture)
 
-    val configWithFakeAddress = ConfigFactory.parseMap(Collections.singletonMap("kafka.kafkaAddress", "not_exist.pl:9092"))
+    val configWithFakeAddress = ConfigFactory.parseMap(Collections.singletonMap("kafka.kafkaProperties.\"bootstrap.servers\"", "not_exist.pl:9092"))
     runScenarioWithoutErrors(fixture, scenario, configWithFakeAddress) {
       //TODO: figure out how to wait for starting thread pool?
       Thread.sleep(100)

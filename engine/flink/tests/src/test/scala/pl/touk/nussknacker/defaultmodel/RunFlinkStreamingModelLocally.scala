@@ -11,7 +11,7 @@ object RunFlinkStreamingModelLocally extends App {
 
   val modelConfig = ConfigFactory.empty()
     // TODO: Fix: Idea loads kafka lite component provider
-    .withValue("kafka.kafkaAddress", fromAnyRef("notused:1111"))
+    .withValue("kafka.kafkaProperties.\"bootstrap.servers\"", fromAnyRef("notused:1111"))
     .withValue("kafka.kafkaProperties.\"schema.registry.url\"", fromAnyRef("notused:1111"))
   val modelData = LocalModelData(modelConfig, new DefaultConfigCreator)
 
