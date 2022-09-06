@@ -1,7 +1,7 @@
 ## req
 
--   node >=14
--   npm >=7
+-   node >= 16.15.1
+-   npm >= 8.11.0
 -   verify/update `.env` (or https://stackoverflow.com/questions/43069087/pass-shell-environment-variable-as-argument-in-npm-script)
 
 ## dev
