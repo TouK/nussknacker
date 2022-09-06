@@ -5,15 +5,13 @@ import io.circe.syntax.EncoderOps
 import monocle.Iso
 import monocle.macros.GenLens
 import monocle.std.option._
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, ScenarioSpecificData, StreamMetaData, TypeSpecificData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNameForScenario, scenarioIdLabel, scenarioVersionAnnotation}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
 import skuber.apps.v1.Deployment
 import skuber.apps.v1.Deployment.Strategy
-import skuber.ext.DaemonSet.RollingUpdate
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volume}
 
 case class MountableResources(commonConfigConfigMap: String,
