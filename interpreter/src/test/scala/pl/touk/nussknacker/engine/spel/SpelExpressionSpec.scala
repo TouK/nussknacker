@@ -18,14 +18,14 @@ import pl.touk.nussknacker.engine.api.generics.{ExpressionParseError, GenericFun
 import pl.touk.nussknacker.engine.api.process.ClassExtractionSettings
 import pl.touk.nussknacker.engine.api.process.ExpressionConfig._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{CastTypedValue, Typed, TypedNull, TypedObjectTypingResult, TypedObjectWithValue, TypingResult}
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, OperatorMismatchTypeError, OperatorNonNumericError, ModuloZeroError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -902,6 +902,27 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("1 / 0").invalidValue shouldBe NonEmptyList.one(DivisionByZeroError("(1 / 0)"))
     parse[Any]("1 % 0").invalidValue shouldBe NonEmptyList.one(ModuloZeroError("(1 % 0)"))
   }
+
+  test("should be able to rewrite fields to other fields") {
+    val recordWithManyFields = java.util.Map.of(
+      "field1", "foo1",
+      "field2", "foo2",
+      "field3", "foo3",
+      "field4", "foo4",
+      "field5", "foo5",
+      "field6", "foo6",
+      "field7", "foo7",
+      "field8", "foo8",
+      "field9", "foo9",
+      "field10", "foo10")
+    val contextOfVariables = ctxWithGlobal.withVariable("input", recordWithManyFields)
+
+    parse[String]("#processHelper.rewrite(#input, 'field1', 'newField1', 'field2', 'newField2').newField2", contextOfVariables)
+      .validExpression.evaluateSync[String](contextOfVariables) shouldBe "foo2"
+
+    parse[String]("#processHelper.rewrite(#input, 'field1', 'newField1', 'field2', 'newField2').field1", contextOfVariables) shouldBe 'invalid
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
@@ -939,6 +960,36 @@ object SampleGlobalObject {
   @GenericType(typingFunction = classOf[GenericFunctionVarArgHelper])
   @varargs
   def genericFunctionWithVarArg(a: Int, b: Boolean*): Int = a + b.count(identity)
+
+  // TODO: be able to provide nested transformations like nestedField.field1 -> even.more.nested.field1 etc
+  @GenericType(typingFunction = classOf[RewriteFunction])
+  @varargs
+  def rewrite(input: java.util.Map[String, Object], fields: String*): java.util.Map[String, Object] = {
+    val copyOfInput = new util.HashMap[String, Object](input)
+    fields.toList.grouped(2).foldLeft(copyOfInput) {
+      case (acc, fromField :: toField :: Nil) =>
+        acc.put(toField, acc.get(fromField))
+        acc.remove(fromField)
+        acc
+      case (_, group) =>
+        throw new IllegalArgumentException(s"Unexpected fields transformation: $group")
+    }
+  }
+
+  private class RewriteFunction extends TypingFunction {
+    override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] = {
+      val fieldsTransformation = arguments.tail
+      val fields = arguments.head.asInstanceOf[TypedObjectTypingResult].fields
+      val TypedString = CastTypedValue[String]
+      val newFields = fieldsTransformation.grouped(2).foldLeft(fields) {
+        case (acc, TypedString(fromField) :: TypedString(toField) :: Nil) =>
+          acc + (toField.valueOpt.get -> acc(fromField.valueOpt.get)) - fromField.valueOpt.get
+        case (_, group) =>
+          throw new IllegalArgumentException(s"Unexpected fields transformation: $group")
+      }
+      Valid(TypedObjectTypingResult(newFields))
+    }
+  }
 
   private case class GenericFunctionHelper() extends TypingFunction {
     override def computeResultType(arguments: List[TypingResult]): ValidatedNel[GenericFunctionTypingError, TypingResult] =
