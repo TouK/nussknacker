@@ -14,7 +14,7 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
 
   val podsResourceQuota = "pods"
 
-  def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int, strategy: Strategy): Validated[Throwable, Unit] = {
+  def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int, strategy: Option[Strategy]): Validated[Throwable, Unit] = {
     quotas match {
       case ListResource(_, _, _, List()) => valid(Unit)
       case ListResource(_, _, _, List(quota)) => hasReachedQuotaLimitInternal(oldDeploymentReplicasCount, quota, replicasCount, strategy)
@@ -24,7 +24,7 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
     }
   }
 
-  private def hasReachedQuotaLimitInternal(oldDeploymentReplicasCount: Option[Int], quotas: Resource.Quota, replicasCount: Int, strategy: Strategy): Validated[Throwable, Unit] = {
+  private def hasReachedQuotaLimitInternal(oldDeploymentReplicasCount: Option[Int], quotas: Resource.Quota, replicasCount: Int, strategy: Option[Strategy]): Validated[Throwable, Unit] = {
     val status = quotas.status
 
     def podResourceQuotaOf(resource: Option[ResourceList]): BigDecimal = {
@@ -50,8 +50,8 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
     }
   }
 
-  private def calculateMaxSurge(replicasCount: Int, strategy: Strategy): Int = {
-    strategy.rollingUpdate match {
+  private def calculateMaxSurge(replicasCount: Int, strategy: Option[Strategy]): Int = {
+    strategy.flatMap(_.rollingUpdate) match {
       case Some(RollingUpdate(_, Left(intSurge))) =>
         intSurge
       case Some(RollingUpdate(_, Right(percentString))) =>

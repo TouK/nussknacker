@@ -115,7 +115,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
-    val deploymentStrategy = deploymentPreparer.deploymentStrategy(canonicalProcess.metaData.typeSpecificData)
+    val deploymentStrategy = deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, MountableResources("dummy", "dummy", "dummy"), scalingOptions.replicasCount)
+      .spec.flatMap(_.strategy)
     for {
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))

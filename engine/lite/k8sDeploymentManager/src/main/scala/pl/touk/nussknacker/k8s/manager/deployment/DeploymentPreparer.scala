@@ -56,7 +56,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
     deploymentLens(userConfigurationBasedDeployment)
   }
 
-  def deploymentStrategy(typeSpecificData: TypeSpecificData): Strategy = {
+  private def deploymentStrategy(typeSpecificData: TypeSpecificData): Strategy = {
     typeSpecificData match {
       case _: LiteStreamMetaData => Deployment.Strategy.Recreate
       case _: RequestResponseMetaData => Deployment.Strategy(rollingUpdate = Deployment.RollingUpdate(maxUnavailable = Right("25%"), maxSurge = Right("25%")))
