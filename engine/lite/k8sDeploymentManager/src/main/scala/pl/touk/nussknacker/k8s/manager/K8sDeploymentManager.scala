@@ -115,10 +115,12 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
+    val deploymentStrategy = deploymentPreparer.deploymentStrategy(canonicalProcess.metaData.typeSpecificData)
     for {
       resourceQuotas <- k8s.list[ResourceQuotaList]()
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
-      _ <- Future.fromTry(K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas, scalingOptions.replicasCount).toEither.toTry)
+      _ <- Future.fromTry(K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas,
+        scalingOptions.replicasCount, deploymentStrategy).toEither.toTry)
       // TODO: it should be moved into CustomProcessValidator after refactor of it
       _ <- Future.fromTry(scenarioValidator.validate(canonicalProcess).toEither.toTry)
     } yield ()
