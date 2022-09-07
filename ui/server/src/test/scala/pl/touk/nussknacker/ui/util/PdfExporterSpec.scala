@@ -14,12 +14,12 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Co
 
 import java.io.FileOutputStream
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
+import java.time.{Instant, ZonedDateTime}
 import scala.io.Source
 
 class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
-  private val history = List(ProcessVersion(VersionId.initialVersionId, LocalDateTime.now(), "Zenon Wojciech", Option.empty, List.empty))
+  private val history = List(ProcessVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech", Option.empty, List.empty))
 
   it should "export process to " in {
     val process: DisplayableProcess = ProcessConverter.toDisplayable(SampleProcess.process.toCanonicalProcess, TestProcessingTypes.Streaming)
@@ -31,7 +31,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
     val details = createDetails(displayable)
 
     val comments = (1 to 29).map(commentId =>
-      Comment(commentId, process.id, details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", LocalDateTime.now())
+      Comment(commentId, process.id, details.processVersionId, "Jakiś taki dziwny ten proces??", "Wacław Wójcik", Instant.now())
     ).toList
 
     val activities = ProcessActivity(comments, List())

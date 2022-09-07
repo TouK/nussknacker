@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.DateUtils
 import slick.ast.ColumnOption.PrimaryKey
 import slick.lifted.{TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
+import java.time.Instant
 
 trait AttachmentEntityFactory extends BaseEntityFactory {
 
@@ -40,5 +39,5 @@ trait AttachmentEntityFactory extends BaseEntityFactory {
 }
 
 case class AttachmentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, fileName: String, data: Array[Byte], user: String, createDate: Timestamp) {
-  val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
+  val createDateTime: Instant = createDate.toInstant
 }

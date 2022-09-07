@@ -16,15 +16,11 @@ import pl.touk.nussknacker.ui.config.AttachmentsConfig
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 import pl.touk.nussknacker.ui.util.MultipartUtils
 
-import java.time.LocalDateTime
-import java.time.chrono.ChronoLocalDateTime
 import scala.language.higherKinds
 
 class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with EspItTest with FailFastCirceSupport {
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
-
-  private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   private val attachmentService = new ProcessAttachmentService(AttachmentsConfig.default, processActivityRepository)
   private val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)

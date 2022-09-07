@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessingType}
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 object processdetails {
 
@@ -34,8 +34,8 @@ object processdetails {
       processCategory = baseProcessDetails.processCategory,
       processingType = baseProcessDetails.processingType,
       modificationDate = baseProcessDetails.modificationDate,
-      modifiedAt = Some(baseProcessDetails.modifiedAt),
-      modifiedBy = Some(baseProcessDetails.modifiedBy),
+      modifiedAt = baseProcessDetails.modifiedAt,
+      modifiedBy = baseProcessDetails.modifiedBy,
       createdAt = baseProcessDetails.createdAt,
       createdBy = baseProcessDetails.createdBy,
       lastAction = baseProcessDetails.lastAction,
@@ -52,11 +52,10 @@ object processdetails {
                                      isSubprocess: Boolean,
                                      processCategory: String,
                                      processingType: ProcessingType,
-                                     modificationDate: LocalDateTime,
-                                     //TODO: remove Option in modifiedAt/modifiedBy in 1.5 version
-                                     modifiedAt: Option[LocalDateTime],
-                                     modifiedBy: Option[String],
-                                     createdAt: LocalDateTime,
+                                     modificationDate: Instant,
+                                     modifiedAt: Instant,
+                                     modifiedBy: String,
+                                     createdAt: Instant,
                                      createdBy: String,
                                      lastAction: Option[ProcessAction],
                                      lastDeployedAction: Option[ProcessAction],
@@ -80,10 +79,10 @@ object processdetails {
                                               isSubprocess: Boolean,
                                               processingType: ProcessingType,
                                               processCategory: String,
-                                              modificationDate: LocalDateTime, //TODO: Deprecated, please use modifiedAt
-                                              modifiedAt: LocalDateTime,
-                                              modifiedBy: String, 
-                                              createdAt: LocalDateTime,
+                                              modificationDate: Instant, //TODO: Deprecated, please use modifiedAt
+                                              modifiedAt: Instant,
+                                              modifiedBy: String,
+                                              createdAt: Instant,
                                               createdBy: String,
                                               tags: List[String],
                                               lastDeployedAction: Option[ProcessAction],
@@ -124,14 +123,14 @@ object processdetails {
 
   @JsonCodec case class ProcessVersion(//processId: Long, //TODO: support it when will support processId as Long / ProcessId
                                        processVersionId: VersionId,
-                                       createDate: LocalDateTime,
+                                       createDate: Instant,
                                        user: String,
                                        modelVersion: Option[Int],
                                        actions: List[ProcessAction])
 
   @JsonCodec case class ProcessAction( //processId: Long, //TODO: support it when will support processId as Long / ProcessId
                                        processVersionId: VersionId,
-                                       performedAt: LocalDateTime,
+                                       performedAt: Instant,
                                        user: String,
                                        action: ProcessActionType,
                                        commentId: Option[Long],

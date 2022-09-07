@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.component
 
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition, Filter => FilterNodeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -11,7 +11,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 
-import java.time.LocalDateTime
+import java.time.{Instant, ZonedDateTime}
 
 object ComponentTestProcessData {
 
@@ -42,9 +42,9 @@ object ComponentTestProcessData {
   val CanceledFraudProcessName = "canceledFraudProcessName"
   val FraudProcessWithSubprocessName = "fraudProcessWithSubprocess"
 
-  private val deployedAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
-  private val canceledAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
-  private val archivedAction = ProcessAction(initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
+  private val deployedAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)
+  private val canceledAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Cancel, Option.empty, Option.empty, Map.empty)
+  private val archivedAction = ProcessAction(initialVersionId, Instant.now(), "user", ProcessActionType.Archive, Option.empty, Option.empty, Map.empty)
 
   val MarketingProcess: ProcessDetails = displayableToProcess(
     displayable = createSimpleDisplayableProcess("marketingProcess", Streaming, SharedSourceConf, SharedSinkConf),

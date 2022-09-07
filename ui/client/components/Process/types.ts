@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {UnknownRecord} from "../../types/common"
+import {UnknownRecord, Instant} from "../../types/common"
 
 export enum ActionType {
   Deploy = "DEPLOY",
@@ -19,7 +19,7 @@ export type BuildInfoType = {
 }
 
 export type ProcessActionType = {
-  performedAt: string,
+  performedAt: Instant,
   user: string,
   action: ActionType,
   commentId?: number,
@@ -46,9 +46,9 @@ export interface ProcessType {
   isLatestVersion: boolean,
   processCategory: string,
   processType: string,
-  modificationDate: string,
+  modificationDate: Instant,
   modifiedBy: string,
-  createdAt: string,
+  createdAt: Instant,
   createdBy: string,
   lastAction?: ProcessActionType,
   lastDeployedAction?: ProcessActionType,

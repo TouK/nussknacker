@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.entity._
-import pl.touk.nussknacker.ui.db.{DateUtils, DbConfig}
+import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -178,10 +178,10 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       lastAction = lastActionData.map(ProcessDBQueryRepository.toProcessAction),
       lastDeployedAction = lastDeployedActionData.map(ProcessDBQueryRepository.toProcessAction),
       tags = tags.map(_.name).toList,
-      modificationDate = DateUtils.toLocalDateTime(processVersion.createDate),
-      modifiedAt = DateUtils.toLocalDateTime(processVersion.createDate),
+      modificationDate = processVersion.createDate.toInstant,
+      modifiedAt = processVersion.createDate.toInstant,
       modifiedBy = processVersion.user,
-      createdAt = DateUtils.toLocalDateTime(process.createdAt),
+      createdAt = process.createdAt.toInstant,
       createdBy = process.createdBy,
       json = convertToTargetShape(processVersion.json, process),
       history = history.toList,

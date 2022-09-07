@@ -3,7 +3,7 @@ package pl.touk.nussknacker.ui.util
 import java.io._
 import java.net.URI
 import java.nio.charset.StandardCharsets
-import java.time.LocalDateTime
+import java.time.{Instant, ZoneId}
 import java.time.format.DateTimeFormatter
 import javax.xml.transform.TransformerFactory
 import javax.xml.transform.sax.SAXResult
@@ -22,16 +22,12 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.ProcessActivity
 
-import java.time.chrono.ChronoLocalDateTime
 import scala.xml.{Elem, NodeSeq, XML}
 
 object PdfExporter extends LazyLogging {
-
-  implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
-
+  
   private val fopFactory = new FopConfParser(getClass.getResourceAsStream("/fop/config.xml"),
     new URI("http://touk.pl"), ResourceResolverFactory.createDefaultResourceResolver).getFopFactoryBuilder.build
-  private val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
   def exportToPdf(svg: String, processDetails: ProcessDetails, processActivity: ProcessActivity): Array[Byte] = {
 
@@ -42,6 +38,13 @@ object PdfExporter extends LazyLogging {
     val fopXml = prepareFopXml(svg.replaceAll("\u00A0", " ").replaceAll("[^\\p{ASCII}]", ""), processDetails, processActivity, processDetails.json)
 
     createPdf(fopXml)
+  }
+
+  //in PDF export we print timezone, to avoid ambiguity
+  //TODO: pass client timezone from FE
+  private def format(instant: Instant) = {
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss [VV]")
+    instant.atZone(ZoneId.systemDefault()).format(formatter)
   }
 
   //TODO: this is one nasty hack, is there a better way to make fop read fonts from classpath?
@@ -109,7 +112,7 @@ object PdfExporter extends LazyLogging {
               Saved by
               {currentVersion.user}
               at
-              {currentVersion.createDate.format(formatter)}
+              {format(currentVersion.createDate)}
             </block>
             <block text-align="left" space-before.minimum="0.5em">
               {processDetails.description.getOrElse("")}
@@ -160,7 +163,7 @@ object PdfExporter extends LazyLogging {
             <table-row>
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {comment.createDate.format(formatter)}
+                  {format(comment.createDate)}
                 </block>
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">
@@ -330,7 +333,7 @@ object PdfExporter extends LazyLogging {
 
               <table-cell border="1pt solid black" padding-left="1pt">
                 <block>
-                  {attachment.createDate.format(formatter)}
+                  {format(attachment.createDate)}
                 </block>
               </table-cell>
               <table-cell border="1pt solid black" padding-left="1pt">

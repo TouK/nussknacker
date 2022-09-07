@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
@@ -11,11 +10,12 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.app.BuildInfo
 import pl.touk.nussknacker.ui.db.entity.{CommentActions, ProcessActionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
-import pl.touk.nussknacker.ui.listener.{Comment}
+import pl.touk.nussknacker.ui.listener.Comment
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.dbio.DBIOAction
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -61,7 +61,7 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
         processId = processId,
         processVersionId = processVersion,
         user = user.username,
-        performedAt = Timestamp.valueOf(LocalDateTime.now()),
+        performedAt = Timestamp.from(Instant.now()),
         action = action,
         commentId = commentId,
         buildInfo = buildInfo

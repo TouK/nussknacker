@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.restmodel.processdetails.{ProcessAction, ProcessShapeFetchStrategy, ProcessVersion}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.app.BuildInfo
-import pl.touk.nussknacker.ui.db.{DateUtils, EspTables}
+import pl.touk.nussknacker.ui.db.EspTables
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.{BadRequestError, NotFoundError}
@@ -94,7 +94,7 @@ object ProcessDBQueryRepository {
 
   def toProcessVersion(versionData: ProcessVersionEntityData, actions: List[(ProcessActionEntityData, Option[CommentEntityData])]): ProcessVersion = ProcessVersion(
     processVersionId = versionData.id,
-    createDate = DateUtils.toLocalDateTime(versionData.createDate),
+    createDate = versionData.createDate.toInstant,
     modelVersion = versionData.modelVersion,
     user = versionData.user,
     actions = actions.map(toProcessAction)

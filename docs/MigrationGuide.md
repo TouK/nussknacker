@@ -18,6 +18,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 * [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
 * [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
+* [#3506](https://github.com/TouK/nussknacker/pull/3506) Changed `LocalDateTime` to `Instant` in `OnDeployActionSuccess` in `listener-api`
+
+### REST API changes                   
+* [#3506](https://github.com/TouK/nussknacker/pull/3506) Dates returned by REST API (createdAt, modifiedAt, createDate) are now returned in Zulu time, with timezone indication. This affects e.g. `/api/procecesses`, `/api/processes/{scenarioId}`, `/api/processes/{scenarioId}/activity` 
 
 ### Scenario API changes
 * [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.

@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, RequestRes
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.util.Random
 
 object TestProcessUtil {
@@ -56,10 +56,10 @@ object TestProcessUtil {
       isSubprocess = isSubprocess,
       processingType = processingType,
       processCategory = category,
-      modificationDate = LocalDateTime.now(),
-      modifiedAt = LocalDateTime.now(),
+      modificationDate = Instant.now(),
+      modifiedAt = Instant.now(),
       modifiedBy = "user1",
-      createdAt = LocalDateTime.now(),
+      createdAt = Instant.now(),
       createdBy = "user1",
       tags = List(),
       lastAction = lastAction.map(createProcessAction),
@@ -90,7 +90,7 @@ object TestProcessUtil {
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     processVersionId = VersionId(generateId()),
-    performedAt = LocalDateTime.now(),
+    performedAt = Instant.now(),
     user = "user",
     action = action,
     commentId = None,

@@ -8,3 +8,6 @@ export type UnknownFunction = (...args: unknown[]) => unknown
 
 export type WithId<T, K extends string = "id"> = T & {[key in K]: string}
 export type WithUuid<T> = WithId<T, "uuid">
+
+//from BE comes as date in zulu time
+export type Instant = string

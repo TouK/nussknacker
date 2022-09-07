@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.db.entity
 
 import db.util.DBIOActionInstances.DB
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.DateUtils
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.JdbcProfile
 import slick.lifted.{TableQuery => LTableQuery}
@@ -10,7 +9,7 @@ import slick.sql.SqlProfile.ColumnOption.NotNull
 import pl.touk.nussknacker.ui.listener.Comment
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.ExecutionContext
 
 trait CommentEntityFactory extends BaseEntityFactory {
@@ -43,7 +42,7 @@ trait CommentEntityFactory extends BaseEntityFactory {
 
 
 case class CommentEntityData(id: Long, processId: ProcessId, processVersionId: VersionId, content: String, user: String, createDate: Timestamp) {
-  val createDateTime: LocalDateTime = DateUtils.toLocalDateTime(createDate)
+  val createDateTime: Instant = createDate.toInstant
 }
 
 trait CommentActions {
@@ -67,7 +66,7 @@ trait CommentActions {
           processVersionId = processVersionId,
           content = comment.value,
           user = loggedUser.username,
-          createDate = Timestamp.valueOf(LocalDateTime.now())
+          createDate = Timestamp.from(Instant.now())
         )
       } yield Some(newId)
     } else {

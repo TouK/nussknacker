@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingPro
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.FailurePropagatingActor
 
-import java.time.LocalDateTime
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -205,7 +205,7 @@ case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
 case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
 
-case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: LocalDateTime, action: ProcessActionType)
+case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: Instant, action: ProcessActionType)
 
 case class DeploymentActionFinished(id: ProcessIdWithName, user: LoggedUser, failureOrDetails: Either[Throwable, DeploymentDetails])
 

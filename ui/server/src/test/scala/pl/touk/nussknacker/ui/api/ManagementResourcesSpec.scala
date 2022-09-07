@@ -31,7 +31,7 @@ import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import java.time.LocalDateTime
+import java.time.Instant
 
 class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -41,7 +41,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
   private val processName: ProcessName = ProcessName(SampleProcess.process.id)
-  private val fixedTime = LocalDateTime.now()
+  private val fixedTime = Instant.now()
 
   private def deployedWithVersions(versionId: Long): BeMatcher[Option[ProcessAction]] =
     BeMatcher(equal(
@@ -139,7 +139,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
           Get(s"/processes/${SampleProcess.process.id}/deployments") ~> withAllPermissions(processesRoute) ~> check {
             val deploymentHistory = responseAs[List[ProcessAction]]
-            val curTime = LocalDateTime.now()
+            val curTime = Instant.now()
             deploymentHistory.map(_.copy(performedAt = curTime)) shouldBe List(
               ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Cancel, Some(secondCommentId), Some(expectedStopComment), Map()),
               ProcessAction(VersionId(2), curTime, user().username, ProcessActionType.Deploy, Some(firstCommentId), Some(expectedDeployComment), TestFactory.buildInfo)
