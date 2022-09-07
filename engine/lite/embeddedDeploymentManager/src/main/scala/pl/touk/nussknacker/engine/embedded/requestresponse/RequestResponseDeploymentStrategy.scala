@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
+import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseAkkaHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -34,7 +34,7 @@ object RequestResponseDeploymentStrategy {
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
-    new RequestResponseDeploymentStrategy(config.as[HttpConfig]("http"), config.as[RequestResponseConfig]("request-response"))
+    new RequestResponseDeploymentStrategy(config.as[HttpBindingConfig]("http"), config.as[RequestResponseConfig]("request-response"))
   }
 
   def slugForScenario(metaData: MetaData): Validated[NonEmptyList[FatalUnknownError], String] = metaData.typeSpecificData match {
@@ -50,7 +50,7 @@ object RequestResponseDeploymentStrategy {
 
 }
 
-class RequestResponseDeploymentStrategy(httpConfig: HttpConfig, config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
+class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: RequestResponseConfig)(implicit as: ActorSystem, ec: ExecutionContext)
   extends DeploymentStrategy with LazyLogging {
 
   private val akkaHttpSetupTimeout = 10 seconds

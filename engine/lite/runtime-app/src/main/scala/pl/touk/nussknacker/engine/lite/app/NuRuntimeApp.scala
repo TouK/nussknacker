@@ -8,7 +8,6 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.HttpConfig
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
@@ -31,7 +30,7 @@ object NuRuntimeApp extends App with LazyLogging {
   val deploymentConfig = parseDeploymentConfig(deploymentConfigLocation)
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
-  val httpConfig = runtimeConfig.as[HttpConfig]("http")
+  val httpConfig = runtimeConfig.as[HttpBindingConfig]("http")
 
   implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
 

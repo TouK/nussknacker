@@ -1098,6 +1098,8 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app")).
     libraryDependencies ++= Seq(
       "commons-io" % "commons-io" % commonsIOV,
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
+      // spray-json module is used by akka-management - must be explicit, same version as rest of akka-http because otherwise ManifestInfo.checkSameVersion reports error
+      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
