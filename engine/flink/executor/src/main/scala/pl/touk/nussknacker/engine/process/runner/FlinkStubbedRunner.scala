@@ -27,6 +27,10 @@ trait FlinkStubbedRunner {
 
   //we use own LocalFlinkMiniCluster, instead of LocalExecutionEnvironment, to be able to pass own classpath...
   protected def execute[T](env: StreamExecutionEnvironment, savepointRestoreSettings: SavepointRestoreSettings) : Unit = {
+    // Checkpoints are disabled to prevent waiting for checkpoint to happen
+    // before finishing execution.
+    env.getCheckpointConfig.disableCheckpointing()
+
     val streamGraph = env.getStreamGraph
     streamGraph.setJobName(process.id)
 
