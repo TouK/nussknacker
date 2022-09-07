@@ -17,7 +17,8 @@
 * [#3483](https://github.com/TouK/nussknacker/pull/3483) Fix for: errors were flickering in newly used dynamic components - 
   after entering to node edition they were disappearing. Now this transient situation is replaced by well-prepared form
   with whole necessary parameters.
-* [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.              
+* [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
+* [#3505](https://github.com/TouK/nussknacker/pull/3505) Bump node version to 16.5.1
 
 
 1.5.0 (16 Aug 2022)
