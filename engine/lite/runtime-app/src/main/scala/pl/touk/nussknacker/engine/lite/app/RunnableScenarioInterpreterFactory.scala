@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.lite.app
 
 import akka.actor.ActorSystem
-import akka.http.scaladsl.server.Route
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
@@ -12,12 +11,10 @@ import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
+import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
-import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
-import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 
-import scala.concurrent.Future
 import java.net.URL
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {

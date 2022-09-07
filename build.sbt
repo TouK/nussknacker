@@ -1038,7 +1038,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
   settings(itSettings()).
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-integration-test",
+    name := "nussknacker-lite-runtime-app-integration-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteEngineRuntimeApp / Universal / stage,
       liteEngineRuntimeApp / Docker / publishLocal
@@ -1102,8 +1102,7 @@ lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app")).
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
     )
-  ).dependsOn(liteEngineKafkaRuntime, requestResponseRuntime, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test",
-  liteRequestResponseComponents % "test")
+  ).dependsOn(liteEngineKafkaRuntime, requestResponseRuntime)
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
@@ -1148,11 +1147,12 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
       Seq(
         "io.skuber" %% "skuber" % "2.6.2",
         "com.github.julien-truffaut" %% "monocle-core" % monocleV,
-        "com.github.julien-truffaut" %% "monocle-macro" % monocleV
+        "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
+        "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test"
       )
     },
     buildAndImportRuntimeImageToK3d := {
-      (liteEngineKafkaRuntime / Docker / publishLocal).value
+      (liteEngineRuntimeApp / Docker / publishLocal).value
       "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}" #|| "echo 'No k3d installed!'" !
     },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(

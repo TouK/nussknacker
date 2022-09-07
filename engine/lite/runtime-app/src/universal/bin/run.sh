@@ -15,8 +15,8 @@ LOGBACK_FILE=${LOGBACK_FILE:-$CONF_DIR/logback.xml}
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 export LOGS_DIR=${LOGS_DIR:-$WORKING_DIR/logs}
-LOG_FILE="$LOGS_DIR/nussknacker-kafka-runtime.out"
-PID_FILE="$WORKING_DIR/nussknacker-kafka-runtime.pid"
+LOG_FILE="$LOGS_DIR/nussknacker-runtime.out"
+PID_FILE="$WORKING_DIR/nussknacker-runtime.pid"
 
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}
@@ -38,17 +38,17 @@ cd $WORKING_DIR
 
 if [[ "${RUN_IN_BACKGROUND}" == "true" ]]; then
   echo -e "JVM: `java -version`\n" >> $LOG_FILE 2>&1
-  echo "Starting Nussknacker Kafka Runtime in background"
+  echo "Starting Nussknacker Lite Runtime in background"
   export CONSOLE_THRESHOLD_LEVEL=OFF
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuRuntimeApp "$@" >> $LOG_FILE 2>&1 &
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@" >> $LOG_FILE 2>&1 &
   set +x
   echo $! > $PID_FILE
-  echo "Nussknacker Kafka Runtime up and running"
+  echo "Nussknacker Lite Runtime up and running"
 else
   echo -e "JVM: `java -version`\n"
-  echo "Starting Nussknacker Kafka Runtime"
+  echo "Starting Nussknacker Lite Runtime"
   set -x
-  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.kafka.NuRuntimeApp "$@"
+  exec java $JDK_JAVA_OPTIONS $JAVA_PROMETHEUS_OPTS -Dconfig.override_with_env_vars=true -Dlogback.configurationFile=$LOGBACK_FILE -Dnussknacker.config.locations=$CONFIG_FILE -cp "$CLASSPATH" pl.touk.nussknacker.engine.lite.app.NuRuntimeApp "$@"
   set +x
 fi

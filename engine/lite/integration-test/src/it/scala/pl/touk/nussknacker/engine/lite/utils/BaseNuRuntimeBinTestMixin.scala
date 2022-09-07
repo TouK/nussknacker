@@ -32,7 +32,7 @@ trait BaseNuRuntimeBinTestMixin extends VeryPatientScalaFutures with Matchers { 
   protected def shellScriptPath: Path = {
     val targetItClassesDir = Path.of(getClass.getResource("/").toURI)
     val liteModuleDir = targetItClassesDir.getParent.getParent.getParent.getParent
-    val stageDir = liteModuleDir.resolve("runtime/target/universal/stage")
+    val stageDir = liteModuleDir.resolve("runtime-app/target/universal/stage")
     stageDir.resolve("bin/run.sh")
   }
 

@@ -29,7 +29,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private val valid = Validated.Valid(())
 
   /**
-   * Currently we support only basic json-schema configurations. See {@link pl.touk.nussknacker.engine.json.JsonSchemaTypeDefinitionExtractor}
+   * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
    */
   def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, parentSchema, None)
