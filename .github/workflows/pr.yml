@@ -599,12 +599,12 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1500M -J-Xmx1500M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish requestResponseApp/Docker/publish liteEngineKafkaRuntime/Docker/publish
+        run: sbt -J-Xms1500M -J-Xmx1500M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"" +publish dist/Docker/publish requestResponseApp/Docker/publish liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1500M -J-Xmx1500M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish requestResponseApp/Docker/publish liteEngineKafkaRuntime/Docker/publish
+        run: sbt -J-Xms1500M -J-Xmx1500M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish requestResponseApp/Docker/publish liteEngineRuntimeApp/Docker/publish
 
   trigger-helm-build:
     name: Trigger Helm Chart Build

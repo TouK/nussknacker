@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.lite.kafka.sample.NuKafkaRuntimeTestSamples
 import pl.touk.nussknacker.engine.lite.utils.{BaseNuRuntimeBinTestMixin, NuRuntimeTestUtils}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
-// depends on liteEngineKafkaRuntime / Universal / stage sbt task
+// depends on liteEngineRuntimeApp / Universal / stage sbt task
 class NuKafkaRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with BaseNuKafkaRuntimeDockerTest with LazyLogging {
 
   test("should run scenario and pass data to output ") {

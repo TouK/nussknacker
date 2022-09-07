@@ -9,7 +9,7 @@ import pl.touk.nussknacker.test.AvailablePortFinder
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 
-// depends on liteEngineKafkaRuntime / Universal / stage sbt task
+// depends on liteEngineRuntimeApp / Universal / stage sbt task
 class NuReqRespRuntimeBinTest extends AnyFunSuite with BaseNuRuntimeBinTestMixin with LazyLogging {
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
