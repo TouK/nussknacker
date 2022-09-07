@@ -34,6 +34,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `definitionMetadata` -> `request-response.definitionMetadata`
 * [#3502](https://github.com/TouK/nussknacker/pull/3502) Refactor of `KafkaProperties`: `kafkaAddress` property has been deprecated. Please provide `kafkaProperties."bootstrap.servers"` instead
 
+### Other changes
+* [#3441](https://github.com/TouK/nussknacker/pull/3441) Updated Flink 1.14.5 -> 1.15.2
+
 ## In version 1.5.0
 
 ### Configuration changes
