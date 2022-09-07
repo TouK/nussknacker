@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentCon
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -23,7 +23,7 @@ import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-import java.time.LocalDateTime
+import java.time.{Instant, ZonedDateTime}
 
 class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -45,7 +45,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       .customNode("custom2", "out2", otherExistingStreamTransformer)
       .emptySink("sink", existingSinkFactory)))
 
-  private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId.initialVersionId, LocalDateTime.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
+  private val process1deployed = process1.copy(lastAction = Option(ProcessAction(VersionId.initialVersionId, Instant.now(), "user", ProcessActionType.Deploy, Option.empty, Option.empty, Map.empty)))
 
   private val process2 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder

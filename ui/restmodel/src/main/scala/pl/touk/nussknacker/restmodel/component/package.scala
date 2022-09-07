@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessAction}
 
 import java.net.URI
-import java.time.LocalDateTime
+import java.time.Instant
 
 package object component {
 
@@ -50,6 +50,6 @@ package object component {
   }
 
   @JsonCodec
-  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isSubprocess: Boolean, processCategory: String, modificationDate: LocalDateTime, modifiedAt: LocalDateTime, modifiedBy: String, createdAt: LocalDateTime, createdBy: String, lastAction: Option[ProcessAction])
+  final case class ComponentUsagesInScenario(id: String, name: ProcessName, processId: ProcessId, nodesId: List[String], isSubprocess: Boolean, processCategory: String, modificationDate: Instant, modifiedAt: Instant, modifiedBy: String, createdAt: Instant, createdBy: String, lastAction: Option[ProcessAction])
 
 }

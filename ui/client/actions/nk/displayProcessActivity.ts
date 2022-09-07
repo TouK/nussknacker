@@ -4,7 +4,7 @@ import {ThunkAction} from "../reduxTypes"
 
 export type DisplayProcessActivityAction = {
   type: "DISPLAY_PROCESS_ACTIVITY",
-  comments: $TodoType[],
+  comments: Comment[],
   attachments: Attachment[],
 }
 

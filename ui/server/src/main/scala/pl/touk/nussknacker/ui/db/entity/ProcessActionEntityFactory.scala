@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.ui.db.entity
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessActionType
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
-import pl.touk.nussknacker.ui.db.DateUtils
 import slick.lifted.{ForeignKeyQuery, ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.{NotNull, Nullable}
+
+import java.time.Instant
 
 trait ProcessActionEntityFactory extends BaseEntityFactory {
 
@@ -62,7 +62,7 @@ case class ProcessActionEntityData(processId: ProcessId,
                                    commentId: Option[Long],
                                    buildInfo: Option[String]) {
 
-  lazy val performedAtTime: LocalDateTime = DateUtils.toLocalDateTime(performedAt)
+  lazy val performedAtTime: Instant = performedAt.toInstant
   lazy val isDeployed: Boolean = action.equals(ProcessActionType.Deploy)
   lazy val isCanceled: Boolean = action.equals(ProcessActionType.Cancel)
 }

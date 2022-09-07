@@ -14,7 +14,7 @@ import pl.touk.nussknacker.ui.process.deployment.{DeployInfo, DeploymentStatusRe
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import java.time.temporal.ChronoUnit
-import java.time.{Clock, Instant, LocalDateTime, ZoneId}
+import java.time.{Clock, Instant, ZoneId}
 import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
 
@@ -46,7 +46,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val userIdForFail = "user1"
     val userIdForSuccess = "user2"
 
-    listener.handle(OnDeployActionSuccess(ProcessId(1), VersionId(1), None, LocalDateTime.now(), ProcessActionType.Cancel))(ctx, ListenerApiUser(LoggedUser(userIdForSuccess, "")))
+    listener.handle(OnDeployActionSuccess(ProcessId(1), VersionId(1), None, Instant.now(), ProcessActionType.Cancel))(ctx, ListenerApiUser(LoggedUser(userIdForSuccess, "")))
     notificationsFor(userIdForSuccess).map(_.toRefresh) shouldBe List(refreshDeployInProgress, refreshAfterSuccess)
 
     listener.handle(OnDeployActionFailed(ProcessId(1), new RuntimeException("Failure")))(ctx, ListenerApiUser(LoggedUser(userIdForFail, "")))

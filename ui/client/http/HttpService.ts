@@ -10,7 +10,7 @@ import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Pr
 import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
 import {Process, ProcessDefinitionData, ProcessId} from "../types"
-import {WithId} from "../types/common"
+import {WithId, Instant} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
@@ -90,9 +90,9 @@ export type ComponentUsageType = {
   isArchived: boolean,
   isSubprocess: boolean,
   processCategory: string,
-  modificationDate: string,
+  modificationDate: Instant,
   modifiedBy: string,
-  createdAt: string,
+  createdAt: Instant,
   createdBy: string,
   lastAction: ProcessActionType,
 }

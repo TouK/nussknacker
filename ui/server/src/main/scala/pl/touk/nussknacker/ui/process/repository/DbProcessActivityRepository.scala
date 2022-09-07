@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.ui.process.repository
 
 import java.sql.Timestamp
-import java.time.LocalDateTime
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
@@ -13,6 +12,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{At
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.listener.{Comment => CommentValue}
 
+import java.time.Instant
 import scala.concurrent.{ExecutionContext, Future}
 
 trait ProcessActivityRepository {
@@ -66,7 +66,7 @@ case class DbProcessActivityRepository(dbConfig: DbConfig)
         fileName = attachmentToAdd.fileName,
         data = attachmentToAdd.data,
         user = loggedUser.username,
-        createDate = Timestamp.valueOf(LocalDateTime.now())
+        createDate = Timestamp.from(Instant.now())
       )
     } yield ()
 
@@ -83,7 +83,7 @@ object DbProcessActivityRepository {
 
   @JsonCodec case class ProcessActivity(comments: List[Comment], attachments: List[Attachment])
 
-  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: VersionId, fileName: String, user: String, createDate: LocalDateTime)
+  @JsonCodec  case class Attachment(id: Long, processId: String, processVersionId: VersionId, fileName: String, user: String, createDate: Instant)
 
   object Attachment {
     def apply(attachment: AttachmentEntityData, processName: String): Attachment = {
@@ -98,7 +98,7 @@ object DbProcessActivityRepository {
     }
   }
 
-  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: VersionId, content: String, user: String, createDate: LocalDateTime)
+  @JsonCodec case class Comment(id: Long, processId: String, processVersionId: VersionId, content: String, user: String, createDate: Instant)
   object Comment {
     def apply(comment: CommentEntityData, processName: String): Comment = {
       Comment(

@@ -19,7 +19,7 @@
   with whole necessary parameters.
 * [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
 * [#3505](https://github.com/TouK/nussknacker/pull/3505) Bump node version to 16.5.1
-
+* [#3506](https://github.com/TouK/nussknacker/pull/3506) Fix date formatting to use client timezone                    
 
 1.5.0 (16 Aug 2022)
 ------------------------
