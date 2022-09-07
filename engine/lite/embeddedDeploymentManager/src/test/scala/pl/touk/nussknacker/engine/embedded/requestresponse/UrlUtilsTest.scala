@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.embedded.requestresponse
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.lite.requestresponse.UrlUtils
 
 class UrlUtilsTest extends AnyFunSuite with Matchers {
 
