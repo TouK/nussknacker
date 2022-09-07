@@ -5,8 +5,7 @@ import cats.data.Validated.Valid
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
-import pl.touk.nussknacker.engine.lite.requestresponse.UrlUtils
+import pl.touk.nussknacker.engine.embedded.requestresponse.{RequestResponseDeploymentStrategy, UrlUtils}
 
 object EmbeddedLiteScenarioValidator {
 

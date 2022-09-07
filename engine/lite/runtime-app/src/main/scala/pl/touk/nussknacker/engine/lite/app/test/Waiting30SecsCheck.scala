@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka.test
+package pl.touk.nussknacker.engine.lite.app.test
 
 import akka.actor.ActorSystem
 import com.typesafe.scalalogging.LazyLogging
@@ -11,7 +11,7 @@ import scala.concurrent.Future
 This class is for purpose of testing k8s deployment status. If you wan to turn it on, you must add:
 ```
 akka.management.health-checks.readiness-checks {
-  wait-30secs = "pl.touk.nussknacker.engine.lite.kafka.test.Waiting30SecsCheck"
+  wait-30secs = "pl.touk.nussknacker.engine.lite.app.test.Waiting30SecsCheck"
 }
 ```
 to application.conf

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.requestresponse
+package pl.touk.nussknacker.engine.embedded.requestresponse
 
 object UrlUtils {
 
@@ -11,7 +11,7 @@ object UrlUtils {
   def sanitizeUrlSlug(string: String): String =
     string.replaceAll(s"[^$unreservedUrlCharactersRegex]", "-")
 
- def validateUrlSlug(string: String): Boolean =
-   string.matches(s"[$unreservedUrlCharactersRegex]+")
+  def validateUrlSlug(string: String): Boolean =
+    string.matches(s"[$unreservedUrlCharactersRegex]+")
 
 }

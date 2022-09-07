@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{EngineConfig, Input, Output}
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{KafkaInterpreterConfig, Input, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
 import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
@@ -31,7 +31,7 @@ import scala.util.control.NonFatal
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
                                  runtimeContext: EngineRuntimeContext,
-                                 engineConfig: EngineConfig,
+                                 engineConfig: KafkaInterpreterConfig,
                                  interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
                                  sourceMetrics: SourceMetrics)
                                 (implicit ec: ExecutionContext) extends Task with LazyLogging {

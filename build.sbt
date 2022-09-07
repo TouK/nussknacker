@@ -476,8 +476,17 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
       liteRequestResponseComponents / Compile / assembly,
       defaultModel / Compile / assembly,
-    ).value
+    ).value,
+    libraryDependencies ++= {
+      Seq(
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+        "com.typesafe.akka" %% "akka-stream" % akkaV,
+        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
+        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test"
+      )
+    }
   ).
+  // TODO: remove deploymentManagerApi from deps after removing requestResponseApp
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
     componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
 
@@ -1018,20 +1027,21 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "ch.qos.logback" % "logback-classic" % logbackV,
         "ch.qos.logback.contrib" % "logback-json-classic" % logbackJsonV,
         "ch.qos.logback.contrib" % "logback-jackson" % logbackJsonV,
-        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV
+        "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+        "com.typesafe.akka" %% "akka-http" % akkaHttpV
       )
     },
   ).dependsOn(liteComponentsApi, interpreter, testUtils % "test")
 
-lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("kafka/integration-test")).
+lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration-test")).
   configs(IntegrationTest).
   settings(itSettings()).
   settings(commonSettings).
   settings(
-    name := "nussknacker-lite-kafka-integration-test",
+    name := "nussknacker-lite-integration-test",
     IntegrationTest / Keys.test := (IntegrationTest / Keys.test).dependsOn(
-      liteEngineKafkaRuntime / Universal / stage,
-      liteEngineKafkaRuntime / Docker / publishLocal
+      liteEngineRuntimeApp / Universal / stage,
+      liteEngineRuntimeApp / Docker / publishLocal
     ).value,
     libraryDependencies ++= Seq(
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
@@ -1049,11 +1059,11 @@ lazy val liteEngineKafkaComponentsApi = (project in lite("kafka/components-api")
     )
   ).dependsOn(liteComponentsApi)
 
-lazy val liteEngineKafkaRuntimeDockerSettings = {
+lazy val liteEngineRuntimeAppDockerSettings = {
   val workingDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nu-kafka-engine-entrypoint.sh"),
+    dockerEntrypoint := Seq(s"$workingDir/bin/nu-engine-entrypoint.sh"),
     Docker / defaultLinuxInstallLocation := workingDir,
     packageName := liteEngineKafkaRuntimeDockerPackageName,
     dockerLabels := Map(
@@ -1065,7 +1075,14 @@ lazy val liteEngineKafkaRuntimeDockerSettings = {
 
 lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
   settings(commonSettings).
-  settings(liteEngineKafkaRuntimeDockerSettings).
+  settings(
+    name := "nussknacker-lite-kafka-runtime"
+  ).dependsOn(liteEngineRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test",
+  kafkaTestUtils % "test", liteBaseComponents % "test")
+
+lazy val liteEngineRuntimeApp: Project = (project in lite("runtime-app")).
+  settings(commonSettings).
+  settings(liteEngineRuntimeAppDockerSettings).
   enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
   settings(
     name := "nussknacker-lite-runtime-app",
@@ -1073,7 +1090,6 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       (defaultModel / assembly).value -> "model/defaultModel.jar",
       (liteBaseComponents / assembly).value -> "components/lite/liteBase.jar",
       (liteKafkaComponents / assembly).value -> "components/lite/liteKafka.jar",
-      // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
       (liteRequestResponseComponents / assembly).value -> "components/lite/liteRequestResponse.jar",
       (openapiComponents / assembly).value -> "components/common/openapi.jar",
       (sqlComponents / assembly).value -> "components/common/sql.jar"
@@ -1083,14 +1099,11 @@ lazy val liteEngineKafkaRuntime: Project = (project in lite("kafka/runtime")).
       "commons-io" % "commons-io" % commonsIOV,
       "com.lightbend.akka.management" %% "akka-management" % akkaManagementV,
       "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-      // must be explicit version because otherwise ManifestInfo.checkSameVersion reports error
-      "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpV,
       "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
       "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
     )
-    // TODO: merge kafka with reqresp or move out reqresp from kafka to separate artifacts
-  ).dependsOn(liteEngineRuntime, requestResponseRuntime, liteEngineKafkaComponentsApi, kafkaUtils, testUtils % "test",
-  kafkaTestUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
+  ).dependsOn(liteEngineKafkaRuntime, requestResponseRuntime, testUtils % "test", kafkaTestUtils % "test", liteBaseComponents % "test",
+  liteRequestResponseComponents % "test")
 
 lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentManager")).
   configs(IntegrationTest).
@@ -1146,8 +1159,8 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
       buildAndImportRuntimeImageToK3d
     ).value
   ).dependsOn(
-  liteEngineKafkaRuntime, // for tests purpose
-  deploymentManagerApi % "provided", testUtils % "test")
+  liteEngineKafkaRuntime, // for tests mechanism purpose
+  requestResponseComponentsApi, deploymentManagerApi % "provided", testUtils % "test")
 
 
 lazy val componentsApi = (project in file("components-api")).
@@ -1521,7 +1534,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, requestResponseApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
+  requestResponseRuntime, requestResponseApp, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,

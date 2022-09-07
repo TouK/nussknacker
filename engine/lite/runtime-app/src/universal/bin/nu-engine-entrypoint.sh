@@ -37,7 +37,7 @@ fi
 
 WORKING_DIR=${WORKING_DIR:-$NUSSKNACKER_DIR}
 
-echo "Starting Nussknacker Kafka Runtime"
+echo "Starting Nussknacker Lite Runtime"
 
 exec java $JAVA_DEBUG_OPTS $JAVA_PROMETHEUS_OPTS -Dlogback.configurationFile="$LOGBACK_FILE" \
           -Dnussknacker.config.locations="$CONFIG_FILE" -Dconfig.override_with_env_vars=true \

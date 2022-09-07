@@ -47,13 +47,13 @@ object KafkaTransactionalScenarioInterpreter {
     interpreterTimeout and publishTimeouts should be adjusted to fetch.max.bytes/max.poll.records
     shutdownTimeout should be longer then pollDuration
    */
-  case class EngineConfig(pollDuration: FiniteDuration = 100 millis,
-                          shutdownTimeout: Duration = 10 seconds,
-                          interpreterTimeout: Duration = 10 seconds,
-                          publishTimeout: Duration = 5 seconds,
-                          waitAfterFailureDelay: FiniteDuration = 10 seconds,
-                          kafka: KafkaConfig,
-                          exceptionHandlingConfig: KafkaExceptionConsumerConfig)
+  case class KafkaInterpreterConfig(pollDuration: FiniteDuration = 100 millis,
+                                    shutdownTimeout: Duration = 10 seconds,
+                                    interpreterTimeout: Duration = 10 seconds,
+                                    publishTimeout: Duration = 5 seconds,
+                                    waitAfterFailureDelay: FiniteDuration = 10 seconds,
+                                    kafka: KafkaConfig,
+                                    exceptionHandlingConfig: KafkaExceptionConsumerConfig)
 
   private[kafka] implicit val capability: FixedCapabilityTransformer[Future] = new FixedCapabilityTransformer[Future]()
 
@@ -89,13 +89,13 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   private val sourceMetrics = new SourceMetrics(interpreter.sources.keys)
 
-  private val engineConfig = modelData.processConfig.as[EngineConfig]
+  private val interpreterConfig = modelData.processConfig.as[KafkaInterpreterConfig]
 
   private val taskRunner: TaskRunner = new TaskRunner(scenario.id,
     liteKafkaJobData.tasksCount,
     createScenarioTaskRun ,
-    engineConfig.shutdownTimeout,
-    engineConfig.waitAfterFailureDelay,
+    interpreterConfig.shutdownTimeout,
+    interpreterConfig.waitAfterFailureDelay,
     context.metricsProvider)
 
   override def run(): Future[Unit] = {
@@ -110,7 +110,7 @@ class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: Scenario
 
   //to override in tests...
   private[kafka] def createScenarioTaskRun(taskId: String): Task = {
-    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, engineConfig, interpreter, sourceMetrics)
+    new KafkaSingleScenarioTaskRun(taskId, scenario.metaData, context, interpreterConfig, interpreter, sourceMetrics)
   }
 
   override def routes: Option[Route] = None

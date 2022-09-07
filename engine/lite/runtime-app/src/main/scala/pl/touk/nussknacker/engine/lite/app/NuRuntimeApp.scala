@@ -1,18 +1,16 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.app
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.server.Directives
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import org.apache.commons.io.FileUtils
 import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.{HttpConfig, RunnableScenarioInterpreterFactory}
+import pl.touk.nussknacker.engine.lite.HttpConfig
 import pl.touk.nussknacker.engine.marshall.ScenarioParser
 import pl.touk.nussknacker.engine.util.config.ConfigFactoryExt
-import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 import pl.touk.nussknacker.engine.util.{JavaClassVersionChecker, SLF4JBridgeHandlerRegistrar}
 
 import java.nio.file.Path
@@ -20,20 +18,23 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import scala.util.control.NonFatal
 
-// TODO: get rid of kafka specific things: class name, LiteKafkaJobData
 object NuRuntimeApp extends App with LazyLogging {
+
+  import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
+  import pl.touk.nussknacker.engine.util.config.CustomFicusInstances._
 
   JavaClassVersionChecker.check()
   SLF4JBridgeHandlerRegistrar.register()
 
   val (scenarioFileLocation, deploymentConfigLocation) = parseArgs
   val scenario = parseScenario(scenarioFileLocation)
-  val liteKafkaJobData = parseDeploymentConfig(deploymentConfigLocation)
+  val deploymentConfig = parseDeploymentConfig(deploymentConfigLocation)
   val runtimeConfig = ConfigFactory.load(ConfigFactoryExt.parseUnresolved(classLoader = getClass.getClassLoader))
 
   val httpConfig = runtimeConfig.as[HttpConfig]("http")
 
   implicit val system = ActorSystem("nu-lite-runtime", runtimeConfig)
+
   import system.dispatcher
 
   // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
@@ -53,7 +54,7 @@ object NuRuntimeApp extends App with LazyLogging {
   private val akkaHttpCloseTimeout = 10 seconds
 
   private def runAfterActorSystemCreation(): Unit = {
-    val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, liteKafkaJobData, system)
+    val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
 
     val healthCheckProvider = new HealthCheckRoutesProvider(system, scenarioInterpreter)
 
@@ -114,8 +115,8 @@ object NuRuntimeApp extends App with LazyLogging {
     }
   }
 
-  private def parseDeploymentConfig(path: Path): LiteKafkaJobData = {
-    ConfigFactory.parseFile(path.toFile).as[LiteKafkaJobData]
+  private def parseDeploymentConfig(path: Path): Config = {
+    ConfigFactory.parseFile(path.toFile)
   }
 
 }

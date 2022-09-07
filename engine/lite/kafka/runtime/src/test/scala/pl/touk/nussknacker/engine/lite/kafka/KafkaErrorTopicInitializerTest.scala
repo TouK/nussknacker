@@ -19,7 +19,7 @@ class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Mat
   private def initializer(topic: String): KafkaErrorTopicInitializer = {
     val engineConfig = config
       .withValue("exceptionHandlingConfig.topic", fromAnyRef(topic))
-      .as[EngineConfig]
+      .as[KafkaInterpreterConfig]
     new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig)
   }
 

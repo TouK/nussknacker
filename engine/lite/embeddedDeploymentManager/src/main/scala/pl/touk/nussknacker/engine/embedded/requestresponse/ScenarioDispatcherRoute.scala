@@ -6,7 +6,7 @@ import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import akka.stream.Materializer
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.lite.requestresponse.ScenarioRoute
+import pl.touk.nussknacker.engine.requestresponse.ScenarioRoute
 
 import scala.concurrent.ExecutionContext
 

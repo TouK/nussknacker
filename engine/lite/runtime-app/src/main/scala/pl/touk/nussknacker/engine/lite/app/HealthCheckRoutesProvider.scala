@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.kafka
+package pl.touk.nussknacker.engine.lite.app
 
 import akka.actor.{Actor, ActorSystem, Props}
 import akka.http.scaladsl.server.Route
@@ -8,7 +8,7 @@ import akka.util.Timeout
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.TaskStatus.{Running, TaskStatus}
-import pl.touk.nussknacker.engine.lite.kafka.RunnableScenarioInterpreterStatusCheckerActor.GetStatus
+import pl.touk.nussknacker.engine.lite.app.RunnableScenarioInterpreterStatusCheckerActor.GetStatus
 
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -22,7 +22,7 @@ class HealthCheckRoutesProvider(system: ActorSystem, scenarioInterpreter: Runnab
   def routes: Route = management.routes
 }
 
-class KafkaRuntimeRunningCheck(system: ActorSystem) extends (() => Future[Boolean]) with LazyLogging {
+class InterpreterIsRunningCheck(system: ActorSystem) extends (() => Future[Boolean]) with LazyLogging {
 
   // default check timeout is 1sec so ask timeout should be lower to see details of error
   private implicit val askTimeout: Timeout = Timeout(900.millis)

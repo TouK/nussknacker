@@ -19,8 +19,7 @@ import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.{HttpConfig, TestRunner}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.lite.requestresponse.{RequestResponseAkkaHttpHandler, RequestResponseConfig, ScenarioRoute, UrlUtils}
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseInterpreter}
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseAkkaHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
 import scala.collection.concurrent.TrieMap

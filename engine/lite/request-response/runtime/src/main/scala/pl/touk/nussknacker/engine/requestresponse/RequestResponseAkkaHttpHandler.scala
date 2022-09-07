@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.requestresponse
+package pl.touk.nussknacker.engine.requestresponse
 
 import akka.http.scaladsl.server.{Directive1, Directives}
 import cats.data.{EitherT, NonEmptyList}
@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
-import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics

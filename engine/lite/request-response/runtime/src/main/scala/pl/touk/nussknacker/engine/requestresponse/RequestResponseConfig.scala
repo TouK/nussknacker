@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.requestresponse
+package pl.touk.nussknacker.engine.requestresponse
 
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 

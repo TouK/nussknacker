@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.requestresponse
+package pl.touk.nussknacker.engine.requestresponse
 
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
 import akka.http.scaladsl.testkit.ScalatestRouteTest
@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
-import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.{InputSchemaProperty, OutputSchemaProperty}
 import pl.touk.nussknacker.engine.requestresponse.openapi.OApiServer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.lite.requestresponse
+package pl.touk.nussknacker.engine.requestresponse
 
 import akka.event.Logging
 import akka.http.scaladsl.model.MediaTypes.`application/json`
