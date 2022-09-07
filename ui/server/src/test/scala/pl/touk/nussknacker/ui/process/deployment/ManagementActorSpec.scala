@@ -130,8 +130,10 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
         listener.events shouldBe 'empty
       }
     }
-    checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
-    listener.events.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
+    eventually {
+      checkStatusAction(SimpleStateStatus.Running, Some(ProcessActionType.Deploy))
+      listener.events.filter(_.isInstanceOf[OnDeployActionSuccess]) should have length 1
+    }
   }
 
   test("Should skip notifications and deployment on validation errors") {
