@@ -35,7 +35,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3502](https://github.com/TouK/nussknacker/pull/3502) Refactor of `KafkaProperties`: `kafkaAddress` property has been deprecated. Please provide `kafkaProperties."bootstrap.servers"` instead
 
 ### Other changes
-* [#3441](https://github.com/TouK/nussknacker/pull/3441) Updated Flink 1.14.5 -> 1.15.2
+* [#3441](https://github.com/TouK/nussknacker/pull/3441) Updated Flink 1.14.5 -> 1.15.2. Some Flink artefacts no longer have Scala version. Test using Flink may need to disable checkpointing or reduce time between checkpoints to prevent timeouts or long waits for tasks to finish.
 
 ## In version 1.5.0
 
