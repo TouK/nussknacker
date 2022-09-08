@@ -248,6 +248,8 @@ lazy val commonSettings =
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
+
+        "org.slf4j" % "slf4j-api" % slf4jV
       )
     )
 
