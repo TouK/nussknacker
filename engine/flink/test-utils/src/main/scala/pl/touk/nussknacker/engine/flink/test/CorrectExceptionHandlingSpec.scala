@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.scala._
-import org.scalatest.{Suite}
+import org.scalatest.Suite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed

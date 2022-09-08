@@ -18,8 +18,8 @@ import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder.AdditionalEn
 
 import scala.collection.JavaConverters._
 
-class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig) extends StreamExecutionEnvironment
-  with LazyLogging with Matchers {
+class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHolder, userFlinkClusterConfig: Configuration, envConfig: AdditionalEnvironmentConfig)
+  extends StreamExecutionEnvironment(userFlinkClusterConfig) with LazyLogging with Matchers {
 
   // Warning: this method assume that will be one job for all checks inside action. We highly recommend to execute
   // job once per test class and then do many concurrent scenarios basing on own unique keys in input.
@@ -37,23 +37,23 @@ class MiniClusterExecutionEnvironment(flinkMiniClusterHolder: FlinkMiniClusterHo
     }
   }
 
-  def stopJob[T](jobName: String, executionResult: JobExecutionResult): Unit = {
+  def stopJob(jobName: String, executionResult: JobExecutionResult): Unit = {
     stopJob(jobName, executionResult.getJobID)
   }
 
-  def stopJob[T](jobName: String, jobID: JobID): Unit = {
+  def stopJob(jobName: String, jobID: JobID): Unit = {
     flinkMiniClusterHolder.cancelJob(jobID)
     waitForJobState(jobID, jobName, ExecutionState.CANCELED, ExecutionState.FINISHED, ExecutionState.FAILED)()
     cleanupGraph()
   }
 
-  def executeAndWaitForStart[T](jobName: String): JobExecutionResult = {
+  def executeAndWaitForStart(jobName: String): JobExecutionResult = {
     val res = execute(jobName)
     waitForStart(res.getJobID, jobName)()
     res
   }
 
-  def executeAndWaitForFinished[T](jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
+  def executeAndWaitForFinished(jobName: String)(patience: Eventually.PatienceConfig = envConfig.defaultWaitForStatePatience): JobExecutionResult = {
     val res = execute(jobName)
     waitForJobState(res.getJobID, jobName, ExecutionState.FINISHED)(patience)
     res
