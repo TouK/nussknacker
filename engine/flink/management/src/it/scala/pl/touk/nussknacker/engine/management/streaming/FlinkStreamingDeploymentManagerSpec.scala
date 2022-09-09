@@ -35,7 +35,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
     val process = SampleProcess.prepareProcess(processName)
 
-    deployProcessAndWaitIfRunning(process, version)
+    deployProcessAndWaitIfRunning(process, version, None)
     try {
       processVersion(ProcessName(processName)) shouldBe Some(version)
     } finally {
@@ -50,7 +50,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val process = SampleProcess.prepareProcess(processName)
     val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
-    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process.toCanonicalProcess, None)
+    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process.toCanonicalProcess, None, None)
 
     deployedResponse.futureValue
   }
@@ -70,12 +70,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     kafkaClient.createTopic(inTopic, 1)
     logger.info("Kafka topics created, deploying scenario")
 
-    deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
+    val oldJobStatus = deployProcessAndWaitIfRunning(kafkaProcess, empty(processId), None)
     try {
       kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "1")).get(30, TimeUnit.SECONDS)
       messagesFromTopic(outTopic, 1).head shouldBe "1"
 
-      deployProcessAndWaitIfRunning(kafkaProcess, empty(processId))
+      deployProcessAndWaitIfRunning(kafkaProcess, empty(processId), oldJobStatus)
 
       kafkaClient.producer.send(new ProducerRecord[String, String](inTopic, "2")).get(30, TimeUnit.SECONDS)
       messagesFromTopic(outTopic, 2).last shouldBe "2"
@@ -91,12 +91,12 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    val oldJobStatus = deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), None)
     try {
       //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), oldJobStatus)
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("List(One element)", "List(One element, One element)")
@@ -112,7 +112,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    val oldJobStatus = deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), None)
     try {
       //we wait for first element to appear in kafka to be sure it's processed, before we proceed to checkpoint
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
@@ -124,7 +124,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       Paths.get(savepointPath).startsWith(savepointDir) shouldBe true
 
       cancelProcess(processId)
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.toString))
+      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), oldJobStatus, Some(savepointPath.toString))
 
       val messages = messagesFromTopic(outTopic, 2)
       messages shouldBe List("List(One element)", "List(One element, One element)")
@@ -140,7 +140,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId))
+    val oldJobStatus = deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), None)
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("List(One element)")
 
@@ -150,7 +150,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
         status.map(_.status) shouldBe Some(FlinkStateStatus.Finished)
       }
 
-      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), Some(savepointPath.futureValue))
+      deployProcessAndWaitIfRunning(processEmittingOneElementAfterStart, empty(processId), oldJobStatus, Some(savepointPath.futureValue))
 
       messagesFromTopic(outTopic, 2) shouldBe List("List(One element)", "List(One element, One element)")
     } finally {
@@ -165,14 +165,14 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(process, empty(process.id))
+    val oldJobStatus = deployProcessAndWaitIfRunning(process, empty(process.id), None)
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("")
 
       logger.info("Starting to redeploy")
 
       val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processId)
-      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefullProcess.toCanonicalProcess, None).failed.futureValue
+      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefullProcess.toCanonicalProcess, None, oldJobStatus).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processId)
@@ -186,14 +186,14 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
 
     kafkaClient.createTopic(outTopic, 1)
 
-    deployProcessAndWaitIfRunning(process, empty(process.id))
+    val oldJobStatus = deployProcessAndWaitIfRunning(process, empty(process.id), None)
     try {
       messagesFromTopic(outTopic, 1) shouldBe List("test")
 
       logger.info("Starting to redeploy")
 
       val statefulProcess = StatefulSampleProcess.processWithAggregator(processId, "#AGG.approxCardinality")
-      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefulProcess.toCanonicalProcess, None).failed.futureValue
+      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefulProcess.toCanonicalProcess, None, oldJobStatus).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processId)

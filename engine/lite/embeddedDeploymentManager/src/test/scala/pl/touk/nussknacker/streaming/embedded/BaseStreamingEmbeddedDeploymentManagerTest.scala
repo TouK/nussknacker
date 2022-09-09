@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
@@ -26,10 +26,10 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
 
   override protected def schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.schemaRegistryMockClient
 
-  case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
+  case class FixtureParam(deploymentManager: EmbeddedDeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: EspProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None, ()).futureValue
     }
   }
 

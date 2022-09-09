@@ -32,7 +32,7 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends AnyFunSuite with
 
     val version = ProcessVersion(VersionId.initialVersionId, ProcessName(lockProcess.id), ProcessId(1), "user1", None)
 
-    deployProcessAndWaitIfRunning(lockProcess, version)
+    deployProcessAndWaitIfRunning(lockProcess, version, None)
     val jobId = deploymentManager.findJobStatus(version.processName).futureValue
       .flatMap(_.deploymentId).get.value
 

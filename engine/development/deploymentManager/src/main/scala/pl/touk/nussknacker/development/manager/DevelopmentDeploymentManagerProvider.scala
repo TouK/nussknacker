@@ -28,6 +28,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
 
   import SimpleStateStatus._
 
+  override type ValidationResult = Unit
+
   //Use these "magic" description values to simulate deployment/validation failure
   private val descriptionForValidationFail = "validateFail"
   private val descriptionForDeploymentFail = "deployFail"
@@ -73,7 +75,8 @@ class DevelopmentDeploymentManager(actorSystem: ActorSystem) extends DeploymentM
     canonicalProcess.metaData.additionalFields.flatMap(_.description)
   }
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
+                      savepointPath: Option[String], validationResult: Unit): Future[Option[ExternalDeploymentId]] = {
     logger.debug(s"Starting deploying scenario: ${processVersion.processName}..")
     val previous = memory.get(processVersion.processName)
     val duringDeployStateStatus = createAndSaveProcessState(DuringDeploy, processVersion)

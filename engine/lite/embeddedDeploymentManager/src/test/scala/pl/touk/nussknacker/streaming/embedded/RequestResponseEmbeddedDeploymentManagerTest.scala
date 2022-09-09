@@ -8,16 +8,16 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
+import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
-import pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
+import pl.touk.nussknacker.engine.embedded.{EmbeddedDeploymentManager, RequestResponseEmbeddedDeploymentManagerProvider}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.test.{AvailablePortFinder, PatientScalaFutures, VeryPatientScalaFutures}
+import pl.touk.nussknacker.test.{AvailablePortFinder, VeryPatientScalaFutures}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
 import sttp.model.StatusCode
 
@@ -38,14 +38,14 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
     val manager = new RequestResponseEmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
-      ConfigFactory.empty().withValue("http.port", fromAnyRef(port)).withValue("http.interface", fromAnyRef("localhost")))
+      ConfigFactory.empty().withValue("http.port", fromAnyRef(port)).withValue("http.interface", fromAnyRef("localhost"))).asInstanceOf[EmbeddedDeploymentManager]
     FixtureParam(manager, modelData, port)
   }
 
-  case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, port: Int) {
+  case class FixtureParam(deploymentManager: EmbeddedDeploymentManager, modelData: ModelData, port: Int) {
     def deployScenario(scenario: EspProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None, ()).futureValue
     }
   }
 

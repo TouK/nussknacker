@@ -116,14 +116,14 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
     val validatedData = for {
       resolvedCanonicalProces <- Future.fromTry(scenarioResolver.resolveScenario(process.json, process.processCategory))
       deploymentData = prepareDeploymentData(toManagerUser(user))
-      _ <- deploymentManager.validate(processVersion, deploymentData, resolvedCanonicalProces)
-    } yield (resolvedCanonicalProces, deploymentData)
+      validationResult <- deploymentManager.validate(processVersion, deploymentData, resolvedCanonicalProces)
+    } yield (resolvedCanonicalProces, deploymentData, validationResult)
 
-    validatedData.map { case (resolvedCanonicalProces, deploymentData) =>
+    validatedData.map { case (resolvedCanonicalProces, deploymentData, validationResult) =>
       //we notify of deployment finish/fail only if initial validation succeeded
       withDeploymentActionNotification(process.idWithName, "deploy", deploymentComment) {
         for {
-          _ <- deploymentManager.deploy(processVersion, deploymentData, resolvedCanonicalProces, savepointPath)
+          _ <- deploymentManager.deploy(processVersion, deploymentData, resolvedCanonicalProces, savepointPath, validationResult)
           deployedActionData <- actionRepository.markProcessAsDeployed(
             process.processId, process.processVersionId, process.processingType, deploymentComment)
         } yield deployedActionData

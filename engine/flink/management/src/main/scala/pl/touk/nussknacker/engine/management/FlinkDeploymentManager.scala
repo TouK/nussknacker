@@ -20,19 +20,22 @@ import scala.concurrent.{ExecutionContext, Future}
 abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
   extends DeploymentManager with LazyLogging {
 
+  override type ValidationResult = Option[ProcessState]
+
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    checkOldJobStatus(processVersion, canonicalProcess).map(_ => ())
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Option[ProcessState]] = {
+    checkOldJobStatus(processVersion, canonicalProcess)
   }
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
+                      savepointPath: Option[String], oldJobStatus: Option[ProcessState]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
 
     val stoppingResult = for {
-      oldJob <- OptionT(checkOldJobStatus(processVersion, canonicalProcess))
+      oldJob <- OptionT.fromOption[Future](oldJobStatus)
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
       if oldJob.isDeployed

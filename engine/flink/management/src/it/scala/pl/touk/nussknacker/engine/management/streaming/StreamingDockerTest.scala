@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
-import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
+import pl.touk.nussknacker.engine.management.{DockerTest, FlinkDeploymentManager, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{NothingT, SttpBackend}
 
@@ -38,21 +38,22 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
     super.afterAll()
   }
 
-  protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
+  protected lazy val deploymentManager: FlinkDeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config).asInstanceOf[FlinkDeploymentManager]
 
-  protected def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
-    deployProcess(process, processVersion, savepointPath)
+  protected def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, oldJobStatus: Option[ProcessState], savepointPath : Option[String] = None): Option[ProcessState] = {
+    deployProcess(process, processVersion, oldJobStatus, savepointPath)
     eventually {
       val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
       logger.debug(s"Waiting for deploy: ${process.id}, $jobStatus")
 
       jobStatus.map(_.status.name) shouldBe Some(FlinkStateStatus.Running.name)
       jobStatus.map(_.status.isRunning) shouldBe Some(true)
+      jobStatus
     }
   }
 
-  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
-    deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath).futureValue
+  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, oldJobStatus: Option[ProcessState], savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
+    deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath, oldJobStatus).futureValue
   }
 
   protected def cancelProcess(processId: String): Unit = {

@@ -11,16 +11,19 @@ import scala.concurrent.Future
 
 trait DeploymentManager extends AutoCloseable {
 
+  type ValidationResult
+
   /**
     * This method is invoked separately before deploy, to be able to give user quick feedback, as deploy (e.g. on Flink) may take long time
     */
-  def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit]
+  def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[ValidationResult]
 
   //TODO: savepointPath is very flink specific, we should handle this mode via custom action
   /**
     * We assume that validate was already called and was successful
     *  */
-  def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]]
+  def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
+             savepointPath: Option[String], validationResult: ValidationResult): Future[Option[ExternalDeploymentId]]
 
   def cancel(name: ProcessName, user: User): Future[Unit]
 

@@ -85,19 +85,21 @@ class EmbeddedDeploymentManager(modelData: ModelData,
                                 processingTypeDeploymentService: ProcessingTypeDeploymentService,
                                 deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
 
+  override type ValidationResult = Unit
+
   private val retrieveDeployedScenariosTimeout = 10.seconds
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
     val deployedScenarios = Await.result(processingTypeDeploymentService.getDeployedScenarios, retrieveDeployedScenariosTimeout)
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
-
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     // TODO: it should be moved into CustomProcessValidator after refactor of it
     Future.fromTry(EmbeddedLiteScenarioValidator.validate(canonicalProcess).toEither.toTry)
   }
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
+                      savepointPath: Option[String], validationResult: Unit): Future[Option[ExternalDeploymentId]] = {
     parseScenario(canonicalProcess).map { parsedResolvedScenario =>
       deployScenarioClosingOldIfNeeded(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately = true)
     }

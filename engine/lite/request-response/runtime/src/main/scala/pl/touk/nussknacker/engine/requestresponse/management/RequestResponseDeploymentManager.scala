@@ -27,9 +27,7 @@ object RequestResponseDeploymentManager {
 }
 
 class RequestResponseDeploymentManager(modelData: BaseModelData, client: RequestResponseClient)(implicit ec: ExecutionContext)
-  extends BaseDeploymentManager with LazyLogging {
-
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
+  extends BaseDeploymentManager with NoValidationDeploymentManager with LazyLogging {
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {

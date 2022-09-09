@@ -40,7 +40,8 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] =
     Future.successful(managerProcessState.get())
 
-  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepoint: Option[String]): Future[Option[ExternalDeploymentId]] = {
+  override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess,
+                      savepoint: Option[String], oldJobStatus: Option[ProcessState]): Future[Option[ExternalDeploymentId]] = {
     deploys.add(processVersion)
     deployResult
   }

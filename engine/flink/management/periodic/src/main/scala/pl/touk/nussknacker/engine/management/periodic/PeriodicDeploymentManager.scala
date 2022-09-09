@@ -79,6 +79,7 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
                                                   toClose: () => Unit)
                                                  (implicit val ec: ExecutionContext) extends DeploymentManager with LazyLogging {
 
+  override type ValidationResult = Unit
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
@@ -91,7 +92,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
   override def deploy(processVersion: ProcessVersion,
                       deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
-                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+                      savepointPath: Option[String],
+                      validationResult: Unit): Future[Option[ExternalDeploymentId]] = {
     extractScheduleProperty(canonicalProcess).flatMap { scheduleProperty =>
       logger.info(s"About to (re)schedule ${processVersion.processName} in version ${processVersion.versionId}")
       // PeriodicProcessStateDefinitionManager do not allow to redeploy (so doesn't GUI),

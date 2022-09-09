@@ -94,6 +94,8 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
 
+  override type ValidationResult = Unit
+
   //TODO: how to use dev-application.conf with not k8s config?
   private lazy val k8s = k8sInit
   private lazy val k8sUtils = new K8sUtils(k8s)
@@ -129,7 +131,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData,
                       canonicalProcess: CanonicalProcess,
-                      savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
+                      savepointPath: Option[String],
+                      validationResult: Unit): Future[Option[ExternalDeploymentId]] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
     for {
       configMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map(

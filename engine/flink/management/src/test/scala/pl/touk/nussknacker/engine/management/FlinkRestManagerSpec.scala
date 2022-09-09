@@ -140,7 +140,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         defaultVersion,
         defaultDeploymentData,
         canonicalProcess,
-        None
+        None, None
       ).futureValue shouldBe None
   }
 
@@ -152,7 +152,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
         defaultVersion,
         defaultDeploymentData,
         canonicalProcess,
-        None
+        None, None
       ), "java.net.NoRouteToHostException: heeelo?")
   }
 
@@ -165,7 +165,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val message = "Job p1 cannot be deployed, status: RESTARTING"
     expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
-    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
+    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None, None), message)
   }
 
   test("refuse to deploy if slots exceeded") {
@@ -174,14 +174,14 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
 
     val message = "Not enough free slots on Flink cluster. Available slots: 0, requested: 1. Extend resources of Flink cluster resources"
     expectException(manager.validate(defaultVersion, defaultDeploymentData, canonicalProcess), message)
-    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None), message)
+    expectException(manager.deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None, None), message)
   }
 
   test("allow deploy if process is failed") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
 
     createManager(statuses, acceptDeploy = true)
-      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
+      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None, None)
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 
@@ -189,7 +189,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.RUNNING.name(), tasksOverview(running = 1)))
 
     createManager(statuses, acceptDeploy = true, acceptSavepoint = true)
-      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None)
+      .deploy(defaultVersion, defaultDeploymentData, canonicalProcess, None, None)
       .futureValue shouldBe Some(ExternalDeploymentId(returnedJobId))
   }
 

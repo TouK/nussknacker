@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess
 
 import scala.concurrent.Future
 
-class DeploymentManagerStub extends BaseDeploymentManager {
+class DeploymentManagerStub extends BaseDeploymentManager with NoValidationDeploymentManager {
 
   var jobStatus: Option[ProcessState] = None
 
@@ -38,6 +38,5 @@ class DeploymentManagerStub extends BaseDeploymentManager {
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(jobStatus)
 
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 }
 
