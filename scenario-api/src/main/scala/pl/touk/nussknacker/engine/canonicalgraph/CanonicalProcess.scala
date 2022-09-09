@@ -5,7 +5,6 @@ import io.circe.{Decoder, Encoder}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
@@ -17,7 +16,7 @@ sealed trait CanonicalTreeNode
 object CanonicalProcess {
 
   //TODO: replace EspProcess use with CanonicalProcess where needed
-  implicit def toCanonical(espProcess: EspProcess): CanonicalProcess = espProcess.toCanonicalProcess
+  //implicit def toCanonical(espProcess: EspProcess): CanonicalProcess = espProcess.toCanonicalProcess
 
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
@@ -106,6 +105,9 @@ case class CanonicalProcess(metaData: MetaData,
     }
     allStartNodes.toList.flatten.flatMap(nextNodes)
   }
+
+  //TODO: remove & deprecate :) 
+  val toCanonicalProcess: CanonicalProcess = this
 
 }
 

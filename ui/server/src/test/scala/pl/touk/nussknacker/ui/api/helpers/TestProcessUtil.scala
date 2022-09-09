@@ -4,7 +4,7 @@ import io.circe.{Encoder, Json}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.{Deploy, ProcessActionType}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{NodeData, SubprocessInputDefinition}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
@@ -23,10 +23,10 @@ object TestProcessUtil {
 
   private val randomGenerator = new Random()
 
-  def toDisplayable(espProcess: EspProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): DisplayableProcess =
-    ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, processingType)
+  def toDisplayable(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): DisplayableProcess =
+    ProcessConverter.toDisplayable(espProcess, processingType)
 
-  def toJson(espProcess: EspProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
+  def toJson(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
     Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))
 
   def createBasicProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, lastAction: Option[ProcessActionType] = None, json: Option[DisplayableProcess] = None): BaseProcessDetails[DisplayableProcess] =

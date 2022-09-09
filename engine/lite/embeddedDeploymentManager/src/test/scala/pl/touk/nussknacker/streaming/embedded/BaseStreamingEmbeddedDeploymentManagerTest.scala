@@ -8,10 +8,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.{DeployedScenarioData, DeploymentManager, ProcessingTypeDeploymentServiceStub}
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessName}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManager
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -27,7 +27,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
   override protected def schemaRegistryClient: SchemaRegistryClient = MockSchemaRegistry.schemaRegistryMockClient
 
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
-    def deployScenario(scenario: EspProcess): Unit = {
+    def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
       deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
     }

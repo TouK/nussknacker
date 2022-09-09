@@ -19,11 +19,11 @@ import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEdito
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -444,11 +444,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
                       aggregateBy: String,
                       timeoutParamName: String,
                       additionalParams: Map[String, String],
-                      afterAggregateExpression: String): EspProcess = {
+                      afterAggregateExpression: String): CanonicalProcess = {
     process(AggregateData(aggregatingNode, aggregator, aggregateBy, timeoutParamName, additionalParams, afterAggregateExpression = afterAggregateExpression))
   }
 
-  private def process(aggregateData: AggregateData*): EspProcess = {
+  private def process(aggregateData: AggregateData*): CanonicalProcess = {
 
     def params(data: AggregateData) = {
     val baseParams: List[(String, Expression)] = List(
@@ -473,7 +473,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }.emptySink("end", "dead-end")
   }
 
-  private def resolveFragmentWithTumblingAggregate(scenario: EspProcess): CanonicalProcess = {
+  private def resolveFragmentWithTumblingAggregate(scenario: CanonicalProcess): CanonicalProcess = {
     val fragmentWithTumblingAggregate = CanonicalProcess(MetaData("fragmentWithTumblingAggregate", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("aggBy", SubprocessClazzRef[Int]), SubprocessParameter("key", SubprocessClazzRef[String])))),

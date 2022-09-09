@@ -4,21 +4,20 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.ConfigFactory
 import io.dropwizard.metrics5.MetricRegistry
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.Inside.inside
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
-import pl.touk.nussknacker.engine.api.{Context, MetaData, ProcessVersion, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{Context, NodeId, ProcessVersion}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
-import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
@@ -28,8 +27,8 @@ import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
-import scala.collection.immutable.ListMap
 import scala.collection.convert.Wrappers.SeqWrapper
+import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
 
@@ -253,7 +252,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
   }
 
   test("should perform union") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -266,7 +265,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
             "branch1a" -> List("Output expression" -> "{a: #v2}"))
         )
         .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#unionOutput.a")
-    ))
+    )
 
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Valid(List("aa withRandomString", "bb withRandomString"))
@@ -274,7 +273,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   test("should sort split results") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
         .source("sourceId1", "request1-post-source")
         .split("spl",
@@ -293,7 +292,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .customNode("sorter", "sorted", "sorter",
           "maxCount" -> "2", "rank" -> "#unionOutput.rank", "output" -> "#unionOutput.value")
         .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
-    ))
+    )
 
     val result = runProcess(process, Request1("abc", "b"))
     result shouldBe Valid(List(util.Arrays.asList("v5", "v4")))
@@ -348,7 +347,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
   }
 
-  def runProcess(process: EspProcess,
+  def runProcess(process: CanonicalProcess,
                  input: Any,
                  creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
@@ -362,13 +361,13 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       invokeInterpreter(interpreter, input)
     }
 
-  def prepareInterpreter(process: EspProcess,
+  def prepareInterpreter(process: CanonicalProcess,
                          creator: RequestResponseConfigCreator,
                          metricRegistry: MetricRegistry): InterpreterType = {
     prepareInterpreter(process, creator, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
   }
 
-  def prepareInterpreter(process: EspProcess,
+  def prepareInterpreter(process: CanonicalProcess,
                          creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                          engineRuntimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): InterpreterType = {
     val simpleModelData = LocalModelData(ConfigFactory.load(), creator)
@@ -389,7 +388,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     }.futureValue
   }
 
-  private def firstIdForFirstSource(scenario: EspProcess): String =
-    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id).nextContextId()
+  private def firstIdForFirstSource(scenario: CanonicalProcess): String =
+    IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id).nextContextId()
 
 }

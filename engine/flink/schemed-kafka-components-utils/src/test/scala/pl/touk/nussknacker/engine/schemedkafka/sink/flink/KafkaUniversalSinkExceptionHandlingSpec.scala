@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
+import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -43,7 +44,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
     }
 
     checkExceptions(configCreator) { case (graph, generator) =>
-      graph.split("split",
+      NonEmptyList.one(graph.split("split",
         GraphBuilder.emptySink("avro-raw",
           "kafka",
           TopicParamName -> s"'$topic'",
@@ -62,7 +63,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
           "first" -> generator.throwFromString(),
           "last" -> generator.throwFromString()
         ),
-      )
+      ))
     }
 
   }

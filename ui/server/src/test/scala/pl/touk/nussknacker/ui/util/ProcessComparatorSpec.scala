@@ -4,14 +4,14 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterTrue, NextSwitch}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, Filter}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
-import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
+import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
-import pl.touk.nussknacker.ui.util.ProcessComparator.{EdgeDifferent, EdgeNotPresentInCurrent, EdgeNotPresentInOther, NodeDifferent, NodeNotPresentInCurrent, NodeNotPresentInOther, PropertiesDifferent}
+import pl.touk.nussknacker.ui.util.ProcessComparator._
 
 class ProcessComparatorSpec extends AnyFunSuite with Matchers {
 
@@ -112,7 +112,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
     )
   }
 
-  private def toDisplayable(espProcess: GraphBuilder[EspProcess] => EspProcess,
+  private def toDisplayable(espProcess: GraphBuilder[CanonicalProcess] => CanonicalProcess,
                             description: Option[String] = None,
                             properties: Map[String, String] = Map.empty) : DisplayableProcess  =
     toDisplayableFromProcess(espProcess(
@@ -125,7 +125,7 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
         .source("start", "testSource")
     ))
 
-  private def toDisplayableFromProcess(espProcess: EspProcess) : DisplayableProcess =
+  private def toDisplayableFromProcess(espProcess: CanonicalProcess) : DisplayableProcess =
     ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, TestProcessingTypes.Streaming)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {

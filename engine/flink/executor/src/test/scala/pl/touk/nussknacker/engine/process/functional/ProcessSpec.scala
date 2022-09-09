@@ -1,17 +1,15 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.LoneElement._
+import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.{RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.spel
@@ -92,13 +90,13 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
   test("should do simple join") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder.source("id", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
         .branchEnd("end1", "join1"),
       GraphBuilder.source("id2", "input")
         .branchEnd("end2", "join1"),
       GraphBuilder.join("join1", "sampleJoin", Some("input33"), List.empty).processorEnd("proc2", "logService", "all" -> "#input33")
-    ))
+    )
 
     val rec = SimpleRecord("1", 3, "a", new Date(0))
     val data = List(rec)
@@ -110,7 +108,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("should do join with branch expressions") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder.source("idInt", "intInputWithParam", "param" -> "#processHelper.add(2, 3)")
         .branchEnd("end1", "join1"),
       GraphBuilder.source("idOtherInt", "intInputWithParam", "param" -> "15")
@@ -130,7 +128,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           "end2" -> List("value" -> "#input2")
         ))
         .processorEnd("proc2", "logService", "all" -> "#input3")
-    ))
+    )
 
     val rec = SimpleRecord("1", 3, "a", new Date(0))
     val data = List(rec)
@@ -141,7 +139,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
   }
 
   test("should handle diamond-like process") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder.source("id", "input")
         .split("split",
           GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
@@ -153,7 +151,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
           "end2" -> List("value" -> "#input")
         ))
         .processorEnd("proc2", "logService", "all" -> "#input33")
-    ))
+    )
 
     val recA = SimpleRecord("a", 3, "a", new Date(1))
     val recB = SimpleRecord("b", 3, "a", new Date(2))

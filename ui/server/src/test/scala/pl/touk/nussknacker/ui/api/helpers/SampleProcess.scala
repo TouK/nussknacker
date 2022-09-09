@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.api.helpers
 
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.spel
 
@@ -9,7 +9,7 @@ object SampleProcess {
 
   import spel.Implicits._
 
-  val process: EspProcess = {
+  val process: CanonicalProcess = {
     ScenarioBuilder
       .streaming("sampleProcess")
       .parallelism(1)

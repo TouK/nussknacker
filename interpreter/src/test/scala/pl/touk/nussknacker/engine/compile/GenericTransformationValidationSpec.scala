@@ -3,22 +3,20 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
-import org.scalatest.{Inside, OptionValues}
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParserCompilationError, MissingParameters, RedundantParameters}
+import org.scalatest.{Inside, OptionValues}
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 
@@ -257,7 +255,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
 
   test("should compute dynamic parameters in joins") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .buildSimpleVariable("var1", "intVal", "123")
@@ -274,7 +272,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
             ), "rightValue" -> "#strVal + 'dd'"
           )
           .emptySink("end", "dummySink")
-      ))
+      )
     val validationResult = validator.validate(process)
 
     val varsInEnd = validationResult.variablesInNodes("end")

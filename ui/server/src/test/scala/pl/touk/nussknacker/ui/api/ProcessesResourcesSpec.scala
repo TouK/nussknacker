@@ -12,11 +12,12 @@ import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, Inside, 
 import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.StreamMetaData
+import pl.touk.nussknacker.engine.api.{ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
@@ -390,7 +391,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("save correct process json with ok status") {
     saveProcess(processName, ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.roots.head.id)
+      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.nodes.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
     }
   }
@@ -446,7 +447,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("save invalid process json with ok status but with non empty invalid nodes") {
     saveProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
-      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.roots.head.id)
+      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.nodes.head.id)
       entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
     }
   }
@@ -474,8 +475,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    updateProcess(processName, ProcessTestData.validProcess.copy(roots = ProcessTestData.validProcess
-      .roots.map(r => r.copy(data = r.data.asInstanceOf[Source].copy(id = "AARGH"))))) {
+    val meta = ProcessTestData.validProcess.metaData
+    val changedMeta = meta.copy(additionalFields = Some(ProcessAdditionalFields(Some("changed descritption..."), Map.empty)))
+    updateProcess(processName, ProcessTestData.validProcess.copy(metaData = changedMeta)) {
       status shouldEqual StatusCodes.OK
     }
 

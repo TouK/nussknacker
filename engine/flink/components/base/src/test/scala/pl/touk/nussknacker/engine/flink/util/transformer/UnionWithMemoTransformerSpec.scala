@@ -9,13 +9,13 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -44,7 +44,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val BranchFooId = "foo"
     val BranchBarId = "bar"
 
-    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process =  ScenarioBuilder.streaming("sample-union-memo").sources(
       GraphBuilder.source("start-foo", "start-foo")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "start-bar")
@@ -64,7 +64,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
         )
         .emptySink(EndNodeId, "end")
-    ))
+    )
 
     val key = "fooKey"
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -98,7 +98,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val BranchFooId = UnionWithMemoTransformer.KeyField
     val BranchBarId = "bar"
 
-    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process =  ScenarioBuilder.streaming("sample-union-memo").sources(
       GraphBuilder.source("start-foo", "start-foo")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "start-bar")
@@ -117,7 +117,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           ),
           "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
         ).emptySink(EndNodeId, "end")
-    ))
+    )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -139,7 +139,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val BranchFooId = "underscore_or_space"
     val BranchBarId = "underscore or space"
 
-    val process =  EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process =  ScenarioBuilder.streaming("sample-union-memo").sources(
       GraphBuilder.source("start-foo", "start-foo")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "start-bar")
@@ -158,7 +158,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           ),
           "stateTimeout" -> s"T(${classOf[Duration].getName}).parse('PT2H')"
         ).emptySink(EndNodeId, "end")
-    ))
+    )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -175,7 +175,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     }
   }
 
-  private def withProcess(testProcess: EspProcess, sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord],
+  private def withProcess(testProcess: CanonicalProcess, sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord],
                           collectingListener: ResultsCollectingListener)(action: => Unit): Unit = {
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()

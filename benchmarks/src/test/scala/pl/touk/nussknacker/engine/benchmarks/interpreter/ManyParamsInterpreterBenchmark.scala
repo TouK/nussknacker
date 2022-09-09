@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.benchmarks.interpreter
 
-import java.util.concurrent.TimeUnit
-
 import cats.effect.IO
-import org.openjdk.jmh.annotations.{Benchmark, BenchmarkMode, Mode, OutputTimeUnit, Scope, State}
+import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.api.{Context, MethodToInvoke, ParamName, Service}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -21,7 +20,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @State(Scope.Thread)
 class ManyParamsInterpreterBenchmark {
 
-  private val process: EspProcess = ScenarioBuilder
+  private val process: CanonicalProcess = ScenarioBuilder
     .streaming("t1")
     .source("source", "source")
     .enricher("e1", "out", "service", (1 to 20).map(i => s"p$i" -> ("''": Expression)): _*)

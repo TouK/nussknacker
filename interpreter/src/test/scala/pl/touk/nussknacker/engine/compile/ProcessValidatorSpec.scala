@@ -16,13 +16,13 @@ import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, Componen
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessObjectDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -1180,11 +1180,11 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  private def validate(process: EspProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
+  private def validate(process: CanonicalProcess, definitions: ProcessDefinition[ObjectDefinition]): CompilationResult[Unit] = {
     validateWithDef(process, ProcessDefinitionBuilder.withEmptyObjects(definitions))
   }
 
-  private def validateWithDef(process: EspProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
+  private def validateWithDef(process: CanonicalProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
     ProcessValidator.default(definitions, new SimpleDictRegistry(Map.empty)).validate(process)
   }
 

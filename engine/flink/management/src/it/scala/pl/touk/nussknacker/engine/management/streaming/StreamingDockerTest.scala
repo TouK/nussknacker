@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaClient
 import pl.touk.nussknacker.engine.management.{DockerTest, FlinkStateStatus, FlinkStreamingDeploymentManagerProvider}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
@@ -40,7 +40,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
 
   protected lazy val deploymentManager: DeploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
 
-  protected def deployProcessAndWaitIfRunning(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
+  protected def deployProcessAndWaitIfRunning(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Assertion = {
     deployProcess(process, processVersion, savepointPath)
     eventually {
       val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue
@@ -51,7 +51,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
     }
   }
 
-  protected def deployProcess(process: EspProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
+  protected def deployProcess(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
     deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath).futureValue
   }
 

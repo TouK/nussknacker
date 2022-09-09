@@ -8,16 +8,16 @@ import io.circe.Json
 import io.circe.Json.{fromInt, fromLong}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -79,7 +79,7 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     runWithResults(config).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
 
   private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, String]] = {
-    val jsonScenario: EspProcess = createScenario(config)
+    val jsonScenario: CanonicalProcess = createScenario(config)
     runtime.registerJsonSchema(config.sourceTopic, config.sourceSchema)
     runtime.registerJsonSchema(config.sinkTopic, config.sinkSchema)
 

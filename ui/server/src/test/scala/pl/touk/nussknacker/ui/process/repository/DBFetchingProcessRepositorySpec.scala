@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.ui.process.repository
 
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails
@@ -221,7 +220,7 @@ class DBFetchingProcessRepositorySpec
     processUpdated.right.get
   }
 
-  private def saveProcess(espProcess: EspProcess, now: Instant, category: String = "") = {
+  private def saveProcess(espProcess: CanonicalProcess, now: Instant, category: String = "") = {
     currentTime = now
     val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess.toCanonicalProcess, TestProcessingTypes.Streaming, false)
 

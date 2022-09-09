@@ -6,10 +6,9 @@ import io.circe.Json._
 import io.circe.generic.JsonCodec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ProcessVersion, Service}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
@@ -68,7 +67,7 @@ trait RequestResponseInterpreterTest extends Matchers {
 
   private val modelData = LocalModelData(ConfigFactory.empty(), new TestConfigCreator)
   private val componentUseCase = ComponentUseCase.TestRuntime
-  def prepareInterpreter(process: EspProcess): InterpreterType = {
+  def prepareInterpreter(process: CanonicalProcess): InterpreterType = {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
     val validatedInterpreter = RequestResponseInterpreter[Future](process,
       ProcessVersion.empty,

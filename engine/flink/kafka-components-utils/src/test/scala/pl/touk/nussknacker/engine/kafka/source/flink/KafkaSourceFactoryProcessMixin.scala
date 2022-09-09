@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
-import org.scalatest.{BeforeAndAfter}
+import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
 import pl.touk.nussknacker.engine.api.{ProcessVersion, process}
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
@@ -54,13 +54,13 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
     SinkForLongs.clear()
   }
 
-  protected def run(process: EspProcess)(action: => Unit): Unit = {
+  protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
 
-  protected def runAndVerifyResult(topicName: String, process: EspProcess, obj: ObjToSerialize): List[InputMeta[Any]] = {
+  protected def runAndVerifyResult(topicName: String, process: CanonicalProcess, obj: ObjToSerialize): List[InputMeta[Any]] = {
     val topic = createTopic(topicName)
     pushMessage(objToSerializeSerializationSchema(topic), obj, topic, timestamp = constTimestamp)
     run(process) {
@@ -84,7 +84,7 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
                               sourceType: SourceType.Value,
                               customVariables: Map[String, String] = Map.empty,
                               topicParamValue: String => String = topic => s"'$topic'"
-                             ): EspProcess = {
+                             ): CanonicalProcess = {
     //should check and recognize all variables based on #input and #inputMeta
     val inputVariables = Map("id" ->" #input.id", "field" -> "#input.field")
     val metaVariables = Map(
@@ -108,7 +108,7 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
       .source("procSource", sourceType.toString, TopicParamName -> topicParamValue(topic))
 
     val processWithVariables = checkAllVariables
-      .foldRight(process.asInstanceOf[GraphBuilder[EspProcess]])( (variable, builder) =>
+      .foldRight(process.asInstanceOf[GraphBuilder[CanonicalProcess]])( (variable, builder) =>
         variable match {
           case (id, expression) => builder.buildSimpleVariable(s"id$id", s"name$id", expression)
         }

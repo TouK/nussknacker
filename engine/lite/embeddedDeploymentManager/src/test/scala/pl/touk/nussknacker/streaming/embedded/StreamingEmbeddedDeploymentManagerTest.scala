@@ -196,7 +196,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
 
     val testData = TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
-        scenario.roots.head.data.asInstanceOf[Source], 2).get, 2)
+        scenario.nodes.head.data.asInstanceOf[Source], 2).get, 2)
 
     val results = wrapInFailingLoader {
       manager.test(name, scenario.toCanonicalProcess, testData, identity[Any]).futureValue

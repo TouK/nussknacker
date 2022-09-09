@@ -4,8 +4,10 @@ import cats.data.NonEmptyList
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.GraphBuilder.Creator
-import pl.touk.nussknacker.engine.graph.{EspProcess, node}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node.SourceNode
 
 class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
@@ -44,13 +46,15 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
     new ProcessGraphBuilder(
       GraphBuilder.source(id, typ, params: _*)
         .creator
-        .andThen(r => EspProcess(metaData, NonEmptyList.of(r)))
+        .andThen(r => EspProcess(metaData, NonEmptyList.of(r)).toCanonicalProcess)
     )
 
-  class ProcessGraphBuilder private[ProcessMetaDataBuilder](val creator: Creator[EspProcess])
-    extends GraphBuilder[EspProcess] {
+  def sources(source: SourceNode, rest: SourceNode*): CanonicalProcess = EspProcess(metaData, NonEmptyList.of(source, rest: _*)).toCanonicalProcess
 
-    override def build(inner: Creator[EspProcess]) = new ProcessGraphBuilder(inner)
+  class ProcessGraphBuilder private[ProcessMetaDataBuilder](val creator: Creator[CanonicalProcess])
+    extends GraphBuilder[CanonicalProcess] {
+
+    override def build(inner: Creator[CanonicalProcess]) = new ProcessGraphBuilder(inner)
   }
 }
 

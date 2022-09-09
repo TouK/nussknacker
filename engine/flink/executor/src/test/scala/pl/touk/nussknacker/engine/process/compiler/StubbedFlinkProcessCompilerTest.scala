@@ -1,30 +1,26 @@
 package pl.touk.nussknacker.engine.process.compiler
 
-import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
 import org.apache.flink.api.scala._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{MetaData, ProcessVersion, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.BaseSampleConfigCreator
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-
-import scala.concurrent.duration._
 
 class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
@@ -32,13 +28,13 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     .source("left-source", "test-source")
     .processorEnd("left-end", "mockService", "all" -> "{}")
 
-  private val scenarioWithMultipleSources = EspProcess(MetaData("test", StreamMetaData()), NonEmptyList.of[SourceNode](
+  private val scenarioWithMultipleSources = ScenarioBuilder.streaming("test").sources(
     GraphBuilder
       .source("left-source", "test-source")
       .processorEnd("left-end", "mockService", "all" -> "{}"),
     GraphBuilder
       .source("right-source", "test-source2")
-      .processorEnd("right-end", "mockService", "all" -> "{}")))
+      .processorEnd("right-end", "mockService", "all" -> "{}"))
 
   private val minimalFlinkConfig = ConfigFactory.empty
     .withValue("timeout", fromAnyRef("10 seconds"))
@@ -76,7 +72,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def testCompile(scenario: EspProcess, testData: TestData) = {
+  private def testCompile(scenario: CanonicalProcess, testData: TestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
       scenario, testData, DefaultNamespacedObjectNaming)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()

@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.ui.integration
 
-import java.io.File
-import java.util.UUID
 import akka.http.javadsl.model.headers.HttpCredentials
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, MediaTypes, StatusCodes}
+import akka.http.scaladsl.model._
 import akka.http.scaladsl.testkit.{RouteTestTimeout, ScalatestRouteTest}
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import com.typesafe.config.Config
@@ -11,15 +9,14 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import org.apache.commons.io.FileUtils
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
+import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, StreamMetaData}
-import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, FixedValuesValidator, LiteralParameterValidator, MandatoryParameterValidator, StringParameterEditor}
-import pl.touk.nussknacker.engine.api.component.ParameterConfig
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -32,11 +29,13 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
-import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, MultipartUtils, SecurityHeadersSupport}
+import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
 
+import java.io.File
+import java.util.UUID
 import scala.concurrent.duration._
 import scala.util.Properties
 
@@ -254,7 +253,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     val processId = "test"
     val nodeUsingDynamicServiceId = "end"
-    def processWithService(params: (String, Expression)*): EspProcess = {
+    def processWithService(params: (String, Expression)*): CanonicalProcess = {
       ScenarioBuilder
         .streaming(processId)
         .additionalFields(properties = Map("environment" -> "someNotEmptyString"))
@@ -365,14 +364,14 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     propertyFromResourcesAfterReload shouldBe propertyFromResourcesBeforeReload
   }
 
-  private def saveProcess(process: EspProcess): ValidationResult = {
+  private def saveProcess(process: CanonicalProcess): ValidationResult = {
     Post(s"/api/processes/${process.id}/Category1?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.Created
       updateProcess(process)
     }
   }
 
-  private def updateProcess(process: EspProcess): ValidationResult = {
+  private def updateProcess(process: CanonicalProcess): ValidationResult = {
     val processId = process.id
     Put(s"/api/processes/$processId", TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
@@ -380,7 +379,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     }
   }
 
-  private def testProcess(process: EspProcess, data: String): Json = {
+  private def testProcess(process: CanonicalProcess, data: String): Json = {
     val displayableProcess = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {

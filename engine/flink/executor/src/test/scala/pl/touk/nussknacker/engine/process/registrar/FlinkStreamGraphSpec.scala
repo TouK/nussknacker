@@ -8,8 +8,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
@@ -20,7 +20,7 @@ import scala.collection.JavaConverters._
 
 trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matchers with OptionValues with PatientScalaFutures {
 
-  protected def streamGraph(process: EspProcess,
+  protected def streamGraph(process: CanonicalProcess,
                             config: Config = ConfigFactory.load()): StreamGraph = {
     val creator: ProcessConfigCreator = ProcessTestHelpers.prepareCreator(List.empty, config)
 

@@ -1,18 +1,18 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import cats.data.NonEmptyList
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.runtime.client.JobExecutionException
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Case
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}
@@ -22,8 +22,6 @@ import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
 class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach {
 
@@ -372,7 +370,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
   //TODO: in the future we should also handle multiple sources tests...
   test("should handle joins for one input (diamond-like) ") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder.source("id", "input")
         .split("split",
           GraphBuilder.filter("left", "#input.id != 'a'").branchEnd("end1", "join1"),
@@ -384,7 +382,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
           "end2" -> List("value" -> "#input")
         ))
         .processorEnd("proc2", "logService", "all" -> "#input33.id")
-    ))
+    )
 
     val recA = "a|1|2|1|4|5|6"
     val recB = "b|1|2|2|4|5|6"
@@ -410,7 +408,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
-  def runFlinkTest(process: EspProcess, testData: TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
+  def runFlinkTest(process: CanonicalProcess, testData: TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {

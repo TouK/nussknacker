@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.{CapabilityTransformer, CustomComponentContext, LiteSource}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
@@ -51,7 +51,7 @@ object sample {
 
   val modelData: LocalModelData = LocalModelData(ConfigFactory.empty(), StateConfigCreator)
 
-  def run(scenario: EspProcess, data: ScenarioInputBatch[SampleInput], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
+  def run(scenario: CanonicalProcess, data: ScenarioInputBatch[SampleInput], initialState: Map[String, Double], runtimeContextPreparer: LiteEngineRuntimeContextPreparer = LiteEngineRuntimeContextPreparer.noOp): ResultType[EndResult[AnyRef]] = {
     val interpreter = ScenarioInterpreterFactory
       .createInterpreter[StateType, SampleInput, AnyRef](scenario, modelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
       .fold(k => throw new IllegalArgumentException(k.toString()), identity)

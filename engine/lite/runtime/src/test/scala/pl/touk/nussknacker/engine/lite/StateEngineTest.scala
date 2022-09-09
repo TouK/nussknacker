@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.lite
 
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
 import pl.touk.nussknacker.engine.spel.Implicits._
@@ -43,7 +42,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     error.throwable shouldEqual SourceFailure
   }
 
-  private lazy val sampleScenarioWithState: EspProcess = ScenarioBuilder
+  private lazy val sampleScenarioWithState: CanonicalProcess = ScenarioBuilder
     .streamingLite("next")
     .source("start", "start")
     .buildSimpleVariable("v1", "v1", "2 * #input")
@@ -51,7 +50,7 @@ class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
     .customNode("sum", "sum", "sum", "name" -> "'test'", "value" -> "#v1")
     .emptySink("end", "end", "value" -> "#input + ':' + #sum")
 
-  private lazy val sampleScenarioWithFailingSource: EspProcess = ScenarioBuilder
+  private lazy val sampleScenarioWithFailingSource: CanonicalProcess = ScenarioBuilder
     .streamingLite("next")
     .source("start", "failOnNumber1Source")
     .emptySink("end", "end", "value" -> "#input")

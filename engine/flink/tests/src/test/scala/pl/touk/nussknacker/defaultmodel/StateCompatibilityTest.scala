@@ -11,13 +11,13 @@ import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolderImpl
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
 
@@ -169,7 +169,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     logger.info("Saved savepoint in: '{}'", versionedSavepointPath)
   }
 
-  private def run(process: EspProcess, action: JobExecutionResult => Unit): Unit = {
+  private def run(process: CanonicalProcess, action: JobExecutionResult => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
     registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id, action)

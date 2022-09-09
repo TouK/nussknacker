@@ -11,8 +11,8 @@ import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
@@ -392,7 +392,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   private class KafkaTestFixture(val inputTopic: String,
                                  val outputTopic: String,
                                  manager: K8sDeploymentManager,
-                                 scenario: EspProcess,
+                                 scenario: CanonicalProcess,
                                  version: ProcessVersion) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
     override def withRunningScenario(action: => Unit): Unit = {
       kafka.createTopic(inputTopic)

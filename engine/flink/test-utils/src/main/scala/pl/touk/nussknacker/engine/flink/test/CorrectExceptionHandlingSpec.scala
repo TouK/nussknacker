@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.flink.test
 
+import cats.data.NonEmptyList
 import org.apache.flink.api.scala._
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
@@ -7,11 +8,12 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
-import pl.touk.nussknacker.engine.build.{ProcessMetaDataBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
@@ -24,9 +26,10 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
   protected def checkExceptions(configCreator: ProcessConfigCreator)
-                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => CanonicalProcess): Unit = {
+                               (prepareScenario: (GraphBuilder[SourceNode], ExceptionGenerator) => NonEmptyList[SourceNode]): Unit = {
     val generator = new ExceptionGenerator
-    val scenario = prepareScenario(ScenarioBuilder.streaming("test").source("source", "source"), generator)
+    val NonEmptyList(start, rest) = prepareScenario(GraphBuilder.source("source", "source"), generator)
+    val scenario = ScenarioBuilder.streaming("test").sources(start, rest: _*)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
 
     val env = flinkMiniCluster.createExecutionEnvironment()

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.SubsequentNode
 import pl.touk.nussknacker.engine.spel
 
@@ -9,7 +9,7 @@ object SampleProcess {
 
   import spel.Implicits._
 
-  def prepareProcess(id: String, parallelism: Option[Int] = None) : EspProcess = {
+  def prepareProcess(id: String, parallelism: Option[Int] = None) : CanonicalProcess = {
     val baseProcessBuilder = ScenarioBuilder.streaming(id)
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
@@ -17,7 +17,7 @@ object SampleProcess {
       .emptySink("endSend", "sendSms", "value" -> "'message'")
   }
 
-  def kafkaProcess(id: String, topic: String) : EspProcess = {
+  def kafkaProcess(id: String, topic: String) : CanonicalProcess = {
     ScenarioBuilder
       .streaming(id)
       .source("startProcess", "real-kafka", "topic" -> s"'$topic'")

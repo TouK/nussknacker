@@ -1,20 +1,18 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import cats.Monad
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, Source, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LiteStreamMetaData, MetaData, MethodToInvoke, ParamName, Service}
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
@@ -51,7 +49,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
   }
 
   private def validate(leftValueExpression: String, rightValueExpression: String): CompilationResult[Unit] = {
-    val scenario = EspProcess(MetaData("test", LiteStreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streamingLite("test").sources(
       GraphBuilder
         .source("left-source", "typed-source", "value" -> leftValueExpression)
         .branchEnd("left-source", "union"),
@@ -67,7 +65,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
             "Output expression" -> "#input"
           )
         ))
-        .processorEnd("end", "dumb")))
+        .processorEnd("end", "dumb"))
 
     val configCreator = new EmptyProcessConfigCreator {
       override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =

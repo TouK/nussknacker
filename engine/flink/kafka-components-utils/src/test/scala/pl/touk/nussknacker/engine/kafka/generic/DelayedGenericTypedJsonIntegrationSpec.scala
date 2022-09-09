@@ -4,16 +4,16 @@ import io.circe.generic.JsonCodec
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.generic.KafkaTypedSourceFactory.TypeDefinitionParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.DelayedGenericTypedJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.JsonSerializationSchema
+import pl.touk.nussknacker.engine.kafka.source.delayed.DelayedKafkaSourceFactory.{DelayParameterName, TimestampFieldParamName}
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessMixin
 import pl.touk.nussknacker.engine.kafka.{KafkaSpec, RecordFormatterFactory, serialization}
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.SinkForLongs
@@ -129,7 +129,7 @@ class DelayedGenericTypedJsonIntegrationSpec extends AnyFunSuite with FlinkSpec 
       .emptySink("out", "sinkForLongs", "value" -> "T(java.time.Instant).now().toEpochMilli()")
   }
 
-  private def runAndVerify(topic: String, process: EspProcess, givenObj: AnyRef, timestamp: Long = now): Unit = {
+  private def runAndVerify(topic: String, process: CanonicalProcess, givenObj: AnyRef, timestamp: Long = now): Unit = {
     createTopic(topic)
     pushMessage(serializationSchema(topic), givenObj, topic, timestamp = timestamp)
     run(process) {

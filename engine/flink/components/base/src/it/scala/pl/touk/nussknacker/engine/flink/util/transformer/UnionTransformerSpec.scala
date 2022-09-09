@@ -1,17 +1,13 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.test.NuTestScenarioRunner
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.MockService
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.RunResult
@@ -20,7 +16,6 @@ import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScal
 class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures {
 
   import ValidatedValuesDetailedMessage._
-
   import spel.Implicits._
 
   private val BranchFooId = "foo"
@@ -42,7 +37,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = EspProcess(MetaData("sample-union-memo", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streaming("sample-union-memo").sources(
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "noopSource")
@@ -55,7 +50,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
           ), "stateTimeout" -> "T(java.time.Duration).parse('PT1M')"
         )
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.$BranchFooId")
-    ))
+    )
 
     val result = testScenarioRunner.runWithData(scenario, data)
     result.validValue shouldBe RunResult.successes(data)
@@ -64,7 +59,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
   test("should unify streams with union when one branch is empty") {
     val testScenarioRunner = NuTestScenarioRunner.flinkBased(config, flinkMiniCluster).build()
 
-    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streaming("sample-union").sources(
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "noopSource")
@@ -76,7 +71,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
-    ))
+    )
 
     val result = testScenarioRunner.runWithData(scenario, data)
     result.validValue shouldBe RunResult.successes(data)
@@ -87,7 +82,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streaming("sample-union").sources(
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "source")
@@ -99,7 +94,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
             BranchBarId -> List("Output expression" -> "{a: '123'}"))
         )
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
-    ))
+    )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
     result.successes.toSet shouldBe data.toSet + "123"
@@ -111,7 +106,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streaming("sample-union").sources(
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "noopSource")
@@ -124,7 +119,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
           )
         )
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName.a")
-    ))
+    )
 
     val result = testScenarioRunner.runWithData(scenario, data).invalidValue
     result.toList should contain (CannotCreateObjectError("All branch values must be of the same type", UnionNodeId))
@@ -136,7 +131,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
       .flinkBased(config, flinkMiniCluster)
       .build()
 
-    val scenario = EspProcess(MetaData("sample-union", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val scenario = ScenarioBuilder.streaming("sample-union").sources(
       GraphBuilder.source("start-foo", "source")
         .branchEnd(BranchFooId, UnionNodeId),
       GraphBuilder.source("start-bar", "source")
@@ -149,7 +144,7 @@ class UnionTransformerSpec extends AnyFunSuite with BeforeAndAfterEach with Matc
           )
         )
         .processorEnd("end", "invocationCollector", "value" -> s"#$OutVariableName")
-    ))
+    )
 
     val result = testScenarioRunner.runWithData(scenario, data).validValue
     result.successes.size shouldBe 6

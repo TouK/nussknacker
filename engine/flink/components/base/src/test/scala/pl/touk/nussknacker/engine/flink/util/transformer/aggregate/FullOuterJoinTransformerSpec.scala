@@ -14,7 +14,8 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.function.ProcessFunctionInterceptor
@@ -22,7 +23,6 @@ import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
 import pl.touk.nussknacker.engine.flink.util.transformer.join.FullOuterJoinTransformer
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
@@ -54,7 +54,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val MainBranchId = "main"
     val JoinedBranchId = "joined"
 
-    val process =  EspProcess(MetaData("sample-join-last", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process =  ScenarioBuilder.streaming("sample-join-last").sources(
       GraphBuilder.source("source", "start-main")
         .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
         .branchEnd(MainBranchId, JoinNodeId),
@@ -77,7 +77,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
         )
         .emptySink(EndNodeId, "end")
-    ))
+    )
 
     val input1 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val input2 = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -337,7 +337,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val MainBranchId = "key"
     val JoinedBranchId = "joined"
 
-    val process =  EspProcess(MetaData("sample-join-last", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process = ScenarioBuilder.streaming("sample-join-last").sources(
       GraphBuilder.source("source", "start-main")
         .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
         .branchEnd(MainBranchId, JoinNodeId),
@@ -360,7 +360,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
         )
         .emptySink(EndNodeId, "end")
-    ))
+    )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -378,7 +378,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val MainBranchId = "underscore_or_space"
     val JoinedBranchId = "underscore or space"
 
-    val process =  EspProcess(MetaData("sample-join-last", StreamMetaData()), NonEmptyList.of[SourceNode](
+    val process =  ScenarioBuilder.streaming("sample-join-last").sources(
       GraphBuilder.source("source", "start-main")
         .buildSimpleVariable("build-key", KeyVariableName, "#input.key")
         .branchEnd(MainBranchId, JoinNodeId),
@@ -401,7 +401,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
           "windowLength" -> s"T(${classOf[Duration].getName}).parse('PT20H')",
         )
         .emptySink(EndNodeId, "end")
-    ))
+    )
 
     val sourceFoo = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
@@ -414,7 +414,7 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     assert(validationResult.isInvalid)
   }
 
-  private def runProcess(testProcess: EspProcess, input1: BlockingQueueSource[OneRecord], input2: BlockingQueueSource[OneRecord], collectingListener: ResultsCollectingListener) = {
+  private def runProcess(testProcess: CanonicalProcess, input1: BlockingQueueSource[OneRecord], input2: BlockingQueueSource[OneRecord], collectingListener: ResultsCollectingListener) = {
     val model = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
