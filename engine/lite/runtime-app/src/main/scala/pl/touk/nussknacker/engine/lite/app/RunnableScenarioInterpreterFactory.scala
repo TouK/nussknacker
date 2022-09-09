@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.readers.ArbitraryTypeReader.arbitraryTypeValueReader
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.RunnableScenarioInterpreter
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
@@ -19,7 +19,7 @@ import java.net.URL
 
 object RunnableScenarioInterpreterFactory extends LazyLogging {
 
-  def prepareScenarioInterpreter(scenario: EspProcess, runtimeConfig: Config, deploymentConfig: Config, system: ActorSystem): RunnableScenarioInterpreter = {
+  def prepareScenarioInterpreter(scenario: CanonicalProcess, runtimeConfig: Config, deploymentConfig: Config, system: ActorSystem): RunnableScenarioInterpreter = {
     val modelConfig: Config = runtimeConfig.getConfig("modelConfig")
     val modelData = ModelData(modelConfig, ModelClassLoader(modelConfig.as[List[URL]]("classPath")))
     val metricRegistry = prepareMetricRegistry(runtimeConfig)
@@ -30,7 +30,7 @@ object RunnableScenarioInterpreterFactory extends LazyLogging {
     prepareScenarioInterpreter(scenario, runtimeConfig, jobData, deploymentConfig, modelData, preparer)(system)
   }
 
-  private def prepareScenarioInterpreter(scenario: EspProcess, runtimeConfig: Config, jobData: JobData, deploymentConfig: Config,
+  private def prepareScenarioInterpreter(scenario: CanonicalProcess, runtimeConfig: Config, jobData: JobData, deploymentConfig: Config,
                                          modelData: ModelData, preparer: LiteEngineRuntimeContextPreparer)(implicit system: ActorSystem) = {
     import system.dispatcher
     scenario.metaData.typeSpecificData match {

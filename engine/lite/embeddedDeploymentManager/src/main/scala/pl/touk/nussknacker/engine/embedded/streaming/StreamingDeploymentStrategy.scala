@@ -4,10 +4,10 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
-import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy, EmbeddedStateStatus}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.{TaskStatus, TestRunner}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
+import pl.touk.nussknacker.engine.lite.{TaskStatus, TestRunner}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -21,7 +21,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
   }
 
   override def onScenarioAdded(jobData: JobData,
-                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[StreamingDeployment] = {
+                               parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[StreamingDeployment] = {
 
 
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that

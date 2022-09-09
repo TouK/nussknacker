@@ -7,7 +7,7 @@ import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.TaskStatus.TaskStatus
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.{RunnableScenarioInterpreter, TaskStatus}
@@ -18,7 +18,7 @@ import java.util.concurrent.Executors
 import scala.concurrent.{ExecutionContext, Future, blocking}
 
 class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
-                                                 parsedResolvedScenario: EspProcess,
+                                                 parsedResolvedScenario: CanonicalProcess,
                                                  modelData: ModelData,
                                                  contextPreparer: LiteEngineRuntimeContextPreparer,
                                                  requestResponseConfig: RequestResponseConfig)

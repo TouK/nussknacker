@@ -5,12 +5,12 @@ import cats.data.{NonEmptyList, Validated}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
-import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context._
 import pl.touk.nussknacker.engine.api.dict.DictRegistry
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
+import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -20,14 +20,13 @@ import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source => _, _}
+import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
 import pl.touk.nussknacker.engine.splittedgraph._
 import pl.touk.nussknacker.engine.splittedgraph.end.NormalEnd
 import pl.touk.nussknacker.engine.splittedgraph.part._
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.EndingNode
-import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
@@ -42,18 +41,14 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
     new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify))
 
-  override def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
+  override def compile(process: CanonicalProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
   }
 }
 
 trait ProcessValidator extends LazyLogging {
 
-  def validate(canonical: CanonicalProcess): CompilationResult[Unit] = {
-    ProcessCanonizer.uncanonizeArtificial(canonical).map(validate).extract
-  }
-
-  def validate(process: EspProcess): CompilationResult[Unit] = {
+  def validate(process: CanonicalProcess): CompilationResult[Unit] = {
     try {
       compile(process).map(_ => Unit)
     } catch {
@@ -65,7 +60,7 @@ trait ProcessValidator extends LazyLogging {
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
 
-  protected def compile(process: EspProcess): CompilationResult[_]
+  protected def compile(process: CanonicalProcess): CompilationResult[_]
 
 }
 
@@ -79,9 +74,10 @@ protected trait ProcessCompilerBase {
 
   protected def globalVariablesPreparer: GlobalVariablesPreparer
 
-  protected def compile(process: EspProcess): CompilationResult[CompiledProcessParts] = {
+  protected def compile(process: CanonicalProcess): CompilationResult[CompiledProcessParts] = {
     ThreadUtils.withThisAsContextClassLoader(classLoader) {
-      compile(ProcessSplitter.split(process))
+      val compilationResultWithArtificial = ProcessCanonizer.uncanonizeArtificial(process).map(ProcessSplitter.split).map(compile)
+      compilationResultWithArtificial.extract
     }
   }
 

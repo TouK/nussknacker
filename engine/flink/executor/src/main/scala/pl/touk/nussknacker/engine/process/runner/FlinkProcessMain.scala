@@ -6,8 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 
 import scala.util.control.NonFatal
@@ -43,7 +43,7 @@ trait FlinkProcessMain[Env] extends FlinkRunner with LazyLogging {
 
   protected def runProcess(env: Env,
                            modelData: ModelData,
-                           process: EspProcess,
+                           process: CanonicalProcess,
                            processVersion: ProcessVersion,
                            deploymentData: DeploymentData,
                            prepareExecutionConfig: ExecutionConfigPreparer): Unit

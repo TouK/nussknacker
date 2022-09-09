@@ -3,20 +3,18 @@ package pl.touk.nussknacker.engine.process.functional
 import cats.data.NonEmptyList
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.metrics.{Counter, Gauge, Histogram}
-import org.scalatest.LoneElement.convertToCollectionLoneElementWrapper
+import org.scalatest.LoneElement._
+import org.scalatest.funsuite.FixtureAnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import org.scalatest.funsuite.FixtureAnyFunSuite
-import org.scalatest.matchers.should.Matchers
-import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
-import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.util.Date
@@ -192,7 +190,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
           Case("false", GraphBuilder.endingCustomNode("customE1", None,"optionalEndingCustom", "param" -> "''"))
         )
     ))
-    val allNodes = NodesCollector.collectNodesInScenario(scenario).map(_.data)
+    val allNodes = scenario.toCanonicalProcess.collectAllNodes
 
     processInvoker.invokeWithSampleData(scenario, Nil)
 

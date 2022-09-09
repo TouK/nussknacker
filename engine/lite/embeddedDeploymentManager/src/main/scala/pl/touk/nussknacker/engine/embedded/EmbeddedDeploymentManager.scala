@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.embedded
 
 import akka.actor.ActorSystem
-import cats.data.Validated.{Invalid, Valid}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import net.ceedubs.ficus.Ficus._
@@ -12,11 +11,9 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
@@ -98,13 +95,11 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
-    parseScenario(canonicalProcess).map { parsedResolvedScenario =>
-      deployScenarioClosingOldIfNeeded(processVersion, parsedResolvedScenario, throwInterpreterRunExceptionsImmediately = true)
-    }
+    Future.successful(deployScenarioClosingOldIfNeeded(processVersion, canonicalProcess, throwInterpreterRunExceptionsImmediately = true))
   }
 
   private def deployScenarioClosingOldIfNeeded(processVersion: ProcessVersion,
-                                               parsedResolvedScenario: EspProcess,
+                                               parsedResolvedScenario: CanonicalProcess,
                                                throwInterpreterRunExceptionsImmediately: Boolean): Option[ExternalDeploymentId] = {
     deployments.get(processVersion.processName).collect { case ScenarioDeploymentData(_, processVersion, Success(oldVersion)) =>
       oldVersion.close()
@@ -115,7 +110,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     Some(ExternalDeploymentId(deploymentId))
   }
 
-  private def deployScenario(processVersion: ProcessVersion, parsedResolvedScenario: EspProcess,
+  private def deployScenario(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess,
                              throwInterpreterRunExceptionsImmediately: Boolean) = {
 
     val interpreterTry = runInterpreter(processVersion, parsedResolvedScenario)
@@ -132,16 +127,10 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     (deploymentId, deploymentEntry)
   }
 
-  private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: EspProcess) = {
+  private def runInterpreter(processVersion: ProcessVersion, parsedResolvedScenario: CanonicalProcess) = {
     val jobData = JobData(parsedResolvedScenario.metaData, processVersion)
     deploymentStrategy.onScenarioAdded(jobData, parsedResolvedScenario)
   }
-
-  private def parseScenario(canonicalProcess: CanonicalProcess): Future[EspProcess] =
-    ProcessCanonizer.uncanonize(canonicalProcess) match {
-      case Valid(a) => Future.successful(a)
-      case Invalid(e) => Future.failed(new IllegalArgumentException(s"Failed to parse scenario: $e"))
-    }
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = {
     deployments.get(name) match {
@@ -177,8 +166,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.withThisAsContextClassLoader {
-        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        deploymentStrategy.testRunner.runTest(modelData, testData, espProcess, variableEncoder)
+        deploymentStrategy.testRunner.runTest(modelData, testData, canonicalProcess, variableEncoder)
       }
     }
   }

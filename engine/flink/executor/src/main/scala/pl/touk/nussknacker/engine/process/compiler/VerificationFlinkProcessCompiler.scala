@@ -5,11 +5,11 @@ import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor
 import pl.touk.nussknacker.engine.flink.util.source.EmptySource
-import pl.touk.nussknacker.engine.graph.EspProcess
 
-class VerificationFlinkProcessCompiler(process: EspProcess,
+class VerificationFlinkProcessCompiler(process: CanonicalProcess,
                                        creator: ProcessConfigCreator,
                                        processConfig: Config,
                                        objectNaming: ObjectNaming)

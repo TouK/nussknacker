@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.process.runner
 
-import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.configuration.{Configuration, CoreOptions, RestOptions, TaskManagerOptions}
+import org.apache.flink.core.fs.FileSystem
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
 import org.apache.flink.runtime.minicluster.{MiniCluster, MiniClusterConfiguration}
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
 
 import scala.collection.JavaConverters._
@@ -17,7 +17,7 @@ trait FlinkStubbedRunner {
 
   protected def modelData: ModelData
 
-  protected def process: EspProcess
+  protected def process: CanonicalProcess
 
   protected def configuration: Configuration
 

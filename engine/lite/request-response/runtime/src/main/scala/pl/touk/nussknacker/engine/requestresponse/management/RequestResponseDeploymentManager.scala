@@ -5,13 +5,10 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.deployment.RequestResponseDeploymentData
@@ -46,8 +43,7 @@ class RequestResponseDeploymentManager(modelData: BaseModelData, client: Request
     Future{
       //TODO: shall we use StaticMethodRunner here?
       modelData.asInvokableModelData.withThisAsContextClassLoader {
-        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
+        FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, canonicalProcess, variableEncoder)
       }
     }
   }

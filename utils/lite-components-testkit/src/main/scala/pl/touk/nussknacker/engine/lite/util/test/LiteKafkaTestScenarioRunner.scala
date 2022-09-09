@@ -11,11 +11,11 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
@@ -42,7 +42,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer = new StringDeserializer
 
-  def runWithStringData(scenario: EspProcess, data: List[StringInput]): RunnerResult[ProducerRecord[String, String]] = {
+  def runWithStringData(scenario: CanonicalProcess, data: List[StringInput]): RunnerResult[ProducerRecord[String, String]] = {
     val serializedData = data.map(serializeStringInput)
     runWithRawData(scenario, serializedData)
       .map(_.mapSuccesses { output =>
@@ -52,7 +52,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
       })
   }
 
-  def runWithAvroData[K, V](scenario: EspProcess, data: List[AvroInput]): RunnerResult[ProducerRecord[K, V]] = {
+  def runWithAvroData[K, V](scenario: CanonicalProcess, data: List[AvroInput]): RunnerResult[ProducerRecord[K, V]] = {
     val serializedData = data.map(serializeAvroInput)
 
     runWithRawData(scenario, serializedData)
@@ -63,7 +63,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
       })
   }
 
-  def runWithRawData(scenario: EspProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
+  def runWithRawData(scenario: CanonicalProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 

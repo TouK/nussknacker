@@ -107,7 +107,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
       .filter("filter1", "false")
       .processor("processor1", "noOpProcessor", "value" -> "0")
       .emptySink("sink1", "end", "value" -> "''")
-    val allNodes = NodesCollector.collectNodesInScenario(scenario).map(_.data)
+    val allNodes = scenario.toCanonicalProcess.collectAllNodes
 
     runScenario(scenario, Nil, metricRegistry)
 

@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -39,7 +39,7 @@ object RequestResponseInterpreter {
 
   type RequestResponseResultType[T] = ValidatedNel[ErrorType, T]
 
-  def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: EspProcess, processVersion: ProcessVersion, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
+  def apply[Effect[_]:Monad:InterpreterShape:CapabilityTransformer](process: CanonicalProcess, processVersion: ProcessVersion, context: LiteEngineRuntimeContextPreparer, modelData: ModelData,
             additionalListeners: List[ProcessListener], resultCollector: ResultCollector, componentUseCase: ComponentUseCase)
            (implicit ec: ExecutionContext):
   Validated[NonEmptyList[ProcessCompilationError], RequestResponseScenarioInterpreter[Effect]] = {

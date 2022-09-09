@@ -2,17 +2,17 @@ package pl.touk.nussknacker.engine.flink.test
 
 import org.apache.flink.api.scala._
 import org.scalatest.Suite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.build.{ProcessMetaDataBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import org.scalatest.matchers.should.Matchers
 
 import scala.jdk.CollectionConverters.seqAsJavaListConverter
 
@@ -24,7 +24,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   self: Suite =>
 
   protected def checkExceptions(configCreator: ProcessConfigCreator)
-                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => EspProcess): Unit = {
+                               (prepareScenario: (ProcessMetaDataBuilder#ProcessGraphBuilder, ExceptionGenerator) => CanonicalProcess): Unit = {
     val generator = new ExceptionGenerator
     val scenario = prepareScenario(ScenarioBuilder.streaming("test").source("source", "source"), generator)
     val recordingCreator = new RecordingConfigCreator(configCreator, generator.count)
@@ -39,7 +39,7 @@ trait CorrectExceptionHandlingSpec extends FlinkSpec with Matchers {
   /**
     * TestFlinkRunner should be invoked, it's not accessible in this module
     */
-  protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
+  protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: CanonicalProcess): Unit
 
   class ExceptionGenerator {
 

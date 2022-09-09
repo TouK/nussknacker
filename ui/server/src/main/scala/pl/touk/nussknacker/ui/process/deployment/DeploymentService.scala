@@ -53,9 +53,7 @@ class DeploymentService(processRepository: FetchingProcessRepository[Future],
         // TODO: what should be in name?
         val deployingUser = User(lastDeployAction.user, lastDeployAction.user)
         val deploymentData = prepareDeploymentData(deployingUser)
-        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).flatMap(canonical => {
-          ProcessCanonizer.uncanonize(canonical).map(Success(_)).valueOr(e => Failure(new RuntimeException(e.head.toString)))
-        }).map { resolvedScenario =>
+        val deployedScenarioDataTry = scenarioResolver.resolveScenario(details.json, details.processCategory).map { resolvedScenario =>
           DeployedScenarioData(processVersion, deploymentData, resolvedScenario)
         }
         deployedScenarioDataTry match {

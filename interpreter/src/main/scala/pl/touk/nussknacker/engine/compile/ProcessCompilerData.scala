@@ -5,6 +5,7 @@ import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData, ProcessListener}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
@@ -12,7 +13,6 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.definition.{LazyInterpreterDependencies, ProcessDefinitionExtractor}
 import pl.touk.nussknacker.engine.dict.DictServicesFactoryLoader
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{NodeData, WithComponent}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
@@ -27,7 +27,7 @@ import scala.concurrent.duration.FiniteDuration
  */
 object ProcessCompilerData {
 
-  def prepare(process: EspProcess,
+  def prepare(process: CanonicalProcess,
               definitions: ProcessDefinition[ObjectWithMethodDef],
               listeners: Seq[ProcessListener],
               userCodeClassLoader: ClassLoader,
@@ -75,7 +75,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
                           val subPartCompiler: PartSubGraphCompiler,
                           val lazyInterpreterDeps: LazyInterpreterDependencies,
                           val interpreter: Interpreter,
-                          process: EspProcess,
+                          process: CanonicalProcess,
                           val listeners: Seq[ProcessListener],
                           services: Map[String, Lifecycle]) {
 

@@ -6,10 +6,10 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
@@ -19,7 +19,7 @@ import java.util.UUID
 
 class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
+  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: CanonicalProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"

@@ -2,17 +2,22 @@ package pl.touk.nussknacker.engine.canonicalgraph
 
 import cats.data.NonEmptyList
 import io.circe.{Decoder, Encoder}
-import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfiguredEncoder}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.CanonicalNode
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 
+import scala.language.implicitConversions
+
 sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
+
+  //TODO: replace EspProcess use with CanonicalProcess where needed
+  implicit def toCanonical(espProcess: EspProcess): CanonicalProcess = espProcess.toCanonicalProcess
 
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
@@ -90,6 +95,17 @@ case class CanonicalProcess(metaData: MetaData,
     copy(metaData = metaData.copy(id = processName.value))
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
+
+  def collectAllNodes: List[NodeData] = {
+    def nextNodes(node: CanonicalNode): List[NodeData] = node match {
+      case canonicalnode.FlatNode(data) => List(data)
+      case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(nextNodes)
+      case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(nextNodes) ::: defaultNext.flatMap(nextNodes)
+      case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(nextNodes)
+      case canonicalnode.Subprocess(data, outputs) => data :: outputs.values.flatten.toList.flatMap(nextNodes)
+    }
+    allStartNodes.toList.flatten.flatMap(nextNodes)
+  }
 
 }
 

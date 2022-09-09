@@ -19,9 +19,6 @@ object ProcessCanonizer {
     )
   }
 
-  def uncanonizeUnsafe(canonicalProcess: CanonicalProcess): EspProcess =
-    uncanonize(canonicalProcess).valueOr(err => throw new IllegalArgumentException(err.toList.mkString("Unmarshalling errors: ", ", ", "")))
-
   def uncanonize(canonicalProcess: CanonicalProcess): ValidatedNel[ProcessUncanonizationError, EspProcess] =
     uncanonizeArtificial(canonicalProcess).toValidNel
 
@@ -66,7 +63,9 @@ object ProcessCanonizer {
         }
 
       case (a@canonicalnode.SwitchNode(data, Nil, defaultNext)) :: Nil =>
-        MaybeArtificial.artificialSink(InvalidTailOfBranch(data.id))
+        uncanonize(a, defaultNext).map { defaultNextV =>
+          node.SwitchNode(data, Nil, Some(defaultNextV))
+        }
 
       case (a@canonicalnode.SwitchNode(data, nexts, defaultNext)) :: Nil if defaultNext.isEmpty =>
         nexts.map { casee =>
