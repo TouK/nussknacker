@@ -2,8 +2,8 @@ package pl.touk.nussknacker.engine.flink.api.timestampwatermark
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.eventtime._
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.{AssignerWithPeriodicWatermarks, AssignerWithPunctuatedWatermarks, TimestampAssigner}
-import org.apache.flink.streaming.api.scala.DataStream
 
 import java.time.Duration
 

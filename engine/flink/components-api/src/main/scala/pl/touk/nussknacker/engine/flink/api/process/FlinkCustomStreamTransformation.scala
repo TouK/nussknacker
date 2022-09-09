@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
-import org.apache.flink.streaming.api.scala.DataStream
+import org.apache.flink.streaming.api.datastream.DataStream
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
@@ -10,10 +10,7 @@ object FlinkCustomStreamTransformation {
   = apply((data, _) => fun(data))
 
   def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]])
-  : FlinkCustomStreamTransformation = new FlinkCustomStreamTransformation {
-    override def transform(start: DataStream[Context], context: FlinkCustomNodeContext)
-    : DataStream[ValueWithContext[AnyRef]] = fun(start, context)
-  }
+  : FlinkCustomStreamTransformation = (start: DataStream[Context], context: FlinkCustomNodeContext) => fun(start, context)
 
   def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
             rType: TypingResult): FlinkCustomStreamTransformation with ReturningType =

@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.flink.api.process
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, ContextInitializer, ContextInitializingFunction, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
@@ -38,7 +39,7 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
 
     //1. add source and 2. set UID
     val rawSourceWithUid = setUidToNodeIdIfNeed(flinkNodeContext, env
-      .addSource[Raw](sourceFunction)(typeInformation)
+      .addSource[Raw](sourceFunction, typeInformation)
       .name(flinkNodeContext.nodeId))
 
     //3. assign timestamp and watermark policy
@@ -53,8 +54,9 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer, nodeId,
-          flinkNodeContext.convertToEngineRuntimeContext)
-      )(typeInformationFromNodeContext)
+          flinkNodeContext.convertToEngineRuntimeContext),
+        typeInformationFromNodeContext
+      )
   }
 }
 

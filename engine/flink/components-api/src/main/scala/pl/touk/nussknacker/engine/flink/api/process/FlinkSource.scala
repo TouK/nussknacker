@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler

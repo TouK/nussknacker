@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.flink.api.signal
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
 import org.apache.flink.api.common.serialization.DeserializationSchema
+import org.apache.flink.streaming.api.datastream.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 
 trait FlinkProcessSignalSender extends ProcessSignalSender {

@@ -7,7 +7,7 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 
-import java.util
+import _root_.java.util
 import scala.collection.JavaConverters._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
