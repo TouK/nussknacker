@@ -145,8 +145,11 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
       result.getMessage shouldBe "Parallelism too large"
       deploymentManager.deploys shouldBe 'empty
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction) shouldBe None
-      processService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
       listener.events shouldBe 'empty
+      // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
+      eventually {
+        processService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed
+      }
     }
   }
 
