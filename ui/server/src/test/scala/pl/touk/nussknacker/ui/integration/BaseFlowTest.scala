@@ -380,7 +380,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
-    val displayableProcess = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
       status shouldEqual StatusCodes.OK

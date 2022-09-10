@@ -29,7 +29,6 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2")
-    .toCanonicalProcess
 
 
   def processWithGet = ScenarioBuilder
@@ -38,7 +37,6 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "request1-get-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2")
-    .toCanonicalProcess
 
   def processWithGenericGet = ScenarioBuilder
     .requestResponse(procId.value)
@@ -46,7 +44,6 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "genericGetSource", "type" -> "{field1: 'java.lang.String', field2: 'java.lang.String'}")
     .filter("filter1", "#input.field1 == 'a'")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2 + '-' + #input.field1")
-    .toCanonicalProcess
 
   def processWithPathJson = ScenarioBuilder
     .requestResponse(procId.value)
@@ -55,7 +52,6 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2")
-    .toCanonicalProcess
 
   def processWithLifecycleService = ScenarioBuilder
     .requestResponse(procId.value)
@@ -64,21 +60,18 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2")
-    .toCanonicalProcess
 
   def noFilterProcess = ScenarioBuilder
     .requestResponse(procId.value)
     .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#input.field2")
-    .toCanonicalProcess
 
   def invalidProcess = ScenarioBuilder
     .requestResponse(procId.value)
     .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "#var1")
-    .toCanonicalProcess
 
   def failingProcess = ScenarioBuilder
     .requestResponse(procId.value)
@@ -86,7 +79,6 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
     .source("start", "request1-post-source")
     .filter("filter1", "1/#input.field1.length() > 0")
     .emptySink("endNodeIID", "response", SinkRawEditorParamName -> "false", SinkRawValueParamName -> "''")
-    .toCanonicalProcess
 
   it should "deploy process and then run it" in {
     assertProcessNotRunning(procId)

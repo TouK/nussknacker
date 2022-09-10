@@ -45,7 +45,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, port: Int) {
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
   }
 

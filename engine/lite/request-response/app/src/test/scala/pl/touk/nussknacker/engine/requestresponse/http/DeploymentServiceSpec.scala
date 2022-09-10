@@ -94,7 +94,6 @@ class DeploymentServiceSpec extends AnyFlatSpec with Matchers {
         .path(path)
         .source("start", "request1-post-source")
         .emptySink("endNodeIID", "response-sink", "value" -> "''")
-        .toCanonicalProcess
     RequestResponseDeploymentData(canonical, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)
   }
 

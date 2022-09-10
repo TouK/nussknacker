@@ -66,7 +66,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
           "Value" -> s"{ original: #input, version: $version }")
 
       val pversion = ProcessVersion(VersionId(version), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
-      manager.deploy(pversion, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      manager.deploy(pversion, DeploymentData.empty, scenario, None).futureValue
       pversion
     }
 
@@ -139,12 +139,12 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
     val otherVersion = version.copy(versionId = VersionId(12), modelVersion = Some(23))
     val otherScenario = scenarioWithOutputTo(otherOutputTopic)
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+    manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     waitFor(version).inState(SimpleStateStatus.DuringDeploy)
 
     val oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
 
-    manager.deploy(otherVersion, DeploymentData.empty, otherScenario.toCanonicalProcess, None).futureValue
+    manager.deploy(otherVersion, DeploymentData.empty, otherScenario, None).futureValue
 
     var statuses: List[StateStatus] = Nil
     // wait until new pod arrives..
@@ -217,7 +217,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
     def withManager(manager: K8sDeploymentManager)(action: ProcessVersion => Unit): Unit = {
       val version = ProcessVersion(VersionId(11), ProcessName(f.scenario.id), ProcessId(1234), "testUser", Some(22))
-      manager.deploy(version, DeploymentData.empty, f.scenario.toCanonicalProcess, None).futureValue
+      manager.deploy(version, DeploymentData.empty, f.scenario, None).futureValue
 
       action(version)
       cancelAndAssertCleanup(manager, version)
@@ -293,7 +293,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     val f = createKafkaFixture()
     k8s.create(Quota(metadata = ObjectMeta(name = "nu-pods-limit"), spec = Some(Quota.Spec(hard = Map[String, Quantity]("pods" -> Quantity("2")))))) //two pods takes test setup
 
-    f.manager.validate(f.version, DeploymentData.empty, f.scenario.toCanonicalProcess).failed.futureValue shouldEqual
+    f.manager.validate(f.version, DeploymentData.empty, f.scenario).failed.futureValue shouldEqual
       ResourceQuotaExceededException("Cluster is full. Release some cluster resources.")
 
     cancelAndAssertCleanup(f.manager, f.version)

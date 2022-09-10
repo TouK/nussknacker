@@ -310,17 +310,12 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   protected def createProcess(process: CanonicalProcess, category: String, processingType: ProcessingType): ProcessId = {
-    val cannonical = process.toCanonicalProcess
-    saveAndGetId(cannonical, category, cannonical.metaData.isSubprocess, processingType).futureValue
+    saveAndGetId(process, category, process.metaData.isSubprocess, processingType).futureValue
   }
 
   private def prepareValidProcess(processName: ProcessName, category: String, isSubprocess: Boolean): Future[ProcessId] = {
-    val validProcess: CanonicalProcess = {
-      if(isSubprocess) SampleFragment.fragment
-      else SampleProcess.process.toCanonicalProcess
-    }
+    val validProcess: CanonicalProcess = if (isSubprocess) SampleFragment.fragment else SampleProcess.process
     val withNameSet = validProcess.copy(metaData = validProcess.metaData.copy(id = processName.value))
-
     saveAndGetId(withNameSet, category, isSubprocess)
   }
 

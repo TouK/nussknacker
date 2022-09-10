@@ -41,7 +41,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
 
     val process = SampleProcess.prepareProcess(processId)
 
-    whenReady(deploymentManager.test(ProcessName(processId), process.toCanonicalProcess, TestData.newLineSeparated("terefere"), identity)) { r =>
+    whenReady(deploymentManager.test(ProcessName(processId), process, TestData.newLineSeparated("terefere"), identity)) { r =>
       r.nodeResults shouldBe Map(
         "startProcess" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
         "nightFilter" -> List(NodeResult(ResultContext(s"$processId-startProcess-0-0", Map("input" -> "terefere")))),
@@ -61,7 +61,7 @@ class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with
     val deploymentManager = FlinkStreamingDeploymentManagerProvider.defaultDeploymentManager(config)
 
     val caught = intercept[IllegalArgumentException] {
-      Await.result(deploymentManager.test(ProcessName(processId), process.toCanonicalProcess, TestData.newLineSeparated("terefere"), _ => null), patienceConfig.timeout)
+      Await.result(deploymentManager.test(ProcessName(processId), process, TestData.newLineSeparated("terefere"), _ => null), patienceConfig.timeout)
     }
     caught.getMessage shouldBe "Compilation errors: MissingSinkFactory(sendSmsNotExist,endSend)"
   }

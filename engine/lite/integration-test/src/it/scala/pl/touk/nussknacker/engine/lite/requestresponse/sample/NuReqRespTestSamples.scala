@@ -32,7 +32,6 @@ object NuReqRespTestSamples {
     ))
     .source("source", "request")
     .emptySink("sink", "response", SinkRawEditorParamName -> "false", "pong" -> "#input.ping")
-    .toCanonicalProcess
 
   def jsonPingMessage(msg: String) = s"""{"ping":"$msg"}"""
   def jsonPongMessage(msg: String) = s"""{"pong":"$msg"}"""

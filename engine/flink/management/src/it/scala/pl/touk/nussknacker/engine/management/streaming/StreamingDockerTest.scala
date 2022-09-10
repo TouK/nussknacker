@@ -52,7 +52,7 @@ trait StreamingDockerTest extends DockerTest with Matchers { self: Suite =>
   }
 
   protected def deployProcess(process: CanonicalProcess, processVersion: ProcessVersion, savepointPath : Option[String] = None): Option[ExternalDeploymentId] = {
-    deploymentManager.deploy(processVersion, DeploymentData.empty, process.toCanonicalProcess, savepointPath).futureValue
+    deploymentManager.deploy(processVersion, DeploymentData.empty, process, savepointPath).futureValue
   }
 
   protected def cancelProcess(processId: String): Unit = {

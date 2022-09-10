@@ -180,8 +180,8 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
   }
 
   private def marshallAndUnmarshall(process: CanonicalProcess): CanonicalProcess = {
-    val unmarshalled = ProcessMarshaller.fromJson(process.toCanonicalProcess.asJson).toOption
-    unmarshalled.foreach(_ shouldBe process.toCanonicalProcess)
+    val unmarshalled = ProcessMarshaller.fromJson(process.asJson).toOption
+    unmarshalled.foreach(_ shouldBe process)
     unmarshalled.value
   }
 

@@ -26,7 +26,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .filter("filter1", "")
       .emptySink("sink11", "")
 
-    val computed = defaultCounter.computeCounts(process.toCanonicalProcess, Map("source1" -> RawCount(30L, 5L),
+    val computed = defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
       "filter1" -> RawCount(20, 10)).get)
 
     computed shouldBe Map(
@@ -53,7 +53,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
           )
           .emptySink("end", "sink")
       )
-    val result = defaultCounter.computeCounts(process.toCanonicalProcess, Map(
+    val result = defaultCounter.computeCounts(process, Map(
       "source1" -> RawCount(1, 0),
       "source2" -> RawCount(2, 0),
       "join1" -> RawCount(3, 0),
@@ -75,7 +75,6 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")
       .emptySink("sink11", "")
-      .toCanonicalProcess
 
     val counter = new ProcessCounter(subprocessRepository(Set(
       CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),

@@ -199,7 +199,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
         scenario.nodes.head.data.asInstanceOf[Source], 2).get, 2)
 
     val results = wrapInFailingLoader {
-      manager.test(name, scenario.toCanonicalProcess, testData, identity[Any]).futureValue
+      manager.test(name, scenario, testData, identity[Any]).futureValue
     }
     results.nodeResults("sink") should have length 2
     val idGenerator = IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, "source")

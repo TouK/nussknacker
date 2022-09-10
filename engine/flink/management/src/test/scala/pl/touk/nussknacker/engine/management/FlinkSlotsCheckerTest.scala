@@ -99,7 +99,6 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
     parallelism.map(baseProcessBuilder.parallelism).getOrElse(baseProcessBuilder)
       .source("startProcess", "kafka-transaction")
       .emptySink("endSend", "sendSms")
-      .toCanonicalProcess
   }
 
 }

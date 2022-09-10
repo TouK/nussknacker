@@ -22,7 +22,7 @@ class ProcessPosting {
   }
 
   def toEntityAsProcessToSave(process: CanonicalProcess, comment: String = ""): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
     toRequest(UpdateProcessCommand(displayable, UpdateProcessComment(comment)))
   }
 

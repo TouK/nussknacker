@@ -50,7 +50,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val process = SampleProcess.prepareProcess(processName)
     val version = ProcessVersion(VersionId(15), ProcessName(processName), processId, "user1", Some(13))
 
-    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process.toCanonicalProcess, None)
+    val deployedResponse = deploymentManager.deploy(version, defaultDeploymentData, process, None)
 
     deployedResponse.futureValue
   }
@@ -172,7 +172,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       logger.info("Starting to redeploy")
 
       val statefullProcess = StatefulSampleProcess.prepareProcessWithLongState(processId)
-      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefullProcess.toCanonicalProcess, None).failed.futureValue
+      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefullProcess, None).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processId)
@@ -193,7 +193,7 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
       logger.info("Starting to redeploy")
 
       val statefulProcess = StatefulSampleProcess.processWithAggregator(processId, "#AGG.approxCardinality")
-      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefulProcess.toCanonicalProcess, None).failed.futureValue
+      val exception = deploymentManager.deploy(empty(process.id), defaultDeploymentData, statefulProcess, None).failed.futureValue
       exception.getMessage shouldBe "State is incompatible, please stop scenario and start again with clean state"
     } finally {
       cancelProcess(processId)

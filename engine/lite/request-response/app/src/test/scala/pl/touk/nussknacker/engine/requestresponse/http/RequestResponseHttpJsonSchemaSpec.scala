@@ -23,7 +23,6 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
       .source("start", "request")
       .emptySink("endNodeIID", "response", outputValueParams:_*)
-      .toCanonicalProcess
   }
 
   def jsonSchemaProcess(inputSchema: String, outputSchema: String, outputValue: String): CanonicalProcess = {
@@ -32,7 +31,6 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
       .additionalFields(properties = Map(InputSchemaProperty -> inputSchema, OutputSchemaProperty -> outputSchema))
       .source("start", "request")
       .emptySink("endNodeIID", "response", SinkRawValueParamName -> outputValue, SinkRawEditorParamName -> "true")
-      .toCanonicalProcess
   }
 
   def jsonSchemaSampleProcess(outputValue: String): CanonicalProcess = {

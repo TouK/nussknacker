@@ -29,7 +29,7 @@ trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with Schema
   case class FixtureParam(deploymentManager: DeploymentManager, modelData: ModelData, inputTopic: String, outputTopic: String) {
     def deployScenario(scenario: CanonicalProcess): Unit = {
       val version = ProcessVersion.empty.copy(processName = ProcessName(scenario.id))
-      deploymentManager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+      deploymentManager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     }
   }
 

@@ -43,7 +43,6 @@ class PeriodicProcessServiceTest extends AnyFunSuite
       .streaming(processName.value)
       .source("start", "source")
       .emptySink("end", "KafkaSink")
-      .toCanonicalProcess
 
   class Fixture {
     val repository = new db.InMemPeriodicProcessesRepository(processingType = "testProcessingType")

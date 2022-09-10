@@ -26,7 +26,7 @@ object NuKafkaRuntimeTestSamples {
       SinkValidationModeParameterName -> s"'${ValidationMode.strict.name}'",
       SinkKeyParamName -> "",
       SinkValueParamName -> "#input"
-    ).toCanonicalProcess
+    )
 
   val jsonPingMessage: String =
     """{"foo":"ping"}""".stripMargin

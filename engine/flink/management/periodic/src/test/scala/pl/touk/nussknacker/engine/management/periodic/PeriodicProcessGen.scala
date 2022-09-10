@@ -30,6 +30,5 @@ object PeriodicProcessGen {
         .additionalFields(properties = Map(CronPropertyDefaultName -> cronProperty))
         .source("test", "test")
         .emptySink("test", "test")
-        .toCanonicalProcess
   }
 }

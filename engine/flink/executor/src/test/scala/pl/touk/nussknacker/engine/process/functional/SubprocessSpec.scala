@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMet
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -129,11 +128,9 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ):: Nil
     )
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess))
-      .resolve(scenario.toCanonicalProcess)
+    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(scenario)
 
     resolved shouldBe 'valid
-
     resolved.toOption.get
   }
 

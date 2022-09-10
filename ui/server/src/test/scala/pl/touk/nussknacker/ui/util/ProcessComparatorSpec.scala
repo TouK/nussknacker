@@ -125,8 +125,8 @@ class ProcessComparatorSpec extends AnyFunSuite with Matchers {
         .source("start", "testSource")
     ))
 
-  private def toDisplayableFromProcess(espProcess: CanonicalProcess) : DisplayableProcess =
-    ProcessConverter.toDisplayable(espProcess.toCanonicalProcess, TestProcessingTypes.Streaming)
+  private def toDisplayableFromProcess(canonicalProcess: CanonicalProcess) : DisplayableProcess =
+    ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming)
 
   private def caseWithExpression(expr: String, id: Int = 1): Case = {
     Case(expr, GraphBuilder.emptySink(s"end$id", "end"))

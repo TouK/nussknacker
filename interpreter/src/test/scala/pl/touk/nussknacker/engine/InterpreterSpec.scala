@@ -374,7 +374,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -399,7 +398,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("second", "subProcess1", "output", "param" -> "#input.msisdn")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -426,7 +424,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("first", "subProcess2", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -457,8 +454,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
         "output2" -> GraphBuilder.buildSimpleVariable("result-sink2", resultVariable, "'result2'").emptySink("end-sink2", "dummySink")
       ))
-      .toCanonicalProcess
-
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -481,7 +476,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "transaction-source")
       .subprocessEnd("sub", "subProcess1", "param" -> "#input.accountId")
-      .toCanonicalProcess
 
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
@@ -502,7 +496,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "toMultiply" -> "2", "multiplyBy" -> "4")
       .buildSimpleVariable("result-sink", resultVariable, "#output.result.toString").emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
