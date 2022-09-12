@@ -397,7 +397,7 @@ class HttpService {
     const promise = api.post(`/testInfo/generate/${testSampleSize}`, data, {responseType: "blob"})
     promise
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error))
+      .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true))
     return promise
   }
 
@@ -521,9 +521,10 @@ class HttpService {
     }
   }
 
-  #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false): Promise<AxiosError<T>> {
+  async #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
     console.warn(message, error)
-    const errorMessage = error?.response?.data || error.message
+    const errorResponseData = error?.response?.data || error.message
+    const errorMessage = errorResponseData instanceof Blob ? await errorResponseData.text() : errorResponseData
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
