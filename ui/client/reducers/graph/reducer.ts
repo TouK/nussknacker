@@ -297,9 +297,6 @@ const reducer = mergeReducers(
   {
     processToDisplay: {
       nodes,
-      properties: {
-        additionalFields: {},
-      },
     },
   },
 )

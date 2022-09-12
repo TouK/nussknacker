@@ -20,11 +20,11 @@ import {BASE_PATH} from "../../../../config"
 import {RootState} from "../../../../reducers"
 
 export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeType, process: Process }> & { readOnly?: boolean }): JSX.Element {
-  const process = useSelector(getProcessToDisplay)
+  const processFromGlobalStore = useSelector(getProcessToDisplay)
   const readOnly = useSelector((s: RootState) => getReadOnly(s, props.readOnly))
 
   const {data: {meta}} = props
-  const {node: nodeToDisplay, process: processToDisplay = process} = meta
+  const {node: nodeToDisplay, process: processToDisplay = processFromGlobalStore} = meta
   const nodeId = processToDisplay.properties.isSubprocess ? nodeToDisplay.id.replace(`${processToDisplay.id}-`, "") : nodeToDisplay.id
 
   const [editedNode, setEditedNode] = useState(nodeToDisplay)
@@ -105,6 +105,11 @@ export function NodeDetails(props: WindowContentProps<WindowKind, { node: NodeTy
     const HeaderTitle = () => <NodeDetailsModalHeader node={nodeToDisplay}/>
     return {HeaderTitle}
   }, [nodeToDisplay])
+
+  //no process? no nodes? no window contents! no errors for whole tree!
+  if (!processFromGlobalStore?.nodes) {
+    return null
+  }
 
   return (
     <WindowContent
