@@ -269,7 +269,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process.toCanonicalProcess, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
 
@@ -312,7 +312,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
@@ -334,7 +334,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process.toCanonicalProcess, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
 
     List((1 to 50).mkString("\n"), (1 to 50000).mkString("-")).foreach { tooLargeData =>
       val multiPart = MultipartUtils.prepareMultiParts("testData" -> tooLargeData, "processJson" -> displayableProcess.asJson.noSpaces)()

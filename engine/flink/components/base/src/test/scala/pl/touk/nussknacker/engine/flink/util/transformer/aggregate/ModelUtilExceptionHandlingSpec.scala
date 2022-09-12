@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
+import cats.data.NonEmptyList
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test._
 import pl.touk.nussknacker.engine.flink.util.transformer.join.BranchType
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.spel.SpelExpressionEvaluationException
@@ -19,7 +20,7 @@ import java.util.UUID
 
 class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHandlingSpec {
 
-  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
+  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: CanonicalProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 
   private val durationExpression = "T(java.time.Duration).parse('PT1M')"
@@ -28,7 +29,7 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
 
   test("should handle exceptions in aggregate keys") {
     checkExceptions(configCreator) { case (graph, generator) =>
-      graph
+      NonEmptyList.one(graph
         .customNode("previousValue", "out1", "previousValue",
           "groupBy" -> generator.throwFromString(),
           "value" -> generator.throwFromString()
@@ -62,21 +63,20 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
           ).emptySink("end2", "empty"),
           GraphBuilder.branchEnd("union1", "union1"),
           GraphBuilder.branchEnd("union2", "union2"),
-        )
+        ))
     }
   }
 
   test("should handle exceptions in single side join") {
 
     val generator = new ExceptionGenerator
-    val scenarioBase = ScenarioBuilder.streaming("test")
-      .source("source", "source").branchEnd("left", "join")
 
     //we do it only once, as test data will be generated for left and right
     val keyParamExpression = generator.throwFromString()
 
-    val scenario = scenarioBase.copy(
-      roots = scenarioBase.roots ++ List(
+    val scenario = ScenarioBuilder.streaming("test")
+      .sources(
+        GraphBuilder.source("source", "source").branchEnd("left", "join"),
         GraphBuilder.source("source2", "source").branchEnd("right", "join"),
         GraphBuilder.join("join", "single-side-join", Some("out"),
           List(("left", List(("key", s"'left' + $keyParamExpression"), ("branchType", s"T(${classOf[BranchType].getName}).MAIN"))),
@@ -84,9 +84,8 @@ class ModelUtilExceptionHandlingSpec extends AnyFunSuite with CorrectExceptionHa
           "aggregator" -> "#AGG.first",
           "aggregateBy" -> s"'aggregate' + ${generator.throwFromString()}",
           "windowLength" -> durationExpression
-        ).emptySink("end4", "empty"),
+        ).emptySink("end4", "empty")
       )
-    )
 
     val runId = UUID.randomUUID().toString
     val config = RecordingExceptionConsumerProvider.configWithProvider(ConfigFactory.empty(), consumerId = runId)

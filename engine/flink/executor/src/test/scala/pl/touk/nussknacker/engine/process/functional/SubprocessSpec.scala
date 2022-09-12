@@ -1,21 +1,20 @@
 package pl.touk.nussknacker.engine.process.functional
 
-import java.util.Date
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.SubprocessResolver
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
+
+import java.util.Date
 
 class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
 
@@ -87,7 +86,7 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     MockService.data.head shouldBe "a"
   }
 
-  private def resolve(espProcess: EspProcess) = {
+  private def resolve(scenario: CanonicalProcess) = {
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
@@ -129,12 +128,9 @@ class SubprocessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
       ):: Nil
     )
 
-    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess))
-      .resolve(espProcess.toCanonicalProcess)
-      .andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocessWithSplit, subprocess, subprocessWithGlobalVar, diamondSubprocess)).resolve(scenario)
 
     resolved shouldBe 'valid
-
     resolved.toOption.get
   }
 

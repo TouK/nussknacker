@@ -1,19 +1,19 @@
 package pl.touk.nussknacker.engine.requestresponse.test
 
 import com.typesafe.config.ConfigFactory
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.BeforeAndAfterEach
-import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, Request1, RequestResponseConfigCreator, Response}
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.testmode.TestProcess._
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.nio.charset.StandardCharsets
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeAndAfterEach {
 
@@ -118,7 +118,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
 
   }
 
-  private def firstIdForFirstSource(scenario: EspProcess): IncContextIdGenerator =
-     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.roots.head.id)
+  private def firstIdForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =
+     IncContextIdGenerator.withProcessIdNodeIdPrefix(scenario.metaData, scenario.nodes.head.id)
 
 }

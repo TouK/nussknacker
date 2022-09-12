@@ -6,7 +6,7 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import pl.touk.nussknacker.engine.Interpreter.{FutureShape, InterpreterShape}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.JobData
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionConsumerConfig
 import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterpreterWithLifecycle
@@ -61,7 +61,7 @@ object KafkaTransactionalScenarioInterpreter {
 
   def testRunner(implicit ec: ExecutionContext): TestRunner = new InterpreterTestRunner[Future, Input, AnyRef]
 
-  def apply(scenario: EspProcess,
+  def apply(scenario: CanonicalProcess,
             jobData: JobData,
             liteKafkaJobData: LiteKafkaJobData,
             modelData: ModelData,
@@ -73,7 +73,7 @@ object KafkaTransactionalScenarioInterpreter {
 }
 
 class KafkaTransactionalScenarioInterpreter private[kafka](interpreter: ScenarioInterpreterWithLifecycle[Future, Input, Output],
-                                                           scenario: EspProcess,
+                                                           scenario: CanonicalProcess,
                                                            jobData: JobData,
                                                            liteKafkaJobData: LiteKafkaJobData,
                                                            modelData: ModelData,

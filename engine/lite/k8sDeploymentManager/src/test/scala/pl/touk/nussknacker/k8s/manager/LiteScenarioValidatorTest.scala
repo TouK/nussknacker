@@ -17,7 +17,6 @@ class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
     val scenarioWithLongName = ScenarioBuilder.streamingLite(invalidK8sServiceName)
       .source("source", "dumb")
       .emptySink("sink", "dumb")
-      .toCanonicalProcess
     noInstanceNameValidator.validate(scenarioWithLongName) shouldBe 'valid
   }
 
@@ -25,7 +24,6 @@ class LiteScenarioValidatorTest extends AnyFunSuite with Matchers {
     val scenarioWithLongName = ScenarioBuilder.requestResponse(notImportantScenarioName.value, invalidK8sServiceName)
       .source("source", "dumb")
       .emptySink("sink", "dumb")
-      .toCanonicalProcess
     noInstanceNameValidator.validate(scenarioWithLongName) shouldBe 'invalid
     noInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some(validSlug))) shouldBe 'valid
     noInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some(invalidK8sServiceName))) shouldBe 'invalid

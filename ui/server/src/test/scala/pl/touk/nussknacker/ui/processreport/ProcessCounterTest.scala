@@ -1,14 +1,11 @@
 package pl.touk.nussknacker.ui.processreport
 
-import cats.data.NonEmptyList
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.VersionId
-import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Filter, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.ui.api.helpers.{StubSubprocessRepository, TestCategories}
@@ -29,7 +26,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .filter("filter1", "")
       .emptySink("sink11", "")
 
-    val computed = defaultCounter.computeCounts(process.toCanonicalProcess, Map("source1" -> RawCount(30L, 5L),
+    val computed = defaultCounter.computeCounts(process, Map("source1" -> RawCount(30L, 5L),
       "filter1" -> RawCount(20, 10)).get)
 
     computed shouldBe Map(
@@ -40,7 +37,7 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
   }
 
   test("compute counts for branches") {
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("source1", "source")
           .branchEnd("branch1", "join1"),
@@ -55,8 +52,8 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
             )
           )
           .emptySink("end", "sink")
-      ))
-    val result = defaultCounter.computeCounts(process.toCanonicalProcess, Map(
+      )
+    val result = defaultCounter.computeCounts(process, Map(
       "source1" -> RawCount(1, 0),
       "source2" -> RawCount(2, 0),
       "join1" -> RawCount(3, 0),
@@ -78,7 +75,6 @@ class ProcessCounterTest extends AnyFunSuite with Matchers {
       .filter("filter1", "")
       .subprocessOneOut("sub1", "subprocess1", "out1")
       .emptySink("sink11", "")
-      .toCanonicalProcess
 
     val counter = new ProcessCounter(subprocessRepository(Set(
       CanonicalProcess(MetaData("subprocess1", FragmentSpecificData()),

@@ -4,19 +4,19 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
-import pl.touk.nussknacker.engine.{InterpretationResult, api}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
-import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
 import pl.touk.nussknacker.engine.compiledgraph.part.ProcessPart
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
+import pl.touk.nussknacker.engine.{InterpretationResult, api}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 
 class InterpreterSetup[T:ClassTag] {
 
-  def sourceInterpretation[F[_]:InterpreterShape](process: EspProcess,
+  def sourceInterpretation[F[_]:InterpreterShape](process: CanonicalProcess,
                            services: Map[String, Service],
                            listeners: Seq[ProcessListener]): (Context, ExecutionContext) => F[List[Either[InterpretationResult, NuExceptionInfo[_ <: Throwable]]]] = {
     val compiledProcess = compile(services, process, listeners)
@@ -39,7 +39,7 @@ class InterpreterSetup[T:ClassTag] {
       interpreter.interpret[F](compiled, process.metaData, initialCtx)(shape, ec)
   }
 
-  def compile(servicesToUse: Map[String, Service], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
+  def compile(servicesToUse: Map[String, Service], process: CanonicalProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 

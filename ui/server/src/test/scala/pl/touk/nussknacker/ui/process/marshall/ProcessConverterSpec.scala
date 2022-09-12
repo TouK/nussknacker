@@ -1,31 +1,30 @@
 package pl.touk.nussknacker.ui.process.marshall
 
-import cats.data.NonEmptyList
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, LanguageConfiguration}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
-import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
+import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.{FilterFalse, FilterTrue, NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.BranchParameters
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
-import pl.touk.nussknacker.engine.graph.{EdgeType, EspProcess}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
-import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
@@ -155,27 +154,24 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Edge("j1", "e", None)
       ), TestProcessingTypes.Streaming)
 
-    val processViaBuilder =  EspProcess(MetaData("t1", metaData), NonEmptyList.of(
+    val processViaBuilder =  ScenarioBuilder.streaming("t1").parallelism(metaData.parallelism.get).stateOnDisk(metaData.spillStateToDisk.get).sources(
       GraphBuilder.join("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
       GraphBuilder.source("s2", "sourceRef").branchEnd("s2", "j1"),
       GraphBuilder.source("s1", "sourceRef").branchEnd("s1", "j1")
-    ))
+    )
 
     displayableCanonical(process).nodes.sortBy(_.id) shouldBe process.nodes.sortBy(_.id)
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
 
     val canonical = ProcessConverter.fromDisplayable(process)
 
-    val normal = ProcessCanonizer.uncanonize(canonical).toOption.get
-    normal.toCanonicalProcess shouldBe canonical
-    //here we want to check that displayable process is converted to Esp just like we'd expect using EspProcessBuilder
-    normal shouldBe processViaBuilder
+    canonical shouldBe processViaBuilder
   }
 
   test("Convert branches to displayable") {
     import pl.touk.nussknacker.engine.spel.Implicits._
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streamingLite("proc1").sources(
         GraphBuilder
           .source("sourceId1", "sourceType1")
           .branchEnd("branch1", "join1"),
@@ -188,7 +184,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end","outType1")
-      )).toCanonicalProcess
+      )
 
     val displayableProcess = ProcessConverter.toDisplayable(process, "type1")
 
@@ -203,7 +199,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
 
   test("finds all nodes in diamond-shaped process") {
 
-    val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process = ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "sourceType1")
           .split("split1",
@@ -215,7 +211,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
             List("branch1" -> Nil, "branch2" -> Nil)
           )
           .emptySink("end", "outType1")
-      )).toCanonicalProcess
+      )
 
     val foundNodes = ProcessConverter.findNodes(process)
 
@@ -229,7 +225,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     val nodeId: String = "problemNode"
 
     def testCase(run: GraphBuilder[SourceNode] => SourceNode, typ: Option[EdgeType] = None, additionalEdges: Set[Edge] = Set.empty) = {
-      val process = EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      val process = ScenarioBuilder.streaming("proc1").sources(
           run(GraphBuilder
             .source("source1", "sourceType1")),
           GraphBuilder
@@ -237,7 +233,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
               List("branch1" -> Nil, "branch2" -> Nil)
             )
             .emptySink("end", "outType1")
-        )).toCanonicalProcess
+        )
       val edges = ProcessConverter.toDisplayable(process, "").edges
       edges.toSet shouldBe Set(Edge("source1", nodeId, None), Edge(nodeId, "join1", typ), Edge("join1", "end", None)) ++ additionalEdges
     }

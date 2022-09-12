@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
 import pl.touk.nussknacker.engine.testmode._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
@@ -25,7 +25,7 @@ import scala.language.higherKinds
 trait TestRunner {
   def runTest[T](modelData: ModelData,
                  testData: TestData,
-                 process: EspProcess,
+                 process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T]
 }
 
@@ -34,7 +34,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
 
   def runTest[T](modelData: ModelData,
                  testData: TestData,
-                 process: EspProcess,
+                 process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T] = {
 
     //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
@@ -74,7 +74,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
 
   }
 
-  private def testJobData(process: EspProcess) = {
+  private def testJobData(process: CanonicalProcess) = {
     // testing process may be unreleased, so it has no version
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
     val deploymentData = DeploymentData.empty

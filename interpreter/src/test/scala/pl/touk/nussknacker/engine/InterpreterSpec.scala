@@ -8,26 +8,24 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.springframework.expression.spel.standard.SpelExpression
 import pl.touk.nussknacker.engine.InterpreterSpec._
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, OutputVariableNameDependency, ParameterWithExtractor}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.expression.{Expression => _, _}
+import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.generics.ExpressionParseError
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.part.{CustomNodePart, ProcessPart, SinkPart}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression._
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
@@ -73,11 +71,11 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     listener.toSeq :+ LoggingListener
 
 
-  private def interpretValidatedProcess(process: ValidatedNel[_, EspProcess], transaction: Transaction, listeners: Seq[ProcessListener] = listenersDef(), services: Map[String, Service] = servicesDef): Any = {
+  private def interpretValidatedProcess(process: ValidatedNel[_, CanonicalProcess], transaction: Transaction, listeners: Seq[ProcessListener] = listenersDef(), services: Map[String, Service] = servicesDef): Any = {
     interpretProcess(process.toOption.get, transaction, listeners, services)
   }
 
-  private def interpretProcess(scenario: EspProcess, transaction: Transaction,
+  private def interpretProcess(scenario: CanonicalProcess, transaction: Transaction,
                                listeners: Seq[ProcessListener] = listenersDef(),
                                services: Map[String, Service] = servicesDef,
                                transformers: Map[String, CustomStreamTransformer] = Map()): Any = {
@@ -119,7 +117,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     }
   }
 
-  def compile(servicesToUse: Map[String, Service], customStreamTransformersToUse: Map[String, CustomStreamTransformer], process: EspProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
+  def compile(servicesToUse: Map[String, Service], customStreamTransformersToUse: Map[String, CustomStreamTransformer], process: CanonicalProcess, listeners: Seq[ProcessListener]): ProcessCompilerData = {
 
     val configCreator: ProcessConfigCreator = new EmptyProcessConfigCreator {
 
@@ -376,7 +374,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("sub", "subProcess1", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -385,7 +382,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
         ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolved shouldBe 'valid
 
@@ -401,7 +398,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("second", "subProcess1", "output", "param" -> "#input.msisdn")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -410,7 +406,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
         ), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolved shouldBe 'valid
 
@@ -428,7 +424,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .subprocessOneOut("first", "subProcess2", "output", "param" -> "#input.accountId")
       .buildSimpleVariable("result-sink", resultVariable, "'result'")
       .emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -444,7 +439,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           SubprocessRef("subProcess1", List(Parameter("param", "#param")))), Map("output" -> List(FlatNode(SubprocessOutputDefinition("sub2Out", "output", List.empty)))))), List.empty
     )
 
-    val resolved = SubprocessResolver(Set(subprocess, nested)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess, nested)).resolve(process)
 
     resolved shouldBe 'valid
 
@@ -459,8 +454,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         "output1" -> GraphBuilder.buildSimpleVariable("result-sink", resultVariable, "'result1'").emptySink("end-sink", "dummySink"),
         "output2" -> GraphBuilder.buildSimpleVariable("result-sink2", resultVariable, "'result2'").emptySink("end-sink2", "dummySink")
       ))
-      .toCanonicalProcess
-
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -470,7 +463,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
             canonicalnode.Case("#param == 'b'", List(FlatNode(SubprocessOutputDefinition("out2", "output2", List.empty))))
           ), List())), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolved shouldBe 'valid
 
@@ -483,7 +476,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "transaction-source")
       .subprocessEnd("sub", "subProcess1", "param" -> "#input.accountId")
-      .toCanonicalProcess
 
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
@@ -492,7 +484,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         FlatNode(Variable("result", "result", "'result'")),
         FlatNode(Sink("end", SinkRef("dummySink", List())))), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
     resolved shouldBe 'valid
 
@@ -504,7 +496,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       .source("source", "transaction-source")
       .subprocessOneOut("sub", "subProcess1", "output", "toMultiply" -> "2", "multiplyBy" -> "4")
       .buildSimpleVariable("result-sink", resultVariable, "#output.result.toString").emptySink("end-sink", "dummySink")
-      .toCanonicalProcess
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
@@ -517,7 +508,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
         )
       ), List.empty)
 
-    val resolved = SubprocessResolver(Set(subprocess)).resolve(process).andThen(ProcessCanonizer.uncanonize)
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
     resolved shouldBe 'valid
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValu
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
@@ -43,15 +43,15 @@ case class LiteTestScenarioRunner(components: List[ComponentDefinition], config:
     *  .emptySink("sink", LiteTestScenarioRunner.sinkName, "value" -> "#result")
     *  }}}
     */
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] =
+  override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[R] =
     runWithDataReturningDetails(scenario, data)
     .map{ result => RunResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
 
-  def runWithDataReturningDetails[T: ClassTag](scenario: EspProcess, data: List[T]): SynchronousResult = {
+  def runWithDataReturningDetails[T: ClassTag](scenario: CanonicalProcess, data: List[T]): SynchronousResult = {
     val testSource = ComponentDefinition(sourceName, new SimpleSourceFactory(Typed[T]))
     val testSink = ComponentDefinition(sinkName, SimpleSinkFactory)
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, testSource :: testSink :: components)
-    val inputId = scenario.roots.head.id
+    val inputId = scenario.nodes.head.id
 
     try {
       SynchronousLiteInterpreter

@@ -2,18 +2,17 @@ package pl.touk.nussknacker.engine.lite
 
 import cats.data.NonEmptyList
 import io.dropwizard.metrics5.{MetricFilter, MetricRegistry}
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.LoneElement._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.lite.sample.SampleInput
 import pl.touk.nussknacker.engine.spel.Implicits._
-import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.engine.util.metrics.common.naming.{nodeIdTag, scenarioIdTag}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier}
 
@@ -92,7 +91,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
     metricProvider.registerGauge(metricIdentifier, someGauge)
   }
 
-  private def runScenario(scenario: EspProcess, input: List[Int], metricRegistry: MetricRegistry): Unit = {
+  private def runScenario(scenario: CanonicalProcess, input: List[Int], metricRegistry: MetricRegistry): Unit = {
     sample.run(scenario, ScenarioInputBatch(input.zipWithIndex.map { case (value, idx) =>
       (SourceId(sourceId), SampleInput(idx.toString, value))
     }), Map.empty, new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry)))
@@ -107,7 +106,7 @@ class MetricsTest extends AnyFunSuite with Matchers {
       .filter("filter1", "false")
       .processor("processor1", "noOpProcessor", "value" -> "0")
       .emptySink("sink1", "end", "value" -> "''")
-    val allNodes = NodesCollector.collectNodesInScenario(scenario).map(_.data)
+    val allNodes = scenario.collectAllNodes
 
     runScenario(scenario, Nil, metricRegistry)
 

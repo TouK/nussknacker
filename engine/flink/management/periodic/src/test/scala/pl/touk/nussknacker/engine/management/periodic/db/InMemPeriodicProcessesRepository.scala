@@ -57,8 +57,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
       processJson = ScenarioBuilder
         .streaming(processName.value)
         .source("start", "source")
-        .emptySink("end", "KafkaSink")
-        .toCanonicalProcess,
+        .emptySink("end", "KafkaSink"),
       inputConfigDuringExecutionJson = "{}",
       jarFileName = "",
       scheduleProperty = scheduleProperty.asJson.noSpaces,

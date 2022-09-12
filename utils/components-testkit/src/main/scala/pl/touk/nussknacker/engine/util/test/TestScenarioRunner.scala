@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.util.test
 import cats.data.ValidatedNel
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 
 import scala.reflect.ClassTag
@@ -22,7 +22,7 @@ trait TestScenarioRunner
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
   //todo add generate test data support
-  def runWithData[T:ClassTag, R](scenario: EspProcess, data: List[T]): RunnerResult[R]
+  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerResult[R]
 }
 
 object RunResult {

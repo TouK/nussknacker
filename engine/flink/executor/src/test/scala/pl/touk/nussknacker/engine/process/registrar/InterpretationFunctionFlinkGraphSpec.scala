@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import cats.data.NonEmptyList
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
-import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar.{BranchInterpretationName, CustomNodeInterpretationName, InterpretationName, SinkInterpretationName, interpretationOperatorName}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
 import scala.collection.JavaConverters._
@@ -60,9 +57,10 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
     graph.getStreamNodes.asScala.filter(node => interpretationNodeNames.exists(node.getOperatorName.contains))
   }
 
-  private def prepareProcess(useAsyncInterpretation: Boolean) = EspProcess(
-    MetaData(id = scenarioId, typeSpecificData = StreamMetaData(useAsyncInterpretation = Some(useAsyncInterpretation))),
-    NonEmptyList.of(
+  private def prepareProcess(useAsyncInterpretation: Boolean) = ScenarioBuilder
+    .streaming(scenarioId)
+    .useAsyncInterpretation(useAsyncInterpretation)
+    .sources(
       GraphBuilder
         // Source part contains services.
         .source("sourceId1", "input")
@@ -107,7 +105,6 @@ class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
             .emptySink("sinkId9", "monitor"),
         ),
     )
-  )
 
   private def prepareConfig(forceSyncInterpretationForSyncScenarioPart: Option[Boolean] = None): Config = {
     val baseConfig = ConfigFactory.load()

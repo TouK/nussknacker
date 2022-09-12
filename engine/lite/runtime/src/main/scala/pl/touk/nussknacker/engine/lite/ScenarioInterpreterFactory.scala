@@ -14,17 +14,16 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessObjectDependencies, Source}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.node.Node
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.definition.{CompilerLazyParameterInterpreter, LazyInterpreterDependencies, ProcessDefinitionExtractor}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{DataBatch, ErrorType, ResultType, monoid}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes._
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch, ScenarioInterpreter, SourceId}
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
-import pl.touk.nussknacker.engine.split.NodesCollector
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
 import pl.touk.nussknacker.engine.{InterpretationResult, ModelData, compiledgraph}
@@ -43,7 +42,7 @@ object ScenarioInterpreterFactory {
 
   private type ScenarioInterpreterType[F[_], Input] = ScenarioInputBatch[Input] => InterpreterOutputType[F]
 
-  def createInterpreter[F[_], Input, Res <: AnyRef](process: EspProcess,
+  def createInterpreter[F[_], Input, Res <: AnyRef](process: CanonicalProcess,
                                                     modelData: ModelData,
                                                     additionalListeners: List[ProcessListener] = Nil,
                                                     resultCollector: ResultCollector = ProductionServiceInvocationCollector,
@@ -57,10 +56,9 @@ object ScenarioInterpreterFactory {
     val processObjectDependencies = ProcessObjectDependencies(modelData.processConfig, modelData.objectNaming)
 
     val definitions = ProcessDefinitionExtractor.extractObjectWithMethods(creator, processObjectDependencies)
-    val nodesUsed = NodesCollector.collectNodesInScenario(process)
 
-    val usedIds = nodesUsed.map(_.data)
-    val countingListeners = List(new NodeCountingListener(usedIds.map(_.id)), new ExceptionCountingListener, new EndCountingListener(usedIds))
+    val allNodes = process.collectAllNodes
+    val countingListeners = List(new NodeCountingListener(allNodes.map(_.id)), new ExceptionCountingListener, new EndCountingListener(allNodes))
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
     val compilerData = ProcessCompilerData.prepare(process,
@@ -75,7 +73,7 @@ object ScenarioInterpreterFactory {
       val components = extractComponents(compiledProcess.sources.toList)
       val sources = collectSources(components)
 
-      val lifecycle = compilerData.lifecycle(nodesUsed.map(_.data)) ++ components.values.collect {
+      val lifecycle = compilerData.lifecycle(allNodes) ++ components.values.collect {
         case lifecycle: Lifecycle => lifecycle
       }
       InvokerCompiler[F, Input, Res](compiledProcess, compilerData, componentUseCase, capabilityTransformer).compile.map(_.run).map { case (sinkTypes, invoker) =>

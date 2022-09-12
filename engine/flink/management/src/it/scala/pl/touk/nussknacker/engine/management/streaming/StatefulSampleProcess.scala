@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.management.streaming
 
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel
 
 object StatefulSampleProcess {
@@ -10,7 +9,7 @@ object StatefulSampleProcess {
   import spel.Implicits._
 
 
-  def prepareProcess(id: String): EspProcess = {
+  def prepareProcess(id: String): CanonicalProcess = {
 
    ScenarioBuilder
       .streaming(id)
@@ -19,7 +18,7 @@ object StatefulSampleProcess {
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
-  def prepareProcessStringWithStringState(id: String): EspProcess = {
+  def prepareProcessStringWithStringState(id: String): CanonicalProcess = {
 
    ScenarioBuilder
       .streaming(id)
@@ -28,7 +27,7 @@ object StatefulSampleProcess {
         .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
   }
 
-  def processWithAggregator(id: String, aggregatorExpression: String): EspProcess = ScenarioBuilder
+  def processWithAggregator(id: String, aggregatorExpression: String): CanonicalProcess = ScenarioBuilder
     .streaming(id)
     .source("state", "oneSource")
     .customNode("transform", "aggregate", "aggregate-sliding",
@@ -42,7 +41,7 @@ object StatefulSampleProcess {
     .enricher("enricher", "output", "paramService", "param" -> "'a'")
     .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "'test'")
 
-  def prepareProcessWithLongState(id: String): EspProcess = {
+  def prepareProcessWithLongState(id: String): CanonicalProcess = {
 
    ScenarioBuilder
       .streaming(id)

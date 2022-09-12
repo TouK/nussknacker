@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerWithTestComponents
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
@@ -39,7 +39,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
   var testComponentHolder: TestComponentHolder = _
 
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] = {
+  override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[R] = {
 
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)

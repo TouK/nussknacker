@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
@@ -119,7 +119,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
   }
 
   private class ReqRespTestFixture(manager: K8sDeploymentManager,
-                                   scenario: EspProcess,
+                                   scenario: CanonicalProcess,
                                    version: ProcessVersion,
                                    extraClasses: K8sExtraClasses) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
     override def withRunningScenario(action: => Unit): Unit = {

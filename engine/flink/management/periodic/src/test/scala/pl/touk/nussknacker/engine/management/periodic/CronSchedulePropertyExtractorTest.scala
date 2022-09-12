@@ -18,8 +18,7 @@ class CronSchedulePropertyExtractorTest extends AnyFunSuite
           .source("test", "test")
           .emptySink("test", "test")
 
-    val result = extractor(process.toCanonicalProcess)
-
+    val result = extractor(process)
     inside(result) { case Left("cron property is missing") => }
   }
 

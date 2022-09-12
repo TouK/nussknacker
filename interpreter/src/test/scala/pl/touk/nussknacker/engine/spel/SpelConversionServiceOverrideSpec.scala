@@ -13,11 +13,11 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValueDeterminer
 import pl.touk.nussknacker.engine.api.component.{ComponentInfo, ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
-import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, _}
+import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.spel.SpelConversionsProvider
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ProcessCompilerData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -76,7 +76,7 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
     outputValue shouldEqual List("123", "234").asJava
   }
 
-  private def interpret(process: EspProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
+  private def interpret(process: CanonicalProcess, spelCustomConversionsProviderOpt: Option[SpelConversionsProvider], inputValue: Any) = {
     val modelData = LocalModelData(ConfigFactory.empty(), new MyProcessConfigCreator(spelCustomConversionsProviderOpt))
     val compilerData = ProcessCompilerData.prepare(process, modelData.processWithObjectsDefinition, Seq.empty, getClass.getClassLoader,
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)(DefaultAsyncInterpretationValueDeterminer.DefaultValue)

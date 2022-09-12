@@ -4,19 +4,17 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.RedundantParameters
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Source, SubprocessInput, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.ValidatedDisplayableProcess
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult, ValidationWarnings}
-import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
-import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestFactory}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 
 import scala.reflect.ClassTag
 
@@ -104,7 +102,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
   test("should migrate fragment and its usage within scenario") {
     val testMigration = newTestModelMigrations(new TestMigrations(7))
-    val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
+    val subprocess = toValidatedDisplayable(sampleSubprocessOneOut)
     val process =
       toValidatedDisplayable(ScenarioBuilder
         .streaming("fooProcess")
@@ -123,7 +121,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
   }
 
   test("should migrate scenario with fragment which does not require any migrations") {
-    val subprocess = toValidatedDisplayable(ProcessCanonizer.uncanonize(sampleSubprocessOneOut).getOrElse(null))
+    val subprocess = toValidatedDisplayable(sampleSubprocessOneOut)
 
     val testMigration = new TestModelMigrations(
       mapProcessingTypeDataProvider(Streaming -> new TestMigrations(8)),

@@ -94,7 +94,7 @@ class ScenarioApiShowcasesTest extends AnyFunSuite with Matchers with EitherValu
       .filter("filter", "#input != 123")
       .emptySink("sink", "sink-type", "bar" -> "#input")
 
-    scenarioDsl.toCanonicalProcess.asJson.printWith(humanReadablePrinter) shouldEqual scenarioJson
+    scenarioDsl.asJson.printWith(humanReadablePrinter) shouldEqual scenarioJson
   }
 
   test("should be able to rewrite scenario") {

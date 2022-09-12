@@ -1,16 +1,15 @@
   package pl.touk.nussknacker.engine.benchmarks.interpreter
 
-import java.util.concurrent.TimeUnit
-
 import cats.effect.IO
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.Interpreter.FutureShape
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 
@@ -21,7 +20,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 @State(Scope.Thread)
 class OneParamInterpreterBenchmark {
 
-  private val process: EspProcess = ScenarioBuilder
+  private val process: CanonicalProcess = ScenarioBuilder
     .streaming("t1")
     .source("source", "source")
     .buildSimpleVariable("v1", "v1", "{a:'', b: 2}")

@@ -14,9 +14,9 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaDat
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseAkkaHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
@@ -79,7 +79,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 
 
   override def onScenarioAdded(jobData: JobData,
-                               parsedResolvedScenario: EspProcess)(implicit ec: ExecutionContext): Try[RequestResponseDeployment] = synchronized {
+                               parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[RequestResponseDeployment] = synchronized {
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
     val interpreter = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,

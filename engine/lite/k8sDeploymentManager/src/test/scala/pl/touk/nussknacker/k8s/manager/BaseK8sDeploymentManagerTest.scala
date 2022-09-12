@@ -6,11 +6,11 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Args, Assertion, BeforeAndAfterAll, FailedStatus, Status}
+import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
@@ -92,10 +92,10 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
 }
 
-class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: EspProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
+class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: CanonicalProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
 
   def withRunningScenario(action: => Unit): Unit = {
-    manager.deploy(version, DeploymentData.empty, scenario.toCanonicalProcess, None).futureValue
+    manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     eventually {
       val state = manager.findJobStatus(version.processName).futureValue
       state.flatMap(_.version) shouldBe Some(version)

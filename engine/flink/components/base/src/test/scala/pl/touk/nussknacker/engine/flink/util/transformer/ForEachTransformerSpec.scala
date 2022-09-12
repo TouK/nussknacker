@@ -10,10 +10,10 @@ import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{ProcessListener, ProcessVersion}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -76,7 +76,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
       .buildSimpleVariable(forEachNodeResultId, "resultVar", resultExpression)
       .emptySink(sinkId, "dead-end")
 
-  private def collectTestResults[T](model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): TestProcess.TestResults[Any] = {
+  private def collectTestResults[T](model: LocalModelData, testProcess: CanonicalProcess, collectingListener: ResultsCollectingListener): TestProcess.TestResults[Any] = {
     runProcess(model, testProcess)
     collectingListener.results[Any]
   }
@@ -84,7 +84,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def extractResultValues(results: TestProcess.TestResults[Any]): List[String] = results.nodeResults(sinkId)
     .map(_.variableTyped[String](resultVariableName).get)
 
-  private def runProcess(model: LocalModelData, testProcess: EspProcess): Unit = {
+  private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
     registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)

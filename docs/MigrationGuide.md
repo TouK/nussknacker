@@ -19,6 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
 * [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Changed `LocalDateTime` to `Instant` in `OnDeployActionSuccess` in `listener-api`
+* [#3513](https://github.com/TouK/nussknacker/pull/3513) Replace `EspProcess` with `CanonicalProcess` in all parts of the API except for the compiler.
 
 ### REST API changes                   
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Dates returned by REST API (createdAt, modifiedAt, createDate) are now returned in Zulu time, with timezone indication. This affects e.g. `/api/procecesses`, `/api/processes/{scenarioId}`, `/api/processes/{scenarioId}/activity` 
@@ -26,6 +27,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 ### Scenario API changes
 * [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
   `V1_033__RequestResponseUrlToSlug` migration is ready for that.
+* [#3513](https://github.com/TouK/nussknacker/pull/3513) Scenario DSL returns `CanonicalProcess` instead of `EspProcess`. 
 
 ### Configuration changes
 * [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:

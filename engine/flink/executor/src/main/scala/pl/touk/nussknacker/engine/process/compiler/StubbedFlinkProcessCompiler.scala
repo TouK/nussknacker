@@ -9,17 +9,17 @@ import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.typed.ReturningType
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
-abstract class StubbedFlinkProcessCompiler(process: EspProcess,
+abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
                                            creator: ProcessConfigCreator,
                                            processConfig: Config,
                                            diskStateBackendSupport: Boolean,
@@ -35,7 +35,7 @@ abstract class StubbedFlinkProcessCompiler(process: EspProcess,
   override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
     val createdDefinitions = super.definitions(processObjectDependencies)
 
-    val collectedSources = checkSources(process.roots.toList.map(_.data).collect {
+    val collectedSources = checkSources(process.allStartNodes.map(_.head.data).collect {
       case source: Source => source
     })
 

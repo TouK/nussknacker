@@ -3,20 +3,18 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.ConfigFactory
-import org.scalatest.matchers.should.Matchers
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError, InvalidTailOfBranch, MissingParameters}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
 import pl.touk.nussknacker.engine.expression.PositionRange
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.spel.SpelExpressionTypingInfo
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -275,7 +273,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("validate nodes after union if validation of part before fails") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process =  ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .filter("invalidFilter", "not.a.valid.expression")
@@ -287,7 +285,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             )
           )
           .processorEnd("stringService", "stringService" , "stringParam" -> "''")
-      ))
+      )
     val validationResult = validator.validate(process)
 
     validationResult.variablesInNodes("stringService")("outPutVar") shouldBe TypedObjectTypingResult(ListMap("branch1" -> Typed[String]))
@@ -297,7 +295,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   private def processWithUnion(serviceExpression: String) =
-    EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
         .source("sourceId1", "mySource")
         .branchEnd("branch1", "join1"),
@@ -312,11 +310,11 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
           )
         )
         .processorEnd("stringService", "stringService" , "stringParam" -> serviceExpression)
-    ))
+    )
 
   test("extract expression typing info from join") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -331,7 +329,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             )
           )
           .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
-      ))
+      )
 
     val validationResult = validator.validate(process)
     validationResult.result should matchPattern {
@@ -356,7 +354,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   test("validation of types of branch parameters") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -371,7 +369,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             )
           )
           .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
-      ))
+      )
 
     val validationResult = validator.validate(process)
     val expectedMsg = s"Bad expression type, expected: CharSequence, found: ${Typed.fromInstance(123).display}"
@@ -403,7 +401,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   test("join-custom-join should work (branch end is in different part of scenario)") {
     val validProcess =
-      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -414,7 +412,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         GraphBuilder
           .join("join2", "unionTransformer", Some("outPutVar2"), List("branch2" -> List("key" -> "'key1'", "value" -> "'ala'")))
           .processorEnd("stringService", "stringService" , "stringParam" -> "'123'")
-      ))
+      )
     val validationResult = validator.validate(validProcess)
 
     validationResult.result shouldBe 'valid
@@ -422,7 +420,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
 
   test("eager params in joins") {
     val process =
-      EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+      ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .branchEnd("branch1", "join1"),
@@ -437,7 +435,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
             )
           )
           .emptySink("sink", "dummySink")
-      ))
+      )
 
     val validationResult = validator.validate(process)
     validationResult.result should matchPattern {
@@ -446,7 +444,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("validate union using variables in branches with custom nodes") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process =  ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
         .source("sourceId1", "mySource")
         .buildSimpleVariable("variable1", "variable1", "42")
@@ -466,7 +464,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
           )
         )
         .processorEnd("stringService", "stringService" , "stringParam" -> "''")
-    ))
+    )
 
     val validationResult = validator.validate(process)
 
@@ -474,7 +472,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
   }
 
   test("should validate branch contexts without branch parameters") {
-    val process =  EspProcess(MetaData("proc1", StreamMetaData()), NonEmptyList.of(
+    val process =  ScenarioBuilder.streaming("proc1").sources(
         GraphBuilder
           .source("sourceId1", "mySource")
           .buildSimpleVariable("var1", "intVal", "123")
@@ -486,7 +484,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
         GraphBuilder
           .join("join1", "noBranchParameters", None, List())
           .emptySink("end", "dummySink")
-      ))
+      )
     val validationResult = validator.validate(process)
 
     validationResult.result shouldBe Validated.invalid(CustomNodeError("join1", "Validation contexts do not match", Option.empty)).toValidatedNel

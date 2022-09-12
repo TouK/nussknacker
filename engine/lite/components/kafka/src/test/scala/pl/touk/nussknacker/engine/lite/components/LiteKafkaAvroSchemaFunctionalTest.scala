@@ -9,23 +9,23 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.errors.SerializationException
-import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
+import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
+import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
+import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
-import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
-import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
-import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.RunResult
@@ -39,11 +39,11 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
 
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
+  import SpecialSpELElement._
   import ValidationMode._
+  import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
-  import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
-  import SpecialSpELElement._
 
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
@@ -473,7 +473,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
     }))
 
   private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, Any]] = {
-    val avroScenario: EspProcess = createScenario(config)
+    val avroScenario: CanonicalProcess = createScenario(config)
     val sourceSchemaId = runtime.registerAvroSchema(config.sourceTopic, config.sourceSchema)
     runtime.registerAvroSchema(config.sinkTopic, config.sinkSchema)
 

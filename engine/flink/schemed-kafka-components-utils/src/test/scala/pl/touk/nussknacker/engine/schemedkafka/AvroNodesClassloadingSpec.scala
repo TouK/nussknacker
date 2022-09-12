@@ -43,7 +43,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
     //we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
       new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario.metaData,
-        scenario.roots.head.data.asInstanceOf[Source]) shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+        scenario.nodes.head.data.asInstanceOf[Source]) shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
 
       intercept[IllegalArgumentException] {
         new TestDataPreparer(modelData).prepareDataForTest(scenario, TestData.newLineSeparated())

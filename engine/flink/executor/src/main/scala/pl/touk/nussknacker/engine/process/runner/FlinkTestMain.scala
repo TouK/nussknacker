@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.TestFlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 
 object FlinkTestMain extends FlinkRunner {
 
-  def run[T](modelData: ModelData, process: EspProcess, testData: TestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
+  def run[T](modelData: ModelData, process: CanonicalProcess, testData: TestData, configuration: Configuration, variableEncoder: Any => T): TestResults[T] = {
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version")) // testing process may be unreleased, so it has no version
     new FlinkTestMain(modelData, process, testData, processVersion, DeploymentData.empty, configuration).runTest(variableEncoder)
   }
@@ -24,7 +24,7 @@ object FlinkTestMain extends FlinkRunner {
 }
 
 class FlinkTestMain(val modelData: ModelData,
-                    val process: EspProcess,
+                    val process: CanonicalProcess,
                     testData: TestData,
                     processVersion: ProcessVersion,
                     deploymentData: DeploymentData,

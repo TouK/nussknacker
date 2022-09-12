@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.{JobData, MetaData, ProcessListener, ProcessVersion}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile._
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
@@ -15,8 +16,8 @@ import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessD
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkProcessSignalSenderProvider, SignalSenderKey}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, NodeData}
-import pl.touk.nussknacker.engine.graph.{EspProcess, node}
 import pl.touk.nussknacker.engine.process.async.DefaultAsyncExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
@@ -43,14 +44,14 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
 
   def this(modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, diskStateBackendSupport = true, modelData.objectNaming, componentUseCase = ComponentUseCase.EngineRuntime)
 
-  def compileProcess(process: EspProcess,
+  def compileProcess(process: CanonicalProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
                      resultCollector: ResultCollector,
                      userCodeClassLoader: ClassLoader): FlinkProcessCompilerData =
     compileProcess(process, processVersion, deploymentData, resultCollector)(UsedNodes.empty, userCodeClassLoader)
 
-  def compileProcess(process: EspProcess,
+  def compileProcess(process: CanonicalProcess,
                      processVersion: ProcessVersion,
                      deploymentData: DeploymentData,
                      resultCollector: ResultCollector)

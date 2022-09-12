@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNode
-import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.split.ProcessSplitter
 
 class PartSortSpec extends AnyFunSuite with Matchers {

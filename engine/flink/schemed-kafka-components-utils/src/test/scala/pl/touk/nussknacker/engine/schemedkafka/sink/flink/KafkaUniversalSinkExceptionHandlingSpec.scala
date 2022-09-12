@@ -1,9 +1,15 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 
+import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
+import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, WithCategories}
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer
+import pl.touk.nussknacker.engine.build.GraphBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
+import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
@@ -12,13 +18,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
-import pl.touk.nussknacker.engine.build.GraphBuilder
-import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
-import pl.touk.nussknacker.engine.graph.EspProcess
-import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.spel.Implicits._
-import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers
 
 class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec with Matchers with SchemaRegistryMixin with KafkaAvroSinkSpecMixin with CorrectExceptionHandlingSpec {
 
@@ -26,7 +26,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: EspProcess): Unit
+  override protected def registerInEnvironment(env: MiniClusterExecutionEnvironment, modelData: ModelData, scenario: CanonicalProcess): Unit
   = TestFlinkRunner.registerInEnvironmentWithModel(env, modelData)(scenario)
 
   test("should handle exceptions in kafka sinks") {
@@ -44,7 +44,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
     }
 
     checkExceptions(configCreator) { case (graph, generator) =>
-      graph.split("split",
+      NonEmptyList.one(graph.split("split",
         GraphBuilder.emptySink("avro-raw",
           "kafka",
           TopicParamName -> s"'$topic'",
@@ -63,7 +63,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
           "first" -> generator.throwFromString(),
           "last" -> generator.throwFromString()
         ),
-      )
+      ))
     }
 
   }

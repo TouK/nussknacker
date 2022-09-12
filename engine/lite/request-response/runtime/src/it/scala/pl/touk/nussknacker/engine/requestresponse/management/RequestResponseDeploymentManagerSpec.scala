@@ -43,7 +43,7 @@ class RequestResponseDeploymentManagerSpec extends AnyFunSuite with VeryPatientS
       .filter("ddd", "#input != null")
       .emptySink("sink", "response", "Raw editor" -> "false", "value" -> "#input.field1")
 
-    val results = manager.test(ProcessName("test1"), process.toCanonicalProcess,
+    val results = manager.test(ProcessName("test1"), process,
       TestData.newLineSeparated("""{ "field1": "a", "field2": "b" }"""), identity).futureValue
 
     val ctxId = IncContextIdGenerator.withProcessIdNodeIdPrefix(process.metaData, "source").nextContextId()

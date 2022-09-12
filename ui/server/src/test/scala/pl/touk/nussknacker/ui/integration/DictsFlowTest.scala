@@ -8,12 +8,12 @@ import com.typesafe.config.Config
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{ACursor, Json}
 import io.dropwizard.metrics5.MetricRegistry
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.{TestFactory, TestProcessUtil, TestProcessingTypes}
@@ -133,7 +133,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
     }
   }
 
-  private def saveProcessAndTestIt(process: EspProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
+  private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel).asObject.value shouldBe empty
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
@@ -152,7 +152,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
       .buildSimpleVariable(VariableNodeId, VariableName, variableExpression)
       .emptySink(EndNodeId, "monitor")
 
-  private def saveProcessAndExtractValidationResult(process: EspProcess, endResultExpressionToPost: String): Json = {
+  private def saveProcessAndExtractValidationResult(process: CanonicalProcess, endResultExpressionToPost: String): Json = {
     val processRootResource = s"/api/processes/${process.id}"
 
     createEmptyScenario(processRootResource)
@@ -177,7 +177,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
       status shouldEqual StatusCodes.Created
     }
 
-  private def extractValidationResult(processRootResource: String, process: EspProcess): Json =
+  private def extractValidationResult(processRootResource: String, process: CanonicalProcess): Json =
     Put(processRootResource, TestFactory.posting.toEntityAsProcessToSave(process)) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
       extractInvalidNodes

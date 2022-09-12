@@ -38,8 +38,7 @@ class InitializationOnPostgresItSpec
 
   private lazy val writeRepository = TestFactory.newWriteProcessRepository(db)
 
-  private def sampleDeploymentData(processId: String) =
-    ProcessTestData.validProcessWithId(processId).toCanonicalProcess
+  private def sampleDeploymentData(processId: String) = ProcessTestData.validProcessWithId(processId)
 
   it should "migrate processes" in {
     saveSampleProcess()

@@ -14,17 +14,16 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessListener, ProcessVersion, VariableConstants}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator, SubprocessResolver}
 import pl.touk.nussknacker.engine.definition.parameter.editor.ParameterTypeEditorDeterminer
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.flink.util.source.EmitWatermarkAfterEachElementCollectionSource
+import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
-import pl.touk.nussknacker.engine.graph.{EspProcess, evaluatedparam}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -379,17 +378,17 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }
   }
 
-  private def runCollectOutputAggregate[T](key: String, model: LocalModelData, testProcess: EspProcess): List[T] = {
+  private def runCollectOutputAggregate[T](key: String, model: LocalModelData, testProcess: CanonicalProcess): List[T] = {
     runCollectOutputVariables(key, model, testProcess).map(_.variableTyped[T]("aggregate").get)
   }
 
-  private def runCollectOutputVariables(key: String, model: LocalModelData, testProcess: EspProcess): List[TestProcess.NodeResult[Any]] = {
+  private def runCollectOutputVariables(key: String, model: LocalModelData, testProcess: CanonicalProcess): List[TestProcess.NodeResult[Any]] = {
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
     runProcess(model, testProcess, collectingListener)
     variablesForKey(collectingListener, key)
   }
 
-  private def runProcess(model: LocalModelData, testProcess: EspProcess, collectingListener: ResultsCollectingListener): Unit = {
+  private def runProcess(model: LocalModelData, testProcess: CanonicalProcess, collectingListener: ResultsCollectingListener): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model) {
       override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
@@ -445,11 +444,11 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
                       aggregateBy: String,
                       timeoutParamName: String,
                       additionalParams: Map[String, String],
-                      afterAggregateExpression: String): EspProcess = {
+                      afterAggregateExpression: String): CanonicalProcess = {
     process(AggregateData(aggregatingNode, aggregator, aggregateBy, timeoutParamName, additionalParams, afterAggregateExpression = afterAggregateExpression))
   }
 
-  private def process(aggregateData: AggregateData*): EspProcess = {
+  private def process(aggregateData: AggregateData*): CanonicalProcess = {
 
     def params(data: AggregateData) = {
     val baseParams: List[(String, Expression)] = List(
@@ -474,7 +473,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     }.emptySink("end", "dead-end")
   }
 
-  private def resolveFragmentWithTumblingAggregate(scenario: EspProcess): EspProcess = {
+  private def resolveFragmentWithTumblingAggregate(scenario: CanonicalProcess): CanonicalProcess = {
     val fragmentWithTumblingAggregate = CanonicalProcess(MetaData("fragmentWithTumblingAggregate", FragmentSpecificData()),
       List(
         canonicalnode.FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("aggBy", SubprocessClazzRef[Int]), SubprocessParameter("key", SubprocessClazzRef[String])))),
@@ -487,7 +486,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         ) )),
         canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "aggregate", List(Field("key", asSpelExpression("#key")),Field("aggresult", asSpelExpression("#aggresult")))))), List.empty)
 
-    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario.toCanonicalProcess).andThen(ProcessCanonizer.uncanonize).toOption.get
+    SubprocessResolver(Set(fragmentWithTumblingAggregate)).resolve(scenario).toOption.get
   }
 }
 

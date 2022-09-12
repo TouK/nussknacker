@@ -5,7 +5,6 @@ import org.apache.flink.configuration.Configuration
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.util.StaticMethodRunner
 
@@ -17,10 +16,9 @@ class FlinkProcessVerifier(modelData: ModelData) extends StaticMethodRunner(mode
 
   def verify(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, savepointPath: String): Future[Unit] = {
     val processId = processVersion.processName
-    val process = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
     try {
       logger.info(s"Starting to verify $processId")
-      tryToInvoke(modelData, process, processVersion, DeploymentData.empty, savepointPath, new Configuration())
+      tryToInvoke(modelData, canonicalProcess, processVersion, DeploymentData.empty, savepointPath, new Configuration())
       logger.info(s"Verification of $processId successful")
       Future.successful(())
     } catch {

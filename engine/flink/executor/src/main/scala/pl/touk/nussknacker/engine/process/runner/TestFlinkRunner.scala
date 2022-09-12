@@ -6,8 +6,8 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.ProcessConfigCreator
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object TestFlinkRunner {
 
-  def registerInEnvironmentWithModel(env: environment.StreamExecutionEnvironment, modelData: ModelData)(scenario: EspProcess,
+  def registerInEnvironmentWithModel(env: environment.StreamExecutionEnvironment, modelData: ModelData)(scenario: CanonicalProcess,
                                                                                                         deploymentData: DeploymentData = DeploymentData.empty,
                                                                                                         version: ProcessVersion = ProcessVersion.empty,
                                                                                                         testRunId: Option[TestRunId] = None): Unit = {
@@ -26,7 +26,7 @@ object TestFlinkRunner {
 
   def registerInEnvironment(env: environment.StreamExecutionEnvironment,
                             configCreator: ProcessConfigCreator, config: Config = ConfigFactory.empty())
-                           (scenario: EspProcess,
+                           (scenario: CanonicalProcess,
                             deploymentData: DeploymentData = DeploymentData.empty,
                             version: ProcessVersion = ProcessVersion.empty,
                             testRunId: Option[TestRunId] = None): Unit = {

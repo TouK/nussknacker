@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.marshall
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import io.circe.generic.extras.semiauto.deriveConfiguredCodec
-import pl.touk.nussknacker.engine.api.CirceUtil._
 import io.circe.syntax._
 import io.circe.{Codec, Json}
 import org.scalatest.flatspec.AnyFlatSpec
@@ -11,12 +10,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine._
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -44,7 +43,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
     val result = marshallAndUnmarshall(process)
 
-    result should equal(Some(process))
+    result should equal(process)
   }
 
   it should "marshall and unmarshall to same scenario with ending processor" in {
@@ -55,7 +54,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
     val result = marshallAndUnmarshall(process)
 
-    result should equal(Some(process))
+    result should equal(process)
   }
 
   it should "marshall and unmarshall to same scenario with ending custom node" in {
@@ -66,7 +65,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
     val result = marshallAndUnmarshall(process)
 
-    result should equal(Some(process))
+    result should equal(process)
   }
 
   it should "marshall and unmarshall to same scenario with additional fields" in {
@@ -88,7 +87,7 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
 
       val result = marshallAndUnmarshall(process)
 
-      result should equal(Some(process))
+      result should equal(process)
     }
   }
 
@@ -180,10 +179,10 @@ class ProcessMarshallerSpec extends AnyFlatSpec with Matchers with OptionValues 
     nodeDataCodec(nodeData).deepDropNullValues shouldBe oldFormat
   }
 
-  private def marshallAndUnmarshall(process: EspProcess): Option[EspProcess] = {
-    val unmarshalled = ProcessMarshaller.fromJson(process.toCanonicalProcess.asJson).toOption
-    unmarshalled.foreach(_ shouldBe process.toCanonicalProcess)
-    ProcessCanonizer.uncanonize(unmarshalled.value).toOption
+  private def marshallAndUnmarshall(process: CanonicalProcess): CanonicalProcess = {
+    val unmarshalled = ProcessMarshaller.fromJson(process.asJson).toOption
+    unmarshalled.foreach(_ shouldBe process)
+    unmarshalled.value
   }
 
   private def buildProcessJsonWithAdditionalFields(processAdditionalFields: Option[String] = None, nodeAdditionalFields: Option[String] = None) =

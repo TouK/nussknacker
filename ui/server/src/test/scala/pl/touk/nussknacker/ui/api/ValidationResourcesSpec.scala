@@ -5,14 +5,15 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValues}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.graph.{EspProcess, node}
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{NodeData, Source}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with FailFastCirceSupport
@@ -156,7 +157,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     )
   }
 
-  private def createAndValidateScenario(scenario: EspProcess)(testCode: => Assertion): Assertion =
+  private def createAndValidateScenario(scenario: CanonicalProcess)(testCode: => Assertion): Assertion =
     createAndValidateScenario(TestProcessUtil.toDisplayable(scenario))(testCode)
 
   private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {

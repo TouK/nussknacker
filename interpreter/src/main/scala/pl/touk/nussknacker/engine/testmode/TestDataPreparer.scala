@@ -4,9 +4,9 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.SourceNodeData
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -36,12 +36,12 @@ class TestDataPreparer(modelData: ModelData) {
       expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.TestDataGeneration)
   }
 
-  def prepareDataForTest[T](espProcess: EspProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {
-    val sourceTestSupport = (espProcess.roots.map(_.data).collect {
+  def prepareDataForTest[T](scenario: CanonicalProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {
+    val sourceTestSupport = (scenario.allStartNodes.map(_.head.data).collect {
       case e: SourceNodeData => e
     } match {
       case one :: Nil =>
-        nodeCompiler.compileSource(one)(espProcess.metaData, NodeId(one.id)).compiledObject
+        nodeCompiler.compileSource(one)(scenario.metaData, NodeId(one.id)).compiledObject
           .fold(a => throw new IllegalArgumentException(s"Failed to compile source: ${a.toList.mkString(", ")}"), identity)
       case _ =>
         throw new IllegalArgumentException("Currently only one source can be handled")

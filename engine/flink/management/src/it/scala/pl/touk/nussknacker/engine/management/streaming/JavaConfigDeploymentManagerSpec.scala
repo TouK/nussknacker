@@ -23,7 +23,7 @@ class JavaConfigDeploymentManagerSpec extends AnyFunSuite with Matchers with Str
           .emptySink("endSend", "sink")
 
     assert(deploymentManager.deploy(ProcessVersion.empty.copy(processName=ProcessName(process.id)), DeploymentData.empty,
-      process.toCanonicalProcess, None).isReadyWithin(100 seconds))
+      process, None).isReadyWithin(100 seconds))
 
     eventually {
       val jobStatus = deploymentManager.findJobStatus(ProcessName(process.id)).futureValue

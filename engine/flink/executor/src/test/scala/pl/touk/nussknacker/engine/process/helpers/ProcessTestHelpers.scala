@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.exception.NonTransientException
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.typed.TypedMap
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes._
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -23,7 +23,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
 
   object processInvoker {
 
-    def invokeWithSampleData(process: EspProcess,
+    def invokeWithSampleData(process: CanonicalProcess,
                              data: List[SimpleRecord],
                              processVersion: ProcessVersion = ProcessVersion.empty,
                              config: Config = ConfigFactory.load()): Unit = {
@@ -40,7 +40,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       env.executeAndWaitForFinished(process.id)()
     }
 
-    def invoke(process: EspProcess,
+    def invoke(process: CanonicalProcess,
                creator: ProcessConfigCreator,
                config: Config,
                processVersion: ProcessVersion,

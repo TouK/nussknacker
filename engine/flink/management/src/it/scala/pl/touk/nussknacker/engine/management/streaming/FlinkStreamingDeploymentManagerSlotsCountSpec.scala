@@ -20,7 +20,7 @@ class FlinkStreamingDeploymentManagerSlotsCountSpec extends AnyFunSuite with Mat
     val process = SampleProcess.prepareProcess(processId, parallelism = Some(parallelism))
 
     try {
-      deploymentManager.deploy(version, DeploymentData.empty, process.toCanonicalProcess, None).failed.futureValue shouldEqual
+      deploymentManager.deploy(version, DeploymentData.empty, process, None).failed.futureValue shouldEqual
         NotEnoughSlotsException(taskManagerSlotCount, taskManagerSlotCount, SlotsBalance(0, parallelism))
     } finally {
       cancelProcess(processId)

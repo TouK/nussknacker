@@ -200,8 +200,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
-        val espProcess = ProcessCanonizer.uncanonizeUnsafe(canonicalProcess)
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, espProcess, variableEncoder)
+        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, canonicalProcess, variableEncoder)
       }
     }
   }

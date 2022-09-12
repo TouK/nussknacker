@@ -5,7 +5,7 @@ import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.graph.EspProcess
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter
@@ -20,7 +20,7 @@ import scala.reflect.ClassTag
 
 class RequestResponseTestScenarioRunner(val components: List[ComponentDefinition], val config: Config) extends ClassBasedTestScenarioRunner with PatientScalaFutures {
 
-  override def runWithData[I:ClassTag, R](scenario: EspProcess, data: List[I]): RunnerResult[R] = {
+  override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[R] = {
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, components)
     import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
