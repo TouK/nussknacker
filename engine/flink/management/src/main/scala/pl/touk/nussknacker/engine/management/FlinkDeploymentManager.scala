@@ -25,14 +25,19 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    checkOldJobStatus(processVersion, canonicalProcess).map(_ => ())
+    for {
+      oldJob <- checkOldJobStatus(processVersion)
+      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
+    } yield ()
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val processName = processVersion.processName
 
     val stoppingResult = for {
-      oldJob <- OptionT(checkOldJobStatus(processVersion, canonicalProcess))
+      // We do checkOldJobStatus twice: in validate and again in deploy. It is done that way because we don't want
+      // to obfuscate api adding another argument to deploy method - it would complicate testing of deploy() as well
+      oldJob <- OptionT(checkOldJobStatus(processVersion))
       deploymentId <- OptionT.fromOption[Future](oldJob.deploymentId)
       //when it's failed we don't need savepoint...
       if oldJob.isDeployed
@@ -55,13 +60,12 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     } yield runResult
   }
 
-  private def checkOldJobStatus(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess): Future[Option[ProcessState]] = {
+  private def checkOldJobStatus(processVersion: ProcessVersion): Future[Option[ProcessState]] = {
     val processName = processVersion.processName
     for {
       oldJob <- findJobStatus(processName)
       _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
-      _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
     } yield oldJob
   }
 
