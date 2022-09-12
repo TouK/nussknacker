@@ -15,9 +15,6 @@ sealed trait CanonicalTreeNode
 
 object CanonicalProcess {
 
-  //TODO: replace EspProcess use with CanonicalProcess where needed
-  //implicit def toCanonical(espProcess: EspProcess): CanonicalProcess = espProcess.toCanonicalProcess
-
   private def isNodeDisabled(node: CanonicalNode): Boolean =
     node.data match {
       case nodeData: Disableable if nodeData.isDisabled.contains(true) => true
