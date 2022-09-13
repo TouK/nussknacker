@@ -187,6 +187,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     //We wait for deployment removal before removing configmaps,
     //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
+      // we split into two steps because of missing k8s svc deletecollection feature in version <= 1.22
       services <- k8s.listSelected[ListResource[Service]](selector)
       _ <- Future.sequence(services.map(s => k8s.delete[Service](s.name)))
       deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
