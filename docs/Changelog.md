@@ -1,6 +1,10 @@
 
 # Changelog
 
+1.7.0 (Not released yet)
+------------------------
+* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+
 1.6.0 (Not released yet)
 ------------------------
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
