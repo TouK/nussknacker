@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
@@ -110,6 +109,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   }
 
   private lazy val defaultLogbackConfig = Using.resource(Source.fromResource("runtime/default-logback.xml"))(_.mkString)
+
   private def logbackConfig: String = config.logbackConfigPath.map(path => Using.resource(Source.fromFile(path))(_.mkString)).getOrElse(defaultLogbackConfig)
 
 
@@ -187,7 +187,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     //We wait for deployment removal before removing configmaps,
     //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
-      services <- k8s.deleteAllSelected[ListResource[Service]](selector)
+      services <- k8s.listSelected[ListResource[Service]](selector)
+      _ <- Future.sequence(services.map(s => k8s.delete[Service](s.name)))
       deployments <- k8s.deleteAllSelected[ListResource[Deployment]](selector)
       configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
       secrets <- k8s.deleteAllSelected[ListResource[Secret]](selector)
@@ -214,7 +215,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   }
 
   private def configMapForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
-                                (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty, overrideName: Option[String] = None): ConfigMap = {
+                              (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty, overrideName: Option[String] = None): ConfigMap = {
     val scenario = canonicalProcess.asJson.spaces2
     //we append serialized data to name so we can guarantee pods will be restarted.
     //They *probably* will restart anyway, as scenario version is in label, but e.g. if only model config is changed?
@@ -234,7 +235,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   }
 
   private def secretForData(processVersion: ProcessVersion, canonicalProcess: CanonicalProcess, nussknackerInstanceName: Option[String])
-                             (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): Secret = {
+                           (data: Map[String, String], additionalLabels: Map[String, String] = Map.empty): Secret = {
     val scenario = canonicalProcess.asJson.spaces2
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, Some(scenario + data.toString()))
     Secret(
