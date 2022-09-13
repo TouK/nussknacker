@@ -5,6 +5,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
@@ -24,11 +25,13 @@ import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectNa
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment._
+import pl.touk.nussknacker.k8s.manager.ingress.{IngressConfig, IngressPreparer}
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
+import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, Service, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -37,16 +40,16 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
+import K8sScalingConfig.valueReader
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import K8sDeploymentManagerConfig._
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
   ConfigMap contains: model config with overrides for execution and scenario
  */
 class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
-
-  import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
@@ -80,6 +83,12 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
   }
 }
 
+object K8sDeploymentManagerConfig {
+  implicit val ingressValueReader: ValueReader[Option[IngressConfig]] = new ValueReader[Option[IngressConfig]] {
+    override def read(config: Config, path: String): Option[IngressConfig] = OptionReader.optionValueReader[IngressConfig].read(config, path)
+  }
+}
+
 case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
                                       dockerImageTag: String = BuildInfo.version,
                                       scalingConfig: Option[K8sScalingConfig] = None,
@@ -88,6 +97,7 @@ case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacke
                                       nussknackerInstanceName: Option[String] = None,
                                       logbackConfigPath: Option[String] = None,
                                       commonConfigMapForLogback: Option[String] = None,
+                                      ingress: Option[IngressConfig] = None,
                                       servicePort: Int = 80)
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
@@ -100,6 +110,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private val servicePreparer = new ServicePreparer(config)
   private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
   private val scenarioValidator = LiteScenarioValidator(config)
+  private val ingressPreparerOpt = config.ingress.map(new IngressPreparer(_, config.nussknackerInstanceName))
 
   private val serializedModelConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
@@ -143,6 +154,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
       deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, mountableResources, scalingOptions.replicasCount))
       serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
+      ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
+        .map(k8sUtils.createOrUpdate[Ingress](_).map(Some(_)))
+        .getOrElse(Future.successful(None))
       //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
@@ -154,7 +168,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         secretIdLabel isNot secret.name
       ))
     } yield {
-      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}")
+      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}${ingressOpt.map(i => s", ingress: ${i.name}")}")
       logger.trace(s"K8s deployment name: ${deployment.name}: K8sDeploymentConfig: ${config.k8sDeploymentConfig}")
       None
     }
@@ -187,6 +201,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     //We wait for deployment removal before removing configmaps,
     //in case of crash it's better to have unnecessary configmaps than deployments without config
     for {
+      ingresses <- k8s.deleteAllSelected[ListResource[Ingress]](selector)
       // we split into two steps because of missing k8s svc deletecollection feature in version <= 1.22
       services <- k8s.listSelected[ListResource[Service]](selector)
       _ <- Future.sequence(services.map(s => k8s.delete[Service](s.name)))
@@ -194,7 +209,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       configMaps <- k8s.deleteAllSelected[ListResource[ConfigMap]](selector)
       secrets <- k8s.deleteAllSelected[ListResource[Secret]](selector)
     } yield {
-      logger.debug(s"Canceled ${name.value}, removed services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
+      logger.debug(s"Canceled ${name.value}, removed ingresses: ${ingresses.itemNames}, services: ${services.itemNames}, deployments: ${deployments.itemNames}, configmaps: ${configMaps.itemNames}, secrets: ${secrets.itemNames}")
       ()
     }
   }
@@ -256,10 +271,6 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
 }
 
 object K8sDeploymentManager {
-
-  import K8sScalingConfig.valueReader
-  import net.ceedubs.ficus.Ficus._
-  import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   val defaultParallelism = 1
 

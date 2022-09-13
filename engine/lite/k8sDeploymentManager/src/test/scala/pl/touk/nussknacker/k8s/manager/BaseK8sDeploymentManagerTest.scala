@@ -17,6 +17,7 @@ import skuber.LabelSelector.dsl._
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
 import skuber.json.format._
+import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
@@ -45,6 +46,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
   protected def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(
+      k8s.deleteAllSelected[ListResource[Ingress]](selector),
       k8s.listSelected[ListResource[Service]](selector)
         .futureValue
         .map(_.name)
@@ -61,6 +63,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
   protected def assertNoGarbageLeft(): Assertion = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     eventually {
+      k8s.listSelected[ListResource[Ingress]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[Service]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[Deployment]](selector).futureValue.items shouldBe Nil
       k8s.listSelected[ListResource[ConfigMap]](selector).futureValue.items shouldBe Nil
