@@ -22,10 +22,13 @@ import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Se
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll { self: LazyLogging =>
+class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
+  self: LazyLogging =>
 
   protected implicit val system: ActorSystem = ActorSystem()
+
   import system.dispatcher
+
   protected lazy val k8s: KubernetesClient = k8sInit
   protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
   protected val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
@@ -41,13 +44,17 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
   protected def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
-    Future.sequence(List(
-      k8s.deleteAllSelected[ListResource[Service]](selector),
-      k8s.deleteAllSelected[ListResource[Deployment]](selector),
-      k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
-      k8s.deleteAllSelected[ListResource[Secret]](selector),
-      k8s.delete[Resource.Quota]("nu-pods-limit")
-    )).futureValue
+    Future.sequence(
+      k8s.listSelected[ListResource[Service]](selector)
+        .futureValue
+        .map(_.name)
+        .map(k8s.delete[Service](_)) ++
+        List(
+          k8s.deleteAllSelected[ListResource[Deployment]](selector),
+          k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
+          k8s.deleteAllSelected[ListResource[Secret]](selector),
+          k8s.delete[Resource.Quota]("nu-pods-limit")
+        )).futureValue
     assertNoGarbageLeft()
   }
 
