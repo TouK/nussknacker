@@ -78,7 +78,7 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
       case (ParameterWithBodyFlag(p, false), value) => p.name -> value
     }.toMap
 
-    val bodyParams = Map("body" -> baseMap.collect {
+    val bodyParams = Map(SingleBodyParameter.name -> baseMap.collect {
       case (ParameterWithBodyFlag(p, true), value) => p.name -> value
     }.toMap)
 

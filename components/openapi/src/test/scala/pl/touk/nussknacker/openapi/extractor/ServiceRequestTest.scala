@@ -5,7 +5,7 @@ import java.net.URL
 import java.util.Collections.singletonMap
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import sttp.client.StringBody
@@ -82,7 +82,7 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
 
     val paramInputs: Map[String, Any] = Map(
       "param1" -> 185,
-      "body" -> "123"
+      SingleBodyParameter.name -> "123"
     )
     val req = prepareRequest("swagger/enricher-primitive-body-param.yml", paramInputs, Map())
 
