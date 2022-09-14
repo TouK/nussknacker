@@ -46,12 +46,12 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
   protected def cleanup(): Unit = {
     val selector = LabelSelector(K8sDeploymentManager.scenarioNameLabel)
     Future.sequence(
-      k8s.deleteAllSelected[ListResource[Ingress]](selector),
       k8s.listSelected[ListResource[Service]](selector)
         .futureValue
         .map(_.name)
         .map(k8s.delete[Service](_)) ++
         List(
+          k8s.deleteAllSelected[ListResource[Ingress]](selector),
           k8s.deleteAllSelected[ListResource[Deployment]](selector),
           k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
           k8s.deleteAllSelected[ListResource[Secret]](selector),

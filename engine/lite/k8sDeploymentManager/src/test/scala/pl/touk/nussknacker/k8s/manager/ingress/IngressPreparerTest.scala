@@ -1,11 +1,15 @@
 package pl.touk.nussknacker.k8s.manager.ingress
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.{fromIterable, fromMap}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
 import skuber.ObjectMeta
 import skuber.networking.v1.Ingress
+
+import scala.collection.JavaConverters._
 
 class IngressPreparerTest extends AnyFunSuite {
 
@@ -43,25 +47,46 @@ class IngressPreparerTest extends AnyFunSuite {
     ))
   }
 
-  test("should prepare ingress with tls") {
+  test("should prepare ingress with tls (and no 'nussknackerInstanceName')") {
     val tlsSecret = "my-secret"
-    val preparer = new IngressPreparer(config = IngressConfig(hostname, Some(IngressTlsConfig(enabled = true, Some(tlsSecret)))), nuInstanceName = None)
+    val tlsConf = ConfigFactory.empty()
+      .withValue("spec.tls", fromIterable(List(fromMap(Map(
+        "hosts" -> fromIterable(List(hostname).asJava),
+        "secretName" -> tlsSecret
+      ).asJava)).asJava))
 
-    preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort).flatMap(_.spec).flatMap(_.tls.headOption) shouldBe Some(Ingress.TLS(
-      hosts = List(hostname),
-      Some(tlsSecret)
+    val preparer = new IngressPreparer(config = IngressConfig(hostname, tlsConf), nuInstanceName = None)
+
+    preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(Ingress(
+      metadata = ObjectMeta(
+        name = "scenario-some-name",
+        labels = Map(
+          "nussknacker.io/scenarioName"-> "some-name-59107c750f",
+          "nussknacker.io/scenarioId" -> "4",
+          "nussknacker.io/scenarioVersion" -> "10"
+        ),
+        annotations = Map("nginx.ingress.kubernetes.io/rewrite-target" -> "/$2")
+      ),
+      spec = Some(Ingress.Spec(
+        rules = List(
+          Ingress.Rule(host = Some(hostname), http = Ingress.HttpRule(List(
+            Ingress.Path(path = "/my-slug(/|$)(.*)", backend = Ingress.Backend(service = Some(Ingress.ServiceType(serviceName, Ingress.Port(number = Some(servicePort))))), pathType = Ingress.PathType.Prefix)
+          )))),
+        tls = List(Ingress.TLS(
+          hosts = List(hostname),
+          Some(tlsSecret)
+        ))
+      ))
     ))
   }
 
-  test("should prepare ingress without tls when disabled") {
-    val tlsSecret = "my-secret"
-    val preparer = new IngressPreparer(config = IngressConfig(hostname, Some(IngressTlsConfig(enabled = false, Some(tlsSecret)))), nuInstanceName = None)
-
-    preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort).flatMap(_.spec).flatMap(_.tls.headOption) shouldBe None
-  }
-
   test("should prepare ingress with custom annotations") {
-    val preparer = new IngressPreparer(config = IngressConfig(hostname, annotations = Map("my-annotation/touk" ->"abc")), nuInstanceName = None)
+    val annotationConf = ConfigFactory.empty()
+      .withValue("metadata.annotations", fromMap(Map(
+        "my-annotation/touk" ->"abc"
+      ).asJava))
+
+    val preparer = new IngressPreparer(config = IngressConfig(hostname, annotationConf), nuInstanceName = None)
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort).map(_.metadata.annotations) shouldBe Some(
       Map("nginx.ingress.kubernetes.io/rewrite-target" -> "/$2", "my-annotation/touk" ->"abc")
