@@ -52,7 +52,7 @@
         "copy-webpack-plugin": "11.0.0",
         "css-loader": "^6.7.1",
         "dotenv": "10.0.0",
-        "dotenv-webpack": "^7.1.0",
+        "dotenv-webpack": "^8.0.1",
         "eslint": "8.17.0",
         "eslint-config-prettier": "^8.4.0",
         "eslint-plugin-i18next": "^5.1.2",
