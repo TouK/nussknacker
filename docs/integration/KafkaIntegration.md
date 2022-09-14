@@ -62,7 +62,7 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 
 | Name                                                                        | Importance | Type     | Default value    | Description                                                                                                                                                                                                                                                  |
 |-----------------------------------------------------------------------------|------------|----------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| kafkaAddress                                                                | High       | string   |                  | Comma separated list of [bootstrap servers](https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers)                                                                                                                                       |
+| kafkaProperties."bootstrap.servers"                                         | High       | string   |                  | Comma separated list of [bootstrap servers](https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers)                                                                                                                                       |
 | kafkaProperties."schema.registry.url"                                       | High       | string   |                  | Comma separated list of [schema registry](https://docs.confluent.io/platform/current/schema-registry/index.html)                                                                                                                                             |
 | kafkaProperties                                                             | Medium     | map      |                  | Additional configuration of [producers](https://kafka.apache.org/documentation/#producerconfigs) or [consumers](https://kafka.apache.org/documentation/#consumerconfigs)                                                                                     |
 | useStringForKey                                                             | Medium     | boolean  | true             | Should we assume that Kafka message keys are in plain string format (not in Avro)                                                                                                                                                                            |
@@ -118,8 +118,8 @@ Below we give two example configurations, one for default setup with one Kafka c
 ```
 components.kafka {
   config: {
-    kafkaAddress: "kafakaBroker1.sample.pl:9092,kafkaBroker2.sample.pl:9092"
     kafkaProperties {
+      "bootstrap.servers": "kafakaBroker1.sample.pl:9092,kafkaBroker2.sample.pl:9092"
       "schema.registry.url": "http://schemaRegistry.pl:8081"
     }
   }
@@ -133,8 +133,8 @@ components.kafkaA {
   providerType: "kafka"
   componentPrefix: "clusterA-"
   config: {
-    kafkaAddress: "clusterA-broker1.sample.pl:9092,clusterA-broker2.sample.pl:9092"
     kafkaProperties {
+      "bootstrap.servers": "clusterA-broker1.sample.pl:9092,clusterA-broker2.sample.pl:9092"
       "schema.registry.url": "http://clusterA-schemaRegistry.pl:8081"
     }
   }
@@ -143,8 +143,8 @@ components.kafkaA {
   providerType: "kafka"
   componentPrefix: "clusterB-"
   config: {
-    kafkaAddress: "clusterB-broker1.sample.pl:9092,clusterB-broker2.sample.pl:9092"
     kafkaProperties {
+      "bootstrap.servers": "clusterB-broker1.sample.pl:9092,clusterB-broker2.sample.pl:9092"
       "schema.registry.url": "http://clusterB-schemaRegistry.pl:8081"
     }
   }
@@ -172,8 +172,8 @@ Kafka based sources and sinks (you don't need to configure them separately). See
 ```
 modelConfig {
   kafka {
-    kafkaAddress: "broker1:9092,broker2:9092"
     kafkaProperties {
+      "bootstrap.servers": "broker1:9092,broker2:9092"
       "schema.registry.url": "http://schemaregistry:8081"
     }
   }
