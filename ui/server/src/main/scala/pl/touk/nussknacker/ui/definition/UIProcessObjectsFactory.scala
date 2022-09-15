@@ -25,6 +25,7 @@ import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -125,9 +126,8 @@ object UIProcessObjectsFactory {
         }
 
         //Figure outputs parameter
-        val outputParameters = mapOutputs(fragment.canonical.nodes).collect {
-          case FlatNode(SubprocessOutputDefinition(_, name, fields, _)) if fields.nonEmpty => //when fragment doesn't contain params then output/result doesn't exist in context
-          extractSubprocessOutputParam(name)
+        val outputParameters = ProcessConverter.findNodes(fragment.canonical).collect {
+          case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => extractSubprocessOutputParam(name)
         }
 
         val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
