@@ -1,72 +1,86 @@
 # Flink components
 
-Sources, sinks and custom transformations are based on
-Flink API. Access to various helpers is provided by
-`FlinkCustomNodeContext`. Special care should be taken to handle:
+[Sources, sinks and custom transformations](./Basics.md#components-and-componentproviders) are based on Flink API.
+In order to implement any of those you need to provide:
+- a Flink function or Flink `DataStream` transformation
+- a Nussknacker [specification](./Components.md#specification)
+
+## Sources
+
+Implementing a fully functional source ([BasicFlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala))
+is more complicated since the following things has to be provided:
+- a Flink [SourceFunction](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/streaming/api/functions/source/SourceFunction.html)
+- Flink [type information](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#flinks-typeinformation-class)
+  for serializing/deserializing the emitted `#input`
+- a [timestamp watermark handler](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/timestampwatermark/TimestampWatermarkHandler.scala)
+  so that events are correctly processed downstream, for example to avoid (or force!) dropping late events by aggregates. Read more about
+  [notion of time](../scenarios_authoring/Intro.md#streaming-flink-only-notion-of-time)
+  and [watermarks](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/)
+- (optionally) generating test data support (trait `FlinkSourceTestSupport`) to ease [scenarios authoring](../scenarios_authoring/TestingAndDebugging.md)
+- (optionally) if the source returns a record having generic type and its fields and methods cannot be discovered using Java reflection,
+  [ReturningType](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/typed/ReturningType.scala)
+  can be implemented to provide detailed typing info for the emitted `#input`. See here for more details about [types](./Basics.md#types).
+  Please note returning type (and much more, like dynamic parameters) can be also specified with [GenericNodeTransformation](./Components.md#genericnodetransformation)
+- (optionally) custom [context initializer](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/ContextInitializer.scala)
+  to emit more variables than `#input`. For example built-in Kafka sources emits `#inputMeta` variable with Kafka record metadata like: partition, topic, offset, etc.
+  The other example could be a file source that emits current line number as a new variable along with the content (as `#input` variable)
+
+Nussknacker also provides a more generic [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
+for implementing sources. The difference is instead of implementing a Flink `SourceFunction`, arbitrary `DataStream[Context]`
+can be returned, however you have to remember to assign timestamps, watermarks and initialize the context.
+
+The above `BasicFlinkSource` and `FlinkSource` are **only** implementation. They have to be returned by [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Source.scala)
+which defines parameters of the source and the result (e.g. variable `#input` and its fields while using `GenericNodeTransformation`).
+
+### Examples
+
+- [Periodic source](../scenarios_authoring/BasicNodes.md#periodic) and its [implementation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala)
+- [FlinkKafkaSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/flink/FlinkKafkaSource.scala)
+  and its factory returning the source implementation along with the fixed specification (e.g. based on a Scala case class) [KafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/KafkaSourceFactory.scala)
+  or generic one [UniversalKafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/source/UniversalKafkaSourceFactory.scala)
+  reading Kafka in different formats: Avro or Json with schemas defined in Schema Registry.
+
+Sources for various systems like RabbitMQ, JDBC, etc. do not necessarily have to be implemented from scratch. Flink comes with
+simple sources [already predefined](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/overview/#data-sources)
+and [connectors](https://ci.apache.org/projects/flink/flink-docs-master/docs/connectors/datastream/overview) with third-party systems.
+All of them can be used to implement a Nussknacker source.
+
+## Sinks
+
+Sinks are easier to implement than sources. Nussknacker provides a [factory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-utils/src/main/scala/pl/touk/nussknacker/engine/flink/util/sink/SingleValueSinkFactory.scala)
+for sinks that take only one parameter. The only thing that has to be provided is a Flink [SinkFunction](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/streaming/api/functions/sink/SinkFunction.html).
+
+Complex sinks can be implemented using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala).
+The following things are required:
+- `prepareValue` - a method that turns `DataStream[Context]` into `DataStream[ValueWithContext[Value]]` containing a final, evaluated value for the sink
+- `registerSink` - a method that turns `DataStream[ValueWithContext[Value]]` into `DataStreamSink`. It's the place where
+  a Flink `SinkFunction` should be registered
+
+Similarly to sources, the above `FlinkSink` is **only** implementation. It has to be returned by [SinkFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Sink.scala)
+which defines parameters of the sink.
+
+Again, Flink provides [basic](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/overview/#data-sinks) sinks
+and [connectors](https://ci.apache.org/projects/flink/flink-docs-master/docs/connectors/datastream/overview) which can be used while implementing
+own Nussknacker sinks.
+
+Examples:
+- [FlinkKafkaUniversalSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/flink/FlinkKafkaUniversalSink.scala)
+  and its factory [UniversalKafkaSinkFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/UniversalKafkaSinkFactory.scala)
+
+## Custom stream transformations
+
+Custom transformation can arbitrarily change `DataStream[Context]`, it is implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala).
+Great examples of custom transformers are [aggregates](../scenarios_authoring/AggregatesInTimeWindows.md). [See here](https://github.com/TouK/nussknacker/tree/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer)
+how components like [previousValue](../scenarios_authoring/BasicNodes.md#previousvalue), [delay](../scenarios_authoring/BasicNodes.md#delay)
+and aggregates are implemented.
+
+## Common
+
+Access to metadata like node id or scenario name and various helpers is provided by `FlinkCustomNodeContext`.
+
+Special care should be taken to handle:
 - lifecycle - preparing the operator (source, sink or functions registered by custom transformers), closing resources, handling failures and restoring the state.
   See Flink's operators lifecycle for more details [here](https://ci.apache.org/projects/flink/flink-docs-master/docs/internals/task_lifecycle/)
 - exceptions, e.g. during deserialization, since any thrown and unhandled exception by the source, causes the Flink job to restart.
 
 :warning: **Flink components should not extend Lifecycle** - it won't be handled properly
-
-## Sources
-
-Sources implementations are defined with [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala).
-In most cases (when you only pass one variable to initial `Context`) it's easier to use `BasicFlinkSource`. This trait
-requires only Flink's `SourceFunction` to be implemented, whereas `FlinkSource` allows to prepare an arbitrary `DataStream`
-and add custom [context initializer](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/ContextInitializer.scala).
-You should bear in mind to apply a watermark strategy to the stream so that events will be processed correctly downstream, e.g. in aggregates.
-
-Sources usually emit a single variable named `#input` having some attributes. To have those attributes recognized
-by the designer you need to specify them. For more information consult [components specification](Components.md#specification)
-and [types](Basics.md#types) to describe (available fields, their types) the emitted `#input`.
-
-### Test data generation
-
-Sources optionally support generating test data to ease [scenarios development](../scenarios_authoring/TestingAndDebugging.md).
-In order to support this feature, `FlinkSourceTestSupport` trait has to be implemented by the source.
-
-### Integrating with Flink sources
-
-Flink comes with simple sources [already predefined](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/overview/#data-sources)
-and [connectors](https://ci.apache.org/projects/flink/flink-docs-master/docs/connectors/datastream/overview) with third-party systems.
-All of them can be used to implement a Nussknacker source. Nussknacker has built-in support for reading Kafka records in different formats:
-Avro or Json with schemas defined in Schema Registry - see [`FlinkKafkaComponentProvider`](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/kafka/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/FlinkKafkaComponentProvider.scala).
-If you do not have Schema Registry in your organization, a source reading records with fixed schema is easily doable,
-for a example `real-kafka-json-SampleProduct` in [`DevProcessConfigCreator`](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/DevProcessConfigCreator.scala)
--> `sourceFactories` parses a JSON input to the model represented by a case class.
-
-### Examples
-
-- TODO simple source ???
-- [Periodic source](../scenarios_authoring/BasicNodes.md#periodic) and its [implementation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/PeriodicSourceFactory.scala).
-- [FlinkKafkaSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/flink/FlinkKafkaSource.scala)
-  and its factory returning the source implementation along with the fixed specification [KafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/KafkaSourceFactory.scala)
-  or generic one [UniversalKafkaSourceFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/source/UniversalKafkaSourceFactory.scala).
-  Those Kafka sources also have a [context initializer](https://github.com/TouK/nussknacker/blob/staging/utils/kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/kafka/source/KafkaContextInitializer.scala)
-  defined that adds additional `#inputMeta` variable with Kafka record metadata like: partition, topic, offset, etc.
-- [GenericSourceWithCustomVariablesSample](https://github.com/TouK/nussknacker/blob/staging/engine/flink/management/dev-model/src/main/scala/pl/touk/nussknacker/engine/management/sample/source/GenericSourceWithCustomVariablesSample.scala)
-  a source that emits defined elements in a parameter but leverages [generic node transformation](Components.md#genericnodetransformation), context initializing, generating test data, typing.
-
-## Sinks
-
-Sinks are defined using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala).
-Again, `BasicFlinkSink` is provided for simple cases which requires implementing a Flink's `SinkFunction`
-and corresponding `FlinkSink` to register arbitrary `DataStreamSink`.
-
-Similarly, Flink provides [basic](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/overview/#data-sinks) sinks
-and [connectors](https://ci.apache.org/projects/flink/flink-docs-master/docs/connectors/datastream/overview) which can be used while implementing
-own Nussknacker sinks. And again, Nussknacker has built-in sinks for writing to Kafka registered in
-[`FlinkKafkaComponentProvider`](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components/kafka/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer/FlinkKafkaComponentProvider.scala).
-
-Examples:
-- TODO simple sink ???
-- [FlinkKafkaUniversalSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/flink/FlinkKafkaUniversalSink.scala)
-  and its factory [UniversalKafkaSinkFactory](https://github.com/TouK/nussknacker/blob/staging/utils/schemed-kafka-components-utils/src/main/scala/pl/touk/nussknacker/engine/schemedkafka/sink/UniversalKafkaSinkFactory.scala)
-
-## Custom transformers
-
-In Flink, custom transformation can arbitrarily change `DataStream[Context]`, it's implemented with [FlinkCustomStreamTransformation](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkCustomStreamTransformation.scala).
-Great examples of custom transformers are [aggregates](../scenarios_authoring/AggregatesInTimeWindows.md). [See here](https://github.com/TouK/nussknacker/tree/staging/engine/flink/components/base/src/main/scala/pl/touk/nussknacker/engine/flink/util/transformer)
-how components like [previousValue](../scenarios_authoring/BasicNodes.md#previousvalue), [delay](../scenarios_authoring/BasicNodes.md#delay)
-and aggregates are implemented.
