@@ -28,6 +28,10 @@ package object openapi {
   final case class HeaderParameter(name: String, `type`: SwaggerTyped) extends SwaggerParameter
 
   final case class SingleBodyParameter(`type`: SwaggerTyped) extends SwaggerParameter {
+    override def name: String = SingleBodyParameter.name
+  }
+
+  object SingleBodyParameter {
     val name = "body"
   }
 
