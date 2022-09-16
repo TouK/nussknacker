@@ -153,7 +153,7 @@ class Services extends React.Component {
   render() {
     const readonly = value => <InputWithFocus readOnly={true} type="text" className="node-input" value={value}/>
     return (
-      <div>
+      <div className="services">
         <div className="modalContentDye">
           <NodeTable>
             {this.formRow("serviceName", "Service name", this.serviceList(this.state.services))}
@@ -169,6 +169,20 @@ class Services extends React.Component {
             !isEmpty(this.state.queryResult.response) ?
               [
                 this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 2"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 3"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 4"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 5"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 6"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 7"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 8"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 9"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 10"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 11"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 12"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 13"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 14"),
+                this.prettyPrint("serviceResult", this.state.queryResult.response.result, "Service result 15"),
                 <hr key="separator"/>,
                 this.prettyPrint("collectedResults", removeEmptyProperties(this.state.queryResult.response.collectedResults), "Collected results"),
               ] :
