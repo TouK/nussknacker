@@ -117,10 +117,10 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
   //we replace outputs in subprocess with part of parent process
-  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Option[List[Parameter]]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
+  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Option[Map[String, String]]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
       case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => {
-        val outputName = SubprocessOutput.figureOutputName(name, outputs)
+        val outputName = outputs.flatMap(_.get(name)).getOrElse(name)
         replacement.get(name) match {
           case Some(nodes) =>
             validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)

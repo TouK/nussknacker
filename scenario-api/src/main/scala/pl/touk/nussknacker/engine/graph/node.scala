@@ -197,11 +197,6 @@ object node {
     override val componentId: String = ref.id
   }
 
-  object SubprocessOutput {
-    def figureOutputName(name: String, outputParameters: Option[List[Parameter]]): String =
-      outputParameters.flatMap(_.find(_.name == name).map(_.expression.expression)).getOrElse(name)
-  }
-
   //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
   case class SubprocessOutput(id: String, outputName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
