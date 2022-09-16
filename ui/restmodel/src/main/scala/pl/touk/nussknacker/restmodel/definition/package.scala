@@ -59,7 +59,7 @@ package object definition {
   }
 
   @JsonCodec(encodeOnly = true) case class UIFragmentObjectDefinition(parameters: List[UIParameter],
-                                                                      outputParameters: List[UIParameter],
+                                                                      outputParameters: List[String],
                                                                       returnType: Option[TypingResult],
                                                                       categories: List[String],
                                                                       componentConfig: SingleComponentConfig) {

@@ -121,7 +121,7 @@ object ComponentTestProcessData {
         .streaming(FraudProcessWithSubprocessName)
         .source(SecondSourceName, SharedSourceName)
         .filter(SecondFilterName, "#input.id != null")
-        .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Nil, Map(
+        .subprocess(FraudSubprocess.id, FraudSubprocess.id, Nil, Map.empty, Map(
           "sink" -> GraphBuilder.emptySink(DefaultSinkName, FraudSinkName)
         ))
       , Fraud), category = CategoryFraud

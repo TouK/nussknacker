@@ -127,7 +127,7 @@ object UIProcessObjectsFactory {
 
         //Figure outputs parameter
         val outputParameters = ProcessConverter.findNodes(fragment.canonical).collect {
-          case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => extractSubprocessOutputParam(name)
+          case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => name
         }
 
         val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
@@ -174,7 +174,7 @@ object UIProcessObjectsFactory {
     )
   }
 
-  private case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[Parameter])
+  case class FragmentObjectDefinition(objectDefinition: ObjectDefinition, outputsDefinition: List[String])
 
   def createUIObjectDefinition(objectDefinition: ObjectDefinition, processCategoryService: ProcessCategoryService): UIObjectDefinition = {
     UIObjectDefinition(
@@ -188,7 +188,7 @@ object UIProcessObjectsFactory {
   def createUIFragmentObjectDefinition(fragmentObjectDefinition: FragmentObjectDefinition, processCategoryService: ProcessCategoryService): UIFragmentObjectDefinition = {
     UIFragmentObjectDefinition(
       parameters = fragmentObjectDefinition.objectDefinition.parameters.map(createUIParameter),
-      outputParameters = fragmentObjectDefinition.outputsDefinition.map(createUIParameter),
+      outputParameters = fragmentObjectDefinition.outputsDefinition,
       returnType = if (fragmentObjectDefinition.objectDefinition.hasNoReturn) None else Some(fragmentObjectDefinition.objectDefinition.returnType),
       categories = fragmentObjectDefinition.objectDefinition.categories.getOrElse(processCategoryService.getAllCategories),
       componentConfig = fragmentObjectDefinition.objectDefinition.componentConfig
