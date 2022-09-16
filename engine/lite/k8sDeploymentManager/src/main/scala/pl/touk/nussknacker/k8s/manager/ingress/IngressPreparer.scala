@@ -11,14 +11,14 @@ import play.api.libs.json.Json
 import skuber.networking.v1.Ingress
 import monocle.std.option.some
 
-case class IngressConfig(host: String, config: Config = ConfigFactory.empty())
+case class IngressConfig(enabled: Boolean, host: Option[String], rootPath: String = "/", config: Config = ConfigFactory.empty())
 
 class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
 
   def prepare(processVersion: ProcessVersion, typeSpecificData: TypeSpecificData, serviceName: String, servicePort: Int): Option[Ingress] =
     typeSpecificData match {
       case _: LiteStreamMetaData => None
-      case rrMetaData: RequestResponseMetaData => Some(prepareRequestResponseIngress(processVersion, rrMetaData, serviceName, servicePort))
+      case rrMetaData: RequestResponseMetaData if config.enabled => Some(prepareRequestResponseIngress(processVersion, rrMetaData, serviceName, servicePort))
       case other => throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }
 
@@ -34,8 +34,8 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
       GenLens[Ingress](_.metadata.labels).modify(_ ++ labels) andThen
       GenLens[Ingress](_.metadata.annotations).modify(_ ++ rewriteAnnotation) andThen
       (ingressSpecLens composeLens GenLens[Ingress.Spec](_.rules)).modify(_ ++ List(
-        Ingress.Rule(Some(config.host), Ingress.HttpRule(paths = List(Ingress.Path(
-          path = s"/$slug" + "(/|$)(.*)",
+        Ingress.Rule(config.host, Ingress.HttpRule(paths = List(Ingress.Path(
+          path = s"${config.rootPath}$slug" + "(/|$)(.*)", // todo: fix RequestResponseOpenApiGenerator so it's aware of ingress address
           backend = Ingress.Backend(Some(Ingress.ServiceType(serviceName, Ingress.Port(number = Some(servicePort))))),
           pathType = Ingress.PathType.Prefix))))))
 

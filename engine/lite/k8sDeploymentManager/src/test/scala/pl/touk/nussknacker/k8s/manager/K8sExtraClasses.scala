@@ -4,14 +4,18 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.k8s.manager.K8sExtraClasses.{extraClassesSecretName, serviceLoaderConfigItemName}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
-import skuber.api.client.KubernetesClient
+import play.api.libs.json.Format
+import skuber.api.client.{KubernetesClient, LoggingContext}
 import skuber.json.format._
-import skuber.{ObjectMeta, Secret}
+import skuber.{ObjectMeta, ResourceDefinition, Secret}
 
 import java.net.URL
 import scala.collection.JavaConverters._
+import scala.concurrent.ExecutionContext
 
 class K8sExtraClasses(k8s: KubernetesClient, classes: List[Class[_]], serviceLoaderConfigURL: URL) extends VeryPatientScalaFutures {
+
+  private val k8sUtils = new K8sUtils(k8s)
 
   def withExtraClassesSecret(action: => Unit): Unit = {
     createExtraClassesSecret()
@@ -55,7 +59,8 @@ class K8sExtraClasses(k8s: KubernetesClient, classes: List[Class[_]], serviceLoa
   }
 
   private def cleanup(): Unit = {
-    k8s.delete[Secret](extraClassesSecretName).futureValue
+    import ExecutionContext.Implicits.global
+    k8sUtils.deleteIfExists[Secret](extraClassesSecretName).futureValue
   }
 
 }

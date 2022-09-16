@@ -65,17 +65,22 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
   test("deployment of req-resp with ingress") {
     val givenScenarioName = "reqresp-ingress"
     val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
-    val f = createReqRespFixture(givenScenarioName, givenServicePort, extraDeployConfig = ConfigFactory.empty().withValue("ingress.host", fromAnyRef("my-nu-runtime.com")))
+    val f = createReqRespFixture(givenScenarioName, givenServicePort, extraDeployConfig = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true)))
 
     f.withRunningScenario {
       k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
+
+      val pingContent = """Nussknacker!"""
+      val pingMessage = s"""{"ping":"$pingContent"}"""
+      val request = basicRequest.post(uri"http://localhost".port(8081).path(givenScenarioName))
+      val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+      jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
   }
 
   private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses): Config = {
     val extraClassesVolume = "extra-classes"
-    ConfigFactory.empty
-      .withValue("mode", fromAnyRef("request-response"))
+    baseDeployConfig("request-response")
       .withValue("servicePort", fromAnyRef(port))
       .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
         "name" -> extraClassesVolume,

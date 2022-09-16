@@ -11,9 +11,13 @@ options:
     disableRollback: true
   k3s:
     extraArgs:
-      - arg: --no-deploy=traefik,servicelb,metrics-server
+      - arg: --no-deploy=traefik,metrics-server #--no-deploy=traefik means that nginx will be used. (it's important for RR ingress tests)
         nodeFilters:
           - server:*
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
+ports:
+  - port: 8081:80 # same as `--port '8081:80@loadbalancer'`
+    nodeFilters:
+      - loadbalancer

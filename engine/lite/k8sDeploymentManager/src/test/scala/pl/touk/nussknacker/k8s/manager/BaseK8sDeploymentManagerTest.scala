@@ -32,7 +32,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
   protected lazy val k8s: KubernetesClient = k8sInit
   protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
-  protected val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
+  protected val dockerTag = sys.env.getOrElse("dockerTagName", "staging-latest")
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
     .withValue("dockerImageTag", fromAnyRef(dockerTag))
@@ -55,7 +55,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
           k8s.deleteAllSelected[ListResource[Deployment]](selector),
           k8s.deleteAllSelected[ListResource[ConfigMap]](selector),
           k8s.deleteAllSelected[ListResource[Secret]](selector),
-          k8s.delete[Resource.Quota]("nu-pods-limit")
+          k8sTestUtils.deleteIfExists[Resource.Quota]("nu-pods-limit")
         )).futureValue
     assertNoGarbageLeft()
   }

@@ -24,13 +24,13 @@ class IngressPreparerTest extends AnyFunSuite {
   val hostname = "my.host"
 
   test("should prepare ingress") {
-    val preparer = new IngressPreparer(config = IngressConfig(hostname), nuInstanceName = Some(nussknackerInstanceName))
+    val preparer = new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname)), nuInstanceName = Some(nussknackerInstanceName))
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(Ingress(
       metadata = ObjectMeta(
         name = "foo-release-scenario-some-name",
         labels = Map(
-          "nussknacker.io/scenarioName"-> "some-name-59107c750f",
+          "nussknacker.io/scenarioName" -> "some-name-59107c750f",
           "nussknacker.io/scenarioId" -> "4",
           "nussknacker.io/scenarioVersion" -> "10",
           "nussknacker.io/nussknackerInstanceName" -> "foo-release"
@@ -55,13 +55,13 @@ class IngressPreparerTest extends AnyFunSuite {
         "secretName" -> tlsSecret
       ).asJava)).asJava))
 
-    val preparer = new IngressPreparer(config = IngressConfig(hostname, tlsConf), nuInstanceName = None)
+    val preparer = new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname), "/", tlsConf), nuInstanceName = None)
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(Ingress(
       metadata = ObjectMeta(
         name = "scenario-some-name",
         labels = Map(
-          "nussknacker.io/scenarioName"-> "some-name-59107c750f",
+          "nussknacker.io/scenarioName" -> "some-name-59107c750f",
           "nussknacker.io/scenarioId" -> "4",
           "nussknacker.io/scenarioVersion" -> "10"
         ),
@@ -83,20 +83,26 @@ class IngressPreparerTest extends AnyFunSuite {
   test("should prepare ingress with custom annotations") {
     val annotationConf = ConfigFactory.empty()
       .withValue("metadata.annotations", fromMap(Map(
-        "my-annotation/touk" ->"abc"
+        "my-annotation/touk" -> "abc"
       ).asJava))
 
-    val preparer = new IngressPreparer(config = IngressConfig(hostname, annotationConf), nuInstanceName = None)
+    val preparer = new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname), "/", annotationConf), nuInstanceName = None)
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort).map(_.metadata.annotations) shouldBe Some(
-      Map("nginx.ingress.kubernetes.io/rewrite-target" -> "/$2", "my-annotation/touk" ->"abc")
+      Map("nginx.ingress.kubernetes.io/rewrite-target" -> "/$2", "my-annotation/touk" -> "abc")
     )
   }
 
   test("should not prepare ingress for lite-streaming") {
-    val preparer = new IngressPreparer(config = IngressConfig("my.host"), nuInstanceName = None)
+    val preparer = new IngressPreparer(config = IngressConfig(enabled = true, Some(hostname)), nuInstanceName = None)
 
     preparer.prepare(processVersion, liteStreamMetaData, serviceName, servicePort) shouldBe None
+  }
+
+  test("should not prepare ingress when disabled") {
+    val preparer = new IngressPreparer(config = IngressConfig(enabled = false, Some(hostname)), nuInstanceName = None)
+
+    preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe None
   }
 
 }
