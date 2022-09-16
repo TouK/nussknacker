@@ -20,6 +20,8 @@ Please remember, that K8s Deployment Manager has to be run with properly configu
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
+Both processing modes: `steaming` and `request-response` share the majority of configuration.
+
 `lite-k8s` Deployment Manager has the following configuration options:                 
 
 | Parameter                 | Type                                                | Default value                       | Description                                                                              |
@@ -33,7 +35,7 @@ have to configure `.kube/config` properly.
 | nussknackerInstanceName   | string                                              | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
 | logbackConfigPath         | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
 | commonConfigMapForLogback | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
-| servicePort               | int                                                 | 80                                  | Port of service exposed in request-response mode                                         |
+| servicePort               | int                                                 | 80                                  | Port of service exposed in request-response processing mode                              |
                                                  
 ### Customizing K8s deployment
 
@@ -109,11 +111,12 @@ spec:
           defaultMode: 420
           name: scenario-7-detectlargetransactions-ad0834f298
         name: configmap
-
 ```
+
 You can customize it adding e.g. own volumes, deployment strategy etc. with `k8sDeploymentConfig` settings,
 e.g. add additional custom label environment variable to the container, add custom sidecar container:
-```conf
+
+```hocon
 spec {
  metadata: {
     labels: {
@@ -146,7 +149,7 @@ By default, configuration of Streaming-Lite runtime consists of
 - the configuration from `modelConfig` 
 
 In some circumstances you want to change values in `modelConfig` without having to modify base image. E.g. different accounts/credentials should be used in Designer and in Runtime. For those cases you can use `configExecutionOverrides` setting:
-```
+```hocon
 deploymentConfig {     
   configExecutionOverrides {
     password: "sfd2323afdf" # this will be used in the Runtime
@@ -169,6 +172,7 @@ Following options are possible:
 
 Please note that:
 - it's not possible to set both config options at the same time
+- for `request-response` processing mode only `fixedReplicasCount` is available
 - due to rounding, exact workers count may be different from parallelism 
   (e.g. for fixedReplicasCount = 3, parallelism = 5, there will be 2 tasks per replica, total workers = 6)  
 
@@ -206,7 +210,7 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 `flinkStreaming` Deployment Manager has the following configuration options:
 
 | Parameter                 | Type     | Default value | Description                                                                                                                                                                                                                                                                                                          |
-| ---------                 | ----     | ------------- | ------------                                                                                                                                                                                                                                                                                                         |
+|---------------------------|----------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | restUrl                   | string   |               | The only required parameter, REST API endpoint of the Flink cluster                                                                                                                                                                                                                                                  |
 | jobManagerTimeout         | duration | 1 minute      | Timeout for communication with FLink cluster. Consider extending if e.g. you have long savepoint times etc.                                                                                                                                                                                                          |
 | shouldVerifyBeforeDeploy  | boolean  | true          | By default, before redeployment of scenario with state from savepoint, verification of savepoint compatibility is performed. There are some cases when it can be too time consuming or not possible. Use this flag to disable it.                                                                                    |

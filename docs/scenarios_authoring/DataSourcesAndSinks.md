@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Data sources and sinks
+# Streaming sources and sinks
 
 ## Kafka topics as input and output to Nussknacker scenarios
 
@@ -24,7 +24,7 @@ It is not uncommon that  programs that write events to Kafka topics (“producer
 
 Nussknacker will connect to Schema Registry to get the list of available schemas and will pre-populate the `Topic name` drop down of the `kafka` source component with the list of available topic names.
 
-Nussknacker knows what data to expect in the Kafka event so it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. You can select the schema version which should be used for that.
+Nussknacker knows what data to expect in the Kafka event, so it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. You can select the schema version which should be used for that.
 
 ![Kafka source](img/kafkaSource.png "Kafka source")
 

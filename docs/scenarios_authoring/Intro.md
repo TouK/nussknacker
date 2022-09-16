@@ -17,7 +17,9 @@ Nussknacker nodes process events; once the node finishes processing of the event
 Typically events processed by Nussknacker come from Kafka topics;  Nussknacker source components are used to read events from Kafka topic and inject them into Nussknacker scenarios. 
 There are cases though when a node can produce a new event, a Tumbling-window or and Session-window component being good examples. 
 
-## (Streaming-Flink only) Notion of time
+## Streaming-Flink
+
+### Notion of time
 
 Notion of passing time is very important in dealing with real time events processing. 
 Please see following excellent references to learn about basic concepts:
@@ -26,17 +28,21 @@ Please see following excellent references to learn about basic concepts:
 
 For Streaming-Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
 
-### (Streaming-Flink only) Sources and Sinks - Kafka
+### Sources and Sinks - Kafka
+
 In general following rules apply:
 * We use _event time_ in scenarios to handle notion of passing time
 * Kafka record timestamps are used to assign event time to Flink events
 * Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
 * We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
 
-### (Streaming-Flink only) Aggregations, window processing 
+### Aggregations, window processing 
+
 If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
 
-## (Streaming-Lite only) Notion of time
+## Streaming-Lite
+
+### Notion of time
 
 Streaming-Lite is stateless, so many concepts important for windows or aggregations do not apply, but following rules apply for Kafka sources and sinks:
 * Kafka record timestamps are used to determine time of the event

@@ -24,11 +24,19 @@ or `NuExceptionInfo` in case of an error.
 
 ## Sources and sinks
 
+### Streaming-Lite
+
 In Streaming-Lite sources and sinks are relatively simple, as all sources and sinks are based on Kafka:
 - A [source](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/components-api/src/main/scala/pl/touk/nussknacker/engine/lite/kafka/api/LiteKafkaSource.scala) 
 transforms `ConsumerRecord` to Nussknacker [Context](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/Context.scala). 
 - A [sink](https://github.com/TouK/nussknacker/blob/staging/engine/lite/components-api/src/main/scala/pl/touk/nussknacker/engine/lite/api/customComponentTypes.scala#L51) creates `ProducerRecord` from its parameters.
 - Both may return error.
+
+### Request-Response-Lite
+
+In Request-Response-Lite sources and sink act slightly different. Both create a combination of a HTTP request (source) and a response(sink)
+- A [source](https://github.com/TouK/nussknacker/blob/staging/engine/lite/request-response/components-api/src/main/scala/pl/touk/nussknacker/engine/requestresponse/api/RequestResponseSourceFactory.scala) can handle GET and POST http requests
+- A [sink](https://github.com/TouK/nussknacker/blob/staging/engine/lite/request-response/components-api/src/main/scala/pl/touk/nussknacker/engine/requestresponse/api/RequestResponseSourceFactory.scala) is responsible for providing response payload
 
 ## Lite custom transformers
 
