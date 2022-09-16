@@ -50,8 +50,6 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     resolved.nodes.find(_.id == "sub").get.data should matchPattern { case SubprocessInput(_, _, _, _, Some(subprocessParameters)) => }
     resolved.nodes.find(_.id == "sub").get.data
     resolved.nodes.find(_.id == "sub2-f1") shouldBe 'defined
-
-
   }
 
   test("resolve nested fragments") {
@@ -275,7 +273,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
   test("should resolve diamond fragments") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "source1")
-      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Nil, Map("output" ->
+      .subprocess("sub", "subProcess1", List("ala" -> "'makota'"), Map.empty, Map("output" ->
         GraphBuilder.emptySink("sink", "type")))
 
     val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
