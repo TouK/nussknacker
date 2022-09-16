@@ -2,7 +2,5 @@
 
 set -e
 
-cd ..
-export addDevArtifacts=true
-./sbtwrapper "set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty; dist/Universal/stage"
-cd -
+cd "$(dirname $0)"/..
+addDevArtifacts=true sbt "set ThisBuild / packageDoc / publishArtifact := false; set Compile / doc / sources := Seq.empty; dist/Universal/stage"
