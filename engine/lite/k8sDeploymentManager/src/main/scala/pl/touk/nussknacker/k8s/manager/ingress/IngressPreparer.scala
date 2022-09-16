@@ -43,7 +43,7 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
   }
 
   private def fromUserConfig: Ingress = {
-    val minimalConfig = ConfigFactory.parseResources("/defaultMinimalIngress.conf")
+    val minimalConfig = ConfigFactory.parseResources("defaultMinimalIngress.conf")
     val finalConfig = config.config.withFallback(minimalConfig)
     Json.parse(finalConfig.root().render(ConfigRenderOptions.concise())).as[Ingress]
   }
