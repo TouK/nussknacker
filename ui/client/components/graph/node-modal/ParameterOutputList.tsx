@@ -6,14 +6,14 @@ import {NodeType, NodeValidationError, ProcessDefinitionData} from "../../../typ
 import ProcessUtils from "../../../common/ProcessUtils";
 
 export default function ParameterOutputList({
-                                                editedNode,
-                                                processDefinitionData,
-                                                fieldErrors,
-                                                isEditMode,
-                                                showValidation,
-                                                renderFieldLabel,
-                                                setProperty,
-                                            }: {
+    editedNode,
+    processDefinitionData,
+    fieldErrors,
+    isEditMode,
+    showValidation,
+    renderFieldLabel,
+    setProperty,
+}: {
     editedNode: NodeType,
     processDefinitionData: ProcessDefinitionData,
     renderFieldLabel: (paramName: string) => JSX.Element,
@@ -23,6 +23,9 @@ export default function ParameterOutputList({
     isEditMode?: boolean,
 }) {
     const parameters = ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.outputParameters
+
+
+
     return parameters && parameters.length === 0 ? null : (
         <div className="node-row" key="outputParameters">
             <div className="node-label" title="Fragment outputs names">Outputs names:</div>
@@ -32,7 +35,7 @@ export default function ParameterOutputList({
                         parameters.map(paramName => {
                             const paramProperty = `ref.outputParameters.${paramName}`
                             return (<NodeField
-                                    key={paramName}
+                                    key={"outputParameters-" + paramName}
                                     isEditMode={isEditMode}
                                     showValidation={showValidation}
                                     node={editedNode}
