@@ -9,6 +9,10 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   override type ClassToLoad = CustomProcessValidatorFactory
   override val prettyClassName: String = "CustomProcessValidatorLoader"
 
+  def emptyCustomProcessValidator: CustomProcessValidator = {
+    new CustomProcessValidatorAggregate(List.empty)
+  }
+
   def loadProcessValidators(classLoader: ClassLoader, config: Config): CustomProcessValidator = {
     val validators = CustomProcessValidatorLoader.loadAll(classLoader).map(_.validator(config))
     new CustomProcessValidatorAggregate(validators)

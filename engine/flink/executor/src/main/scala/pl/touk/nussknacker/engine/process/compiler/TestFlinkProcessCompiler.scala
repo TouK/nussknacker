@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies}
 import pl.touk.nussknacker.engine.api.test.TestData
@@ -22,7 +23,6 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                testData: TestData,
                                objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
-
 
   override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
     collectingListener :: defaults

@@ -30,7 +30,7 @@ object ProcessCompilationError {
 
     override def nodeIds: Set[String] = Set(nodeId)
 
-    protected def nodeId: String
+    def nodeId: String
 
   }
 
@@ -205,8 +205,9 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ProcessNameValidationError(message: String) extends ProcessCompilationError {
+  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with InASingleNode {
     override def nodeIds: Set[String] = Set()
+    override def nodeId: String = "$properties"
   }
 
 }

@@ -15,7 +15,7 @@ class FlinkStreamingProcessRegistrarSpec extends AnyFlatSpec with Matchers with 
   import spel.Implicits._
 
   it should "perform simple valid process" in {
-    val process = ScenarioBuilder.streaming("invalid+scenario")
+    val process = ScenarioBuilder.streaming("test")
         .source("id", "input")
         .filter("filter1", "#processHelper.add(12, #processHelper.constant()) > 1")
         .filter("filter2", "#input.intAsAny + 1 > 1")

@@ -88,8 +88,7 @@ object ProcessTestData {
   val processValidation: ProcessValidation = ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-    new SubprocessResolver(new StubSubprocessRepository(Set())),
-    emptyProcessingTypeDataProvider
+    new SubprocessResolver(new StubSubprocessRepository(Set()))
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")

@@ -2,9 +2,8 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, ProcessNameValidationError, UnknownSubprocess}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, UnknownSubprocess}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
@@ -28,35 +27,17 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, possibleValues}
-import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, StubSubprocessRepository, TestCategories, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessResolver}
 
 import scala.collection.immutable.ListMap
 
 class ProcessValidationSpec extends AnyFunSuite with Matchers {
-  import ProcessValidationSpec._
   import ProcessTestData._
+  import ProcessValidationSpec._
   import TestCategories._
   import spel.Implicits._
-
-  test("validate processName") {
-    val process = createProcessWithName("invalid+scenario",
-      List(
-        Source("in", SourceRef(existingSourceFactory, List())),
-        Sink("out", SinkRef(existingSinkFactory, List()))
-      ),
-      List(Edge("in", "out", None))
-    )
-
-    val result = validator.validate(process, Category1)
-
-    result.errors.globalErrors shouldBe List(
-      PrettyValidationErrors.formatErrorMessage(ProcessNameValidationError(
-        s"Illegal characters in scenario name: invalid+scenario. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces"
-      )))
-  }
 
   test("check for notunique edge types") {
     val process = createProcess(
@@ -550,13 +531,6 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithName(id: String, nodes: List[NodeData],
-                            edges: List[Edge],
-                            `type`: ProcessingType = TestProcessingTypes.Streaming,
-                            additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess(id, ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
-  }
-
   def createProcess(nodes: List[NodeData],
                     edges: List[Edge],
                     `type`: ProcessingType = TestProcessingTypes.Streaming,
@@ -577,8 +551,7 @@ private object ProcessValidationSpec {
       new SubprocessResolver(new StubSubprocessRepository(Set(
         SubprocessDetails(sampleSubprocessOneOut, Category1),
         SubprocessDetails(subprocess, Category1),
-      ))),
-      emptyProcessingTypeDataProvider
+      )))
     )
 
     mockedProcessValidation

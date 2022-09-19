@@ -60,14 +60,13 @@ object ScenarioInterpreterFactory {
     val allNodes = process.collectAllNodes
     val countingListeners = List(new NodeCountingListener(allNodes.map(_.id)), new ExceptionCountingListener, new EndCountingListener(allNodes))
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
-
-    val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(modelData.modelClassLoader.classLoader, modelData.processConfig)
+    
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
       componentUseCase,
-      customProcessValidator
+      modelData.customProcessValidator
       // defaultAsyncValue is not important here because it isn't used in base mode (??)
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 

@@ -24,14 +24,11 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
 
   private lazy val verification = new FlinkProcessVerifier(modelData.asInvokableModelData)
 
-  private lazy val flinkProcessNameValidationPattern = "[a-zA-Z0-9-_ ]+"r
-
   override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
     for {
       oldJob <- checkOldJobStatus(processVersion)
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
     } yield ()
-    validateProcessName(processVersion).map(_ => ())
     checkOldJobStatus(processVersion).map(_ => ())
   }
 
@@ -71,15 +68,6 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       _ <- if (oldJob.exists(!_.allowedActions.contains(ProcessActionType.Deploy)))
         Future.failed(new IllegalStateException(s"Job ${processName.value} cannot be deployed, status: ${oldJob.map(_.status.name).getOrElse("")}")) else Future.successful(Some(()))
     } yield oldJob
-  }
-
-  private def validateProcessName(processVersion: ProcessVersion) = {
-    val processName = processVersion.processName.value
-    if (flinkProcessNameValidationPattern.pattern.matcher(processName).matches()) {
-      Future.successful(Some(()))
-    } else {
-      Future.failed(new IllegalStateException(s"Illegal characters in process name: $processName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces"))
-    }
   }
 
   protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit]

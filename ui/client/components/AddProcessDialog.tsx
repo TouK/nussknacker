@@ -19,6 +19,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
   const nameValidators = useProcessNameValidators()
 
   const [value, setState] = useState({processId: "", processCategory: ""})
+  const [processNameValidationError, setProcessNameValidationError] = useState("")
 
   const isValid = useMemo(
     () => value.processCategory && allValid(nameValidators, [value.processId]),
@@ -29,9 +30,14 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     async () => {
       if (isValid) {
         const {processId, processCategory} = value
-        await HttpService.createProcess(processId, processCategory, isSubprocess)
-        passProps.close()
-        history.push(visualizationUrl(processId))
+        try {
+          await HttpService.createProcess(processId, processCategory, isSubprocess)
+          passProps.close()
+          history.push(visualizationUrl(processId))
+        } catch(error) {
+          if(error?.response?.status == 400)
+            setProcessNameValidationError(error?.response?.data)
+        }
       }
     },
     [isSubprocess, isValid, passProps, value],
@@ -52,6 +58,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
         value={value}
         onChange={setState}
         nameValidators={nameValidators}
+        processNameValidationError={processNameValidationError}
       />
     </WindowContent>
   )

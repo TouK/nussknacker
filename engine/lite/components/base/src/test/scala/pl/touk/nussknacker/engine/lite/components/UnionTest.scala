@@ -5,6 +5,7 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.CustomProcessValidatorLoader
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -75,7 +76,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
         Map("dumb" -> WithCategories.anyCategory(DumbService))
     }
     val modelData = LocalModelData(ConfigFactory.empty(), configCreator)
-    val validator = ProcessValidator.default(modelData.processWithObjectsDefinition, new SimpleDictRegistry(Map.empty), config = ConfigFactory.empty)
+    val validator = modelData.prepareValidatorForCategory(None)
     val validationResult = validator.validate(scenario)
     validationResult
   }

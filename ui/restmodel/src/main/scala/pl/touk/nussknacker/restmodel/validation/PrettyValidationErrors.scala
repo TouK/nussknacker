@@ -27,6 +27,7 @@ object PrettyValidationErrors {
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
+      case ScenarioNameValidationError(scenarioName, description) => node(s"Invalid scenario name: $scenarioName.", description)
       case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer")
@@ -62,7 +63,6 @@ object PrettyValidationErrors {
       case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) => NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
-      case ProcessNameValidationError(message) => node("Invalid scenario name", message)
     }
   }
 

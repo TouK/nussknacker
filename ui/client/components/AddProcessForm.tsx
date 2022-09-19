@@ -13,9 +13,10 @@ type FormValue = { processId: string, processCategory: string }
 
 interface AddProcessFormProps extends ChangeableValue<FormValue> {
   nameValidators: Validator[],
+  processNameValidationError: string
 }
 
-export function AddProcessForm({nameValidators, value, onChange}: AddProcessFormProps): JSX.Element {
+export function AddProcessForm({nameValidators, value, onChange, processNameValidationError}: AddProcessFormProps): JSX.Element {
   const categories = useSelector(getWritableCategories)
 
   const onFieldChange = useCallback(
@@ -50,7 +51,7 @@ export function AddProcessForm({nameValidators, value, onChange}: AddProcessForm
                 value={value.processId}
                 onChange={e => onFieldChange("processId", e.target.value)}
               />
-              <ValidationLabels validators={nameValidators} values={[value.processId]}/>
+              <ValidationLabels validators={nameValidators} values={[value.processId]} processNameValidationError={processNameValidationError}/>
             </div>
           </div>
           <div className="node-row">
