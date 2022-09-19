@@ -62,7 +62,41 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 
-  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) { testScenarioRunner =>
+  test("we are checking name validation") { port =>
+    //given
+    val finalConfig = ConfigFactory.load()
+      .withValue("components.openAPI.url", fromAnyRef(s"http://localhost:$port/swagger"))
+      .withValue("components.openAPI.rootUrl", fromAnyRef(rootUrl(port)))
+    val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
+    val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
+    val definition = IOUtils.toString(finalConfig.as[URL]("components.openAPI.url"), StandardCharsets.UTF_8)
+    val services = SwaggerParser.parse(definition, openAPIsConfig)
+
+    val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
+    val data = List("10")
+    val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
+    val testScenarioRunner = NuTestScenarioRunner
+      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .withExtraComponents(mockComponents)
+      .build()
+
+    val scenario =
+      ScenarioBuilder
+        .streaming("invalid+scenario+name")
+        .parallelism(1)
+        .source("start", "source")
+        .enricher("customer", "customer", "getCustomer", ("customer_id", "#input"))
+        .processorEnd("end", "invocationCollector", "value" -> "#customer")
+
+    //when
+    val result = testScenarioRunner.runWithData(scenario, data)
+
+    //then
+    result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
+  }
+
+
+  it should "call enricher with primitive request body" in withPrimitiveRequestBody (stubbedBackend) { testScenarioRunner =>
     //given
     val data = List("10")
     val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))

@@ -94,12 +94,15 @@ trait ModelData extends BaseModelData with AutoCloseable {
   lazy val dictServices: UiDictServices =
     DictServicesFactoryLoader.justOne(modelClassLoader.classLoader).createUiDictServices(processDefinition.expressionConfig.dictionaries, processConfig)
 
-  def prepareValidatorForCategory(category: Option[String]): ProcessValidator =
-    ProcessValidator.default(
-      category.map(processWithObjectsDefinition.forCategory).getOrElse(processWithObjectsDefinition),
-      dictServices.dictRegistry,
-      modelClassLoader.classLoader
-    )
+  def prepareValidatorForCategory(category: Option[String]): ProcessValidator = {
+    ProcessValidator.
+      default(
+        category.map(processWithObjectsDefinition.forCategory).getOrElse(processWithObjectsDefinition),
+        dictServices.dictRegistry,
+        modelClassLoader.classLoader,
+        this.processConfig
+      )
+  }
 
   def withThisAsContextClassLoader[T](block: => T) : T = {
     ThreadUtils.withThisAsContextClassLoader(modelClassLoader.classLoader) {

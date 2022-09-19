@@ -1499,6 +1499,7 @@ lazy val ui = (project in file("ui/server"))
     schemedKafkaComponentsUtils % "provided",
     requestResponseRuntime % "provided",
     developmentTestsDeploymentManager % "provided",
+    flinkExecutor % "test",
   )
 
 /*

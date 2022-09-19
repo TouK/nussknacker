@@ -18,9 +18,7 @@ class ProcessNameValidator extends CustomProcessValidator {
       List()
     } else {
       List(
-        ProcessNameValidationError(
-          s"Illegal characters in process name: $processName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces"
-        )
+        ProcessNameValidationError(s"Illegal characters in scenario name: $processName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces")
 
       )
     }

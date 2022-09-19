@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.compile
 import cats.data.Validated.{Invalid, Valid}
 import cats.data._
 import cats.instances.string._
+import com.typesafe.config.ConfigFactory
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -1185,7 +1186,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
   }
 
   private def validateWithDef(process: CanonicalProcess, definitions: ProcessDefinition[ObjectWithMethodDef]): CompilationResult[Unit] = {
-    ProcessValidator.default(definitions, new SimpleDictRegistry(Map.empty)).validate(process)
+    ProcessValidator.default(definitions, new SimpleDictRegistry(Map.empty), config = ConfigFactory.empty).validate(process)
   }
 
   private val definitionWithTypedSource = baseDefinition.copy(sourceFactories

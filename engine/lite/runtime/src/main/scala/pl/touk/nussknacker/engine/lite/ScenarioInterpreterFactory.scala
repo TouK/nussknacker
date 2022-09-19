@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, Scenario
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.splittedgraph.splittednode.SplittedNode
 import pl.touk.nussknacker.engine.util.metrics.common.{EndCountingListener, ExceptionCountingListener, NodeCountingListener}
-import pl.touk.nussknacker.engine.{InterpretationResult, ModelData, compiledgraph}
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, InterpretationResult, ModelData, compiledgraph}
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
@@ -61,11 +61,13 @@ object ScenarioInterpreterFactory {
     val countingListeners = List(new NodeCountingListener(allNodes.map(_.id)), new ExceptionCountingListener, new EndCountingListener(allNodes))
     val listeners = creator.listeners(processObjectDependencies) ++ additionalListeners ++ countingListeners
 
+    val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(modelData.modelClassLoader.classLoader, modelData.processConfig)
     val compilerData = ProcessCompilerData.prepare(process,
       definitions,
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
-      componentUseCase
+      componentUseCase,
+      customProcessValidator
       // defaultAsyncValue is not important here because it isn't used in base mode (??)
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 

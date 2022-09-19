@@ -66,7 +66,9 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      uiValidationResult.add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
+      uiValidationResult
+        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
+        .add(validateWithCustomProcessValidator(canonical, displayable.processingType))
     } else {
       uiValidationResult
     }
@@ -88,7 +90,6 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
       .add(validateAdditionalProcessProperties(displayable))
-      .add(validateWithCustomProcessValidator(displayable))
       .add(warningValidation(displayable))
   }
 
@@ -208,23 +209,16 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
     )
   }
 
-  private def validateWithCustomProcessValidator(process: DisplayableProcess): ValidationResult = {
+  private def validateWithCustomProcessValidator(process: CanonicalProcess, processingType: ProcessingType): ValidationResult = {
 
     val errors = customProcessNodesValidators
-      .forType(process.processingType)
-      .map(_.validate(ProcessConverter.fromDisplayable(process)))
+      .forType(processingType)
+      .map(_.validate(process))
       .getOrElse(List())
-    val globalErrors = errors.filter(_.nodeIds.isEmpty)
-
-    ValidationResult.errors(
-      invalidNodes = (for {
-        error <- errors.filterNot(globalErrors.contains)
-        nodeId <- error.nodeIds
-      } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertiesErrors = Nil,
-      globalErrors = globalErrors.map(PrettyValidationErrors.formatErrorMessage)
-    )
-
+    NonEmptyList.fromList(errors) match {
+      case Some(errorList) => formatErrors(errorList)
+      case None => ValidationResult.success
+    }
   }
 
   private case class ValidatorKey(modelData: ModelData, category: Category)

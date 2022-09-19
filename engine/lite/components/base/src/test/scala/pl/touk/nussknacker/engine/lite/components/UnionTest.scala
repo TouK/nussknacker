@@ -75,7 +75,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
         Map("dumb" -> WithCategories.anyCategory(DumbService))
     }
     val modelData = LocalModelData(ConfigFactory.empty(), configCreator)
-    val validator = ProcessValidator.default(modelData.processWithObjectsDefinition, new SimpleDictRegistry(Map.empty))
+    val validator = ProcessValidator.default(modelData.processWithObjectsDefinition, new SimpleDictRegistry(Map.empty), config = ConfigFactory.empty)
     val validationResult = validator.validate(scenario)
     validationResult
   }
