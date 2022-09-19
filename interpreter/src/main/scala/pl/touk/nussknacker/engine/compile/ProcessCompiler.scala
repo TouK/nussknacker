@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
+import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -35,11 +36,12 @@ import scala.util.control.NonFatal
 class ProcessCompiler(protected val classLoader: ClassLoader,
                       protected val sub: PartSubGraphCompiler,
                       protected val globalVariablesPreparer: GlobalVariablesPreparer,
-                      protected val nodeCompiler: NodeCompiler
+                      protected val nodeCompiler: NodeCompiler,
+                      protected val customProcessValidator: CustomProcessValidator
                      ) extends ProcessCompilerBase with ProcessValidator {
 
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
-    new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify))
+    new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify), customProcessValidator)
 
   override def compile(process: CanonicalProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
@@ -49,12 +51,17 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
 trait ProcessValidator extends LazyLogging {
 
   def validate(process: CanonicalProcess): CompilationResult[Unit] = {
+
     try {
       compile(process).map(_ => Unit)
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.id}", e)
-        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
+        CompilationResult.map2(
+          CompilationResult(validateWithCustomProcessValidators(process)),
+          CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage)))): CompilationResult[Unit])((_, compiled) => {
+            compiled
+          })
     }
   }
 
@@ -252,7 +259,7 @@ object ProcessValidator {
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
-    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
+    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
   }
 
 }

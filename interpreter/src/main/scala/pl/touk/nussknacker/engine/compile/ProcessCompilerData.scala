@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.ValidatedNel
-import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api.async.DefaultAsyncInterpretationValue
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
