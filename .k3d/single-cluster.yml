@@ -11,7 +11,7 @@ options:
     disableRollback: true
   k3s:
     extraArgs:
-      - arg: --no-deploy=traefik,metrics-server #--no-deploy=traefik means that nginx will be used. (it's important for RR ingress tests)
+      - arg: --no-deploy=traefik,metrics-server #--no-deploy=traefik, but we deploy ingress-nginx-controller by custom manifests in k3s
         nodeFilters:
           - server:*
   kubeconfig:
@@ -21,3 +21,7 @@ ports:
   - port: 8081:80 # same as `--port '8081:80@loadbalancer'`
     nodeFilters:
       - loadbalancer
+volumes:
+  - volume: $GITHUB_WORKSPACE/.k3d/k3s_manifests/:/var/lib/rancher/k3s/server/manifests
+    nodeFilters:
+      - server:0

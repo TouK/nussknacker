@@ -134,8 +134,8 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
 
   private def cleanupReverseProxyPod(): Unit = {
     Future.sequence(List(
-      k8s.delete[Pod](reverseProxyPodName),
-      k8s.delete[ConfigMap](reverseProxyConfConfigMapName)
+      deleteIfExists[Pod](reverseProxyPodName),
+      deleteIfExists[ConfigMap](reverseProxyConfConfigMapName)
     )).futureValue
   }
 

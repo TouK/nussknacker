@@ -89,10 +89,10 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
 
   def stop()(implicit ec: ExecutionContext): Unit = if (cleanupKafka) {
     Future.sequence(List(
-      k8s.delete[Pod](kafkaPodName, 1),
-      k8s.delete[Pod](srPodName, 1),
-      k8s.delete[Service](kafkaServiceName, 1),
-      k8s.delete[Service](srServiceName, 1)
+      k8sUtils.deleteIfExists[Pod](kafkaPodName, 1),
+      k8sUtils.deleteIfExists[Pod](srPodName, 1),
+      k8sUtils.deleteIfExists[Service](kafkaServiceName, 1),
+      k8sUtils.deleteIfExists[Service](srServiceName, 1)
     )).futureValue
     eventually {
       k8s.getOption[Pod](kafkaPodName).futureValue shouldBe 'empty

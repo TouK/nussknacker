@@ -19,6 +19,7 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
     typeSpecificData match {
       case _: LiteStreamMetaData => None
       case rrMetaData: RequestResponseMetaData if config.enabled => Some(prepareRequestResponseIngress(processVersion, rrMetaData, serviceName, servicePort))
+      case _ if !config.enabled => None
       case other => throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
     }
 
