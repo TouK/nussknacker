@@ -8,29 +8,25 @@ In order to implement any of those you need to provide:
 ## Sources
 
 Implementing a fully functional source ([BasicFlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala))
-is more complicated since the following things has to be provided:
+is more complicated than a sink since the following things has to be provided:
 - a Flink [SourceFunction](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/streaming/api/functions/source/SourceFunction.html)
 - Flink [type information](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/fault-tolerance/serialization/types_serialization/#flinks-typeinformation-class)
-  for serializing/deserializing the emitted `#input`
+  for serializing/deserializing emitted data (e.g. `#input`)
 - a [timestamp watermark handler](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/timestampwatermark/TimestampWatermarkHandler.scala)
   so that events are correctly processed downstream, for example to avoid (or force!) dropping late events by aggregates. Read more about
   [notion of time](../scenarios_authoring/Intro.md#streaming-flink-only-notion-of-time)
   and [watermarks](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/)
 - (optionally) generating test data support (trait `FlinkSourceTestSupport`) to ease [scenarios authoring](../scenarios_authoring/TestingAndDebugging.md)
-- (optionally) if the source returns a record having generic type and its fields and methods cannot be discovered using Java reflection,
-  [ReturningType](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/typed/ReturningType.scala)
-  can be implemented to provide detailed typing info for the emitted `#input`. See here for more details about [types](./Basics.md#types).
-  Please note returning type (and much more, like dynamic parameters) can be also specified with [GenericNodeTransformation](./Components.md#genericnodetransformation)
 - (optionally) custom [context initializer](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/ContextInitializer.scala)
-  to emit more variables than `#input`. For example built-in Kafka sources emits `#inputMeta` variable with Kafka record metadata like: partition, topic, offset, etc.
+  to emit more variables than `#input`. For example built-in Kafka sources emit `#inputMeta` variable with Kafka record metadata like: partition, topic, offset, etc.
   The other example could be a file source that emits current line number as a new variable along with the content (as `#input` variable)
 
 Nussknacker also provides a more generic [FlinkSource](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSource.scala)
 for implementing sources. The difference is instead of implementing a Flink `SourceFunction`, arbitrary `DataStream[Context]`
 can be returned, however you have to remember to assign timestamps, watermarks and initialize the context.
 
-The above `BasicFlinkSource` and `FlinkSource` are **only** implementation. They have to be returned by [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Source.scala)
-which defines parameters of the source and the result (e.g. variable `#input` and its fields while using `GenericNodeTransformation`).
+When using Flink engine, all sources returned by [SourceFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Source.scala)
+have to implement `FlinkSource` (or its subtrait `BasicFlinkSource`).
 
 ### Examples
 
@@ -50,14 +46,14 @@ All of them can be used to implement a Nussknacker source.
 Sinks are easier to implement than sources. Nussknacker provides a [factory](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-utils/src/main/scala/pl/touk/nussknacker/engine/flink/util/sink/SingleValueSinkFactory.scala)
 for sinks that take only one parameter. The only thing that has to be provided is a Flink [SinkFunction](https://nightlies.apache.org/flink/flink-docs-stable/api/java/org/apache/flink/streaming/api/functions/sink/SinkFunction.html).
 
-Complex sinks can be implemented using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala).
+Sinks with multiple parameters can be implemented using [FlinkSink](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/process/FlinkSink.scala).
 The following things are required:
 - `prepareValue` - a method that turns `DataStream[Context]` into `DataStream[ValueWithContext[Value]]` containing a final, evaluated value for the sink
 - `registerSink` - a method that turns `DataStream[ValueWithContext[Value]]` into `DataStreamSink`. It's the place where
   a Flink `SinkFunction` should be registered
 
-Similarly to sources, the above `FlinkSink` is **only** implementation. It has to be returned by [SinkFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Sink.scala)
-which defines parameters of the sink.
+Similarly to sources, all sinks returned by [SinkFactory](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/Sink.scala)
+have to implement `FlinkSink` (or its subtrait `BasicFlinkSink`).
 
 Again, Flink provides [basic](https://ci.apache.org/projects/flink/flink-docs-master/docs/dev/datastream/overview/#data-sinks) sinks
 and [connectors](https://ci.apache.org/projects/flink/flink-docs-master/docs/connectors/datastream/overview) which can be used while implementing
