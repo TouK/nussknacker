@@ -73,17 +73,6 @@ export const getDynamicParameterDefinitions = createSelector(
   }
 )
 
-export const getDynamicOutputParameterDefinitions = createSelector(
-    getValidationPerformed, getDetailsParameters, getResultParameters, getProcessDefinitionData, (validationPerformed, detailsParameters, resultParameters, {processDefinition}) => (node: NodeType) => {
-        const dynamicParameterDefinitions = validationPerformed(node.id) ? detailsParameters(node.id) : resultParameters(node.id)
-        if (!dynamicParameterDefinitions) {
-            return ProcessUtils.findNodeObjectTypeDefinition(node, processDefinition)?.outputParameters
-        }
-
-        return dynamicParameterDefinitions || null
-    }
-)
-
 export const getFindAvailableVariables = createSelector(
   getProcessDefinition,
   getProcessCategory,

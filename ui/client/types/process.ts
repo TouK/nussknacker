@@ -45,7 +45,7 @@ export interface ReturnedType {
 
 export interface NodeObjectTypeDefinition {
   parameters: UIParameter[],
-  outputParameters?: UIParameter[],
+  outputParameters?: string[],
   returnType: ReturnedType | null,
 }
 
