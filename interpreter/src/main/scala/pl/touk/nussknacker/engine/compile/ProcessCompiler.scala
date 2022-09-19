@@ -20,7 +20,6 @@ import pl.touk.nussknacker.engine.compiledgraph.{CompiledProcessParts, part}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.graph.EspProcess
 import pl.touk.nussknacker.engine.graph.node.{Sink, Source => _, _}
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.split._
@@ -53,15 +52,15 @@ trait ProcessValidator extends LazyLogging {
   def validate(process: CanonicalProcess): CompilationResult[Unit] = {
 
     try {
-      compile(process).map(_ => Unit)
+      CompilationResult.map2(
+        CompilationResult(validateWithCustomProcessValidators(process)),
+        compile(process).map(_ => Unit): CompilationResult[Unit])((_, compiled) => {
+        compiled
+      })
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.id}", e)
-        CompilationResult.map2(
-          CompilationResult(validateWithCustomProcessValidators(process)),
-          CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage)))): CompilationResult[Unit])((_, compiled) => {
-            compiled
-          })
+        CompilationResult(Invalid(NonEmptyList.of(FatalUnknownError(e.getMessage))))
     }
   }
 

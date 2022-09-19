@@ -30,8 +30,12 @@ object ProcessCompilationError {
 
     override def nodeIds: Set[String] = Set(nodeId)
 
-    def nodeId: String
+    protected def nodeId: String
 
+  }
+
+  trait PropertiesError { self: ProcessCompilationError =>
+    override def nodeIds: Set[String] = Set()
   }
 
   case class UnsupportedPart(nodeId: String) extends ProcessCompilationError with InASingleNode
@@ -205,9 +209,6 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with InASingleNode {
-    override def nodeIds: Set[String] = Set()
-    override def nodeId: String = "$properties"
-  }
+  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with PropertiesError
 
 }
