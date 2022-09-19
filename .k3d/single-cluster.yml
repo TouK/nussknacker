@@ -24,4 +24,4 @@ ports:
 volumes:
   - volume: $GITHUB_WORKSPACE/.k3d/k3s_manifests/:/var/lib/rancher/k3s/server/manifests
     nodeFilters:
-      - server:0
+      - server:*
