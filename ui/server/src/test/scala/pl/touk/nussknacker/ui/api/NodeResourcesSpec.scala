@@ -44,14 +44,14 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalData", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[NodeAdditionalInfo] should matchPattern {
           case MarkdownNodeAdditionalInfo(content) if content.contains("http://touk.pl?id=a")=>
         }
       }
 
       val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalData", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
         responseAs[Option[NodeAdditionalInfo]] shouldBe None
       }
     }
