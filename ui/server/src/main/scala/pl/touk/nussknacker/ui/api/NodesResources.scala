@@ -52,10 +52,10 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
 
     pathPrefix("nodes" / Segment) { processName =>
       (post & processDetailsForName[Unit](processName)) { process =>
-        path("additionalData") {
+        path("additionalInfo") {
           entity(as[NodeData]) { nodeData =>
             complete {
-              additionalInfoProvider.prepareAdditionalDataForNode(nodeData, process.processingType)
+              additionalInfoProvider.prepareAdditionalInfoForNode(nodeData, process.processingType)
             }
           }
         } ~ path("validation") {
@@ -122,7 +122,7 @@ class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]
   private val providers: ProcessingTypeDataProvider[Option[NodeData => Future[Option[NodeAdditionalInfo]]]] = typeToConfig.mapValues(pt => ScalaServiceLoader
     .load[NodeAdditionalInfoProvider](pt.modelClassLoader.classLoader).headOption.map(_.additionalInfo(pt.processConfig)))
 
-  def prepareAdditionalDataForNode(nodeData: NodeData, processingType: ProcessingType)(implicit ec: ExecutionContext): Future[Option[NodeAdditionalInfo]] = {
+  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(implicit ec: ExecutionContext): Future[Option[NodeAdditionalInfo]] = {
     (for {
       provider <- OptionT.fromOption[Future](providers.forType(processingType).flatten)
       data <- OptionT(provider(nodeData))

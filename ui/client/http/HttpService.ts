@@ -376,10 +376,30 @@ class HttpService {
     return promise
   }
 
-  getNodeAdditionalData(processId, node): Promise<AxiosResponse<NodeAdditionalInfo>> {
-    const promise = api.post<NodeAdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalData`, node)
+  validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
+    const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToFetchState", "Failed to get node additional data"),
+        i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
+        error,
+        true
+    ))
+    return promise
+  }
+
+  getNodeAdditionalInfo(processId, node): Promise<AxiosResponse<NodeAdditionalInfo>> {
+    const promise = api.post<NodeAdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalInfo`, node)
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToFetchNodeAdditionalInfo", "Failed to get node additional info"),
+      error,
+      true
+    ))
+    return promise
+  }
+
+  getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<NodeAdditionalInfo>> {
+    const promise = api.post<NodeAdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties)
+    promise.catch(error => this.#addError(
+      i18next.t("notification.error.failedToFetchPropertiesAdditionalInfo", "Failed to get properties additional info"),
       error,
       true
     ))
