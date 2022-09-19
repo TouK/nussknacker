@@ -51,7 +51,6 @@ export function SubprocessInput({
         setProperty={setProperty}
       />
       <ParameterList
-        paramsFieldName="parameters"
         processDefinitionData={processDefinitionData}
         editedNode={node}
         savedNode={node}

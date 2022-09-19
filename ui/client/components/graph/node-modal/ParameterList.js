@@ -9,8 +9,9 @@ const newFields = (oldParameters, newParameters) => _.differenceWith(newParamete
 const removedFields = (oldParameters, newParameters) => _.differenceWith(oldParameters, newParameters, parametersEquals)
 const unchangedFields = (oldParameters, newParameters) => _.intersectionWith(oldParameters, newParameters, parametersEquals)
 
+const nodeDefinitionParameters = node => node?.ref.parameters
+
 export default function ParameterList({
-  paramsFieldName,
   createListField,
   createReadOnlyField,
   editedNode,
@@ -18,20 +19,15 @@ export default function ParameterList({
   savedNode,
   setNodeState,
 }) {
-  const nodeDefinitionParameters = node => _.get(node?.ref, paramsFieldName, [])
   const nodeDefinitionByName = node => _(processDefinitionData.componentGroups)?.flatMap(c => c.components)?.find(n => n.node.type === node.type && n.label === node.ref.id)?.node
   const nodeId = savedNode.id
   const savedParameters = nodeDefinitionParameters(savedNode)
-
-  const nodeDef = nodeDefinitionByName(savedNode)
-  const definitionParameters = nodeDefinitionParameters(nodeDef)
-
+  const definitionParameters = nodeDefinitionParameters(nodeDefinitionByName(savedNode))
   const diffParams = {
     added: newFields(savedParameters, definitionParameters),
     removed: removedFields(savedParameters, definitionParameters),
     unchanged: unchangedFields(savedParameters, definitionParameters),
   }
-
   const newParams = concat(diffParams.unchanged, diffParams.added)
   const parametersChanged = !zip(newParams, nodeDefinitionParameters(editedNode)).reduce((acc, params) => acc && parametersEquals(params[0], params[1]), true)
   //If subprocess parameters changed, we update state of parent component and will be rerendered, current node state is probably not ready to be rendered
