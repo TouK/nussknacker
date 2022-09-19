@@ -28,7 +28,7 @@ npm run start:backend-staging
 
 ## Using locally started backend
 
-This option uses backend started at http://localhost:8080 . For more information how to start it, take a look at [Backend instruction](../README.md) 
+This option uses backend started at http://localhost:8080 . For more information how to start it, take a look at [Backend instruction](../../CONTRIBUTING.md#running) 
 ```
 npm start
 ```

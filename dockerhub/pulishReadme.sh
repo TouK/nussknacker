@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-cd "$(dirname $0)"
+cd "$(dirname -- "$0")"
 
 if [ -f ~/.sbt/1.0/docker.sh ]; then
   . ~/.sbt/1.0/docker.sh

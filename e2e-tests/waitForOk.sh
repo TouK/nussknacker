@@ -2,7 +2,7 @@
 
 #set -e
 
-cd "$(dirname $0)"
+cd "$(dirname -- "$0")"
 
 URL_PATH=$1
 MSG_INIT=$2
