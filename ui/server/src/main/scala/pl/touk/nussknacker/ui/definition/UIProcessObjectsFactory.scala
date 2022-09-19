@@ -3,12 +3,12 @@ package pl.touk.nussknacker.ui.definition
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.component.{AdditionalPropertyConfig, ComponentGroupName, ParameterConfig, SingleComponentConfig}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, NotBlankParameterValidator, Parameter, RawParameterEditor, StringParameterEditor}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.deployment.DeploymentManager
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, generics}
-import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
@@ -17,15 +17,14 @@ import pl.touk.nussknacker.engine.definition.parameter.ParameterData
 import pl.touk.nussknacker.engine.definition.parameter.defaults.{DefaultValueDeterminerChain, DefaultValueDeterminerParameters}
 import pl.touk.nussknacker.engine.definition.parameter.editor.EditorExtractor
 import pl.touk.nussknacker.engine.definition.parameter.validator.{ValidatorExtractorParameters, ValidatorsExtractor}
-import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node.{SubprocessInputDefinition, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.restmodel.definition._
 import pl.touk.nussknacker.ui.component.ComponentDefinitionPreparer
 import pl.touk.nussknacker.ui.config.ComponentsGroupMappingConfigExtractor
 import pl.touk.nussknacker.ui.definition.additionalproperty.{AdditionalPropertyValidatorDeterminerChain, UiAdditionalPropertyEditorDeterminer}
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
-import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -120,36 +119,17 @@ object UIProcessObjectsFactory {
         val config = fixedComponentsConfig.getOrElse(id, SingleComponentConfig.zero).copy(docsUrl = docsUrl)
         val typedParameters = parameters.map(extractSubprocessParam(classLoader, config))
 
-        def mapOutputs(nodes: List[CanonicalNode]): List[CanonicalNode] = nodes.flatMap {
-          case canonicalnode.SplitNode(_, nextParts) => mapOutputs(nextParts.flatten)
-          case node => List(node)
-        }
 
         //Figure outputs parameter
-        val outputParameters = ProcessConverter.findNodes(fragment.canonical).collect {
+        val outputParameters = fragment.canonical.collectAllNodes.collect {
           case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => name
         }
-
         val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
 
         (id, FragmentObjectDefinition(objectDefinition, outputParameters))
     }.toMap
     subprocessInputs
   }
-
-  private def extractSubprocessOutputParam(name: String) = Parameter(
-    name = name,
-    typ = Typed.apply[String],
-    validators = List(MandatoryParameterValidator, NotBlankParameterValidator),
-    editor = Some(StringParameterEditor),
-    defaultValue = None,
-    additionalVariables = Map.empty,
-    variablesToHide = Set.empty,
-    branchParam = false,
-    isLazyParameter = false,
-    scalaOptionParameter = false,
-    javaOptionalParameter = false
-  )
 
   private def extractSubprocessParam(classLoader: ClassLoader, componentConfig: SingleComponentConfig)(p: SubprocessParameter): Parameter = {
     val runtimeClass = p.typ.toRuntimeClass(classLoader)
