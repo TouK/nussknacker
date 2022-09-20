@@ -258,11 +258,8 @@ class ProcessesResources(
               }
             }
           }
-        } ~ {
-          new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData)).securedRoute
-        } ~ {
-          new PropertiesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig)).securedRoute
-        }
+        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig)).securedRoute
+
       }
   }
 

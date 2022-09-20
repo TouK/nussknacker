@@ -7,11 +7,11 @@ import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.additionalInfo.{MarkdownAdditionalInfo, AdditionalInfo}
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
+import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
-import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData}
+import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, StreamMetaData}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -32,12 +32,13 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData))
+  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig))
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
+  private val processProperties = ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"))))
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
@@ -136,4 +137,31 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     }
   }
 
+  test("it should return additional info for process properties") {
+    val testProcess = ProcessTestData.sampleDisplayableProcess
+    saveProcess(testProcess) {
+      import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
+
+      Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        responseAs[AdditionalInfo] should matchPattern {
+          case MarkdownAdditionalInfo(content) if content.equals("2 threads will be used on environment 'test'") =>
+        }
+      }
+    }
+  }
+
+  test("validate properties") {
+    val testProcess = ProcessTestData.sampleDisplayableProcess
+    saveProcess(testProcess) {
+      val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
+
+      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+          parameters = None,
+          expressionType = None,
+          validationErrors = List(PrettyValidationErrors.formatErrorMessage(InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), ""))),
+          validationPerformed = true)
+      }
+    }
+  }
 }

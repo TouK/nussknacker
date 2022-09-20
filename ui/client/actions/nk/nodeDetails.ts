@@ -45,8 +45,7 @@ export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
 //TODO: use sth better, how long should be timeout?
 const validate = debounce(async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
   const nodeId = validationRequestData.nodeData.id
-  const nodeType = NodeUtils.nodeType(validationRequestData.nodeData);
-  if (nodeType === "Properties") {
+  if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
     const {data} = await HttpService.validateProperties(processId, validationRequestData.processProperties)
     callback(data, nodeId)
   } else {
