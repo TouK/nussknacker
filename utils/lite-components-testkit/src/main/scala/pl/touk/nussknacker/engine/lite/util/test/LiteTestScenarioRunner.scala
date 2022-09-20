@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
-import com.typesafe.config.Config
+import com.typesafe.config.{Config, ConfigFactory}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -12,35 +12,56 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
-import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner.{sinkName, sourceName}
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
 import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, ModelWithTestComponents, RunResult}
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, ModelWithTestComponents, RunResult, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
 object LiteTestScenarioRunner {
 
-  val sourceName = "test-source"
+  @deprecated("Use TestScenarioRunner.testDataSource instead", "1.6")
+  def sourceName: String = TestScenarioRunner.testDataSource
 
-  val sinkName = "test-sink"
+  @deprecated("Use TestScenarioRunner.testResultSink instead", "1.6")
+  def sinkName: String = TestScenarioRunner.testResultSink
+
+  implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+
+    def liteBased(config: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
+      LiteTestScenarioRunnerBuilder(List.empty, config)
+    }
+
+  }
 
 }
 
+case class LiteTestScenarioRunnerBuilder(extraComponents: List[ComponentDefinition], config: Config)
+  extends TestScenarioRunnerBuilder[LiteTestScenarioRunner, LiteTestScenarioRunnerBuilder] {
+
+  override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteTestScenarioRunnerBuilder =
+    copy(extraComponents = extraComponents)
+
+  override def build(): LiteTestScenarioRunner = new LiteTestScenarioRunner(extraComponents, config)
+
+}
+
+
+// TODO: expose like kafkaLite and flink version + add docs
 /*
   This is simplistic Lite engine runner. It can be used to test enrichers, lite custom components.
   For testing specific source/sink implementations (e.g. request-response, kafka etc.) other runners should be used
  */
-case class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Config) extends ClassBasedTestScenarioRunner {
+class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Config) extends ClassBasedTestScenarioRunner {
 
   /**
-    *  Additional source LiteTestScenarioRunner.sourceName and sink LiteTestScenarioRunner.sinkName are provided,
+    *  Additional source TestScenarioRunner.testDataSource and sink TestScenarioRunner.testResultSink are provided,
     *  so sample scenario should look like:
     *  {{{
-    *  .source("source", LiteTestScenarioRunner.sourceName)
+    *  .source("source", TestScenarioRunner.testDataSource)
     *    (...)
-    *  .emptySink("sink", LiteTestScenarioRunner.sinkName, "value" -> "#result")
+    *  .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#result")
     *  }}}
     */
   override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[R] =
@@ -48,8 +69,8 @@ case class LiteTestScenarioRunner(components: List[ComponentDefinition], config:
     .map{ result => RunResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
 
   def runWithDataReturningDetails[T: ClassTag](scenario: CanonicalProcess, data: List[T]): SynchronousResult = {
-    val testSource = ComponentDefinition(sourceName, new SimpleSourceFactory(Typed[T]))
-    val testSink = ComponentDefinition(sinkName, SimpleSinkFactory)
+    val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[T]))
+    val testSink = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
     val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, testSource :: testSink :: components)
     val inputId = scenario.nodes.head.id
 

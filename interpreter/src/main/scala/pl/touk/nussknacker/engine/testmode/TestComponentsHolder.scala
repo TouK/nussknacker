@@ -34,6 +34,8 @@ case class TestComponentHolder(runId: TestRunId) extends Serializable {
 
 object TestComponentsHolder {
 
+  val invocationCollectorComponentName = "invocationCollector"
+
   def results[T](runId: TestRunId): List[T] = invocationCollectors(runId).data()
 
   private var invocationCollectors = Map[TestRunId, InvocationsCollectingService]()
@@ -47,7 +49,7 @@ object TestComponentsHolder {
   def registerTestComponents(componentDefinitions: List[ComponentDefinition]): TestComponentHolder = synchronized {
     val runId = TestRunId(UUID.randomUUID().toString)
     val invocationCollector = new InvocationsCollectingService
-    val definitions = componentDefinitions :+ ComponentDefinition("invocationCollector", invocationCollector)
+    val definitions = componentDefinitions :+ ComponentDefinition(invocationCollectorComponentName, invocationCollector)
     components += (runId -> definitions)
     invocationCollectors += (runId -> invocationCollector)
     TestComponentHolder(runId)

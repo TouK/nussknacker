@@ -1,18 +1,15 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import com.typesafe.config.ConfigValueFactory._
 import io.circe.parser.parse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -43,9 +40,9 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
   test("should read data with json payload on avro schema based topic") {
     //Given
-    val runtime = createRuntime
-    val schemaId = runtime.registerAvroSchema(inputTopic, schema)
-    runtime.registerAvroSchema(outputTopic, schema)
+    val runner = TestScenarioRunner.kafkaLiteBased().build()
+    runner.registerAvroSchema(inputTopic, schema)
+    runner.registerAvroSchema(outputTopic, schema)
 
     //When
     val jsonRecord =
@@ -58,7 +55,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], jsonRecord)
 
     val list: List[ConsumerRecord[Array[Byte],Array[Byte]]] = List(input)
-    val result = runtime.runWithRawData(scenario, list).validValue
+    val result = runner.runWithRawData(scenario, list).validValue
     val resultWithValue = result.copy(successes = result.successes.map(_.value()))
 
     //Then
@@ -67,19 +64,4 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
     parse(expected) shouldBe parse(resultJson)
   }
 
-
-  private def createRuntime = {
-    val config = DefaultKafkaConfig
-      // we disable default kafka components to replace them by mocked
-      .withValue("components.kafka.disabled", fromAnyRef(true))
-      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
-      .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
-
-    val mockSchemaRegistryClient = new MockSchemaRegistryClient
-    val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
-    val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
-    val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
-
-    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
-  }
 }

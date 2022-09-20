@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.openapi.functional
 
+import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.scalatest.BeforeAndAfterAll
@@ -11,13 +11,10 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.flink.util.test.NuTestScenarioRunner
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.spel
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult}
-import pl.touk.nussknacker.openapi.OpenAPIsConfig.openAPIServicesConfigVR
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
@@ -27,11 +24,11 @@ import sttp.client.{Response, SttpBackend}
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
-import java.util
 import scala.concurrent.{ExecutionContext, Future}
 
 class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
 
+  import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import spel.Implicits._
 
   def rootUrl(port: Int): String = s"http://localhost:$port/customers"
@@ -42,11 +39,11 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   }
 
   def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, _.withValue("allowedMethods", fromAnyRef(util.Arrays.asList("POST")))))
+    test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("POST"))))
   }
 
   def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, _.withValue("allowedMethods", fromAnyRef(util.Arrays.asList("POST")))))
+    test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("POST"))))
   }
 
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
@@ -95,28 +92,28 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     ScenarioBuilder
       .streaming("openapi-test")
       .parallelism(1)
-      .source("start", "source")
+      .source("start", TestScenarioRunner.testDataSource)
       .enricher("customer", "customer", "getCustomer", params: _*)
-      .processorEnd("end", "invocationCollector", "value" -> "#customer")
+      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#customer")
   }
 
   private def prepareScenarioRunner(port: Int, sttpBackend: SttpBackend[Future, Nothing, Nothing],
-                                    openAPIsConfigModify: Config => Config = identity) = {
+                                    openAPIsConfig: OpenAPIServicesConfig = OpenAPIServicesConfig()) = {
     val url = new URL(s"http://localhost:$port/swagger")
-    val stubComponent = prepareStubbedComponent(sttpBackend, openAPIsConfigModify, url)
     val finalConfig = ConfigFactory.load()
       .withValue("components.openAPI.url", fromAnyRef(url.toString))
       .withValue("components.openAPI.rootUrl", fromAnyRef(rootUrl(port)))
     val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
-    NuTestScenarioRunner
+    val stubComponent = prepareStubbedComponent(sttpBackend, openAPIsConfig, url)
+    // TODO: switch to liteBased after adding ability to override components there (currently there is only option to append not conflicting once) and rename class to *FunctionalTest
+    TestScenarioRunner
       .flinkBased(resolvedConfig, flinkMiniCluster)
       .withExtraComponents(List(stubComponent))
       .build()
   }
 
-  private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Nothing, Nothing], openAPIsConfigModify: Config => Config, url: URL) = {
+  private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Nothing, Nothing], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
-    val openAPIsConfig = openAPIsConfigModify(config).rootAs[OpenAPIServicesConfig]
     val services = SwaggerParser.parse(definition, openAPIsConfig)
     val stubbedGetCustomerOpenApiService = new SwaggerEnricher(Some(url), services.head, Map.empty, (_: ExecutionContext) => sttpBackend)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)

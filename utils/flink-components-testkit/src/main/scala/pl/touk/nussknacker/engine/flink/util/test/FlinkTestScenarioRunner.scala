@@ -1,13 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.test
 
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import cats.data.Validated.Valid
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -21,15 +18,15 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult}
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
 object testComponents {
 
   def withDataList[T: ClassTag : TypeInformation](data: List[T]): List[ComponentDefinition] = List(
-    "source" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])),
-    "noopSource" -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](List.empty, None, Typed.apply[T]))
+    TestScenarioRunner.testDataSource -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])),
+    TestScenarioRunner.noopSource -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](List.empty, None, Typed.apply[T]))
   ).map(cd => ComponentDefinition(cd._1, cd._2))
 }
 
@@ -69,16 +66,30 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
 }
 
+object FlinkTestScenarioRunner {
+
+  implicit class FlinkTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+    def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
+      FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster)
+    }
+  }
+
+}
+
 object NuTestScenarioRunner {
+  @deprecated("Use: import FlinkTestScenarioRunner._; TestScenarioRunner.flinkBased(...) instead", "1.6")
   def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-    FlinkTestScenarioRunnerBuilder(List(), config, flinkMiniCluster)
+    FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster)
   }
 }
 
-case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder) {
-  def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster)
+case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder)
+  extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
-  def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
+  override def withExtraComponents(components: List[ComponentDefinition]): FlinkTestScenarioRunnerBuilder = {
     copy(components = components)
   }
+
+  override def build() = new FlinkTestScenarioRunner(components, config, flinkMiniCluster)
+
 }

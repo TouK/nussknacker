@@ -35,27 +35,42 @@ val scenario =
 ```
 
 ### Creating test scenario runner
-Scenario should be executed inside a runner. `NuTestScenarioRunner` gives you another DLS for building runners.
+
+Scenario should be executed inside a runner. `TestScenarioRunner` gives you another DLS for building runners.
 At first, you chose type of the scenario from:
-- flink - only one right now
+- flinkBased - based on Flink engine, you need to pass to it `FlinkMiniClusterHolder`, it can be created e.g. using `FlinkSpec`:
 
 ```scala
- val testScenarioRunner = NuTestScenarioRunner
-      .flinkBased(config, flinkMiniCluster)
-      .build()
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
+val testScenarioRunner = TestScenarioRunner
+  .flinkBased(config, flinkMiniCluster)
+  .build()
 ```
 
-:::caution
-For flink runner test must extend FlinkSpec for now.
-:::
+- liteBased - based on Lite engine, no other setup needed, provides interface to communicate with engine using raw classes (similar interface as using flinkBased):
+```scala
+import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
+val testScenarioRunner = TestScenarioRunner
+  .kafkaLiteBased()
+  .build()
+```
+
+- kafkaLiteBased - also based on Lite engine, provides some more suitable methods of simulation communication with kafka, it bases on mocked schema registry, kafka server is not needed:
+```scala
+import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
+val testScenarioRunner = TestScenarioRunner
+  .kafkaLiteBased()
+  .build()
+```
 
 ### Injecting custom and mocked components
-You can inject list of your own or mocked components with `.withExtraComponents` method on `NuTestScenarioRunner` to be passed to engine model data.
+You can inject list of your own or mocked components with `.withExtraComponents` method on specified above `TestScenarioRunner` to be passed to engine model data.
 Each component should match `ComponentDefinition`. It means that ComponentDefinition passed via `.withExtraComponents` overrides the one which could be already defined in modelData for given name. Example:
 ```scala
+import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
 val stubbedGetCustomerOpenApiService: SwaggerEnricher = new SwaggerEnricher(Some(new URL(rootUrl(port))), services.head, Map.empty, stubbedBackedProvider)
 val mockComponents = List(ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService))
-val testScenarioRunner = NuTestScenarioRunner
+val testScenarioRunner = TestScenarioRunner
       .flinkBased(resolvedConfig, flinkMiniCluster)
       .withExtraComponents(mockComponents)
       .build()
