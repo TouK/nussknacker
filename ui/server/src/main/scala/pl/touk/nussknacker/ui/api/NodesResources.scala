@@ -8,7 +8,7 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.additionalInfo.{NodeAdditionalInfo, NodeAdditionalInfoProvider}
+import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -45,7 +45,7 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      typeToConfig: ProcessingTypeDataProvider[ModelData])(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
-  private val additionalInfoProvider = new AdditionalInfoProvider(typeToConfig)
+  private val additionalInfoProvider = new NodeAdditionalInfoProvider(typeToConfig)
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -116,13 +116,13 @@ object NodesResources {
 
 }
 
-class AdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]) {
+class NodeAdditionalInfoProvider(typeToConfig: ProcessingTypeDataProvider[ModelData]) {
 
   //TODO: do not load provider for each request...
-  private val providers: ProcessingTypeDataProvider[Option[NodeData => Future[Option[NodeAdditionalInfo]]]] = typeToConfig.mapValues(pt => ScalaServiceLoader
-    .load[NodeAdditionalInfoProvider](pt.modelClassLoader.classLoader).headOption.map(_.additionalInfo(pt.processConfig)))
+  private val providers: ProcessingTypeDataProvider[Option[NodeData => Future[Option[AdditionalInfo]]]] = typeToConfig.mapValues(pt => ScalaServiceLoader
+    .load[AdditionalInfoProvider](pt.modelClassLoader.classLoader).headOption.map(_.nodeAdditionalInfo(pt.processConfig)))
 
-  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(implicit ec: ExecutionContext): Future[Option[NodeAdditionalInfo]] = {
+  def prepareAdditionalInfoForNode(nodeData: NodeData, processingType: ProcessingType)(implicit ec: ExecutionContext): Future[Option[AdditionalInfo]] = {
     (for {
       provider <- OptionT.fromOption[Future](providers.forType(processingType).flatten)
       data <- OptionT(provider(nodeData))

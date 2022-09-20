@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.additionalInfo
 
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.graph.node.NodeData
 
 import scala.concurrent.Future
@@ -11,8 +12,9 @@ import scala.concurrent.Future
   *
   * additionalInfo method is invoked when node changes, so it should be relatively fast.
   */
-trait NodeAdditionalInfoProvider {
+trait AdditionalInfoProvider {
 
-  def additionalInfo(config: Config)(node: NodeData): Future[Option[NodeAdditionalInfo]]
+  def nodeAdditionalInfo(config: Config)(node: NodeData): Future[Option[AdditionalInfo]]
+  def propertiesAdditionalInfo(config: Config)(metaData: MetaData): Future[Option[AdditionalInfo]]
 
 }
