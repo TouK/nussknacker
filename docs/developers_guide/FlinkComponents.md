@@ -70,7 +70,7 @@ Great examples of custom transformers are [aggregates](../scenarios_authoring/Ag
 how components like [previousValue](../scenarios_authoring/BasicNodes.md#previousvalue), [delay](../scenarios_authoring/BasicNodes.md#delay)
 and aggregates are implemented.
 
-## Common
+## Common details
 
 Access to metadata like node id or scenario name and various helpers is provided by `FlinkCustomNodeContext`.
 
