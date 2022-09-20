@@ -211,10 +211,10 @@ class DBProcessService(managerActor: ActorRef,
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
       val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess)
 
-      val errorsWithoutEmptyProcess = validateInitialScenario(emptyCanonicalProcess, processingType, command.category)
+      val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
 
-      if (errorsWithoutEmptyProcess.nonEmpty) {
-        Future.successful(Left(ProcessValidationError(errorsWithoutEmptyProcess.map(_.message).mkString(", "))))
+      if (propertiesErrors.nonEmpty) {
+        Future.successful(Left(ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))))
       } else {
         repositoryManager
           .runInTransaction(processRepository.saveNewProcess(action))
@@ -291,7 +291,7 @@ class DBProcessService(managerActor: ActorRef,
     }
   }
 
-  private def validateInitialScenario(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {
+  private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {
     val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors
 
