@@ -91,6 +91,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
   * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) More strict filtering method types. Methods with parameters or result like `Collection[IllegalType]` are no longer available in SpEl.
+* [#3542](https://github.com/TouK/nussknacker/pull/3542) Numerous renames:
+  * trait `NodeAdditionalInfo` -> `AdditionalInfo`,
+  * class `MarkdownNodeAdditionalInfo` -> `MarkdownAdditionalInfo`
+  * trait `NodeAdditionalInfoProvider` -> `AdditionalInfoProvider`
+  * method `AdditionalInfoProvider.additionalInfo` renamed to `nodeAdditionalInfo` and new method added `propertiesAdditionalInfo`
 
 ### REST API changes
 
