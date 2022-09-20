@@ -32,7 +32,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
   protected lazy val k8s: KubernetesClient = k8sInit
   protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
-  protected val dockerTag = sys.env.getOrElse("dockerTagName", "staging-latest")
+  protected val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
     .withValue("dockerImageTag", fromAnyRef(dockerTag))
