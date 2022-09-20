@@ -1149,7 +1149,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     name := "nussknacker-lite-k8s-deploymentManager",
     libraryDependencies ++= {
       Seq(
-        "io.skuber" %% "skuber" % "2.6.2",
+        "io.github.hagay3" %% "skuber" % "3.0.2",
         "com.github.julien-truffaut" %% "monocle-core" % monocleV,
         "com.github.julien-truffaut" %% "monocle-macro" % monocleV,
         "com.typesafe.akka" %% "akka-slf4j" % akkaV % "test"

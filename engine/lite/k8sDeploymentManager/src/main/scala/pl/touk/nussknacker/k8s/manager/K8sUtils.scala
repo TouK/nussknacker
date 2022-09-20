@@ -19,6 +19,14 @@ class K8sUtils(client: KubernetesClient) {
     }
   }
 
+  def deleteIfExists[O <: skuber.ObjectResource](name: String, gracePeriodSeconds: Int = -1, namespace: Option[String] = None)
+                                                (implicit rd: ResourceDefinition[O], fmt: Format[O], lc: LoggingContext, ec: ExecutionContext) = {
+    client.getOption[O](name, namespace).flatMap {
+      case Some(_) => client.delete(name, gracePeriodSeconds = gracePeriodSeconds, namespace = namespace)
+      case None => Future.successful(())
+    }
+  }
+
 }
 
 object K8sUtils {

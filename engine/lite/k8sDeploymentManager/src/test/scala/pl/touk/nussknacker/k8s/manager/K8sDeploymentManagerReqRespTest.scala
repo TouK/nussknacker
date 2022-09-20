@@ -17,6 +17,7 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import skuber.LabelSelector.dsl._
 import skuber.json.format._
+import skuber.networking.v1.Ingress
 import skuber.{ListResource, Service}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
@@ -61,10 +62,25 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     }
   }
 
+  test("deployment of req-resp with ingress") {
+    val givenScenarioName = "reqresp-ingress"
+    val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
+    val f = createReqRespFixture(givenScenarioName, givenServicePort, extraDeployConfig = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true)))
+
+    f.withRunningScenario {
+      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
+
+      val pingContent = """Nussknacker!"""
+      val pingMessage = s"""{"ping":"$pingContent"}"""
+      val request = basicRequest.post(uri"http://localhost".port(8081).path(givenScenarioName))
+      val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+      jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
+    }
+  }
+
   private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses): Config = {
     val extraClassesVolume = "extra-classes"
-    ConfigFactory.empty
-      .withValue("mode", fromAnyRef("request-response"))
+    baseDeployConfig("request-response")
       .withValue("servicePort", fromAnyRef(port))
       .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
         "name" -> extraClassesVolume,
@@ -82,11 +98,11 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
 
-  private def createReqRespFixture(givenScenarioName: String, givenServicePort: Int, modelData: LocalModelData = modelData) = {
+  private def createReqRespFixture(givenScenarioName: String, givenServicePort: Int, modelData: LocalModelData = modelData, extraDeployConfig: Config = ConfigFactory.empty()) = {
     val extraClasses = new K8sExtraClasses(k8s,
       List(classOf[TestComponentProvider], classOf[EnvService]),
       K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
-    val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses)
+    val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses).withFallback(extraDeployConfig)
     val manager = K8sDeploymentManager(modelData, deployConfig)
     val pingSchema = """{
                        |  "type": "object",

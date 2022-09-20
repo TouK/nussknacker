@@ -266,7 +266,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
     f.withRunningScenario {
       //check if cm exists
-      k8s.list[ListResource[ConfigMap]].futureValue.items.exists(_.name == configMapName) shouldBe true
+      k8s.list[ListResource[ConfigMap]]().futureValue.items.exists(_.name == configMapName) shouldBe true
 
       //check if cm is actually mounted
       val pod = k8s.listSelected[ListResource[Pod]](requirementForName(f.version.processName)).futureValue.items.head
@@ -276,7 +276,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
       }) shouldBe true
     }
     // check that after cancelling scenario CM is still there
-    k8s.list[ListResource[ConfigMap]].futureValue.items.exists(_.name == configMapName) shouldBe true
+    k8s.list[ListResource[ConfigMap]]().futureValue.items.exists(_.name == configMapName) shouldBe true
 
     //cleanup
     k8s.delete[ConfigMap](configMapName)

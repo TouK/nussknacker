@@ -7,13 +7,21 @@ options:
   k3d:
     wait: true
     timeout: "60s"
-    disableLoadbalancer: true
+    disableLoadbalancer: false
     disableRollback: true
   k3s:
     extraArgs:
-      - arg: --no-deploy=traefik,servicelb,metrics-server
+      - arg: --no-deploy=traefik,metrics-server #--no-deploy=traefik, but we deploy ingress-nginx-controller by custom manifests in k3s
         nodeFilters:
           - server:*
   kubeconfig:
     updateDefaultKubeconfig: true
     switchCurrentContext: true
+ports:
+  - port: 8081:80 # same as `--port '8081:80@loadbalancer'`
+    nodeFilters:
+      - loadbalancer
+volumes:
+  - volume: $GITHUB_WORKSPACE/.k3d/k3s_manifests/:/var/lib/rancher/k3s/server/manifests
+    nodeFilters:
+      - server:*
