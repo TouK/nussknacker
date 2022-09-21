@@ -21,7 +21,7 @@
 * [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
 * [#3505](https://github.com/TouK/nussknacker/pull/3505) Bump node version to 16.5.1
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Fix date formatting to use client timezone
-* [#3544](https://github.com/TouK/nussknacker/pull/3544) Testkit refactor: unification of flinkBased TestScenarioRunner and kafkaLiteBased, easier usage of kafkaLiteBased
+* [#3545](https://github.com/TouK/nussknacker/pull/3545) Testkit refactor: unification of flinkBased TestScenarioRunner and kafkaLiteBased, easier usage of kafkaLiteBased
 
 1.5.0 (16 Aug 2022)
 ------------------------
