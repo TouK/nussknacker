@@ -84,7 +84,7 @@ Scenario can be run with data via `.runWithData` method. This call synchronously
 testScenarioRunner.runWithData(scenario, List(1, 3, 5))
 ```
 
-Both `flinkBased` and `liteBased` scenario test runners provides additional `source` component which is used in for providing test data in `runWithData` method.
+Both `flinkBased` and `liteBased` scenario test runners provides additional `source` component which is used for providing test data in `runWithData` method.
 Results are collected using `sink` component in `liteBased` case and `invocationCollector` in `flinkBased` case.
 All component names can be accessed using `TestScenarioRunner` object e.g. using `TestScenarioRunner.testDataSource` property.
 
