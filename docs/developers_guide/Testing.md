@@ -38,7 +38,7 @@ val scenario =
 
 Scenario should be executed inside a runner. `TestScenarioRunner` gives you another DLS for building runners.
 At first, you chose type of the scenario from:
-- flinkBased - based on Flink engine, you need to pass to it `FlinkMiniClusterHolder`, it can be created e.g. using `FlinkSpec`:
+- `flinkBased` - based on Flink engine, you need to pass to it `FlinkMiniClusterHolder`, it can be created e.g. using `FlinkSpec`:
 
 ```scala
 import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
@@ -47,7 +47,7 @@ val testScenarioRunner = TestScenarioRunner
   .build()
 ```
 
-- liteBased - based on Lite engine, no other setup needed, provides interface to communicate with engine using raw classes (similar interface as using flinkBased):
+- `kafkaLiteBased` - based on Lite engine, no other setup needed, provides suitable methods of simulation communication with kafka, it bases on mocked schema registry, kafka server is not needed:
 ```scala
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
 val testScenarioRunner = TestScenarioRunner
@@ -55,11 +55,11 @@ val testScenarioRunner = TestScenarioRunner
   .build()
 ```
 
-- kafkaLiteBased - also based on Lite engine, provides some more suitable methods of simulation communication with kafka, it bases on mocked schema registry, kafka server is not needed:
+- `liteBased` - also based on Lite engine, provides interface to communicate with engine using raw classes (not using any Kafka API, similar interface as using flinkBased):
 ```scala
-import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
+import pl.touk.nussknacker.engine.lite.util.test.LiteTestScenarioRunner._
 val testScenarioRunner = TestScenarioRunner
-  .kafkaLiteBased()
+  .liteBased()
   .build()
 ```
 
@@ -77,11 +77,30 @@ val testScenarioRunner = TestScenarioRunner
 ```
 
 ### Running scenario with data
+
 Scenario can be run with data via `.runWithData` method. This call synchronously executes scenario inside runner with data being passed to input source.
 
 ```scala
 testScenarioRunner.runWithData(scenario, List(1, 3, 5))
 ```
+
+Both `flinkBased` and `liteBased` scenario test runners provides additional `source` component which is used in for providing test data in `runWithData` method.
+Results are collected using `sink` component in `liteBased` case and `invocationCollector` in `flinkBased` case.
+All component names can be accessed using `TestScenarioRunner` object e.g. using `TestScenarioRunner.testDataSource` property.
+
+In case of `kafkaLiteBased` scenario test runner, you should use the same source/sink components as in production (e.g. `kafka`). There are available
+methods for passing avro records or jsons - you don't need to serialize them. Example for avro:
+
+```scala
+val runner = TestScenarioRunner.kafkaLiteBased().build()
+val sourceSchemaId = runner.registerAvroSchema("sourceTopic", sourceSchema)
+runner.registerAvroSchema("sinkTopic", sinkSchema)
+
+val genericRecord = new GenericRecordBuilder(sourceSchema).set("field", "value").build()
+val input = KafkaAvroConsumerRecord("sourceTopic", genericRecord, sourceSchemaId)
+runner.runWithAvroData(scenario, List(input))
+```
+
 ### Retrieving results
 
 Results of the scenario invocation can be get with `results()`
