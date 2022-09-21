@@ -123,7 +123,7 @@ object UIProcessObjectsFactory {
         //Figure outputs parameter
         val outputParameters = fragment.canonical.collectAllNodes.collect {
           case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => name
-        }
+        }.sorted
         val objectDefinition = new ObjectDefinition(typedParameters, Typed[java.util.Map[String, Any]], Some(List(category)), config)
 
         (id, FragmentObjectDefinition(objectDefinition, outputParameters))

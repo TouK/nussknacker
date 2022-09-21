@@ -8,7 +8,7 @@ import ParameterList from "./ParameterList"
 import {ParameterExpressionField} from "./ParameterExpressionField"
 import {InputWithFocus} from "../../withFocus"
 import {DescriptionField} from "./DescriptionField"
-import ParameterOutputList from "./ParameterOutputList"
+import OutputParametersList from "./OutputParametersList"
 
 export function SubprocessInput({
   fieldErrors,
@@ -86,7 +86,7 @@ export function SubprocessInput({
           </div>
         )}
       />
-      <ParameterOutputList
+      <OutputParametersList
         editedNode={node}
         fieldErrors={fieldErrors}
         isEditMode={isEditMode}
