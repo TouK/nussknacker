@@ -99,7 +99,7 @@ export type ComponentUsageType = {
 
 type NotificationActions = {
   success(message: string): void,
-  error(message: string, error: any, showErrorText: boolean): void,
+  error(message: string, error: string, showErrorText: boolean): void,
 }
 
 export interface TestProcessResponse {
