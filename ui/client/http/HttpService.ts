@@ -521,10 +521,11 @@ class HttpService {
     }
   }
 
-  async #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
+  async #addError(message: string, error?: AxiosError<any>, showErrorText = false) {
     console.warn(message, error)
     const errorResponseData = error?.response?.data || error.message
-    const errorMessage = errorResponseData instanceof Blob ? await errorResponseData.text() : errorResponseData
+    const errorMessage = errorResponseData instanceof Blob ? await errorResponseData.text() :
+        (errorResponseData instanceof Object ? JSON.stringify(errorResponseData) : errorResponseData)
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
