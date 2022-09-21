@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.util.test
 
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
@@ -12,25 +13,50 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
 
 object LiteKafkaTestScenarioRunner {
-  val DefaultKafkaConfig: Config =
-    ConfigFactory
-      .empty()
-      .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
 
-  def apply(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition]): LiteKafkaTestScenarioRunner =
-    new LiteKafkaTestScenarioRunner(schemaRegistryClient, components, DefaultKafkaConfig)
+  implicit class LiteKafkaTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+
+    def kafkaLiteBased(baseConfig: Config = ConfigFactory.load()): LiteKafkaTestScenarioRunnerBuilder = {
+      val config = baseConfig.withFallback(ConfigFactory.empty()
+        .withValue(KafkaConfigProperties.bootstrapServersProperty(), ConfigValueFactory.fromAnyRef("kafka:666"))
+        .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+        // we disable default kafka components to replace them by mocked
+        .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true)))
+      val mockSchemaRegistryClient = new MockSchemaRegistryClient
+      val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
+      val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
+      val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
+      LiteKafkaTestScenarioRunnerBuilder(mockedComponents, List.empty, config, mockSchemaRegistryClient)
+    }
+
+  }
+
 }
 
-class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, components: List[ComponentDefinition], config: Config) extends TestScenarioRunner {
+case class LiteKafkaTestScenarioRunnerBuilder(private val mockedKafkaComponents: List[ComponentDefinition], extraComponents: List[ComponentDefinition], config: Config, schemaRegistryClient: SchemaRegistryClient)
+  extends TestScenarioRunnerBuilder[LiteKafkaTestScenarioRunner, LiteKafkaTestScenarioRunnerBuilder] {
+
+  override def withExtraComponents(extraComponents: List[ComponentDefinition]): LiteKafkaTestScenarioRunnerBuilder =
+    copy(extraComponents = extraComponents)
+
+  override def build(): LiteKafkaTestScenarioRunner = new LiteKafkaTestScenarioRunner(mockedKafkaComponents ++ extraComponents, config, schemaRegistryClient)
+
+}
+
+class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config: Config, val schemaRegistryClient: SchemaRegistryClient) extends TestScenarioRunner {
 
   type SerializedInput = ConsumerRecord[Array[Byte], Array[Byte]]
   type SerializedOutput = ProducerRecord[Array[Byte], Array[Byte]]
@@ -38,7 +64,7 @@ class LiteKafkaTestScenarioRunner(schemaRegistryClient: SchemaRegistryClient, co
   type StringInput = ConsumerRecord[String, String]
   type AvroInput = ConsumerRecord[Any, KafkaAvroElement]
 
-  private val delegate: LiteTestScenarioRunner = LiteTestScenarioRunner(components, config)
+  private val delegate: LiteTestScenarioRunner = new LiteTestScenarioRunner(components, config)
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer = new StringDeserializer
 

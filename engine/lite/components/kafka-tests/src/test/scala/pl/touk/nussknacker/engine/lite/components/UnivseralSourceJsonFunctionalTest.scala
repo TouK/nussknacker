@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.Json
 import io.circe.Json.{fromInt, fromLong}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -15,7 +13,6 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
@@ -23,12 +20,10 @@ import pl.touk.nussknacker.engine.lite.util.test.{KafkaConsumerRecord, LiteKafka
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.test.{KafkaConfigProperties, SpecialSpELElement, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.util.UUID
 
@@ -43,19 +38,7 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
 
-  private val runtime: LiteKafkaTestScenarioRunner = {
-    val config = DefaultKafkaConfig
-      // we disable default kafka components to replace them by mocked
-      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
-      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
-
-    val mockSchemaRegistryClient = new MockSchemaRegistryClient
-    val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
-    val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
-    val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
-
-    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
-  }
+  private val runner: LiteKafkaTestScenarioRunner = TestScenarioRunner.kafkaLiteBased().build()
 
   // TODO: add more tests for primitives, logical tests, unions and so on, add random tests - like in LiteKafkaAvroSchemaFunctionalTest
 
@@ -80,11 +63,11 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
 
   private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, String]] = {
     val jsonScenario: CanonicalProcess = createScenario(config)
-    runtime.registerJsonSchema(config.sourceTopic, config.sourceSchema)
-    runtime.registerJsonSchema(config.sinkTopic, config.sinkSchema)
+    runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
+    runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
 
     val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
-    runtime.runWithStringData(jsonScenario, List(input))
+    runner.runWithStringData(jsonScenario, List(input))
   }
 
   private def createScenario(config: ScenarioConfig) =
