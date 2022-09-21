@@ -6,33 +6,31 @@ import ProcessUtils from "../../../common/ProcessUtils"
 import {useDiffMark} from "./PathsToMark"
 import {useTranslation} from "react-i18next"
 
-type OutputFieldProps<N extends string, V> = {
+type OutputFieldProps = {
     autoFocus?: boolean,
     value: string,
-    fieldLabel: string,
-    fieldProperty: N,
+    fieldProperty: string,
     fieldType: FieldType,
     isEditMode?: boolean,
     readonly?: boolean,
-    renderFieldLabel: (paramName: string) => JSX.Element,
+    renderedFieldLabel: JSX.Element,
     onChange: (value: string | boolean) => void,
     showValidation?: boolean,
     validators?: Validator[],
 }
 
-function OutputField<N extends string, V>({
+function OutputField({
   autoFocus,
   value,
-  fieldLabel,
   fieldProperty,
   fieldType,
   isEditMode,
   readonly,
-  renderFieldLabel,
+  renderedFieldLabel,
   onChange,
   showValidation,
   validators = [],
-}: OutputFieldProps<N, V>): JSX.Element {
+}: OutputFieldProps): JSX.Element {
   const readOnly = !isEditMode || readonly
   const className = !showValidation || allValid(validators, [value]) ? "node-input" : "node-input node-input-with-error"
   const [isMarked] = useDiffMark()
@@ -49,14 +47,14 @@ function OutputField<N extends string, V>({
       value={value}
       onChange={onChange}
     >
-      {renderFieldLabel(fieldLabel)}
+      {renderedFieldLabel}
     </Field>
   )
 }
 
-const outputParamsPath = "ref.outputParameters"
+const outputVariablePath = "ref.outputVariableNames"
 
-export default function ParameterOutputList({
+export default function OutputParametersList({
   editedNode,
   processDefinitionData,
   fieldErrors,
@@ -73,21 +71,21 @@ export default function ParameterOutputList({
     showValidation?: boolean,
     isEditMode?: boolean,
 }): JSX.Element {
-  const parameters = ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.outputParameters
-  const [params, setParams] = useState(() => parameters.reduce((previousValue, currentValue) => ({
-    ...previousValue, [currentValue]: editedNode.ref?.outputParameters[currentValue],
+  const outputParameters = ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.outputParameters
+  const [params, setParams] = useState(() => outputParameters.reduce((previousValue, currentValue) => ({
+    ...previousValue, [currentValue]: editedNode.ref?.outputVariableNames[currentValue],
   }), {}))
 
   const {t} = useTranslation()
 
   useEffect(() => {
-    setProperty(outputParamsPath, params)
+    setProperty(outputVariablePath, params)
   }, [params, setProperty])
 
-  return parameters && parameters.length === 0 ?
+  return outputParameters && outputParameters.length === 0 ?
     null :
     (
-      <div className="node-row" key="outputParameters">
+      <div className="node-row" key="outputVariableNames">
         <div
           className="node-label" 
           title={t("parameterOutputs.outputsTitle", "Fragment outputs names")}
@@ -97,18 +95,17 @@ export default function ParameterOutputList({
         <div className="node-value">
           <div className="fieldsControl">
             {
-              parameters.map(paramName => (
+              outputParameters.map(paramName => (
                 <OutputField
                   key={paramName}
                   isEditMode={isEditMode}
                   showValidation={showValidation}
                   value={params[paramName]}
-                  renderFieldLabel={renderFieldLabel}
+                  renderedFieldLabel={renderFieldLabel(paramName)}
                   onChange={value => setParams(prevState => ({...prevState, [paramName]: value}))}
                   fieldType={FieldType.input}
-                  fieldLabel={paramName}
                   fieldProperty={paramName}
-                  validators={[errorValidator(fieldErrors || [], `${outputParamsPath}.${paramName}`)]}
+                  validators={[errorValidator(fieldErrors || [], `${outputVariablePath}.${paramName}`)]}
                 />
               ))
             }

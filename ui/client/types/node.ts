@@ -32,7 +32,7 @@ export type NodeType<F extends Field = Field> = {
     id: string,
     typ: string,
     parameters: $TodoType[],
-    outputParameters: Record<string, string>,
+    outputVariableNames: Record<string, string>,
   },
   varName?: string,
   value?: $TodoType,
