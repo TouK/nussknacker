@@ -152,7 +152,7 @@ class Services extends React.Component {
   render() {
     const readonly = value => <InputWithFocus readOnly={true} type="text" className="node-input" value={value}/>
     return (
-      <div>
+      <div className="services">
         <div className="modalContentDye">
           <div className="node-table">
             {this.formRow("serviceName", "Service name", this.serviceList(this.state.services))}
