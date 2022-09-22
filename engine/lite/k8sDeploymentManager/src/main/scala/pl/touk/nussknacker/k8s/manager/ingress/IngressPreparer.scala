@@ -2,14 +2,13 @@ package pl.touk.nussknacker.k8s.manager.ingress
 
 import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions}
 import monocle.macros.GenLens
+import monocle.std.option.some
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization}
-import pl.touk.nussknacker.k8s.manager.K8sUtils.sanitizeObjectName
-import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.labelsForScenario
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer.rewriteAnnotation
+import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, RequestResponseSlugUtils}
 import play.api.libs.json.Json
 import skuber.networking.v1.Ingress
-import monocle.std.option.some
 
 case class IngressConfig(enabled: Boolean, host: Option[String], rootPath: String = "/", config: Config = ConfigFactory.empty())
 
@@ -24,7 +23,7 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
     }
 
   private def prepareRequestResponseIngress(processVersion: ProcessVersion, rrMetaData: RequestResponseMetaData, serviceName: String, servicePort: Int): Ingress = {
-    val objectName = IngressPreparer.name(nuInstanceName, s"scenario-${processVersion.processName.value}")
+    val objectName = K8sDeploymentManager.objectNameForScenario(processVersion, nuInstanceName, None)
     val labels = labelsForScenario(processVersion, nuInstanceName)
     val slug = RequestResponseSlugUtils.determineSlug(processVersion.processName, rrMetaData, nuInstanceName)
 
@@ -51,11 +50,5 @@ class IngressPreparer(config: IngressConfig, nuInstanceName: Option[String]) {
 }
 
 object IngressPreparer {
-  private[ingress] def name(nussknackerInstanceName: Option[String], scenarioName: String): String =
-    sanitizeObjectName(nameWithoutSanitization(nussknackerInstanceName, scenarioName))
-
-  private[ingress] def nameWithoutSanitization(nussknackerInstanceName: Option[String], scenarioName: String): String =
-    objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization(nussknackerInstanceName, scenarioName)
-
   private[ingress] val rewriteAnnotation = Map("nginx.ingress.kubernetes.io/rewrite-target" -> "/$2")
 }

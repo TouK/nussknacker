@@ -28,7 +28,7 @@ class IngressPreparerTest extends AnyFunSuite {
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(Ingress(
       metadata = ObjectMeta(
-        name = "foo-release-scenario-some-name",
+        name = "foo-release-scenario-4-some-name",
         labels = Map(
           "nussknacker.io/scenarioName" -> "some-name-59107c750f",
           "nussknacker.io/scenarioId" -> "4",
@@ -59,7 +59,7 @@ class IngressPreparerTest extends AnyFunSuite {
 
     preparer.prepare(processVersion, requestResponseMetaData, serviceName, servicePort) shouldBe Some(Ingress(
       metadata = ObjectMeta(
-        name = "scenario-some-name",
+        name = "scenario-4-some-name",
         labels = Map(
           "nussknacker.io/scenarioName" -> "some-name-59107c750f",
           "nussknacker.io/scenarioId" -> "4",

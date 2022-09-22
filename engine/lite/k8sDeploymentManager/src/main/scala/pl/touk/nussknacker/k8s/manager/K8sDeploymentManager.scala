@@ -168,7 +168,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         secretIdLabel isNot secret.name
       ))
     } yield {
-      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}${ingressOpt.map(i => s", ingress: ${i.name}")}")
+      logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}${ingressOpt.map(i => s", ingress: ${i.name}").getOrElse("")}")
       logger.trace(s"K8s deployment name: ${deployment.name}: K8sDeploymentConfig: ${config.k8sDeploymentConfig}")
       None
     }

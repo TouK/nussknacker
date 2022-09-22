@@ -30,3 +30,7 @@ ui/client/cypress/fixtures/env.json
 *.swp
 fe-dist.tgz
 target.tgz
+.k3d/k3s_manifests/ccm.yaml
+.k3d/k3s_manifests/coredns.yaml
+.k3d/k3s_manifests/local-storage.yaml
+.k3d/k3s_manifests/rolebindings.yaml
