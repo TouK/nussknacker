@@ -12,6 +12,7 @@ import {
 } from "../../types"
 
 import {debounce} from "lodash"
+import NodeUtils from "../../components/graph/NodeUtils";
 
 export type NodeValidationUpdated = { type: "NODE_VALIDATION_UPDATED", validationData: ValidationData, nodeId: string }
 export type NodeValidationClear = { type: "NODE_VALIDATION_CLEAR", nodeId: string }
@@ -44,19 +45,20 @@ export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
 //TODO: use sth better, how long should be timeout?
 const validate = debounce(async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
   const nodeId = validationRequestData.nodeData.id
-  const {data} = await HttpService.validateNode(processId, validationRequestData)
-  callback(data, nodeId)
+  if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
+    const {data} = await HttpService.validateProperties(processId, validationRequestData.processProperties)
+    callback(data, nodeId)
+  } else {
+    const {data} = await HttpService.validateNode(processId, validationRequestData)
+    callback(data, nodeId)
+  }
 }, 500)
 
 export function validateNodeData(processId: string, validationRequestData: ValidationRequest): ThunkAction {
   return (dispatch) => {
-    //Properties are "special types" which are not compatible with NodeData in BE
-    const {nodeData} = validationRequestData
-    if (nodeData.type && nodeData.type !== "Properties") {
-      validate(processId, validationRequestData, (data, nodeId) => {
-        dispatch(nodeValidationDataUpdated(data, nodeId))
-      })
-    }
+    validate(processId, validationRequestData, (data, nodeId) => {
+      dispatch(nodeValidationDataUpdated(data, nodeId))
+    })
   }
 }
 

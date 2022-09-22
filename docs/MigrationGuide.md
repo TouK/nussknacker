@@ -24,6 +24,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### REST API changes                   
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Dates returned by REST API (createdAt, modifiedAt, createDate) are now returned in Zulu time, with timezone indication. This affects e.g. `/api/procecesses`, `/api/processes/{scenarioId}`, `/api/processes/{scenarioId}/activity` 
+* [#3542](https://github.com/TouK/nussknacker/pull/3542) Node additional info path renamed from `nodes/{scenarioId}/additionalData` to `nodes/{scenarioId}/additionalInfo`
 
 ### Scenario API changes
 * [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
@@ -91,6 +92,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * package `pl.touk.nussknacker.engine.avro` -> `pl.touk.nussknacker.engine.schemedkafka`
   * object `KafkaAvroBaseComponentTransformer` -> `KafkaUniversalComponentTransformer`
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) More strict filtering method types. Methods with parameters or result like `Collection[IllegalType]` are no longer available in SpEl.
+* [#3542](https://github.com/TouK/nussknacker/pull/3542) Numerous renames:
+  * trait `NodeAdditionalInfo` -> `AdditionalInfo`,
+  * class `MarkdownNodeAdditionalInfo` -> `MarkdownAdditionalInfo`
+  * trait `NodeAdditionalInfoProvider` -> `AdditionalInfoProvider`
+  * method `AdditionalInfoProvider.additionalInfo` renamed to `nodeAdditionalInfo` and new method added `propertiesAdditionalInfo`
 
 ### REST API changes
 

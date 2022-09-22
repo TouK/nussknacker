@@ -7,7 +7,7 @@ import {NodeTableBody} from "./NodeDetailsContent/NodeTable"
 import {IdField} from "./IdField"
 import {NodeField} from "./NodeField"
 import {FieldType} from "./editors/field/Field"
-import {errorValidator} from "./editors/Validators"
+import {errorValidator, literalIntegerValueValidator} from "./editors/Validators"
 import AdditionalProperty from "./AdditionalProperty"
 import {DescriptionField} from "./DescriptionField"
 
@@ -71,7 +71,7 @@ export function Properties({
                 fieldType={FieldType.input}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[errorValidator(fieldErrors || [], "parallelism")]}
+                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}
                 autoFocus
               />
               <NodeField
@@ -83,7 +83,7 @@ export function Properties({
                 fieldType={FieldType.input}
                 fieldLabel={"Checkpoint interval in seconds"}
                 fieldProperty={"typeSpecificProperties.checkpointIntervalInSeconds"}
-                validators={[errorValidator(fieldErrors || [], "checkpointIntervalInSeconds")]}
+                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "checkpointIntervalInSeconds")]}
               />
               <NodeField
                 isEditMode={isEditMode}
@@ -121,7 +121,7 @@ export function Properties({
                 fieldType={FieldType.input}
                 fieldLabel={"Parallelism"}
                 fieldProperty={"typeSpecificProperties.parallelism"}
-                validators={[errorValidator(fieldErrors || [], "parallelism")]}
+                validators={[literalIntegerValueValidator, errorValidator(fieldErrors || [], "parallelism")]}
                 autoFocus
               />
             ) :
