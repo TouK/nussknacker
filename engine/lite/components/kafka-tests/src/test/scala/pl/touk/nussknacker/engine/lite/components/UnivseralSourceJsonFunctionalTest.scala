@@ -61,7 +61,7 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   private def runWithValueResults(config: ScenarioConfig) =
     runWithResults(config).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
 
-  private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, String]] = {
+  private def runWithResults(config: ScenarioConfig): RunnerResult[RunResult[ProducerRecord[String, String]]] = {
     val jsonScenario: CanonicalProcess = createScenario(config)
     runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
     runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)

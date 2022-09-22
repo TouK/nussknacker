@@ -64,7 +64,7 @@ class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Conf
     *  .emptySink("sink", TestScenarioRunner.testResultSink, "value" -> "#result")
     *  }}}
     */
-  override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[R] =
+  override def runWithData[I:ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[RunResult[R]] =
     runWithDataReturningDetails(scenario, data)
     .map{ result => RunResult(result._1, result._2.map(_.result.asInstanceOf[R])) }
 

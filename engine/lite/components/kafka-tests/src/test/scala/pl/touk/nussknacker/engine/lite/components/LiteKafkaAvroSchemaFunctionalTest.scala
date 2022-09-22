@@ -452,7 +452,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
       case v => v
     }))
 
-  private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, Any]] = {
+  private def runWithResults(config: ScenarioConfig): RunnerResult[RunResult[ProducerRecord[String, Any]]] = {
     val avroScenario = createScenario(config)
     val runner = TestScenarioRunner.kafkaLiteBased().build()
     val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)

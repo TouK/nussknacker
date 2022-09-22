@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
   */
 object TestScenarioRunner {
 
-  type RunnerResult[R] = ValidatedNel[ProcessCompilationError, RunResult[R]]
+  type RunnerResult[R] = ValidatedNel[ProcessCompilationError, R]
 
   // Maybe we should replace ids with more meaningful: test-data, rest-result?
   val testDataSource = "source"
@@ -53,7 +53,7 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
   //todo add generate test data support
-  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerResult[R]
+  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerResult[RunResult[R]]
 }
 
 object RunResult {
