@@ -5,7 +5,7 @@ import io.circe.Json
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.deployment.{ProcessState, ProcessStateDefinitionManager, StateStatus}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.parseVersionAnnotation
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, progressingCondition, replicaFailureCondition, trueConditionStatus}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentStatusMapper.{availableCondition, crashLoopBackOffReason, newReplicaSetAvailable, progressingCondition, replicaFailureCondition, trueConditionStatus}
 import skuber.{Container, Pod}
 import skuber.apps.v1.Deployment
 
@@ -20,6 +20,8 @@ object K8sDeploymentStatusMapper {
   private val trueConditionStatus = "True"
 
   private val crashLoopBackOffReason = "CrashLoopBackOff"
+
+  private val newReplicaSetAvailable = "NewReplicaSetAvailable"
 }
 
 //Based on https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#deployment-status
@@ -50,7 +52,11 @@ class K8sDeploymentStatusMapper(definitionManager: ProcessStateDefinitionManager
     def anyContainerInState(state: Container.State) = pods.flatMap(_.status.toList).flatMap(_.containerStatuses).exists(_.state.exists(_ == state))
 
     (condition(availableCondition), condition(progressingCondition), condition(replicaFailureCondition)) match {
-      case (Some(available), _, _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
+      case (Some(available), None, _) if isTrue(available) => (SimpleStateStatus.Running, None, Nil)
+      // Regarding https://kubernetes.io/docs/concepts/workloads/controllers/deployment/#complete-deployment
+      // "type: Progressing with status: "True" means that your Deployment is either in the middle of a rollout and it is progressing
+      // or that it has successfully completed its progress and the minimum required new replicas are available ..."
+      case (Some(available), Some(progressing), _) if isTrue(available) && isTrue(progressing) && progressing.reason.contains(newReplicaSetAvailable) => (SimpleStateStatus.Running, None, Nil)
       case (_, Some(progressing), _) if isTrue(progressing) && anyContainerInState(Container.Waiting(Some(crashLoopBackOffReason))) =>
         logger.debug(s"Some containers are in waiting state with CrashLoopBackOff reason - returning Restarting status. Pods: $pods")
         (SimpleStateStatus.Restarting, None, Nil)

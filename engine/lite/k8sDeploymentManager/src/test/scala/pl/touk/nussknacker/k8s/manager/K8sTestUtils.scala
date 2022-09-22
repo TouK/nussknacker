@@ -72,7 +72,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
       eventually {
         new Socket("localhost", localPort)
       }
-      action
+      action(localPort)
     }
   }
 
