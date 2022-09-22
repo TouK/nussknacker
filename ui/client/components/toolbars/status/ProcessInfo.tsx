@@ -5,11 +5,13 @@ import {SwitchTransition} from "react-transition-group"
 import {RootState} from "../../../reducers"
 import {
   getFetchedProcessDetails,
-  getProcessState,
   getProcessUnsavedNewName,
   isProcessRenamed,
-  isProcessStateLoaded,
 } from "../../../reducers/selectors/graph"
+import {
+  getProcessState,
+  isProcessStateLoaded
+} from "../../../reducers/selectors/scenarioState";
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"

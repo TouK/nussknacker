@@ -6,6 +6,7 @@ import ProcessStateUtils from "../../components/Process/ProcessStateUtils"
 import {Process} from "../../types"
 import {ProcessCounts} from "../graph"
 import {RootState} from "../index"
+import {getProcessState, isProcessStateLoaded} from "./scenarioState";
 
 export const getGraph = (state: RootState): RootState["graphReducer"] => state.graphReducer
 
@@ -17,8 +18,7 @@ export const getProcessName = getProcessId
 export const getProcessUnsavedNewName = createSelector(getGraph, (g) => g?.unsavedNewName)
 export const getProcessVersionId = createSelector(getFetchedProcessDetails, d => d?.processVersionId)
 export const getProcessCategory = createSelector(getFetchedProcessDetails, d => d?.processCategory || "")
-export const isProcessStateLoaded = createSelector(getGraph, d => !!d?.processStateLoaded)
-export const getProcessState = createSelector(getGraph, d => d?.processState)
+
 export const isLatestProcessVersion = createSelector(getFetchedProcessDetails, d => d?.isLatestVersion)
 export const isSubprocess = createSelector(getProcessToDisplay, p => p.properties?.isSubprocess)
 export const isArchived = createSelector(getFetchedProcessDetails, p => p?.isArchived)
