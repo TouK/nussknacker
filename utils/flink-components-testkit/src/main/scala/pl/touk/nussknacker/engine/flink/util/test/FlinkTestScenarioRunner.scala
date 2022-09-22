@@ -17,8 +17,8 @@ import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
 import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestRunId, TestServiceInvocationCollector}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunListResult, RunResult, RunUnitResult, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
@@ -34,7 +34,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
   var testComponentHolder: TestComponentHolder = _
 
-  override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerResult[RunResult[R]] = {
+  override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
     val componentsWithData = testComponents.withDataList(data)
     val componentsWithTestComponents = this.components ++ componentsWithData
@@ -46,7 +46,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
   /**
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
-  def runAndCollectResults[R](scenario: CanonicalProcess): RunnerResult[RunResult[R]] = {
+  def runAndCollectResults[R](scenario: CanonicalProcess): RunnerListResult[R] = {
     run(scenario, ProductionServiceInvocationCollector, None).map { _ =>
       collectResults()
     }
@@ -81,10 +81,11 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
       val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
       registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, testRunId)
       env.executeAndWaitForFinished(scenario.id)()
+      RunUnitResult(errors = Nil)
     }
   }
 
-  private def collectResults[R](): RunResult[R] = {
+  private def collectResults[R](): RunListResult[R] = {
     //TODO: add runtime errors handling
     val results = testComponentHolder.results(testComponentHolder.runId).map((k: Any) => k.asInstanceOf[R])
     RunResult.successes(results)

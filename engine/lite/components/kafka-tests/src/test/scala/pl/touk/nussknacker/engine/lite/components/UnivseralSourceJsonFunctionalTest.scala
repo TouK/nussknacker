@@ -21,8 +21,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
+import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.util.UUID
@@ -61,7 +61,7 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   private def runWithValueResults(config: ScenarioConfig) =
     runWithResults(config).map(_.mapSuccesses(r => CirceUtil.decodeJsonUnsafe[Json](r.value(), "invalid json string")))
 
-  private def runWithResults(config: ScenarioConfig): RunnerResult[RunResult[ProducerRecord[String, String]]] = {
+  private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, String]] = {
     val jsonScenario: CanonicalProcess = createScenario(config)
     runner.registerJsonSchema(config.sourceTopic, config.sourceSchema)
     runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
@@ -94,7 +94,7 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     lazy val sinkTopic = s"$topic-output"
   }
 
-  private def valid[T](data: T): Valid[RunResult[T]] =
+  private def valid[T](data: T): Valid[RunListResult[T]] =
     Valid(RunResult.success(data))
 
   private def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
