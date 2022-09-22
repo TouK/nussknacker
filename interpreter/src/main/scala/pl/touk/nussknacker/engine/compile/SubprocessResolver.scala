@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, F
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
 
+
 object SubprocessResolver {
   def apply(subprocesses: Iterable[CanonicalProcess]): SubprocessResolver =
     SubprocessResolver(subprocesses.map(a => a.metaData.id -> a).toMap.get _)
@@ -79,10 +80,9 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
           val subResolvedV = resolveCanonical(idPrefix :+ subprocessInput.id)(subprocessNodes)
           val additionalResolved = subprocessAdditionalBranches.map(resolveCanonical(idPrefix :+ subprocessInput.id)).sequence
 
-
           //we replace subprocess outputs with following nodes from parent process
           val nexts = (nextResolvedV, subResolvedV, additionalResolved)
-            .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved, subprocessInput.id), nextResolved, additionalResolved) }
+            .mapN { (nodeResolved, nextResolved, additionalResolved) =>(replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
             .andThen { case (replacement, nextResolved, additionalResolved) =>
               additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
                 replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
@@ -117,11 +117,22 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
   //we replace outputs in subprocess with part of parent process
-  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
+  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Option[Map[String, String]]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
-      case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => replacement.get(name) match {
-        case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
-        case None => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
+      case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => {
+        //it's temporary solutions
+        val maybeOutputName = outputs match {
+          case None => Some(name)
+          case Some(map) => map.get(name)
+        }
+
+        maybeOutputName
+          .map{ outputName => replacement.get(name) match {
+            case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
+            case None => invalidBranches(UnknownSubprocessOutput(outputName, Set(id, parentId)))
+          }}
+          .getOrElse(invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId))))
+          .asInstanceOf[ValidatedWithBranches[CanonicalBranch]]
       }
     }, NodeDataFun.id)
   }

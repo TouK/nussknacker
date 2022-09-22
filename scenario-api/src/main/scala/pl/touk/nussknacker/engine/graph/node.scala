@@ -197,7 +197,6 @@ object node {
     override val componentId: String = ref.id
   }
 
-
   //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
   case class SubprocessOutput(id: String, outputName: String, fields: List[Field], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
@@ -259,6 +258,5 @@ object NodeDataCodec {
 
   implicit val nodeDataEncoder: Encoder[NodeData] = deriveConfiguredEncoder
   implicit val nodeDataDecoder: Decoder[NodeData] = deriveConfiguredDecoder
-
 
 }

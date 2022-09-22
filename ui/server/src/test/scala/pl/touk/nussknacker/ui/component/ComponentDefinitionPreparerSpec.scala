@@ -16,6 +16,7 @@ import pl.touk.nussknacker.restmodel.definition.{ComponentGroup, NodeEdges, Node
 import pl.touk.nussknacker.engine.graph.EdgeType._
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestPermissions, TestProcessingTypes}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
+import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory.FragmentObjectDefinition
 import pl.touk.nussknacker.ui.process.ConfigProcessCategoryService
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
@@ -181,7 +182,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
   private def prepareGroups(fixedConfig: Map[String, String], componentsGroupMapping: Map[ComponentGroupName, Option[ComponentGroupName]],
                             processDefinition: ProcessDefinition[ObjectDefinition] = ProcessTestData.processDefinition): List[ComponentGroup] = {
     // TODO: this is a copy paste from UIProcessObjectsFactory.prepareUIProcessObjects - should be refactored somehow
-    val subprocessInputs = Map[String, ObjectDefinition]()
+    val subprocessInputs = Map[String, FragmentObjectDefinition]()
     val uiProcessDefinition = UIProcessObjectsFactory.createUIProcessDefinition(processDefinition, subprocessInputs, Set.empty, processCategoryService)
     val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
     val fixedComponentsConfig = fixedConfig.mapValues(v => SingleComponentConfig(None, None, None, Some(ComponentGroupName(v)), None))

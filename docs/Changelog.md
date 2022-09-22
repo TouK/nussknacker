@@ -24,6 +24,7 @@
 * [#3542](https://github.com/TouK/nussknacker/pull/3542) Feature: properties validation and properties additional info 
   (similar to `NodeAdditionalInfo`)
 * [#3545](https://github.com/TouK/nussknacker/pull/3545) Testkit refactor: unification of flinkBased TestScenarioRunner and kafkaLiteBased, easier usage of kafkaLiteBased
+* [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment outputs
 
 1.5.0 (16 Aug 2022)
 ------------------------

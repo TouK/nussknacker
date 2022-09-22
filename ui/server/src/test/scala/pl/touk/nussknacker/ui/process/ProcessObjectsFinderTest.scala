@@ -16,14 +16,13 @@ import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputD
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
-import pl.touk.nussknacker.ui.api.helpers.TestCategories._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 
 class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
@@ -64,7 +63,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
     ScenarioBuilder
       .streaming("fooProcess4")
       .source("source", existingSourceFactory)
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
+      .subprocessOneOut("sub", "subProcess1", "output", "fragmentResult", "ala" -> "'makota'")
       .emptySink("sink", existingSinkFactory)))
 
   private val processWithSomeBasesStreaming = displayableToProcess(TestProcessUtil.toDisplayable(
@@ -95,22 +94,10 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       .streaming("processWithSomeBases")
       .source("source", existingSourceFactory)
       .customNode("custom", "outCustom", otherExistingStreamTransformer2)
-      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map(
+      .subprocess(subprocess.metaData.id, subprocess.metaData.id, Nil, Map.empty, Map(
         "sink" -> GraphBuilder.emptySink("sink", existingSinkFactory)
       ))
   ))
-
-  private val invalidProcessWithAllObjects = displayableToProcess(TestProcessUtil.toDisplayable(
-    ScenarioBuilder
-      .streaming("processWithAllObjects")
-      .source("source", existingSourceFactory)
-      .subprocessOneOut("sub", "subProcess1", "output", "ala" -> "'makota'")
-      .customNode("custom", "out1", existingStreamTransformer)
-      .customNode("custom2", "out2", otherExistingStreamTransformer)
-      .processor("processor1", existingServiceId)
-      .processor("processor2", otherExistingServiceId)
-      .filter("filterInvalid", "#variableThatDoesNotExists == 1")
-      .emptySink("sink", existingSinkFactory)))
 
   private val defaultComponentIdProvider = new DefaultComponentIdProvider(Map(
     Streaming -> Map(

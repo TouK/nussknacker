@@ -43,12 +43,14 @@ describe("Fragment", () => {
     cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
     cy.wait(750)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
-    cy.get("button[name='close']").click()
+
+    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("fragmentResult")
+    cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
-    cy.get(".ace_editor").should("be.visible").type("{selectall}#testOutput.")
+    cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 
