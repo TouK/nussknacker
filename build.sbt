@@ -858,8 +858,7 @@ lazy val liteComponentsTestkit = (project in utils("lite-components-testkit")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-components-testkit",
-  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, schemedKafkaComponentsUtils)
-
+  ).dependsOn(componentsTestkit, requestResponseRuntime, liteEngineRuntime, liteKafkaComponents)
 
 lazy val commonUtils = (project in utils("utils")).
   settings(commonSettings).
@@ -989,25 +988,29 @@ lazy val liteBaseComponents = (project in lite("components/base")).
     name := "nussknacker-lite-base-components",
   ).dependsOn(liteComponentsApi % "provided", componentsUtils % Provided, testUtils % "test", liteEngineRuntime % "test")
 
-lazy val liteKafkaComponents = (project in lite("components/kafka")).
+lazy val liteKafkaComponents: Project = (project in lite("components/kafka")).
   settings(commonSettings).
   settings(assemblyNoScala("liteKafka.jar"): _*).
   settings(
-    name := "nussknacker-lite-kafka-components",
+    name := "nussknacker-lite-kafka-components"
+    //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
+  ).dependsOn(
+  liteEngineKafkaComponentsApi % Provided,
+  liteComponentsApi % Provided,
+  componentsUtils % Provided,
+  schemedKafkaComponentsUtils)
+
+lazy val liteKafkaComponentsTests: Project =  (project in lite("components/kafka-tests")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-lite-kafka-components-tests",
     libraryDependencies ++= {
       Seq(
         "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
         "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     },
-    //TODO: avroUtils brings kafkaUtils to assembly, which is superfluous, as we already have it in engine...
-  ).dependsOn(
-  liteEngineKafkaComponentsApi % Provided,
-  liteComponentsApi % Provided,
-  componentsUtils % Provided,
-  schemedKafkaComponentsUtils,
-  liteComponentsTestkit % Test
-)
+  ).dependsOn(liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).

@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -15,22 +13,18 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.test.{KafkaConfigProperties, SpecialSpELElement, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
 import java.util.UUID
@@ -47,20 +41,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
 
   private val sourceName = "my-source"
   private val sinkName = "my-sink"
-
-  private val runtime: LiteKafkaTestScenarioRunner = {
-    val config = DefaultKafkaConfig
-      // we disable default kafka components to replace them by mocked
-      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
-      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
-
-    val mockSchemaRegistryClient = new MockSchemaRegistryClient
-    val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
-    val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
-    val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
-
-    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
-  }
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
 
@@ -428,19 +408,19 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
     }
   }
 
-  test("should catch runtime errors") {
+  test("should catch runner errors") {
     val testData = Table(
       "config",
-      //Comparing String -> Enum returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      //Comparing String -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleStrFixedV, recordStringSchema, recordEnumSchema, Input),
 
-      //FIXME: Comparing EnumV2 -> Enum returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
+      //FIXME: Comparing EnumV2 -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
       rConfig(sampleEnumV2, recordEnumSchemaV2, recordEnumSchema, Input),
 
-      //Comparing String -> Fixed returns true, but in runtime BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Fixed
+      //Comparing String -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Fixed
       rConfig(sampleString, recordStringSchema, recordFixedSchema, Input),
 
-      //FIXME: Comparing FixedV2 -> Fixed returns true, but in runtime BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
+      //FIXME: Comparing FixedV2 -> Fixed returns true, but in runner BestEffortAvroEncoder tries to encode value FixedV2 to Fixed
       rConfig(sampleFixedV2, recordFixedSchemaV2, recordFixedSchema, Input),
 
       //Situation when we put String -> UUID, where String isn't valid UUID type...
@@ -456,7 +436,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
   }
 
   //Error / bug on field schema evolution... SubV1 -> SubV2 ( currency with default value - optional field )
-  test("should catch runtime errors on field schema evolution") {
+  test("should catch runner errors on field schema evolution") {
     val config = rConfig(sampleNestedRecord, nestedRecordSchema, nestedRecordSchemaV2, Map("sub" -> SpecialSpELElement("#input.field.sub"), "str" -> sampleString), Some(lax))
     val results = runWithValueResults(config)
 
@@ -473,12 +453,13 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
     }))
 
   private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, Any]] = {
-    val avroScenario: CanonicalProcess = createScenario(config)
-    val sourceSchemaId = runtime.registerAvroSchema(config.sourceTopic, config.sourceSchema)
-    runtime.registerAvroSchema(config.sinkTopic, config.sinkSchema)
+    val avroScenario = createScenario(config)
+    val runner = TestScenarioRunner.kafkaLiteBased().build()
+    val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
+    runner.registerAvroSchema(config.sinkTopic, config.sinkSchema)
 
     val input = KafkaAvroConsumerRecord(config.sourceTopic, config.inputData, sourceSchemaId)
-    runtime.runWithAvroData(avroScenario, List(input))
+    runner.runWithAvroData(avroScenario, List(input))
   }
 
   private def createScenario(config: ScenarioConfig) =

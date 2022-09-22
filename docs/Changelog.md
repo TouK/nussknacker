@@ -23,6 +23,7 @@
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Fix date formatting to use client timezone                    
 * [#3542](https://github.com/TouK/nussknacker/pull/3542) Feature: properties validation and properties additional info 
   (similar to `NodeAdditionalInfo`)
+* [#3545](https://github.com/TouK/nussknacker/pull/3545) Testkit refactor: unification of flinkBased TestScenarioRunner and kafkaLiteBased, easier usage of kafkaLiteBased
 
 1.5.0 (16 Aug 2022)
 ------------------------

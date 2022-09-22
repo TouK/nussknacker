@@ -1,7 +1,5 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import com.typesafe.config.ConfigValueFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
@@ -9,14 +7,12 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
-import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
-import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.io.ByteArrayOutputStream
 
@@ -53,12 +49,11 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
       "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
 
-
   test("should read data on json schema based universal source when schemaId in header") {
     //Given
-    val runtime = createRuntime
-    val schemaId = runtime.registerJsonSchema(inputTopic, schema)
-    runtime.registerJsonSchema(outputTopic, schema)
+    val runner = createRunner
+    val schemaId = runner.registerJsonSchema(inputTopic, schema)
+    runner.registerJsonSchema(outputTopic, schema)
 
     //When
     val record =
@@ -72,7 +67,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], record, headers)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runtime.runWithRawData(scenario, list).validValue
+    val result = runner.runWithRawData(scenario, list).validValue
 
     //Then
     parse(new String(input.value())) shouldBe parse(new String(result.successes.head.value()))
@@ -80,9 +75,9 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
 
   test("should read data on json schema based universal source when schemaId in wire-format") {
     //Given
-    val runtime = createRuntime
-    val schemaId = runtime.registerJsonSchema(inputTopic, schema)
-    runtime.registerJsonSchema(outputTopic, schema)
+    val runner = createRunner
+    val schemaId = runner.registerJsonSchema(inputTopic, schema)
+    runner.registerJsonSchema(outputTopic, schema)
 
     //When
     val stringRecord =
@@ -100,23 +95,12 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
     val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], recordWithWireFormatSchemaId.toByteArray)
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
-    val result = runtime.runWithRawData(scenario, list).validValue
+    val result = runner.runWithRawData(scenario, list).validValue
 
     //Then
     parse(stringRecord) shouldBe parse(new String(result.successes.head.value()))
   }
 
-  private def createRuntime = {
-    val config = DefaultKafkaConfig
-      // we disable default kafka components to replace them by mocked
-      .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true))
-      .withValue(KafkaConfigProperties.property("schema.registry.url"), fromAnyRef("schema-registry:666"))
+  private def createRunner = TestScenarioRunner.kafkaLiteBased().build()
 
-    val mockSchemaRegistryClient = new MockSchemaRegistryClient
-    val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
-    val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
-    val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
-
-    new LiteKafkaTestScenarioRunner(mockSchemaRegistryClient, mockedComponents, config)
-  }
 }

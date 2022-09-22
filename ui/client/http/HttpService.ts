@@ -99,7 +99,7 @@ export type ComponentUsageType = {
 
 type NotificationActions = {
   success(message: string): void,
-  error(message: string, error: any, showErrorText: boolean): void,
+  error(message: string, error: string, showErrorText: boolean): void,
 }
 
 export interface TestProcessResponse {
@@ -535,19 +535,22 @@ class HttpService {
     }
   }
 
-  #addErrorMessage(message: string, error: any, showErrorText: boolean) {
+  #addErrorMessage(message: string, error: string, showErrorText: boolean) {
     if (this.#notificationActions) {
       this.#notificationActions.error(message, error, showErrorText)
     }
   }
 
-  async #addError<T>(message: string, error?: AxiosError<T>, showErrorText = false) {
+  async #addError(message: string, error?: AxiosError<unknown>, showErrorText = false) {
     console.warn(message, error)
     const errorResponseData = error?.response?.data || error.message
-    const errorMessage = errorResponseData instanceof Blob ? await errorResponseData.text() : errorResponseData
+    const errorMessage = errorResponseData instanceof Blob ?
+      await errorResponseData.text() :
+      typeof errorResponseData === "string" ? errorResponseData : JSON.stringify(errorResponseData)
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
+  
 }
 
 export default new HttpService()

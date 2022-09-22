@@ -3,8 +3,9 @@ import Notifications from "react-notification-system-redux"
 import {v4 as uuid4} from "uuid"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import Notification from "../components/notifications/Notification"
+import {Action} from "./reduxTypes"
 
-export function success(message) {
+export function success(message: string): Action {
   return Notifications.success({
     autoDismiss: 10,
     children: [
@@ -13,7 +14,7 @@ export function success(message) {
   })
 }
 
-export function error(message, error, showErrorText) {
+export function error(message: string, error?: string, showErrorText?: boolean): Action {
   const details = showErrorText && error ? error : null
   return Notifications.error({
     autoDismiss: 10,
@@ -23,7 +24,7 @@ export function error(message, error, showErrorText) {
   })
 }
 
-export function info(message) {
+export function info(message: string): Action {
   return Notifications.info({
     autoDismiss: 10,
     children: [
