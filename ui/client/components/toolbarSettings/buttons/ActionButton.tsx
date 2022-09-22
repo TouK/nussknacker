@@ -1,6 +1,7 @@
 import React, {useMemo} from "react"
 import {useSelector} from "react-redux"
-import {getProcessId, getProcessState} from "../../../reducers/selectors/graph"
+import {getProcessId} from "../../../reducers/selectors/graph"
+import {getProcessState} from "../../../reducers/selectors/scenarioState"
 import {getCustomActions} from "../../../reducers/selectors/settings"
 import CustomActionButton from "../../toolbars/status/buttons/CustomActionButton"
 

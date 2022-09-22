@@ -11,6 +11,7 @@ import {FeatureFlags, featureFlags} from "./featureFlags"
 import {UserSettings, userSettings} from "./userSettings"
 import {StateWithHistory} from "redux-undo"
 import {backendNotifications, BackendNotificationState} from "./notifications";
+import {reducer as scenarioState, ScenarioStateState} from "./scenarioState"
 
 export const reducer = combineReducers<RootState>({
   httpErrorHandler,
@@ -24,6 +25,7 @@ export const reducer = combineReducers<RootState>({
   featureFlags,
   userSettings,
   nodeDetails,
+  scenarioState
 })
 
 export type RootState = {
@@ -38,6 +40,7 @@ export type RootState = {
   featureFlags: FeatureFlags,
   userSettings: UserSettings,
   nodeDetails: NodeDetailsState,
+  scenarioState: ScenarioStateState
 }
 
 export default reducer

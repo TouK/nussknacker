@@ -29,8 +29,6 @@ const emptyGraphState: GraphState = {
   selectionState: [],
   processCounts: {},
   testResults: null,
-  processState: null,
-  processStateLoaded: false,
   unsavedNewName: null,
 }
 
@@ -41,13 +39,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       return {
         ...state,
         graphLoading: true,
-      }
-    }
-    case "PROCESS_STATE_LOADED": {
-      return {
-        ...state,
-        processState: action.processState,
-        processStateLoaded: true,
       }
     }
     case "UPDATE_IMPORTED_PROCESS": {
