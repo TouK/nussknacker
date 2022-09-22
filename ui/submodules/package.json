@@ -63,7 +63,7 @@
         "fork-ts-checker-webpack-plugin": "^6.3.4",
         "hook-shell-script-webpack-plugin": "^0.1.4",
         "html-webpack-plugin": "^5.5.0",
-        "husky": "^7.0.4",
+        "husky": "^8.0.1",
         "i18next": "^21.6.12",
         "i18next-browser-languagedetector": "^6.1.3",
         "i18next-http-backend": "^1.3.2",
