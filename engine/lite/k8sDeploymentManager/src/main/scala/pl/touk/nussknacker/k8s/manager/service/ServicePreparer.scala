@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.k8s.manager.service
 
-import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData}
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNamePrefixedWithNussknackerInstanceNameWithoutSanitization, scenarioIdLabel, scenarioVersionAnnotation}
+import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, MetaData, ProcessVersion, RequestResponseMetaData}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import pl.touk.nussknacker.k8s.manager.K8sUtils.sanitizeObjectName
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.determineSlug
@@ -13,8 +11,8 @@ import skuber.{ObjectMeta, Service}
 
 class ServicePreparer(config: K8sDeploymentManagerConfig) {
 
-  def prepare(processVersion: ProcessVersion, scenario: CanonicalProcess): Option[Service] = {
-    scenario.metaData.typeSpecificData match {
+  def prepare(processVersion: ProcessVersion, metaData: MetaData): Option[Service] = {
+    metaData.typeSpecificData match {
       case _: LiteStreamMetaData =>
         None
       case rrMetaData: RequestResponseMetaData =>
@@ -26,7 +24,7 @@ class ServicePreparer(config: K8sDeploymentManagerConfig) {
 
   private def prepareRequestResponseService(processVersion: ProcessVersion, rrMetaData: RequestResponseMetaData): Service = {
     val objectName = serviceName(config.nussknackerInstanceName, determineSlug(processVersion.processName, rrMetaData, config.nussknackerInstanceName))
-    val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
+    val annotations = versionAnnotationForScenario(processVersion)
     val labels = labelsForScenario(processVersion, config.nussknackerInstanceName)
     val selectors = Map(
       //here we use id to avoid sanitization problems

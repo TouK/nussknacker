@@ -30,7 +30,7 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
 
   //TODO: exception when non-request-response process?
-  def path(p: Option[String]) =
+  def slug(p: Option[String]) =
     new ProcessMetaDataBuilder(metaData.copy(typeSpecificData = RequestResponseMetaData(p)))
 
   def subprocessVersions(subprocessVersions: Map[String, Long]) =

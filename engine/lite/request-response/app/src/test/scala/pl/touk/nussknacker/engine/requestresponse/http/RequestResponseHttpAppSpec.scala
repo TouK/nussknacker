@@ -47,7 +47,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
 
   def processWithPathJson = ScenarioBuilder
     .requestResponse(procId.value)
-    .path(Some("customPath1"))
+    .slug(Some("customPath1"))
     .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .filter("filter1", "#input.field1() == 'a'")
@@ -55,7 +55,7 @@ class RequestResponseHttpAppSpec extends RequestResponseHttpTest {
 
   def processWithLifecycleService = ScenarioBuilder
     .requestResponse(procId.value)
-    .path(Some("customPath1"))
+    .slug(Some("customPath1"))
     .additionalFields(properties = Map(OutputSchemaProperty -> outputSchema))
     .source("start", "request1-post-source")
     .processor("service", "lifecycleService")

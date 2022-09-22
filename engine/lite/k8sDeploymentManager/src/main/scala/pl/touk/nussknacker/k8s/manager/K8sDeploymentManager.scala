@@ -5,6 +5,8 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
@@ -24,7 +26,8 @@ import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
-import pl.touk.nussknacker.k8s.manager.deployment._
+import pl.touk.nussknacker.k8s.manager.deployment.{K8sScalingConfig, _}
+import K8sScalingConfig.valueReader
 import pl.touk.nussknacker.k8s.manager.ingress.{IngressConfig, IngressPreparer}
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
@@ -32,7 +35,7 @@ import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, Pod, ResourceQuotaList, Secret, Service, k8sInit}
+import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service, k8sInit}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
@@ -40,10 +43,6 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
-import K8sScalingConfig.valueReader
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import K8sDeploymentManagerConfig._
 
 /*
   Each scenario is deployed as Deployment+ConfigMap
@@ -60,10 +59,12 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
 
   private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = forMode(config)(
-    _ => steamingInitialMetData,
-    config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-  )
+  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
+    forMode(config)(
+      _ => steamingInitialMetData,
+      config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
+    )
+  }
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
     _ => Map.empty,
@@ -135,6 +136,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         scalingOptions.replicasCount, deploymentStrategy).toEither.toTry)
       // TODO: it should be moved into CustomProcessValidator after refactor of it
       _ <- Future.fromTry(scenarioValidator.validate(canonicalProcess).toEither.toTry)
+      _ <- validatePreparedService(processVersion, canonicalProcess.metaData)
     } yield ()
   }
 
@@ -153,7 +155,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
       mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
       deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, mountableResources, scalingOptions.replicasCount))
-      serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
+      serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess.metaData).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
       ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
         .map(k8sUtils.createOrUpdate[Ingress](_).map(Some(_)))
         .getOrElse(Future.successful(None))
@@ -193,6 +195,21 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         K8sScalingOptions(replicasCount = replicasCount, noOfTasksInReplica = 1)
       case other =>
         throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
+    }
+  }
+
+  private def validatePreparedService(processVersion: ProcessVersion, metaData: MetaData): Future[Unit] = {
+    servicePreparer.prepare(processVersion, metaData) match {
+      case None =>
+        Future.successful(())
+      case Some(service) =>
+        k8s.getOption[Service](service.name).flatMap {
+          case None => Future.successful(())
+          case Some(existing) =>
+            val scenarioName = parseVersionAnnotation(existing).map(_.processName.value).getOrElse("(Unknown)")
+            val message = s"Slug is not unique, scenario $scenarioName is using it"
+            Future.failed(new IllegalArgumentException(message))
+        }
     }
   }
 
@@ -323,6 +340,9 @@ object K8sDeploymentManager {
     scenarioVersionLabel -> processVersion.versionId.value.toString
   ) ++ nussknackerInstanceName.map(nussknackerInstanceNameLabel -> _)
 
+  private[manager] def versionAnnotationForScenario(processVersion: ProcessVersion) =
+    Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
+
   /*
     Id of both is created with scenario id + sanitized name. This is to:
     - guarantee uniqueness - id is sufficient for that, sanitized name - not necessarily, as replacement/shortening may lead to duplicates
@@ -346,7 +366,7 @@ object K8sDeploymentManager {
   private[manager] def nussknackerInstanceNamePrefix(nussknackerInstanceName: Option[String]) =
     nussknackerInstanceName.map(_ + "-").getOrElse("")
 
-  private[manager] def parseVersionAnnotation(deployment: Deployment): Option[ProcessVersion] = {
+  private[manager] def parseVersionAnnotation(deployment: ObjectResource): Option[ProcessVersion] = {
     deployment.metadata.annotations.get(scenarioVersionAnnotation).flatMap(CirceUtil.decodeJson[ProcessVersion](_).toOption)
   }
 
