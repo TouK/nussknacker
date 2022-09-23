@@ -4,9 +4,9 @@ import akka.actor.ActorSystem
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
+import org.scalatest._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest._
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -21,7 +21,6 @@ import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
   self: LazyLogging =>
@@ -74,30 +73,6 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
   override protected def afterAll(): Unit = {
     cleanup()
-  }
-
-  override def run(testName: Option[String], args: Args): Status = {
-    try {
-      val status = super.run(testName, args)
-      if (status == FailedStatus) {
-        logger.error(s"Test: $testName failed. Dumping cluster-info")
-        dumpClusterInfoSupressExceptions()
-      }
-      status
-    } catch {
-      case NonFatal(ex) =>
-        dumpClusterInfoSupressExceptions()
-        throw ex
-    }
-  }
-
-  private def dumpClusterInfoSupressExceptions(): Unit = {
-    try {
-      k8sTestUtils.dumpClusterInfo()
-    } catch {
-      case NonFatal(ex) =>
-        logger.warn("Some error during cluster-info dump occurred", ex)
-    }
   }
 
 }
