@@ -314,6 +314,8 @@ jobs:
         run:  tar xfz target.tgz
       # We run k8s tests here instead of in integrationTests job because it causes RAM overhead and some other docker tests failing occasionally
       - uses: AbsaOSS/k3d-action@v2.3.0
+        env:
+          PROJECT_ROOT: ${{ github.workspace }}
         with:
           cluster-name: "k3s-default"
           k3d-version: "v5.4.1" # default version - change with caution, there was some problem with 500 exit codes for after upgrade
