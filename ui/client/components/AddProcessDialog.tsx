@@ -35,8 +35,11 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
           passProps.close()
           history.push(visualizationUrl(processId))
         } catch(error) {
-          if(error?.response?.status == 400)
+          if(error?.response?.status == 400) {
             setProcessNameValidationError(error?.response?.data)
+          } else {
+            throw error
+          }
         }
       }
     },

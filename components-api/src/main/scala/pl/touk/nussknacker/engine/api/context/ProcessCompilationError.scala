@@ -34,7 +34,8 @@ object ProcessCompilationError {
 
   }
 
-  trait PropertiesError { self: ProcessCompilationError =>
+  // All errors which we want to be seen in process as properties errors should extend this trait
+  trait ScenarioPropertiesError { self: ProcessCompilationError =>
     override def nodeIds: Set[String] = Set()
   }
 
@@ -209,6 +210,6 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with PropertiesError
+  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with ScenarioPropertiesError
 
 }

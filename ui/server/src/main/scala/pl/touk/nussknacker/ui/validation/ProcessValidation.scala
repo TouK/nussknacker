@@ -5,7 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{InASingleNode, PropertiesError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioPropertiesError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
@@ -196,10 +196,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val processErrors = errors.filter(_.nodeIds.isEmpty)
-    val (propertiesErrors, otherErrors) =  processErrors.partition{
-      case _: PropertiesError => true
-      case _ => false
-    }
+    val (propertiesErrors, otherErrors) =  processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
 
     ValidationResult.errors(
       invalidNodes = (for {
