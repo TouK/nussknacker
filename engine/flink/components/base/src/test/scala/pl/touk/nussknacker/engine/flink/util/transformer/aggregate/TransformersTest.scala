@@ -7,6 +7,7 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CannotCreateObjectError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
@@ -394,7 +395,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
         collectingListener :: defaults
       }
     }, ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 

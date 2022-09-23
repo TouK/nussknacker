@@ -5,6 +5,7 @@ import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
@@ -179,7 +180,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val model = LocalModelData(ConfigFactory.empty(), new UnionWithMemoTransformerSpec.Creator(sourceFoo, sourceBar, collectingListener))
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.withJobRunning(testProcess.id)(action)
   }
 }

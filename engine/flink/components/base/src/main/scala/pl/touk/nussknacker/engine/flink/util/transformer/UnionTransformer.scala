@@ -3,6 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.functions.co.CoMapFunction
+import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -81,7 +84,12 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
                 val valueParam = outputExpressionByBranchId(branchId)
                 stream.flatMap(new UnionMapFunction(valueParam, context))
             }
-            val connectedStream = valuesWithContexts.reduce(_.connect(_).map(identity, identity))
+            val connectedStream = valuesWithContexts.reduce(_.connect(_).map(
+              new CoMapFunction[ValueWithContext[AnyRef], ValueWithContext[AnyRef], ValueWithContext[AnyRef]]{
+                override def map1(value: ValueWithContext[AnyRef]): ValueWithContext[AnyRef] = value
+                override def map2(value: ValueWithContext[AnyRef]): ValueWithContext[AnyRef] = value
+              }
+            ))
 
             timestampAssigner
               .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))

@@ -70,7 +70,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   private def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
 }

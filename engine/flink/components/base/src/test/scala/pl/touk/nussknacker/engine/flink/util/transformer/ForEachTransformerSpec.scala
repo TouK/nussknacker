@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import org.apache.flink.streaming.api.scala._
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -86,7 +87,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     stoppableEnv.executeAndWaitForFinished(testProcess.id)()
   }
 }

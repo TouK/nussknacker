@@ -3,8 +3,10 @@ package pl.touk.nussknacker.engine.flink.util.transformer.join
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
+import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -85,7 +87,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
         val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
-          .keyBy(v => v.value, v => v.value.key)
+          .keyBy((v: ValueWithContext[String]) => v.value, (v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
           .process(aggregatorFunction)
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 

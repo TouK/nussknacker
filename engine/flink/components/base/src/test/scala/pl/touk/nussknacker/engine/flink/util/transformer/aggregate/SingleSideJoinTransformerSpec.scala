@@ -110,7 +110,7 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
     val model = modelData(input1, input2, collectingListener)
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
     val registrar = FlinkProcessRegistrar(new FlinkProcessCompiler(model), ExecutionConfigPreparer.unOptimizedChain(model))
-    registrar.register(new StreamExecutionEnvironment(stoppableEnv), testProcess, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(stoppableEnv, testProcess, ProcessVersion.empty, DeploymentData.empty)
     val id = stoppableEnv.executeAndWaitForStart(testProcess.id)
     (id, stoppableEnv)
   }

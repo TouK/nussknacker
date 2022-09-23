@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka.signal
 
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
+import org.apache.flink.streaming.api.scala._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -52,7 +53,7 @@ class KafkaSignalsSpec extends AnyFunSuite with Matchers with FlinkSpec with Kaf
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
     FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-      .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+      .register(env, process, ProcessVersion.empty, DeploymentData.empty)
 
     env.withJobRunning(process.id) {
       eventually {
@@ -73,9 +74,9 @@ object CustomSignalReader extends CustomStreamTransformer {
     FlinkCustomStreamTransformation.applyA((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
         .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
-        .map(new CoMapFunction[Context, Array[Byte], ValueWithContext[_]] {
-          override def map1(value: Context): ValueWithContext[_] = ValueWithContext("", value)
-          override def map2(value: Array[Byte]): ValueWithContext[_] = ValueWithContext[AnyRef]("", Context("id"))
+        .map(new CoMapFunction[Context, Array[Byte], ValueWithContext[AnyRef]] {
+          override def map1(value: Context): ValueWithContext[AnyRef] = ValueWithContext("", value)
+          override def map2(value: Array[Byte]): ValueWithContext[AnyRef] = ValueWithContext[AnyRef]("", Context("id"))
         })
   })
 }

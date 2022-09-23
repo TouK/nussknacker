@@ -4,7 +4,9 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -35,6 +37,7 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
@@ -215,11 +218,6 @@ object SampleNodes {
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("groupBy") groupBy: LazyParameter[String])
                (implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      val a = start
-        .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-        .keyBy((v: ValueWithContext[String]) => v.value)
-        .state
-
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
@@ -337,14 +335,14 @@ object SampleNodes {
     @MethodToInvoke(returnType = classOf[Long])
     def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
       def trans(str: DataStream[Context]): DataStream[ValueWithContext[AnyRef]] = {
-        val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext] {
+        val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
             val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
         }
-        str.transform("collectTimestammp", streamOperator)
+        str.transform("collectTimestammp", implicitly[TypeInformation[ValueWithContext[AnyRef]]], streamOperator)
       }
 
       FlinkCustomStreamTransformation(trans(_))
@@ -415,7 +413,7 @@ object SampleNodes {
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)
-              .keyBy(_ => "")
+              .keyBy((_: java.lang.Integer) => "")
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
@@ -457,7 +455,11 @@ object SampleNodes {
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         val afterMap = start
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
-        afterMap.addSink(element => MockService.add(element.value))
+        afterMap.addSink(new SinkFunction[ValueWithContext[AnyRef]] {
+          override def invoke(value: ValueWithContext[AnyRef], context: SinkFunction.Context): Unit = {
+            MockService.add(value.value)
+          }
+        })
         afterMap
       })
 

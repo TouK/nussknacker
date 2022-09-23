@@ -55,16 +55,27 @@ object SampleSignalHandlingTransformer {
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
     @MethodToInvoke(returnType = classOf[LockOutput])
-    def execute(@ParamName("input") input: LazyParameter[String]) =
+    def execute(@ParamName("input") input: LazyParameter[String]): FlinkCustomStreamTransformation =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.flatMap(context.lazyParameterHelper.lazyMapFunction(input)),
           context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
           .keyBy((v: ValueWithContext[String]) => v.value, (v: SampleProcessSignal) => v.action.key)
-          .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
-          .keyBy(_ => QueryableState.defaultKey)
-          .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Json.fromFields(List(
-            "lockEnabled" -> Json.fromBoolean(lockOutput.lockEnabled)
-          ))){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[AnyRef]]])
+          .transform(
+            "lockStreamTransform",
+            implicitly[TypeInformation[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]],
+            new LockStreamFunction(context.metaData)
+          )
+          .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
+          .transform(
+            "queryableStateTransform",
+            implicitly[TypeInformation[ValueWithContext[AnyRef]]],
+            new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](
+              lockQueryName,
+              lockOutput => Json.fromFields(List(
+                "lockEnabled" -> Json.fromBoolean(lockOutput.lockEnabled)
+              ))
+            ){}.asInstanceOf[OneInputStreamOperator[Either[LockOutputStateChanged, ValueWithContext[LockOutput]], ValueWithContext[AnyRef]]]
+          )
       })
   }
 
@@ -99,14 +110,14 @@ object SampleSignalHandlingTransformer {
       }
     }
 
-    private def setInitialStateIfStateNotDefined() = {
+    private def setInitialStateIfStateNotDefined(): Unit = {
       logger.info("Setting lock state to true")
       if (lockEnabledState.value() == null) {
         changeState(true)
       }
     }
 
-    def changeState(newValue: Boolean) = {
+    def changeState(newValue: Boolean): Unit = {
       if (lockEnabledState.value() != newValue) {
         logger.info(s"Setting lock state to $newValue")
         lockEnabledState.update(newValue)
@@ -147,7 +158,7 @@ object SampleSignalHandlingTransformer {
       }
     }
 
-    private def setInitialStateIfNoSet() = {
+    private def setInitialStateIfNoSet(): Unit = {
       if (queriedStates.value() == null) {
         queriedStates.update(Encoder[List[QueriedState]].apply(List.empty).noSpaces)
       }

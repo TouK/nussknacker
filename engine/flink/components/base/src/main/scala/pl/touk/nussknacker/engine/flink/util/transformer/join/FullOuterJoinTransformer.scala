@@ -5,8 +5,10 @@ import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
+import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.transformation._
@@ -113,8 +115,9 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), inputType, storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
 
       val stream = keyedStreams
+        .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])
         .reduce(_.union(_))
-        .keyBy(_.value.key)
+        .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction)
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 

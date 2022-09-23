@@ -31,7 +31,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
+        .register(env, process, processVersion, DeploymentData.empty)
 
       MockService.clear()
       SinkForStrings.clear()
@@ -47,7 +47,7 @@ trait ProcessTestHelpers extends FlinkSpec { self: Suite =>
       val env = flinkMiniCluster.createExecutionEnvironment()
       val modelData = LocalModelData(config, creator)
       registrar.FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-        .register(new StreamExecutionEnvironment(env), process, processVersion, DeploymentData.empty)
+        .register(env, process, processVersion, DeploymentData.empty)
 
       MockService.clear()
       env.withJobRunning(process.id)(actionToInvokeWithJobRunning)

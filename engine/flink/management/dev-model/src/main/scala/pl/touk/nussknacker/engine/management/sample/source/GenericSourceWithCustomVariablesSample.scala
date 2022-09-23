@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.api.NodeId
+import org.apache.flink.streaming.api.scala._
 
 object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 
