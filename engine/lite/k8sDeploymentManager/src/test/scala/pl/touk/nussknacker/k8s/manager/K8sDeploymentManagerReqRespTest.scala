@@ -5,7 +5,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.PatienceConfiguration.Timeout
 import org.scalatest.tags.Network
+import org.scalatest.time.{Minutes, Span}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -101,6 +103,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
         val secondVersion = 2
         val secondVersionInfo = f.version.copy(versionId = VersionId(secondVersion))
+        // It can take a while on CI :/
         f.manager.deploy(secondVersionInfo, DeploymentData.empty, preparePingPongScenario(givenScenarioName, secondVersion), None).futureValue
         eventually {
           val state = f.manager.findJobStatus(secondVersionInfo.processName).futureValue

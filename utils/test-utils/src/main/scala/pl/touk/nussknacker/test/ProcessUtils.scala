@@ -6,7 +6,7 @@ import org.scalatest.Assertion
 import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
 
 object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutures {
@@ -23,13 +23,19 @@ object ProcessUtils extends LazyLogging with Matchers with VeryPatientScalaFutur
       }
     }
     Future {
-      IOUtils.copy(process.getInputStream, System.out)
+      blocking {
+        IOUtils.copy(process.getInputStream, System.out)
+      }
     }
     Future {
-      IOUtils.copy(process.getErrorStream, System.err)
+      blocking {
+        IOUtils.copy(process.getErrorStream, System.err)
+      }
     }
     val future = Future {
-      process.waitFor()
+      blocking {
+        process.waitFor()
+      }
     }
     future.failed.foreach { ex =>
       logger.error("process.waitFor() interrupted", ex)
