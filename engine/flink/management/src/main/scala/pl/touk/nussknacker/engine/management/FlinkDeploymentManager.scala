@@ -29,7 +29,6 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       oldJob <- checkOldJobStatus(processVersion)
       _ <- checkRequiredSlotsExceedAvailableSlots(canonicalProcess, oldJob.flatMap(_.deploymentId))
     } yield ()
-    checkOldJobStatus(processVersion).map(_ => ())
   }
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
