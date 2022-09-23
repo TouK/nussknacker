@@ -4,7 +4,9 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.streaming.api.scala._
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
@@ -216,11 +218,6 @@ object SampleNodes {
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("groupBy") groupBy: LazyParameter[String])
                (implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      val a = start
-        .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-        .keyBy((v: ValueWithContext[String]) => v.value)
-        .state
-
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
