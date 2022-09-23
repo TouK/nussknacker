@@ -44,7 +44,7 @@ describe("Fragment", () => {
     cy.wait(750)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
 
-    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("fragmentResult")
+    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").clear().type("fragmentResult")
     cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
