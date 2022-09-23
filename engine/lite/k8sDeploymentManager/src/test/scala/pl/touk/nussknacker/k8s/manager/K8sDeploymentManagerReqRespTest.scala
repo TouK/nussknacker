@@ -84,7 +84,8 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val givenScenarioName = "reqresp-redeploy"
     val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
     val firstVersion = 1
-    val f = createReqRespFixture(givenScenarioName, givenServicePort, firstVersion)
+    val f = createReqRespFixture(givenScenarioName, givenServicePort, firstVersion,
+      extraDeployConfig = ConfigFactory.empty().withValue("scalingConfig.fixedReplicasCount", fromAnyRef(1)))
 
     f.withRunningScenario {
       k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>

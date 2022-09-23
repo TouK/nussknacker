@@ -241,7 +241,6 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       // lifecycle of CM (e.g. delete it on scenario canceling)
       case None => labelsForScenario(processVersion, nussknackerInstanceName)
     }
-    // TODO: extract lite-kafka-runtime-api module with LiteKafkaRuntimeDeploymentConfig class and use here
     ConfigMap(
       metadata = ObjectMeta(
         name = objectName,
