@@ -229,11 +229,6 @@ object SampleNodes {
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("groupBy") groupBy: LazyParameter[String])
                (implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-      val a = start
-        .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-        .keyBy((v: ValueWithContext[String]) => v.value)
-        .state
-
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))

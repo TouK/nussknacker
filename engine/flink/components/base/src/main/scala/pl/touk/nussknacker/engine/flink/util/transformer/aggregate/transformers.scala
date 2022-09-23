@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindo
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
