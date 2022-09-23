@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process.helpers
 
 import com.typesafe.config.{Config, ConfigFactory}
-import org.apache.flink.streaming.api.scala._
 import org.scalatest.Suite
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.dict.DictInstance

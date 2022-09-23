@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.scala._
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport

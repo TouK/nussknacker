@@ -7,8 +7,9 @@ import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
-import org.apache.flink.streaming.api.scala.{DataStream, _}
+import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableState
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
@@ -56,11 +57,10 @@ object SampleSignalHandlingTransformer {
     @MethodToInvoke(returnType = classOf[LockOutput])
     def execute(@ParamName("input") input: LazyParameter[String]) =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
-        val ds = context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.flatMap(context.lazyParameterHelper.lazyMapFunction(input)),
+        context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.flatMap(context.lazyParameterHelper.lazyMapFunction(input)),
           context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
-          .keyBy(_.value, _.action.key)
+          .keyBy((v: ValueWithContext[String]) => v.value, (v: SampleProcessSignal) => v.action.key)
           .transform("lockStreamTransform", new LockStreamFunction(context.metaData))
-        ds
           .keyBy(_ => QueryableState.defaultKey)
           .transform("queryableStateTransform", new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](lockQueryName, lockOutput => Json.fromFields(List(
             "lockEnabled" -> Json.fromBoolean(lockOutput.lockEnabled)

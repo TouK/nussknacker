@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
-import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}

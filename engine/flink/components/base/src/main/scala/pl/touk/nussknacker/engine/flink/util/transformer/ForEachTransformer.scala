@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.scala.createTypeInformation
-import org.apache.flink.streaming.api.scala.DataStream
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}

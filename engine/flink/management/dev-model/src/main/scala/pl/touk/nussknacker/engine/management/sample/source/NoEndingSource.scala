@@ -8,7 +8,6 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
-import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly

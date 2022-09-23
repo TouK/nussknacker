@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.kafka.source.flink
 
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfter
 import org.scalatest.funsuite.AnyFunSuite

@@ -6,7 +6,6 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}

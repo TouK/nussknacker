@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.process
 
 import com.typesafe.config.ConfigFactory
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion

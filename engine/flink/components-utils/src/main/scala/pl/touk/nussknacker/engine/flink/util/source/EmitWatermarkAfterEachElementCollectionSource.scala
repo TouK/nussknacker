@@ -2,9 +2,10 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.process.BasicContextInitializer
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -57,8 +58,9 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
       .map(new FlinkContextInitializingFunction(
         contextInitializer, flinkNodeContext.nodeId,
-        flinkNodeContext.convertToEngineRuntimeContext)
-      )(typeInformationFromNodeContext)
+        flinkNodeContext.convertToEngineRuntimeContext),
+        typeInformationFromNodeContext
+      )
   }
 
 }

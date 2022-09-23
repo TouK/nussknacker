@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.compiler
 import com.typesafe.config.Config
 import org.apache.flink.api.common.serialization.DeserializationSchema
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.scala.{ConnectedStreams, DataStream}
+import org.apache.flink.streaming.api.datastream.{ConnectedStreams, DataStream}
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -82,7 +82,7 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
 private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
   override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.executionEnvironment.addSource(new EmptySourceFunction[SignalType]))
+    start.connect(start.getExecutionEnvironment.addSource(new EmptySourceFunction[SignalType]))
   }
 }
 

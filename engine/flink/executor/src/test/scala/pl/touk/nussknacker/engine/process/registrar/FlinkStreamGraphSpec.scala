@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

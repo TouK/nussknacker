@@ -4,7 +4,6 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.scala._
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._

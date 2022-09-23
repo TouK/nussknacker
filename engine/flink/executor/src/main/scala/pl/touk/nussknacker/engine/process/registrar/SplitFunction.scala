@@ -2,8 +2,7 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.ProcessFunction
-import org.apache.flink.streaming.api.scala._
-import org.apache.flink.util.Collector
+import org.apache.flink.util.{Collector, OutputTag}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.{EndingReference, JoinReference, NextPartReference}
@@ -26,6 +25,6 @@ class SplitFunction(nodeToValidationCtx: Map[String, ValidationContext], typeInf
       case JoinReference(id, _, _) => (id, typeInfoMap(id))
       case er: EndingReference => (EndId, typeInfoMap(er.nodeId))
     }
-    ctx.output(OutputTag[InterpretationResult](tagName)(typeInfo), interpretationResult)
+    ctx.output(new OutputTag[InterpretationResult](tagName, typeInfo), interpretationResult)
   }
 }

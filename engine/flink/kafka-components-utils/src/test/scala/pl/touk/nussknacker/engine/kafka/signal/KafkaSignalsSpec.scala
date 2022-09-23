@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment, _}
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -68,12 +69,14 @@ object CustomSignalReader extends CustomStreamTransformer {
 
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
-  def execute() =
-    FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+  def execute(): FlinkCustomStreamTransformation =
+    FlinkCustomStreamTransformation.applyA((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
         .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
-        .map((a:Context) => ValueWithContext("", a),
-              (_:Array[Byte]) => ValueWithContext[AnyRef]("", Context("id")))
+        .map(new CoMapFunction[Context, Array[Byte], ValueWithContext[_]] {
+          override def map1(value: Context): ValueWithContext[_] = ValueWithContext("", value)
+          override def map2(value: Array[Byte]): ValueWithContext[_] = ValueWithContext[AnyRef]("", Context("id"))
+        })
   })
 }
 

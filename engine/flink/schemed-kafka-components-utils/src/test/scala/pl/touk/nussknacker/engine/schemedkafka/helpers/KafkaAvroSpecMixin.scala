@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite

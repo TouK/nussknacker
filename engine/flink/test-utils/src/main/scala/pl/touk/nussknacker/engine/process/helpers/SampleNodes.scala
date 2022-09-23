@@ -4,12 +4,13 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
-import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction}
+import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.java.functions.KeySelector
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
+import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
-import org.apache.flink.streaming.api.scala.{DataStream, _}
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -214,10 +215,15 @@ object SampleNodes {
     def execute(@ParamName("stringVal") stringVal: String,
                 @ParamName("groupBy") groupBy: LazyParameter[String])
                (implicit nodeId: NodeId, metaData: MetaData, componentUseCase: ComponentUseCase) = FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+      val a = start
+        .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
+        .keyBy((v: ValueWithContext[String]) => v.value)
+        .state
+
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-          .keyBy(_.value)
+          .keyBy((v: ValueWithContext[String]) => v.value)
           .mapWithState[ValueWithContext[AnyRef], Long] {
             case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
               (ValueWithContext(
@@ -275,7 +281,7 @@ object SampleNodes {
         .implementedBy(FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
           start
             .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
-            .keyBy(_.value)
+            .keyBy((value: ValueWithContext[String]) => value.value)
             .map(_ => ValueWithContext[AnyRef](null, Context("new")))
         }))
     }
@@ -294,7 +300,10 @@ object SampleNodes {
             val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
             inputs("end1")
               .connect(inputs("end2"))
-              .map(inputFromIr, inputFromIr)
+              .map(new CoMapFunction[Context, Context, ValueWithContext[AnyRef]]{
+                override def map1(value: Context): ValueWithContext[AnyRef] = inputFromIr(value)
+                override def map2(value: Context): ValueWithContext[AnyRef] = inputFromIr(value)
+              })
           }
         })
     }
@@ -326,13 +335,20 @@ object SampleNodes {
   object ExtractAndTransformTimestamp extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Long])
-    def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation
-      = FlinkCustomStreamTransformation(_.transform("collectTimestamp",
-        new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
+    def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
+      def trans(str: DataStream[Context]): DataStream[ValueWithContext[AnyRef]] = {
+        val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext] {
           override def processElement(element: StreamRecord[Context]): Unit = {
-            output.collect(new StreamRecord[ValueWithContext[AnyRef]](ValueWithContext(element.getTimestamp.underlying(), element.getValue), timestampToSet))
+            val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
+            val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
+            output.collect(outputResult)
           }
-        }))
+        }
+        str.transform("collectTimestammp", streamOperator)
+      }
+
+      FlinkCustomStreamTransformation(trans(_))
+    }
 
   }
 

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
 import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
