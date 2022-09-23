@@ -144,6 +144,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
                       canonicalProcess: CanonicalProcess,
                       savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     val scalingOptions = determineScalingOptions(canonicalProcess)
+    logger.debug(s"Deploying $processVersion")
     for {
       configMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map(
         "scenario.json" -> canonicalProcess.asJson.noSpaces,
@@ -159,7 +160,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
         .map(k8sUtils.createOrUpdate[Ingress](_).map(Some(_)))
         .getOrElse(Future.successful(None))
-      //we don't wait until deployment succeeds before deleting old map, but for now we don't rollback anyway
+      //we don't wait until deployment succeeds before deleting old maps and service, but for now we don't rollback anyway
       //https://github.com/kubernetes/kubernetes/issues/22368#issuecomment-790794753
       _ <- k8s.deleteAllSelected[ListResource[ConfigMap]](LabelSelector(
         requirementForName(processVersion.processName),
@@ -168,6 +169,11 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       _ <- k8s.deleteAllSelected[ListResource[Secret]](LabelSelector(
         requirementForName(processVersion.processName),
         secretIdLabel isNot secret.name
+      ))
+      //cleaning up after after possible slug change
+      _ <- k8s.deleteAllSelected[ListResource[Service]](LabelSelector(
+        requirementForName(processVersion.processName),
+        scenarioVersionLabel isNot processVersion.versionId.value.toString
       ))
     } yield {
       logger.info(s"Deployed ${processVersion.processName.value}, with deployment: ${deployment.name}, configmap: ${configMap.name}${serviceOpt.map(svc => s", service: ${svc.name}").getOrElse("")}${ingressOpt.map(i => s", ingress: ${i.name}").getOrElse("")}")

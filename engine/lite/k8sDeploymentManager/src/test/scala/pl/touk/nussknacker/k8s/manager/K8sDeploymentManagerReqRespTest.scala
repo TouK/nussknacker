@@ -20,7 +20,7 @@ import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import skuber.LabelSelector.dsl._
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ListResource, Service}
+import skuber.{LabelSelector, ListResource, Service}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
 import scala.collection.JavaConverters._
@@ -131,6 +131,23 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
       val failure = f.manager.validate(newVersion, DeploymentData.empty, scenario).failed.futureValue
       failure.getMessage shouldBe s"Slug is not unique, scenario $givenScenarioName is using it"
+    }
+
+  }
+
+  test("check cleanup after slug change") {
+    val givenScenarioName = "reqresp-slugchange"
+    val slug = "slug1"
+    val f = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
+
+    f.withRunningScenario {
+      val otherSlug = "otherSlug"
+      val changedSlug = preparePingPongScenario(givenScenarioName, 1, Some(otherSlug))
+      val newVersion = f.version.copy(versionId = VersionId(Random.nextInt(1000)))
+      f.manager.deploy(newVersion, DeploymentData.empty, changedSlug, None).futureValue
+      f.waitForRunning(newVersion)
+      val servicesForScenario = k8s.listSelected[ListResource[Service]](LabelSelector(requirementForName(newVersion.processName))).futureValue.items
+      servicesForScenario.map(_.name) should have length 1
     }
 
   }
