@@ -196,7 +196,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
     val processErrors = errors.filter(_.nodeIds.isEmpty)
-    val globalErrors = processErrors.partition{
+    val (propertiesErrors, otherErrors) =  processErrors.partition{
       case _: PropertiesError => true
       case _ => false
     }
@@ -206,8 +206,8 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
         error <- errors.toList.filterNot(processErrors.contains)
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertiesErrors = globalErrors._1.map(PrettyValidationErrors.formatErrorMessage),
-      globalErrors = globalErrors._2.map(PrettyValidationErrors.formatErrorMessage)
+      processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
+      globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
     )
   }
 
