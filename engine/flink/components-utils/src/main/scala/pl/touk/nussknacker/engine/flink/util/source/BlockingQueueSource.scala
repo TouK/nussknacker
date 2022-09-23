@@ -2,8 +2,6 @@ package pl.touk.nussknacker.engine.flink.util.source
 
 import com.github.ghik.silencer.silent
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.java.typeutils.ResultTypeQueryable
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.AssignerWithPunctuatedWatermarks
@@ -69,7 +67,7 @@ class BlockingQueueSource[T: TypeInformation](timestampAssigner: AssignerWithPun
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     env
-      .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
+      .addSource(flinkSourceFunction)
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
       .map(new FlinkContextInitializingFunction(
         contextInitializer, flinkNodeContext.nodeId,

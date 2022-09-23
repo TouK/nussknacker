@@ -2,10 +2,8 @@ package pl.touk.nussknacker.engine.management.sample.transformer
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {
 
