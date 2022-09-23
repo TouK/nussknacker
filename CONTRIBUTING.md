@@ -88,9 +88,10 @@ and add dependency to `ui` module like in flink-streaming case.
 To run streaming lite scenarios with K8s, we recommend using [k3d](https://k3d.io) with
 [nussknacker-quickstart](https://github.com/TouK/nussknacker-quickstart) setup
 - run integration environment, as described above
-- `export K3D_FIX_DNS=1; k3d cluster create --network nussknacker_network` - this will create K8s cluster, which
-  has access to docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209)
-- run `sbt buildAndImportRuntimeImageToK3d` (can be skipped if you intend to use e.g. `staging-latest` docker image) 
+- `K3D_FIX_DNS=1 PROJECT_ROOT=$(pwd) k3d cluster create --network nussknacker_network --config=.k3d/single-cluster.yml` 
+  This will create K8s cluster, which has access to docker network used by integration environment. [K3D_FIX_DNS](https://github.com/rancher/k3d/issues/209).
+  This cluster will use nginx ingress controller instead of default traefic to make `rewrite-target` annotation works correctly
+- run `sbt buildAndImportRuntimeImageToK3d` (can be skipped if you intend to use e.g. `staging-latest` docker image)
 
 #### Accessing service
 

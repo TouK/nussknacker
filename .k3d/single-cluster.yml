@@ -22,6 +22,6 @@ ports:
     nodeFilters:
       - loadbalancer
 volumes:
-  - volume: $GITHUB_WORKSPACE/.k3d/k3s_manifests/:/var/lib/rancher/k3s/server/manifests
+  - volume: $PROJECT_ROOT/.k3d/k3s_manifests/:/var/lib/rancher/k3s/server/manifests
     nodeFilters:
       - server:*
