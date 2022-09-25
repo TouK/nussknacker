@@ -44,13 +44,14 @@ describe("Fragment", () => {
     cy.wait(750)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
 
-    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").clear().type("fragmentResult")
+    cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult")
     cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
     cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")
+    cy.wait(750)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 
