@@ -51,6 +51,7 @@ describe("Fragment", () => {
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
     cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")
+    cy.wait(500)
     cy.get("[data-testid=window]").toMatchImageSnapshot()
   })
 
