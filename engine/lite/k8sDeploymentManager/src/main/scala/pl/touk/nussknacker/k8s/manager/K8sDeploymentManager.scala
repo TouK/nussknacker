@@ -206,9 +206,14 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
         k8s.getOption[Service](service.name).flatMap {
           case None => Future.successful(())
           case Some(existing) =>
-            val scenarioName = parseVersionAnnotation(existing).map(_.processName.value).getOrElse("(Unknown)")
-            val message = s"Slug is not unique, scenario $scenarioName is using it"
-            Future.failed(new IllegalArgumentException(message))
+            parseVersionAnnotation(existing) match {
+              case Some(existingServiceData) if existingServiceData.processId != processVersion.processId=>
+                val scenarioName = existingServiceData.processName.value
+                val message = s"Slug is not unique, scenario $scenarioName is using it"
+                Future.failed(new IllegalArgumentException(message))
+              case _ => Future.successful(())
+            }
+
         }
     }
   }

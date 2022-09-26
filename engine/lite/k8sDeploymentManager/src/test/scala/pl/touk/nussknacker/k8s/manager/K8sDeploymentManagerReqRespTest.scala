@@ -26,6 +26,7 @@ import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _
 import scala.collection.JavaConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.reflectiveCalls
+import scala.util.Random
 
 // we use this tag to mark tests using external dependencies
 @Network
@@ -67,7 +68,6 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("deployment of req-resp with ingress") {
     val givenScenarioName = "reqresp-ingress"
-    val givenServicePort = 12345 // some random, remote port, we don't need to worry about collisions
     val f = createReqRespFixture(givenScenarioName, extraDeployConfig = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true)))
 
     f.withRunningScenario {
@@ -120,9 +120,16 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val f = createReqRespFixture(givenScenarioName, givenSlug = Some(slug))
 
     f.withRunningScenario {
+      //ends without errors, we only change version
+      f.manager.validate(f.version.copy(versionId = VersionId(2)), DeploymentData.empty, f.scenario).futureValue
+
       val newName = "reqresp-other"
+      //different id and name
+      val newVersion = f.version.copy(processName = ProcessName(newName), processId = ProcessId(Random.nextInt(1000)),
+        versionId = VersionId(2))
       val scenario = preparePingPongScenario(newName, 2, Some(slug))
-      val failure = f.manager.validate(ProcessVersion.empty.copy(versionId = VersionId(2)), DeploymentData.empty, scenario).failed.futureValue
+
+      val failure = f.manager.validate(newVersion, DeploymentData.empty, scenario).failed.futureValue
       failure.getMessage shouldBe s"Slug is not unique, scenario $givenScenarioName is using it"
     }
 
@@ -158,7 +165,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
     val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses).withFallback(extraDeployConfig)
     val manager = K8sDeploymentManager(modelData, deployConfig)
-    val scenario = preparePingPongScenario(givenScenarioName, givenVersion)
+    val scenario = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
     logger.info(s"Running req-resp test on ${scenario.id}")
     val version = ProcessVersion(VersionId(givenVersion), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
     new ReqRespTestFixture(manager = manager, scenario = scenario, version = version, extraClasses)
