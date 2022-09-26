@@ -6,28 +6,35 @@ import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
+import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.test.testComponents.{noopSourceComponent, testDataSourceComponent}
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerWithTestComponents
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
-import pl.touk.nussknacker.engine.resultcollector.{ProductionServiceInvocationCollector, ResultCollector}
+import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestRunId, TestServiceInvocationCollector}
+import pl.touk.nussknacker.engine.testmode.{TestComponentHolder, TestComponentsHolder, TestServiceInvocationCollector}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunListResult, RunResult, RunUnitResult, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
 
-object testComponents {
+private object testComponents {
 
-  def withDataList[T: ClassTag : TypeInformation](data: List[T]): List[ComponentDefinition] = List(
-    TestScenarioRunner.testDataSource -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])),
-    TestScenarioRunner.noopSource -> SourceFactory.noParamFromClassTag[T](new CollectionSource[T](List.empty, None, Typed.apply[T]))
-  ).map(cd => ComponentDefinition(cd._1, cd._2))
+  def testDataSourceComponent[T: ClassTag : TypeInformation](data: List[T]): ComponentDefinition = {
+    ComponentDefinition(TestScenarioRunner.testDataSource, SourceFactory.noParamFromClassTag[T](new CollectionSource[T](data, None, Typed.apply[T])))
+  }
+
+  def noopSourceComponent: ComponentDefinition = {
+    implicit val typeInf: TypeInformation[Any] = TypeInformation.of(classOf[Any])
+    ComponentDefinition(TestScenarioRunner.noopSource, SourceFactory.noParamFromClassTag[Any](new CollectionSource[Any](List.empty, None, typing.Unknown)))
+  }
+
 }
 
 class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val config: Config, flinkMiniCluster: FlinkMiniClusterHolder) extends ClassBasedTestScenarioRunner {
@@ -36,9 +43,8 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
   override def runWithData[I: ClassTag, R](scenario: CanonicalProcess, data: List[I]): RunnerListResult[R] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val componentsWithData = testComponents.withDataList(data)
-    val componentsWithTestComponents = this.components ++ componentsWithData
-    run(scenario, new TestServiceInvocationCollector(testComponentHolder.runId), Some(testComponentHolder.runId), componentsWithTestComponents).map { _ =>
+    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: Nil
+    run(scenario, testComponents, useTestCollector = true).map { _ =>
       collectResults()
     }
   }
@@ -46,8 +52,9 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
   /**
    * Can be used to test Flink bounded sources - we wait for the scenario to finish.
    */
-  def runAndCollectResults[R](scenario: CanonicalProcess): RunnerListResult[R] = {
-    run(scenario, ProductionServiceInvocationCollector, None).map { _ =>
+  def runWithoutData[R](scenario: CanonicalProcess): RunnerListResult[R] = {
+    val testComponents = noopSourceComponent :: Nil
+    run(scenario, testComponents, useTestCollector = false).map { _ =>
       collectResults()
     }
   }
@@ -57,17 +64,20 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
    */
   def runWithDataIgnoringResults[I: ClassTag](scenario: CanonicalProcess, data: List[I]): RunnerResult[Unit] = {
     implicit val typeInf: TypeInformation[I] = TypeInformation.of(implicitly[ClassTag[I]].runtimeClass.asInstanceOf[Class[I]])
-    val componentsWithData = testComponents.withDataList(data)
-    val componentsWithTestComponents = this.components ++ componentsWithData
-    run(scenario, ProductionServiceInvocationCollector, None, componentsWithTestComponents)
+    val testComponents = testDataSourceComponent(data) :: noopSourceComponent :: Nil
+    run(scenario, testComponents, useTestCollector = false)
   }
 
   private def run(scenario: CanonicalProcess,
-                  resultCollector: => ResultCollector,
-                  testRunId: => Option[TestRunId],
-                  componentsWithTestComponents: List[ComponentDefinition] = components): RunnerResult[Unit] = {
+                  testComponents: List[ComponentDefinition],
+                  useTestCollector: Boolean): RunnerResult[Unit] = {
     val modelData = LocalModelData(config, new EmptyProcessConfigCreator)
-    testComponentHolder = TestComponentsHolder.registerTestComponents(componentsWithTestComponents)
+    testComponentHolder = TestComponentsHolder.registerTestComponents(components ++ testComponents)
+    val (resultCollector, testRunId) = if (useTestCollector) {
+      (new TestServiceInvocationCollector(testComponentHolder.runId), Some(testComponentHolder.runId))
+    } else {
+      (ProductionServiceInvocationCollector, None)
+    }
 
     //todo get flink mini cluster through composition
     val env = flinkMiniCluster.createExecutionEnvironment()
