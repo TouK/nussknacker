@@ -56,7 +56,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
     val list: List[ConsumerRecord[Array[Byte],Array[Byte]]] = List(input)
     val result = runner.runWithRawData(scenario, list).validValue
-    val resultWithValue = result.copy(successes = result.successes.map(_.value()))
+    val resultWithValue = result.copy(success = result.successes.map(_.value()))
 
     //Then
     val resultJson = new String(resultWithValue.successes.head)

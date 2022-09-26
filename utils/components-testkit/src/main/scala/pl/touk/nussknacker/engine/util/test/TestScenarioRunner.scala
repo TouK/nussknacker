@@ -5,8 +5,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 
 import scala.reflect.ClassTag
 
@@ -25,13 +24,14 @@ import scala.reflect.ClassTag
 object TestScenarioRunner {
 
   type RunnerResult[R] = ValidatedNel[ProcessCompilationError, RunResult[R]]
+  type RunnerListResult[R] = ValidatedNel[ProcessCompilationError, RunListResult[R]]
 
   // Maybe we should replace ids with more meaningful: test-data, rest-result?
   val testDataSource = "source"
   val noopSource = "noopSource"
   // Maybe we should unify those two test result nodes?
   val testResultSink = "sink"
-  def testResultService: String = TestComponentsHolder.invocationCollectorComponentName
+  val testResultService = "invocationCollector"
 
 }
 
@@ -53,25 +53,33 @@ trait TestScenarioRunnerBuilder[R <: TestScenarioRunner, B <: TestScenarioRunner
 
 trait ClassBasedTestScenarioRunner extends TestScenarioRunner {
   //todo add generate test data support
-  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerResult[R]
+  def runWithData[T:ClassTag, R](scenario: CanonicalProcess, data: List[T]): RunnerListResult[R]
 }
 
 object RunResult {
 
-  def success[T](data: T): RunResult[T] =
-    RunResult(Nil, data :: Nil)
+  def success[T](data: T): RunListResult[T] =
+    RunListResult(Nil, data :: Nil)
 
-  def successes[T](data: List[T]): RunResult[T] =
-    RunResult(Nil, data)
-
-  def errors[T](errors: List[NuExceptionInfo[_]]): RunResult[T] =
-    RunResult[T](errors, List())
+  def successes[T](data: List[T]): RunListResult[T] =
+    RunListResult(Nil, data)
 
 }
 
-case class RunResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) {
+sealed trait RunResult[T] {
+  def errors: List[NuExceptionInfo[_]]
+  def success: T
+}
 
-  def mapSuccesses[U](f: T => U): RunResult[U] =
-    copy(successes = successes.map(f))
+case class RunListResult[T](errors: List[NuExceptionInfo[_]], success: List[T]) extends RunResult[List[T]] {
 
+  def successes: List[T] = success
+
+  def mapSuccesses[U](f: T => U): RunListResult[U] =
+    copy(success = success.map(f))
+
+}
+
+case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult[Unit] {
+  override def success: Unit = ()
 }

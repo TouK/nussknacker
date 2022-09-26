@@ -22,8 +22,8 @@ import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
-import pl.touk.nussknacker.engine.util.test.{RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
+import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
@@ -452,7 +452,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
       case v => v
     }))
 
-  private def runWithResults(config: ScenarioConfig): RunnerResult[ProducerRecord[String, Any]] = {
+  private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario = createScenario(config)
     val runner = TestScenarioRunner.kafkaLiteBased().build()
     val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
@@ -487,11 +487,11 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
   }
 
   //RecordValid -> valid success record with base field
-  private def rValid(data: Any, schema: Schema): Valid[RunResult[GenericRecord]] = {
+  private def rValid(data: Any, schema: Schema): Valid[RunListResult[GenericRecord]] = {
     valid(AvroUtils.createRecord(schema, Map(RecordFieldName -> data)))
   }
 
-  private def valid[T](data: T): Valid[RunResult[T]] =
+  private def valid[T](data: T): Valid[RunListResult[T]] =
     Valid(RunResult.success(data))
 
   private def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =

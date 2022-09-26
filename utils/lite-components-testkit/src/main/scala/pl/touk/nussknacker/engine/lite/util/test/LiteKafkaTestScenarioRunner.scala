@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerResult
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -68,7 +68,7 @@ class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config:
   private val kafkaConfig: KafkaConfig = KafkaConfig.parseConfig(config)
   private val keyStringDeserializer = new StringDeserializer
 
-  def runWithStringData(scenario: CanonicalProcess, data: List[StringInput]): RunnerResult[ProducerRecord[String, String]] = {
+  def runWithStringData(scenario: CanonicalProcess, data: List[StringInput]): RunnerListResult[ProducerRecord[String, String]] = {
     val serializedData = data.map(serializeStringInput)
     runWithRawData(scenario, serializedData)
       .map(_.mapSuccesses { output =>
@@ -78,7 +78,7 @@ class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config:
       })
   }
 
-  def runWithAvroData[K, V](scenario: CanonicalProcess, data: List[AvroInput]): RunnerResult[ProducerRecord[K, V]] = {
+  def runWithAvroData[K, V](scenario: CanonicalProcess, data: List[AvroInput]): RunnerListResult[ProducerRecord[K, V]] = {
     val serializedData = data.map(serializeAvroInput)
 
     runWithRawData(scenario, serializedData)
@@ -89,7 +89,7 @@ class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config:
       })
   }
 
-  def runWithRawData(scenario: CanonicalProcess, data: List[SerializedInput]): RunnerResult[SerializedOutput] =
+  def runWithRawData(scenario: CanonicalProcess, data: List[SerializedInput]): RunnerListResult[SerializedOutput] =
     delegate
       .runWithData[SerializedInput, SerializedOutput](scenario, data)
 
