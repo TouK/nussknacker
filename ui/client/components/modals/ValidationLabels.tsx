@@ -17,7 +17,7 @@ export default function ValidationLabels(props: Props) {
     description: string,
   }
 
-  const {validators, values, additionalClassName, validationLabelInfo, processNameValidationError} = props
+  const {validators, values, additionalClassName, validationLabelInfo} = props
 
   const validationErrors: ValidationErrors[] = withoutDuplications(validators)
     .filter(v => !v.isValid(...values))
@@ -40,9 +40,6 @@ export default function ValidationLabels(props: Props) {
   // It's possible that expression is valid and it's type is known, but a different type is expected.
   return (
     <div className={`validation-labels ${additionalClassName}`}>
-      <span className="validation-label-error" title={processNameValidationError}>
-        {processNameValidationError}
-      </span>
       { isValid ? (
         <span className="validation-label-info" title="Info">
           {validationLabelInfo}
