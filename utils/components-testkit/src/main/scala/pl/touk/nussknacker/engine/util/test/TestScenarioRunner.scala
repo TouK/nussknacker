@@ -69,16 +69,18 @@ object RunResult {
 
 sealed trait RunResult[T] {
   def errors: List[NuExceptionInfo[_]]
-  def successes: T
+  def success: T
 }
 
-case class RunListResult[T](errors: List[NuExceptionInfo[_]], successes: List[T]) extends RunResult[List[T]] {
+case class RunListResult[T](errors: List[NuExceptionInfo[_]], success: List[T]) extends RunResult[List[T]] {
+
+  def successes: List[T] = success
 
   def mapSuccesses[U](f: T => U): RunListResult[U] =
-    copy(successes = successes.map(f))
+    copy(success = success.map(f))
 
 }
 
 case class RunUnitResult(errors: List[NuExceptionInfo[_]]) extends RunResult[Unit] {
-  override def successes: Unit = ()
+  override def success: Unit = ()
 }
