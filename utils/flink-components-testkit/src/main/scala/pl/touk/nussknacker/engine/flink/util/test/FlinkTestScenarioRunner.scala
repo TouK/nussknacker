@@ -85,7 +85,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     compileProcessData.compileProcess().map { _ =>
       val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
-      registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, Some(testComponentHolder.runId))
+      registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = None)
       env.executeAndWaitForFinished(scenario.id)()
       RunUnitResult(errors = Nil)
     }
