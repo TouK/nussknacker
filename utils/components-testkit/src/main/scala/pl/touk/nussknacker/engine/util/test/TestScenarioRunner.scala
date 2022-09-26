@@ -5,7 +5,6 @@ import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.{RunnerListResult, RunnerResult}
 
 import scala.reflect.ClassTag
@@ -32,7 +31,7 @@ object TestScenarioRunner {
   val noopSource = "noopSource"
   // Maybe we should unify those two test result nodes?
   val testResultSink = "sink"
-  def testResultService: String = TestComponentsHolder.invocationCollectorComponentName
+  val testResultService = "invocationCollector"
 
 }
 

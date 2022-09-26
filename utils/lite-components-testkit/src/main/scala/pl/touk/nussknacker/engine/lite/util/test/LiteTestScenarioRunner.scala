@@ -13,9 +13,8 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
-import pl.touk.nussknacker.engine.testmode.TestComponentsHolder
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, ModelWithTestComponents, RunListResult, RunResult, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, ModelWithTestComponents, RunListResult, RunResult, TestComponentsHolder, TestScenarioRunner, TestScenarioRunnerBuilder}
 
 import scala.reflect.ClassTag
 
