@@ -66,7 +66,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
   }
 
   override val routes: Option[Route] = {
-    Some(new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName, "/").combinedRoute)
+    Some(new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.definitionMetadata, jobData.processVersion.processName).combinedRoute)
   }
 
 }

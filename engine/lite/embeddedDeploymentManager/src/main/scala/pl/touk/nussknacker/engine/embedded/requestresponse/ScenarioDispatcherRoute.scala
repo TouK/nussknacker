@@ -27,9 +27,3 @@ class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Scena
   }
 
 }
-
-object ScenarioDispatcherRoute {
-
-  def invocationUrl(scenarioSlug: String) = s"/scenario/$scenarioSlug"
-
-}
