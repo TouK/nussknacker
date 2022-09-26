@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
-import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.{CustomProcessValidatorLoader, ModelData}
 import pl.touk.nussknacker.engine.api.async.{DefaultAsyncInterpretationValue, DefaultAsyncInterpretationValueDeterminer}
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
@@ -71,8 +71,9 @@ class FlinkProcessCompiler(creator: ProcessConfigCreator,
     val listenersToUse = adjustListeners(defaultListeners, processObjectDependencies)
 
     val processDefinition = definitions(processObjectDependencies)
+    val customProcessValidator = CustomProcessValidatorLoader.loadProcessValidators(userCodeClassLoader, processConfig)
     val compiledProcess =
-      ProcessCompilerData.prepare(process, processDefinition, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase)
+      ProcessCompilerData.prepare(process, processDefinition, listenersToUse, userCodeClassLoader, resultCollector, componentUseCase, customProcessValidator)
 
     new FlinkProcessCompilerData(
       compiledProcess = compiledProcess,

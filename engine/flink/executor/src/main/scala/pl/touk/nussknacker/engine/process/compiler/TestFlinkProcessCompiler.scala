@@ -23,7 +23,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
-
+  
   override protected def adjustListeners(defaults: List[ProcessListener], processObjectDependencies: ProcessObjectDependencies): List[ProcessListener] = {
     collectingListener :: defaults
   }

@@ -7,6 +7,7 @@ type Props = {
   values: Array<string>,
   additionalClassName?: string,
   validationLabelInfo?: string,
+  processNameValidationError?: string
 }
 
 export default function ValidationLabels(props: Props) {
@@ -27,7 +28,7 @@ export default function ValidationLabels(props: Props) {
 
   const isValid: boolean = isEmpty(validationErrors)
 
-  const renderErrorLablels = () => validationErrors.map(
+  const renderErrorLabels = () => validationErrors.map(
     (validationError, ix) => (
       <span key={ix} className="validation-label-error" title={validationError.description}>
         {validationError.message}
@@ -44,7 +45,7 @@ export default function ValidationLabels(props: Props) {
           {validationLabelInfo}
         </span>
       ) :
-        renderErrorLablels()
+        renderErrorLabels()
       }
     </div>
   )

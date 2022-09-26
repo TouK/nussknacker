@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, UnknownSubprocess}
 import pl.touk.nussknacker.engine.api.definition._
@@ -28,16 +27,15 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.ProcessTestData
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, possibleValues}
-import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, StubSubprocessRepository, TestCategories, TestFactory, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
+import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessResolver}
 
 import scala.collection.immutable.ListMap
 
 class ProcessValidationSpec extends AnyFunSuite with Matchers {
-  import ProcessValidationSpec._
   import ProcessTestData._
+  import ProcessValidationSpec._
   import TestCategories._
   import spel.Implicits._
 
@@ -553,8 +551,7 @@ private object ProcessValidationSpec {
       new SubprocessResolver(new StubSubprocessRepository(Set(
         SubprocessDetails(sampleSubprocessOneOut, Category1),
         SubprocessDetails(subprocess, Category1),
-      ))),
-      emptyProcessingTypeDataProvider
+      )))
     )
 
     mockedProcessValidation

@@ -62,7 +62,8 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 
-  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) { testScenarioRunner =>
+
+  it should "call enricher with primitive request body" in withPrimitiveRequestBody (stubbedBackend) { testScenarioRunner =>
     //given
     val data = List("10")
     val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))

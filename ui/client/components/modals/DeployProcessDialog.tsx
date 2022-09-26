@@ -29,11 +29,12 @@ export function DeployProcessDialog(props: WindowContentProps<WindowKind, Toggle
 
   const confirmAction = useCallback(
     async () => {
-      await action(processId, comment).then(() => {
+      try {
+        await action(processId, comment)
         props.close()
-      }).catch(error => {
+      } catch(error) {
         setValidationError(error?.response?.data)
-      })
+      }
     },
     [action, comment, dispatch, processId, props],
   )

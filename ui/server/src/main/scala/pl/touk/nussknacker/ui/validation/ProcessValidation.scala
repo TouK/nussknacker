@@ -5,6 +5,7 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioPropertiesError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
@@ -14,7 +15,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
-import pl.touk.nussknacker.restmodel.validation.{CustomProcessValidator, PrettyValidationErrors}
+import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -24,16 +25,14 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 object ProcessValidation {
   def apply(modelData: ProcessingTypeDataProvider[ModelData],
             additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
-            subprocessResolver: SubprocessResolver,
-            customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator]): ProcessValidation = {
-    new ProcessValidation(modelData, additionalProperties, subprocessResolver, customProcessNodesValidators, None)
+            subprocessResolver: SubprocessResolver): ProcessValidation = {
+    new ProcessValidation(modelData, additionalProperties, subprocessResolver, None)
   }
 }
 
 class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
                         additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
                         subprocessResolver: SubprocessResolver,
-                        customProcessNodesValidators: ProcessingTypeDataProvider[CustomProcessValidator],
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
 
   val uiValidationError = "UiValidation"
@@ -49,15 +48,15 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig)
 
   def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, None
+    modelData, additionalPropertiesConfig, subprocessResolver, None
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, Some(modify)
+    modelData, additionalPropertiesConfig, subprocessResolver, Some(modify)
   )
 
   def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) =
-    new ProcessValidation(modelData, additionalPropertiesConfig, subprocessResolver, customProcessNodesValidators, None)
+    new ProcessValidation(modelData, additionalPropertiesConfig, subprocessResolver, None)
 
   def validate(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -66,7 +65,8 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
     //displayable to canonical conversion for invalid ui process structure can have unexpected results
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
-      uiValidationResult.add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
+      uiValidationResult
+        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
     } else {
       uiValidationResult
     }
@@ -88,7 +88,6 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
       .add(validateAdditionalProcessProperties(displayable))
-      .add(validateWithCustomProcessValidator(displayable))
       .add(warningValidation(displayable))
   }
 
@@ -196,23 +195,17 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   }
 
   private def formatErrors(errors: NonEmptyList[ProcessCompilationError]): ValidationResult = {
-    val globalErrors = errors.filter(_.nodeIds.isEmpty)
+    val processErrors = errors.filter(_.nodeIds.isEmpty)
+    val (propertiesErrors, otherErrors) =  processErrors.partition(_.isInstanceOf[ScenarioPropertiesError])
 
     ValidationResult.errors(
       invalidNodes = (for {
-        error <- errors.toList.filterNot(globalErrors.contains)
+        error <- errors.toList.filterNot(processErrors.contains)
         nodeId <- error.nodeIds
       } yield nodeId -> PrettyValidationErrors.formatErrorMessage(error)).toGroupedMap,
-      processPropertiesErrors = Nil,
-      globalErrors = globalErrors.map(PrettyValidationErrors.formatErrorMessage)
+      processPropertiesErrors = propertiesErrors.map(PrettyValidationErrors.formatErrorMessage),
+      globalErrors = otherErrors.map(PrettyValidationErrors.formatErrorMessage)
     )
-  }
-
-  private def validateWithCustomProcessValidator(process: DisplayableProcess): ValidationResult = {
-    customProcessNodesValidators
-      .forType(process.processingType)
-      .map(_.validate(process))
-      .getOrElse(ValidationResult.success)
   }
 
   private case class ValidatorKey(modelData: ModelData, category: Category)

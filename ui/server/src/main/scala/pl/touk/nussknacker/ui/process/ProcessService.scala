@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -29,7 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, Pro
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.FatalValidationError
+import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}
@@ -89,7 +90,8 @@ class DBProcessService(managerActor: ActorRef,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
-                       processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
+                       processRepository: ProcessRepository[DB],
+                       processValidation: ProcessValidation)(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
   import cats.instances.future._
   import cats.syntax.either._
@@ -210,15 +212,21 @@ class DBProcessService(managerActor: ActorRef,
       val emptyCanonicalProcess = newProcessPreparer.prepareEmptyProcess(command.processName.value, processingType, command.isSubprocess)
       val action = CreateProcessAction(command.processName, command.category, emptyCanonicalProcess, processingType, command.isSubprocess)
 
-      repositoryManager
-        .runInTransaction(processRepository.saveNewProcess(action))
-        .map{
-          case Right(maybemaybeCreated) =>
-            maybemaybeCreated
-              .map(created => Right(toProcessResponse(command.processName, created)))
-              .getOrElse(Left(ProcessValidationError("Unknown error on creating scenario.")))
-          case Left(value) =>
-            Left(value)
+      val propertiesErrors = validateInitialScenarioProperties(emptyCanonicalProcess, processingType, command.category)
+
+      if (propertiesErrors.nonEmpty) {
+        Future.successful(Left(ProcessValidationError(propertiesErrors.map(_.message).mkString(", "))))
+      } else {
+        repositoryManager
+          .runInTransaction(processRepository.saveNewProcess(action))
+          .map {
+            case Right(maybemaybeCreated) =>
+              maybemaybeCreated
+                .map(created => Right(toProcessResponse(command.processName, created)))
+                .getOrElse(Left(ProcessValidationError("Unknown error on creating scenario.")))
+            case Left(value) =>
+              Left(value)
+          }
       }
     }
 
@@ -282,6 +290,12 @@ class DBProcessService(managerActor: ActorRef,
 
       Future.successful(result)
     }
+  }
+
+  private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {
+    val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
+    validationResult.errors.processPropertiesErrors
+
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

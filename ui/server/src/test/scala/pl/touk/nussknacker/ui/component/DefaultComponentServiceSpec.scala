@@ -515,7 +515,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository()
+      processRepository = TestFactory.newDummyWriteProcessRepository(),
+      processValidation = TestFactory.processValidation
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

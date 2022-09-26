@@ -23,6 +23,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Changed `LocalDateTime` to `Instant` in `OnDeployActionSuccess` in `listener-api`
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Replace `EspProcess` with `CanonicalProcess` in all parts of the API except for the compiler.
 * [#3545](https://github.com/TouK/nussknacker/pull/3545) `TestScenarioRunner.flinkBased` should be used instead of `NuTestScenarioRunner.flinkBased`. Before this, you need to `import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._` 
+* [#3386](https://github.com/TouK/nussknacker/pull/3386) Changed `CustomProcessValidator` `validate` method.
+  It now receives `CanonicalProcess` instead of `DisplayableProcess` and returns `ValidatedNel[ProcessCompilationError, Unit]`
+  instead of `ValidationResult`. Moved `CustomProcessValidator` from module `nussknacker-restmodel` in package `validation` to `nussknacker-extensions-api`. 
 
 ### REST API changes                   
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Dates returned by REST API (createdAt, modifiedAt, createDate) are now returned in Zulu time, with timezone indication. This affects e.g. `/api/procecesses`, `/api/processes/{scenarioId}`, `/api/processes/{scenarioId}/activity` 

@@ -49,7 +49,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
     ProcessValidation(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-      sampleResolver, emptyProcessingTypeDataProvider
+      sampleResolver
     )
   }
 

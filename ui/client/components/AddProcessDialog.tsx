@@ -8,7 +8,7 @@ import HttpService from "../http/HttpService"
 import "../stylesheets/visualization.styl"
 import {WindowContent} from "../windowManager"
 import {AddProcessForm} from "./AddProcessForm"
-import {allValid} from "./graph/node-modal/editors/Validators"
+import {allValid, errorValidator} from "./graph/node-modal/editors/Validators"
 
 interface AddProcessDialogProps extends WindowContentProps {
   isSubprocess?: boolean,
@@ -19,6 +19,12 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
   const nameValidators = useProcessNameValidators()
 
   const [value, setState] = useState({processId: "", processCategory: ""})
+  const [processNameError, setProcessNameError] = useState({
+    fieldName: "processName",
+    message: "",
+    description: "",
+    typ: ""
+  })
 
   const isValid = useMemo(
     () => value.processCategory && allValid(nameValidators, [value.processId]),
@@ -29,9 +35,18 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
     async () => {
       if (isValid) {
         const {processId, processCategory} = value
-        await HttpService.createProcess(processId, processCategory, isSubprocess)
-        passProps.close()
-        history.push(visualizationUrl(processId))
+        try {
+          await HttpService.createProcess(processId, processCategory, isSubprocess)
+          passProps.close()
+          history.push(visualizationUrl(processId))
+        } catch (error) {
+          if (error?.response?.status == 400) {
+            //todo: change to pass error from BE as whole object not just the message 
+            setProcessNameError({fieldName: "processName", message: error?.response?.data, description: "", typ: ""})
+          } else {
+            throw error
+          }
+        }
       }
     },
     [isSubprocess, isValid, passProps, value],
@@ -51,7 +66,7 @@ export function AddProcessDialog(props: AddProcessDialogProps): JSX.Element {
       <AddProcessForm
         value={value}
         onChange={setState}
-        nameValidators={nameValidators}
+        nameValidators={nameValidators.concat(errorValidator([processNameError], "processName"))}
       />
     </WindowContent>
   )

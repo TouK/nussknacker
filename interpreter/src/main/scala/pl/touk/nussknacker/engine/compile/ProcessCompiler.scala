@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated._
-import cats.data.{NonEmptyList, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.instances.list._
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine._
@@ -35,11 +35,12 @@ import scala.util.control.NonFatal
 class ProcessCompiler(protected val classLoader: ClassLoader,
                       protected val sub: PartSubGraphCompiler,
                       protected val globalVariablesPreparer: GlobalVariablesPreparer,
-                      protected val nodeCompiler: NodeCompiler
+                      protected val nodeCompiler: NodeCompiler,
+                      protected val customProcessValidator: CustomProcessValidator
                      ) extends ProcessCompilerBase with ProcessValidator {
 
   override def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessCompiler =
-    new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify))
+    new ProcessCompiler(classLoader, sub.withExpressionParsers(modify), globalVariablesPreparer, nodeCompiler.withExpressionParsers(modify), customProcessValidator)
 
   override def compile(process: CanonicalProcess): CompilationResult[CompiledProcessParts] = {
     super.compile(process)
@@ -49,8 +50,13 @@ class ProcessCompiler(protected val classLoader: ClassLoader,
 trait ProcessValidator extends LazyLogging {
 
   def validate(process: CanonicalProcess): CompilationResult[Unit] = {
+
     try {
-      compile(process).map(_ => Unit)
+      CompilationResult.map2(
+        CompilationResult(validateWithCustomProcessValidators(process)),
+        compile(process).map(_ => Unit): CompilationResult[Unit])((_, compiled) => {
+        compiled
+      })
     } catch {
       case NonFatal(e) =>
         logger.warn(s"Unexpected error during compilation of ${process.id}", e)
@@ -58,9 +64,15 @@ trait ProcessValidator extends LazyLogging {
     }
   }
 
+  private def validateWithCustomProcessValidators(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+    customProcessValidator.validate(process)
+  }
+
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
 
   protected def compile(process: CanonicalProcess): CompilationResult[_]
+
+  protected def customProcessValidator: CustomProcessValidator
 
 }
 
@@ -237,13 +249,12 @@ protected trait ProcessCompilerBase {
 
 object ProcessValidator {
 
-  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
+  def default(definitions: ProcessDefinition[ObjectWithMethodDef], dictRegistry: DictRegistry, customProcessValidator: CustomProcessValidator, classLoader: ClassLoader = getClass.getClassLoader): ProcessValidator = {
     val typeDefinitionSet = TypeDefinitionSet(ProcessDefinitionExtractor.extractTypes(definitions))
-
     val expressionCompiler = ExpressionCompiler.withoutOptimization(classLoader, dictRegistry, definitions.expressionConfig, definitions.settings, typeDefinitionSet)
     val nodeCompiler = new NodeCompiler(definitions, expressionCompiler, classLoader, PreventInvocationCollector, ComponentUseCase.Validation)
     val sub = new PartSubGraphCompiler(expressionCompiler, nodeCompiler)
-    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler)
+    new ProcessCompiler(classLoader, sub, GlobalVariablesPreparer(definitions.expressionConfig), nodeCompiler, customProcessValidator)
   }
 
 }
