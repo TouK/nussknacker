@@ -1,16 +1,17 @@
-package pl.touk.nussknacker.engine.process.compiler
+package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies, SinkFactory, Source, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, Service}
 import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.definition.{MethodDefinitionExtractor, ProcessObjectDefinitionExtractor}
-import pl.touk.nussknacker.engine.testmode.TestComponentHolder
+import pl.touk.nussknacker.engine.definition.ProcessObjectDefinitionExtractor
+import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
+import pl.touk.nussknacker.engine.util.test.TestComponentsHolder
 
 import scala.reflect.ClassTag
 
@@ -19,7 +20,7 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
                                              diskStateBackendSupport: Boolean,
                                              objectNaming: ObjectNaming,
                                              componentUseCase: ComponentUseCase,
-                                             testComponentsHolder: TestComponentHolder)
+                                             testComponentsHolder: TestComponentsHolder)
   extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
 
@@ -41,5 +42,5 @@ class FlinkProcessCompilerWithTestComponents(creator: ProcessConfigCreator,
 
   private def testComponentsWithCategories[T <: Component : ClassTag] = testComponentsHolder.components[T].map(cd => cd.name -> WithCategories(cd.component.asInstanceOf[T])).toMap
 
-  def this(componentsHolder: TestComponentHolder, modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, false, modelData.objectNaming, ComponentUseCase.EngineRuntime, componentsHolder)
+  def this(componentsHolder: TestComponentsHolder, modelData: ModelData) = this(modelData.configCreator, modelData.processConfig, false, modelData.objectNaming, ComponentUseCase.EngineRuntime, componentsHolder)
 }

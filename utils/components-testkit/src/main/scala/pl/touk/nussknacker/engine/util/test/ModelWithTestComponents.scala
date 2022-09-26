@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.EmptyProcessConfigCreator
 import pl.touk.nussknacker.engine.testing.LocalModelData
-import pl.touk.nussknacker.engine.testmode.{TestComponentsHolder, TestComponentsProvider, TestRunId}
+import pl.touk.nussknacker.engine.testmode.TestRunId
 
 object ModelWithTestComponents {
 
