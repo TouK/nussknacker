@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine
 
+import cats.data.ValidatedNel
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.loader.{LoadClassFromClassLoader, ScalaServiceLoader}
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
 
 object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   override type ClassToLoad = CustomProcessValidatorFactory
@@ -23,8 +25,11 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   }
 
   private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator]) extends CustomProcessValidator {
-    override def validate(process: CanonicalProcess): List[ProcessCompilationError] = {
-      customValidators.flatMap(_.validate(process))
+    val syntax = ValidatedSyntax[ProcessCompilationError]
+
+    import syntax._
+    override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+      customValidators.map(_.validate(process)).sequence.map(_ => ())
     }
   }
 }

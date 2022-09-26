@@ -65,11 +65,7 @@ trait ProcessValidator extends LazyLogging {
   }
 
   private def validateWithCustomProcessValidators(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
-    val errors = customProcessValidator.validate(process)
-    NonEmptyList.fromList(errors) match {
-      case Some(compilationErrors) => invalid(compilationErrors)
-      case None => valid(Unit)
-    }
+    customProcessValidator.validate(process)
   }
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]): ProcessValidator
