@@ -19,7 +19,7 @@ class FlinkScenarioNameValidator(config: Config) extends CustomProcessValidator 
 
     val scenarioName = process.metaData.id
     if (flinkProcessNameValidationPattern.pattern.matcher(scenarioName).matches()) {
-      Valid()
+      Valid(())
     } else {
       Invalid(NonEmptyList.one(
         ScenarioNameValidationError(scenarioName, "Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces")
