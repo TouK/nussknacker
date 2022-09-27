@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
-import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessShapeFetchStrategy, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, BasicProcess, ProcessDetails, ProcessShapeFetchStrategy, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
@@ -102,14 +103,17 @@ class ProcessesResources(
             }
           }
         } ~ path("processesDetails") {
-          get {
-            parameter('names.as(CsvSeq[String])) { namesToFetch =>
-              complete {
-                validateAndReverseResolveAll(processRepository.fetchProcessesDetails(namesToFetch.map(ProcessName(_)).toList))
-              }
-            } ~
+          (get & parameters('names.as(CsvSeq[String]).?, 'validate.as[Boolean].withDefault(true))) { (namesToFetch, validate) =>
             complete {
-              validateAndReverseResolveAll(processRepository.fetchProcessesDetails())
+              val processes = namesToFetch match {
+                case Some(names) => processRepository.fetchProcessesDetails[CanonicalProcess](names.map(ProcessName(_)).toList)
+                case None => processRepository.fetchProcessesDetails[CanonicalProcess]()
+              }
+              if (validate) {
+                validateAndReverseResolveAll(processes)
+              } else {
+                toProcessDetailsAll(processes)
+              }
             }
           }
         } ~ path("subProcesses") {
@@ -119,9 +123,14 @@ class ProcessesResources(
             }
           }
         } ~ path("subProcessesDetails") {
-          get {
+          (get & parameters('validate.as[Boolean].withDefault(true))) { validate =>
             complete {
-              validateAndReverseResolveAll(processRepository.fetchSubProcessesDetails[CanonicalProcess]())
+              val subProcesses = processRepository.fetchSubProcessesDetails[CanonicalProcess]()
+              if (validate) {
+                validateAndReverseResolveAll(subProcesses)
+              } else {
+                toProcessDetailsAll(subProcesses)
+              }
             }
           }
         } ~ path("processes" / "status") {
@@ -174,10 +183,11 @@ class ProcessesResources(
                     .map(toResponseEither[ValidationResult])
                 }
               }
-            } ~ get {
+            } ~ (get & parameters('validate.as[Boolean].withDefault(true))) { validate =>
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
-                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process)) // todo: we should really clearly separate backend objects from ones returned to the front
+                  case Some(process) if validate => validateAndReverseResolve(enrichDetailsWithProcessState(process))
+                  case Some(process) => toProcessDetails(enrichDetailsWithProcessState(process))
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }
@@ -197,10 +207,11 @@ class ProcessesResources(
             }
           }
         } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
-          (get & processId(processName)) { processId =>
+          (get & processId(processName) & parameters('validate.as[Boolean].withDefault(true))) { (processId, validate) =>
             complete {
               processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
-                case Some(process) => validateAndReverseResolve(process) // todo: we should really clearly separate backend objects from ones returned to the front
+                case Some(process) if validate => validateAndReverseResolve(enrichDetailsWithProcessState(process))
+                case Some(process) => toProcessDetails(enrichDetailsWithProcessState(process))
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
             }
@@ -315,6 +326,15 @@ class ProcessesResources(
       processResolving.reverseResolveExpressions(canonical, processingType, validationResult)
     }
     Future.successful(validatedDetails)
+  }
+
+  private def toProcessDetails(canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]): Future[ProcessDetails] = {
+    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType))
+    Future.successful(processDetails)
+  }
+
+  private def toProcessDetailsAll(canonicalProcessDetails: Future[List[BaseProcessDetails[CanonicalProcess]]]): Future[List[ProcessDetails]] = {
+    canonicalProcessDetails.flatMap(all => Future.sequence(all.map(toProcessDetails)))
   }
 
   private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {

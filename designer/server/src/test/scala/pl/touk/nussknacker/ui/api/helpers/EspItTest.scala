@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -178,6 +179,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     Post(s"/processes/${processName.value}/$TestCat?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
+
+  protected def saveSubProcess(process: CanonicalProcess)(testCode: => Assertion): Assertion = {
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    saveSubProcess(displayable)(testCode)
+  }
 
   protected def saveSubProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion =
     Post(s"/processes/${process.id}/$TestCat?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
