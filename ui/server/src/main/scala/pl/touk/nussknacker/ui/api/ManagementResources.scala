@@ -81,11 +81,10 @@ object ManagementResources {
 
     override def apply(a: TestResults[Json]): Json = a match {
       case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => Json.obj(
-        "nodeResults" -> nodeResults.asJson,
-        "invocationResults" -> invocationResults.asJson,
-        
-        "mockedResults" -> mockedResults.asJson,
-        "exceptions" -> exceptions.asJson
+        "nodeResults" -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
+        "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+        "mockedResults" -> mockedResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+        "exceptions" -> exceptions.sortBy(_.context.id).asJson
       )
     }
   }
