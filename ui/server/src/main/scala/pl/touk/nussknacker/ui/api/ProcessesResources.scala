@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util._
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -41,7 +42,8 @@ class ProcessesResources(
   processResolving: UIProcessResolving,
   val processAuthorizer:AuthorizeProcess,
   processChangeListener: ProcessChangeListener,
-  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData]
+  typeToConfig: ProcessingTypeDataProvider[ProcessingTypeData],
+  processValidation: ProcessValidation
 )(implicit val ec: ExecutionContext, mat: Materializer)
   extends Directives
     with FailFastCirceSupport
@@ -258,7 +260,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig)).securedRoute
+        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation).securedRoute
 
       }
   }

@@ -1,53 +1,42 @@
 package pl.touk.nussknacker.ui.validation
 
-import cats.data.Validated
-import cats.data.Validated.{Invalid, Valid, invalid, valid}
-import pl.touk.nussknacker.engine.api.context.PartSubGraphCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, UnknownProperty}
-import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import cats.data.Validated.{Valid, invalid, valid}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import pl.touk.nussknacker.engine.CustomProcessValidator
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingRequiredProperty, PropertyValidationError, UnknownProperty}
+import pl.touk.nussknacker.engine.api.definition.{MandatoryParameterValidator, ParameterValidator}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
-import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
-class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
+class AdditionalPropertiesValidator(config: Map[String, AdditionalPropertyConfig]) extends CustomProcessValidator {
 
   import cats.implicits._
 
+  //it's not really used, as we wrap errors in PropertyValidationError
   implicit val nodeId: NodeId = NodeId("properties")
 
-  type PropertyConfig = Map[String, AdditionalPropertyConfig]
+  type ValidationResult = ValidatedNel[ProcessCompilationError, Unit]
 
-  def validate(process: DisplayableProcess): ValidationResult = additionalPropertiesConfig.forType(process.processingType) match {
-    case None =>
-      ValidationResult.globalErrors(List(PrettyValidationErrors.noValidatorKnown(process.processingType)))
-
-    case Some(config) => {
-      val additionalProperties = process.properties.additionalFields
-        .map(field => field.properties)
-        .getOrElse(Map.empty)
-        .toList
-
-      val validated = (
-        getConfiguredValidationsResults(config, additionalProperties),
-        getMissingRequiredPropertyValidationResults(config, additionalProperties),
-        getUnknownPropertyValidationResults(config, additionalProperties)
-        )
-        .mapN { (_, _, _) => Unit }
-
-      val processPropertiesErrors = validated match {
-        case Invalid(e) => e.map(error => PrettyValidationErrors.formatErrorMessage(error)).toList
-        case Valid(_) => List.empty
-      }
-
-      ValidationResult.errors(Map(), processPropertiesErrors, List())
+  override def validate(process: CanonicalProcess): ValidationResult = {
+    if (process.metaData.isSubprocess) {
+      return Valid(())
     }
+
+    val additionalProperties = process.metaData.additionalFields
+      .map(field => field.properties)
+      .getOrElse(Map.empty)
+      .toList
+
+    (getConfiguredValidationsResults(additionalProperties),
+     getMissingRequiredPropertyValidationResults(additionalProperties),
+     getUnknownPropertyValidationResults(additionalProperties)
+     ).mapN { (_, _, _) => Unit }
   }
 
-  private def getConfiguredValidationsResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
+  private def getConfiguredValidationsResults(additionalProperties: List[(String, String)]) = {
     val validatorsByPropertyName = config
       .map(propertyConfig => propertyConfig._1 -> AdditionalPropertyValidatorDeterminerChain(propertyConfig._2).determine())
 
@@ -58,11 +47,11 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 
     propertiesWithConfiguredValidator.collect {
       case (property, Some(config), validator: ParameterValidator) =>
-        validator.isValid(property._1, property._2, config.label).toValidatedNel
+        validator.isValid(property._1, property._2, config.label).toValidatedNel.leftMap[NonEmptyList[ProcessCompilationError]](_.map(PropertyValidationError))
     }.sequence.map(_ => Unit)
   }
 
-  private def getMissingRequiredPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
+  private def getMissingRequiredPropertyValidationResults(additionalProperties: List[(String, String)]) = {
     config
       .filter(_._2.validators.nonEmpty)
       .filter(_._2.validators.get.contains(MandatoryParameterValidator))
@@ -73,7 +62,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
       .sequence.map(_ => Unit)
   }
 
-  private def getUnknownPropertyValidationResults(config: PropertyConfig, additionalProperties: List[(String, String)]) = {
+  private def getUnknownPropertyValidationResults(additionalProperties: List[(String, String)]) = {
     additionalProperties
       .map(property => (property._1, UnknownPropertyValidator(config)))
       .map {
@@ -84,20 +73,14 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 }
 
 private case class MissingRequiredPropertyValidator(actualPropertyNames: List[String]) {
-
-  def isValid(propertyName: String, label: Option[String] = None)
-             (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-
+  def isValid(propertyName: String, label: Option[String] = None): Validated[ProcessCompilationError, Unit] = {
     if (actualPropertyNames.contains(propertyName)) valid(Unit) else invalid(MissingRequiredProperty(propertyName, label))
   }
 }
 
 private case class UnknownPropertyValidator(config: Map[String, AdditionalPropertyConfig]) {
-
-  def isValid(propertyName: String)
-             (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
-
-    if (config.get(propertyName).nonEmpty) valid(Unit) else invalid(UnknownProperty(propertyName))
+  def isValid(propertyName: String): Validated[ProcessCompilationError, Unit] = {
+    if (config.contains(propertyName)) valid(Unit) else invalid(UnknownProperty(propertyName))
   }
 }
 

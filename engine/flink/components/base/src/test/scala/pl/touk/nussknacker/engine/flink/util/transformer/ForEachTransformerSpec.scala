@@ -45,7 +45,7 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     val model = modelData(List(TestRecord()), collectingListener)
 
     val testProcess = aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
-    val processValidator = model.prepareValidatorForCategory(None)
+    val processValidator = model.prepareValidatorForCategory(None, Nil)
 
     val forEachResultValidationContext = processValidator.validate(testProcess).typing(forEachNodeResultId)
     forEachResultValidationContext.inputValidationContext.get(forEachOutputVariableName) shouldBe Some(Typed[String])

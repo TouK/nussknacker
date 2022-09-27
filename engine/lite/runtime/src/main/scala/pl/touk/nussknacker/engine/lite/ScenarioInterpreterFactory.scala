@@ -66,7 +66,7 @@ object ScenarioInterpreterFactory {
       listeners,
       modelData.modelClassLoader.classLoader, resultCollector,
       componentUseCase,
-      modelData.customProcessValidator
+      modelData.prepareCustomValidator(Nil)
       // defaultAsyncValue is not important here because it isn't used in base mode (??)
     )(DefaultAsyncInterpretationValueDeterminer.DefaultValue)
 

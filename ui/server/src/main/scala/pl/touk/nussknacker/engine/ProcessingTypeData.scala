@@ -1,11 +1,12 @@
 package pl.touk.nussknacker.engine
 
+import _root_.sttp.client.{NothingT, SttpBackend}
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import _root_.sttp.client.{NothingT, SttpBackend}
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.ui.validation.AdditionalPropertiesValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -13,6 +14,7 @@ case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               modelData: ModelData,
                               typeSpecificInitialData: TypeSpecificInitialData,
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
+                              additionalValidators: List[CustomProcessValidator],
                               queryableClient: Option[QueryableClient],
                               supportsSignals: Boolean) extends AutoCloseable {
 
@@ -42,6 +44,7 @@ object ProcessingTypeData {
       modelData,
       deploymentManagerProvider.typeSpecificInitialData(managerConfig),
       additionalProperties,
+      new AdditionalPropertiesValidator(additionalProperties) :: deploymentManagerProvider.additionalValidators(managerConfig) ,
       queryableClient,
       deploymentManagerProvider.supportsSignals)
   }

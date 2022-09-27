@@ -2,7 +2,6 @@ package pl.touk.nussknacker.ui.validation
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, UnknownSubprocess}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -27,7 +26,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessResolver}
 
@@ -186,12 +185,12 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("not allow required scenario fields") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+    val processValidation = TestFactory.processValidation/*.withAdditionalPropertiesConfig(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
         "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
         "field2" -> AdditionalPropertyConfig(None, None, None, Some("label2"))
       ))
-    )
+    )                                                      */
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b")), Category1) shouldBe 'ok
 
@@ -204,53 +203,6 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     processValidation.validate(validProcessWithFields(Map("field2" -> "b")), Category1)
       .errors.processPropertiesErrors should matchPattern {
       case List(NodeValidationError("MissingRequiredProperty", _, _, Some("field1"), ValidationResults.NodeValidationErrorType.SaveAllowed)) =>
-    }
-  }
-
-  test("don't validate properties on fragment") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label1")),
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(MandatoryParameterValidator)), Some("label2"))
-      ))
-    )
-
-    val process = validProcessWithFields(Map())
-    val subprocess = process.copy(properties = process.properties.copy(typeSpecificProperties = FragmentSpecificData()))
-
-    processValidation.validate(subprocess, Category1) shouldBe 'ok
-
-  }
-
-  test("validate type) scenario field") {
-    val possibleValues = List(FixedExpressionValue("true", "true"), FixedExpressionValue("false", "false"))
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field1" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), Some("label")),
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-      ))
-    )
-
-    processValidation.validate(validProcessWithFields(Map("field1" -> "true")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "false")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "1")), Category1) should not be 'ok
-
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1.1")), Category1) should not be 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "true")), Category1) should not be 'ok
-  }
-
-  test("handle unknown properties validation") {
-    val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-        "field2" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-      ))
-    )
-
-    val result = processValidation.validate(validProcessWithFields(Map("field1" -> "true")), Category1)
-
-    result.errors.processPropertiesErrors should matchPattern {
-      case List(NodeValidationError("UnknownProperty", _, _, Some("field1"), NodeValidationErrorType.SaveAllowed)) =>
     }
   }
 
@@ -500,13 +452,13 @@ private object ProcessValidationSpec {
   val sourceTypeName: String = "processSource"
   val sinkTypeName: String = "processSink"
 
-  val validator: ProcessValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
+  val validator: ProcessValidation = TestFactory.processValidation/*.withAdditionalPropertiesConfig(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
       "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
       "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
       "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
     ))
-  )
+  )                                                                 */
 
   def validProcessWithFields(fields: Map[String, String]): DisplayableProcess = {
     createProcess(
@@ -545,13 +497,12 @@ private object ProcessValidationSpec {
       .withSourceFactory(sourceTypeName)
       .withSinkFactory(sinkTypeName)
 
-    val mockedProcessValidation: ProcessValidation = ProcessValidation(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+    val mockedProcessValidation: ProcessValidation = new ProcessValidation(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (new StubModelDataWithProcessDefinition(processDefinition), Nil)),
       new SubprocessResolver(new StubSubprocessRepository(Set(
         SubprocessDetails(sampleSubprocessOneOut, Category1),
         SubprocessDetails(subprocess, Category1),
-      )))
+      ))), None
     )
 
     mockedProcessValidation

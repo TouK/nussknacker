@@ -5,14 +5,13 @@ import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
-import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
-import pl.touk.nussknacker.engine.compile.{CompilationResult, ProcessValidator}
-import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
+import pl.touk.nussknacker.engine.compile.CompilationResult
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.LiteSource
@@ -75,7 +74,7 @@ class UnionTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessa
         Map("dumb" -> WithCategories.anyCategory(DumbService))
     }
     val modelData = LocalModelData(ConfigFactory.empty(), configCreator)
-    val validator = modelData.prepareValidatorForCategory(None)
+    val validator = modelData.prepareValidatorForCategory(None, Nil)
     val validationResult = validator.validate(scenario)
     validationResult
   }

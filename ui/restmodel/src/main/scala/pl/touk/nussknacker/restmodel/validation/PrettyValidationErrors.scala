@@ -27,7 +27,12 @@ object PrettyValidationErrors {
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
-      case ScenarioNameValidationError(scenarioName, description) => node(s"Invalid scenario name: $scenarioName.", description)
+      case ScenarioNameValidationError(scenarioName, description) => node(s"Invalid scenario name: $scenarioName.", description
+        //TODO: we should pass id here, but editing scenario id is *really* quirky...
+        //  , fieldName = Some("id")
+      )
+      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
+
       case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer")
@@ -59,8 +64,9 @@ object PrettyValidationErrors {
       case UnknownSubprocessOutput(id, _) => node(s"Unknown fragment output $id", "Please check fragment definition")
       case DisablingManyOutputsSubprocess(id, _) => node(s"Cannot disable fragment $id. Has many outputs", "Please check fragment definition")
       case DisablingNoOutputsSubprocess(id) => node(s"Cannot disable fragment $id. Hasn't outputs", "Please check fragment definition")
-      case MissingRequiredProperty(fieldName, label, _) => missingRequiredProperty(typ, fieldName, label)
-      case UnknownProperty(propertyName, _) => unknownProperty(typ, propertyName)
+      case MissingRequiredProperty(fieldName, label) => missingRequiredProperty(typ, fieldName, label)
+      case UnknownProperty(propertyName) => unknownProperty(typ, propertyName)
+      case PropertyValidationError(error) => formatErrorMessage(error)
       case InvalidPropertyFixedValue(fieldName, label, value, values, _) => invalidPropertyFixedValue(typ, fieldName, label, value, values)
       case CustomNodeError(_, message, paramName) => NodeValidationError(typ, message, message, paramName, NodeValidationErrorType.SaveAllowed)
     }

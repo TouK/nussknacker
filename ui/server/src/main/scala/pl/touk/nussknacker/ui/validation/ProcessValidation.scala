@@ -2,8 +2,6 @@ package pl.touk.nussknacker.ui.validation
 
 import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioPropertiesError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
@@ -11,11 +9,13 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.process.ProcessingType
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -23,15 +23,13 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 
 object ProcessValidation {
-  def apply(modelData: ProcessingTypeDataProvider[ModelData],
-            additionalProperties: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
+  def apply(processingTypeData: ProcessingTypeDataProvider[ProcessingTypeData],
             subprocessResolver: SubprocessResolver): ProcessValidation = {
-    new ProcessValidation(modelData, additionalProperties, subprocessResolver, None)
+    new ProcessValidation(processingTypeData.mapValues(ptd => (ptd.modelData, ptd.additionalValidators)), subprocessResolver, None)
   }
 }
 
-class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
-                        additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
+class ProcessValidation(validationData: ProcessingTypeDataProvider[(ModelData, List[CustomProcessValidator])],
                         subprocessResolver: SubprocessResolver,
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
 
@@ -45,18 +43,13 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
 
   import pl.touk.nussknacker.engine.util.Implicits._
 
-  private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertiesConfig)
-
   def withSubprocessResolver(subprocessResolver: SubprocessResolver) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, subprocessResolver, None
+    validationData, subprocessResolver, None
   )
 
   def withExpressionParsers(modify: PartialFunction[ExpressionParser, ExpressionParser]) = new ProcessValidation(
-    modelData, additionalPropertiesConfig, subprocessResolver, Some(modify)
+    validationData, subprocessResolver, Some(modify)
   )
-
-  def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) =
-    new ProcessValidation(modelData, additionalPropertiesConfig, subprocessResolver, None)
 
   def validate(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
@@ -73,11 +66,11 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   }
 
   def processingTypeValidationWithTypingInfo(canonical: CanonicalProcess, processingType: ProcessingType, category: Category): ValidationResult = {
-    modelData.forType(processingType) match {
+    validationData.forType(processingType) match {
       case None =>
         ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.noValidatorKnown(processingType)))
       case Some(model) =>
-        validateUsingTypeValidator(canonical, model, category)
+        validateUsingTypeValidator(canonical, model._1, model._2, category)
     }
   }
 
@@ -87,13 +80,20 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .add(validateDuplicates(displayable))
       .add(validateLooseNodes(displayable))
       .add(validateEdgeUniqueness(displayable))
-      .add(validateAdditionalProcessProperties(displayable))
       .add(warningValidation(displayable))
   }
 
-  private def validateUsingTypeValidator(canonical: CanonicalProcess, modelData: ModelData, category: Category): ValidationResult = {
+
+
+  private def validateUsingTypeValidator(canonical: CanonicalProcess,
+                                         modelData: ModelData,
+                                         additionalValidators: List[CustomProcessValidator],
+                                         category: Category): ValidationResult = {
+    val syntax = ValidatedSyntax[ProcessCompilationError]
+    import syntax._
+
     val processValidator = processValidatorCache.getOrCreate(ValidatorKey(modelData, category)) {
-      val modelCategoryValidator = modelData.prepareValidatorForCategory(Some(category))
+      val modelCategoryValidator = modelData.prepareValidatorForCategory(Some(category), additionalValidators)
 
       expressionParsers
         .map(modelCategoryValidator.withExpressionParsers)
@@ -137,14 +137,6 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       List(),
       List()
     )
-  }
-
-  private def validateAdditionalProcessProperties(displayable: DisplayableProcess): ValidationResult = {
-    if (displayable.metaData.isSubprocess) {
-      ValidationResult.success
-    } else {
-      additionalPropertiesValidator.validate(displayable)
-    }
   }
 
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {

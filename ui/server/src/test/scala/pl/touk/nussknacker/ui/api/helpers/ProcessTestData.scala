@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -85,10 +85,10 @@ object ProcessTestData {
     .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
       manyInputs = false, canBeEnding = true))
 
-  val processValidation: ProcessValidation = ProcessValidation(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-    new SubprocessResolver(new StubSubprocessRepository(Set()))
+  val processValidation: ProcessValidation = new ProcessValidation(
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (new StubModelDataWithProcessDefinition(processDefinition), Nil)),
+    new SubprocessResolver(new StubSubprocessRepository(Set())),
+    None
   )
 
   val validProcess: CanonicalProcess = validProcessWithId("fooProcess")
@@ -221,18 +221,18 @@ object ProcessTestData {
     )
   }
 
-  val emptySubprocess = {
+  val emptySubprocess: CanonicalProcess = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData(), None, Map()), List(), List.empty)
   }
 
-  val sampleSubprocessOneOut = {
+  val sampleSubprocessOneOut: CanonicalProcess = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       canonicalnode.FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
     ), List.empty)
   }
 
-  val sampleSubprocess = {
+  val sampleSubprocess: CanonicalProcess = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
@@ -242,7 +242,7 @@ object ProcessTestData {
     ), List.empty)
   }
 
-  val sampleSubprocess2 = {
+  val sampleSubprocess2: CanonicalProcess = {
     CanonicalProcess(MetaData("sub1", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param2", SubprocessClazzRef[String])))),
       SplitNode(Split("split"), List(
@@ -278,17 +278,6 @@ object ProcessTestData {
           "output1" -> GraphBuilder.emptySink("sink", existingSinkFactory)
         )),
       subprocess = subprocess
-    )
-  }
-
-  def displayableWithAdditionalFields(additionalFields: Option[ProcessAdditionalFields]): DisplayableProcess = {
-    val process = validDisplayableProcess.toDisplayable
-    val properties = process.properties
-
-    process.copy(
-      properties = properties.copy(
-        additionalFields = additionalFields
-      )
     )
   }
 

@@ -112,7 +112,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val subprocessResolver = new SubprocessResolver(subprocessRepository)
 
     val additionalProperties = typeToConfig.mapValues(_.additionalPropertiesConfig)
-    val processValidation = ProcessValidation(modelData, additionalProperties, subprocessResolver)
+    val processValidation = ProcessValidation(typeToConfig, subprocessResolver)
 
     val substitutorsByProcessType = modelData.mapValues(modelData => ProcessDictSubstitutor(modelData.dictServices.dictRegistry))
     val processResolving = new UIProcessResolving(processValidation, substitutorsByProcessType)
@@ -144,8 +144,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, scenarioResolver, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
-      writeProcessRepository, processValidation
-    )
+      writeProcessRepository)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -170,7 +169,8 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processResolving = processResolving,
           processAuthorizer = processAuthorizer,
           processChangeListener = processChangeListener,
-          typeToConfig = typeToConfig
+          typeToConfig = typeToConfig,
+          processValidation = processValidation
         ),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),

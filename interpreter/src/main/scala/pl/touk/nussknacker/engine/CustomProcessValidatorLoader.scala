@@ -15,9 +15,8 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
     new CustomProcessValidatorAggregate(List.empty)
   }
 
-  def loadProcessValidators(classLoader: ClassLoader, config: Config): CustomProcessValidator = {
-    val validators = CustomProcessValidatorLoader.loadAll(classLoader).map(_.validator(config))
-    new CustomProcessValidatorAggregate(validators)
+  def loadProcessValidators(classLoader: ClassLoader, config: Config, preloaded: List[CustomProcessValidator] = Nil): CustomProcessValidator = {
+    new CustomProcessValidatorAggregate(CustomProcessValidatorLoader.loadAll(classLoader).map(_.validator(config)) ++ preloaded)
   }
 
   override def loadAll(classLoader: ClassLoader): List[CustomProcessValidatorFactory] = {
@@ -25,7 +24,7 @@ object CustomProcessValidatorLoader extends LoadClassFromClassLoader {
   }
 
   private class CustomProcessValidatorAggregate(customValidators: List[CustomProcessValidator]) extends CustomProcessValidator {
-    val syntax = ValidatedSyntax[ProcessCompilationError]
+    private val syntax = ValidatedSyntax[ProcessCompilationError]
 
     import syntax._
     override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {

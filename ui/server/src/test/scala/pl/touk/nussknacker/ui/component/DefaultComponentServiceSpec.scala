@@ -363,7 +363,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
     Fraud -> LocalModelData(fraudConfig, ComponentFraudTestConfigCreator),
   ).map { case (processingType, modelData) =>
-    processingType -> ProcessingTypeData(new MockDeploymentManager, modelData, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), Map.empty, None, supportsSignals = false)
+    processingType -> ProcessingTypeData(new MockDeploymentManager, modelData, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), Map.empty, Nil, None, supportsSignals = false)
   })
 
   it should "return components for each user" in {
@@ -433,7 +433,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       Streaming -> LocalModelData(streamingConfig, ComponentMarketingTestConfigCreator),
       Fraud -> LocalModelData(wrongConfig, WronglyConfiguredConfigCreator),
     ).map { case (processingType, config) =>
-      processingType -> ProcessingTypeData(new MockDeploymentManager, config, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), Map.empty, None, supportsSignals = false)
+      processingType -> ProcessingTypeData(new MockDeploymentManager,
+        config, MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()), Map.empty, Nil, None, supportsSignals = false)
     })
 
     val processService = createDbProcessService(categoryService, List(MarketingProcess))
@@ -515,8 +516,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 
   private def cid(processingType: ProcessingType, name: String, componentType: ComponentType): ComponentId =

@@ -15,22 +15,20 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
-import pl.touk.nussknacker.ui.process.repository.DeploymentComment
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, EmptyResponse, UpdateProcessCommand}
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
-import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager, UpdateProcessComment}
+import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
+import pl.touk.nussknacker.ui.validation.FatalValidationError
 
 import java.time
 import scala.concurrent.{ExecutionContext, Future}
@@ -90,8 +88,7 @@ class DBProcessService(managerActor: ActorRef,
                        repositoryManager: RepositoryManager[DB],
                        fetchingProcessRepository: FetchingProcessRepository[Future],
                        processActionRepository: ProcessActionRepository[DB],
-                       processRepository: ProcessRepository[DB],
-                       processValidation: ProcessValidation)(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
+                       processRepository: ProcessRepository[DB])(implicit ec: ExecutionContext) extends ProcessService with LazyLogging {
 
   import cats.instances.future._
   import cats.syntax.either._
@@ -293,9 +290,8 @@ class DBProcessService(managerActor: ActorRef,
   }
 
   private def validateInitialScenarioProperties(canonicalProcess: CanonicalProcess, processingType:ProcessingType, category: String) = {
-    val validationResult = processValidation.processingTypeValidationWithTypingInfo(canonicalProcess, processingType, category)
+    val validationResult = processResolving.validateBeforeUiReverseResolving(canonicalProcess, processingType, category)
     validationResult.errors.processPropertiesErrors
-
   }
 
   private def archiveSubprocess(process: BaseProcessDetails[_])(implicit user: LoggedUser): Future[EmptyResponse] =

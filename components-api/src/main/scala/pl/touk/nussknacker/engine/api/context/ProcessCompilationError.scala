@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.api.context
 
-import cats.Applicative
 import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.InASingleNode
 
 sealed trait ProcessCompilationError {
   def nodeIds: Set[String]
@@ -22,9 +21,6 @@ sealed trait ParameterValidationError extends PartSubGraphCompilationError with 
 object ProcessCompilationError {
 
   type ValidatedNelCompilationError[T] = ValidatedNel[ProcessCompilationError, T]
-
-  val ValidatedNelApplicative: Applicative[ValidatedNelCompilationError] =
-    Applicative[ValidatedNelCompilationError]
 
   trait InASingleNode { self: ProcessCompilationError =>
 
@@ -46,7 +42,7 @@ object ProcessCompilationError {
   case class InvalidRootNode(nodeId: String) extends ProcessUncanonizationError with InASingleNode
 
   object EmptyProcess extends ProcessUncanonizationError {
-    override def nodeIds = Set()
+    override def nodeIds: Set[String] = Set()
   }
 
   case class InvalidTailOfBranch(nodeId: String) extends ProcessUncanonizationError with InASingleNode
@@ -148,21 +144,10 @@ object ProcessCompilationError {
 
   case class CustomParameterValidationError(message: String, description: String, paramName: String, nodeId: String) extends ParameterValidationError
 
-  case class MissingRequiredProperty(paramName: String, label: Option[String], nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
+  case class MissingRequiredProperty(paramName: String, label: Option[String]) extends ProcessCompilationError with ScenarioPropertiesError
 
-  object MissingRequiredProperty {
-    def apply(paramName: String, label: Option[String])(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      MissingRequiredProperty(paramName, label, nodeId.id)
-  }
-
-  case class UnknownProperty(paramName: String, nodeId: String)
-    extends PartSubGraphCompilationError with InASingleNode
-
-  object UnknownProperty {
-    def apply(paramName: String)(implicit nodeId: NodeId): PartSubGraphCompilationError =
-      UnknownProperty(paramName, nodeId.id)
-  }
+  case class UnknownProperty(paramName: String)
+    extends ProcessCompilationError with ScenarioPropertiesError
 
   case class InvalidPropertyFixedValue(paramName: String, label: Option[String], value: String, values: List[String], nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
@@ -211,5 +196,9 @@ object ProcessCompilationError {
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
   case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with ScenarioPropertiesError
+
+  case class SpecificDataValidationError(fieldName: String, message: String) extends ProcessCompilationError with ScenarioPropertiesError
+
+  case class PropertyValidationError(nested: ProcessCompilationError) extends ProcessCompilationError with ScenarioPropertiesError
 
 }

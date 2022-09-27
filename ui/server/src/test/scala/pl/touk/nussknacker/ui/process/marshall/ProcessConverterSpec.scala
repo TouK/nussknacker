@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessAdditionalFields, SpelExpressionExcludeList, StreamMetaData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ExpressionDefinition, ProcessDefinition}
 import pl.touk.nussknacker.engine.graph.EdgeType
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, NodeValidationError, NodeValidationErrorType, ValidationResult}
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider, sampleResolver}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, sampleResolver}
 import pl.touk.nussknacker.ui.api.helpers.{StubModelDataWithProcessDefinition, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -46,10 +45,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       settings = ClassExtractionSettings.Default
     )
 
-    ProcessValidation(
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
-      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
-      sampleResolver
+    new ProcessValidation(
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> (new StubModelDataWithProcessDefinition(processDefinition), Nil)),
+      sampleResolver,
+      None
     )
   }
 

@@ -42,7 +42,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   def modelData(list: List[TestRecord] = List()): LocalModelData = LocalModelData(ConfigFactory
     .empty().withValue("useTypingResultTypeInformation", fromAnyRef(true)), new Creator(list))
 
-  private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None)
+  private val processValidator: ProcessValidator = modelData().prepareValidatorForCategory(None, Nil)
 
   test("aggregates are properly validated") {
     validateOk("#AGG.approxCardinality","#input.str",  Typed[Long])

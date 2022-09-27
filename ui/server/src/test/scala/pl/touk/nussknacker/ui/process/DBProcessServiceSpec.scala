@@ -1,16 +1,14 @@
 package pl.touk.nussknacker.ui.process
 
-import pl.touk.nussknacker.engine.api.context.ValidationContext
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.compile.NodeTypingInfo
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.variables.MetaVariables
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationErrors, ValidationResult, ValidationWarnings}
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeTypingData, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
@@ -23,15 +21,14 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
 import java.time.Duration
-import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
 
+  import io.circe.syntax._
   import org.scalatest.prop.TableDrivenPropertyChecks._
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
   import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-  import io.circe.syntax._
 
   //These users were created based on categoriesConfig at ui.conf
   private val adminUser = TestFactory.adminUser()
@@ -157,7 +154,6 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
       repositoryManager = TestFactory.newDummyRepositoryManager(),
       fetchingProcessRepository = new MockFetchingProcessRepository(processes),
       processActionRepository = TestFactory.newDummyActionRepository(),
-      processRepository = TestFactory.newDummyWriteProcessRepository(),
-      processValidation = TestFactory.processValidation
+      processRepository = TestFactory.newDummyWriteProcessRepository()
     )
 }

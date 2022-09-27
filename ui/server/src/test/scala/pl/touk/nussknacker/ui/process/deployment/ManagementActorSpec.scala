@@ -68,7 +68,7 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
 
   private val processService = new DBProcessService(managementActor, time.Duration.ofMinutes(1), newProcessPreparer,
     processCategoryService, processResolving, repositoryManager, fetchingProcessRepository, actionRepository,
-    writeProcessRepository, processValidation
+    writeProcessRepository
   )
 
 

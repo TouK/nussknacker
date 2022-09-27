@@ -5,30 +5,21 @@ import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import net.ceedubs.ficus.readers.{OptionReader, ValueReader}
+import pl.touk.nussknacker.engine.BaseModelData
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
 import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
-import pl.touk.nussknacker.engine.version.BuildInfo
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
-import pl.touk.nussknacker.k8s.manager.RequestResponseSlugUtils.defaultSlug
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
-import pl.touk.nussknacker.k8s.manager.deployment.{K8sScalingConfig, _}
-import K8sScalingConfig.valueReader
-import pl.touk.nussknacker.k8s.manager.ingress.{IngressConfig, IngressPreparer}
+import pl.touk.nussknacker.k8s.manager.deployment._
+import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
@@ -36,70 +27,12 @@ import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
 import skuber.{ConfigMap, LabelSelector, ListResource, ObjectMeta, ObjectResource, Pod, ResourceQuotaList, Secret, Service, k8sInit}
-import sttp.client.{NothingT, SttpBackend}
 
 import java.util.Collections
 import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
-
-/*
-  Each scenario is deployed as Deployment+ConfigMap
-  ConfigMap contains: model config with overrides for execution and scenario
- */
-class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
-
-  override def createDeploymentManager(modelData: BaseModelData, config: Config)
-                                      (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
-                                       deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    K8sDeploymentManager(modelData.asInvokableModelData, config)
-  }
-
-  private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
-
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
-    forMode(config)(
-      _ => steamingInitialMetData,
-      config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName, config.rootAs[K8sDeploymentManagerConfig].nussknackerInstanceName)))
-    )
-  }
-
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = forMode(config)(
-    _ => Map.empty,
-    _ => RequestResponseOpenApiSettings.additionalPropertiesConfig
-  )
-
-  override def name: String = "lite-k8s"
-
-  private def forMode[T](config: Config)(streaming: Config => T, requestResponse: Config => T): T = {
-    // TODO: mode field won't be needed if we add scenarioType to TypeSpecificInitialData.forScenario
-    //       and add scenarioType -> mode mapping with reasonable defaults to configuration
-    config.getString("mode") match {
-      case "streaming" => streaming(config)
-      case "request-response" => requestResponse(config)
-      case other => throw new IllegalArgumentException(s"Unsupported mode: $other")
-    }
-  }
-}
-
-object K8sDeploymentManagerConfig {
-  implicit val ingressValueReader: ValueReader[Option[IngressConfig]] = new ValueReader[Option[IngressConfig]] {
-    override def read(config: Config, path: String): Option[IngressConfig] = OptionReader.optionValueReader[IngressConfig].read(config, path)
-  }
-}
-
-case class K8sDeploymentManagerConfig(dockerImageName: String = "touk/nussknacker-lite-runtime-app",
-                                      dockerImageTag: String = BuildInfo.version,
-                                      scalingConfig: Option[K8sScalingConfig] = None,
-                                      configExecutionOverrides: Config = ConfigFactory.empty(),
-                                      k8sDeploymentConfig: Config = ConfigFactory.empty(),
-                                      nussknackerInstanceName: Option[String] = None,
-                                      logbackConfigPath: Option[String] = None,
-                                      commonConfigMapForLogback: Option[String] = None,
-                                      ingress: Option[IngressConfig] = None,
-                                      servicePort: Int = 80)
 
 class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
                           (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
@@ -109,7 +42,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private lazy val k8sUtils = new K8sUtils(k8s)
   private val deploymentPreparer = new DeploymentPreparer(config)
   private val servicePreparer = new ServicePreparer(config)
-  private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(config.scalingConfig)
+  private val scalingOptionsDeterminerOpt = K8sScalingOptionsDeterminer.create(None)//config.scalingConfig)
   private val scenarioValidator = LiteScenarioValidator(config)
   private val ingressPreparerOpt = config.ingress.map(new IngressPreparer(_, config.nussknackerInstanceName))
 
@@ -134,8 +67,6 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       oldDeployment <- k8s.getOption[Deployment](objectNameForScenario(processVersion, config.nussknackerInstanceName, None))
       _ <- Future.fromTry(K8sPodsResourceQuotaChecker.hasReachedQuotaLimit(oldDeployment.flatMap(_.spec.flatMap(_.replicas)), resourceQuotas,
         scalingOptions.replicasCount, deploymentStrategy).toEither.toTry)
-      // TODO: it should be moved into CustomProcessValidator after refactor of it
-      _ <- Future.fromTry(scenarioValidator.validate(canonicalProcess).toEither.toTry)
       _ <- validatePreparedService(processVersion, canonicalProcess.metaData)
     } yield ()
   }
@@ -192,7 +123,7 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
           case Some(fixed: FixedReplicasCountK8sScalingOptionsDeterminer) =>
             fixed.replicasCount
           case Some(_) =>
-            logger.debug(s"Not supported scaling config for request-response scenario type: ${config.scalingConfig}. Will be used default replicase count: $defaultReqRespReplicaseCount instead")
+            //logger.debug(s"Not supported scaling config for request-response scenario type: ${config.scalingConfig}. Will be used default replicase count: $defaultReqRespReplicaseCount instead")
             defaultReqRespReplicaseCount
           case None =>
             defaultReqRespReplicaseCount
@@ -325,10 +256,6 @@ object K8sDeploymentManager {
   val secretIdLabel: String = "nussknacker.io/secretId"
 
   val resourceTypeLabel: String = "nussknacker.io/resourceType"
-
-  def apply(modelData: BaseModelData, config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem): K8sDeploymentManager = {
-    new K8sDeploymentManager(modelData, config.rootAs[K8sDeploymentManagerConfig])
-  }
 
   /*
     We use name label to find deployment to cancel/findStatus, we append short hash to reduce collision risk

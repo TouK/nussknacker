@@ -9,7 +9,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.api.StreamMetaData
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.graph.expression.Expression
@@ -31,13 +30,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
-  private val processValidation = TestFactory.processValidation.withAdditionalPropertiesConfig(
-    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map(
-      "requiredStringProperty" -> AdditionalPropertyConfig(None, Some(StringParameterEditor), Some(List(MandatoryParameterValidator)), Some("label")),
-      "numberOfThreads" -> AdditionalPropertyConfig(None, Some(FixedValuesParameterEditor(possibleValues)), Some(List(FixedValuesValidator(possibleValues))), None),
-      "maxEvents" -> AdditionalPropertyConfig(None, None, Some(List(LiteralParameterValidator.integerValidator)), Some("label"))
-    ))
-  )
+  private val processValidation = TestFactory.processValidation
 
   private val route: Route = withPermissions(new ValidationResources(fetchingProcessRepository,
     new UIProcessResolving(processValidation, emptyProcessingTypeDataProvider)), testPermissionRead
@@ -64,17 +57,6 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
       entity should include ("This field value is required and can not be blank")
-    }
-  }
-
-  it should "find errors in scenario properties" in {
-    createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
-      status shouldEqual StatusCodes.OK
-      val entity = entityAs[String]
-      entity should include ("Configured property requiredStringProperty (label) is missing")
-      entity should include ("Property numberOfThreads has invalid value")
-      entity should include ("Unknown property unknown")
-      entity should include ("This field value has to be an integer number")
     }
   }
 

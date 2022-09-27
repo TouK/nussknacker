@@ -4,10 +4,11 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
+import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
@@ -27,15 +28,19 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig))
+  private val processValidation = ProcessValidation(typeToConfig, new SubprocessResolver(subprocessRepository))
+
+  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData),
+    processValidation)
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
-    = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
+  = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
   private val processProperties = ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"))))
@@ -47,12 +52,12 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
       val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
       Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
-          case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a")=>
+          case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a") =>
         }
       }
 
       val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[Option[AdditionalInfo]] shouldBe None
       }
     }
