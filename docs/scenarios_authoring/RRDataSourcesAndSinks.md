@@ -9,7 +9,7 @@ sidebar_position: 4
 ### Prerequisites
 
 To fully understand how Nussknacker works in Request-Response mode, it's best to read the following first:
-* [Http session](https://developer.mozilla.org/en-US/docs/Web/HTTP/Session)
+* [Http overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
 
 ### Concepts
 
@@ -30,9 +30,8 @@ Nussknacker uses those schema to detect how the request and response should look
 
 ## Request-Response source
 
-Nussknacker will read HTTP Post request payload and serialize it to event based on [Input schema](#request-response-schema)
-
-Thanks to that Nussknacker knows what data to expect in the request, so it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. 
+Nussknacker will read HTTP Post request payload.
+Thanks to the [Input schema](#request-response-schema) Nussknacker knows what data to expect in the request, so it will hint field names and will perform additional validations on SpEL expressions involving data from the selected topic. 
 
 ![RR source](img/rrSource.png "RR source")
 

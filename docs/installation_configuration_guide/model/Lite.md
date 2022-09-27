@@ -2,9 +2,9 @@
 sidebar_label: "Lite"
 ---
 
-# Lite model configuration
+# Lite Model configuration
 
-## Streaming-Lite specific model configuration
+## Streaming processing mode
 
 ### Configuration
 

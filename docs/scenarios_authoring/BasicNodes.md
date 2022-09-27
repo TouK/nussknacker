@@ -199,9 +199,9 @@ This source has the following parameters:
 
 ![collect](img/collect.png)
 
-**(Request-Response only)**
+**(Request-response only)**
 
-`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and store them in a list.
+`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and stores them in a list.
 
 **Collect** takes one argument:
 - Input expression - expression which will be collected from all nodes invocations.

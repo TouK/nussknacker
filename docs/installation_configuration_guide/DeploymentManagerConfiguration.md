@@ -20,7 +20,7 @@ Please remember, that K8s Deployment Manager has to be run with properly configu
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
-Both processing modes: `steaming` and `request-response` share the majority of configuration.
+Both processing modes: `streaming` and `request-response` share the majority of configuration.
 
 `lite-k8s` Deployment Manager has the following configuration options:                 
 

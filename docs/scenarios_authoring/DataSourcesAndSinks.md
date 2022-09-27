@@ -2,7 +2,7 @@
 sidebar_position: 3
 ---
 
-# Streaming sources and sinks
+# Sources and sinks | Streaming only
 
 ## Kafka topics as input and output to Nussknacker scenarios
 

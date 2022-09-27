@@ -2,11 +2,11 @@
 sidebar_position: 2
 ---
 
-# Http incoming
+# Request-Response processing mode only
 
 ## Overview
 
-Based on your network topology after you deploy a `Request-response` scenario there should be either a k8s service or ingress allowing you to connect to scenario.
+Depending on your network topology after you deploy a `Request-response` scenario, there should be either a k8s service or ingress allowing you to connect to scenario.
 
 ## Connection
 
@@ -24,7 +24,7 @@ curl -X POST -d "payload_based_on_input_schema" 'http://<ingress_domain><scenari
 
 ## OpenAPI
 
-After you deploy your `Request-Response` scenario there will be available OpenAPI definition based on input and output schema you have provided in scenario properties.
+After you deploy your `Request-Response` scenario an OpenAPI definition based on input and output schema you have provided in scenario properties will be available.
 You should see swagger based definition under `http://<scenario_name>/definition`
 
 You can see example definition below:
