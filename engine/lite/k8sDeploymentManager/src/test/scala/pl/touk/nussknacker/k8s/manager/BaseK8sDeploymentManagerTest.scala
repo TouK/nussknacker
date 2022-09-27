@@ -81,11 +81,7 @@ class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val sce
 
   def withRunningScenario(action: => Unit): Unit = {
     manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
-    eventually {
-      val state = manager.findJobStatus(version.processName).futureValue
-      state.flatMap(_.version) shouldBe Some(version)
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
-    }
+    waitForRunning(version)
 
     try {
       action
@@ -97,4 +93,11 @@ class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val sce
     }
   }
 
+  def waitForRunning(version: ProcessVersion) = {
+    eventually {
+      val state = manager.findJobStatus(version.processName).futureValue
+      state.flatMap(_.version) shouldBe Some(version)
+      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+    }
+  }
 }
