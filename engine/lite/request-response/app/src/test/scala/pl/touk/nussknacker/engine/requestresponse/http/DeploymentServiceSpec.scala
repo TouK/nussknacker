@@ -91,7 +91,7 @@ class DeploymentServiceSpec extends AnyFlatSpec with Matchers {
   private def processWithIdAndPath(processName: ProcessName, path: Option[String]) = {
     val canonical = ScenarioBuilder
         .requestResponse(processName.value)
-        .path(path)
+        .slug(path)
         .source("start", "request1-post-source")
         .emptySink("endNodeIID", "response-sink", "value" -> "''")
     RequestResponseDeploymentData(canonical, 0, ProcessVersion.empty.copy(processName = processName), DeploymentData.empty)

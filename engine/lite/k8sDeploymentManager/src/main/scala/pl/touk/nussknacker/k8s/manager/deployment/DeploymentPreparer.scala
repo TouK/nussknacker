@@ -6,7 +6,7 @@ import monocle.Iso
 import monocle.macros.GenLens
 import monocle.std.option._
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
-import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNameForScenario, scenarioIdLabel, scenarioVersionAnnotation}
+import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, objectNameForScenario, scenarioIdLabel, scenarioVersionAnnotation, versionAnnotationForScenario}
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManagerConfig
 import skuber.EnvVar.FieldRef
 import skuber.LabelSelector.IsEqualRequirement
@@ -31,7 +31,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
 
   private def applyDeploymentDefaults(userConfigurationBasedDeployment: Deployment, processVersion: ProcessVersion, typeSpecificData: TypeSpecificData, resourcesToMount: MountableResources, determinedReplicasCount: Int, nussknackerInstanceName: Option[String]) = {
     val objectName = objectNameForScenario(processVersion, config.nussknackerInstanceName, None)
-    val annotations = Map(scenarioVersionAnnotation -> processVersion.asJson.spaces2)
+    val annotations = versionAnnotationForScenario(processVersion)
     val labels = labelsForScenario(processVersion, nussknackerInstanceName)
 
     //we use 'OptionOptics some' here and do not worry about withDefault because _.spec is provided in defaultMinimalDeployment

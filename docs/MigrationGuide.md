@@ -32,8 +32,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3542](https://github.com/TouK/nussknacker/pull/3542) Node additional info path renamed from `nodes/{scenarioId}/additionalData` to `nodes/{scenarioId}/additionalInfo`
 
 ### Scenario API changes
-* [#3471](https://github.com/TouK/nussknacker/pull/3471) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
-  `V1_033__RequestResponseUrlToSlug` migration is ready for that.
+* [#3471](https://github.com/TouK/nussknacker/pull/3471), [#3553](https://github.com/TouK/nussknacker/pull/3553) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
+  `V1_033__RequestResponseUrlToSlug` migration is ready for that, the change also applies to Scenario DSL.
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Scenario DSL returns `CanonicalProcess` instead of `EspProcess`. 
 
 ### Configuration changes
