@@ -35,6 +35,7 @@ export function Properties({
   //fixme move this configuration to some better place?
   //we sort by name, to have predictable order of properties (should be replaced by defining order in configuration)
   const sorted = useMemo(() => sortBy(Object.entries(additionalPropertiesConfig), ([name]) => name), [additionalPropertiesConfig])
+
   return (
     <NodeTableBody>
       <IdField
@@ -43,6 +44,8 @@ export function Properties({
         node={node}
         renderFieldLabel={renderFieldLabel}
         setProperty={setProperty}
+        additionalValidators={[errorValidator(fieldErrors || [], "id")]}
+        
       />
       {node.isSubprocess ?
         (

@@ -97,7 +97,7 @@ private case class UnknownPropertyValidator(config: Map[String, AdditionalProper
   def isValid(propertyName: String)
              (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (config.get(propertyName).nonEmpty) valid(Unit) else invalid(UnknownProperty(propertyName))
+    if (config.contains(propertyName)) valid(Unit) else invalid(UnknownProperty(propertyName))
   }
 }
 
