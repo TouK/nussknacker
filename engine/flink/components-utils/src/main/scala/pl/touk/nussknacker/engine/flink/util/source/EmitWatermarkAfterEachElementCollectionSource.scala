@@ -54,7 +54,7 @@ class EmitWatermarkAfterEachElementCollectionSource[T: TypeInformation](list: Se
   override def sourceStream(env: StreamExecutionEnvironment, flinkNodeContext: FlinkCustomNodeContext): DataStream[Context] = {
     val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     env
-      .addSource(flinkSourceFunction)
+      .addSource(flinkSourceFunction, implicitly[TypeInformation[T]])
       .name(s"${flinkNodeContext.metaData.id}-${flinkNodeContext.nodeId}-source")
       .map(new FlinkContextInitializingFunction(
         contextInitializer, flinkNodeContext.nodeId,

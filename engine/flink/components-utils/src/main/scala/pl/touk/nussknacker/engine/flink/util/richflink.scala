@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream}
+import org.apache.flink.streaming.api.datastream.{DataStream, KeyedStream, SingleOutputStreamOperator}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
@@ -31,7 +31,10 @@ object richflink {
     //reported with operator_name tag equal to nodeId.
     //in most cases uid should be set together with operator name, if this is not the case - use ExplicitUidInOperatorsSupport explicitly
     def setUidWithName(implicit ctx: FlinkCustomNodeContext, explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean): DataStream[T] =
-      ExplicitUidInOperatorsSupport.setUidIfNeed[T, DataStream[T]](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream).setUidWithName
+      ExplicitUidInOperatorsSupport.setUidIfNeed[T, DataStream[T]](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream) match {
+        case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId)
+        case other => other
+      }
   }
 
 }
