@@ -12,9 +12,14 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OPEN_API_VERSION
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 
-class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: OpenApiDefinitionConfig, scenarioName: ProcessName, exposedPath: String) extends Directives with LazyLogging {
+class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: OpenApiDefinitionConfig, scenarioName: ProcessName) extends Directives with LazyLogging {
+
+  // Regarding https://spec.openapis.org/oas/v3.1.0#serverObject server url accept urls "relative to the location where the OpenAPI document is being served"
+  // We use this relative reference instead of default '/' because runtime can by server reverse proxies (i.e. ingress controller) that can rewrite this url
+  private val defaultServerUrl = "./"
 
   val invocationRoute: Route = {
     logDirective {
@@ -32,12 +37,13 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
 
   val definitionRoute: Route = {
     val interpreter = handler.requestResponseInterpreter
-    val oApiJson = RequestResponseOpenApiGenerator
-      .generateOpenApi(List((exposedPath, interpreter)), interpreter.generateOpenApiInfoForScenario(), definitionConfig.server)
+    val openApiInfo = interpreter.generateInfoOpenApiDefinitionPart()
+    val oApiJson = new RequestResponseOpenApiGenerator(OPEN_API_VERSION, openApiInfo).generateOpenApiDefinition(interpreter, definitionConfig.servers, defaultServerUrl)
+    val oApiJsonAsString = jsonStringToEntity(oApiJson.spaces2)
 
     get {
       complete {
-        HttpResponse(status = StatusCodes.OK, entity = jsonStringToEntity(oApiJson))
+        HttpResponse(status = StatusCodes.OK, entity = oApiJsonAsString)
       }
     }
   }

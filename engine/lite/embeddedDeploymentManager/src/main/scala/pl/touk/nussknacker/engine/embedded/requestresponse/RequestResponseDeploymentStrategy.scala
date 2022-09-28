@@ -86,7 +86,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     val interpreterWithSlug = slugForScenario(jobData.metaData).product(interpreter)
     interpreterWithSlug.foreach { case (slug, interpreter) =>
-      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config.definitionMetadata, jobData.processVersion.processName, ScenarioDispatcherRoute.invocationUrl(slug)))
+      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config.definitionMetadata, jobData.processVersion.processName))
       interpreter.open()
     }
     interpreterWithSlug

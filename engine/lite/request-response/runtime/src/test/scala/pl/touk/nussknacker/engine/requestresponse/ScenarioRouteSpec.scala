@@ -41,7 +41,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
   private val routes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter),
-    OpenApiDefinitionConfig(Some(OApiServer("https://nussknacker.io", "request response test"))), scenarioName, "/").combinedRoute
+    OpenApiDefinitionConfig(List(OApiServer("https://nussknacker.io", Some("request response test")))), scenarioName).combinedRoute
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

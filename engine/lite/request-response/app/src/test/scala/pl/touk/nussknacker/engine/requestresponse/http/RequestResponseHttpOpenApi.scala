@@ -19,7 +19,7 @@ class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestR
       .emptySink("end", "response", SinkRawEditorParamName -> "false", "place" -> "#input.city")
 
     val interpreter = prepareInterpreter(process = process)
-    val openApiOpt = interpreter.generateOpenApiDefinition()
+    val openApiOpt = interpreter.generatePathOpenApiDefinitionPart()
     val expectedOpenApi =
       """{
         |  "post" : {

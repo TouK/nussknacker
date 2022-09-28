@@ -11,7 +11,7 @@ object OApiDocumentation {
 }
 case class OApiDocumentation(openapi: String, info: OApiInfo, servers: Option[List[OApiServer]], paths: Json)
 @JsonCodec(encodeOnly = true)
-case class OApiServer(url: String, description: String)
+case class OApiServer(url: String, description: Option[String])
 case class OApiInfo(title: String, description: Option[String] = None, contact: Option[OApiContact] = None, version: String)
 @JsonCodec(encodeOnly = true)
 case class OApiContact(name: String, url: String, email: String)
