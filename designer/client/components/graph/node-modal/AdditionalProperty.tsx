@@ -3,7 +3,8 @@ import {UnknownFunction} from "../../../types/common"
 import EditableEditor from "./editors/EditableEditor"
 import React, {useCallback} from "react"
 import {ExpressionLang} from "./editors/expression/types"
-import {PossibleValue} from "./editors/Validators"
+import {errorValidator, PossibleValue} from "./editors/Validators"
+import {NodeValidationError} from "../../../types";
 
 export interface AdditionalPropertyConfig {
   editor: any,
@@ -16,7 +17,7 @@ interface Props {
   showValidation: boolean,
   propertyName: string,
   propertyConfig: AdditionalPropertyConfig,
-  propertyErrors: Array<any>,
+  propertyErrors: NodeValidationError[],
   editedNode: any,
   onChange: UnknownFunction,
   renderFieldLabel: UnknownFunction,
@@ -31,10 +32,12 @@ export default function AdditionalProperty(props: Props) {
   } = props
 
   const values = propertyConfig.values?.map(value => ({expression: value, label: value}))
-  const current = get(editedNode, `additionalFields.properties.${propertyName}`) || ""
+  let propertyPath = `additionalFields.properties.${propertyName}`;
+  const current = get(editedNode, propertyPath) || ""
   const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
-
-  const onValueChange = useCallback((newValue) => onChange(`additionalFields.properties.${propertyName}`, newValue), [onChange, propertyName])
+  
+  let validator = errorValidator(propertyErrors, propertyName);
+  const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyName])
 
   return (
     <EditableEditor
@@ -51,7 +54,7 @@ export default function AdditionalProperty(props: Props) {
       showValidation={showValidation}
       //AdditionalProperties do not use any variables
       variableTypes={{}}
-      errors={propertyErrors}
+      validators={[validator]}
     />
   )
 }
