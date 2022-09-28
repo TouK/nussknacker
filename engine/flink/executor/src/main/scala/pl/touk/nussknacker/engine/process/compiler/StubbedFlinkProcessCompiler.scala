@@ -82,7 +82,7 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
 
 private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
   override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.getExecutionEnvironment.addSource(new EmptySourceFunction[SignalType]))
+    start.connect(start.getExecutionEnvironment.addSource(new EmptySourceFunction[SignalType], implicitly[TypeInformation[SignalType]]))
   }
 }
 
