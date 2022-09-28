@@ -7,8 +7,6 @@ object RequestResponseOpenApiSettings {
 
   val OutputSchemaProperty = "outputSchema"
   val InputSchemaProperty = "inputSchema"
-  val OPEN_API_VERSION = "3.1.0"
-
   private val emptySchema = "{}"
 
   val additionalPropertiesConfig: Map[String, AdditionalPropertyConfig] = Map(

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.requestresponse
 
 import akka.event.Logging
 import akka.http.scaladsl.model.MediaTypes.`application/json`
+import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
 import akka.http.scaladsl.server.directives.DebuggingDirectives
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
@@ -12,8 +13,9 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OPEN_API_VERSION
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
+
+import java.nio.file.Files
 
 class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: OpenApiDefinitionConfig, scenarioName: ProcessName) extends Directives with LazyLogging {
 
@@ -38,7 +40,7 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
   val definitionRoute: Route = {
     val interpreter = handler.requestResponseInterpreter
     val openApiInfo = interpreter.generateInfoOpenApiDefinitionPart()
-    val oApiJson = new RequestResponseOpenApiGenerator(OPEN_API_VERSION, openApiInfo).generateOpenApiDefinition(interpreter, definitionConfig.servers, defaultServerUrl)
+    val oApiJson = new RequestResponseOpenApiGenerator(definitionConfig.openApiVersion, openApiInfo).generateOpenApiDefinition(interpreter, definitionConfig.servers, defaultServerUrl)
     val oApiJsonAsString = jsonStringToEntity(oApiJson.spaces2)
 
     get {
@@ -49,7 +51,7 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
   }
 
   val combinedRoute: Route = {
-    path("definition") {
+    SwaggerUiRoute.route ~ path("definition") {
       definitionRoute
     } ~ {
       pathEndOrSingleSlash {
