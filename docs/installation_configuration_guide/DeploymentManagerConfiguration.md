@@ -200,7 +200,6 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 | request-response.definitionMetadata.servers               | string          | [{"url": "./"}] | Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 
 | request-response.definitionMetadata.servers[].url         | string          |                 | Url of server in scenario's OpenApi definition                                                                                   | 
 | request-response.definitionMetadata.servers[].description | string          |                 | (Optional) description of server in scenario's OpenApi definition                                                                | 
-| request-response.definitionMetadata.openApiVersion        | string          | 3.0.0           | OpenApi definition version. Be aware that swagger-ui currently support version up to 3.0.0                                       | 
 
 ## Streaming-Flink 
 
