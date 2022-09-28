@@ -12,6 +12,13 @@ import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.ui.definition.additionalproperty.AdditionalPropertyValidatorDeterminerChain
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.validation.AdditionalPropertiesValidator.toPath
+
+object AdditionalPropertiesValidator {
+
+  def toPath(propertyName: String) = s"additionalFields.properties.$propertyName"
+
+}
 
 class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) {
 
@@ -58,7 +65,7 @@ class AdditionalPropertiesValidator(additionalPropertiesConfig: ProcessingTypeDa
 
     propertiesWithConfiguredValidator.collect {
       case (property, Some(config), validator: ParameterValidator) =>
-        validator.isValid(property._1, property._2, config.label).toValidatedNel
+        validator.isValid(toPath(property._1), property._2, config.label).toValidatedNel
     }.sequence.map(_ => Unit)
   }
 
@@ -88,7 +95,7 @@ private case class MissingRequiredPropertyValidator(actualPropertyNames: List[St
   def isValid(propertyName: String, label: Option[String] = None)
              (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (actualPropertyNames.contains(propertyName)) valid(Unit) else invalid(MissingRequiredProperty(propertyName, label))
+    if (actualPropertyNames.contains(propertyName)) valid(Unit) else invalid(MissingRequiredProperty(toPath(propertyName), label))
   }
 }
 
@@ -97,7 +104,7 @@ private case class UnknownPropertyValidator(config: Map[String, AdditionalProper
   def isValid(propertyName: String)
              (implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
 
-    if (config.contains(propertyName)) valid(Unit) else invalid(UnknownProperty(propertyName))
+    if (config.contains(propertyName)) valid(Unit) else invalid(UnknownProperty(toPath(propertyName)))
   }
 }
 

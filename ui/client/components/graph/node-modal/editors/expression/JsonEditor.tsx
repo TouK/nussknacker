@@ -2,11 +2,15 @@ import React from "react"
 
 import AceEditor from "./ace"
 import {ExpressionObj} from "./types"
+import ValidationLabels from "../../../../modals/ValidationLabels";
+import {Validator} from "../Validators";
 
 type Props = {
   expressionObj: ExpressionObj,
   onValueChange: (value: string) => void,
   className: string,
+  showValidation: boolean,
+  validators: Validator[],
 }
 
 export default class JsonEditor extends React.Component<Props, { value: string }> {
@@ -63,6 +67,8 @@ export default class JsonEditor extends React.Component<Props, { value: string }
             tabSize: 2,
           }}
         />
+        {this.props.showValidation &&
+          <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
       </React.Fragment>
     )
   }
