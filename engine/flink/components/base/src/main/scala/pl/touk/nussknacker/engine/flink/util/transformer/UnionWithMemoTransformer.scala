@@ -51,6 +51,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
+                  .returns(implicitly[TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]]])
             }
             val connectedStream = keyedInputStreams.reduce(_.connect(_).map(
               new CoMapFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]]] {
