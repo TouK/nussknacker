@@ -1,6 +1,9 @@
 package pl.touk.nussknacker.engine.requestresponse
 
+import akka.http.scaladsl.model.headers.{BasicHttpCredentials, HttpChallenge}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.server
+import akka.http.scaladsl.server.AuthenticationFailedRejection.CredentialsRejected
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
@@ -41,8 +44,11 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
     Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime
   ).valueOr(errors => throw new IllegalArgumentException(s"Failed to compile: $errors"))
 
-  private val routes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter),
-    OpenApiDefinitionConfig(List(OApiServer("https://nussknacker.io", Some("request response test")))), scenarioName).combinedRoute
+  private val definitionConfig: OpenApiDefinitionConfig = OpenApiDefinitionConfig(List(OApiServer("https://nussknacker.io", Some("request response test"))))
+  private val requestResponseConfig: RequestResponseConfig = RequestResponseConfig(definitionConfig)
+  private val openRoutes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
+  private val password = "password"
+  private val securedRoutes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.copy(basicAuthConfig = Some(BasicAuthConfig(password = password))), scenarioName).combinedRoute
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
@@ -56,84 +62,110 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
 
   private val expectedOApiDef =
     s"""{
-      |  "openapi" : "${defaultOpenApiVersion}",
-      |  "info" : {
-      |    "title" : "test",
-      |    "description" : "description",
-      |    "version" : "1"
-      |  },
-      |  "servers" : [
-      |    {
-      |      "url" : "https://nussknacker.io",
-      |      "description" : "request response test"
-      |    }
-      |  ],
-      |  "paths" : {
-      |    "/" : {
-      |      "post" : {
-      |        "description" : "**scenario name**: test",
-      |        "tags" : [
-      |          "Nussknacker"
-      |        ],
-      |        "operationId" : "test",
+       |  "openapi" : "${defaultOpenApiVersion}",
+       |  "info" : {
+       |    "title" : "test",
+       |    "description" : "description",
+       |    "version" : "1"
+       |  },
+       |  "servers" : [
+       |    {
+       |      "url" : "https://nussknacker.io",
+       |      "description" : "request response test"
+       |    }
+       |  ],
+       |  "paths" : {
+       |    "/" : {
+       |      "post" : {
+       |        "description" : "**scenario name**: test",
+       |        "tags" : [
+       |          "Nussknacker"
+       |        ],
+       |        "operationId" : "test",
       |        "requestBody" : {
-      |          "required" : true,
-      |          "content" : {
-      |            "application/json" : {
-      |              "schema" : {
-      |                "type" : "object",
-      |                "nullable" : false,
-      |                "properties" : {
-      |                  "city" : {
-      |                    "type" : "string",
-      |                    "nullable" : false,
-      |                    "default" : "Warsaw"
-      |                  }
-      |                }
-      |              }
-      |            }
-      |          }
-      |        },
-      |        "produces" : [
-      |          "application/json"
-      |        ],
-      |        "consumes" : [
-      |          "application/json"
-      |        ],
-      |        "summary" : "test",
-      |        "responses" : {
-      |          "200" : {
-      |            "content" : {
-      |              "application/json" : {
-      |                "schema" : {
-      |                  "type" : "object",
-      |                  "properties" : {
-      |                    "place" : {
-      |                      "type" : "string"
-      |                    }
-      |                  }
-      |                }
-      |              }
-      |            }
-      |          }
-      |        }
-      |      }
-      |    }
-      |  }
-      |}""".stripMargin
+       |          "required" : true,
+       |          "content" : {
+       |            "application/json" : {
+       |              "schema" : {
+       |                "type" : "object",
+       |                "nullable" : false,
+       |                "properties" : {
+       |                  "city" : {
+       |                    "type" : "string",
+       |                    "nullable" : false,
+       |                    "default" : "Warsaw"
+       |                  }
+       |                }
+       |              }
+       |            }
+       |          }
+       |        },
+       |        "produces" : [
+       |          "application/json"
+       |        ],
+       |        "consumes" : [
+       |          "application/json"
+       |        ],
+       |        "summary" : "test",
+       |        "responses" : {
+       |          "200" : {
+       |            "content" : {
+       |              "application/json" : {
+       |                "schema" : {
+       |                  "type" : "object",
+       |                  "properties" : {
+       |                    "place" : {
+       |                      "type" : "string"
+       |                    }
+       |                  }
+       |                }
+       |              }
+       |            }
+       |          }
+       |        }
+       |      }
+       |    }
+       |  }
+       |}""".stripMargin
 
   test("get scenario openapi definition") {
-    Get("/definition") ~> routes ~> check {
+    Get("/definition") ~> openRoutes ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldBe expectedOApiDef
     }
   }
 
-  test("handle post") {
+  test("handle post with open route") {
     val msg = """{"city":"London"}"""
-    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> routes ~> check {
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg))
+      .addCredentials(BasicHttpCredentials("publisher", "password")) ~> openRoutes ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[String] shouldBe s"""{"place":"London"}"""
+    }
+  }
+
+  test("handle post with valid credentials on secured route") {
+    val msg = """{"city":"London"}"""
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg))
+      .addCredentials(BasicHttpCredentials("publisher", "password")) ~> securedRoutes ~> check {
+      status shouldEqual StatusCodes.OK
+      responseAs[String] shouldBe s"""{"place":"London"}"""
+    }
+  }
+
+  test("reject post with bad password on secured route") {
+    val msg = """{"city":"London"}"""
+    val wrongCredentials = BasicHttpCredentials("publisher", "WRONG_PASSWORD")
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(wrongCredentials) ~> securedRoutes ~> check {
+      rejection shouldBe server.AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8")))
+    }
+  }
+
+  test("reject post with bad user on secured route") {
+    val msg = """{"city":"London"}"""
+    val wrongCredentials = BasicHttpCredentials("BAD_USER", "password")
+    Post("/", HttpEntity(ContentTypes.`application/json`, msg)) ~> addCredentials(wrongCredentials) ~> securedRoutes ~> check {
+      rejection shouldBe server.AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("Basic", "request-response", Map("charset" -> "UTF-8")))
     }
   }
 

@@ -106,7 +106,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     } catch {
       // Those are rather not our cases but their shouldn't cause transaction abortion:
       // https://stackoverflow.com/a/63837803
-      case e @ (_: ProducerFencedException | _: OutOfOrderSequenceException | _: AuthorizationException) =>
+      case e@(_: ProducerFencedException | _: OutOfOrderSequenceException | _: AuthorizationException) =>
         logger.warn(s"Fatal producer error: ${e.getMessage}. Closing producer without abort transaction")
         throw e
       case NonFatal(e) =>

@@ -68,7 +68,8 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   test("deployment of req-resp with ingress") {
     val givenScenarioName = "reqresp-ingress"
-    val f = createReqRespFixture(givenScenarioName, extraDeployConfig = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true)))
+    val config = ConfigFactory.empty().withValue("ingress.enabled", fromAnyRef(true))
+    val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 
     f.withRunningScenario {
       k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
@@ -76,6 +77,24 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
       val request = basicRequest.post(uri"http://localhost".port(8081).path(givenScenarioName))
+      val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+      jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
+    }
+  }
+
+  test("deployment of secured req-resp") {
+    val givenScenarioName = "reqresp-ingress"
+    val config = ConfigFactory.empty()
+      .withValue("ingress.enabled", fromAnyRef(true))
+      .withValue("configExecutionOverrides.request-response.basicAuthConfig.password", fromAnyRef("rrPassword"))
+    val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
+
+    f.withRunningScenario {
+      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
+
+      val pingContent = """Nussknacker!"""
+      val pingMessage = s"""{"ping":"$pingContent"}"""
+      val request = basicRequest.auth.basic("publisher", "rrPassword").post(uri"http://localhost".port(8081).path(givenScenarioName))
       val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
@@ -91,11 +110,13 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
         val pingContent = """Nussknacker!"""
         val pingMessage = s"""{"ping":"$pingContent"}"""
+
         def checkVersions() = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
           val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
           jsonResponse.hcursor.downField("version").as[Int].rightValue
         }.toSet
+
         val versionsBeforeRedeploy = checkVersions()
         versionsBeforeRedeploy shouldEqual Set(firstVersion)
 
