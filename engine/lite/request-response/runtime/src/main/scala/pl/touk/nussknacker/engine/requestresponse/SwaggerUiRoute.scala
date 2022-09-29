@@ -7,19 +7,13 @@ import com.typesafe.scalalogging.LazyLogging
 object SwaggerUiRoute extends Directives with LazyLogging {
 
   val route: Route = {
-    path("swagger-ui") {
+    pathPrefix("swagger-ui") {
       get {
         encodeResponse {
           respondWithHeader(`Cache-Control`(List(CacheDirectives.public, CacheDirectives.`max-age`(0)))) {
-            getFromResource("swagger-ui/index.html")
-          }
-        }
-      }
-    } ~ pathPrefix("swagger-ui") {
-      get {
-        encodeResponse {
-          respondWithHeader(`Cache-Control`(List(CacheDirectives.public, CacheDirectives.`max-age`(0)))) {
-            getFromResourceDirectory(s"swagger-ui")
+            pathEndOrSingleSlash {
+              getFromResource("swagger-ui/index.html")
+            } ~ getFromResourceDirectory(s"swagger-ui")
           }
         }
       }
