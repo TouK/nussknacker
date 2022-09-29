@@ -16,7 +16,7 @@ import pl.touk.nussknacker.openapi.http.SwaggerSttpService
 import pl.touk.nussknacker.openapi.http.backend.{FixedAsyncHttpClientBackendProvider, HttpBackendProvider, HttpClientConfig, SharedHttpClientBackendProvider}
 import sttp.client.SttpBackend
 
-import java.net.URL
+import java.net.{MalformedURLException, URL}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
@@ -90,7 +90,17 @@ object SwaggerEnricherCreator {
 
   private[enrichers] def determineInvocationBaseUrl(definitionUrl: URL,
                                                     rootUrl: Option[URL],
-                                                    serversFromDefinition: List[URL]): URL =
-    rootUrl.orElse(serversFromDefinition.headOption).getOrElse(throw new IllegalArgumentException("Host has to be defined"))
+                                                    serversFromDefinition: List[String]): URL = {
+    def relativeToDefinitionUrl(serversUrlPart: String): URL = {
+      try {
+        new URL(definitionUrl, serversUrlPart)
+      } catch {
+        case _: MalformedURLException =>
+          new URL(serversUrlPart)
+      }
+    }
+    // Regarding https://spec.openapis.org/oas/v3.1.0#fixed-fields default server url is /
+    rootUrl.getOrElse(relativeToDefinitionUrl(serversFromDefinition.headOption.getOrElse("/")))
+  }
 
 }

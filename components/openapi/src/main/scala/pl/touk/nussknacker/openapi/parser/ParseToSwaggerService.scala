@@ -2,7 +2,6 @@ package pl.touk.nussknacker.openapi.parser
 
 import cats.data.Validated.Valid
 
-import java.net.URL
 import cats.data.ValidatedNel
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.Operation
@@ -17,7 +16,6 @@ import pl.touk.nussknacker.engine.json.swagger.parser.SwaggerRefSchemas
 import pl.touk.nussknacker.openapi._
 
 import scala.collection.JavaConverters._
-import scala.util.Try
 
 private[parser] object ParseToSwaggerService {
 
@@ -67,11 +65,11 @@ private[parser] object ParseToSwaggerService {
 }
 
 private[parser] class ParseToSwaggerService(uriWithParameters: String,
-                            swaggerRefSchemas: SwaggerRefSchemas,
-                            servers: List[Server],
-                            globalSecurityRequirements: List[SecurityRequirement],
-                            securitySchemes: Option[Map[String, SecurityScheme]],
-                            securities: Map[String, OpenAPISecurityConfig]) extends LazyLogging {
+                                            swaggerRefSchemas: SwaggerRefSchemas,
+                                            servers: List[Server],
+                                            globalSecurityRequirements: List[SecurityRequirement],
+                                            securitySchemes: Option[Map[String, SecurityScheme]],
+                                            securities: Map[String, OpenAPISecurityConfig]) extends LazyLogging {
 
   import ParseToSwaggerService._
   import cats.implicits._
@@ -117,17 +115,10 @@ private[parser] class ParseToSwaggerService(uriWithParameters: String,
           pathParts = parseUriWithParams(relativeUriWithParameters),
           parameters = parameters,
           responseSwaggerType = serviceResultType,
-          method.toString, servers.map(prepareUrl),
+          method.toString, servers.map(_.getUrl),
           parsedSecurities)
       }
     }
-
-  private def prepareUrl(server: Server): URL = {
-    val originalUrl = server.getUrl
-    Try(new URL(originalUrl))
-      .orElse(Try(new URL("http://" + originalUrl)))
-      .getOrElse(throw new IllegalArgumentException(s"Failed to parse server: $originalUrl"))
-  }
 
   private def parseUriWithParams(relativeUriWithParameters: String): List[PathPart] = {
     val paramPlaceholder = "^\\{(.*)\\}$".r
