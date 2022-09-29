@@ -41,7 +41,7 @@
               },
               {
                 "name": "CONFIG_FILE",
-                "value": "/opt/nussknacker/conf/application.conf,/data/modelConfig.conf"
+                "value": "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"
               },
               {
                 "name": "POD_NAME",

@@ -65,7 +65,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
                   EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
@@ -75,7 +75,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 volumeMounts = List(
                   Volume.Mount(name = "common-conf", mountPath = "/config"),
                   Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
-                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
+                  Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
@@ -84,7 +84,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
                 Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
-                Volume("model-conf", Volume.Secret(secretId))
+                Volume("runtime-conf", Volume.Secret(secretId))
               )
             ))
         )
@@ -154,7 +154,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
                   EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
@@ -164,7 +164,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 volumeMounts = List(
                   Volume.Mount(name = "common-conf", mountPath = "/config"),
                   Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
-                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
+                  Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
@@ -185,7 +185,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 Volume("my-volume", Volume.GenericVolumeSource("{\"name\":\"my-volume\"}")),
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
                 Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
-                Volume("model-conf", Volume.Secret(secretId))
+                Volume("runtime-conf", Volume.Secret(secretId))
               )
             ))
         )
@@ -237,7 +237,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
-                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/model-config/modelConfig.conf"),
+                  EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
                   EnvVar("DEPLOYMENT_CONFIG_FILE", "/config/deploymentConfig.conf"),
                   EnvVar("LOGBACK_FILE", "/logging-config/logback.xml"),
                   // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
@@ -247,7 +247,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                 volumeMounts = List(
                   Volume.Mount(name = "common-conf", mountPath = "/config"),
                   Volume.Mount(name = "logging-conf", mountPath = "/logging-config"),
-                  Volume.Mount(name = "model-conf", mountPath = "/model-config")
+                  Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
@@ -256,7 +256,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
                 Volume("logging-conf", Volume.ConfigMapVolumeSource(loggingConfigMapId)),
-                Volume("model-conf", Volume.Secret(secretId))
+                Volume("runtime-conf", Volume.Secret(secretId))
               )
             ))
         )

@@ -16,13 +16,13 @@ import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, Pod, Probe, Volu
 
 case class MountableResources(commonConfigConfigMap: String,
                               loggingConfigConfigMap: String,
-                              modelConfigSecret: String)
+                              runtimeConfigSecret: String)
 
 class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging {
 
   private val CommonConfigMountPath = "/config"
   private val LoggingConfigMountPath = "/logging-config"
-  private val ModelConfigMountPath = "/model-config"
+  private val RuntimeConfigMountPath = "/runtime-config"
 
   def prepare(processVersion: ProcessVersion, typeSpecificData: TypeSpecificData, resourcesToMount: MountableResources, determinedReplicasCount: Int): Deployment = {
     val userConfigurationBasedDeployment = DeploymentUtils.parseDeploymentWithFallback(config.k8sDeploymentConfig, getClass.getResource(s"/defaultMinimalDeployment.conf"))
@@ -50,7 +50,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         (templateSpecLens composeLens GenLens[Pod.Spec](_.volumes)).modify(_ ++ List(
           Volume("common-conf", Volume.ConfigMapVolumeSource(resourcesToMount.commonConfigConfigMap)),
           Volume("logging-conf", Volume.ConfigMapVolumeSource(resourcesToMount.loggingConfigConfigMap)),
-          Volume("model-conf", Volume.Secret(resourcesToMount.modelConfigSecret)),
+          Volume("runtime-conf", Volume.Secret(resourcesToMount.runtimeConfigSecret)),
         )) andThen
         (templateSpecLens composeLens GenLens[Pod.Spec](_.containers)).modify(containers => modifyContainers(containers))
     deploymentLens(userConfigurationBasedDeployment)
@@ -83,7 +83,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       image = image,
       env = List(
         EnvVar("SCENARIO_FILE", s"$CommonConfigMountPath/scenario.json"),
-        EnvVar("CONFIG_FILE", s"/opt/nussknacker/conf/application.conf,$ModelConfigMountPath/modelConfig.conf"),
+        EnvVar("CONFIG_FILE", s"/opt/nussknacker/conf/application.conf,$RuntimeConfigMountPath/runtimeConfig.conf"),
         EnvVar("DEPLOYMENT_CONFIG_FILE", s"$CommonConfigMountPath/deploymentConfig.conf"),
         EnvVar("LOGBACK_FILE", s"$LoggingConfigMountPath/logback.xml"),
         // We pass POD_NAME, because there is no option to pass only replica hash which is appended to pod name.
@@ -93,7 +93,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       volumeMounts = List(
         Volume.Mount(name = "common-conf", mountPath = CommonConfigMountPath),
         Volume.Mount(name = "logging-conf", mountPath = LoggingConfigMountPath),
-        Volume.Mount(name = "model-conf", mountPath = ModelConfigMountPath),
+        Volume.Mount(name = "runtime-conf", mountPath = RuntimeConfigMountPath),
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value

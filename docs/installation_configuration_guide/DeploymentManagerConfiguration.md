@@ -77,7 +77,7 @@ spec:
         - name: SCENARIO_FILE
           value: /data/scenario.json
         - name: CONFIG_FILE
-          value: /opt/nussknacker/conf/application.conf,/data/modelConfig.conf
+          value: /opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf
         - name: DEPLOYMENT_CONFIG_FILE
           value: /data/deploymentConfig.conf
         - name: LOGBACK_FILE
