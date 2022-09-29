@@ -29,7 +29,7 @@ class FlinkScenarioNameValidationSpec extends AnyFunSuite with Matchers with Pro
       .validate(processWithInvalidName)
 
     validationResult.result should matchPattern {
-      case Invalid(NonEmptyList(ScenarioNameValidationError("invalid+name", _), _)) =>
+      case Invalid(NonEmptyList(ScenarioNameValidationError(_, _), _)) =>
     }
   }
 
