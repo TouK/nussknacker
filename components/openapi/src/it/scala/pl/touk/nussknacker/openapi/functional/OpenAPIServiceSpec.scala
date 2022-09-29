@@ -42,7 +42,7 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
           rootUrl = Some(new URL(s"http://localhost:$port")))
         val services = SwaggerParser.parse(definition, config)
 
-        val enricher = new SwaggerEnrichers(Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
+        val enricher = new SwaggerEnrichers(new URL("http://foo"), Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
         enricher.open(TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty)))
 

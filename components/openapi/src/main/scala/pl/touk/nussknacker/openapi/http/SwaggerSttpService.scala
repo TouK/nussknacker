@@ -10,10 +10,7 @@ import sttp.client.monad.syntax._
 import java.net.URL
 import scala.language.higherKinds
 
-class SwaggerSttpService(rootUrl: Option[URL], swaggerService: SwaggerService) {
-
-  private val baseUrl =
-    rootUrl.orElse(swaggerService.servers.headOption).getOrElse(throw new IllegalArgumentException("Host has to be defined"))
+class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService) {
 
   def invoke[F[_]](parameters: Map[String, Any])(implicit backend: SttpBackend[F, Nothing, Nothing]): F[AnyRef] = {
     implicit val monad: MonadError[F] = backend.responseMonad
