@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestD
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import org.apache.flink.streaming.api.scala._
 
 class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 

@@ -6,7 +6,6 @@ import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceCont
 import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
-import org.apache.flink.streaming.api.scala._
 
 class OneSource extends BasicFlinkSource[String] {
 

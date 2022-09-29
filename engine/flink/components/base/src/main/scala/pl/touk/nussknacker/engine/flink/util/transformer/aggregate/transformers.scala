@@ -3,11 +3,11 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import org.apache.flink.annotation.PublicEvolving
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
-import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
 import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport

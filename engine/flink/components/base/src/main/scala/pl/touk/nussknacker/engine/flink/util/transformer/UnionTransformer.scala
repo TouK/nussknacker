@@ -5,7 +5,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._

@@ -9,7 +9,6 @@ import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
-import org.apache.flink.streaming.api.scala._
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly
 class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSupport[String] {
