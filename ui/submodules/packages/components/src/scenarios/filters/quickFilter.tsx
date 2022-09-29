@@ -1,9 +1,11 @@
 import { InputWithClear, useFilterContext } from "../../common";
-import React, { PropsWithChildren } from "react";
+import React, { FormEventHandler, PropsWithChildren } from "react";
 import Paper from "@mui/material/Paper";
 import { useTranslation } from "react-i18next";
 import { Divider, Grow, InputAdornment, LinearProgress, Stack } from "@mui/material";
 import { Search } from "@mui/icons-material";
+
+const preventSubmit: FormEventHandler<HTMLFormElement> = (e) => e.preventDefault();
 
 export function QuickFilter<F extends Record<string, any>>({
     children,
@@ -16,7 +18,14 @@ export function QuickFilter<F extends Record<string, any>>({
 
     return (
         <Paper elevation={2} sx={{ position: "sticky", top: -1, zIndex: 2 }} {...props}>
-            <Stack component={"form"} noValidate autoComplete="off" direction="row" divider={<Divider orientation="vertical" flexItem />}>
+            <Stack
+                component={"form"}
+                noValidate
+                onSubmit={preventSubmit}
+                autoComplete="off"
+                direction="row"
+                divider={<Divider orientation="vertical" flexItem />}
+            >
                 <InputWithClear
                     placeholder={t("table.filter.QUICK", "Search...")}
                     fullWidth
