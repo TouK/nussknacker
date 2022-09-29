@@ -113,10 +113,12 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private val scenarioValidator = LiteScenarioValidator(config)
   private val ingressPreparerOpt = config.ingress.map(new IngressPreparer(_, config.nussknackerInstanceName))
 
-  private val serializedModelConfig = {
+  //runtime config is combined from scenarioType.modelConfig and deploymentConfig.configExecutionOverrides
+  private val serializedRuntimeConfig = {
     val inputConfig = modelData.inputConfigDuringExecution
+    val modelConfigPart = wrapInModelConfig(inputConfig.config.withoutPath("classPath"))
     //TODO: should overrides apply only to model or to whole config??
-    val withOverrides = config.configExecutionOverrides.withFallback(wrapInModelConfig(inputConfig.config.withoutPath("classPath")))
+    val withOverrides = config.configExecutionOverrides.withFallback(modelConfigPart)
     inputConfig.copy(config = withOverrides).serialized
   }
 
@@ -152,9 +154,9 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
       )))
       loggingConfigMap <- k8sUtils.createOrUpdate(configMapForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(
         Map("logback.xml" -> logbackConfig), additionalLabels = Map(resourceTypeLabel -> "logging-conf"), overrideName = config.commonConfigMapForLogback))
-      //modelConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
-      secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("modelConfig.conf" -> serializedModelConfig)))
-      mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, modelConfigSecret = secret.name)
+      //runtimeConfig.conf often contains confidential data e.g passwords, so we put it in secret, not configmap
+      secret <- k8sUtils.createOrUpdate(secretForData(processVersion, canonicalProcess, config.nussknackerInstanceName)(Map("runtimeConfig.conf" -> serializedRuntimeConfig)))
+      mountableResources = MountableResources(commonConfigConfigMap = configMap.name, loggingConfigConfigMap = loggingConfigMap.name, runtimeConfigSecret = secret.name)
       deployment <- k8sUtils.createOrUpdate(deploymentPreparer.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, mountableResources, scalingOptions.replicasCount))
       serviceOpt <- servicePreparer.prepare(processVersion, canonicalProcess.metaData).map(k8sUtils.createOrUpdate[Service](_).map(Some(_))).getOrElse(Future.successful(None))
       ingressOpt <- serviceOpt.flatMap(s => ingressPreparerOpt.flatMap(_.prepare(processVersion, canonicalProcess.metaData.typeSpecificData, s.name, config.servicePort)))
