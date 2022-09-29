@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -13,7 +14,6 @@ import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 import pl.touk.nussknacker.engine.api.NodeId
-import org.apache.flink.streaming.api.scala._
 
 object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleInputGenericNodeTransformation[Source] {
 

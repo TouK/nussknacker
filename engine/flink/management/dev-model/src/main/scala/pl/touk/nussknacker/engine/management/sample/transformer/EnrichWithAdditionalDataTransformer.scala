@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.api.scala._
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.KeyedCoProcessFunction
 import org.apache.flink.util.Collector

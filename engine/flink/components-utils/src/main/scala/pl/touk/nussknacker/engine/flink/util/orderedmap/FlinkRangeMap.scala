@@ -1,10 +1,9 @@
 package pl.touk.nussknacker.engine.flink.util.orderedmap
 
 import java.{util => jul}
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.MapTypeInfo
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 
 import scala.Ordering.Implicits._
 import scala.collection.immutable.SortedMap

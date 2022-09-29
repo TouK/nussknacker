@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}

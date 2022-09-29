@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 // Must be in object because of Java interop (problems with package object) and abstract type StringKeyedValue[V]

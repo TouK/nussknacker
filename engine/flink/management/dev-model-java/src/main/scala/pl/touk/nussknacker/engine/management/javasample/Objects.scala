@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.management.javasample
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.process.{SinkFactory, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler

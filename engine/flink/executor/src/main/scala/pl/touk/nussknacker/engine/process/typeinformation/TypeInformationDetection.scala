@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.typeinformation
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -37,8 +38,6 @@ object TypeInformationDetectionUtils extends LazyLogging {
 }
 
 object GenericTypeInformationDetection extends TypeInformationDetection {
-
-  import org.apache.flink.api.scala._
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = implicitly[TypeInformation[Context]]
 

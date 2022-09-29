@@ -5,10 +5,10 @@ import com.codahale.metrics.{Histogram, SlidingTimeWindowReservoir}
 import org.apache.flink.api.common.functions.{RichFunction, RuntimeContext}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
 import org.apache.flink.dropwizard.metrics.DropwizardHistogramWrapper
 import org.apache.flink.streaming.api.TimerService
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult

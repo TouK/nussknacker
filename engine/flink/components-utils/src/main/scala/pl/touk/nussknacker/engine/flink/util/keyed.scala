@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util
 import cats.data.ValidatedNel
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed

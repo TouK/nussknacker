@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, NodeDependencyValue}

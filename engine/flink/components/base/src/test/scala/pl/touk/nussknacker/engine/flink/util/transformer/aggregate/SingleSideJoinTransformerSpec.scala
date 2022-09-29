@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala._
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
+import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._

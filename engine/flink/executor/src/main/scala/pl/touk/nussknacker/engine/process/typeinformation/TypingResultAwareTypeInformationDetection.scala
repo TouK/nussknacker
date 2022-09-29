@@ -5,6 +5,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer, TraversableSerializer, TraversableTypeInfo}
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
@@ -45,7 +46,6 @@ class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
-    import org.apache.flink.api.scala._
     Set(
       implicitly[TypeInformation[BigDecimal]]
     )

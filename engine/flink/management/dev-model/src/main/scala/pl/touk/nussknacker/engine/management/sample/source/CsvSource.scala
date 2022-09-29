@@ -1,16 +1,15 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import java.nio.charset.StandardCharsets
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.management.sample.dto.CsvRecord
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import org.apache.flink.streaming.api.scala._
 
 class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 

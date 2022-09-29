@@ -9,7 +9,7 @@ import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableState
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
