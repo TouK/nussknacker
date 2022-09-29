@@ -210,6 +210,6 @@ object ProcessCompilationError {
 
   case class CannotCreateObjectError(message: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
-  case class ScenarioNameValidationError(scenarioName: String, description: String) extends ProcessCompilationError with ScenarioPropertiesError
+  case class ScenarioNameValidationError(message: String, description: String) extends ProcessCompilationError with ScenarioPropertiesError
 
 }
