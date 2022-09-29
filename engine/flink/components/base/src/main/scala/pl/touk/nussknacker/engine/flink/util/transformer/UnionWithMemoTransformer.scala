@@ -56,9 +56,9 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
             val connectedStream = keyedInputStreams.reduce(_.connect(_).map(
               new CoMapFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]]] {
                 override def map1(value: ValueWithContext[StringKeyedValue[(String, AnyRef)]]): ValueWithContext[StringKeyedValue[(String, AnyRef)]] =
-                  mapElement(value)
+                  value
                 override def map2(value: ValueWithContext[StringKeyedValue[(String, AnyRef)]]): ValueWithContext[StringKeyedValue[(String, AnyRef)]] =
-                  mapElement(value)
+                  value
               }
             ))
 
@@ -72,9 +72,6 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
           }
         }
       )
-
-
-  protected def mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = identity
 
   def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])

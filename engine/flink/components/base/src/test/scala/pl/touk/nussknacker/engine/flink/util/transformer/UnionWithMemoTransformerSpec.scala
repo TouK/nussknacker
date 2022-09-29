@@ -13,10 +13,8 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
-import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.flink.util.sink.EmptySink
 import pl.touk.nussknacker.engine.flink.util.source.BlockingQueueSource
-import pl.touk.nussknacker.engine.graph.node.SourceNode
 import pl.touk.nussknacker.engine.process.ExecutionConfigPreparer
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompiler
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar
@@ -25,7 +23,6 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Duration
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.{util => jul}
 import scala.collection.JavaConverters._
 
@@ -71,21 +68,21 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val sourceBar = BlockingQueueSource.create[OneRecord](_.timestamp, Duration.ofHours(1))
 
     val collectingListener = ResultsCollectingListenerHolder.registerRun(identity)
+
+    def outValues = {
+      collectingListener.results[Any].nodeResults(EndNodeId)
+        .map(_.variableTyped[jul.Map[String@unchecked, AnyRef@unchecked]](OutVariableName).get.asScala)
+    }
+
     withProcess(process, sourceFoo, sourceBar, collectingListener) {
       sourceFoo.add(OneRecord(key, 0, 123))
       eventually {
-        UnionWithMemoTransformerSpec.elementsProcessed.asScala.toList shouldEqual List(BranchFooId -> 123)
+        outValues shouldEqual List(
+          Map("key" -> key, BranchFooId -> 123)
+        )
       }
       sourceBar.add(OneRecord(key, 1, 234))
       eventually {
-        UnionWithMemoTransformerSpec.elementsProcessed.asScala.toList shouldEqual List(BranchFooId -> 123, BranchBarId -> 234)
-      }
-
-      eventually {
-        val nodeResults = collectingListener.results[Any].nodeResults
-        val outValues = nodeResults(EndNodeId)
-          .map(_.variableTyped[jul.Map[String@unchecked, AnyRef@unchecked]](OutVariableName).get.asScala)
-
         outValues shouldEqual List(
           Map("key" -> key, BranchFooId -> 123),
           Map("key" -> key, BranchFooId -> 123, BranchBarId -> 234)
@@ -128,9 +125,9 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     val processValidator = model.prepareValidatorForCategory(None)
     val validationResult = processValidator.validate(process).result
 
-    val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}"""
+    val expectedMessage = s"""Input node can not be named "${UnionWithMemoTransformer.KeyField}""""
     validationResult should matchPattern {
-      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, `expectedMessage`, None), Nil)) =>
     }
   }
 
@@ -171,7 +168,7 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
     val expectedMessage = s"""Nodes "$BranchFooId", "$BranchBarId" have too similar names"""
     validationResult should matchPattern {
-      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, expectedMessage, None), Nil)) =>
+      case Invalid(NonEmptyList(CustomNodeError(UnionNodeId, `expectedMessage`, None), Nil)) =>
     }
   }
 
@@ -187,18 +184,11 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
 object UnionWithMemoTransformerSpec {
 
-  val elementsProcessed = new ConcurrentLinkedQueue[(String, AnyRef)]()
-
   class Creator(sourceFoo: BlockingQueueSource[OneRecord], sourceBar: BlockingQueueSource[OneRecord], collectingListener: ResultsCollectingListener) extends EmptyProcessConfigCreator {
 
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] =
       Map(
-        "union-memo-test" -> WithCategories(new UnionWithMemoTransformer(None) {
-          override protected val mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = (v: ValueWithContext[KeyedValue[String, (String, AnyRef)]]) => {
-            elementsProcessed.add(v.value.value)
-            v
-          }
-        }))
+        "union-memo-test" -> WithCategories(new UnionWithMemoTransformer(None)))
 
     override def listeners(processObjectDependencies: ProcessObjectDependencies): Seq[ProcessListener] =
       Seq(collectingListener)
