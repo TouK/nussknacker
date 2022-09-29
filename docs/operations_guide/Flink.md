@@ -139,7 +139,7 @@ Each scenario has its own performance characteristics and considerations. This s
 
 ###  Managing lifecycle of scenario
 
-State of the scenario can be viewed in the scenario list, in the scenario details view or via API . Possible states can be grouped in the following categories:
+State of the scenario can be viewed in the scenario list, in the scenario details view or via API. Possible states can be grouped in the following categories:
 
 * Not running
   * _NotDeployed_ (initial status before first deploy)

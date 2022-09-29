@@ -80,7 +80,7 @@ which is provided by NU engine implementation - e.g. for Flink components it can
 Implementation of most of the component types depends on the engine which will execute the scenario. 
 See following documentation on engine-specific details:
 - [Streaming-Flink components](FlinkComponents.md) section.
-- [Streaming-Lite components](StreamingLiteComponents.md) section.
+- [Streaming-Lite components](LiteComponents.md) section.
 
 ## Enrichers
                          

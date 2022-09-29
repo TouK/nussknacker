@@ -66,7 +66,7 @@ For this processing mode we use `RollingUpdate` deployment strategy to ensure HA
 
 ### Failure recovery
 
-In case of an unexpected errors e.g. network issue between kafka cluster and runtime nussknacker will try to reconnect
+In case of an unexpected errors e.g. network issue between Kafka cluster and runtime Nussknacker will try to reconnect
 after `waitAfterFailureDelay`
 
 ### Other
@@ -104,7 +104,7 @@ see [docs](../installation_configuration_guide/DeploymentManagerConfiguration#co
 
 ### Managing lifecycle of scenario
 
-State of the scenario can be viewed in the scenario list, in the scenario details view or via API . Possible states can
+State of the scenario can be viewed in the scenario list, in the scenario details view or via API. Possible states can
 be grouped in the following categories:
 
 * Not running
