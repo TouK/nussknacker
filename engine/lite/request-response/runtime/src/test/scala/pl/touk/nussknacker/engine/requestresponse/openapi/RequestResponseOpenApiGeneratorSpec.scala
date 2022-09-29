@@ -4,13 +4,13 @@ import io.circe.Json
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OPEN_API_VERSION
+import pl.touk.nussknacker.engine.requestresponse.OpenApiDefinitionConfig.defaultOpenApiVersion
 
 class RequestResponseOpenApiGeneratorSpec extends AnyFunSuite with Matchers with OptionValues {
 
   private val openApiInfo = OApiInfo("fooTitle", version = "fooVersion")
 
-  private val generator = new RequestResponseOpenApiGenerator(OPEN_API_VERSION, openApiInfo)
+  private val generator = new RequestResponseOpenApiGenerator(defaultOpenApiVersion, openApiInfo)
 
   private val stubPathDefinitionGenerator = new PathOpenApiDefinitionGenerator {
     override def generatePathOpenApiDefinitionPart(): Option[Json] = Some(Json.obj())
