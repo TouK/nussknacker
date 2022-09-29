@@ -31,7 +31,7 @@ object richflink {
     //reported with operator_name tag equal to nodeId.
     //in most cases uid should be set together with operator name, if this is not the case - use ExplicitUidInOperatorsSupport explicitly
     def setUidWithName(implicit ctx: FlinkCustomNodeContext, explicitUidInStatefulOperators: FlinkCustomNodeContext => Boolean): DataStream[T] =
-      ExplicitUidInOperatorsSupport.setUidIfNeed[T, DataStream[T]](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream) match {
+      ExplicitUidInOperatorsSupport.setUidIfNeed[T](explicitUidInStatefulOperators(ctx), ctx.nodeId)(dataStream) match {
         case operator: SingleOutputStreamOperator[T] => operator.name(ctx.nodeId)
         case other => other
       }

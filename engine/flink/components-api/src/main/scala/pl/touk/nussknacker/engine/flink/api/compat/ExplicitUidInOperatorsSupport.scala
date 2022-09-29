@@ -24,7 +24,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 trait ExplicitUidInOperatorsSupport {
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStream[T]): DataStream[T] =
-    ExplicitUidInOperatorsSupport.setUidIfNeed[T, DataStream[T]](explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
+    ExplicitUidInOperatorsSupport.setUidIfNeed(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
 
   protected def setUidToNodeIdIfNeed[T](nodeCtx: FlinkCustomNodeContext, stream: DataStreamSink[T]): DataStreamSink[T] =
     ExplicitUidInOperatorsSupport.setUidIfNeedSink(explicitUidInStatefulOperators(nodeCtx), nodeCtx.nodeId)(stream)
@@ -43,8 +43,8 @@ trait ExplicitUidInOperatorsSupport {
 
 object ExplicitUidInOperatorsSupport {
 
-  def setUidIfNeed[T, S >: SingleOutputStreamOperator[T] <: DataStream[T]](explicitUidInStatefulOperators: Boolean, uidValue: String)
-                     (stream: S): S = {
+  def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
+                     (stream: DataStream[T]): DataStream[T] = {
     if (explicitUidInStatefulOperators) {
       stream match {
         case operator: SingleOutputStreamOperator[T] => operator.uid(uidValue)

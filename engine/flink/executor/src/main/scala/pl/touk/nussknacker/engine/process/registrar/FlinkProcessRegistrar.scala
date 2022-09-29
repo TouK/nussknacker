@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -88,7 +87,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
 
   private def register(env: StreamExecutionEnvironment,
-                       compiledProcessWithDeps: Option[ProcessPart] => (ClassLoader => FlinkProcessCompilerData),
+                       compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
                        processWithDeps: FlinkProcessCompilerData,
                        testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
@@ -178,7 +177,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       branchesForParts ++ branchForEnds
     }
 
-    def registerSubsequentPart[T](start: SingleOutputStreamOperator[Context],
+    def registerSubsequentPart(start: SingleOutputStreamOperator[Context],
                                   processPart: SubsequentPart): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
@@ -189,7 +188,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           registerCustomNodePart(start, part)
       }
 
-    def registerSinkPark[T](start: SingleOutputStreamOperator[Context],
+    def registerSinkPark(start: SingleOutputStreamOperator[Context],
                             part: SinkPart,
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
@@ -218,7 +217,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       Map()
     }
 
-    def registerCustomNodePart[T](start: DataStream[Context],
+    def registerCustomNodePart(start: DataStream[Context],
                                   part: CustomNodePart): Map[BranchEndDefinition, BranchEndData] = {
       val transformer = part.transformer match {
         case t: FlinkCustomStreamTransformation => t
@@ -258,7 +257,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, asyncExecutionContextPreparer, useIOMonad)
-        ExplicitUidInOperatorsSupport.setUidIfNeed[InterpretationResult, SingleOutputStreamOperator[InterpretationResult]](
+        ExplicitUidInOperatorsSupport.setUidIfNeedJava[InterpretationResult](
           ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
           AsyncDataStream.orderedWait(stream, asyncFunction, processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
       } else {
