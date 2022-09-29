@@ -7,9 +7,10 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{ContextId, JobData, MetaData}
+import pl.touk.nussknacker.engine.api.{ContextId, MetaData}
 import pl.touk.nussknacker.engine.util.service.{EagerServiceWithStaticParametersAndReturnType, TimeMeasuringService}
 import pl.touk.nussknacker.openapi.SwaggerService
+import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherCreator.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
 import pl.touk.nussknacker.openapi.http.backend.{FixedAsyncHttpClientBackendProvider, HttpBackendProvider, HttpClientConfig, SharedHttpClientBackendProvider}
@@ -19,13 +20,13 @@ import java.net.URL
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 
-class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
+class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
                       fixedParams: Map[String, () => AnyRef],
                       httpBackendProvider: HttpBackendProvider) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
 
   override protected def serviceName: String = swaggerService.name
 
-  private val swaggerHttpService = new SwaggerSttpService(rootUrl, swaggerService)
+  private val swaggerHttpService = new SwaggerSttpService(baseUrl, swaggerService)
 
   private val parameterExtractor = new ParametersExtractor(swaggerService, fixedParams)
 
@@ -56,10 +57,12 @@ class SwaggerEnricher(rootUrl: Option[URL], swaggerService: SwaggerService,
 
 class SwaggerEnricherCreator(httpBackendProvider: HttpBackendProvider) {
 
-  def create(rootUrl: Option[URL],
+  def create(definitionUrl: URL,
+             rootUrl: Option[URL],
              swaggerService: SwaggerService,
              fixedParams: Map[String, () => AnyRef]): SwaggerEnricher = {
-    new SwaggerEnricher(rootUrl, swaggerService, fixedParams, httpBackendProvider)
+    val baseUrl = determineInvocationBaseUrl(definitionUrl, rootUrl, swaggerService.servers)
+    new SwaggerEnricher(baseUrl, swaggerService, fixedParams, httpBackendProvider)
   }
 
 }
@@ -84,5 +87,10 @@ object SwaggerEnricherCreator {
     }
     new SwaggerEnricherCreator(backendProvider)
   }
+
+  private[enrichers] def determineInvocationBaseUrl(definitionUrl: URL,
+                                                    rootUrl: Option[URL],
+                                                    serversFromDefinition: List[URL]): URL =
+    rootUrl.orElse(serversFromDefinition.headOption).getOrElse(throw new IllegalArgumentException("Host has to be defined"))
 
 }

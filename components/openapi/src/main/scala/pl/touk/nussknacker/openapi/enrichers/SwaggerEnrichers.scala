@@ -5,7 +5,7 @@ import pl.touk.nussknacker.openapi.SwaggerService
 
 import java.net.URL
 
-class SwaggerEnrichers(baseUrl: Option[URL], creator: SwaggerEnricherCreator) {
+class SwaggerEnrichers(definitionUrl: URL, rootUrl: Option[URL], creator: SwaggerEnricherCreator) {
 
   def enrichers(swaggerServices: List[SwaggerService],
                 additionalCategories: List[String],
@@ -15,7 +15,7 @@ class SwaggerEnrichers(baseUrl: Option[URL], creator: SwaggerEnricherCreator) {
         swaggerService.name,
         swaggerService.documentation,
         swaggerService.categories ++ additionalCategories,
-        creator.create(baseUrl, swaggerService, fixedParameters)
+        creator.create(definitionUrl, rootUrl, swaggerService, fixedParameters)
       )
     }
   }

@@ -116,7 +116,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Nothing, Nothing], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
     val services = SwaggerParser.parse(definition, openAPIsConfig)
-    val stubbedGetCustomerOpenApiService = new SwaggerEnricher(Some(url), services.head, Map.empty, (_: ExecutionContext) => sttpBackend)
+    val stubbedGetCustomerOpenApiService = new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
   }
 
