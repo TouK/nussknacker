@@ -6,7 +6,6 @@ import com.typesafe.config.ConfigFactory
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, SourceFactory, WithCategories}

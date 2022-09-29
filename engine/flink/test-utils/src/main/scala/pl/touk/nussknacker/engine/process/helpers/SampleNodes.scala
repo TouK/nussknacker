@@ -10,6 +10,7 @@ import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
