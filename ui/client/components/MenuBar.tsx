@@ -8,6 +8,7 @@ import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 import {DynamicTabData} from "../containers/DynamicTab"
 import {CustomTabBasePath} from "../containers/paths"
+import {absoluteBePath} from "../common/UrlUtils";
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -59,6 +60,10 @@ type Props = {
 
 const Spacer = () => <Flex flex={1}/>
 
+function NussknackerLogo() {
+  return <img src={absoluteBePath("/assets/img/nussknacker-logo.svg")} className={"navbar-brand-logo"}/>;
+}
+
 export function MenuBar({appPath, rightElement = null, leftElement = null}: Props): JSX.Element {
   const [expanded, setExpanded] = useStateWithRevertTimeout(false)
   const {t} = useTranslation()
@@ -79,7 +84,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null}: Prop
         <Flex>
           {leftElement}
           <NavLink className="navbar-brand" to={appPath} title={t("menu.goToMainPage", "Go to main page")}>
-            <img src={"/assets/img/nussknacker-logo.svg"} className={"navbar-brand-logo"}/>
+            <NussknackerLogo/>
           </NavLink>
           {rightElement}
           <Spacer/>
