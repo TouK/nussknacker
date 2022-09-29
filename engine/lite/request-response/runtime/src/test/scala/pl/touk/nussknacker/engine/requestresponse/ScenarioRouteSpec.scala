@@ -75,6 +75,7 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
       |        "tags" : [
       |          "Nussknacker"
       |        ],
+      |        "operationId" : "test",
       |        "requestBody" : {
       |          "required" : true,
       |          "content" : {

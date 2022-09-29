@@ -29,12 +29,14 @@ object RequestResponseOpenApiGenerator {
 
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
-  private[requestresponse] def generateScenarioDefinition(summary: String,
+  private[requestresponse] def generateScenarioDefinition(operationId: String,
+                                                          summary: String,
                                                           description: String,
                                                           tags: List[String],
                                                           requestDefinition: Json,
                                                           responseDefinition: Json): Json = {
     val postOpenApiDefinition = generatePostJsonOApiPathDefinition(
+      operationId,
       summary,
       description,
       tags,
@@ -53,8 +55,9 @@ object RequestResponseOpenApiGenerator {
       (if(getOpenApiDefinition.isEmpty) Map.empty else Map("get" -> getOpenApiDefinition))
   }
 
-  private def generatePostJsonOApiPathDefinition(summary: String, description: String, tags: List[String], requestSchema: Json, responseSchema: Json) =
+  private def generatePostJsonOApiPathDefinition(operationId: String, summary: String, description: String, tags: List[String], requestSchema: Json, responseSchema: Json) =
     Map(
+      "operationId" -> operationId,
       "summary" -> summary,
       "description" -> description,
       "tags" -> tags,
