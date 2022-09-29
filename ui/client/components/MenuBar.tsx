@@ -2,7 +2,6 @@ import React, {ReactNode, useEffect, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {NavLink} from "react-router-dom"
-import {ReactComponent as NussknackerLogo} from "../assets/img/nussknacker-logo.svg"
 import {getLoggedUser, getTabs} from "../reducers/selectors/settings"
 import {Flex} from "./common/Flex"
 import {ButtonWithFocus} from "./withFocus"
@@ -80,7 +79,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null}: Prop
         <Flex>
           {leftElement}
           <NavLink className="navbar-brand" to={appPath} title={t("menu.goToMainPage", "Go to main page")}>
-            <NussknackerLogo className={"navbar-brand-logo"}/>
+            <img src={"/assets/img/nussknacker-logo.svg"} className={"navbar-brand-logo"}/>
           </NavLink>
           {rightElement}
           <Spacer/>
