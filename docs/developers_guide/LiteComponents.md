@@ -34,7 +34,7 @@ transforms `ConsumerRecord` to Nussknacker [Context](https://github.com/TouK/nus
 
 ### Request-Response
 
-In Request-Response / Lite sources and sinks act slightly different. Both create a combination of a HTTP request (source) and a response(sink)
+In Request-Response / Lite sources and sinks act slightly different. Both create a combination of a HTTP request (source) and a response (sink).
 - A [source](https://github.com/TouK/nussknacker/blob/staging/engine/lite/request-response/components-api/src/main/scala/pl/touk/nussknacker/engine/requestresponse/api/RequestResponseSourceFactory.scala) can handle GET and POST http requests
 - A [sink](https://github.com/TouK/nussknacker/blob/staging/engine/lite/request-response/components-api/src/main/scala/pl/touk/nussknacker/engine/requestresponse/api/RequestResponseSourceFactory.scala) is responsible for providing response payload
 

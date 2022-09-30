@@ -204,7 +204,7 @@ This source has the following parameters:
 `collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and stores them in a list.
 
 **Collect** takes one argument:
-- Input expression - expression which will be collected from all nodes invocations.
+- Input expression - expression which will be collected from all invocations of this for a given request.
 
 For example:
 - We use `for-each` component on list `{"one", "two", "three"}`

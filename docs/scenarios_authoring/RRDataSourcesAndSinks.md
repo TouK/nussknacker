@@ -17,7 +17,7 @@ the only Sink component is Response.
 
 ## Request-Response schema
 
-Each scenario needs to define two schemas:
+Each scenario needs to define two schemas in [JSON Schema](https://json-schema.org/) format:
 
 - Input schema
 - Output schema

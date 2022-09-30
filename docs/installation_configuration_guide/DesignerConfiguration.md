@@ -6,7 +6,7 @@ sidebar_position: 4
 ## Web interface configuration
 
 | Parameter name                              | Importance | Type     | Default value | Description                                                                                                                                                                    |
-| --------------                              | ---------- | ----     | ------------- | -----------                                                                                                                                                                    |
+|---------------------------------------------|------------|----------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | http.port                                   | High       | int      | 8080          | HTTP Port of Designer app                                                                                                                                                      |
 | http.interface                              | High       | string   | "0.0.0.0"     | HTTP interface for Designer app                                                                                                                                                |
 | http.publicPath                             | Medium     | string   | ""            | if Designer used with reverse proxy and custom path, use this configuration to generate links in Designer properly (Designer app is always served from root path)              |
@@ -31,7 +31,7 @@ for detailed list of configuration options.
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
 
 | Parameter name       | Importance | Type   | Default value                                             | Description                                                                                 |
-| --------------       | ---------- | ----   | -------------                                             | -----------                                                                                 |
+|----------------------|------------|--------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                       |
 | db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              |                                                                                             |
 | db.user              | High       | string | "SA"                                                      |                                                                                             |
@@ -57,7 +57,7 @@ Actual link for particular scenario is created by replacing
 in `metricsSettings.url` setting.
 
 | Parameter name                          | Importance | Type   | Default value                                                                                      | Description                                                                                                                    |
-| --------------                          | ---------- | ----   | -------------                                                                                      | -----------                                                                                                                    |
+|-----------------------------------------|------------|--------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
 | metricsSettings.url                     | High       | string | `/grafana/d/$dashboard?theme=dark&var-scenarioName=$scenarioName&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
 | metricsSettings.defaultDashboard        | Medium     | string | nussknacker-scenario (for docker setup)                                                            | Default dashboard                                                                                                              |
 | metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                                    | Mapping of scenario types to dashboard                                                                                         |
@@ -78,7 +78,7 @@ If you have custom metrics settings which result in different fields or tags (e.
 with the settings presented below:
 
 | Parameter name                                     | Importance | Type                                                                      | Default value               | Description                                                                                                                                   |
-|----------------------------------------------------| ---------- |---------------------------------------------------------------------------|-----------------------------| -----------                                                                                                                                   |
+|----------------------------------------------------|------------|---------------------------------------------------------------------------|-----------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | countsSettings.influxUrl                           | Medium     | string                                                                    |                             | Main InfluxDB query endpoint (e.g. http://influx:8086/query). It should be accessible from Nussknacker Designer server, not from user browser |
 | countsSettings.database                            | Medium     | string                                                                    |                             |                                                                                                                                               |
 | countsSettings.user                                | Medium     | string                                                                    |                             |                                                                                                                                               |
@@ -100,11 +100,11 @@ See [development configuration](https://github.com/TouK/nussknacker/blob/staging
 
 
 | Parameter name                              | Importance | Type   | Default value | Description                                                                                                                                                                          |
-|---------------------------------------------| ---------- |--------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| commentSettings.substitutionPattern         | Low        | regexp |            | Regular expression to look for issue identifier (e.g. `(issues/[0-9]*)` - note use of regexp group)                                                                                  |
-| commentSettings.substitutionLink            | Low        | string |            | Link template (e.g. `https://github.com/TouK/nussknacker/$1` - `$1` will be replaced with matched group from `substitutionPattern` config                                            |
-| deploymentCommentSettings.validationPattern | Low        | regexp |            | If deploymentCommentSettings is specified, comment matching validation pattern is required for deployment. Also, if `substitutionPattern` is defined, at least one match is required |
-| deploymentCommentSettings.exampleComment    | Low        | string |            | Example of comment which passes validation. Unlike validationPattern field is not mandatory.                                                                                         |
+|---------------------------------------------|------------|--------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| commentSettings.substitutionPattern         | Low        | regexp |               | Regular expression to look for issue identifier (e.g. `(issues/[0-9]*)` - note use of regexp group)                                                                                  |
+| commentSettings.substitutionLink            | Low        | string |               | Link template (e.g. `https://github.com/TouK/nussknacker/$1` - `$1` will be replaced with matched group from `substitutionPattern` config                                            |
+| deploymentCommentSettings.validationPattern | Low        | regexp |               | If deploymentCommentSettings is specified, comment matching validation pattern is required for deployment. Also, if `substitutionPattern` is defined, at least one match is required |
+| deploymentCommentSettings.exampleComment    | Low        | string |               | Example of comment which passes validation. Unlike validationPattern field is not mandatory.                                                                                         |
 
 ## Security
 
@@ -137,7 +137,7 @@ Currently supported permissions:
 ### Configuration parameters 
 
 | Parameter name                   | Importance | Type        | Default value | Description                                                                                                                                                        |
-| ---                              | ---        | ---         | ---           | ---                                                                                                                                                                |
+|----------------------------------|------------|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | authentication.method            | required   | string      |               | `BasicAuth`, `Oidc` or `OAuth2`                                                                                                                                    |
 | authentication.usersFile         | required   | url or path |               | URL or path to a file with a mapping of user identities to roles and roles to permissions                                                                          |
 | authentication.anonymousUserRole | optional   | string      |               | Role assigned to an unauthenticated user if the selected authentication provider permits anonymous access. No anonymous access allowed unless a value is provided. |
@@ -235,7 +235,7 @@ and provider discovery. The only supported flow is the authorization code flow w
 You can select this authentication method by setting the `authentication.method` parameter to `Oidc`
 
 | Parameter name                       | Importance  | Type           | Default value               | Description                                                                                                   |
-|--------------------------------------| ---         |----------------| ---                         |---------------------------------------------------------------------------------------------------------------|
+|--------------------------------------|-------------|----------------|-----------------------------|---------------------------------------------------------------------------------------------------------------|
 | authentication.issuer                | required    | url            |                             | OpenID Provider's location                                                                                    |
 | authentication.clientId              | required    | string         |                             | Client identifier valid at the authorization server                                                           |
 | authentication.clientSecret          | required    | string         |                             | Secret corresponding to the client identifier at the authorization server                                     |
@@ -649,7 +649,7 @@ You can configure `secondaryEnvironment` to allow for
 Currently, you can only configure secondary environment if it uses BASIC authentication - technical user is needed to access REST API.
 
 | Parameter name                              | Importance | Type                                                                | Default value | Description                                                                                                                                                                                             |
-| --------------                              | ---------- | ----                                                                | ------------- | -----------                                                                                                                                                                                             |
+|---------------------------------------------|------------|---------------------------------------------------------------------|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | environment                                 | Medium     | string                                                              |               | Used mainly for metrics configuration. Please note: it **has** to be consistent with [tag configuration of metrics](https://github.com/TouK/nussknacker-quickstart/blob/main/telegraf/telegraf.conf#L6) |
 | environmentAlert.content                    | Low        | string                                                              |               | Human readable name of environment, to display in UI                                                                                                                                                    |
 | environmentAlert.cssClass                   | Low        | indicator-green / indicator-blue / indicator-yellow / indicator-red |               | Color of environment indicator                                                                                                                                                                          |
@@ -662,7 +662,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 ## Testing 
 
 | Parameter name                    | Importance | Type   | Default value | Description                                           |
-| --------------                    | ---------- | ----   | ------------- | -----------                                           |
+|-----------------------------------|------------|--------|---------------|-------------------------------------------------------|
 | testDataSettings.maxSampleCount   | Medium     | string | 20            | Limits number of samples for tests from file          |
 | testDataSettings.testDataMaxBytes | Low        | string | 200000        | Limits size of test input for tests from file         |
 | testDataSettings.resultsMaxBytes  | Low        | string | 50000000      | Limits size of returned test data for tests from file |
@@ -671,7 +671,7 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 ## Other configuration options
 
 | Parameter name                   | Importance | Type    | Default value | Description                                                                                                                                                                                                                 |
-|----------------------------------| ---------- |---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+|----------------------------------|------------|---------|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | attachments.maxSizeInBytes       | Medium     | long    | 10485760      | Limits max size of scenario attachment, by default to 10mb                                                                                                                                                                  |
 | analytics.engine                 | Low        | Matomo  |               | Currently only available analytics engine is [Matomo](https://matomo.org/)                                                                                                                                                  |
 | analytics.url                    | Low        | string  |               | URL of Matomo server                                                                                                                                                                                                        |
@@ -702,7 +702,6 @@ In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components
 - `streaming-lite-embedded` - using embedded Streaming-Lite Deployment Manager providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
-- `request-response` - todo what abr meant
 
 And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)
 
