@@ -6,12 +6,6 @@ sidebar_position: 4
 
 ## Http request as input and output to Nussknacker scenarios
 
-### Prerequisites
-
-To fully understand how Nussknacker works in Request-response mode, it's best to read the following first:
-
-* [Http overview](https://developer.mozilla.org/en-US/docs/Web/HTTP/Overview)
-
 ### Concepts
 
 In Request-response mode you interact with Nussknacker Lite runtime engine in a similar way as with any "server" in the
