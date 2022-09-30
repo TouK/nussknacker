@@ -212,4 +212,6 @@ object ProcessCompilationError {
 
   case class ScenarioNameValidationError(message: String, description: String) extends ProcessCompilationError with ScenarioPropertiesError
 
+  case class SpecificDataValidationError(fieldName: String, message: String) extends ProcessCompilationError with ScenarioPropertiesError
+
 }

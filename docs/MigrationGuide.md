@@ -19,7 +19,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   `helper-utils` to `default-helpers`, separated `MathUtils` from
   `components-utils` to `math-utils`, removed dependencies from `helper-utils`
 * [#3420](https://github.com/TouK/nussknacker/pull/3420) `DeploymentManagerProvider.typeSpecificInitialData` takes deploymentConfig `Config` now
-* [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
+* [#3493](https://github.com/TouK/nussknacker/pull/3493), [#3582](https://github.com/TouK/nussknacker/pull/3582) Added methods `DeploymentManagerProvider.additionalPropertiesConfig`, `DeploymentManagerProvider.additionalValidators`
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Changed `LocalDateTime` to `Instant` in `OnDeployActionSuccess` in `listener-api`
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Replace `EspProcess` with `CanonicalProcess` in all parts of the API except for the compiler.
 * [#3545](https://github.com/TouK/nussknacker/pull/3545) `TestScenarioRunner.flinkBased` should be used instead of `NuTestScenarioRunner.flinkBased`. Before this, you need to `import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._` 

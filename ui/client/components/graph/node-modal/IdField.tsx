@@ -1,4 +1,4 @@
-import {allValid, mandatoryValueValidator, uniqueValueValidator} from "./editors/Validators"
+import {allValid, mandatoryValueValidator, uniqueValueValidator, Validator} from "./editors/Validators"
 import Field, {FieldType} from "./editors/field/Field"
 import React, {useMemo} from "react"
 import {useDiffMark} from "./PathsToMark"
@@ -12,6 +12,7 @@ interface IdFieldProps {
   renderFieldLabel: (paramName: string) => JSX.Element,
   setProperty?: <K extends keyof NodeType>(property: K, newValue: NodeType[K], defaultValue?: NodeType[K]) => void,
   showValidation?: boolean,
+  additionalValidators?:  Validator[]
 }
 
 // wise decision to treat a name as an id forced me to do so.
@@ -30,11 +31,12 @@ export function IdField({
   renderFieldLabel,
   setProperty,
   showValidation,
+  additionalValidators
 }: IdFieldProps): JSX.Element {
   const nodes = useSelector(getProcessNodesIds)
   const otherNodes = useMemo(() => nodes.filter(n => n !== node.id), [node.id, nodes])
 
-  const validators = [mandatoryValueValidator, uniqueValueValidator(otherNodes)]
+  const validators = (additionalValidators || []).concat(mandatoryValueValidator, uniqueValueValidator(otherNodes))
   const [isMarked] = useDiffMark()
   const propName = `id`
   const value = useMemo(() => node[FAKE_NAME_PROP_NAME] ?? node[propName], [node, propName])

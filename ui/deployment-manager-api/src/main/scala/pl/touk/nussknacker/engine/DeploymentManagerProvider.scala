@@ -22,6 +22,8 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 
+  def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
+
   def supportsSignals: Boolean = false
 
   def createQueryableClient(config: Config): Option[QueryableClient] = None

@@ -46,7 +46,8 @@ export function nodeValidationDataClear(nodeId: string): NodeValidationClear {
 const validate = debounce(async (processId: string, validationRequestData: ValidationRequest, callback: (data: ValidationData, nodeId: NodeId) => void) => {
   const nodeId = validationRequestData.nodeData.id
   if (NodeUtils.nodeIsProperties(validationRequestData.nodeData)) {
-    const {data} = await HttpService.validateProperties(processId, validationRequestData.processProperties)
+    //NOTE: we don't validationRequestData contains processProperties, but they are refreshed only on modal open
+    const {data} = await HttpService.validateProperties(processId, validationRequestData.nodeData)
     callback(data, nodeId)
   } else {
     const {data} = await HttpService.validateNode(processId, validationRequestData)

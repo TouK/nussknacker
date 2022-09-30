@@ -1,3 +1,4 @@
+
 # Changelog
 
 1.6.0 (Not released yet)
@@ -18,7 +19,9 @@
 * [#3483](https://github.com/TouK/nussknacker/pull/3483) Fix for: errors were flickering in newly used dynamic components - 
   after entering to node edition they were disappearing. Now this transient situation is replaced by well-prepared form
   with whole necessary parameters.
-* [#3493](https://github.com/TouK/nussknacker/pull/3493) Added method `DeploymentManagerProvider.additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
+* [#3493](https://github.com/TouK/nussknacker/pull/3493), [#3582](https://github.com/TouK/nussknacker/pull/3582) Methods added to to `DeploymentManagerProvider`:
+  * `additionalPropertiesConfig`, which allows to configure additional scenario properties programmatically.
+  * `additionalValidators`, which allows to define DeploymentManager-specific validators.
 * [#3505](https://github.com/TouK/nussknacker/pull/3505) Bump node version to 16.5.1
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Fix date formatting to use client timezone                    
 * [#3542](https://github.com/TouK/nussknacker/pull/3542) Feature: properties validation and properties additional info 

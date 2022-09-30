@@ -152,9 +152,9 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
   }
 
-  private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses): Config = {
+  private def reqRespDeployConfig(port: Int, extraClasses: K8sExtraClasses, fallback: Config): K8sDeploymentManagerConfig = {
     val extraClassesVolume = "extra-classes"
-    baseDeployConfig("request-response")
+    val ficusConfig = baseDeployConfig("request-response")
       .withValue("servicePort", fromAnyRef(port))
       .withValue("k8sDeploymentConfig.spec.template.spec.volumes", fromIterable(List(fromMap(Map(
         "name" -> extraClassesVolume,
@@ -167,7 +167,8 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
             "name" -> extraClassesVolume,
             "mountPath" -> "/opt/nussknacker/components/common/extra"
           ).asJava)).asJava)
-      ).asJava)).asJava))
+      ).asJava)).asJava)).withFallback(fallback)
+    K8sDeploymentManagerConfig.parse(ficusConfig)
   }
 
   private val modelData: LocalModelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator)
@@ -180,8 +181,8 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val extraClasses = new K8sExtraClasses(k8s,
       List(classOf[TestComponentProvider], classOf[EnvService]),
       K8sExtraClasses.serviceLoaderConfigURL(getClass, classOf[ComponentProvider]))
-    val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses).withFallback(extraDeployConfig)
-    val manager = K8sDeploymentManager(modelData, deployConfig)
+    val deployConfig = reqRespDeployConfig(givenServicePort, extraClasses, extraDeployConfig)
+    val manager = new K8sDeploymentManager(modelData, deployConfig)
     val scenario = preparePingPongScenario(givenScenarioName, givenVersion, givenSlug)
     logger.info(s"Running req-resp test on ${scenario.id}")
     val version = ProcessVersion(VersionId(givenVersion), ProcessName(scenario.id), ProcessId(1234), "testUser", Some(22))
