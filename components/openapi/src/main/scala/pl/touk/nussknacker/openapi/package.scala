@@ -47,7 +47,7 @@ package object openapi {
                                              parameters: List[SwaggerParameter],
                                              responseSwaggerType: Option[SwaggerTyped],
                                              method: String,
-                                             servers: List[URL],
+                                             servers: List[String],
                                              securities: List[SwaggerSecurity])
 
 }
