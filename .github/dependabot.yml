@@ -6,7 +6,7 @@
 version: 2
 updates:
   - package-ecosystem: "npm" # See documentation for possible values
-    directory: "/ui/client" # Location of package manifests
+    directory: "/designer/client" # Location of package manifests
     schedule:
       interval: "daily"
     labels:
@@ -18,7 +18,7 @@ updates:
       - dependency-name: "*"
         update-types: ["version-update:semver-patch"]
   - package-ecosystem: "npm"
-    directory: "/ui/submodules"
+    directory: "/designer/submodules"
     schedule:
       interval: "daily"
     labels:
