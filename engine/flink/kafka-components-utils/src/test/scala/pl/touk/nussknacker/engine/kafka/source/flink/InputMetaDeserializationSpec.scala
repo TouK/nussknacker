@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDete
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
 import KafkaSourceFactoryMixin.SampleKey
 import InputMetaDeserializationSpec.sampleKeyTypeInformation
+import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.process.typeinformation.TypingResultAwareTypeInformationDetection
 
@@ -39,11 +40,14 @@ class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkT
 }
 
 object InputMetaDeserializationSpec {
-  val sampleKeyFieldTypes: List[TypeInformation[_]] = List(TypeInformation.of(classOf[String]), TypeInformation.of(classOf[Long]))
-  val sampleKeyTypeInformation: TypeInformation[SampleKey] = new CaseClassTypeInfo[SampleKey](classOf[SampleKey], Array.empty, sampleKeyFieldTypes, List("partOne", "partTwo")){
-    override def createSerializer(config: ExecutionConfig): TypeSerializer[SampleKey] =
-      new ScalaCaseClassSerializer[SampleKey](classOf[SampleKey], sampleKeyFieldTypes.map(_.createSerializer(config)).toArray)
-  }
+  val partOneType: TypeInformation[String] = TypeInformation.of(classOf[String])
+  val partTwoType: TypeInformation[Long] = TypeInformation.of(classOf[Long])
+
+  val sampleKeyFieldTypes: List[TypeInformation[_]] = List(partOneType, partTwoType)
+  val sampleKeyTypeInformation: TypeInformation[SampleKey] = ConcreteCaseClassTypeInfo[SampleKey](
+    ("partOne", partOneType),
+    ("partTwo", partTwoType)
+  )
 }
 
 class SampleKeyTypeInformationCustomisation extends TypingResultAwareTypeInformationCustomisation {
