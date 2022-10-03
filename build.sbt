@@ -896,8 +896,8 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
   )
