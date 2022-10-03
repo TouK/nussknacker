@@ -888,7 +888,20 @@ lazy val flinkComponentsUtils = (project in flink("components-utils")).
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, componentsUtils % "provided", testUtils % "test")
+  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, flinkScalaUtils, componentsUtils % "provided", testUtils % "test")
+
+lazy val flinkScalaUtils = (project in flink("scala-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-flink-scala-utils",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+      )
+    }
+  )
+
 
 lazy val flinkTestUtils = (project in flink("test-utils")).
   settings(commonSettings).
