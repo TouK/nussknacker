@@ -1,13 +1,16 @@
 package pl.touk.nussknacker.ui.validation
 
+import cats.data.{Validated, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, UnknownSubprocess}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, ScenarioNameValidationError, UnknownSubprocess}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, MetaData, ProcessAdditionalFields, StreamMetaData}
+import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitNode}
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
@@ -20,7 +23,7 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
-import pl.touk.nussknacker.engine.spel
+import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -29,6 +32,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidatio
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
 import pl.touk.nussknacker.ui.api.helpers._
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessResolver}
 
 import scala.collection.immutable.ListMap
@@ -490,6 +494,18 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       "subIn" -> List(PrettyValidationErrors.formatErrorMessage(UnknownSubprocess(subprocess.id, "subIn")))
     )
   }
+
+  test("validates with custom validator") {
+    val process = ScenarioBuilder
+      .streaming(SampleCustomProcessValidator.badName)
+      .source("start", existingSourceFactory)
+      .emptySink("sink", existingSinkFactory)
+
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val result = mockProcessValidation(process).validate(displayable, Category1)
+
+    result.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
+  }
 }
 
 private object ProcessValidationSpec {
@@ -548,6 +564,7 @@ private object ProcessValidationSpec {
     val mockedProcessValidation: ProcessValidation = ProcessValidation(
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+      mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> List(SampleCustomProcessValidator)),
       new SubprocessResolver(new StubSubprocessRepository(Set(
         SubprocessDetails(sampleSubprocessOneOut, Category1),
         SubprocessDetails(subprocess, Category1),
@@ -555,5 +572,15 @@ private object ProcessValidationSpec {
     )
 
     mockedProcessValidation
+  }
+
+  object SampleCustomProcessValidator extends CustomProcessValidator{
+    val badName = "badName"
+
+    val badNameError: ScenarioNameValidationError = ScenarioNameValidationError("BadName", "BadName")
+
+    override def validate(process: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
+      Validated.condNel(process.id != badName, (), badNameError)
+    }
   }
 }

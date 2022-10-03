@@ -21,7 +21,7 @@ import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.ValidatedProcessDetails
-import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataProvider, mapProcessingTypeDataProvider}
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.definition.editor.JavaSampleEnum
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -85,9 +85,10 @@ object ProcessTestData {
     .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
       manyInputs = false, canBeEnding = true))
 
-  val processValidation: ProcessValidation = ProcessValidation(
+  def processValidation: ProcessValidation = ProcessValidation(
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
     mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
+    mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Nil),
     new SubprocessResolver(new StubSubprocessRepository(Set()))
   )
 

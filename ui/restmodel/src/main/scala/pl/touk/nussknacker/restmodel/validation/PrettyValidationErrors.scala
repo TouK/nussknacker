@@ -27,7 +27,11 @@ object PrettyValidationErrors {
       case SubprocessParamClassLoadError(fieldName, refClazzName, nodeId) =>
         node("Invalid parameter type.", s"Failed to load $refClazzName", fieldName = Some(fieldName))
       case DuplicatedNodeIds(ids) => node(s"Duplicate node ids: ${ids.mkString(", ")}", "Two nodes cannot have same id", errorType = NodeValidationErrorType.RenderNotAllowed)
-      case ScenarioNameValidationError(message, description) => node(message, description)
+      case ScenarioNameValidationError(message, description) => node(message, description
+        //TODO: we should pass id here, but editing scenario id is *really* quirky...
+        //  , fieldName = Some("id")
+      )
+      case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
       case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer")
