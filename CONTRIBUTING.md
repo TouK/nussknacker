@@ -47,7 +47,7 @@ should be documented (with type, default values etc.) in appropriate sections of
 
 - JDK >= 9 is needed - we have specified target java version to java 8, but using some compiler flags available only on JDK >= 9 (--release flag)
 - For building backend - standard `sbt` setup should be enough
-- For building of frontend `node` and `npm` will be needed - see [client README](ui/client/README.md) for detailed instruction
+- For building of frontend `node` and `npm` will be needed - see [client README](designer/client/README.md) for detailed instruction
 - Some tests requires `docker`
 
 ### Running
@@ -55,7 +55,7 @@ should be documented (with type, default values etc.) in appropriate sections of
 #### Running Designer from IntelliJ
 
 Before running from IDE you have to manually build:
-- build fronted using [Building frontend instruction](#building-frontend) below (only if you want to test/compile FE, see `Readme.md` in `ui/client` for more details)
+- build fronted using [Building frontend instruction](#building-frontend) below (only if you want to test/compile FE, see `Readme.md` in `designer/client` for more details)
 - run `sbt prepareDev` - it prepares components, models and copies FE files (generated above)
 
 Run existing configuration `NussknackerApp` automatically loaded from `./run/NussknackerApp.run.xml`
@@ -64,9 +64,9 @@ Run existing configuration `NussknackerApp` automatically loaded from `./run/Nus
 
 Building:
 - build fronted using [Building frontend instruction](#building-frontend) below
-- run `./buildServer.sh` in `ui`
+- run `./buildServer.sh` in `designer`
 
-Run `./runServer.sh` in `ui`
+Run `./runServer.sh` in `designer`
 
 #### Running using integration environment
 
@@ -81,7 +81,7 @@ To test flink-streaming components just run `RunFlinkStreamingModelLocally` from
 Be aware that it uses stubbed version of DeploymentManager so it won't be possible to deploy scenarios.
 
 If you want to test other components, just extends helper class `LocalNussknackerWithSingleModel`
-and add dependency to `ui` module like in flink-streaming case.
+and add dependency to `designer` module like in flink-streaming case.
 
 #### Setting up Kubernetes environment
 
@@ -101,8 +101,8 @@ Service should be available at http://localhost:8080/api
 
 1. If you want to build frontend and have access to it from served application, you can build it using [Building frontend instruction](#building-frontend) below.
 It will at the end:
-- copy main application static files to `./ui/server/target/scala-XXX/classes/web/static/` and make them accessible via http://localhost:8080/
-- copy submodules static files to `./ui/server/target/scala-XXX/classes/web/submodules/` and make them accessible via http://localhost:8080/submodules/*
+- copy main application static files to `./designer/server/target/scala-XXX/classes/web/static/` and make them accessible via http://localhost:8080/
+- copy submodules static files to `./designer/server/target/scala-XXX/classes/web/submodules/` and make them accessible via http://localhost:8080/submodules/*
 
 2. If you want to test the verification mechanism (used during redeployment of Flink scenarios), you need to make a directory with savepoints available from your dev host. You can use `./bindSavepointsDirLocally.sh` script for that.
    At the end you need to turn `FLINK_SHOULD_VERIFY_BEFORE_DEPLOY` flag on in environment variables.
@@ -111,9 +111,9 @@ It will at the end:
 
 #### Building frontend
 ```
-./ui/buildClient.sh
+./designer/buildClient.sh
 ```
-For more details see [client README](ui/client/README.md)
+For more details see [client README](designer/client/README.md)
 
 #### Building tarball
 ```sbt dist/Universal/packageZipTarball```

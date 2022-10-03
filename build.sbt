@@ -105,7 +105,7 @@ def modelMergeStrategy: String => MergeStrategy = {
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
-def uiMergeStrategy: String => MergeStrategy = {
+def designerMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
@@ -212,7 +212,7 @@ lazy val commonSettings =
         "org.apache.avro" % "avro" % avroV,
         "com.typesafe" % "config" % configV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
-        //NOTE: xmlgraphics used in UI comes with v. old version...
+        //NOTE: xmlgraphics used in Designer comes with v. old version...
         "commons-io" % "commons-io" % commonsIOV,
         //we stick to version in Flink to avoid nasty bugs in process runtime...
         //NOTE: commons-text (in api) uses 3.9...
@@ -368,7 +368,7 @@ val publishAssemblySettings = List(
 )
 
 def assemblySettings(assemblyName: String, includeScala: Boolean, filterProvidedDeps: Boolean = true): List[Def.SettingsDefinition] = {
-  // This work around need to be optional because for ui module it causes excluding of scala lib (because we has there other work around for Idea classpath and provided deps)
+  // This work around need to be optional because for designer module it causes excluding of scala lib (because we has there other work around for Idea classpath and provided deps)
   val filterProvidedDepsSettingOpt = if (filterProvidedDeps) {
     Some(
       //For some reason problem described in https://github.com/sbt/sbt-assembly/issues/295 appears, workaround also works...
@@ -450,7 +450,7 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
     SettingsHelper.makeDeploymentSettings(Universal, Universal / packageZipTarball, "tgz")
   )
   .settings(distDockerSettings)
-  .dependsOn(ui)
+  .dependsOn(designer)
 
 def engine(name: String) = file(s"engine/$name")
 
@@ -658,7 +658,7 @@ lazy val flinkTests = (project in flink("tests")).
     flinkTestUtils % "test",
     kafkaTestUtils % "test",
     //for local development
-    ui % "test",
+    designer % "test",
     deploymentManagerApi % "test")
 
 lazy val defaultModel = (project in (file("defaultModel"))).
@@ -1281,7 +1281,7 @@ lazy val flinkExtensionsApi = (project in flink("extensions-api")).
   ).dependsOn(flinkComponentsApi, extensionsApi)
 
 
-lazy val processReports = (project in file("ui/processReports")).
+lazy val processReports = (project in file("designer/processReports")).
   configs(IntegrationTest).
   settings(commonSettings).
   settings(itSettings()).
@@ -1380,23 +1380,23 @@ lazy val flinkKafkaComponents = (project in flink("components/kafka")).
     name := "nussknacker-flink-kafka-components",
   ).dependsOn(flinkComponentsApi % Provided, flinkKafkaComponentsUtils, flinkSchemedKafkaComponentsUtils, commonUtils % Provided, componentsUtils % Provided)
 
-lazy val copyUiDist = taskKey[Unit]("copy ui")
+lazy val copyClientDist = taskKey[Unit]("copy designer client")
 
-lazy val restmodel = (project in file("ui/restmodel"))
+lazy val restmodel = (project in file("designer/restmodel"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-restmodel"
   )
   .dependsOn(extensionsApi, testUtils % "test")
 
-lazy val listenerApi = (project in file("ui/listener-api"))
+lazy val listenerApi = (project in file("designer/listener-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-listener-api",
   )
   .dependsOn(restmodel)
 
-lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
+lazy val deploymentManagerApi = (project in file("designer/deployment-manager-api"))
   .settings(commonSettings)
   .settings(
     name := "nussknacker-deployment-manager-api",
@@ -1409,19 +1409,19 @@ lazy val deploymentManagerApi = (project in file("ui/deployment-manager-api"))
   )
   .dependsOn(extensionsApi, testUtils % "test")
 
-lazy val ui = (project in file("ui/server"))
+lazy val designer = (project in file("designer/server"))
   .configs(SlowTests)
   .settings(slowTestsSettings)
   .settings(commonSettings)
-  .settings(assemblySettings("nussknacker-ui-assembly.jar", includeScala = includeFlinkAndScala, filterProvidedDeps = false): _*)
+  .settings(assemblySettings("nussknacker-designer-assembly.jar", includeScala = includeFlinkAndScala, filterProvidedDeps = false): _*)
   .settings(publishAssemblySettings: _*)
   .settings(
-    name := "nussknacker-ui",
-    copyUiDist := {
-      val feDistDirectory = file("ui/client/dist")
+    name := "nussknacker-designer",
+    copyClientDist := {
+      val feDistDirectory = file("designer/client/dist")
       val feDistFiles: Seq[File] = (feDistDirectory ** "*").get()
       IO.copy(feDistFiles pair Path.rebase(feDistDirectory, (compile / crossTarget).value / "classes" / "web" / "static"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
-      val feSubmodulesDistDirectory = file("ui/submodules/dist")
+      val feSubmodulesDistDirectory = file("designer/submodules/dist")
       val feSubmodulesDistFiles: Seq[File] = (feSubmodulesDistDirectory ** "*").get()
       IO.copy(feSubmodulesDistFiles pair Path.rebase(feSubmodulesDistDirectory, (compile / crossTarget).value / "classes" / "web" / "submodules"), CopyOptions.apply(overwrite = true, preserveLastModified = true, preserveExecutable = false))
     },
@@ -1435,14 +1435,14 @@ lazy val ui = (project in file("ui/server"))
       flinkExecutor / Compile / assembly
     ).value,
     /*
-      We depend on copyUiDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
+      We depend on copyClientDist in packageBin and assembly to be make sure fe files will be included in jar and fajar
       We abuse sbt a little bit, but we don't want to put webpack in generate resources phase, as it's long and it would
-      make compilation v. long. This is not too nice, but so far only alternative is to put ui dists copyUiDist outside sbt and
+      make compilation v. long. This is not too nice, but so far only alternative is to put designer dists copyClientDist outside sbt and
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
-    Compile / packageBin := (Compile / packageBin).dependsOn(copyUiDist).value,
-    assembly in ThisScope := (assembly in ThisScope).dependsOn(copyUiDist).value,
-    assembly / assemblyMergeStrategy := uiMergeStrategy,
+    Compile / packageBin := (Compile / packageBin).dependsOn(copyClientDist).value,
+    assembly in ThisScope := (assembly in ThisScope).dependsOn(copyClientDist).value,
+    assembly / assemblyMergeStrategy := designerMergeStrategy,
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-http" % akkaHttpV,
@@ -1491,7 +1491,7 @@ lazy val ui = (project in file("ui/server"))
     testUtils % "test",
     //TODO: this is unfortunately needed to run without too much hassle in Intellij...
     //provided dependency of kafka is workaround for Idea, which is not able to handle test scope on module dependency
-    //otherwise it is (wrongly) added to classpath when running UI from Idea
+    //otherwise it is (wrongly) added to classpath when running Designer from Idea
     flinkDeploymentManager % "provided",
     liteEmbeddedDeploymentManager % "provided",
     liteK8sDeploymentManager % "provided",
@@ -1545,7 +1545,7 @@ lazy val modules = List[ProjectReference](
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
-  restmodel, listenerApi, deploymentManagerApi, ui, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
+  restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
 )
@@ -1591,16 +1591,16 @@ lazy val root = (project in file("."))
 
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 prepareDev := {
-  val workTarget = (ui / baseDirectory).value / "work"
+  val workTarget = (designer / baseDirectory).value / "work"
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
-  (ui / copyUiDist).value
+  (designer / copyClientDist).value
 }
 
 lazy val buildClient = taskKey[Unit]("Build client")
 buildClient := {
   val s: TaskStreams = streams.value
-  val buildResult = ("./ui/buildClient.sh" !)
+  val buildResult = ("./designer/buildClient.sh" !)
   if (buildResult == 0) {
     s.log.success("Frontend build success")
   } else {

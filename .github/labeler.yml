@@ -1,16 +1,16 @@
 ui:
-- 'ui/client/*'
-- 'ui/client/**/*'
-- 'ui/submodules/*'
-- 'ui/submodules/**/*'
+- 'designer/client/*'
+- 'designer/client/**/*'
+- 'designer/submodules/*'
+- 'designer/submodules/**/*'
 
 client:
-- 'ui/client/*'
-- 'ui/client/**/*'
+- 'designer/client/*'
+- 'designer/client/**/*'
 
 submodules:
-- 'ui/submodules/*'
-- 'ui/submodules/**/*'
+- 'designer/submodules/*'
+- 'designer/submodules/**/*'
 
 docs:
 - '**/*.md'

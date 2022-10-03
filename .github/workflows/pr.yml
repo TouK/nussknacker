@@ -47,8 +47,8 @@ jobs:
           list-files: 'csv'
           filters: |
             fe_changes:
-              - 'ui/client/**'
-              - 'ui/submodules/**'
+              - 'designer/client/**'
+              - 'designer/submodules/**'
             all_changes:
               - '**'
       - name: Define variables
@@ -126,10 +126,10 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -137,19 +137,19 @@ jobs:
       - name: Download node modules
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
-          npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/submodules
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - name: Build FE
-        run: (cd ui/client; npm run build)
+        run: (cd designer/client; npm run build)
       - name: Build FE submodules
         run: |
-          cd ui
+          cd designer
           cp -r client/.federated-types/nussknackerUi submodules/types/@remote
           cd submodules
           npm run build
       - name: Tar fe artifacts
         shell: bash
-        run:  tar -czf 'fe-dist.tgz' ui/client/dist ui/submodules/dist
+        run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
       - name: Store dist
         uses: actions/upload-artifact@v2
         with:
@@ -324,7 +324,7 @@ jobs:
             --trace
       - name: Slow tests
         shell: bash
-        run: ./ciRunSbt.sh ui/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
+        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -355,11 +355,11 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         uses: actions/setup-node@v2
@@ -368,17 +368,17 @@ jobs:
       - name: Download node modules
         if: ${{ env.shouldPerformFrontendTests == 'true' && steps.cache-npm.outputs.cache-hit != 'true' }}
         run: |
-          npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/submodules
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - name: Test FE
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        run: (cd ui/client; npm run test:unit)
+        run: (cd designer/client; npm run test:unit)
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
         uses: actions/upload-artifact@v2
         with:
           name: FrontendTests-results
-          path: ui/client/junit.xml
+          path: designer/client/junit.xml
 
   dockerTest:
     name: Docker based tests
@@ -405,10 +405,10 @@ jobs:
           path: |
             **/node_modules
             ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('ui/client/package-lock.json', 'ui/client/.nvmrc', 'ui/submodules/package-lock.json', 'ui/submodules/.nvmrc') }}
+          key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat ui/client/.nvmrc)
+        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -416,8 +416,8 @@ jobs:
       - name: Download node modules
         if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
-          npm ci --no-audit --prefix ui/client
-          npm ci --no-audit --prefix ui/submodules
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - uses: olafurpg/setup-scala@v10
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
@@ -469,7 +469,7 @@ jobs:
           DOCKER_PULL_OPTION: never
         shell: bash
         run: |
-          cd ui/client
+          cd designer/client
           npx start-server-and-test backend:docker 8080 test:e2e
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
@@ -483,29 +483,29 @@ jobs:
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
         run: |
-          cd ui/client
+          cd designer/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Find diffs
         if: failure() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
         id: snapshots_diffs
         shell: bash
         run: |
-          echo ::set-output name=found::$(ls ui/client/cypress/integration/__image_snapshots__/*.diff.png | wc -l)
+          echo ::set-output name=found::$(ls designer/client/cypress/integration/__image_snapshots__/*.diff.png | wc -l)
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
         with:
           name: CypressTests-results
-          path: ui/client/cypress-test-results/*.xml
+          path: designer/client/cypress-test-results/*.xml
       - name: Store test results
         if: always()
         uses: actions/upload-artifact@v2
         with:
           name: e2e-test-results
           path: |
-            ui/client/cypress/**/__image_snapshots__/
-            ui/client/cypress/screenshots/
-            ui/client/cypress/videos/
+            designer/client/cypress/**/__image_snapshots__/
+            designer/client/cypress/screenshots/
+            designer/client/cypress/videos/
           if-no-files-found: ignore
       - name: FE tests e2e on build docker image with CYPRESS_SNAPSHOT_UPDATE
         if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'true' }}
@@ -515,7 +515,7 @@ jobs:
           DOCKER_PULL_OPTION: never
         shell: bash
         run: |
-          cd ui/client
+          cd designer/client
           npx start-server-and-test backend:docker 8080 test:e2e
       - name: FE tests e2e on pulled image with CYPRESS_SNAPSHOT_UPDATE
         if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'false' }}
@@ -523,7 +523,7 @@ jobs:
           CYPRESS_SNAPSHOT_UPDATE: "true"
         shell: bash
         run: |
-          cd ui/client
+          cd designer/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Create Pull Request
         id: update_snapshots

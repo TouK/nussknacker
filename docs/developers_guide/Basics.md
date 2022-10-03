@@ -31,7 +31,7 @@ To read more see [ComponentProvider API](./Components)
 
 ## Deployment of scenarios
 
-The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
+The Designer uses [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 interface to perform actions on scenarios (deploy / cancel / etc.). All providers that are available in distribution deployment are located in `managers` directory and are added to the designer classpath.
 If you want to implement own `DeploymentManager`, you should implement this interface, package it, add to classpath and configure scenario type to use it. More info you can find on 
 [DeploymentManagerConfiguration page](../installation_configuration_guide/DeploymentManagerConfiguration) 
@@ -56,13 +56,13 @@ If you want to implement own `DeploymentManager`, you should implement this inte
 
 ### Designer customization
 
-- [ProcessChangeListenerFactory](https://github.com/TouK/nussknacker/blob/staging/ui/listener-api/src/main/scala/pl/touk/nussknacker/ui/listener/ProcessChangeListenerFactory.scala)
+- [ProcessChangeListenerFactory](https://github.com/TouK/nussknacker/blob/staging/designer/listener-api/src/main/scala/pl/touk/nussknacker/ui/listener/ProcessChangeListenerFactory.scala)
 - Security
-  - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/api/AuthenticationProvider.scala)
-  - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/ui/security/oauth2/OAuth2ServiceFactory.scala)
-- [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/ui/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
+  - [AuthenticationProvider](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/designer/security/api/AuthenticationProvider.scala)
+  - [OAuth2ServiceFactory](https://github.com/TouK/nussknacker/blob/staging/security/src/main/scala/pl/touk/nussknacker/designer/security/oauth2/OAuth2ServiceFactory.scala)
+- [CountsReporterCreator](https://github.com/TouK/nussknacker/blob/staging/designer/processReports/src/main/scala/pl/touk/nussknacker/processCounts/CountsReporter.scala)
 - [NodeAdditionalInfoProvider](https://github.com/TouK/nussknacker/blob/staging/extensions-api/src/main/scala/pl/touk/nussknacker/engine/additionalInfo/NodeAdditionalInfoProvider.scala)
-- [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/ui/restmodel/src/main/scala/pl/touk/nussknacker/restmodel/validation/CustomProcessValidator.scala)
+- [CustomProcessValidatorFactory](https://github.com/TouK/nussknacker/blob/staging/designer/restmodel/src/main/scala/pl/touk/nussknacker/restmodel/validation/CustomProcessValidator.scala)
              
 ## Modules architecture and conventions
 
@@ -78,7 +78,7 @@ Both *API modules* and *Utils modules* have several modules with `-components` p
 
 `nussknacker-scenario-api` contains classes needed to operate on scenarios: creating it via DSL, marshalling to JSON, etc.
 
-`nussknacker-deployment-manager-api` contains interfaces needed to create own  [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/ui/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
+`nussknacker-deployment-manager-api` contains interfaces needed to create own  [DeploymentManager](https://github.com/TouK/nussknacker/blob/staging/designer/deployment-manager-api/src/main/scala/pl/touk/nussknacker/engine/api/deployment/DeploymentManager.scala)
 that can be used to scenario execution.
 
 `nussknacker-extensions-*` contains other extensions API.

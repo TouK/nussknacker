@@ -26,6 +26,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3386](https://github.com/TouK/nussknacker/pull/3386) Changed `CustomProcessValidator` `validate` method.
   It now receives `CanonicalProcess` instead of `DisplayableProcess` and returns `ValidatedNel[ProcessCompilationError, Unit]`
   instead of `ValidationResult`. Moved `CustomProcessValidator` from module `nussknacker-restmodel` in package `validation` to `nussknacker-extensions-api`. 
+* [#3586](https://github.com/TouK/nussknacker/pull/3586) Module `nussknacker-ui` was renamed to `nussknacker-designer`, `ui.conf` was renamed to `designer.conf`, `defaultUiConfing.conf` renamed to `defaultDesignerConfig.conf`
+
 
 ### REST API changes                   
 * [#3506](https://github.com/TouK/nussknacker/pull/3506) Dates returned by REST API (createdAt, modifiedAt, createDate) are now returned in Zulu time, with timezone indication. This affects e.g. `/api/procecesses`, `/api/processes/{scenarioId}`, `/api/processes/{scenarioId}/activity` 

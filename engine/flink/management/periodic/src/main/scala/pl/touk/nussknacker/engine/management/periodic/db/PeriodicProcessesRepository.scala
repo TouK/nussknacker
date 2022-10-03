@@ -262,7 +262,7 @@ class SlickPeriodicProcessesRepository(db: JdbcBackend.DatabaseDef,
 
 }
 
-//Copied from ui/server. 
+//Copied from designer/server.
 object DBIOActionInstances {
 
   type DB[A] = DBIOAction[A, NoStream, Effect.All]
