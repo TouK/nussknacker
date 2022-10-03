@@ -10,16 +10,15 @@ import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaDa
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 
-class LiteScenarioValidator(nussknackerInstanceName: Option[String]) extends CustomProcessValidator {
+class RequestResponseScenarioValidator(nussknackerInstanceName: Option[String]) extends CustomProcessValidator {
 
   def validate(scenario: CanonicalProcess): ValidatedNel[ProcessCompilationError, Unit] = {
     scenario.metaData.typeSpecificData match {
-      case _: LiteStreamMetaData =>
-        Valid(())
       case rrMetaData: RequestResponseMetaData =>
         validateRequestResponse(ProcessName(scenario.id), rrMetaData)
+      //should not happen
       case other =>
-        throw new IllegalArgumentException("Not supported scenario meta data type: " + other)
+        throw new IllegalArgumentException("This validator supports only Request-Response mode, got: " + other)
     }
   }
 
@@ -35,8 +34,8 @@ class LiteScenarioValidator(nussknackerInstanceName: Option[String]) extends Cus
 
 }
 
-object LiteScenarioValidator {
+object RequestResponseScenarioValidator {
 
-  def apply(config: K8sDeploymentManagerConfig) = new LiteScenarioValidator(config.nussknackerInstanceName)
+  def apply(config: K8sDeploymentManagerConfig) = new RequestResponseScenarioValidator(config.nussknackerInstanceName)
 
 }
