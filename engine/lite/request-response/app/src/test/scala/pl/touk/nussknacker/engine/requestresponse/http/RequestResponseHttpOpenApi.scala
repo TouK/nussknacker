@@ -27,6 +27,7 @@ class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestR
         |    "tags" : [
         |      "Nussknacker"
         |    ],
+        |    "operationId" : "proc1",
         |    "requestBody" : {
         |      "required" : true,
         |      "content" : {

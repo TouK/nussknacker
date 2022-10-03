@@ -105,6 +105,7 @@ object RequestResponseInterpreter {
         // TODO: remove cyclic dependency: RequestResponseOpenApiGenerator -> RequestResponseScenarioInterpreter -> RequestResponseOpenApiGenerator
         RequestResponseOpenApiGenerator.generateScenarioDefinition(
           id,
+          id,
           sourceDefinition.description,
           sourceDefinition.tags,
           sourceDefinition.definition,
