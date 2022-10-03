@@ -8,6 +8,7 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSe
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 
 object InputMetaTypeInformationProvider {
@@ -34,7 +35,7 @@ object InputMetaTypeInformationProvider {
       new MapTypeInfo(classOf[String], classOf[String]),
       TypeInformation.of(classOf[Integer])
     )
-    new CaseClassTypeInfo[InputMeta[K]](classOf[InputMeta[K]], Array.empty, fieldTypes, fieldNames){
+    new ConcreteCaseClassTypeInfo[InputMeta[K]](classOf[InputMeta[K]], fieldNames.zip(fieldTypes)){
       override def createSerializer(config: ExecutionConfig): TypeSerializer[InputMeta[K]] =
         new ScalaCaseClassSerializer[InputMeta[K]](classOf[InputMeta[K]], fieldTypes.map(_.createSerializer(config)).toArray)
     }
