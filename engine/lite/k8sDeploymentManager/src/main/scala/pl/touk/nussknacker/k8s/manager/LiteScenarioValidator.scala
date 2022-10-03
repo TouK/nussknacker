@@ -28,8 +28,9 @@ class LiteScenarioValidator(nussknackerInstanceName: Option[String]) extends Cus
     // We don't sanitize / validate against url because k8s object names are more restrictively validated than urls, see https://datatracker.ietf.org/doc/html/rfc3986
     val withoutSanitization = ServicePreparer.serviceNameWithoutSanitization(nussknackerInstanceName, slug)
     val withSanitization = ServicePreparer.serviceName(nussknackerInstanceName, slug)
+    val prefix = K8sDeploymentManager.nussknackerInstanceNamePrefix(nussknackerInstanceName)
     Validated.cond(withSanitization == withoutSanitization, (), NonEmptyList.of(SpecificDataValidationError("slug", "Allowed characters include lowercase letters, digits, hyphen, " +
-              "name must start and end alphanumeric character")))
+              s"name must start and end alphanumeric character, total length ${if (prefix.isEmpty) s"(including prefix '$prefix') " else ""}cannot be more than ${K8sUtils.maxObjectNameLength}")))
   }
 
 }
