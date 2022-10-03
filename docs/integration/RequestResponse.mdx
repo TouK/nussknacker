@@ -1,0 +1,122 @@
+---
+sidebar_position: 2
+---
+
+# Request-Response processing mode only
+
+## Overview
+
+Depending on your network topology after you deploy a `Request-response` scenario, there should be either a k8s service or ingress allowing you to connect to scenario.
+
+When you use default [source and sink](../scenarios_authoring/RRDataSourcesAndSinks.md), you can interact with REST API provided by before mentioned service or ingress with HTTP POST method.
+
+## Connection
+
+In case of `service` you can trigger your scenario with example curl command:
+
+```bash
+curl -X POST -d "payload_based_on_input_schema" 'http://<scenario_name>'
+```
+
+For `ingress` configuration it looks quite similar:
+
+```bash
+curl -X POST -d "payload_based_on_input_schema" 'http://<ingress_domain><scenario_name>'
+```
+
+## OpenAPI
+
+After you deploy your `Request-response` scenario an OpenAPI definition based on input and output schema you have provided in scenario properties will be available.
+You should see swagger based definition under `http://<scenario_name>/definition`
+
+You can see example definition below:
+
+<details>
+  <summary>Scenario OpenAPI definition)</summary>
+
+```json
+{
+  "openapi" : "3.1.0",
+  "info" : {
+    "title" : "dsw-rr",
+    "version" : "1"
+  },
+  "paths" : {
+    "/" : {
+      "post" : {
+        "description" : "**scenario name**: dsw-rr",
+        "tags" : [
+          "Nussknacker"
+        ],
+        "requestBody" : {
+          "required" : true,
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "type" : "object",
+                "nullable" : false,
+                "properties" : {
+                  "input" : {
+                    "type" : "object",
+                    "nullable" : false,
+                    "required" : [
+                      "first",
+                      "last"
+                    ],
+                    "properties" : {
+                      "last" : {
+                        "type" : "string",
+                        "nullable" : false
+                      },
+                      "first" : {
+                        "type" : "string",
+                        "nullable" : false
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "produces" : [
+          "application/json"
+        ],
+        "consumes" : [
+          "application/json"
+        ],
+        "summary" : "dsw-rr",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "object",
+                  "properties" : {
+                    "input" : {
+                      "type" : "object",
+                      "properties" : {
+                        "first" : {
+                          "type" : "string"
+                        },
+                        "last" : {
+                          "type" : "string"
+                        }
+                      },
+                      "required" : [
+                        "first",
+                        "last"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+</details>

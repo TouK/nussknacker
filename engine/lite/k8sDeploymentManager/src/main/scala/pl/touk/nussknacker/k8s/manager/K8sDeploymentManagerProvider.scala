@@ -27,11 +27,11 @@ class K8sDeploymentManagerProvider extends DeploymentManagerProvider {
     new K8sDeploymentManager(modelData.asInvokableModelData, K8sDeploymentManagerConfig.parse(config))
   }
 
-  private val steamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
+  private val streamingInitialMetData = TypeSpecificInitialData(LiteStreamMetaData(Some(1)))
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = {
     forMode(config)(
-      _ => steamingInitialMetData,
+      _ => streamingInitialMetData,
       config => (scenarioName: ProcessName, _: String) => RequestResponseMetaData(Some(defaultSlug(scenarioName,
         config.nussknackerInstanceName)))
     )

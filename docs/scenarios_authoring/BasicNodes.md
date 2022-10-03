@@ -194,3 +194,23 @@ This source has the following parameters:
 - period - specifies how often events will be sent
 - count - specifies number of event that will be sent at every `period`
 - value - specifies data that event will hold
+
+## Collect
+
+![collect](img/collect.png)
+
+**(Request-response only)**
+
+`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and stores them in a list.
+
+**Collect** takes one argument:
+- Input expression - expression which will be collected from all invocations of this for a given request.
+
+For example:
+- We use `for-each` component on list `{"one", "two", "three"}`
+- Connect bellow `for-each` some node which do `#element.size` on each element and returns `#elementSize`
+- Use `collect` with `Input expression: #elementSize`
+
+Then output from `collect` will be list: `{3, 3, 5}`.
+
+_Collect is designed to be used in simple collect cases, it might not work as expected in nested structures (like for-each inside for-each)_
