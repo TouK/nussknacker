@@ -5,12 +5,12 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
-class ConcreteCaseClassTypeInfo[T <: Product : ClassTag](fields: List[(String, TypeInformation[_])])
-  extends CaseClassTypeInfo[T](classOf[T], Array.empty, fields.map(_._2), fields.map(_._1)) {
+class ConcreteCaseClassTypeInfo[T <: Product: ClassTag](fields: List[(String, TypeInformation[_])])
+  extends CaseClassTypeInfo[T](classTag[T].runtimeClass.asInstanceOf[Class[T]], Array.empty, fields.map(_._2), fields.map(_._1)) {
   override def createSerializer(config: ExecutionConfig): TypeSerializer[T] = {
-    new ScalaCaseClassSerializer[T](classOf[T], fields.map(_._2.createSerializer(config)).toArray)
+    new ScalaCaseClassSerializer[T](classTag[T].runtimeClass.asInstanceOf[Class[T]], fields.map(_._2.createSerializer(config)).toArray)
   }
 }
 
