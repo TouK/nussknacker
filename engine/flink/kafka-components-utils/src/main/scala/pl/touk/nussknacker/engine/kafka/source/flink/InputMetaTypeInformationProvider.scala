@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.kafka.source.flink
 
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.MapTypeInfo
-import org.apache.flink.api.scala.typeutils.CaseClassTypeInfo
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
