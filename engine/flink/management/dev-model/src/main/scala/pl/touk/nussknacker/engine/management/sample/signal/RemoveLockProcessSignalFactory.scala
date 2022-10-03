@@ -7,7 +7,6 @@ import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala.typeutils.EitherTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -54,6 +53,7 @@ object SampleSignalHandlingTransformer {
   class LockStreamTransformer extends CustomStreamTransformer {
     final val lockQueryName = "locks-state" //it has to be `final` to use it as value in Java annoatation, otherwise it won't compile
 
+    // TODO: Add better TypeInformation
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
     @MethodToInvoke(returnType = classOf[LockOutput])

@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
@@ -19,6 +18,7 @@ import scala.collection.JavaConverters._
   */
 object ForEachTransformer extends CustomStreamTransformer {
 
+  // TODO: Add better TypeInformation
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(@ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
              @OutputVariableName outputVariable: String): FlinkCustomStreamTransformation with ReturningType = {
