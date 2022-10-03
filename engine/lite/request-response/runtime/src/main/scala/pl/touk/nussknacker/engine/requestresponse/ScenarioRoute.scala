@@ -26,10 +26,11 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
   val securityDirectiveOpt: Option[AuthenticationDirective[String]] = {
 
     val password = config.basicAuthConfig.map(_.password)
+    val user = config.basicAuthConfig.map(_.user)
 
     def rrAuthenticator(credentials: Credentials): Option[String] =
       credentials match {
-        case p@Credentials.Provided(id) if id == "publisher" && p.verify(password.get) => Some(id)
+        case p@Credentials.Provided(username) if username == user.get && p.verify(password.get) => Some(username)
         case _ => None
       }
 

@@ -86,6 +86,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val givenScenarioName = "reqresp-ingress"
     val config = ConfigFactory.empty()
       .withValue("ingress.enabled", fromAnyRef(true))
+      .withValue("configExecutionOverrides.request-response.basicAuthConfig.user", fromAnyRef("publisher"))
       .withValue("configExecutionOverrides.request-response.basicAuthConfig.password", fromAnyRef("rrPassword"))
     val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 

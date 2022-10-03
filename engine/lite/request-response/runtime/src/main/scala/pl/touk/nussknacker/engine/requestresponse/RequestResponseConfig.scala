@@ -13,7 +13,7 @@ object OpenApiDefinitionConfig {
 
 }
 
-case class BasicAuthConfig(user: String = "publisher", password: String)
+case class BasicAuthConfig(user: String, password: String)
 
 case class RequestResponseConfig(definitionMetadata: OpenApiDefinitionConfig = OpenApiDefinitionConfig(),
                                  basicAuthConfig: Option[BasicAuthConfig] = None)
