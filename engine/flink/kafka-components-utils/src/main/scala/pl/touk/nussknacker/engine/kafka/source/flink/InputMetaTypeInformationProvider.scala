@@ -8,23 +8,37 @@ import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSe
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 
 object InputMetaTypeInformationProvider {
 
   // It should be synchronized with InputMeta.withType
-  def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] =
-    ConcreteCaseClassTypeInfo[InputMeta[K]](
-      (InputMeta.keyParameterName, keyTypeInformation),
-      ("topic", TypeInformation.of(classOf[String])),
-      ("partition", TypeInformation.of(classOf[Integer])),
-      ("offset", TypeInformation.of(classOf[java.lang.Long])),
-      ("timestamp", TypeInformation.of(classOf[java.lang.Long])),
-      ("timestampType", TypeInformation.of(classOf[TimestampType])),
-      ("headers", new MapTypeInfo(classOf[String], classOf[String])),
-      ("leaderEpoch", TypeInformation.of(classOf[Integer]))
+  def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
+    val fieldNames = List(
+      InputMeta.keyParameterName,
+      "topic",
+      "partition",
+      "offset",
+      "timestamp",
+      "timestampType",
+      "headers",
+      "leaderEpoch"
     )
+    val fieldTypes = List(
+      keyTypeInformation,
+      TypeInformation.of(classOf[String]),
+      TypeInformation.of(classOf[Integer]),
+      TypeInformation.of(classOf[java.lang.Long]),
+      TypeInformation.of(classOf[java.lang.Long]),
+      TypeInformation.of(classOf[TimestampType]),
+      new MapTypeInfo(classOf[String], classOf[String]),
+      TypeInformation.of(classOf[Integer])
+    )
+    new CaseClassTypeInfo[InputMeta[K]](classOf[InputMeta[K]], Array.empty, fieldTypes, fieldNames){
+      override def createSerializer(config: ExecutionConfig): TypeSerializer[InputMeta[K]] =
+        new ScalaCaseClassSerializer[InputMeta[K]](classOf[InputMeta[K]], fieldTypes.map(_.createSerializer(config)).toArray)
+    }
+  }
 }
 
 /**
