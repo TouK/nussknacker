@@ -35,9 +35,11 @@ object InputMetaTypeInformationProvider {
       new MapTypeInfo(classOf[String], classOf[String]),
       TypeInformation.of(classOf[Integer])
     )
-    new ConcreteCaseClassTypeInfo[InputMeta[K]](classOf[InputMeta[K]], fieldNames.zip(fieldTypes)){
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[InputMeta[K]] =
-        new ScalaCaseClassSerializer[InputMeta[K]](classOf[InputMeta[K]], fieldTypes.map(_.createSerializer(config)).toArray)
+    val cls = classOf[InputMeta[K]]
+    val fields = fieldNames.zip(fieldTypes)
+    new ConcreteCaseClassTypeInfo[InputMeta[K]](cls, fields){
+      override def createSerializer(config: ExecutionConfig) =
+        new ScalaCaseClassSerializer[InputMeta[K]](cls, fields.map(_._2.createSerializer(config)).toArray)
     }
   }
 }
