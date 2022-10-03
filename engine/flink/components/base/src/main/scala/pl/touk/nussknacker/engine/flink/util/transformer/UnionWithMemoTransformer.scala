@@ -2,10 +2,10 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -41,7 +41,10 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     ContextTransformation
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
+        // TODO: Add better TypeInformation
+
         new FlinkCustomJoinTransformation {
+          implicit val keyedValueTypeInformation = TypeInformation.of(new TypeHint[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] {})
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
@@ -100,8 +103,10 @@ class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunc
 
   import scala.collection.JavaConverters._
 
-  override protected def stateDescriptor: ValueStateDescriptor[Map[String, AnyRef]] =
-    new ValueStateDescriptor("state", implicitly[TypeInformation[Map[String, AnyRef]]])
+  override protected def stateDescriptor: ValueStateDescriptor[Map[String, AnyRef]] = {
+    // TODO: Add better TypeInformation
+    new ValueStateDescriptor("state", implicitly[TypeInformation[Map[String, AnyRef]]](TypeInformation.of(new TypeHint[Map[String, AnyRef]] {})))
+  }
 
   override def processElement(valueWithCtx: ValueWithContext[StringKeyedValue[(String, AnyRef)]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val currentState = Option(readState()).getOrElse(Map.empty)

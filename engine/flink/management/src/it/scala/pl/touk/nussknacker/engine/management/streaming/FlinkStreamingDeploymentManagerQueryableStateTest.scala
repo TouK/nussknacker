@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
@@ -41,10 +41,13 @@ class FlinkStreamingDeploymentManagerQueryableStateTest extends AnyFunSuite with
     val client = new FlinkStreamingDeploymentManagerProvider()
       .createQueryableClient(processingTypeConfig.deploymentConfig).get.asInstanceOf[FlinkQueryableClient]
 
+    implicit val booleanTypeInformation: TypeInformation[java.lang.Boolean] = TypeInformation.of(classOf[java.lang.Boolean])
+
     def queryState(): Boolean = client.fetchState[java.lang.Boolean](
       jobId = jobId,
       queryName = "single-lock-state",
-      key = oneElementValue).map(Boolean.box(_)).futureValue
+      key = oneElementValue
+    ).map(Boolean.box(_)).futureValue
 
     eventually {
       queryState() shouldBe true

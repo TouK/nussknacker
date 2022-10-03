@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -51,23 +51,24 @@ object SampleSignalHandlingTransformer {
   class LockStreamTransformer extends CustomStreamTransformer {
     final val lockQueryName = "locks-state" //it has to be `final` to use it as value in Java annoatation, otherwise it won't compile
 
+    // TODO: Add better TypeInformation
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
     @MethodToInvoke(returnType = classOf[LockOutput])
     def execute(@ParamName("input") input: LazyParameter[String]): FlinkCustomStreamTransformation =
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         context.signalSenderProvider.get[RemoveLockProcessSignalFactory].connectWithSignals(start.flatMap(context.lazyParameterHelper.lazyMapFunction(input)),
-          context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)
+          context.metaData.id, context.nodeId, SignalSchema.deserializationSchema)(TypeInformation.of(classOf[SampleProcessSignal]))
           .keyBy((v: ValueWithContext[String]) => v.value, (v: SampleProcessSignal) => v.action.key)
           .transform(
             "lockStreamTransform",
-            implicitly[TypeInformation[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]],
+            implicitly[TypeInformation[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]](TypeInformation.of(new TypeHint[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]] {})),
             new LockStreamFunction(context.metaData)
           )
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
           .transform(
             "queryableStateTransform",
-            implicitly[TypeInformation[ValueWithContext[AnyRef]]],
+            implicitly[TypeInformation[ValueWithContext[AnyRef]]](TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})),
             new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](
               lockQueryName,
               lockOutput => Json.fromFields(List(
@@ -139,7 +140,7 @@ object SampleSignalHandlingTransformer {
 
     override def open(): Unit = {
       super.open()
-      val queriedStateDescriptor = new ValueStateDescriptor("queriedStates", implicitly[TypeInformation[String]]) //this TypeInformation has to be matched by the one used during quering state
+      val queriedStateDescriptor = new ValueStateDescriptor("queriedStates", TypeInformation.of(classOf[String])) //this TypeInformation has to be matched by the one used during quering state
       queriedStateDescriptor.setQueryable(queryName)
       queriedStates = getRuntimeContext.getState(queriedStateDescriptor)
     }

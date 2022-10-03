@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -91,8 +91,9 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
               }
             ))
 
+            // TODO: Add better TypeInformation
             timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
           }
         }

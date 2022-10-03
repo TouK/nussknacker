@@ -4,10 +4,9 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits.toTraverseOps
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
@@ -105,7 +104,8 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               val sanitizedId = ContextTransformation.sanitizeBranchName(id)
               (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
             }))
-            .returns(implicitly[TypeInformation[ValueWithContext[KeyedValue[String, AnyRef]]]])
+            // TODO: Add better TypeInformation
+            .returns(TypeInformation.of(new TypeHint[ValueWithContext[StringKeyedValue[AnyRef]]] {}))
       }
 
       val types = aggregateByByBranchId.mapValues(_.returnType)
@@ -124,7 +124,8 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
       timestampAssigner
-        .map(new TimestampAssignmentHelper(_).assignWatermarks(stream))
+        // TODO: Add better TypeInformation
+        .map(new TimestampAssignmentHelper(_)(TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})).assignWatermarks(stream))
         .getOrElse(stream)
     }
   }

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.process.typeinformation
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
@@ -39,10 +38,11 @@ object TypeInformationDetectionUtils extends LazyLogging {
 
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
-  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = implicitly[TypeInformation[Context]]
+  // TODO: Use better TypeInformation
+  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = TypeInformation.of(classOf[Context])
 
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = implicitly[TypeInformation[ValueWithContext[AnyRef]]].asInstanceOf[TypeInformation[ValueWithContext[T]]]
+    = TypeInformation.of(classOf[ValueWithContext[T]])
 
-  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
+  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
 }

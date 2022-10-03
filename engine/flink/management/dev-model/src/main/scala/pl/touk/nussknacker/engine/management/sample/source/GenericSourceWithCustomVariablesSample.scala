@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
@@ -68,7 +68,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
     import scala.collection.JavaConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
-    new CollectionSource[String](elements, None, Typed[String])
+    new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))
       with TestDataGenerator
       with FlinkSourceTestSupport[String] {
 

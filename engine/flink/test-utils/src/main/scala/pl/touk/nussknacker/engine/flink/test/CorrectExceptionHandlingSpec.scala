@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
@@ -67,8 +67,11 @@ class RecordingConfigCreator(delegate: ProcessConfigCreator, samplesCount: Int) 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     val timestamps = StandardTimestampWatermarkHandler.afterEachEvent[AnyRef]((_: AnyRef) => 1L)
     val inputType = Typed.fromDetailedType[java.util.List[Int]]
-    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(samples, Some(timestamps), inputType
-      ), inputType)))
+    Map("source" -> WithCategories(SourceFactory.noParam(CollectionSource(
+      samples,
+      Some(timestamps),
+      inputType
+    )(TypeInformation.of(classOf[AnyRef])), inputType)))
   }
 
   override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]]

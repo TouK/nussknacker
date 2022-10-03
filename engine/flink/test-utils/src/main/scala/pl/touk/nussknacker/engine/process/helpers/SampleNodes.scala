@@ -5,14 +5,13 @@ import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -47,6 +46,25 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
 object SampleNodes {
+
+  // TODO: Use better TypeInformation
+  // TODO: Should swap Int for java.lang.Integer?
+  implicit val intTypeInformation: TypeInformation[Int] =
+    TypeInformation.of(classOf[Int])
+  implicit val longTypeInformation: TypeInformation[Long] =
+    TypeInformation.of(classOf[Long])
+  implicit val stringTypeInformation: TypeInformation[String] =
+    TypeInformation.of(classOf[String])
+  implicit val stringWithContext: TypeInformation[ValueWithContext[String]] =
+    TypeInformation.of(new TypeHint[ValueWithContext[String]] {})
+  implicit val valueWithContextTypeInformation: TypeInformation[ValueWithContext[AnyRef]] =
+    TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})
+  implicit val simpleRecordTypeInformation: TypeInformation[SimpleRecord] =
+    TypeInformation.of(classOf[SampleNodes.SimpleRecord])
+  implicit val simpleJsonRecordTypeInformation: TypeInformation[SimpleJsonRecord] =
+    TypeInformation.of(classOf[SampleNodes.SimpleJsonRecord])
+  implicit val typedMapTypeInformation: TypeInformation[TypedMap] =
+    TypeInformation.of(classOf[TypedMap])
 
   // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,

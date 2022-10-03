@@ -6,7 +6,6 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -48,6 +47,9 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
   private val KeyVariableName = "keyVar"
 
   private val OutVariableName = "outVar"
+
+  // TODO: Add better TypeInformation
+  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   private def performTest(input: List[Either[OneRecord, OneRecord]], expected: List[Map[String, AnyRef]]): Unit = {
     val MainBranchId = "main"

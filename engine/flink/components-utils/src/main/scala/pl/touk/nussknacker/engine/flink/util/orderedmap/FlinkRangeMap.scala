@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.orderedmap
 
 import java.{util => jul}
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.api.java.typeutils.MapTypeInfo
-import org.apache.flink.api.scala.createTypeInformation
 
 import scala.Ordering.Implicits._
 import scala.collection.immutable.SortedMap
@@ -50,8 +49,10 @@ object FlinkRangeMap {
    */
   implicit object SortedMapFlinkRangeMap extends FlinkRangeMap[SortedMap] {
 
-    override def typeInformation[K: TypeInformation, V: TypeInformation]: TypeInformation[SortedMap[K, V]] =
-      implicitly[TypeInformation[SortedMap[K, V]]]
+    override def typeInformation[K: TypeInformation, V: TypeInformation]: TypeInformation[SortedMap[K, V]] = {
+      // TODO: Use better TypeInformation
+      TypeInformation.of(new TypeHint[SortedMap[K, V]] {})
+    }
 
     override def empty[K: Ordering, V]: SortedMap[K, V] = SortedMap.empty[K, V]
 

@@ -6,6 +6,7 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
@@ -265,7 +266,8 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       resultStream
         .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        .process(new SplitFunction(outputContexts, typeInformationDetection), createTypeInformation[Unit])
+        // TODO: Use better TypeInformation
+        .process(new SplitFunction(outputContexts, typeInformationDetection), TypeInformation.of(classOf[Unit]))
     }
 
   }
