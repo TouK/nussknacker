@@ -3,7 +3,7 @@ sidebar_position: 3
 ---
 # Deployment Manager configuration
 
-Configuration of Deployment Manager, which is component of the Designer that deploys scenario to given Engine (e.g. Streaming-Lite runtime or Flink in Streaming-Flink mode). 
+Configuration of Deployment Manager, which is component of the Designer that deploys scenario to given Engine (e.g. Lite or Flink). 
 Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
 ```
 deploymentConfig {     

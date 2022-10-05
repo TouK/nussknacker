@@ -11,7 +11,7 @@ sidebar_position: 3
 To fully understand how Nussknacker works with Kafka topics, it's best to read the following first:
 * [Kafka topic key](https://kafka.apache.org/intro)
 
-If you want to use Streaming-Flink processing engine, this is also recommended:
+If you want to use Flink engine, this is also recommended:
 * [Flink keyed state](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
 
 ### Concepts
