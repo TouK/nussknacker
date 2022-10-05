@@ -13,4 +13,9 @@ object OpenApiDefinitionConfig {
 
 }
 
-case class RequestResponseConfig(definitionMetadata: OpenApiDefinitionConfig = OpenApiDefinitionConfig())
+case class BasicAuthConfig(user: String, password: String)
+
+case class RequestResponseSecurityConfig(basicAuth: Option[BasicAuthConfig] = None)
+
+case class RequestResponseConfig(definitionMetadata: OpenApiDefinitionConfig = OpenApiDefinitionConfig(),
+                                 security: Option[RequestResponseSecurityConfig] = None)
