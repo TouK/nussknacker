@@ -48,7 +48,8 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   private val requestResponseConfig: RequestResponseConfig = RequestResponseConfig(definitionConfig)
   private val openRoutes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig, scenarioName).combinedRoute
   private val password = "password"
-  private val securedRoutes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.copy(basicAuthConfig = Some(BasicAuthConfig(user = "publisher", password = password))), scenarioName).combinedRoute
+  private val securityConfig: RequestResponseSecurityConfig = RequestResponseSecurityConfig(basicAuth = Some(BasicAuthConfig(user = "publisher", password = password)))
+  private val securedRoutes = new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig.copy(security = Some(securityConfig)), scenarioName).combinedRoute
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

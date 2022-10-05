@@ -24,23 +24,27 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
   private val defaultServerUrl = "./"
 
   val securityDirectiveOpt: Option[AuthenticationDirective[String]] = {
+    def prepareAuthenticator(basicAuthConfig: BasicAuthConfig): Credentials => Option[String] = {
+      val password = basicAuthConfig.password
+      val user = basicAuthConfig.user
 
-    val password = config.basicAuthConfig.map(_.password)
-    val user = config.basicAuthConfig.map(_.user)
+      def rrAuthenticator(credentials: Credentials): Option[String] =
+        credentials match {
+          case p@Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
+          case _ => None
+        }
 
-    def rrAuthenticator(credentials: Credentials): Option[String] =
-      credentials match {
-        case p@Credentials.Provided(username) if username == user.get && p.verify(password.get) => Some(username)
-        case _ => None
-      }
+      rrAuthenticator
+    }
 
-    val basicAuthDirective = config.basicAuthConfig.flatMap { _ =>
+    val authenticationDirective = config.security.flatMap(_.basicAuth.flatMap { conf =>
       Some(SecurityDirectives.authenticateBasic(
-        authenticator = rrAuthenticator,
+        authenticator = prepareAuthenticator(conf),
         realm = "request-response"
       ))
-    }
-    basicAuthDirective
+    })
+
+    authenticationDirective
   }
 
   val invocationRoute: Route = {
@@ -75,7 +79,7 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
       invocationRoute
     }
     val invocationRouteWithSecurity: Route = securityDirectiveOpt match {
-      case Some(basicAuth) => basicAuth { _: String => invocationRoutePath }
+      case Some(securityDirective) => securityDirective { _: String => invocationRoutePath }
       case None => invocationRoutePath
     }
     SwaggerUiRoute.route ~ path("definition") {
