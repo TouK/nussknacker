@@ -1267,6 +1267,18 @@ lazy val flinkComponentsApi = (project in flink("components-api")).
     }
   ).dependsOn(componentsApi)
 
+lazy val flinkComponentsApiScala = (project in flink("components-api-scala")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-flink-components-api",
+    libraryDependencies ++= {
+      Seq(
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
+        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+      )
+    }
+  ).dependsOn(flinkComponentsApi)
+
 lazy val flinkExtensionsApi = (project in flink("extensions-api")).
   settings(commonSettings).
   settings(
