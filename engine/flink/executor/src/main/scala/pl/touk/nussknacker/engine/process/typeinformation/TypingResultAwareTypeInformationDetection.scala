@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
 import pl.touk.nussknacker.engine.util.Implicits._
@@ -55,13 +56,11 @@ class TypingResultAwareTypeInformationDetection(customisation:
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
     val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
 
-    val typeInfos = List(id, variables, parentCtx)
-    new CaseClassTypeInfo[Context](classOf[Context],
-      Array.empty, typeInfos, List("id", "variables", "parentContext")) {
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[Context] = {
-        new ScalaCaseClassSerializer[Context](classOf[Context], typeInfos.map(_.createSerializer(config)).toArray)
-      }
-    }
+    ConcreteCaseClassTypeInfo[Context](
+      ("id", id),
+      ("variables", variables),
+      ("parentContext", parentCtx)
+    )
   }
 
   //This is based on TypeInformationGen macro
@@ -108,13 +107,10 @@ class TypingResultAwareTypeInformationDetection(customisation:
     val valueType = forType(value)
     val finalContext = forContext(validationContext)
 
-    val typeInfos = List(valueType, finalContext)
-    new CaseClassTypeInfo[ValueWithContext[T]](classOf[ValueWithContext[T]],
-      Array.empty, typeInfos, List("value", "context")) {
-      override def createSerializer(config: ExecutionConfig): TypeSerializer[ValueWithContext[T]] = {
-        new ScalaCaseClassSerializer[ValueWithContext[T]](classOf[ValueWithContext[T]], typeInfos.map(_.createSerializer(config)).toArray)
-      }
-    }
+    ConcreteCaseClassTypeInfo[ValueWithContext[T]](
+      ("value", valueType),
+      ("context", finalContext)
+    )
   }
 
   //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
