@@ -35,5 +35,13 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
     }
   }
 
+  it("should return usage reports feature enabled by default") {
+    getSettings ~> check {
+      status shouldBe StatusCodes.OK
+      val responseSettings = responseAs[UISettings]
+      responseSettings.features.usageReports.enabled shouldBe true
+    }
+  }
+
   private def getSettings: RouteTestResult = Get(s"/settings") ~> withoutPermissions(settingsRoute)
 }
