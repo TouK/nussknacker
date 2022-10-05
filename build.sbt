@@ -488,7 +488,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     }
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, httpUtils % "provided", testUtils % "it,test",
-    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
+    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test", schemedKafkaComponentsUtils)
 
 lazy val flinkDeploymentManager = (project in flink("management")).
   configs(IntegrationTest).
@@ -935,7 +935,7 @@ lazy val requestResponseComponentsApi = (project in lite("request-response/compo
   settings(commonSettings).
   settings(
     name := "nussknacker-request-response-components-api"
-  ).dependsOn(liteComponentsApi)
+  ).dependsOn(liteComponentsApi, jsonUtils)
 
 lazy val liteComponentsApi = (project in lite("components-api")).
   settings(commonSettings).

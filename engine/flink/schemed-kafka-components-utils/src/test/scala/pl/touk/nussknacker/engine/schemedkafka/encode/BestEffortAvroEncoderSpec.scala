@@ -194,8 +194,10 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
-    BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
+    val value2 = BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema)
+    value2 shouldBe 'invalid
+    val value1 = BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema)
+    value1 shouldBe 'valid
   }
 
   it("should create record with logical type for timestamp-millis") {

@@ -64,7 +64,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
 
   override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
-    val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+    val encoder = new BestEffortJsonSchemaEncoder(mode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 

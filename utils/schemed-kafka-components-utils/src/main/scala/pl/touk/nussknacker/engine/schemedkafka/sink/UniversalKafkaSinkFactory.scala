@@ -128,8 +128,9 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
 
     val serializationSchema = schemaBasedMessagesSerdeProvider.serializationSchemaFactory.create(preparedTopic.prepared, Option(finalState.schema), kafkaConfig)
     val clientId = s"${TypedNodeDependency[MetaData].extract(dependencies).id}-${preparedTopic.prepared}"
+    val validationMode = extractValidationMode(params.getOrElse(SinkValidationModeParameterName, ValidationMode.strict.name).asInstanceOf[String])
 
-    implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, ValidationMode.strict)
+    implProvider.createSink(preparedTopic, key, valueLazyParam, kafkaConfig, serializationSchema, clientId, finalState.schema, validationMode)
   }
 
   override def nodeDependencies: List[NodeDependency] = List(TypedNodeDependency[MetaData], TypedNodeDependency[NodeId])

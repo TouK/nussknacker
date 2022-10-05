@@ -52,6 +52,8 @@ object RequestResponseInterpreter {
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
                                                             statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]) extends PathOpenApiDefinitionGenerator with AutoCloseable {
 
+    lazy val outputSchemaString: Option[String] = context.jobData.metaData.additionalFields.flatMap(_.properties.get(OutputSchemaProperty))
+
     val id: String = context.jobData.metaData.id
 
     val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
@@ -81,13 +83,12 @@ object RequestResponseInterpreter {
       statelessScenarioInterpreter.close()
       context.close()
     }
-
     /*
     * TODO : move inputSchema and outputSchema to one place
     * It is better to have both schemas in one place (properties or some new/custom place)
     *  */
     def getSchemaOutputProperty: Json = {
-      context.jobData.metaData.additionalFields.flatMap(_.properties.get(OutputSchemaProperty)) match {
+      outputSchemaString match {
         case None => Map("type" -> "object".asJson, "properties" -> Json.Null).asJson
         case Some(outputSchemaStr) => CirceUtil.decodeJsonUnsafe[Json](outputSchemaStr, "Provided json is not valid")
       }

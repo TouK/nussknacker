@@ -48,7 +48,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   }
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new ResponseEncoder[Any] {
-    override def toJsonResponse(input: Any, result: List[Any]): Json = {
+    override def toJsonResponse(input: Any, result: List[Any], schema: Option[Schema]): Json = {
       result.map(jsonEncoder.encode)
         .headOption
         .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
