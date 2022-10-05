@@ -13,29 +13,16 @@ object InputMetaTypeInformationProvider {
 
   // It should be synchronized with InputMeta.withType
   def typeInformation[K](keyTypeInformation: TypeInformation[K]): CaseClassTypeInfo[InputMeta[K]] = {
-    val fieldNames = List(
-      InputMeta.keyParameterName,
-      "topic",
-      "partition",
-      "offset",
-      "timestamp",
-      "timestampType",
-      "headers",
-      "leaderEpoch"
+    ConcreteCaseClassTypeInfo[InputMeta[K]](
+      (InputMeta.keyParameterName, keyTypeInformation),
+      ("topic", TypeInformation.of(classOf[String])),
+      ("partition", TypeInformation.of(classOf[Integer])),
+      ("offset", TypeInformation.of(classOf[java.lang.Long])),
+      ("timestamp", TypeInformation.of(classOf[java.lang.Long])),
+      ("timestampType", TypeInformation.of(classOf[TimestampType])),
+      ("headers", new MapTypeInfo(classOf[String], classOf[String])),
+      ("leaderEpoch", TypeInformation.of(classOf[Integer]))
     )
-    val fieldTypes = List(
-      keyTypeInformation,
-      TypeInformation.of(classOf[String]),
-      TypeInformation.of(classOf[Integer]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      TypeInformation.of(classOf[java.lang.Long]),
-      TypeInformation.of(classOf[TimestampType]),
-      new MapTypeInfo(classOf[String], classOf[String]),
-      TypeInformation.of(classOf[Integer])
-    )
-    val cls = classOf[InputMeta[K]]
-    val fields = fieldNames.zip(fieldTypes)
-    ConcreteCaseClassTypeInfo[InputMeta[K]](cls, fields: _*)
   }
 }
 
