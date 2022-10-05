@@ -57,17 +57,6 @@ class TypingResultAwareTypeInformationDetection(customisation:
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  //This is based on TypeInformationGen macro
-  def generateTraversable(traversableClass: Class[_], elementTpi: TypeInformation[AnyRef]): TypeInformation[_] = {
-    new TraversableTypeInfo[TraversableOnce[AnyRef], AnyRef](traversableClass.asInstanceOf[Class[TraversableOnce[AnyRef]]], elementTpi) {
-      override def createSerializer(executionConfig: ExecutionConfig): TypeSerializer[TraversableOnce[AnyRef]] = {
-        val traversableClassName = s"${traversableClass.getName}[AnyRef]"
-        new TraversableSerializer[TraversableOnce[AnyRef], AnyRef](elementTpi.createSerializer(executionConfig),
-          s"implicitly[scala.collection.generic.CanBuildFrom[$traversableClassName, AnyRef, $traversableClassName]]")
-      }
-    }
-  }
-
   def forType(typingResult: TypingResult): TypeInformation[AnyRef] = {
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
@@ -79,8 +68,6 @@ class TypingResultAwareTypeInformationDetection(customisation:
         registeredTypeInfos.find(_.getTypeClass == a.klass).getOrElse(TypeInformation.of(a.klass))
 
       case a: TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[AnyRef](forType(a.params.head))
-
-      case TraversableType(traversableClass, elementType) => generateTraversable(traversableClass, forType(elementType))
 
       case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
 
