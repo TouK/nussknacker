@@ -37,10 +37,7 @@ object InputMetaTypeInformationProvider {
     )
     val cls = classOf[InputMeta[K]]
     val fields = fieldNames.zip(fieldTypes)
-    new ConcreteCaseClassTypeInfo[InputMeta[K]](cls, fields){
-      override def createSerializer(config: ExecutionConfig) =
-        new ScalaCaseClassSerializer[InputMeta[K]](cls, fields.map(_._2.createSerializer(config)).toArray)
-    }
+    new ConcreteCaseClassTypeInfo[InputMeta[K]](cls, fields){}
   }
 }
 
