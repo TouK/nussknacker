@@ -8,6 +8,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 
 import scala.concurrent.ExecutionContext
+import scala.util.Random
 
 class SettingsResources(config: FeatureTogglesConfig,
                         authenticationMethod: String,
@@ -86,6 +87,12 @@ object TopTabType extends Enumeration {
                              requiredPermission: Option[String],
                              addAccessTokenInQueryParam: Option[Boolean])
 
+private object FingerprintUtils {
+  lazy val random = Random.alphanumeric.take(10).mkString
+}
+
+@JsonCodec case class AnalyticsReportConfig(enabled: Boolean = true, fingerprint: String = FingerprintUtils.random)
+
 @JsonCodec case class ToggleFeaturesOptions(counts: Boolean,
                                             metrics: Option[MetricsSettings],
                                             remoteEnvironment: Option[RemoteEnvironmentConfig],
@@ -95,7 +102,9 @@ object TopTabType extends Enumeration {
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings,
-                                            redirectAfterArchive: Boolean)
+                                            redirectAfterArchive: Boolean,
+                                            analytics: AnalyticsReportConfig = AnalyticsReportConfig(),
+                                           )
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)
 
