@@ -700,7 +700,7 @@ For each category you have to define its scenario type (`streaming` in examples 
 
 In Nussknacker distribution there are preconfigured scenario types:
 - `streaming` - using Flink Deployment Manager providing both stateful and stateless streaming components
-- `streaming-lite-embedded` - using embedded Streaming-Lite Deployment Manager providing only stateless streaming components
+- `streaming-lite-embedded` - using embedded Lite Deployment Manager in Streaming processing mode providing only stateless streaming components
 - `request-response-embedded` - use embedded Request-Response Deployment Manager, scenario logic is exposed as REST API, on additional HTTP port at Designer
 
 And one `Default` category using `streaming` by default (can be configured via `DEFAULT_SCENARIO_TYPE` environment variable)

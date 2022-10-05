@@ -1,1 +1,0 @@
-Application used by Nussknacker designer to run scenarios in Streaming-Lite mode

@@ -144,7 +144,7 @@ Please note that you cannot override names or labels configured by Nussknacker.
                               
 ### Overriding configuration passed to runtime. 
                                  
-By default, configuration of Streaming-Lite runtime consists of
+By default, configuration of Lite engine runtime consists of
 - `application.conf` from runtime image - see [this](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf) for default.
 - the configuration from `modelConfig` 
 
