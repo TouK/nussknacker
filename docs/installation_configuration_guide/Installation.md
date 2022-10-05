@@ -31,7 +31,7 @@ More information you can find at [Docker hub](https://hub.docker.com/r/touk/nuss
 
 ### Base Image
 
-As a base image we use `openjdk:11-jre`. See [Open JDK's Docker hub](https://hub.docker.com/_/openjdk) for more
+As a base image we use `eclipse-temurin:11-jre-jammy`. See [Eclipse Temurin Docker hub](https://hub.docker.com/_/eclipse-temurin) for more
 details.
 
 ### Container configuration
