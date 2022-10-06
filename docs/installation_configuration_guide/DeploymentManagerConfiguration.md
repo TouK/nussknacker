@@ -197,13 +197,15 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 
 `request-response-embedded` Deployment Manager has the following configuration options:
 
-| Parameter                                                 | Type            | Default value   | Description                                                                                                                      |
-|-----------------------------------------------------------|-----------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------|
-| http.interface                                            | string          | 0.0.0.0         | Interface on which REST API of scenarios will be exposed                                                                         |
-| http.port                                                 | int             | 8181            | Port on which REST API of scenarios will be exposed                                                                              | 
-| request-response.definitionMetadata.servers               | string          | [{"url": "./"}] | Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 
-| request-response.definitionMetadata.servers[].url         | string          |                 | Url of server in scenario's OpenApi definition                                                                                   | 
-| request-response.definitionMetadata.servers[].description | string          |                 | (Optional) description of server in scenario's OpenApi definition                                                                | 
+| Parameter                                                 | Type   | Default value   | Description                                                                                                                      |
+|-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------|
+| http.interface                                            | string | 0.0.0.0         | Interface on which REST API of scenarios will be exposed                                                                         |
+| http.port                                                 | int    | 8181            | Port on which REST API of scenarios will be exposed                                                                              | 
+| request-response.definitionMetadata.servers               | string | [{"url": "./"}] | Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 
+| request-response.definitionMetadata.servers[].url         | string |                 | Url of server in scenario's OpenApi definition                                                                                   | 
+| request-response.definitionMetadata.servers[].description | string |                 | (Optional) description of server in scenario's OpenApi definition                                                                | 
+| request-response.security.basicAuth.user                  | string |                 | (Optional) Basic auth user                                                                                                       | 
+| request-response.security.basicAuth.password              | string |                 | (Optional) Basic auth password                                                                                                   | 
 
 ## Streaming-Flink 
 
