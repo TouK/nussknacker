@@ -45,7 +45,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings = config.as[TestDataSettings]("testDataSettings")
     val redirectAfterArchive = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
-    val usageReports = config.getAs[UsageReportsConfig]("usageReports").getOrElse(UsageReportsConfig())
+    val usageReports = config.as[UsageReportsConfig]("usageReports")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,

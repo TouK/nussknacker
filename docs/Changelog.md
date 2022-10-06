@@ -31,6 +31,7 @@
 * [#3580](https://github.com/TouK/nussknacker/pull/3580) SwaggerEnrichers support relative service urls and handle situation when 
   only definition url is provided (without services inside definition and without rootUrl)
 * [#3584](https://github.com/TouK/nussknacker/pull/3584) ReqRes Feature: secure RR scenario service/ingress
+* [#3598](https://github.com/TouK/nussknacker/pull/3598) Introducing configuration for controlling anonymous usage reporting by FE  
 
 1.5.0 (16 Aug 2022)
 ------------------------
