@@ -11,8 +11,6 @@ object FlinkCustomStreamTransformation {
 
   def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]])
   : FlinkCustomStreamTransformation = (start: DataStream[Context], context: FlinkCustomNodeContext) => fun(start, context)
-  def applyA(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]])
-  : FlinkCustomStreamTransformation = (start: DataStream[Context], context: FlinkCustomNodeContext) => fun(start, context)
 
   def apply(fun: (DataStream[Context], FlinkCustomNodeContext) => DataStream[ValueWithContext[AnyRef]],
             rType: TypingResult): FlinkCustomStreamTransformation with ReturningType =
