@@ -29,7 +29,7 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
   private val intervalTimeProcesses = 20000
   private val intervalTimeHealthCheck = 30000
 
-  private val ReportsUrlPattern = "https://stats\\.nussknacker\\.io/\\?fingerprint=(.*)&version=(.*)".r
+  private val ReportsUrlPattern = "https://stats\\.nussknacker\\.io/\\?fingerprint=(.*)&version=(.*)&timestamp=(.*)".r
 
   it("should return base intervalSettings") {
     getSettings ~> check {
@@ -50,7 +50,7 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
 
       noException should be thrownBy {
         responseSettings.features.usageStatisticsReports.url match {
-          case ReportsUrlPattern(fingerprint, version) if fingerprint.startsWith("gen-") && URLDecoder.decode(version, StandardCharsets.UTF_8) == BuildInfo.version => ()
+          case ReportsUrlPattern(fingerprint, version, _) if fingerprint.startsWith("gen-") && URLDecoder.decode(version, StandardCharsets.UTF_8) == BuildInfo.version => ()
         }
       }
     }

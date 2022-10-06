@@ -15,7 +15,7 @@ private object FingerprintUtils {
 case class UsageStatisticsReportsConfig(enabled: Boolean, fingerprint: String = FingerprintUtils.random)
 
 object UsageStatisticsUrl {
-  def apply(fingerprint: String, version: String) = s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, StandardCharsets.UTF_8)}&version=${URLEncoder.encode(version, StandardCharsets.UTF_8)}"
+  def apply(fingerprint: String, version: String) = s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, StandardCharsets.UTF_8)}&version=${URLEncoder.encode(version, StandardCharsets.UTF_8)}&timestamp=${System.currentTimeMillis()}"
 }
 
 object UsageStatisticsReportsSettings {
