@@ -5,7 +5,6 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
@@ -20,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeye
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
@@ -53,14 +53,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
                   .returns(implicitly[TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]]])
             }
-            val connectedStream = keyedInputStreams.reduce(_.connect(_).map(
-              new CoMapFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[StringKeyedValue[(String, AnyRef)]]] {
-                override def map1(value: ValueWithContext[StringKeyedValue[(String, AnyRef)]]): ValueWithContext[StringKeyedValue[(String, AnyRef)]] =
-                  value
-                override def map2(value: ValueWithContext[StringKeyedValue[(String, AnyRef)]]): ValueWithContext[StringKeyedValue[(String, AnyRef)]] =
-                  value
-              }
-            ))
+            val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
             val afterOptionalAssigner = timestampAssigner
               .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_).assignWatermarks(connectedStream))

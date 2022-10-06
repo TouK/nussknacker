@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.flink.api.datastream
 import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.functions.co.CoMapFunction
 
 object DataStreamImplicits {
   implicit class DataStreamExtension[T](stream: DataStream[T]) {
@@ -23,6 +24,13 @@ object DataStreamImplicits {
 
       stream.map(mapper).returns(implicitly[TypeInformation[R]])
     }
+
+    def connectAndMerge(other: DataStream[T]): SingleOutputStreamOperator[T] = stream.connect(other).map(
+      new CoMapFunction[T, T, T] {
+        override def map1(value: T): T = value
+        override def map2(value: T): T = value
+      }
+    )
   }
 }
 

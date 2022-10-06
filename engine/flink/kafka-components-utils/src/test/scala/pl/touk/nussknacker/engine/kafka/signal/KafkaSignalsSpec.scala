@@ -71,7 +71,7 @@ object CustomSignalReader extends CustomStreamTransformer {
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
   def execute(): FlinkCustomStreamTransformation =
-    FlinkCustomStreamTransformation.applyA((start: DataStream[Context], context: FlinkCustomNodeContext) => {
+    FlinkCustomStreamTransformation.apply((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
         .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
         .map(new CoMapFunction[Context, Array[Byte], ValueWithContext[AnyRef]] {
