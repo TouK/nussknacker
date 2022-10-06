@@ -20,7 +20,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 testDataSettings: TestDataSettings,
                                 enableConfigEndpoint: Boolean,
                                 redirectAfterArchive: Boolean,
-                                usageReports: UsageReportsConfig
+                                usageStatisticsReports: UsageStatisticsReportsConfig
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -45,7 +45,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val intervalTimeSettings = config.as[IntervalTimeSettings]("intervalTimeSettings")
     val testDataSettings = config.as[TestDataSettings]("testDataSettings")
     val redirectAfterArchive = config.getAs[Boolean]("redirectAfterArchive").getOrElse(true)
-    val usageReports = config.as[UsageReportsConfig]("usageReports")
+    val usageStatisticsReports = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
 
     FeatureTogglesConfig(
       development = isDevelopmentMode,
@@ -60,7 +60,7 @@ object FeatureTogglesConfig extends LazyLogging{
       testDataSettings = testDataSettings,
       enableConfigEndpoint = enableConfigEndpoint,
       redirectAfterArchive = redirectAfterArchive,
-      usageReports = usageReports
+      usageStatisticsReports = usageStatisticsReports
     )
   }
 
