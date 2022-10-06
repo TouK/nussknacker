@@ -6,15 +6,16 @@ import scala.util.Random
 import pl.touk.nussknacker.engine.version.BuildInfo
 
 import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 
 private object FingerprintUtils {
-  lazy val random = s"nu-${Random.alphanumeric.take(10).mkString}"
+  lazy val random = s"gen-${Random.alphanumeric.take(10).mkString}"
 }
 
 case class UsageStatisticsReportsConfig(enabled: Boolean, fingerprint: String = FingerprintUtils.random)
 
 object UsageStatisticsUrl {
-  def apply(fingerprint: String, version: String) = s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, "UTF-8")}&version=${URLEncoder.encode(version, "UTF-8")}"
+  def apply(fingerprint: String, version: String) = s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, StandardCharsets.UTF_8)}&version=${URLEncoder.encode(version, StandardCharsets.UTF_8)}"
 }
 
 object UsageStatisticsReportsSettings {

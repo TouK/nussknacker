@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
 
 import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
 
 
 class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
@@ -49,7 +50,7 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
 
       noException should be thrownBy {
         responseSettings.features.usageStatisticsReports.url match {
-          case ReportsUrlPattern(fingerprint, version) if fingerprint.startsWith("nu-") && URLDecoder.decode(version, "UTF-8") == BuildInfo.version => ()
+          case ReportsUrlPattern(fingerprint, version) if fingerprint.startsWith("gen-") && URLDecoder.decode(version, StandardCharsets.UTF_8) == BuildInfo.version => ()
         }
       }
     }
