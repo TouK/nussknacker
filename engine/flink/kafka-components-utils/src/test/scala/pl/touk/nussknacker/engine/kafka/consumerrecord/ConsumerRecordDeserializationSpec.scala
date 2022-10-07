@@ -27,10 +27,11 @@ class ConsumerRecordDeserializationSpec extends AnyFunSuite with Matchers with K
 
     val typeInformation: TypeInformation[TestConsumerRecord] = TypeInformation.of(classOf[TestConsumerRecord])
 
+    Serializers.registerSerializers(emptyModel, executionConfigWithoutKryo)
     intercept[Exception] {
-      Serializers.registerSerializers(emptyModel, executionConfigWithoutKryo)
       getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)
     }
+    
     Serializers.registerSerializers(emptyModel, executionConfigWithKryo)
     val out = getSerializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)
     checkResult(out, givenObj)
