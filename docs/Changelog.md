@@ -5,6 +5,7 @@
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+* [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 
 1.6.0 (Not released yet)
 ------------------------

@@ -6,6 +6,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 1.7.0 (Not released yet)
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
+* [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
+  * nussknacker-request-response-app in version <= 1.6
+  * Lite k8s engine with request-response processing mode
+  * `request-response-embedded` Deployment Manager
 
 
 ## In version 1.6.0 (Not released yet)

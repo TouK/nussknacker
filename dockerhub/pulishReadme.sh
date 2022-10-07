@@ -23,4 +23,3 @@ function publishRepoReadme {
 
 publishRepoReadme "nussknacker"
 publishRepoReadme "nussknacker-lite-runtime-app"
-publishRepoReadme "nussknacker-request-response-app"

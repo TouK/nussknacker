@@ -49,7 +49,6 @@ val addDevArtifacts = propOrEnv("addDevArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
-val requestResponseDockerPackageName = propOrEnv("requestResponseDockerPackageName", "nussknacker-request-response-app")
 
 val liteEngineKafkaRuntimeDockerPackageName = propOrEnv("liteEngineKafkaRuntimeDockerPackageName", "nussknacker-lite-runtime-app")
 
@@ -487,59 +486,8 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
       )
     }
   ).
-  // TODO: remove deploymentManagerApi from deps after removing requestResponseApp
-  dependsOn(liteEngineRuntime, requestResponseComponentsApi, deploymentManagerApi, httpUtils % "provided", testUtils % "it,test",
+  dependsOn(liteEngineRuntime, requestResponseComponentsApi, httpUtils % "provided", testUtils % "it,test",
     componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
-
-lazy val requestResponseDockerSettings = {
-  val workingDir = "/opt/nussknacker"
-
-  commonDockerSettings ++ Seq(
-    dockerEntrypoint := Seq(s"$workingDir/bin/nussknacker-request-response-entrypoint.sh"),
-    dockerExposedPorts := Seq(
-      requestResponseProcessesPort,
-      requestResponseManagementPort
-    ),
-    dockerExposedVolumes := Seq(s"$workingDir/storage"),
-    Docker / defaultLinuxInstallLocation := workingDir,
-    packageName := requestResponseDockerPackageName,
-    dockerLabels := Map(
-      "version" -> version.value,
-      "scala" -> scalaVersion.value,
-    )
-  )
-}
-
-lazy val requestResponseApp = (project in lite("request-response/app")).
-  settings(commonSettings).
-  settings(publishAssemblySettings: _*).
-  enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging).
-  settings(
-    name := "nussknacker-request-response-app",
-    assembly / assemblyOption := (assembly / assemblyOption).value.withIncludeScala(true).withLevel(Level.Info),
-    assembly / assemblyMergeStrategy := requestResponseMergeStrategy,
-    javaAgents += JavaAgent("io.prometheus.jmx" % "jmx_prometheus_javaagent" % jmxPrometheusJavaagentV % "dist"),
-    libraryDependencies ++= {
-      Seq(
-        "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.typesafe.akka" %% "akka-http" % akkaHttpV,
-        "com.typesafe.akka" %% "akka-stream" % akkaV,
-        "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
-        "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
-        "com.typesafe.akka" %% "akka-slf4j" % akkaV,
-        "ch.qos.logback" % "logback-classic" % logbackV
-      )
-    }
-  ).
-  settings(requestResponseDockerSettings).
-  dependsOn(
-    requestResponseRuntime, interpreter,
-    //Those below components are built in and we don't want to add them each time..
-    liteBaseComponents, liteRequestResponseComponents, openapiComponents, sqlComponents,
-    testUtils % "test", requestResponseComponentsUtils % "test", liteRequestResponseComponents % "test",
-    componentsUtils % "test", componentsApi % "test"
-  )
-
 
 lazy val flinkDeploymentManager = (project in flink("management")).
   configs(IntegrationTest).
@@ -1540,7 +1488,7 @@ lazy val bom = (project in file("bom"))
   ).dependsOn(modules.map(k => k: ClasspathDep[ProjectReference]): _*)
 
 lazy val modules = List[ProjectReference](
-  requestResponseRuntime, requestResponseApp, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
+  requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
@@ -1579,7 +1527,6 @@ lazy val root = (project in file("."))
       releaseStepCommand("dist/Universal/packageZipTarball"),
       releaseStepCommand("liteEngineRuntimeApp/Universal/packageZipTarball"),
       releaseStepCommand("dist/Docker/publish"),
-      releaseStepCommand("requestResponseApp/Docker/publish"),
       releaseStepCommand("liteEngineRuntimeApp/Docker/publish"),
       releaseStepCommand("sonatypeBundleRelease"),
       setNextVersion,
