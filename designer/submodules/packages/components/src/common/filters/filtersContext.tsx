@@ -133,7 +133,7 @@ export function FiltersContextProvider<M>({ children, getValueLinker }: PropsWit
     const [searchParams, _setSearchParams] = useSearchParams();
     const setSearchParams = useDebounce(_setSearchParams, 100);
 
-    const [model = {}, setModel] = useState<M>(deserializeFromQuery(searchParams));
+    const [model = {}, setModel] = useState<M>(window.location.search ? deserializeFromQuery(searchParams) : ({} as M));
 
     useEffect(() => {
         setSearchParams(serializeToQuery(model), { replace: true });
