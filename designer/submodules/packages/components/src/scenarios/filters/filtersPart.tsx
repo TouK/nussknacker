@@ -13,7 +13,7 @@ import { RowType } from "../list/listPart";
 import { Divider, Stack } from "@mui/material";
 import { useTranslation } from "react-i18next";
 
-export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean, withSort?: boolean }): JSX.Element {
+export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[]; isLoading?: boolean; withSort?: boolean }): JSX.Element {
     const { t } = useTranslation();
     const { data: userData } = useUserQuery();
 
@@ -33,10 +33,10 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
         };
     }, [data, filterableKeys, userData?.categories]);
 
-    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
+    const statusFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
     const { getFilter, setFilter, activeKeys } = useFilterContext<ScenariosFiltersModel>();
 
-    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
 
     const getLabel = useCallback(
         (name: keyof ScenariosFiltersModel, value?: string | number) => {
@@ -95,19 +95,19 @@ export function FiltersPart({ withSort, isLoading, data = [] }: { data: RowType[
                             onChange={setFilter("CREATED_BY")}
                         />
                     </FilterMenu>
-                    <FilterMenu label={t("table.filter.other", "Other")} count={otherFilters.filter((k) => getFilter(k)).length}>
+                    <FilterMenu label={t("table.filter.other", "Type")} count={otherFilters.filter((k) => getFilter(k)).length}>
                         <OtherOptionsStack />
                     </FilterMenu>
-                    {withSort?(
-                    <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>
-                        <SortOptionsStack
-                            label={t("table.filter.SORT_BY", "Sort")}
-                            options={["createdAt", "modificationDate", "name"].map((name) => ({ name }))}
-                            value={getFilter("SORT_BY", true)}
-                            onChange={setFilter("SORT_BY")}
-                        />
-                    </FilterMenu>
-                    ):null}
+                    {withSort ? (
+                        <FilterMenu label={t("table.filter.SORT_BY", "Sort")}>
+                            <SortOptionsStack
+                                label={t("table.filter.SORT_BY", "Sort")}
+                                options={["createdAt", "modificationDate", "name"].map((name) => ({ name }))}
+                                value={getFilter("SORT_BY", true)}
+                                onChange={setFilter("SORT_BY")}
+                            />
+                        </FilterMenu>
+                    ) : null}
                 </Stack>
             </QuickFilter>
             <ActiveFilters getLabel={getLabel} activeKeys={activeKeys.filter((k) => k !== "NAME" && k !== "SORT_BY")} />
