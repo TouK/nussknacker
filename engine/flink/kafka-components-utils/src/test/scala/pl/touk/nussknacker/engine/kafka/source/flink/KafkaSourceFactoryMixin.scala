@@ -8,15 +8,15 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.record.TimestampType
 import org.apache.kafka.common.serialization.{Deserializer, StringDeserializer}
-import org.scalatest.{Assertion}
+import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.decodeJsonUnsafe
+import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializationSchemaFactory, ConsumerRecordToJsonFormatterFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
-import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
@@ -32,7 +32,6 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val sampleKey: SampleKey = SampleKey("one", 2L)
   val sampleHeadersMap: Map[String, String] = Map("headerOne" -> "valueOfHeaderOne", "headerTwo" -> null)
   val sampleHeaders: Headers = ConsumerRecordUtils.toHeaders(sampleHeadersMap)
-
 
   val sampleTopic = "topic"
   val constTimestamp: Long = 123L
@@ -123,8 +122,8 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
 
 object KafkaSourceFactoryMixin {
 
-  @JsonCodec case class SampleKey(partOne: String, partTwo: Long)
-  @JsonCodec case class SampleValue(id: String, field: String)
+  @JsonCodec case class SampleKey(partOne: String, partTwo: Long) extends DisplayJsonWithEncoder[SampleKey]
+  @JsonCodec case class SampleValue(id: String, field: String) extends DisplayJsonWithEncoder[SampleValue]
   @JsonCodec case class ObjToSerialize(value: SampleValue, key: SampleKey, headers: Map[String, String])
 
   implicit val sampleKeyTypeInformation: TypeInformation[SampleKey] = TypeInformation.of(classOf[SampleKey])
