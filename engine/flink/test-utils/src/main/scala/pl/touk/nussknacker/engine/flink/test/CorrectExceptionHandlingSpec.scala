@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.test
 
 import cats.data.NonEmptyList
-import org.apache.flink.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.Suite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData

@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.StateBackend
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -11,9 +11,6 @@ import pl.touk.nussknacker.engine.process.util.StateConfiguration
 import pl.touk.nussknacker.engine.process.util.StateConfiguration.RocksDBStateBackendConfig
 import pl.touk.nussknacker.engine.process.{CheckpointConfig, ExecutionConfigPreparer}
 import pl.touk.nussknacker.engine.util.MetaDataExtractor
-
-import java.util.function.Consumer
-import scala.collection.JavaConverters._
 
 /*
   This trait is meant to be the place to configure StreamExecutionEnvironment. Here (e.g. in DefaultStreamExecutionEnvPreparer)
@@ -75,9 +72,7 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
 
   override def flinkClassLoaderSimulation: ClassLoader = {
     FlinkUserCodeClassLoaders.childFirst(Array.empty,
-      Thread.currentThread().getContextClassLoader, Array.empty, new Consumer[Throwable] {
-        override def accept(t: Throwable): Unit = throw t
-      }, true
+      Thread.currentThread().getContextClassLoader, Array.empty, (t: Throwable) => throw t, true
     )
   }
 }

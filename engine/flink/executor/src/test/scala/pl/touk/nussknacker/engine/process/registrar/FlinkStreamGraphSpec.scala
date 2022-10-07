@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.flink.streaming.api.graph.{StreamGraph, StreamNode}
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -27,7 +26,7 @@ trait FlinkStreamGraphSpec extends AnyFunSuite with ProcessTestHelpers with Matc
     val env = flinkMiniCluster.createExecutionEnvironment()
     val modelData = LocalModelData(config, creator)
     FlinkProcessRegistrar(new FlinkProcessCompiler(modelData), ExecutionConfigPreparer.unOptimizedChain(modelData))
-      .register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+      .register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.getStreamGraph
   }
 

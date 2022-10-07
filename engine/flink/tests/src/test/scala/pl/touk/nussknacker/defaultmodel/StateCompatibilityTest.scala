@@ -6,7 +6,6 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.flink.api.common.JobExecutionResult
 import org.apache.flink.core.execution.SavepointFormatType
 import org.apache.flink.runtime.jobgraph.SavepointRestoreSettings
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
@@ -139,7 +138,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
     val env = flinkMiniCluster.createExecutionEnvironment()
     val process1 = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
-    registrar.register(new StreamExecutionEnvironment(env), process1, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
     val streamGraph = env.getStreamGraph
     val allowNonRestoredState = false
     streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState))
@@ -171,7 +170,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
 
   private def run(process: CanonicalProcess, action: JobExecutionResult => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id, action)
   }
 }

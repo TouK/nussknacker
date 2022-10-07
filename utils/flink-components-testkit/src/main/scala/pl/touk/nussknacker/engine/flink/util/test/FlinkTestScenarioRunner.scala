@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.test
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, SourceFactory}
@@ -85,7 +85,7 @@ class FlinkTestScenarioRunner(val components: List[ComponentDefinition], val con
 
     compileProcessData.compileProcess().map { _ =>
       val registrar = FlinkProcessRegistrar(compiler, ExecutionConfigPreparer.unOptimizedChain(modelData))
-      registrar.register(new StreamExecutionEnvironment(env), scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = None)
+      registrar.register(env, scenario, ProcessVersion.empty, DeploymentData.empty, testRunId = None)
       env.executeAndWaitForFinished(scenario.id)()
       RunUnitResult(errors = Nil)
     }

@@ -1,8 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.compat
 
 import org.apache.flink.annotation.{Public, PublicEvolving}
-import org.apache.flink.streaming.api.datastream.{DataStreamSink, SingleOutputStreamOperator}
-import org.apache.flink.streaming.api.scala.DataStream
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink, SingleOutputStreamOperator}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 
@@ -46,9 +45,12 @@ object ExplicitUidInOperatorsSupport {
 
   def setUidIfNeed[T](explicitUidInStatefulOperators: Boolean, uidValue: String)
                      (stream: DataStream[T]): DataStream[T] = {
-    if (explicitUidInStatefulOperators)
-      stream.uid(uidValue)
-    else
+    if (explicitUidInStatefulOperators) {
+      stream match {
+        case operator: SingleOutputStreamOperator[T] => operator.uid(uidValue)
+        case _ => throw new UnsupportedOperationException("Only supported for operators.")
+      }
+    } else
       stream
   }
 

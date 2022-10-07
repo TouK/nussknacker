@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
-import org.apache.flink.api.scala._
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
-import org.apache.flink.streaming.api.scala.{DataStream, StreamExecutionEnvironment}
+import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializer, Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
@@ -39,8 +40,8 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
           .addSource(new PeriodicFunction(period))
           .map(_ => Context(processId))
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
-          .flatMap { v =>
-            1.to(count).map(_ => v.value)
+          .flatMap { (v: ValueWithContext[AnyRef], c: Collector[AnyRef]) =>
+            1.to(count).map(_ => v.value).foreach(c.collect)
           }
 
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
@@ -50,8 +51,9 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
           .map(
             new FlinkContextInitializingFunction[AnyRef](
               new BasicContextInitializer[AnyRef](Unknown), flinkNodeContext.nodeId,
-              flinkNodeContext.convertToEngineRuntimeContext)
-          )(typeInformationFromNodeContext)
+              flinkNodeContext.convertToEngineRuntimeContext),
+            typeInformationFromNodeContext
+          )
       }
 
       override val returnType: typing.TypingResult = value.returnType

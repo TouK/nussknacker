@@ -4,10 +4,9 @@ import org.apache.flink.api.common.functions.RichMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.scala.DataStream
+import org.apache.flink.streaming.api.datastream.DataStream
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, MethodToInvoke, QueryableStateNames, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomStreamTransformation
-import org.apache.flink.streaming.api.scala._
 
 case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends CustomStreamTransformer {
 
@@ -17,7 +16,7 @@ case class ConstantStateTransformer[T: TypeInformation](defaultValue: T) extends
   @QueryableStateNames(values = Array(stateName))
   def execute(): FlinkCustomStreamTransformation = FlinkCustomStreamTransformation((start: DataStream[Context]) => {
     start
-      .keyBy(_ => "1")
+      .keyBy((_: Context) => "1")
       .map(new RichMapFunction[Context, ValueWithContext[AnyRef]] {
 
         var constantState: ValueState[T] = _

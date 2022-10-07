@@ -3,16 +3,17 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.streaming.api.environment.RemoteStreamEnvironment
-import org.apache.flink.streaming.api.scala.{DataStream, OutputTag, StreamExecutionEnvironment}
+import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
+import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonize.ProcessCanonizer
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -66,7 +67,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
     }
   }
 
-  protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.getJavaEnv.isInstanceOf[RemoteStreamEnvironment]
+  protected def isRemoteEnv(env: StreamExecutionEnvironment): Boolean = env.isInstanceOf[RemoteStreamEnvironment]
 
   //In remote env we assume FlinkProcessRegistrar is loaded via userClassloader
   protected def usingRightClassloader(env: StreamExecutionEnvironment)(action: ClassLoader => Unit): Unit = {
@@ -86,7 +87,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       new FlinkCompilerLazyInterpreterCreator(runtimeContext, compiledProcessWithDepsProvider(runtimeContext.getUserCodeClassLoader))
 
   private def register(env: StreamExecutionEnvironment,
-                       compiledProcessWithDeps: Option[ProcessPart] => (ClassLoader => FlinkProcessCompilerData),
+                       compiledProcessWithDeps: Option[ProcessPart] => ClassLoader => FlinkProcessCompilerData,
                        processWithDeps: FlinkProcessCompilerData,
                        testRunId: Option[TestRunId], typeInformationDetection: TypeInformationDetection): Unit = {
 
@@ -124,7 +125,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       val start = source
         .sourceStream(env, nodeContext(nodeComponentInfoFrom(part), Left(ValidationContext.empty)))
-        .process(new SourceMetricsFunction(part.id))(contextTypeInformation)
+        .process(new SourceMetricsFunction(part.id), contextTypeInformation)
 
       val asyncAssigned = registerInterpretationPart(start, part, InterpretationName)
 
@@ -136,7 +137,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
                          branchEnds: Map[BranchEndDefinition, BranchEndData]): Map[BranchEndDefinition, BranchEndData] = {
       val inputs: Map[String, (DataStream[Context], ValidationContext)] = branchEnds.collect {
         case (BranchEndDefinition(id, joinId), BranchEndData(validationContext, stream)) if joinPart.id == joinId =>
-          id -> (stream.map(_.finalContext)(typeInformationDetection.forContext(validationContext)), validationContext)
+          id -> (stream.map((value: InterpretationResult) => value.finalContext, typeInformationDetection.forContext(validationContext)), validationContext)
       }
 
       val transformer = joinPart.transformer match {
@@ -151,32 +152,32 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       val newStart = transformer
         .transform(inputs.mapValues(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValues(_._2))))
-        .map(newContextFun)(typeInformationDetection.forContext(joinPart.validationContext))
+        .map((value: ValueWithContext[AnyRef]) => newContextFun(value), typeInformationDetection.forContext(joinPart.validationContext))
 
       val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)
       registerNextParts(afterSplit, joinPart)
     }
 
     //the method returns all possible branch ends in part, together with DataStream leading to them
-    def registerNextParts(start: DataStream[Unit], part: PotentiallyStartPart): Map[BranchEndDefinition, BranchEndData] = {
+    def registerNextParts(start: SingleOutputStreamOperator[Unit], part: PotentiallyStartPart): Map[BranchEndDefinition, BranchEndData] = {
       val branchesForParts = part.nextParts.map { part =>
         val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore, None)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
-        registerSubsequentPart(start.getSideOutput(OutputTag[InterpretationResult](part.id)(typeInformationForTi))(typeInformationForTi)
-          .map(_.finalContext)(typeInformationForVC), part)
+        registerSubsequentPart(start.getSideOutput(new OutputTag[InterpretationResult](part.id, typeInformationForTi))
+          .map((value: InterpretationResult) => value.finalContext, typeInformationForVC), part)
       }.foldLeft(Map[BranchEndDefinition, BranchEndData]()) {
         _ ++ _
       }
       val branchForEnds = part.ends.collect {
         case TypedEnd(be: BranchEnd, validationContext) =>
           val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext, None)
-          be.definition -> BranchEndData(validationContext, start.getSideOutput(OutputTag[InterpretationResult](be.nodeId)(ti))(ti))
+          be.definition -> BranchEndData(validationContext, start.getSideOutput(new OutputTag[InterpretationResult](be.nodeId, ti)))
       }.toMap
       branchesForParts ++ branchForEnds
     }
 
-    def registerSubsequentPart[T](start: DataStream[Context],
+    def registerSubsequentPart(start: SingleOutputStreamOperator[Context],
                                   processPart: SubsequentPart): Map[BranchEndDefinition, BranchEndData] =
       processPart match {
         case part@SinkPart(sink: FlinkSink, _, contextBefore, _) =>
@@ -187,7 +188,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           registerCustomNodePart(start, part)
       }
 
-    def registerSinkPark[T](start: DataStream[Context],
+    def registerSinkPark(start: SingleOutputStreamOperator[Context],
                             part: SinkPart,
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
@@ -195,8 +196,8 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = registerInterpretationPart(start, part, SinkInterpretationName)
-        .getSideOutput(OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId)(typeInformationForIR))(typeInformationForIR)
-        .map(_.finalContext)(typeInformationForCtx)
+        .getSideOutput(new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR))
+        .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
       //TODO: maybe this logic should be moved to compiler instead?
@@ -207,7 +208,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           val typ = part.node.data.ref.typ
           val collectingSink = SinkInvocationCollector(runId, part.id, typ)
           withValuePrepared
-            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue))(TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
+            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
             //FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
       }
@@ -216,7 +217,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       Map()
     }
 
-    def registerCustomNodePart[T](start: DataStream[Context],
+    def registerCustomNodePart(start: DataStream[Context],
                                   part: CustomNodePart): Map[BranchEndDefinition, BranchEndData] = {
       val transformer = part.transformer match {
         case t: FlinkCustomStreamTransformation => t
@@ -231,15 +232,15 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       }
       val transformed = transformer
         .transform(start, customNodeContext)
-        .map(newContextFun)(typeInformationDetection.forContext(part.validationContext))
+        .map((value: ValueWithContext[_]) => newContextFun(value), typeInformationDetection.forContext(part.validationContext))
       // TODO: for ending custom nodes there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = registerInterpretationPart(transformed, part, CustomNodeInterpretationName)
       registerNextParts(afterInterpretation, part)
     }
 
-    def registerInterpretationPart(stream: DataStream[Context],
+    def registerInterpretationPart(stream: SingleOutputStreamOperator[Context],
                                    part: ProcessPart,
-                                   name: String): DataStream[Unit] = {
+                                   name: String): SingleOutputStreamOperator[Unit] = {
       val node = part.node
       val validationContext = part.validationContext
       val outputContexts = part.ends.map(pe => pe.end.nodeId -> pe.validationContext).toMap ++ (part match {
@@ -254,16 +255,19 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       val useIOMonad = configParameters.flatMap(_.useIOMonadInInterpreter).getOrElse(true)
       val shouldUseAsyncInterpretation = AsyncInterpretationDeterminer(configParameters, asyncExecutionContextPreparer).determine(node, streamMetaData)
 
-      (if (shouldUseAsyncInterpretation) {
+      val resultStream: SingleOutputStreamOperator[InterpretationResult] = if (shouldUseAsyncInterpretation) {
         val asyncFunction = new AsyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, asyncExecutionContextPreparer, useIOMonad)
-        ExplicitUidInOperatorsSupport.setUidIfNeed(ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
-          new DataStream(org.apache.flink.streaming.api.datastream.AsyncDataStream.orderedWait(stream.javaStream, asyncFunction,
-            processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize)))
+        ExplicitUidInOperatorsSupport.setUidIfNeedJava[InterpretationResult](
+          ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators(globalParameters), node.id + "-$async")(
+          AsyncDataStream.orderedWait(stream, asyncFunction, processWithDeps.processTimeout.toMillis, TimeUnit.MILLISECONDS, asyncExecutionContextPreparer.bufferSize))
       } else {
         val ti = InterpretationResultTypeInformation.create(typeInformationDetection, outputContexts)
-        stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad))(ti)
-      }).name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        .process(new SplitFunction(outputContexts, typeInformationDetection))(org.apache.flink.streaming.api.scala.createTypeInformation[Unit])
+        stream.flatMap(new SyncInterpretationFunction(compiledProcessWithDeps(Some(part)), node, validationContext, useIOMonad), ti)
+      }
+
+      resultStream
+        .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
+        .process(new SplitFunction(outputContexts, typeInformationDetection), createTypeInformation[Unit])
     }
 
   }

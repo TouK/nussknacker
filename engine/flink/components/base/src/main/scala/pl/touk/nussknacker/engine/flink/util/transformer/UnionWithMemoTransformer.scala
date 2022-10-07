@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -18,6 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeye
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
@@ -49,22 +51,20 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
+                  .returns(implicitly[TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]]])
             }
-            val connectedStream = keyedInputStreams.reduce(_.connect(_).map(mapElement, mapElement))
+            val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
             val afterOptionalAssigner = timestampAssigner
               .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(context, afterOptionalAssigner
-              .keyBy(_.value.key)
+              .keyBy((v: ValueWithContext[StringKeyedValue[(String, AnyRef)]]) => v.value.key)
               .process(new UnionMemoFunction(stateTimeout)))
           }
         }
       )
-
-
-  protected def mapElement: ValueWithContext[KeyedValue[String, (String, AnyRef)]] => ValueWithContext[KeyedValue[String, (String, AnyRef)]] = identity
 
   def transformContextsDefinition(valueByBranchId: Map[String, LazyParameter[AnyRef]], variableName: String)
                                  (inputContexts: Map[String, ValidationContext])

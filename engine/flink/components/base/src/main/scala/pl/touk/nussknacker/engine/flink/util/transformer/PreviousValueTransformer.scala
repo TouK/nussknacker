@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
 import org.apache.flink.configuration.Configuration
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -20,7 +20,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
     setUidToNodeIdIfNeed(ctx,
       start
         .flatMap(ctx.lazyParameterHelper.lazyMapFunction(groupBy))
-        .keyBy(vCtx => Option(vCtx.value).map(_.toString).orNull)
+        .keyBy((vCtx: ValueWithContext[CharSequence]) => Option(vCtx.value).map(_.toString).orNull)
         .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper))), value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],

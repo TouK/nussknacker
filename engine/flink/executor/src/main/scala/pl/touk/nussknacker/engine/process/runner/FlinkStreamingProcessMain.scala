@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.namespaces.{FlinkUsageKey, NamingContext}

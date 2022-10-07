@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.process.api
 
 import org.apache.flink.api.common.state.ValueStateDescriptor
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.scala._
+import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.util.Collector
-import org.scalatest.{BeforeAndAfter}
+import org.scalatest.BeforeAndAfter
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.flink.api.state.EvictableStateFunction
@@ -29,9 +30,11 @@ class EvictableStateTest extends AnyFlatSpec with Matchers with BeforeAndAfter w
     env.enableCheckpointing(500)
 
     env.addSource(StaticSource)
-      .keyBy(_ => "staticKey")
+      .keyBy((_: String) => "staticKey")
       .process(new TestOperator)
-      .addSink(_ => ())
+      .addSink(new SinkFunction[String]{
+        override def invoke(value: String, context: SinkFunction.Context): Unit = ()
+      })
 
     futureResult = Future {
       //We need to set context loader to avoid forking in sbt

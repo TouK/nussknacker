@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.flink.api.common.functions.{RichMapFunction, RuntimeContext}
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
-import org.apache.flink.streaming.api.datastream.DataStreamSink
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.{Context, LazyParameter, ValueWithContext}
@@ -26,8 +26,6 @@ class FlinkKafkaUniversalSink(preparedTopic: PreparedKafkaTopic,
                               schema: NkSerializableParsedSchema[ParsedSchema],
                               validationMode: ValidationMode)
   extends FlinkSink with Serializable with LazyLogging {
-
-  import org.apache.flink.streaming.api.scala._
 
   type Value = KeyedValue[AnyRef, AnyRef]
 

@@ -2,13 +2,12 @@ package pl.touk.nussknacker.engine.management.sample.source
 
 import java.time.Duration
 import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
-
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
-import org.apache.flink.streaming.api.scala._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
 
 //this not ending source is more reliable in tests than CollectionSource, which terminates quickly

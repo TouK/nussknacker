@@ -1,10 +1,11 @@
 package pl.touk.nussknacker.engine.management.sample.transformer
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.streaming.api.scala.DataStream
+import org.apache.flink.streaming.api.datastream.DataStream
+import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.{Context, CustomStreamTransformer, LazyParameter, MethodToInvoke, ParamName, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
-import org.apache.flink.streaming.api.scala._
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {
 
@@ -13,7 +14,7 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
     start
       .flatMap(ctx.lazyParameterHelper.lazyMapFunction(groupBy))
-      .keyBy(_.value)
+      .keyBy((v: ValueWithContext[_]) => v.value)
       .mapWithState[ValueWithContext[AnyRef], List[String]] { case (StringFromIr(ir, sr), oldState) =>
         logger.info(s"received: $sr, current state: $oldState")
         val nList = sr :: oldState.getOrElse(Nil)

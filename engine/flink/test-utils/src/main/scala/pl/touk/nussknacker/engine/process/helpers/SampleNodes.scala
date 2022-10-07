@@ -4,12 +4,15 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
-import org.apache.flink.streaming.api.datastream.DataStreamSink
-import org.apache.flink.streaming.api.functions.co.RichCoFlatMapFunction
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeutils.TypeSerializer
+import org.apache.flink.api.java.functions.KeySelector
+import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
+import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
-import org.apache.flink.streaming.api.scala.{DataStream, _}
+import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -34,6 +37,7 @@ import pl.touk.nussknacker.engine.process.SimpleJavaEnum
 import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, TimeMeasuringService}
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
@@ -217,7 +221,7 @@ object SampleNodes {
       setUidToNodeIdIfNeed(context,
         start
           .flatMap(context.lazyParameterHelper.lazyMapFunction(groupBy))
-          .keyBy(_.value)
+          .keyBy((v: ValueWithContext[String]) => v.value)
           .mapWithState[ValueWithContext[AnyRef], Long] {
             case (SimpleFromValueWithContext(ctx, sr), Some(oldState)) =>
               (ValueWithContext(
@@ -245,6 +249,7 @@ object SampleNodes {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
         .map(ValueWithContext[AnyRef](null, _))
+        .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
     })
   }
 
@@ -261,6 +266,7 @@ object SampleNodes {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
               .map(ValueWithContext[AnyRef](null, _))
+              .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
           })
     }
 
@@ -275,8 +281,9 @@ object SampleNodes {
         .implementedBy(FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
           start
             .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
-            .keyBy(_.value)
+            .keyBy((value: ValueWithContext[String]) => value.value)
             .map(_ => ValueWithContext[AnyRef](null, Context("new")))
+            .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
         }))
     }
 
@@ -294,7 +301,10 @@ object SampleNodes {
             val inputFromIr = (ir: Context) => ValueWithContext(ir.variables("input").asInstanceOf[AnyRef], ir)
             inputs("end1")
               .connect(inputs("end2"))
-              .map(inputFromIr, inputFromIr)
+              .map(new CoMapFunction[Context, Context, ValueWithContext[AnyRef]]{
+                override def map1(value: Context): ValueWithContext[AnyRef] = inputFromIr(value)
+                override def map2(value: Context): ValueWithContext[AnyRef] = inputFromIr(value)
+              })
           }
         })
     }
@@ -326,13 +336,20 @@ object SampleNodes {
   object ExtractAndTransformTimestamp extends CustomStreamTransformer {
 
     @MethodToInvoke(returnType = classOf[Long])
-    def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation
-      = FlinkCustomStreamTransformation(_.transform("collectTimestamp",
-        new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
+    def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
+      def trans(str: DataStream[Context]): DataStream[ValueWithContext[AnyRef]] = {
+        val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
-            output.collect(new StreamRecord[ValueWithContext[AnyRef]](ValueWithContext(element.getTimestamp.underlying(), element.getValue), timestampToSet))
+            val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
+            val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
+            output.collect(outputResult)
           }
-        }))
+        }
+        str.transform("collectTimestammp", implicitly[TypeInformation[ValueWithContext[AnyRef]]], streamOperator)
+      }
+
+      FlinkCustomStreamTransformation(trans(_))
+    }
 
   }
 
@@ -399,10 +416,11 @@ object SampleNodes {
           FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
             start
               .map(_ => 1: java.lang.Integer)
-              .keyBy(_ => "")
+              .keyBy((_: java.lang.Integer) => "")
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
+              .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
           }))
     }
 
@@ -427,6 +445,7 @@ object SampleNodes {
         val componentUseCase = flinkCustomNodeContext.componentUseCase
         start
           .map(context => ValueWithContext[AnyRef](componentUseCase, context))
+          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
       })
     }
 
@@ -441,7 +460,11 @@ object SampleNodes {
       FlinkCustomStreamTransformation((start: DataStream[Context], context: FlinkCustomNodeContext) => {
         val afterMap = start
           .flatMap(context.lazyParameterHelper.lazyMapFunction[AnyRef](param))
-        afterMap.addSink(element => MockService.add(element.value))
+        afterMap.addSink(new SinkFunction[ValueWithContext[AnyRef]] {
+          override def invoke(value: ValueWithContext[AnyRef], context: SinkFunction.Context): Unit = {
+            MockService.add(value.value)
+          }
+        })
         afterMap
       })
 
@@ -529,6 +552,7 @@ object SampleNodes {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
           .map(ctx => ValueWithContext[AnyRef](TypedMap(map), ctx))
+          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
       })
     }
 
@@ -554,6 +578,7 @@ object SampleNodes {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .map(ctx => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx))
+          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
       })
     }
 
@@ -708,6 +733,7 @@ object SampleNodes {
         dataStream
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
           .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"))
+          .returns(implicitly[TypeInformation[ValueWithContext[Value]]])
       }
 
       override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =

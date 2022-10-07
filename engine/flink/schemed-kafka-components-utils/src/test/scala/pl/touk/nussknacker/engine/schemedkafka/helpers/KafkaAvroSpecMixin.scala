@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.api.common.ExecutionConfig
-import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
@@ -162,7 +161,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()
-    registrar.register(new StreamExecutionEnvironment(env), process, ProcessVersion.empty, DeploymentData.empty)
+    registrar.register(env, process, ProcessVersion.empty, DeploymentData.empty)
     env.withJobRunning(process.id)(action)
   }
 
