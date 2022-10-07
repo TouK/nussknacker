@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
+import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper, ContextType}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.util.Implicits._
