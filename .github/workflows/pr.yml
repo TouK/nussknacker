@@ -608,11 +608,28 @@ jobs:
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
         run: sbt -J-Xms1500M -J-Xmx1500M "set version in ThisBuild := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish dist/Docker/publish liteEngineRuntimeApp/Docker/publish
 
-  trigger-helm-build:
-    name: Trigger Helm Chart Build
+  trigger-external-build:
     runs-on: ubuntu-latest
     needs: [ setup, publish ]
     if: ${{ github.ref == 'refs/heads/staging' }}
+    strategy:
+      matrix:
+        include:
+          - repo: nussknacker-helm
+            workflow_id: helm-test-workflow.yaml
+            ref: main
+          - repo: nussknacker-quickstart
+            workflow_id: pr.yml
+            ref: staging
+          - repo: nussknacker-quickstart
+            workflow_id: benchmark-workflow.yml
+            ref: staging
+          - repo: nussknacker-sample-components
+            workflow_id: pr.yml
+            ref: staging
+          - repo: nussknacker-flink-compatibility
+            workflow_id: test.yml
+            ref: staging
     steps:
       - uses: actions/github-script@v6
         with:
@@ -620,62 +637,8 @@ jobs:
           script: |
             await github.rest.actions.createWorkflowDispatch({
               owner: context.repo.owner,
-              repo: 'nussknacker-helm',
-              workflow_id: 'helm-test-workflow.yaml',
-              ref: 'main',
-              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
-
-  trigger-quickstart-build:
-    name: Trigger quickstart Build
-    runs-on: ubuntu-latest
-    needs: [ setup, publish ]
-    if: ${{ github.ref == 'refs/heads/staging' }}
-    steps:
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: 'nussknacker-quickstart',
-              workflow_id: 'pr.yml',
-              ref: 'staging',
-              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
-
-  trigger-samples-build:
-    name: Trigger sample components Build
-    runs-on: ubuntu-latest
-    needs: [ setup, publish ]
-    if: ${{ github.ref == 'refs/heads/staging' }}
-    steps:
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: 'nussknacker-sample-components',
-              workflow_id: 'pr.yml',
-              ref: 'staging',
-              inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
-            })
-
-  trigger-flink-compat-build:
-    name: Trigger flink compat Build
-    runs-on: ubuntu-latest
-    needs: [ setup, publish ]
-    if: ${{ github.ref == 'refs/heads/staging' }}
-    steps:
-      - uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.ORG_TRIGGER_PAT_TOKEN }}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: 'nussknacker-flink-compatibility',
-              workflow_id: 'test.yml',
-              ref: 'staging',
+              repo: '${{ matrix.repo }}',
+              workflow_id: '${{ matrix.workflow_id }}',
+              ref: '${{ matrix.ref }}',
               inputs: {"nussknacker_version": "${{ needs.setup.outputs.nk_snapshot_version }}"}
             })
