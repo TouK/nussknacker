@@ -1,7 +1,7 @@
 import {get} from "lodash"
 import {UnknownFunction} from "../../../types/common"
 import EditableEditor from "./editors/EditableEditor"
-import React, {useCallback} from "react"
+import React, {useCallback, useMemo} from "react"
 import {ExpressionLang} from "./editors/expression/types"
 import {errorValidator, PossibleValue} from "./editors/Validators"
 import {NodeValidationError} from "../../../types";
@@ -35,8 +35,8 @@ export default function AdditionalProperty(props: Props) {
   let propertyPath = `additionalFields.properties.${propertyName}`;
   const current = get(editedNode, propertyPath) || ""
   const expressionObj = {expression: current, value: current, language: ExpressionLang.String}
+  const validators = useMemo(() => [errorValidator(propertyErrors, propertyName)], [propertyErrors, propertyName])
   
-  let validator = errorValidator(propertyErrors, propertyName);
   const onValueChange = useCallback((newValue) => onChange(propertyPath, newValue), [onChange, propertyName])
 
   return (
@@ -54,7 +54,7 @@ export default function AdditionalProperty(props: Props) {
       showValidation={showValidation}
       //AdditionalProperties do not use any variables
       variableTypes={{}}
-      validators={[validator]}
+      validators={validators}
     />
   )
 }
