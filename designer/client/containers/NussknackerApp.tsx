@@ -124,8 +124,6 @@ export class NussknackerApp extends React.Component<Props, State> {
               </TransitionRouteSwitch>
             </ErrorHandler>
           </main>
-          {featuresSettings.usageStatisticsReports.enabled &&
-              <img src={featuresSettings.usageStatisticsReports.url} hidden alt=""/>}
         </div>
       ) :
       null

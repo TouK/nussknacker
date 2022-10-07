@@ -2,6 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.config.UsageStatisticsUrl
 
 class UsageStatisticsUrlTest extends AnyFunSuite with Matchers{
 

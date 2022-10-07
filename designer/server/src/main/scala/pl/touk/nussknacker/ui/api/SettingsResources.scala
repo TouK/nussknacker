@@ -28,8 +28,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
-            redirectAfterArchive = config.redirectAfterArchive,
-            usageStatisticsReports = UsageStatisticsReportsSettings(config.usageStatisticsReports)
+            redirectAfterArchive = config.redirectAfterArchive
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -96,8 +95,7 @@ object TopTabType extends Enumeration {
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings,
-                                            redirectAfterArchive: Boolean,
-                                            usageStatisticsReports: UsageStatisticsReportsSettings,
+                                            redirectAfterArchive: Boolean
                                            )
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)

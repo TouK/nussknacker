@@ -10,12 +10,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.EspItTest
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withoutPermissions
 import pl.touk.nussknacker.ui.config.AnalyticsConfig
-import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.ui.security.basicauth.BasicAuthenticationConfiguration
-
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
-
 
 class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -29,8 +24,6 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
   private val intervalTimeProcesses = 20000
   private val intervalTimeHealthCheck = 30000
 
-  private val ReportsUrlPattern = "https://stats\\.nussknacker\\.io/\\?fingerprint=(.*)&version=(.*)&timestamp=(.*)".r
-
   it("should return base intervalSettings") {
     getSettings ~> check {
       status shouldBe StatusCodes.OK
@@ -39,20 +32,6 @@ class SettingsResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fail
 
       data.intervalTimeSettings.processes shouldBe intervalTimeProcesses
       data.intervalTimeSettings.healthCheck shouldBe intervalTimeHealthCheck
-    }
-  }
-
-  it("should return usage reports settings with default generated url") {
-    getSettings ~> check {
-      status shouldBe StatusCodes.OK
-      val responseSettings = responseAs[UISettings]
-      responseSettings.features.usageStatisticsReports.enabled shouldBe true
-
-      noException should be thrownBy {
-        responseSettings.features.usageStatisticsReports.url match {
-          case ReportsUrlPattern(fingerprint, version, _) if fingerprint.startsWith("gen-") && URLDecoder.decode(version, StandardCharsets.UTF_8) == BuildInfo.version => ()
-        }
-      }
     }
   }
 

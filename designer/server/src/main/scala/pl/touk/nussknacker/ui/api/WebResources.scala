@@ -6,8 +6,10 @@ import java.nio.file.Files
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.{FileUtils, IOUtils}
+import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.ui.config.{UsageStatisticsReportsConfig, UsageStatisticsUrl}
 
-class WebResources(publicPath: String) extends Directives with LazyLogging {
+class WebResources(publicPath: String, usageStatisticsReports: UsageStatisticsReportsConfig) extends Directives with LazyLogging {
 
   //see config.js comment
   private lazy val mainContentFile = {
@@ -18,7 +20,7 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       logger.error("Failed to find web/static/main.html - probably frontend resources are not packaged in jar. Frontend won't work properly!")
       ""
     }
-    FileUtils.writeStringToFile(tempMainContentFile, content.replace("__publicPath__", publicPath))
+    FileUtils.writeStringToFile(tempMainContentFile, withUsageStatisticsReporting(content.replace("__publicPath__", publicPath)))
     tempMainContentFile
   }
 
@@ -41,4 +43,10 @@ class WebResources(publicPath: String) extends Directives with LazyLogging {
       }
     }
   }
+
+  private def withUsageStatisticsReporting(html: String) = {
+    if(usageStatisticsReports.enabled) html.replace("</body>", s"""<img src="${UsageStatisticsUrl(usageStatisticsReports.fingerprint, BuildInfo.version)}" alt="" hidden /></body>""")
+    else html
+  }
+
 }
