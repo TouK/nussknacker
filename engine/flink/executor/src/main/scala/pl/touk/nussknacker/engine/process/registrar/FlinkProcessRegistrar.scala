@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData, UsedNodes}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
@@ -207,7 +208,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           val typ = part.node.data.ref.typ
           val collectingSink = SinkInvocationCollector(runId, part.id, typ)
           withValuePrepared
-            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
+            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), ValueWithContextType.info)
             //FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
       }

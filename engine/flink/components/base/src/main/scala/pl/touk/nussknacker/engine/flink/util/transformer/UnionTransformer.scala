@@ -18,6 +18,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 case object UnionTransformer extends UnionTransformer(None) {
 
@@ -93,7 +94,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
 
             // TODO: Add better TypeInformation
             timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(ValueWithContextType.info).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
           }
         }

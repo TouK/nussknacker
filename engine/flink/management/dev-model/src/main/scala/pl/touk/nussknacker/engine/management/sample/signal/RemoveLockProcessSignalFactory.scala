@@ -12,9 +12,10 @@ import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInpu
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableState
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
-import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName, _}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaUtils}
 
@@ -68,7 +69,7 @@ object SampleSignalHandlingTransformer {
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
           .transform(
             "queryableStateTransform",
-            implicitly[TypeInformation[ValueWithContext[AnyRef]]](TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})),
+            ValueWithContextType.info,
             new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](
               lockQueryName,
               lockOutput => Json.fromFields(List(

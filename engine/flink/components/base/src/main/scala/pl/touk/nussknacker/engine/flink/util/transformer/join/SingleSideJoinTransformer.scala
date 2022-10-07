@@ -23,6 +23,7 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.Duration
@@ -92,7 +93,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
 
         timestampAssigner
           // TODO: Add better TypeInformation
-          .map(new TimestampAssignmentHelper(_)(TypeInformation.of(new TypeHint[ValueWithContext[AnyRef]] {})).assignWatermarks(statefulStreamWithUid))
+          .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info).assignWatermarks(statefulStreamWithUid))
           .getOrElse(statefulStreamWithUid)
       }
     }

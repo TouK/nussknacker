@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
 import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
+import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper, ContextType}
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
-import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.InterpretationResultMapTypeInfo
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -53,7 +53,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val id = TypeInformation.of(classOf[String])
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
-    val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
+    val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo))
 
     ConcreteCaseClassTypeInfo[Context](
       ("id", id),

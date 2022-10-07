@@ -1,15 +1,14 @@
-package pl.touk.nussknacker.engine.process.typeinformation.internal
-
-import java.util.function.Supplier
+package pl.touk.nussknacker.engine.flink.typeinformation
 
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo
 import org.apache.flink.api.common.typeutils.base.TypeSerializerSingleton
 import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.core.memory.{DataInputView, DataOutputView}
 
+import java.util.function.Supplier
 import scala.reflect.ClassTag
 
-abstract class FixedValueSerializer[T] extends TypeSerializerSingleton[T] {
+abstract class FixedValueTypeInformationHelper[T] extends TypeSerializerSingleton[T] {
 
   def value: T
 
@@ -33,7 +32,7 @@ abstract class FixedValueSerializer[T] extends TypeSerializerSingleton[T] {
 
 }
 
-object FixedValueSerializers {
+object FixedValueTypeInformationHelper {
 
   def emptyMapTypeInfo: BasicTypeInfo[Map[String, AnyRef]] = new BasicTypeInfo[Map[String, AnyRef]](classOf[Map[String, AnyRef]],
     Array.empty, EmptyMapSerializer.asInstanceOf[TypeSerializer[Map[String, AnyRef]]], null) {}
@@ -43,7 +42,7 @@ object FixedValueSerializers {
     Array.empty, NullSerializer.asInstanceOf[TypeSerializer[T]], null) {}
 
 
-  object EmptyMapSerializer extends FixedValueSerializer[Map[String, AnyRef]] {
+  object EmptyMapSerializer extends FixedValueTypeInformationHelper[Map[String, AnyRef]] {
     override def value: Map[String, AnyRef] = Map.empty
 
     override def snapshotConfiguration(): TypeSerializerSnapshot[Map[String, AnyRef]] = new SimpleTypeSerializerSnapshot(new Supplier[TypeSerializer[Map[String, AnyRef]]] {
@@ -51,7 +50,7 @@ object FixedValueSerializers {
     }) {}
   }
 
-  object NullSerializer extends FixedValueSerializer[AnyRef] {
+  object NullSerializer extends FixedValueTypeInformationHelper[AnyRef] {
     override def value: AnyRef = null
 
     override def snapshotConfiguration(): TypeSerializerSnapshot[AnyRef] = new SimpleTypeSerializerSnapshot[AnyRef](new Supplier[TypeSerializer[AnyRef]] {
