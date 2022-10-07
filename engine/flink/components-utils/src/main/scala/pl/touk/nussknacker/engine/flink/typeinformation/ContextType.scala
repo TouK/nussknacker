@@ -18,5 +18,5 @@ object ContextType {
   def info: TypeInformation[Context] =
     info(TypeInformation.of(new TypeHint[Map[String, Any]] {}))
 
-  private def simpleTypeInformation = ContextType.info
+  private def simpleTypeInformation = TypeInformation.of(classOf[Context])
 }
