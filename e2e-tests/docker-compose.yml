@@ -9,8 +9,8 @@ services:
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
-      USAGE_REPORTS_FINGERPRINT: "e2e-tests"
       CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "false"
+      CONFIG_FORCE_usageStatisticsReports_enabled: "false"
     expose:
       - 8080
     ports:
