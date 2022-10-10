@@ -10,20 +10,17 @@ import pl.touk.nussknacker.engine.requestresponse.ScenarioRoute
 
 import scala.concurrent.ExecutionContext
 
-class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, ScenarioRoute]) extends Directives with LazyLogging {
+class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Route]) extends Directives with LazyLogging {
 
   protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
     path("scenario" / Segment) { scenarioSlug =>
-      handle(scenarioSlug)(_.combinedRoute)
+      scenarioRoutes.get(scenarioSlug) match {
+        case None => complete {
+          HttpResponse(status = StatusCodes.NotFound)
+        }
+        case Some(r) => r
+      }
     }
-
-  private def handle(scenarioSlug: String)(callback: ScenarioRoute => Route): Route = scenarioRoutes.get(scenarioSlug) match {
-    case None => complete {
-      HttpResponse(status = StatusCodes.NotFound)
-    }
-    case Some(processInterpreter) => callback(processInterpreter)
-  }
-
 }
