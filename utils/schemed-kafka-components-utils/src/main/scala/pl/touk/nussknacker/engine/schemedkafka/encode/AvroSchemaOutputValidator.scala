@@ -10,6 +10,7 @@ import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._

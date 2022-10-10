@@ -7,7 +7,8 @@ import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {

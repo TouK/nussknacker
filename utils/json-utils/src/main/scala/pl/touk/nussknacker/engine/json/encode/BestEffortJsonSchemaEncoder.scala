@@ -1,10 +1,11 @@
-package pl.touk.nussknacker.engine.schemedkafka.encode
+package pl.touk.nussknacker.engine.json.encode
 
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema.{ArraySchema, BooleanSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import scala.collection.convert.ImplicitConversions.`map AsScala`

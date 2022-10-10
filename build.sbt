@@ -488,7 +488,7 @@ lazy val requestResponseRuntime = (project in lite("request-response/runtime")).
     }
   ).
   dependsOn(liteEngineRuntime, requestResponseComponentsApi, httpUtils % "provided", testUtils % "it,test",
-    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test", schemedKafkaComponentsUtils)
+    componentsUtils % "test", requestResponseComponentsUtils % "test", liteBaseComponents % "test", liteRequestResponseComponents % "test")
 
 lazy val flinkDeploymentManager = (project in flink("management")).
   configs(IntegrationTest).

@@ -13,12 +13,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor2}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter

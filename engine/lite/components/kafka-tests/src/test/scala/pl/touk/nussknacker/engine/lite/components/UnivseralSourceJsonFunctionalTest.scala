@@ -13,12 +13,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult

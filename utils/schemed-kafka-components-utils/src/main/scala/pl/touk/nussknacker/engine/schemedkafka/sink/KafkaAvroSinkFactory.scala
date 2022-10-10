@@ -8,10 +8,11 @@ import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParamet
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData}
-import pl.touk.nussknacker.engine.schemedkafka.encode.{AvroSchemaOutputValidator, ValidationMode}
+import pl.touk.nussknacker.engine.schemedkafka.encode.AvroSchemaOutputValidator
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.extractValidationMode
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 

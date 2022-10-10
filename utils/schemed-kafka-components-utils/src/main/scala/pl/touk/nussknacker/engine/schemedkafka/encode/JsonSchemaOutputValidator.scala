@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 

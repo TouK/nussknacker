@@ -5,8 +5,9 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.TestSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor

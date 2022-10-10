@@ -52,7 +52,7 @@ object RequestResponseInterpreter {
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
                                                             statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]) extends PathOpenApiDefinitionGenerator with AutoCloseable {
 
-    lazy val outputSchemaString: Option[String] = context.jobData.metaData.additionalFields.flatMap(_.properties.get(OutputSchemaProperty))
+    private lazy val outputSchemaString: Option[String] = context.jobData.metaData.additionalFields.flatMap(_.properties.get(OutputSchemaProperty))
 
     val id: String = context.jobData.metaData.id
 

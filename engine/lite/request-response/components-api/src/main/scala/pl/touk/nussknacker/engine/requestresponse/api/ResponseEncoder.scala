@@ -5,6 +5,6 @@ import org.everit.json.schema.Schema
 
 trait ResponseEncoder[-Input] {
 
-  def toJsonResponse(input: Input, result: List[Any], schema: Option[Schema] = None): Json
+  def toJsonResponse(input: Input, result: List[Any]): Json
 
 }

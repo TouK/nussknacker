@@ -11,14 +11,13 @@ import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtra
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponsePostSource, ResponseEncoder}
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEncoder
 
 import java.nio.charset.StandardCharsets
 
 class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, schema: Schema, val nodeId: NodeId)
   extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] {
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
-  private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
   override def parse(parameters: Array[Byte]): Any = {
     val parametersString = new String(parameters, StandardCharsets.UTF_8)
@@ -47,13 +46,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     }
   }
 
-  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new ResponseEncoder[Any] {
-    override def toJsonResponse(input: Any, result: List[Any], schema: Option[Schema]): Json = {
-      result.map(jsonEncoder.encode)
-        .headOption
-        .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
-    }
-  })
+  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(schema))
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 

@@ -7,6 +7,7 @@ import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company, FullNameV1, StringForcingDatumReaderProvider}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
