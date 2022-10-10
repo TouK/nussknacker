@@ -12,5 +12,5 @@ case class UsageStatisticsReportsConfig(enabled: Boolean, fingerprint: String = 
 
 object UsageStatisticsUrl {
   def apply(fingerprint: String, version: String) =
-    s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, StandardCharsets.UTF_8)}&version=${URLEncoder.encode(version, StandardCharsets.UTF_8)}&timestamp=${System.currentTimeMillis()}"
+    s"https://stats.nussknacker.io/?fingerprint=${URLEncoder.encode(fingerprint, StandardCharsets.UTF_8)}&version=${URLEncoder.encode(version, StandardCharsets.UTF_8)}"
 }
