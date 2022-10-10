@@ -31,8 +31,6 @@ case class ResultsCollectingListener(holderClass: String, runId: TestRunId) exte
 
   override def serviceInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, params: Map[String, Any], result: Try[Any]) = {}
 
-  override def sinkInvoked(nodeId: String, ref: String, context: Context, processMetaData: MetaData, param: Any) = {}
-
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
     ResultsCollectingListenerHolder.updateResults(runId, _.updateExceptionResult(exceptionInfo))
   }
