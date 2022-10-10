@@ -114,5 +114,37 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), schema) shouldBe 'invalid
   }
 
+  test("should encode not required property with empty map") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": ["string"]
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map(), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map(), schema) shouldBe 'valid
+  }
+
+  //todo test when union support(CombinedSchema) will be implemented for JsonSchema
+  ignore("should encode null value for nullable field") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": ["string", "null"]
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
+  }
+
 
 }
