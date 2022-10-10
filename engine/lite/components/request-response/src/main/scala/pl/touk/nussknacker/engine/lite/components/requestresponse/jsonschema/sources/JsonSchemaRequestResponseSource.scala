@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.requestresponse.utils.encode.SchemaResponseEnc
 
 import java.nio.charset.StandardCharsets
 
-class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, schema: Schema, val nodeId: NodeId)
+class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData, inputSchema: Schema, outputSchema: Schema, val nodeId: NodeId)
   extends RequestResponsePostSource[Any] with LazyLogging with ReturningType with SourceTestSupport[Any] {
   protected val openApiDescription: String = s"**scenario name**: ${metaData.id}"
 
@@ -25,7 +25,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   }
 
   private def validateAndReturnTypedMap(parameters: String): Any = {
-    new CirceJsonDeserializer(schema).deserialize(parameters).valueOr(e => throw new RuntimeException("Deserialization error", e))
+    new CirceJsonDeserializer(inputSchema).deserialize(parameters).valueOr(e => throw new RuntimeException("Deserialization error", e))
   }
 
 
@@ -35,7 +35,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
   }
 
   override def returnType: typing.TypingResult = {
-    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema).typingResult
   }
 
   override def testDataParser: TestDataParser[Any] = {
@@ -46,7 +46,7 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     }
   }
 
-  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(schema))
+  override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))
 
   private def decodeJsonWithError(str: String): Json = CirceUtil.decodeJsonUnsafe[Json](str, "Provided json is not valid")
 
