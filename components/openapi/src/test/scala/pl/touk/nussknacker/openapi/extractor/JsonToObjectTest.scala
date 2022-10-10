@@ -8,8 +8,8 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
 
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
 class JsonToObjectTest extends AnyFunSuite
   with Matchers {
@@ -17,10 +17,9 @@ class JsonToObjectTest extends AnyFunSuite
   private val json = Json.obj(
     "field1" -> fromString("value"),
     "field2" -> Json.fromInt(1),
-    //to jest zgodne z polską strefą - w lipcu jest +02:00...
     "field4" -> fromString("2020-07-10T12:12:30+02:00"),
     "field5" -> fromString(""),
-    "field6" -> fromString("12:12:30"),
+    "field6" -> fromString("12:12:35+02:00"),
     "field7" -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
     "doubleField" -> Json.fromDoubleOrNull(1.55)
@@ -46,9 +45,9 @@ class JsonToObjectTest extends AnyFunSuite
     fields.get("field1") shouldBe "value"
     fields.get("field2") shouldBe 1L
     Option(fields.get("field3")) shouldBe 'empty
-    fields.get("field4") shouldBe LocalDateTime.ofInstant(ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME).toInstant, ZoneId.systemDefault())
+    fields.get("field4") shouldBe ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
     Option(fields.get("field5")) shouldBe 'empty
-    fields.get("field6") shouldBe LocalTime.of(12, 12, 30)
+    fields.get("field6") shouldBe OffsetTime.of(12, 12, 35, 0, ZoneOffset.ofHours(2))
     fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55

@@ -2,11 +2,11 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.json.swagger._
+import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime, LocalTime, ZoneId, ZonedDateTime}
+import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 
 // TODO: Validated
 object JsonToObject {
@@ -68,10 +68,11 @@ object JsonToObject {
   }
 
   //we want to accept empty string - just in case...
-  //we use LocalDateTime, because it's used in many helpers
-  private def parseDateTime(dateTime: String): LocalDateTime = {
+  //some of the implementations allow timezone to be optional, we are strict
+  //see e.g. https://github.com/OAI/OpenAPI-Specification/issues/1498#issuecomment-369680369
+  private def parseDateTime(dateTime: String): ZonedDateTime = {
     Option(dateTime).filterNot(_.isEmpty).map { dateTime =>
-      LocalDateTime.ofInstant(ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_DATE_TIME).toInstant, ZoneId.systemDefault())
+      ZonedDateTime.parse(dateTime, DateTimeFormatter.ISO_DATE_TIME)
     }.orNull
   }
 
@@ -81,9 +82,9 @@ object JsonToObject {
     }.orNull
   }
 
-  private def parseTime(time: String): LocalTime = {
+  private def parseTime(time: String): OffsetTime = {
     Option(time).filterNot(_.isEmpty).map { time =>
-      LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME)
+      OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
     }.orNull
   }
 }
