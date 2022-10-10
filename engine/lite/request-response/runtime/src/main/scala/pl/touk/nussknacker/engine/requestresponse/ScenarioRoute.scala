@@ -2,9 +2,8 @@ package pl.touk.nussknacker.engine.requestresponse
 
 import akka.event.Logging
 import akka.http.scaladsl.model.MediaTypes.`application/json`
-import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
-import akka.http.scaladsl.server.directives.DebuggingDirectives
+import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials, DebuggingDirectives, SecurityDirectives}
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
@@ -15,13 +14,38 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 
-import java.nio.file.Files
-
-class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: OpenApiDefinitionConfig, scenarioName: ProcessName) extends Directives with LazyLogging {
+class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
+                    config: RequestResponseConfig,
+                    scenarioName: ProcessName)
+  extends Directives with LazyLogging {
 
   // Regarding https://spec.openapis.org/oas/v3.1.0#serverObject server url accept urls "relative to the location where the OpenAPI document is being served"
   // We use this relative reference instead of default '/' because runtime can by server reverse proxies (i.e. ingress controller) that can rewrite this url
   private val defaultServerUrl = "./"
+
+  val securityDirectiveOpt: Option[AuthenticationDirective[String]] = {
+    def prepareAuthenticator(basicAuthConfig: BasicAuthConfig): Credentials => Option[String] = {
+      val password = basicAuthConfig.password
+      val user = basicAuthConfig.user
+
+      def rrAuthenticator(credentials: Credentials): Option[String] =
+        credentials match {
+          case p@Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
+          case _ => None
+        }
+
+      rrAuthenticator
+    }
+
+    val authenticationDirective = config.security.flatMap(_.basicAuth.flatMap { conf =>
+      Some(SecurityDirectives.authenticateBasic(
+        authenticator = prepareAuthenticator(conf),
+        realm = "request-response"
+      ))
+    })
+
+    authenticationDirective
+  }
 
   val invocationRoute: Route = {
     logDirective {
@@ -40,7 +64,7 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
   val definitionRoute: Route = {
     val interpreter = handler.requestResponseInterpreter
     val openApiInfo = interpreter.generateInfoOpenApiDefinitionPart()
-    val oApiJson = new RequestResponseOpenApiGenerator(definitionConfig.openApiVersion, openApiInfo).generateOpenApiDefinition(interpreter, definitionConfig.servers, defaultServerUrl)
+    val oApiJson = new RequestResponseOpenApiGenerator(config.definitionMetadata.openApiVersion, openApiInfo).generateOpenApiDefinition(interpreter, config.definitionMetadata.servers, defaultServerUrl)
     val oApiJsonAsString = jsonStringToEntity(oApiJson.spaces2)
 
     get {
@@ -51,13 +75,16 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler, definitionConfig: O
   }
 
   val combinedRoute: Route = {
+    val invocationRoutePath = pathEndOrSingleSlash {
+      invocationRoute
+    }
+    val invocationRouteWithSecurity: Route = securityDirectiveOpt match {
+      case Some(securityDirective) => securityDirective { _: String => invocationRoutePath }
+      case None => invocationRoutePath
+    }
     SwaggerUiRoute.route ~ path("definition") {
       definitionRoute
-    } ~ {
-      pathEndOrSingleSlash {
-        invocationRoute
-      }
-    }
+    } ~ invocationRouteWithSecurity
   }
 
   protected def logDirective: Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
