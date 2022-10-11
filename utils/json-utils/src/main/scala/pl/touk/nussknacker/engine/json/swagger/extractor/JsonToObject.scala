@@ -31,9 +31,10 @@ object JsonToObject {
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
-          elementType.map { case (jsonField, jsonDef) =>
-            jsonField -> jo(jsonField).map(JsonToObject(_, jsonDef)).getOrElse(nullOrError(jsonField))
+          elementType.collect {
+            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToObject(_, jsonDef)).getOrElse(nullOrError(jsonField))
           }
+            .filter(e => e._2 != null || required.contains(e._1))
         )
       )
     }

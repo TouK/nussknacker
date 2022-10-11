@@ -20,4 +20,19 @@ object JsonTestData {
       |  "type": "integer"
       |}""".stripMargin))
 
+  val objectSchema: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "outgoing" :  {
+      |      "type": "object",
+      |      "properties": {
+      |        "first" : { "type": "string" },
+      |        "last" : { "type": "string" }
+      |      },
+      |      "required": ["first", "last"]
+      |    }
+      |  }
+      |}
+      |""".stripMargin))
 }

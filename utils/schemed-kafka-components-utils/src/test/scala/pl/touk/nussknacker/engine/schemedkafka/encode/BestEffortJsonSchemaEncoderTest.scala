@@ -1,8 +1,11 @@
 package pl.touk.nussknacker.engine.schemedkafka.encode
 
-import cats.data.NonEmptyList
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.Validated.{Invalid, Valid, valid}
+import cats.data.{NonEmptyList, ValidatedNel}
 import io.circe.Json
+import io.circe.Json.{fromLong, fromString, obj}
+import org.apache.avro.SchemaBuilder
+import org.apache.avro.generic.GenericRecordBuilder
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
@@ -130,8 +133,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map(), schema) shouldBe 'valid
   }
 
-  //todo test when union support(CombinedSchema) will be implemented for JsonSchema
-  ignore("should encode null value for nullable field") {
+  test("should encode null value for nullable field") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{
         |  "$schema": "https://json-schema.org/draft-07/schema",
@@ -146,5 +148,64 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
   }
 
+  test("should encode not required field") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  }
+        |}""".stripMargin))
 
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'valid
+  }
+
+  ignore("should reject when missing required field") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "required": ["foo"]
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map(), schema) shouldBe 'invalid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map(), schema) shouldBe 'invalid
+  }
+
+  test("should encode avro generic record") {
+    type WithError[T] = ValidatedNel[String, T]
+    val avroToJsonEncoder: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] = new AvroToJsonBasedOnSchemaEncoder().encoder(encoder.encode)
+
+    val avroSchema =
+      SchemaBuilder.builder().record("test").fields()
+        .requiredString("field1")
+        .requiredLong("field2").endRecord()
+
+    val jsonSchema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "field1": {
+        |      "type": "string"
+        |    },
+        |    "field2": {
+        |      "type": "number"
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    val genRec = new GenericRecordBuilder(avroSchema).set("field1", "a").set("field2", 11).build()
+
+    avroToJsonEncoder(genRec, jsonSchema, None) shouldEqual valid(obj("field1" -> fromString("a"), "field2" -> fromLong(11)))
+  }
 }

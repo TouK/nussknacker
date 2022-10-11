@@ -6,31 +6,39 @@ import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema.{ArraySchema, BooleanSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonBasedOnSchemaEncoder, ToJsonEncoder}
 
+import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
+import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
 class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
+  type WithError[T] = ValidatedNel[String, T]
 
+  private val classLoader = this.getClass.getClassLoader
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, this.getClass.getClassLoader)
 
+  private val optionalEncoders = ServiceLoader.load(classOf[ToJsonBasedOnSchemaEncoder], classLoader).asScala.map(_.encoder(this.encode))
+  private val highPriority: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] = Map()
 
-  type WithError[T] = ValidatedNel[String, T]
 
   final def encodeOrError(value: Any, schema: Schema): Json = {
     encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
 
-  def encodeObject(fields: Map[String, _], objectSchema: ObjectSchema): WithError[Json] = {
+  def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): WithError[Json] = {
     fields
-      .map(kv => (kv, objectSchema.getPropertySchemas.get(kv._1)))
+      .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {
-        case (tuple, propertySchema) if propertySchema != null => encode(tuple._2, propertySchema).map(tuple._1 -> _)
-        case (tuple, null) if validationMode != ValidationMode.lax => error(s"Not expected field with name: ${tuple._1} for schema: $objectSchema and policy $validationMode does not allow redundant")
+        case (field, propertySchema) if (propertySchema != null) && notNullOrRequired(field, parentSchema) => encode(field._2, propertySchema).map(field._1 -> _)
+        case (filed, null) if validationMode != ValidationMode.lax => error(s"Not expected field with name: ${filed._1} for schema: $parentSchema and policy $validationMode does not allow redundant")
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
 
+  private def notNullOrRequired(field: (String, _), parentSchema: ObjectSchema): Boolean = {
+    field._2 != null || parentSchema.getRequiredProperties.contains(field._1)
+  }
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): WithError[Json] = {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
@@ -64,8 +72,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
-      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(Json.fromString(value.toString))
+      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (_, _) if validationMode != ValidationMode.lax => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
@@ -74,6 +82,9 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
 
   def encode(value: Any, schema: Schema, fieldName: Option[String] = None): WithError[Json] = {
-    encodeBasedOnSchema(value, schema, fieldName)
+    optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse((value, schema, fieldName), (vs: (Any, Schema, Option[String])) =>
+      encodeBasedOnSchema(vs._1, vs._2, fieldName)
+    )
   }
+
 }

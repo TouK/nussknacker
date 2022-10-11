@@ -3,7 +3,8 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
-import io.circe.Json.{fromInt, fromLong}
+import io.circe.Json.{fromInt, fromLong, fromString, obj}
+import org.apache.avro.AvroRuntimeException
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
@@ -13,6 +14,7 @@ import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -27,7 +29,7 @@ import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMess
 
 import java.util.UUID
 
-class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
@@ -47,14 +49,31 @@ class UnivseralSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
       ("config", "result"),
       //Primitive integer validations
       // FIXME handle minimum > MIN_VALUE && maximum < MAX_VALUE) as an Integer to make better interoperability between json and avro?
-//      (sConfig(fromLong(Integer.MAX_VALUE.toLong + 1), longSchema, integerRangeSchema), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
+      //      (sConfig(fromLong(Integer.MAX_VALUE.toLong + 1), longSchema, integerRangeSchema), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
       (sConfig(fromInt(1), integerRangeSchema, longSchema), valid(fromInt(1))),
       (sConfig(fromLong(Integer.MAX_VALUE), integerRangeSchema, integerRangeSchema), valid(fromInt(Integer.MAX_VALUE))),
+      (sConfig(obj(), objectSchema, objectSchema), valid(obj())),
+      (sConfig(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString(""))), objectSchema, objectSchema), valid(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString("")))))
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
+    }
+  }
+
+  test("should catch runtime errors") {
+    val testData = Table(
+      ("config", "result"),
+      (sConfig(obj("outgoing" -> Json.Null), objectSchema, objectSchema), "#/outgoing: expected type: JSONObject, found: Null"),
+      (sConfig(obj("outgoing" -> fromString("invalid")), objectSchema, objectSchema), "#/outgoing: expected type: JSONObject, found: String"),
+    )
+
+    forAll(testData) { (config: ScenarioConfig, expected: String) =>
+      val results = runWithValueResults(config)
+      val message = results.validValue.errors.head.throwable.asInstanceOf[CustomNodeValidationException].getMessage
+
+      message shouldBe expected
     }
   }
 

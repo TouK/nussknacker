@@ -30,7 +30,8 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val jsonObject = new JSONTokener(string).nextValue()
     //after validate jsonObject has set default field values
     catchValidationError(jsonSchema.validate(jsonObject))
-    Validated.fromEither(CirceUtil.decodeJson[Json](jsonObject.toString).map(JsonToObject.apply(_, swaggerTyped)))
+    val either = CirceUtil.decodeJson[Json](jsonObject.toString).map(JsonToObject.apply(_, swaggerTyped))
+    Validated.fromEither(either)
   }
 
   protected def prepareValidationErrorMessage(exception: Throwable): String = {

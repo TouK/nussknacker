@@ -408,7 +408,7 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
     }
   }
 
-  test("should catch runner errors") {
+  test("should catch runtime errors") {
     val testData = Table(
       "config",
       //Comparing String -> Enum returns true, but in runner BestEffortAvroEncoder tries to encode String (that doesn't meet the requirements) to Enum
