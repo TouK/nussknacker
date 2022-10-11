@@ -14,7 +14,7 @@
       <env name="OPENAPI_SERVICE_URL" value="http://localhost:5000" />
       <env name="SCHEMA_REGISTRY_URL" value="http://localhost:3082" />
       <env name="SQL_ENRICHER_URL" value="localhost:5432" />
-      <env name="CONFIG_FORCE_usageStatisticsReports_enabled" value="false" />
+      <env name="USAGE_REPORTS_FINGERPRINT" value="development" />
     </envs>
     <option name="INCLUDE_PROVIDED_SCOPE" value="true" />
     <option name="MAIN_CLASS_NAME" value="pl.touk.nussknacker.ui.NussknackerApp" />
