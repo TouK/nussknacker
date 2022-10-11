@@ -10,6 +10,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * nussknacker-request-response-app in version <= 1.6
   * Lite k8s engine with request-response processing mode
   * `request-response-embedded` Deployment Manager
+* [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
 
 
 ## In version 1.6.0 (Not released yet)

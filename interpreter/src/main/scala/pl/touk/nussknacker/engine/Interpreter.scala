@@ -134,7 +134,6 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
       case Sink(id, ref, false) =>
         val valueWithModifiedContext = ValueWithContext(null, ctx)
-        listeners.foreach(_.sinkInvoked(node.id, ref, ctx, metaData, valueWithModifiedContext.value))
         listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
         monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
       case BranchEnd(e) =>

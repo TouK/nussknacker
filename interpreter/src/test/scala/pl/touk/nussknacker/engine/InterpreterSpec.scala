@@ -335,8 +335,6 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
       override def expressionEvaluated(nodeId: String, expressionId: String, expression: String, context: Context, processMetaData: MetaData, result: Any): Unit = {}
 
-      override def sinkInvoked(nodeId: String, id: String, context: Context, processMetaData: MetaData, param: Any) = {}
-
       override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]) = {}
     }
 

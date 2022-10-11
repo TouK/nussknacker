@@ -12,9 +12,6 @@ import pl.touk.nussknacker.engine.util.metrics._
 
 import java.util.concurrent.TimeUnit
 
-@deprecated("use FlinkMetricsProviderForScenario directly", "1.1")
-class MetricUtils(runtimeContext: RuntimeContext) extends FlinkMetricsProviderForScenario(runtimeContext)
-
 class FlinkMetricsProviderForScenario(runtimeContext: RuntimeContext) extends BaseMetricsProviderForScenario {
 
   override def registerGauge[T](identifier: MetricIdentifier, value: Gauge[T]): Unit =
