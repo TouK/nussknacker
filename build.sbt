@@ -1388,7 +1388,7 @@ lazy val designer = (project in file("designer/server"))
       use bash to control when it's done - and this can lead to bugs and edge cases (release, dist/docker, dist/tgz, assembly...)
      */
     Compile / packageBin := (Compile / packageBin).dependsOn(copyClientDist).value,
-    assembly in ThisScope := (assembly in ThisScope).dependsOn(copyClientDist).value,
+    ThisScope / assembly := (ThisScope / assembly).dependsOn(copyClientDist).value,
     assembly / assemblyMergeStrategy := designerMergeStrategy,
     libraryDependencies ++= {
       Seq(
