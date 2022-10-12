@@ -19,14 +19,7 @@ import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, Model
 import scala.reflect.ClassTag
 
 object LiteTestScenarioRunner {
-
-  @deprecated("Use TestScenarioRunner.testDataSource instead", "1.6")
-  def sourceName: String = TestScenarioRunner.testDataSource
-
-  @deprecated("Use TestScenarioRunner.testResultSink instead", "1.6")
-  def sinkName: String = TestScenarioRunner.testResultSink
-
-  implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
+    implicit class LiteTestScenarioRunnerExt(testScenarioRunner: TestScenarioRunner.type) {
 
     def liteBased(config: Config = ConfigFactory.load()): LiteTestScenarioRunnerBuilder = {
       LiteTestScenarioRunnerBuilder(List.empty, config)

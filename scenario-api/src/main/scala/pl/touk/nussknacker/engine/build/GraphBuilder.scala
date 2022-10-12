@@ -100,11 +100,6 @@ trait GraphBuilder[R] {
     }
     new SimpleGraphBuilder(SourceNode(node.Join(id, output, typ, parameters.toList, branchParameters), _))
   }
-
-  @deprecated("Use join method", "1.3")
-  def branch(id: String, typ: String, output: Option[String], branchParams: List[(String, List[(String, Expression)])], params: (String, Expression)*): GraphBuilder[SourceNode] = {
-    join(id, typ, output, branchParams,  params: _*)
-  }
 }
 
 private[build] class SimpleGraphBuilder[R<:Node](val creator: GraphBuilder.Creator[R]) extends GraphBuilder[R] {

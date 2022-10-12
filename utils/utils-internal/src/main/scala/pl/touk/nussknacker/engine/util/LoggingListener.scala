@@ -51,10 +51,6 @@ object LoggingListener extends ProcessListener with Serializable {
     debug(List(metadata.id, nodeId, "service", id), s"Invocation ended-up with result: $result. Context: $context")
   }
 
-  override def sinkInvoked(nodeId: String, id: String, context: Context, metadata: MetaData, param: Any): Unit = {
-    debug(List(metadata.id, nodeId, "sink", id), s"Sink invoked with param: $param. Context: $context")
-  }
-
   override def exceptionThrown(exceptionInfo: NuExceptionInfo[_ <: Throwable]): Unit = {
     //TODO:??
   }

@@ -103,9 +103,6 @@ case class CanonicalProcess(metaData: MetaData,
     allStartNodes.toList.flatten.flatMap(nextNodes)
   }
 
-  @deprecated("This method does nothing, serves only as a help to make transition EspProcess to CanonicalProcess easier when using DSL", "1.6")
-  val toCanonicalProcess: CanonicalProcess = this
-
 }
 
 object canonicalnode {

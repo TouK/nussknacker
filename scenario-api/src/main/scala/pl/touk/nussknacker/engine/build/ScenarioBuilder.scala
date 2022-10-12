@@ -73,30 +73,3 @@ object ScenarioBuilder {
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))
 
 }
-
-@deprecated("use ScenarioBuilder streaming method", "1.3")
-object EspProcessBuilder {
-
-  def id(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id, StreamMetaData()))
-
-}
-
-@deprecated("use ScenarioBuilder streamingLite method", "1.3")
-object StreamingLiteScenarioBuilder {
-
-  def id(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id, LiteStreamMetaData()))
-
-}
-
-@deprecated("use ScenarioBuilder requestResponse method", "1.3")
-object RequestResponseScenarioBuilder {
-
-  def id(id: ProcessName) =
-    new ProcessMetaDataBuilder(MetaData(id.value, RequestResponseMetaData(None)))
-
-  def id(id: String) =
-    new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(None)))
-
-}

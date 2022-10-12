@@ -109,13 +109,6 @@ object FlinkTestScenarioRunner {
 
 }
 
-object NuTestScenarioRunner {
-  @deprecated("Use: import FlinkTestScenarioRunner._; TestScenarioRunner.flinkBased(...) instead", "1.6")
-  def flinkBased(config: Config, flinkMiniCluster: FlinkMiniClusterHolder): FlinkTestScenarioRunnerBuilder = {
-    FlinkTestScenarioRunnerBuilder(List.empty, config, flinkMiniCluster)
-  }
-}
-
 case class FlinkTestScenarioRunnerBuilder(components: List[ComponentDefinition], config: Config, flinkMiniCluster: FlinkMiniClusterHolder)
   extends TestScenarioRunnerBuilder[FlinkTestScenarioRunner, FlinkTestScenarioRunnerBuilder] {
 
