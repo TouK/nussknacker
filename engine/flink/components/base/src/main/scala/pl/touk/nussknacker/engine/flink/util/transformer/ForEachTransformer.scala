@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._

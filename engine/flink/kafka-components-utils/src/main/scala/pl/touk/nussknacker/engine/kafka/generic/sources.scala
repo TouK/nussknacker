@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.Decoder
-import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies

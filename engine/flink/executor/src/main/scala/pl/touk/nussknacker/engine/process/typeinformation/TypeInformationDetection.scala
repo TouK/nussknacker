@@ -43,7 +43,7 @@ object GenericTypeInformationDetection extends TypeInformationDetection {
     ContextType.info
 
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = ValueWithContextType.info(forType(value), ContextType.info).asInstanceOf[TypeInformation[ValueWithContext[T]]]
+    = ValueWithContextType.info(forType(value).asInstanceOf[TypeInformation[T]], ContextType.info)
 
   override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
 }

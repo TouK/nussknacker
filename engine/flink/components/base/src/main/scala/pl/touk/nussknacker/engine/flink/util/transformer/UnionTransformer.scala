@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.{Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue

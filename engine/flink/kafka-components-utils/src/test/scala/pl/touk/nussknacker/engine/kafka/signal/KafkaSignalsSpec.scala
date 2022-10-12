@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.scalatest.funsuite.AnyFunSuite
@@ -71,7 +71,7 @@ object CustomSignalReader extends CustomStreamTransformer {
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
   def execute(): FlinkCustomStreamTransformation = {
-    implicit val byteArrayTypeInformation = TypeInformation.of(new TypeHint[Array[Byte]] {})
+    implicit val byteArrayTypeInformation: PrimitiveArrayTypeInfo[Array[Byte]] = PrimitiveArrayTypeInfo.BYTE_PRIMITIVE_ARRAY_TYPE_INFO
 
     FlinkCustomStreamTransformation.apply((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
