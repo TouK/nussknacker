@@ -53,7 +53,6 @@ object SampleSignalHandlingTransformer {
   class LockStreamTransformer extends CustomStreamTransformer {
     final val lockQueryName = "locks-state" //it has to be `final` to use it as value in Java annoatation, otherwise it won't compile
 
-    // TODO: Add better TypeInformation
     @SignalTransformer(signalClass = classOf[RemoveLockProcessSignalFactory])
     @QueryableStateNames(values = Array(lockQueryName))
     @MethodToInvoke(returnType = classOf[LockOutput])
