@@ -34,6 +34,8 @@
 * [#3598](https://github.com/TouK/nussknacker/pull/3598) Introducing configuration for controlling anonymous usage reporting by FE  
 * [#3608](https://github.com/TouK/nussknacker/pull/3608) Use `ZonedDateTime` for `date-time` JsonSchema format
 * [#3619](https://github.com/TouK/nussknacker/pull/3619) Patch `KafkaMetricWrapper.java` until Flink 1.15.3 is released. Read [more](https://issues.apache.org/jira/browse/FLINK-28488) about this bug. 
+* [#3574](https://github.com/TouK/nussknacker/pull/3574) Feature: instance logo can be shown next to Nu logo, by convention it has
+  to be available at path `<nu host>/assets/img/instance-logo.svg`
 
 1.5.0 (16 Aug 2022)
 ------------------------
