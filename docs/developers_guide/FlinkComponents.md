@@ -14,7 +14,7 @@ is more complicated than a sink since the following things has to be provided:
   for serializing/deserializing emitted data (e.g. `#input`)
 - a [timestamp watermark handler](https://github.com/TouK/nussknacker/blob/staging/engine/flink/components-api/src/main/scala/pl/touk/nussknacker/engine/flink/api/timestampwatermark/TimestampWatermarkHandler.scala)
   so that events are correctly processed downstream, for example to avoid (or force!) dropping late events by aggregates. Read more about
-  [notion of time](../scenarios_authoring/Intro.md#streaming-flink-only-notion-of-time)
+  [notion of time](../scenarios_authoring/Intro.md#notion-of-time)
   and [watermarks](https://nightlies.apache.org/flink/flink-docs-stable/docs/dev/datastream/event-time/generating_watermarks/)
 - (optionally) generating test data support (trait `FlinkSourceTestSupport`) to ease [scenarios authoring](../scenarios_authoring/TestingAndDebugging.md)
 - (optionally) custom [context initializer](https://github.com/TouK/nussknacker/blob/staging/components-api/src/main/scala/pl/touk/nussknacker/engine/api/process/ContextInitializer.scala)

@@ -1,6 +1,6 @@
-# Nussknacker Streaming-Lite runtime application
+# Nussknacker Lite runtime application
 
-This image contains [Nussknacker](http://nussknacker.io) runtime for scenarios runned in Streaming-Lite mode.
+This image contains [Nussknacker](http://nussknacker.io) runtime for scenarios runned on Lite engine.
 
 # Tags semantic
 
@@ -17,7 +17,7 @@ If you want to check it manually, the invocation will look like:
 docker run -it --network host -e KAFKA_ADDRESS=localhost:3032 -e SCHEMA_REGISTRY_URL=http://localhost:3082 -v /tmp/scenario.json:/opt/nussknacker/conf/scenario.json -v /tmp/deploymentConfig.conf:/opt/nussknacker/conf/deploymentConfig.conf touk/nussknacker-lite-runtime-app:latest
 ```
 where:
-- /tmp/scenario.json - file with scenario json. You can get some by creating scenario in Streaming-Lite mode using Nussknacker and after that exporting it to file
+- /tmp/scenario.json - file with scenario json. You can get some by creating scenario in Streaming processing mode using Nussknacker and after that exporting it to file
 - /tmp/deploymentConfig.conf - file with deployment configuration, currently it contains only `tasksCount` parameter with number of parallel tasks consuming topics. Example:
 ```
 tasksCount: 2

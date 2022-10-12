@@ -99,7 +99,7 @@ following dependencies **should** be marked as `provided` and not be part of cus
 - `nussknacker-utils`, `nussknacker-components-utils`, `nussknacker-helpers-utils` (are provided in `defaultModel.jar`)
 - `nussknacker-flink-components-utils` (is provided in `flinkExecutor.jar`)
 - Basic Flink dependencies: `flink-streaming-scala`, `flink-runtime`, `flink-statebackend-rocksdb` etc. for Flink components  (are provided in `flinkExecutor.jar`)
-- `nussknacker-kafka-utils` for Streaming-Lite components
+- `nussknacker-kafka-utils` for Streaming components in Lite engine
 
 **Please remember that `provided` dependency are not transitive, i.e. if you depend on e.g. `nussknacker-flink-kafka-components-utils`
 you still have to declare dependency on `nussknacker-flink-components-utils` explicitly 

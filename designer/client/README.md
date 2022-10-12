@@ -16,8 +16,11 @@ npm ci
 
 # Run
 
-You have a few options to provide backend for frontend needs. After each "run" command, frontend will be available at http://localhost:3000. 
-Below there are described possible options.
+You can run frontend connected to one of different backends, depending on your needs. After each "run" command, frontend will be available at http://localhost:3000. 
+
+Below there are described possible options. 
+
+After you execute any of them, you probably want to run also `submodules` as described [here](#Submodules). This step is optional, but most of the application's functionality relies on it. 
 
 ## Using backend started with docker
 
@@ -114,12 +117,14 @@ To run cypress test in mode that would update image snapshots, use the same comm
 npm run test:e2e:linux:update
 ```
 
-#### Submodules (e.g. scenarios and components tabs)
+#### Submodules 
+Independent parts of application e.g. scenarios and components tabs
 
-To render views using submodules in dev mode you need to run submodules app in dev mode as well (available on port 5001). To make it happen just: 
+To render views using submodules in dev mode you need to run submodules app in dev mode as well (available on port 5001). 
+Assuming that core frontend is running on `localhost:3000` as described [here](#Run), to make it happen just: 
 ```
 cd ../submodules
-npm start
+NU_FE_CORE_URL=http://localhost:3000 npm start
 ```
 > WARNING: When using **unified linux environment** prefix npm start invocation with NU_FE_CORE_URL=http://host.docker.internal:3000 and add entry in `/etc/hosts` leading to `127.0.0.1`
 

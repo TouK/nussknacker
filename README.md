@@ -24,7 +24,14 @@ Documentation is available at [nussknacker.io/documentation](https://nussknacker
 
 ## Quickstart
 
-Visit [quickstart](https://nussknacker.io/documentation/quickstart/docker/) to have a look around.
+If you want to see Nussknacker in action without any other dependencies, you can use embedded engine in Request-response mode (scenario logic is exposed with REST API), just run:
+```bash
+docker run -it --network host -e DEFAULT_SCENARIO_TYPE=request-response-embedded touk/nussknacker:latest
+```
+Be aware that some things (e.g. metrics) will not work, and this engine is not intended for production use.
+
+If you want to follow step-by-step via more complex tutorials, based on production ready engines, read one of quickstart guides for: [Streaming mode on Flink engine](https://nussknacker.io/documentation/quickstart/docker/)
+or [Streaming mode on Lite engine](https://nussknacker.io/documentation/quickstart/helm) or [Request-response mode on Lite engine](https://nussknacker.io/documentation/quickstart/helm-request-response)
 
 ## Contact
 

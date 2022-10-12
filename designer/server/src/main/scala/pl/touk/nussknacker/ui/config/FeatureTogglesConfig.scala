@@ -19,7 +19,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings,
                                 enableConfigEndpoint: Boolean,
-                                redirectAfterArchive: Boolean
+                                redirectAfterArchive: Boolean,
                                )
 
 object FeatureTogglesConfig extends LazyLogging{
@@ -57,7 +57,7 @@ object FeatureTogglesConfig extends LazyLogging{
       environmentAlert = environmentAlert,
       testDataSettings = testDataSettings,
       enableConfigEndpoint = enableConfigEndpoint,
-      redirectAfterArchive = redirectAfterArchive
+      redirectAfterArchive = redirectAfterArchive,
     )
   }
 

@@ -56,6 +56,21 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     testResultVars.get("inputMeta") shouldBe Some(inputMeta)
   }
 
+  test("should test source emitting event extending DisplayWithEncoder") {
+    val process = ScenarioBuilder.streaming("test")
+      .source("start", "kafka-jsonValueWithMeta", TopicParamName -> "'test.topic'")
+      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
+    val inputMeta = InputMeta(null, "test.topic", 0, 1, System.currentTimeMillis(), TimestampType.CREATE_TIME, Collections.emptyMap(), 0)
+    val consumerRecord = new InputMetaToJson()
+      .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
+      .mapObject(_.add("key", Null)
+        .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd"))))
+
+    val results = run(process, TestData.newLineSeparated(consumerRecord.noSpaces))
+
+    results.nodeResults shouldBe 'nonEmpty
+  }
+
   private def run(process: CanonicalProcess, testData: TestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(LocalModelData(config, creator), process, testData,
