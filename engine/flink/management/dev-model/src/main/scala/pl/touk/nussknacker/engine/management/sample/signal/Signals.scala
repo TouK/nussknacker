@@ -24,6 +24,5 @@ object Signals {
 
 object SignalSchema {
   import Signals._
-  // TODO: Add better TypeInformation
   val deserializationSchema = new EspDeserializationSchema[SampleProcessSignal](jsonBytes => decodeJsonUnsafe[SampleProcessSignal](jsonBytes))(TypeInformation.of(classOf[SampleProcessSignal]))
 }

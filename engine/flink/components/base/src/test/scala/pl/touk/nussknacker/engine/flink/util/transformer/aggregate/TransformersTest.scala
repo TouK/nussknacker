@@ -493,7 +493,6 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
-    // TODO: Add better TypeInformation
     Map("start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
       .create[TestRecord](input, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord])))))
   }

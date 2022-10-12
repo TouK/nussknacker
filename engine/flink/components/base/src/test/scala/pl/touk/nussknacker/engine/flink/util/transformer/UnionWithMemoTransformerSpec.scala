@@ -37,7 +37,6 @@ class UnionWithMemoTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
   private val OutVariableName = "outVar"
 
-  // TODO: Add better TypeInformation
   private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   test("union with memo") {

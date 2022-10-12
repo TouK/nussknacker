@@ -5,7 +5,6 @@ import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -20,8 +19,7 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
-import pl.touk.nussknacker.engine.flink.typeinformation.{ContextType, KeyedValueType, ValueWithContextType}
-import pl.touk.nussknacker.engine.util.KeyedValue
+import pl.touk.nussknacker.engine.flink.typeinformation.{KeyedValueType, TupleType, ValueWithContextType}
 
 import java.time.Duration
 
@@ -42,9 +40,16 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     ContextTransformation
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
-        // TODO: Add better TypeInformation
-
         new FlinkCustomJoinTransformation {
+          private val processedTypeInfo = ValueWithContextType.info(
+            KeyedValueType.info(
+              TupleType.tuple2Info(
+                TypeInformation.of(classOf[String]),
+                TypeInformation.of(classOf[AnyRef])
+              )
+            )
+          )
+
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
               case (branchId, stream) =>
@@ -53,14 +58,13 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
-                  .returns(ValueWithContextType.info(
-                    KeyedValueType.info(TypeInformation.of(new TypeHint[(String, AnyRef)] {}))))
+                  .returns(processedTypeInfo)
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
             val afterOptionalAssigner = timestampAssigner
               .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(
-                ValueWithContextType.info(KeyedValueType.info(TypeInformation.of(new TypeHint[(String, AnyRef)] {})))
+                processedTypeInfo
               ).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 

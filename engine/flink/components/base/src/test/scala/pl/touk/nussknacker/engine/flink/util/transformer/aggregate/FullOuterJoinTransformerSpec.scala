@@ -48,7 +48,6 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
 
   private val OutVariableName = "outVar"
 
-  // TODO: Add better TypeInformation
   private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   private def performTest(input: List[Either[OneRecord, OneRecord]], expected: List[Map[String, AnyRef]]): Unit = {

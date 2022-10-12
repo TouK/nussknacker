@@ -4,6 +4,7 @@ import java.time.Duration
 import javax.annotation.Nullable
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor}
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.java.typeutils.ListTypeInfo
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
@@ -12,7 +13,11 @@ import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
+import pl.touk.nussknacker.engine.flink.typeinformation.ContextType
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyOnlyMapper
+
+import java.util
+import java.util.Collections
 
 object DelayTransformer extends DelayTransformer
 
@@ -51,13 +56,13 @@ class DelayFunction(delay: Duration)
   type FlinkTimerCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
 
   // TODO: Add better TypeInformation
-  private val descriptor = new MapStateDescriptor[Long, List[api.Context]](
+  private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
     TypeInformation.of(new TypeHint[Long] {}),
-    TypeInformation.of(new TypeHint[List[api.Context]] {})
+    new ListTypeInfo(ContextType.info)
   )
 
-  @transient private var state : MapState[Long, List[api.Context]] = _
+  @transient private var state : MapState[Long, java.util.List[api.Context]] = _
 
   override def open(config: Configuration): Unit = {
     state = getRuntimeContext.getMapState(descriptor)
@@ -67,15 +72,16 @@ class DelayFunction(delay: Duration)
     val fireTime = ctx.timestamp() + delay.toMillis
 
     val currentState = readStateValueOrInitial(fireTime)
-    val stateWithNewEntry = value.context :: currentState
-    state.put(fireTime, stateWithNewEntry)
+    currentState.add(0, value.context)
+    state.put(fireTime, currentState)
     
     ctx.timerService().registerEventTimeTimer(fireTime)
   }
 
   override def onTimer(timestamp: Long, funCtx: FlinkTimerCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
     val currentState = readStateValueOrInitial(timestamp)
-    currentState.reverse.foreach(emitValue(out, _))
+    Collections.reverse(currentState)
+    currentState.forEach(emitValue(out, _))
     state.remove(timestamp)
   }
 
@@ -83,8 +89,8 @@ class DelayFunction(delay: Duration)
     output.collect(ValueWithContext(null, ctx))
   }
 
-  private def readStateValueOrInitial(timestamp: Long) : List[api.Context] = {
-    Option(state.get(timestamp)).getOrElse(List.empty)
+  private def readStateValueOrInitial(timestamp: Long) : java.util.List[api.Context] = {
+    Option(state.get(timestamp)).getOrElse(new util.ArrayList[api.Context]())
   }
 
 }
