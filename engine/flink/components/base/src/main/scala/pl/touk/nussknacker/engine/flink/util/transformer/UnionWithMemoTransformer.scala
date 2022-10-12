@@ -6,7 +6,6 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.streaming.api.functions.co.CoMapFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -44,8 +43,6 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     ContextTransformation
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
-        // TODO: Add better TypeInformation
-
         new FlinkCustomJoinTransformation {
           private val processedInnerTypeInfo = Typed.fromDetailedType[KeyedValue[String, (String, AnyRef)]]
 

@@ -96,7 +96,6 @@ class Creator(input: List[TestRecord], collectingListener: ResultsCollectingList
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
     Map(
-      // TODO: Add better TypeInformation
       "start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
         .create[TestRecord](input, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord]))))
     )
