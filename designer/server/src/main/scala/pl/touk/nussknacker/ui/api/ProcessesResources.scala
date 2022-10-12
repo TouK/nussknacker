@@ -116,12 +116,6 @@ class ProcessesResources(
               }
             }
           }
-        } ~ path("subProcesses") {
-          get {
-            complete {
-              processRepository.fetchSubProcessesDetails[Unit]().toBasicProcess
-            }
-          }
         } ~ path("subProcessesDetails") {
           // To be removed in NU 1.8.
           get {

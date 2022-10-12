@@ -207,26 +207,25 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    Get("/subProcesses") ~> routeWithAllPermissions ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] should include (sampleSubprocess.id)
-      val subprocesses = responseAs[List[BasicProcess]]
-      subprocesses should have size 1
-      subprocesses.map(_.name.value) should contain only sampleSubprocess.id
+    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
+      processes should have size 1
+      val process = processes.head
+      process.id shouldBe sampleSubprocess.id
+      process.isArchived shouldBe false
     }
 
     archiveProcess(ProcessName(sampleSubprocess.id)) { status =>
       status shouldEqual StatusCodes.OK
     }
 
-    Get("/subProcesses") ~> routeWithAllPermissions ~> check {
-      status shouldEqual StatusCodes.OK
-      responseAs[String] should not include sampleSubprocess.id
-      responseAs[List[Json]] shouldBe 'empty
-    }
-
     forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
-      processes.find(_.name == sampleSubprocess.id) shouldBe None
+      processes shouldBe 'empty
+    }
+    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(true))) { processes =>
+      processes should have size 1
+      val process = processes.head
+      process.id shouldBe sampleSubprocess.id
+      process.isArchived shouldBe true
     }
   }
 
