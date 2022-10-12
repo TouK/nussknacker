@@ -19,7 +19,6 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
-import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -382,10 +381,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
   }
 
   private def invokeInterpreter(interpreter: InterpreterType, input: Any) = {
-    val metrics = new InvocationMetrics(interpreter.context)
-    metrics.measureTime {
-      interpreter.invokeToOutput(input)
-    }.futureValue
+    interpreter.invokeToOutput(input).futureValue
   }
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): String =

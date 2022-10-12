@@ -22,6 +22,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.{LiteEngineRuntimeCont
 import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory, TestRunner}
 import pl.touk.nussknacker.engine.requestresponse.api.RequestResponseSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
+import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 import pl.touk.nussknacker.engine.requestresponse.openapi.{OApiInfo, PathOpenApiDefinitionGenerator, RequestResponseOpenApiGenerator}
 import pl.touk.nussknacker.engine.resultcollector.ResultCollector
 
@@ -49,12 +50,13 @@ object RequestResponseInterpreter {
 
   // TODO: Some smarter type in Input than Context?
   class RequestResponseScenarioInterpreter[Effect[_]:Monad](val context: LiteEngineRuntimeContext,
-                                                            statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef])
-                                                           (implicit ec: ExecutionContext) extends PathOpenApiDefinitionGenerator with AutoCloseable {
+                                                            statelessScenarioInterpreter: ScenarioInterpreterWithLifecycle[Effect, Any, AnyRef]) extends PathOpenApiDefinitionGenerator with AutoCloseable {
 
     val id: String = context.jobData.metaData.id
 
     val sinkTypes: Map[NodeId, typing.TypingResult] = statelessScenarioInterpreter.sinkTypes
+
+    private val invocationMetrics = new InvocationMetrics(context)
 
     val (sourceId, source) = statelessScenarioInterpreter.sources.toList match {
       case Nil => throw new IllegalArgumentException("No source found")
@@ -69,7 +71,7 @@ object RequestResponseInterpreter {
       }
     }
 
-    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] = {
+    def invokeToOutput(input: Any): Effect[ValidatedNel[ErrorType, List[Any]]] = invocationMetrics.measureTime {
       invoke(input).map(_.map(_.map(_.result)))
     }
 

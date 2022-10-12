@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploy
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseAkkaHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 
 import scala.collection.concurrent.TrieMap
@@ -86,7 +86,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
       ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
     val interpreterWithSlug = slugForScenario(jobData.metaData).product(interpreter)
     interpreterWithSlug.foreach { case (slug, interpreter) =>
-      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), config, jobData.processVersion.processName))
+      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseHttpHandler(interpreter), config, jobData.processVersion.processName))
       interpreter.open()
     }
     interpreterWithSlug
