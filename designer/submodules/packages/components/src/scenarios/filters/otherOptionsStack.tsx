@@ -4,11 +4,12 @@ import { useTranslation } from "react-i18next";
 import { ScenariosFiltersModel } from "./scenariosFiltersModel";
 import { FilterListItem } from "./filterListItem";
 import { OptionsStack } from "./optionsStack";
+import { Divider } from "@mui/material";
 
 export function OtherOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
+    const otherFilters: Array<keyof ScenariosFiltersModel> = ["HIDE_SCENARIOS", "HIDE_FRAGMENTS"];
 
     return (
         <OptionsStack
@@ -34,18 +35,6 @@ export function OtherOptionsStack(): JSX.Element {
                 onChange={(checked) => setFilter("HIDE_FRAGMENTS", checked)}
                 label={t("table.filter.SHOW_FRAGMENTS", "Show fragments")}
             />
-            <FilterListItem
-                invert
-                color="default"
-                checked={getFilter("HIDE_ACTIVE") === true}
-                onChange={(checked) => setFilter("HIDE_ACTIVE", checked)}
-                label={t("table.filter.SHOW_ACTIVE", "Show active")}
-            />
-            <FilterListItem
-                checked={getFilter("SHOW_ARCHIVED") === true}
-                onChange={(checked) => setFilter("SHOW_ARCHIVED", checked)}
-                label={t("table.filter.SHOW_ARCHIVED", "Show archived")}
-            />
         </OptionsStack>
     );
 }
@@ -53,7 +42,7 @@ export function OtherOptionsStack(): JSX.Element {
 export function StatusOptionsStack(): JSX.Element {
     const { t } = useTranslation();
     const { getFilter, setFilter } = useFilterContext<ScenariosFiltersModel>();
-    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED"];
+    const filters: Array<keyof ScenariosFiltersModel> = ["HIDE_DEPLOYED", "HIDE_NOT_DEPLOYED", "HIDE_ACTIVE", "SHOW_ARCHIVED"];
 
     return (
         <OptionsStack
@@ -78,6 +67,19 @@ export function StatusOptionsStack(): JSX.Element {
                 checked={getFilter("HIDE_NOT_DEPLOYED") === true}
                 onChange={(checked) => setFilter("HIDE_NOT_DEPLOYED", checked)}
                 label={t("table.filter.SHOW_NOT_DEPLOYED", "Show not deployed")}
+            />
+            <Divider />
+            <FilterListItem
+                invert
+                color="default"
+                checked={getFilter("HIDE_ACTIVE") === true}
+                onChange={(checked) => setFilter("HIDE_ACTIVE", checked)}
+                label={t("table.filter.SHOW_ACTIVE", "Show active")}
+            />
+            <FilterListItem
+                checked={getFilter("SHOW_ARCHIVED") === true}
+                onChange={(checked) => setFilter("SHOW_ARCHIVED", checked)}
+                label={t("table.filter.SHOW_ARCHIVED", "Show archived")}
             />
         </OptionsStack>
     );
