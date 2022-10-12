@@ -9,6 +9,7 @@ import {ButtonWithFocus} from "./withFocus"
 import {useSearchQuery} from "../containers/hooks/useSearchQuery"
 import {DynamicTabData} from "../containers/DynamicTab"
 import {CustomTabBasePath} from "../containers/paths"
+import {absoluteBePath} from "../common/UrlUtils";
 
 function useStateWithRevertTimeout<T>(startValue: T, time = 10000): [T, React.Dispatch<React.SetStateAction<T>>] {
   const [defaultValue] = useState<T>(startValue)
@@ -52,6 +53,18 @@ function Menu({onClick}: { onClick: () => void }): JSX.Element {
   )
 }
 
+function InstanceLogo() {
+  const [validLogo, setValidLogo] = useState(false)
+  return (
+    <div className={validLogo ? "navbar-instance" : ""}>
+      <img src={absoluteBePath("/assets/img/instance-logo.svg")} alt="" style={validLogo ? {display: "flex"} : {display: "none"}}
+           className={validLogo ? "navbar-instance-logo" : ""} onLoad={(e) => {
+        setValidLogo(true);
+      }}/>
+    </div>
+  );
+}
+
 type Props = {
   appPath: string,
   rightElement?: ReactNode,
@@ -82,6 +95,7 @@ export function MenuBar({appPath, rightElement = null, leftElement = null}: Prop
           <NavLink className="navbar-brand" to={appPath} title={t("menu.goToMainPage", "Go to main page")}>
             <NussknackerLogo className={"navbar-brand-logo"}/>
           </NavLink>
+          <InstanceLogo/>
           {rightElement}
           <Spacer/>
           <ButtonWithFocus className="expand-button" onClick={() => setExpanded(v => !v)}>
