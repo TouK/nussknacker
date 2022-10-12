@@ -6,7 +6,8 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.{Encoder, Json}
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala.typeutils.EitherTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator, TwoInputStreamOperator}
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -63,7 +64,11 @@ object SampleSignalHandlingTransformer {
           .keyBy((v: ValueWithContext[String]) => v.value, (v: SampleProcessSignal) => v.action.key)
           .transform(
             "lockStreamTransform",
-            implicitly[TypeInformation[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]](TypeInformation.of(new TypeHint[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]] {})),
+            new EitherTypeInfo(
+              classOf[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]],
+              TypeInformation.of(classOf[LockOutputStateChanged]),
+              ValueWithContextType.info(TypeInformation.of(classOf[LockOutput]))
+            ),
             new LockStreamFunction(context.metaData)
           )
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)

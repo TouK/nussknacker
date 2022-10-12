@@ -50,7 +50,6 @@ object FlinkRangeMap {
   implicit object SortedMapFlinkRangeMap extends FlinkRangeMap[SortedMap] {
 
     override def typeInformation[K: TypeInformation, V: TypeInformation]: TypeInformation[SortedMap[K, V]] = {
-      // TODO: Use better TypeInformation
       TypeInformation.of(new TypeHint[SortedMap[K, V]] {})
     }
 

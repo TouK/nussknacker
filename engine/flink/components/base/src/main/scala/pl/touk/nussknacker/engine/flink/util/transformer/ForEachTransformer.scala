@@ -18,7 +18,6 @@ import scala.collection.JavaConverters._
   */
 object ForEachTransformer extends CustomStreamTransformer {
 
-  // TODO: Add better TypeInformation
   @MethodToInvoke(returnType = classOf[Object])
   def invoke(@ParamName("Elements") elements: LazyParameter[java.util.Collection[AnyRef]],
              @OutputVariableName outputVariable: String): FlinkCustomStreamTransformation with ReturningType = {

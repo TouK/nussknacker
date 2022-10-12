@@ -39,7 +39,6 @@ object TypeInformationDetectionUtils extends LazyLogging {
 
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
-  // TODO: Use better TypeInformation
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
     ContextType.info
 

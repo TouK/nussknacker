@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.process.registrar
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala.typeutils.UnitTypeInfo
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
@@ -267,8 +268,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       resultStream
         .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        // TODO: Use better TypeInformation
-        .process(new SplitFunction(outputContexts, typeInformationDetection), TypeInformation.of(classOf[Unit]))
+        .process(new SplitFunction(outputContexts, typeInformationDetection), new UnitTypeInfo)
     }
 
   }

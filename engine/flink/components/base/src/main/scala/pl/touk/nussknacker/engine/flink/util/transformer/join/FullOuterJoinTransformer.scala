@@ -123,7 +123,6 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
       timestampAssigner
-        // TODO: Add better TypeInformation
         .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info).assignWatermarks(stream))
         .getOrElse(stream)
     }
