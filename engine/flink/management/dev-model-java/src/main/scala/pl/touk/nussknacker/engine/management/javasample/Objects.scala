@@ -22,7 +22,6 @@ class Objects extends Serializable {
       }
     }
 
-    // TODO: Use better TypeInformation
     override val typeInformation: TypeInformation[Model] = TypeInformation.of(classOf[Model])
 
     override def timestampAssigner: Option[TimestampWatermarkHandler[Model]] = None

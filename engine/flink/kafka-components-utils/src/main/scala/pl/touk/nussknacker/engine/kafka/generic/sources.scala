@@ -34,7 +34,6 @@ object sources {
       processObjectDependencies,
       new FlinkKafkaDelayedSourceImplFactory(timestampAssigner, TypedJsonTimestampFieldAssigner(_)))
 
-  // TODO: Use better TypeInformation
   object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)(TypeInformation.of(new TypeHint[java.util.Map[_, _]] {}))
 
   object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](deserializeToTypedMap)(TypeInformation.of(classOf[TypedMap]))

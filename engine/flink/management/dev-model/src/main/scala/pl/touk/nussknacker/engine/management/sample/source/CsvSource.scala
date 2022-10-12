@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermar
 
 class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[CsvRecord] with TestDataGenerator {
 
-  // TODO: Use better TypeInformation
   override val typeInformation: TypeInformation[CsvRecord] = TypeInformation.of(classOf[CsvRecord])
 
   override def flinkSourceFunction: SourceFunction[CsvRecord] = new SourceFunction[CsvRecord] {

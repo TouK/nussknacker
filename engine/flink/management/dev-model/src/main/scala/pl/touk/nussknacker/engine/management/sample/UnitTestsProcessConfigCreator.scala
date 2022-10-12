@@ -55,7 +55,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     "TariffService"  -> all(new TariffService)
   )
 
-  // TODO: Add better TypeInformation
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies) = {
     Map(
       "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),

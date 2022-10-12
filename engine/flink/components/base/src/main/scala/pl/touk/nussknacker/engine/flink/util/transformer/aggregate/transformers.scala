@@ -128,7 +128,6 @@ object transformers {
             case SessionWindowTrigger.OnEvent => FireOnEachEvent(baseTrigger)
             case SessionWindowTrigger.OnEnd => baseTrigger
           }
-          // TODO: Add better TypeInformation
           implicit val pairTypeInformation: TypeInformation[(AnyRef, java.lang.Boolean)] = TypeInformation.of(new TypeHint[(AnyRef, java.lang.Boolean)] {})
           start
             .groupByWithValue(groupBy, aggregateBy.product(endSessionCondition))

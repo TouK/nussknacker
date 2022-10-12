@@ -48,8 +48,6 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: clean up sample objects...
 object SampleNodes {
 
-  // TODO: Use better TypeInformation
-  // TODO: Should swap Int for java.lang.Integer?
   implicit val intTypeInformation: TypeInformation[Int] =
     TypeInformation.of(classOf[Int])
   implicit val longTypeInformation: TypeInformation[Long] =

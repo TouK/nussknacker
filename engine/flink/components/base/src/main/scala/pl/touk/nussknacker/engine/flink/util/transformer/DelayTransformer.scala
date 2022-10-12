@@ -55,7 +55,6 @@ class DelayFunction(delay: Duration)
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
   type FlinkTimerCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#OnTimerContext
 
-  // TODO: Add better TypeInformation
   private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
     TypeInformation.of(new TypeHint[Long] {}),

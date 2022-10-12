@@ -110,7 +110,6 @@ class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunc
   import scala.collection.JavaConverters._
 
   override protected def stateDescriptor: ValueStateDescriptor[Map[String, AnyRef]] = {
-    // TODO: Add better TypeInformation
     new ValueStateDescriptor("state", implicitly[TypeInformation[Map[String, AnyRef]]](TypeInformation.of(new TypeHint[Map[String, AnyRef]] {})))
   }
 

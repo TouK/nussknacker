@@ -71,7 +71,6 @@ object CustomSignalReader extends CustomStreamTransformer {
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
   def execute(): FlinkCustomStreamTransformation = {
-    // TODO: Add better TypeInformation
     implicit val byteArrayTypeInformation = TypeInformation.of(new TypeHint[Array[Byte]] {})
 
     FlinkCustomStreamTransformation.apply((start: DataStream[Context], context: FlinkCustomNodeContext) => {

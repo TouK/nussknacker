@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 case object StatefulTransformer extends CustomStreamTransformer with LazyLogging {
 
-  // TODO: Add better TypeInformation
   @MethodToInvoke
   def execute(@ParamName("groupBy") groupBy: LazyParameter[String]): FlinkCustomStreamTransformation
   = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
