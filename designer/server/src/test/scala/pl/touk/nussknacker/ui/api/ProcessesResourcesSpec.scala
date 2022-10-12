@@ -82,14 +82,14 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("return validated and non-validated process") {
-    val processId = createDeployedProcess(processName)
+    createDeployedProcess(processName)
 
     Get(s"/processes/${processName.value}") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[ValidatedProcessDetails].name shouldBe processName.value
     }
 
-    Get(s"/processes/${processName.value}?validate=false") ~> routeWithRead ~> check {
+    Get(s"/processes/${processName.value}?skipValidateAndResolve=true") ~> routeWithRead ~> check {
       status shouldEqual StatusCodes.OK
       responseAs[ProcessDetails].name shouldBe processName.value
       responseAs[String] should not include "validationResult"
@@ -547,7 +547,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    Get(s"/processes/${SampleProcess.process.id}/1?validate=false") ~> routeWithAllPermissions ~> check {
+    Get(s"/processes/${SampleProcess.process.id}/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
       processDetails.processVersionId shouldBe VersionId.initialVersionId
       responseAs[String] should not include "validationResult"
@@ -710,7 +710,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
     saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value)) {
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value)) {
-        Get("/processesDetails?validate=false") ~> routeWithAllPermissions ~> check {
+        Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
           val processes = responseAs[List[ProcessDetails]]
           processes should have size 2
@@ -743,7 +743,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
     saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value)) {
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value)) {
-        Get(s"/processesDetails?names=${firstProcessName.value}&validate=false") ~> routeWithAllPermissions ~> check {
+        Get(s"/processesDetails?names=${firstProcessName.value}&skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           val processes = responseAs[List[ProcessDetails]]
           processes should have size 1
           processes.map(_.name) should contain only firstProcessName.value
@@ -795,21 +795,6 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
       val processes = responseAs[List[ValidatedProcessDetails]]
       processes.map(_.name) should contain only subprocess.id
-    }
-  }
-
-  test("return non-validated subprocess details") {
-    val subprocess = ProcessTestData.sampleSubprocess
-    saveSubProcess(subprocess) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get("/subProcessesDetails?validate=false") ~> routeWithRead ~> check {
-      status shouldEqual StatusCodes.OK
-      val processes = responseAs[List[ProcessDetails]]
-      processes.map(_.name) should contain only subprocess.id
-      responseAs[String] should not include "validationResult"
-      Unmarshal(response).to[List[ValidatedProcessDetails]].failed.futureValue shouldBe a[DecodingFailure]
     }
   }
 

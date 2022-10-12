@@ -103,16 +103,16 @@ class ProcessesResources(
             }
           }
         } ~ path("processesDetails") {
-          (get & parameters('names.as(CsvSeq[String]).?, 'validate.as[Boolean].withDefault(true))) { (namesToFetch, validate) =>
+          (get & parameters('names.as(CsvSeq[String]).?, 'skipValidateAndResolve.as[Boolean].withDefault(false))) { (namesToFetch, skipValidateAndResolve) =>
             complete {
               val processes = namesToFetch match {
                 case Some(names) => processRepository.fetchProcessesDetails[CanonicalProcess](names.map(ProcessName(_)).toList)
                 case None => processRepository.fetchProcessesDetails[CanonicalProcess]()
               }
-              if (validate) {
-                validateAndReverseResolveAll(processes)
-              } else {
+              if (skipValidateAndResolve) {
                 toProcessDetailsAll(processes)
+              } else {
+                validateAndReverseResolveAll(processes)
               }
             }
           }
@@ -123,14 +123,11 @@ class ProcessesResources(
             }
           }
         } ~ path("subProcessesDetails") {
-          (get & parameters('validate.as[Boolean].withDefault(true))) { validate =>
+          // To be removed in NU 1.8.
+          get {
             complete {
               val subProcesses = processRepository.fetchSubProcessesDetails[CanonicalProcess]()
-              if (validate) {
-                validateAndReverseResolveAll(subProcesses)
-              } else {
-                toProcessDetailsAll(subProcesses)
-              }
+              validateAndReverseResolveAll(subProcesses)
             }
           }
         } ~ path("processes" / "status") {
@@ -183,11 +180,11 @@ class ProcessesResources(
                     .map(toResponseEither[ValidationResult])
                 }
               }
-            } ~ (get & parameters('validate.as[Boolean].withDefault(true))) { validate =>
+            } ~ (get & parameters('skipValidateAndResolve.as[Boolean].withDefault(false))) { skipValidateAndResolve =>
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
-                  case Some(process) if validate => validateAndReverseResolve(enrichDetailsWithProcessState(process))
-                  case Some(process) => toProcessDetails(enrichDetailsWithProcessState(process))
+                  case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
+                  case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
                   case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
                 }
               }
@@ -207,11 +204,11 @@ class ProcessesResources(
             }
           }
         } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
-          (get & processId(processName) & parameters('validate.as[Boolean].withDefault(true))) { (processId, validate) =>
+          (get & processId(processName) & parameters('skipValidateAndResolve.as[Boolean].withDefault(false))) { (processId, skipValidateAndResolve) =>
             complete {
               processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
-                case Some(process) if validate => validateAndReverseResolve(enrichDetailsWithProcessState(process))
-                case Some(process) => toProcessDetails(enrichDetailsWithProcessState(process))
+                case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
+                case Some(process) => validateAndReverseResolve(enrichDetailsWithProcessState(process))
                 case None => HttpResponse(status = StatusCodes.NotFound, entity = "Scenario not found")
               }
             }
