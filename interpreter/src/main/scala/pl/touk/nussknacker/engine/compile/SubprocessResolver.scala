@@ -125,7 +125,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         }
         (replacement.get(name), maybeOutputName) match {
           case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
-          case (Some(nodes), Some(outputName)) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
+          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
           case _ => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
         }
       }

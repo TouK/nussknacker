@@ -17,6 +17,7 @@ import {
   updateAfterNodeIdChange,
 } from "./utils"
 import {Edge, ValidationResult} from "../../types"
+import NodeUtils from "../../components/graph/NodeUtils";
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -133,7 +134,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "NODES_CONNECTED": {
       let newEdges: Edge[]
 
-      const freeOutputEdges = state.processToDisplay.edges.filter(e => e.from === action.fromNode.id && !e.to)
+      const availableEdges = NodeUtils.edgesForNode(action.fromNode, action.processDefinitionData).edges;
+      const freeOutputEdges = state.processToDisplay.edges
+        .filter(e => e.from === action.fromNode.id && !e.to)
+        //we do this to skip e.g. edges that became incorrect/unavailable
+        .filter(e => availableEdges.find(available => available?.name == e.edgeType.name && available?.type == e.edgeType.type))
+      
       const freeOutputEdge = freeOutputEdges.find(e => e.edgeType === action.edgeType) || freeOutputEdges[0]
       if (freeOutputEdge) {
         newEdges = state.processToDisplay.edges.map(e => e === freeOutputEdge ?

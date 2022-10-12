@@ -1,6 +1,6 @@
 import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
 import {TypingResult, UIParameter} from "./definition"
-import {Edge} from "./edge"
+import {Edge, EdgeType} from "./edge"
 import {NodeType, PropertiesType} from "./node"
 import {ValidationResult} from "./validation"
 import {ComponentGroup, SingleComponentConfig} from "./component"
@@ -33,7 +33,6 @@ export type CustomActionParameter = {
 }
 
 export type AdditionalPropertiesConfig = Record<string, AdditionalPropertyConfig>
-export type DynamicParameterDefinitions = $TodoType
 
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
@@ -67,9 +66,21 @@ export interface ProcessDefinitionData {
   processDefinition?: ProcessDefinition,
   componentGroups?: ComponentGroup[],
   additionalPropertiesConfig?: AdditionalPropertiesConfig,
-  edgesForNodes?: $TodoType[],
+  edgesForNodes?: EdgesForNode[],
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
+}
+
+export type EdgesForNode = {
+  nodeId: NodeTypeId,
+  edges: EdgeType[],
+  canChooseNodes: boolean,
+  isForInputDefinition: boolean,
+}
+
+export type NodeTypeId = {
+  type: string,
+  id?: string,
 }
 
 export interface GlobalVariable {

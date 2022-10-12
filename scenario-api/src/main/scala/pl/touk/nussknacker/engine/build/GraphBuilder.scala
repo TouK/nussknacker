@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.build
 
 import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parameter}
 import pl.touk.nussknacker.engine.graph.expression._
+import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
@@ -44,6 +45,12 @@ trait GraphBuilder[R] {
 
   def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
     creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map()))
+
+  def fragmentInput(id: String, params: (String, Class[_])*): GraphBuilder[SourceNode] =
+    new SimpleGraphBuilder(SourceNode(SubprocessInputDefinition(id, params.map(kv => SubprocessParameter(kv._1, SubprocessClazzRef(kv._2.getName))).toList), _))
+
+  def fragmentOutput(id: String, outputName: String, params: (String, Expression)*): R =
+    creator(EndingNode(SubprocessOutputDefinition(id, outputName, params.map(kv => Field(kv._1, kv._2)).toList )))
 
   def filter(id: String, expression: Expression, disabled: Option[Boolean] = None): GraphBuilder[R] =
     build(node => creator(FilterNode(Filter(id, expression, disabled), node, None)))
