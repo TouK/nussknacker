@@ -153,6 +153,7 @@ describe("Components list", () => {
     cy.visit("/customtabs/components/usages/filter")
 
     cy.get("input[type=text]").type("8 xxx")
+    cy.matchQuery("?TEXT=8+xxx")
     cy.contains(/^filter 8$/).should("be.visible")
 
     cy.wait(500) //ensure "loading" mask is hidden
