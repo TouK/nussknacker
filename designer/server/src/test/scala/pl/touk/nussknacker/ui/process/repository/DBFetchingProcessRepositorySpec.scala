@@ -15,6 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -62,7 +63,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
-    val processes= fetching.fetchProcesses(None, isArchived = Some(false), None, None, None)(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
+    val processes= fetching.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
 
     processes.map(_.name) shouldEqual "categorized-c1"::Nil
   }

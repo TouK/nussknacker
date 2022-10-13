@@ -32,9 +32,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   override def fetchDeployedProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(true))
 
-  override def fetchProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy](processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false)).map(_.filter(p => processNames.contains(p.idWithName.name)))
-
   override def fetchSubProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isSubprocess = Some(true), isArchived = Some(false))
 
@@ -60,11 +57,6 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
 
   override def fetchProcessingType(processId: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[String] =
     getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
-
-  override def fetchProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    getUserProcesses[PS].map(_.filter(
-      p => check(isSubprocess, p.isSubprocess) && check(isArchived, p.isArchived) && check(isDeployed, p.isDeployed) && checkSeq(categories, p.processCategory) && checkSeq(processingTypes, p.processingType)
-    ))
 
   //TODO: Implement
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] = ???
