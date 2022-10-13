@@ -45,7 +45,7 @@ class TypingResultBasedSerializationBenchmark {
 
   private val determiner = new TypingResultAwareTypeInformationDetection(new CompositeCustomisation(Nil))
 
-  private val genericContextSetup = new SerializationBenchmarkSetup(ContextType.infoGeneric, contextToSerialize)
+  private val genericContextSetup = new SerializationBenchmarkSetup(TypeInformation.of(classOf[Context]), contextToSerialize)
   
   private val typingResultContextSetup = new SerializationBenchmarkSetup(
     determiner.forContext(ValidationContext(Map(

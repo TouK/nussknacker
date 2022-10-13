@@ -105,7 +105,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               val sanitizedId = ContextTransformation.sanitizeBranchName(id)
               (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
             }))
-            .returns(ValueWithContextType.infoBranch(context, id, KeyedValueType.infoGeneric))
+            .returns(ValueWithContextType.infoBranch[StringKeyedValue[AnyRef]](context, id, Typed.fromDetailedType[StringKeyedValue[AnyRef]]))
       }
 
       val types = aggregateByByBranchId.mapValues(_.returnType)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
-import pl.touk.nussknacker.engine.flink.typeinformation.{ContextType, ValueWithContextType}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.{ContextTypeHelpers, ValueWithContextTypeHelpers}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 object TypeInformationDetectionUtils extends LazyLogging {
@@ -40,10 +40,10 @@ object TypeInformationDetectionUtils extends LazyLogging {
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
-    ContextType.infoGeneric
+    ContextTypeHelpers.infoGeneric
 
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = ValueWithContextType.infoGeneric.asInstanceOf[TypeInformation[ValueWithContext[T]]]
+    = ValueWithContextTypeHelpers.infoGeneric.asInstanceOf[TypeInformation[ValueWithContext[T]]]
 
   override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
 }

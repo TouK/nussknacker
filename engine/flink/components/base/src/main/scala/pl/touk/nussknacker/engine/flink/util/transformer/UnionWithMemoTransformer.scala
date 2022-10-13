@@ -21,6 +21,7 @@ import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransforme
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.typeinformation.{KeyedValueType, TupleType, ValueWithContextType}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.ValueWithContextTypeHelpers
 
 import java.time.Duration
 import java.util
@@ -43,17 +44,24 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
-          private val processedInnerTypeInfo = KeyedValueType.info(
-            TupleType.tuple2Info(
-              TypeInformation.of(classOf[String]),
-              TypeInformation.of(classOf[AnyRef])
-            )
-          )
-          private def processedTypeInfoBranch(ctx: FlinkCustomNodeContext, key: String) =
+          private val processedInnerTypeInfo = Typed.fromDetailedType[StringKeyedValue[(String, AnyRef)]]
+          private def processedTypeInfoBranch(ctx: FlinkCustomNodeContext, key: String):
+            TypeInformation[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] =
             ValueWithContextType.infoBranch(ctx, key, processedInnerTypeInfo)
 
-          private def processedTypeInfo =
-            ValueWithContextType.infoFromValue(processedInnerTypeInfo)
+          private def processedTypeInfo(ctx: FlinkCustomNodeContext, finalCtx: ValidationContext):
+            TypeInformation[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] = {
+            val contextTypeInfo = ctx.typeInformationDetection.forContext(finalCtx)
+            ValueWithContextTypeHelpers.infoFromValueAndContext(
+              KeyedValueType.info(
+                TupleType.tuple2Info(
+                  TypeInformation.of(classOf[String]),
+                  TypeInformation.of(classOf[AnyRef])
+                )
+              ),
+              contextTypeInfo
+            )
+          }
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
@@ -67,9 +75,13 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
+            val finalContextValidated = transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.right.get)
+            val finalContext = finalContextValidated.toOption.get
+
             // TODO: Add better TypeInformation
             val afterOptionalAssigner = timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo(context, finalContext))
+                .assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(context, afterOptionalAssigner

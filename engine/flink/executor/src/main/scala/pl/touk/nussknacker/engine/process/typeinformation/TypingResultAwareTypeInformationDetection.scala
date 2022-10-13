@@ -4,15 +4,15 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
-import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer, TraversableSerializer, TraversableTypeInfo}
+import org.apache.flink.api.scala.typeutils.{TraversableSerializer, TraversableTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
-import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper, ContextType}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
+import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
-import pl.touk.nussknacker.engine.process.typeinformation.internal.InterpretationResultMapTypeInfo
+import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -55,7 +55,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
       .asInstanceOf[TypeInformation[Map[String, Any]]]
     val parentCtx = validationContext.parent.map(forContext)
 
-    ContextType.infoFromVariablesAndParentOption(variables, parentCtx)
+    ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
   //This is based on TypeInformationGen macro
