@@ -8,6 +8,9 @@ object ContextType {
   def infoBranch(nodeCtx: FlinkCustomNodeContext, key: String): TypeInformation[Context] =
     nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.right.get(key))
 
+  def infoBranch(nodeCtx: FlinkCustomNodeContext, key: String): TypeInformation[Context] =
+    nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.right.get(key))
+
   def info(nodeCtx: FlinkCustomNodeContext): TypeInformation[Context] =
     nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.left.get)
 }

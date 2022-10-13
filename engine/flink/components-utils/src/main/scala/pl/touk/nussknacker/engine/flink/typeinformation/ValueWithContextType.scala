@@ -18,6 +18,15 @@ object ValueWithContextType {
   def infoBranch[T: ClassTag](nodeCtx: FlinkCustomNodeContext, key: String): TypeInformation[ValueWithContext[T]] =
     infoBranch(nodeCtx, key, Typed[T])
 
+  def infoBranch[T](nodeCtx: FlinkCustomNodeContext, key: String, value: TypingResult): TypeInformation[ValueWithContext[T]] =
+    nodeCtx.typeInformationDetection.forValueWithContext(nodeCtx.validationContext.right.get(key), value)
+
+  def infoBranch[T](nodeCtx: FlinkCustomNodeContext, key: String, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+    infoFromValueAndContext(value, ContextType.infoBranch(nodeCtx, key))
+
+  def infoBranch[T: ClassTag](nodeCtx: FlinkCustomNodeContext, key: String): TypeInformation[ValueWithContext[T]] =
+    infoBranch(nodeCtx, key, Typed[T])
+
   def info[T](nodeCtx: FlinkCustomNodeContext, value: TypingResult): TypeInformation[ValueWithContext[T]] =
     infoWithCustomContext(nodeCtx, nodeCtx.validationContext.left.get, value)
 
