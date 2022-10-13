@@ -54,16 +54,6 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
     )
   }
 
-  test("test Traversable serialization") {
-
-    List[(Traversable[String], TypingResult)](
-      (List("a", "b", "c", "d"), Typed.fromDetailedType[List[String]])
-    ).foreach { case (traversable, typ) =>
-      val typeInfo = informationDetection.forType(typ)
-      serializeRoundTrip[AnyRef](traversable, typeInfo)(traversable)
-    }
-  }
-
   test("map serialization fallbacks to Kryo when available") {
 
     val map = Map("obj" -> SomeTestClass("name"))
