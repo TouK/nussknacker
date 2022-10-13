@@ -1,18 +1,9 @@
 {
   "name": "@nu/components",
-  "version": "0.0.0",
   "description": "",
-  "private": true,
-  "contextPath": "components",
-  "scripts": {
-    "make-types": "make-federated-types",
-    "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",
-    "prebuild": "npm run make-translations",
-    "build": "NODE_ENV=production webpack",
-    "start": "PORT=5001 webpack serve"
-  },
+  "version": "0.0.0",
   "author": "",
-  "license": "ISC",
+  "contextPath": "components",
   "dependencies": {
     "@emotion/react": "11.9.0",
     "@emotion/styled": "11.10.4",
@@ -56,5 +47,14 @@
     "@types/react-virtualized": "9.21.20",
     "@types/react-virtualized-auto-sizer": "1.0.1",
     "i18next-parser": "5.4.0"
+  },
+  "license": "ISC",
+  "private": true,
+  "scripts": {
+    "build": "NODE_ENV=production webpack",
+    "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",
+    "make-types": "make-federated-types",
+    "prebuild": "npm run make-translations",
+    "start": "PORT=5001 webpack serve"
   }
 }

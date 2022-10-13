@@ -1,31 +1,8 @@
 {
   "name": "@nu/submodules",
-  "version": "0.1.0-SNAPSHOT",
   "description": "",
-  "private": true,
-  "main": "index.js",
-  "workspaces": [
-    "./packages/*"
-  ],
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=7.0.0"
-  },
-  "scripts": {
-    "prebuild": "npm run make-types",
-    "build": "npm run build -workspaces --if-present",
-    "prestart": "npm run make-types",
-    "start": "ts-node runWorkspacesConcurrently start",
-    "start:core-dev": "NU_FE_CORE_URL=http://localhost:3000 npm start",
-    "make-types": "npm run make-types -workspaces --if-present",
-    "env": "chmod +x ./env.sh && ./env.sh",
-    "lint": "eslint --fix .",
-    "docker-build": "docker build . -t nu.submodules",
-    "docker-run": "docker run -it -p 127.0.0.1:13011:80/tcp nu.submodules:latest",
-    "#prepare": "husky install"
-  },
+  "version": "0.1.0-SNAPSHOT",
   "author": "",
-  "license": "ISC",
   "devDependencies": {
     "@babel/cli": "7.17.6",
     "@babel/plugin-transform-runtime": "7.17.0",
@@ -87,8 +64,31 @@
     "webpack-merge": "5.8.0",
     "webpack-remote-types-plugin": "0.2.7"
   },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=7.0.0"
+  },
+  "license": "ISC",
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown",
     "*.{j|t}sx?": "eslint --cache --fix"
-  }
+  },
+  "main": "index.js",
+  "private": true,
+  "scripts": {
+    "#prepare": "husky install",
+    "build": "npm run build -workspaces --if-present",
+    "docker-build": "docker build . -t nu.submodules",
+    "docker-run": "docker run -it -p 127.0.0.1:13011:80/tcp nu.submodules:latest",
+    "env": "chmod +x ./env.sh && ./env.sh",
+    "lint": "eslint --fix .",
+    "make-types": "npm run make-types -workspaces --if-present",
+    "prebuild": "npm run make-types",
+    "prestart": "npm run make-types",
+    "start": "ts-node runWorkspacesConcurrently start",
+    "start:core-dev": "NU_FE_CORE_URL=http://localhost:3000 npm start"
+  },
+  "workspaces": [
+    "./packages/*"
+  ]
 }
