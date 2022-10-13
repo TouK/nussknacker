@@ -33,6 +33,7 @@
 * [#3584](https://github.com/TouK/nussknacker/pull/3584) ReqRes Feature: secure RR scenario service/ingress
 * [#3598](https://github.com/TouK/nussknacker/pull/3598) Introducing configuration for controlling anonymous usage reporting by FE  
 * [#3608](https://github.com/TouK/nussknacker/pull/3608) Use `ZonedDateTime` for `date-time` JsonSchema format
+* [#3618](https://github.com/TouK/nussknacker/pull/3618) Updated Flink 1.15.2 -> 1.15.3
 
 1.5.0 (16 Aug 2022)
 ------------------------
