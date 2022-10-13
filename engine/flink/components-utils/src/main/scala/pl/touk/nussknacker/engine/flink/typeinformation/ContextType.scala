@@ -24,6 +24,9 @@ object ContextType {
   def infoGeneric: TypeInformation[Context] =
     infoFromVariables(TypeInformation.of(new TypeHint[Map[String, Any]] {}))
 
+  def infoBranch(nodeCtx: FlinkCustomNodeContext, key: String): TypeInformation[Context] =
+    nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.right.get(key))
+
   def info(nodeCtx: FlinkCustomNodeContext): TypeInformation[Context] =
     nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.left.get)
 

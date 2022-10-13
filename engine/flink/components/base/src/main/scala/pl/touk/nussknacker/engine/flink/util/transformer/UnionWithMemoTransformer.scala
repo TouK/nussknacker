@@ -43,14 +43,17 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
-          private def processedTypeInfo(ctx: FlinkCustomNodeContext) = ValueWithContextType.info(ctx,
-            KeyedValueType.info(
-              TupleType.tuple2Info(
-                TypeInformation.of(classOf[String]),
-                TypeInformation.of(classOf[AnyRef])
-              )
+          private val processedInnerTypeInfo = KeyedValueType.info(
+            TupleType.tuple2Info(
+              TypeInformation.of(classOf[String]),
+              TypeInformation.of(classOf[AnyRef])
             )
           )
+          private def processedTypeInfoBranch(ctx: FlinkCustomNodeContext, key: String) =
+            ValueWithContextType.infoBranch(ctx, key, processedInnerTypeInfo)
+
+          private def processedTypeInfo =
+            ValueWithContextType.infoFromValue(processedInnerTypeInfo)
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
@@ -60,12 +63,13 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
-                  .returns(processedTypeInfo(context))
+                  .returns(processedTypeInfoBranch(context, branchId))
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
+            // TODO: Add better TypeInformation
             val afterOptionalAssigner = timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo(context)).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(context, afterOptionalAssigner
