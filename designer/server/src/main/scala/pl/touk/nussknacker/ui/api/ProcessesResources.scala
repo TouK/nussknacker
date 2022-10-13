@@ -19,7 +19,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.EspErrorToHttp._
-import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
+import pl.touk.nussknacker.ui.api.ProcessesResources.{ProcessesQuery, SkipValidateAndResolveParamName}
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
@@ -94,12 +94,9 @@ class ProcessesResources(
             }
           }
         } ~ path("processesDetails") {
-          (get & parameters('names.as(CsvSeq[String]).?, 'skipValidateAndResolve.as[Boolean].withDefault(false))) { (namesToFetch, skipValidateAndResolve) =>
+          (get & processesQuery & parameters(SkipValidateAndResolveParamName.as[Boolean].withDefault(false))) { (query, skipValidateAndResolve) =>
             complete {
-              val processes = namesToFetch match {
-                case Some(names) => processRepository.fetchProcessesDetails[CanonicalProcess](names.map(ProcessName(_)).toList)
-                case None => processRepository.fetchProcessesDetails[CanonicalProcess]()
-              }
+              val processes = processRepository.fetchProcessesDetails[CanonicalProcess](query.toRepositoryQuery)
               if (skipValidateAndResolve) {
                 toProcessDetailsAll(processes)
               } else {
@@ -165,7 +162,7 @@ class ProcessesResources(
                     .map(toResponseEither[ValidationResult])
                 }
               }
-            } ~ (get & parameters('skipValidateAndResolve.as[Boolean].withDefault(false))) { skipValidateAndResolve =>
+            } ~ (get & parameters(SkipValidateAndResolveParamName.as[Boolean].withDefault(false))) { skipValidateAndResolve =>
               complete {
                 processRepository.fetchLatestProcessDetailsForProcessId[CanonicalProcess](processId.id).map[ToResponseMarshallable] {
                   case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
@@ -189,7 +186,7 @@ class ProcessesResources(
             }
           }
         } ~ path("processes" / Segment / VersionIdSegment) { (processName, versionId) =>
-          (get & processId(processName) & parameters('skipValidateAndResolve.as[Boolean].withDefault(false))) { (processId, skipValidateAndResolve) =>
+          (get & processId(processName) & parameters(SkipValidateAndResolveParamName.as[Boolean].withDefault(false))) { (processId, skipValidateAndResolve) =>
             complete {
               processRepository.fetchProcessDetailsForId[CanonicalProcess](processId.id, versionId).map[ToResponseMarshallable] {
                 case Some(process) if skipValidateAndResolve => toProcessDetails(enrichDetailsWithProcessState(process))
@@ -360,4 +357,6 @@ object ProcessesResources {
       names = names.map(_.map(ProcessName(_))),
     )
   }
+
+  val SkipValidateAndResolveParamName = "skipValidateAndResolve"
 }

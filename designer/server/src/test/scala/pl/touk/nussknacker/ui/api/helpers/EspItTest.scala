@@ -4,12 +4,14 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import io.circe.{Encoder, Json, parser}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -22,6 +24,7 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
@@ -251,20 +254,33 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
 
   protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
-    val url = ProcessesQuery.createQueryParamsUrl(query)
+    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[BasicProcess]] = FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[BasicProcess]]])
+    val url = ProcessesQuery.createQueryParamsUrl("/processes", query)
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
+      responseAs[List[BasicProcess]] // just to test if decoder succeds
+      callback(processes)
+    }
+  }
+
+  protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ValidatedProcessDetails] => Unit): Unit = {
+    import FailFastCirceSupport._
+
+    val url = ProcessesQuery.createQueryParamsUrl("/processesDetails", query)
+
+    Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+      status shouldEqual StatusCodes.OK
+      val processes = responseAs[List[ValidatedProcessDetails]]
       callback(processes)
     }
   }
 
   object ProcessesQuery {
-    def empty: ProcessesQuery = ProcessesQuery()
 
-    def createQueryParamsUrl(query: ProcessesQuery): String = {
-      var url = s"/processes?fake=true"
+    def createQueryParamsUrl(path: String, query: ProcessesQuery): String = {
+      var url = s"$path?fake=true"
 
       query.isArchived.foreach { isArchived =>
         url += s"&isArchived=$isArchived"

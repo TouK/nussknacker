@@ -190,13 +190,13 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
 
-      forScenariosReturned(ProcessesQuery.empty) { processes =>
+      forScenariosReturned(ProcessesQuery()) { processes =>
         val process = processes.find(_.name == SampleProcess.process.id).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          forScenariosReturned(ProcessesQuery.empty) { processes =>
+          forScenariosReturned(ProcessesQuery()) { processes =>
             val process = processes.find(_.name == SampleProcess.process.id).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true
