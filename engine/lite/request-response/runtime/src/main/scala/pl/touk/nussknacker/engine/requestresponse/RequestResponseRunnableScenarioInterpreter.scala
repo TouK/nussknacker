@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.requestresponse
 
-import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
@@ -22,7 +21,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
                                                  modelData: ModelData,
                                                  contextPreparer: LiteEngineRuntimeContextPreparer,
                                                  requestResponseConfig: RequestResponseConfig)
-                                                (implicit actorSystem: ActorSystem, ec: ExecutionContext) extends RunnableScenarioInterpreter with LazyLogging with Directives {
+                                                (implicit ec: ExecutionContext) extends RunnableScenarioInterpreter with LazyLogging with Directives {
 
   import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
 
@@ -66,7 +65,7 @@ class RequestResponseRunnableScenarioInterpreter(jobData: JobData,
   }
 
   override val routes: Option[Route] = {
-    Some(new ScenarioRoute(new RequestResponseAkkaHttpHandler(interpreter), requestResponseConfig, jobData.processVersion.processName).combinedRoute)
+    Some(new ScenarioRoute(new RequestResponseHttpHandler(interpreter), requestResponseConfig, jobData.processVersion.processName).combinedRoute)
   }
 
 }
