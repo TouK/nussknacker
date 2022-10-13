@@ -8,8 +8,18 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
-
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+
+object FetchingProcessRepository {
+  case class FetchProcessesDetailsQuery(isSubprocess: Option[Boolean] = None,
+                                        isArchived: Option[Boolean] = None,
+                                        isDeployed: Option[Boolean] = None,
+                                        categories: Option[Seq[String]] = None,
+                                        processingTypes: Option[Seq[String]] = None,
+                                        names: Option[Seq[ProcessName]] = None,
+                                       )
+}
 
 abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {
 
@@ -24,6 +34,8 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
                                                     categories: Option[Seq[String]],
                                                     processingTypes: Option[Seq[String]])
                                                    (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
+
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 
   def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 

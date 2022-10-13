@@ -261,30 +261,10 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   object ProcessesQuery {
-    def empty: ProcessesQuery =
-      ProcessesQuery(List.empty, isArchived = None, isSubprocess = None, isDeployed = None)
-
-    def categories(categories: List[String]): ProcessesQuery =
-      ProcessesQuery(categories, isArchived = None, isSubprocess = None, isDeployed = None)
-
-    def archived(categories: List[String] = List.empty, isSubprocess: Option[Boolean] = Some(false)): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = isSubprocess, isArchived = Some(true), isDeployed = None)
-
-    def subprocess(categories: List[String ] = List.empty, isArchived: Option[Boolean] = Some(false)): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(true), isArchived = isArchived, isDeployed = None)
-
-    def deployed(categories: List[String ] = List.empty): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(true))
-
-    def notDeployed(categories: List[String ] = List.empty): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(false))
+    def empty: ProcessesQuery = ProcessesQuery()
 
     def createQueryParamsUrl(query: ProcessesQuery): String = {
       var url = s"/processes?fake=true"
-
-      if (query.categories.nonEmpty) {
-        url += s"&categories=${query.categories.mkString(",")}"
-      }
 
       query.isArchived.foreach { isArchived =>
         url += s"&isArchived=$isArchived"
@@ -298,12 +278,52 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
         url += s"&isDeployed=$isDeployed"
       }
 
+      query.categories.foreach { categories =>
+        url += s"&categories=${categories.mkString(",")}"
+      }
+
+      query.processingTypes.foreach { processingTypes =>
+        url += s"&processingTypes=${processingTypes.mkString(",")}"
+      }
+
+      query.names.foreach { names =>
+        url += s"&names=${names.mkString(",")}"
+      }
+
       url
     }
 
   }
 
-  case class ProcessesQuery(categories: List[String], isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean])
+  case class ProcessesQuery(isSubprocess: Option[Boolean] = None,
+                            isArchived: Option[Boolean] = None,
+                            isDeployed: Option[Boolean] = None,
+                            categories: Option[List[String]] = None,
+                            processingTypes: Option[List[String]] = None,
+                            names: Option[List[String]] = None,
+                           ) {
+
+    def subprocess(): ProcessesQuery =
+      copy(isSubprocess = Some(true))
+
+    def archived(): ProcessesQuery =
+      copy(isArchived = Some(true))
+
+    def deployed(): ProcessesQuery =
+      copy(isDeployed = Some(true))
+
+    def notDeployed(): ProcessesQuery =
+      copy(isDeployed = Some(false))
+
+    def names(names: List[String]): ProcessesQuery =
+      copy(names = Some(names))
+
+    def categories(categories: List[String]): ProcessesQuery =
+      copy(categories = Some(categories))
+
+    def processingTypes(processingTypes: List[String]): ProcessesQuery =
+      copy(processingTypes = Some(processingTypes))
+  }
 
   protected def routeWithPermissions(route: RouteWithUser, isAdmin: Boolean = false): Route =
     if (isAdmin) withAdminPermissions(route) else withAllPermissions(route)

@@ -17,6 +17,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
     
     def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 
+    // TODO: ProcessName?
     def name: Rep[String] = column[String]("name", NotNull)
 
     def description: Rep[Option[String]] = column[Option[String]]("description", O.Length(1000))

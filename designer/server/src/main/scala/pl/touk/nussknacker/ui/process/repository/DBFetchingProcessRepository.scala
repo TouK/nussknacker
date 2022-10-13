@@ -12,6 +12,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -41,6 +42,21 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     run(fetchProcessDetailsByQueryAction({ process =>
       expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
     }, isDeployed))
+  }
+
+  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)
+                                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
+    val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
+      query.isSubprocess.map(arg => process => process.isSubprocess === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg.map(_.value))),
+    )
+
+    run(fetchProcessDetailsByQueryAction({ process =>
+      expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
+    }, query.isDeployed))
   }
 
   override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {

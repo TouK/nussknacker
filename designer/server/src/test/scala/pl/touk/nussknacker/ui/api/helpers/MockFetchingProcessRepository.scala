@@ -12,6 +12,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.{HsqldbProfile, JdbcBackend}
@@ -39,6 +40,11 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
 
   override def fetchAllProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
     filterProcesses[PS](isArchived = Some(false))
+
+  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
+    getUserProcesses[PS].map(_.filter(
+      p => check(q.isSubprocess, p.isSubprocess) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.isDeployed) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
+    ))
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)

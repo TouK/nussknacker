@@ -19,6 +19,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui._
 import pl.touk.nussknacker.ui.api.EspErrorToHttp._
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.listener.ProcessChangeEvent._
 import pl.touk.nussknacker.ui.listener.{ProcessChangeEvent, ProcessChangeListener, User}
 import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, UpdateProcessCommand}
@@ -26,6 +27,7 @@ import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
@@ -84,21 +86,10 @@ class ProcessesResources(
           }
         }  ~ path("processes") {
           get {
-            parameters(
-              'isSubprocess.as[Boolean].?,
-              'isArchived.as[Boolean].?,
-              'isDeployed.as[Boolean].?,
-              'categories.as(CsvSeq[String]).?,
-              'processingTypes.as(CsvSeq[String]).?
-            ) { (isSubprocess, isArchived, isDeployed, categories, processingTypes) =>
+            processesQuery { query =>
               complete {
-                processRepository.fetchProcesses[Unit](
-                  isSubprocess,
-                  isArchived.orElse(Option(false)), //Back compatibility
-                  isDeployed,
-                  categories,
-                  processingTypes
-                ).map(_.map(enrichDetailsWithProcessState[Unit])).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
+                processRepository.fetchProcessesDetails[Unit](query.toRepositoryQuery)
+                  .map(_.map(enrichDetailsWithProcessState[Unit])).toBasicProcess //TODO: Remove enrichProcess when we will support cache for state
               }
             }
           }
@@ -331,6 +322,17 @@ class ProcessesResources(
   private implicit class ToBasicConverter(self: Future[List[BaseProcessDetails[_]]]) {
     def toBasicProcess: Future[List[BasicProcess]] = self.map(f => f.map(bpd => BasicProcess(bpd)))
   }
+
+  private def processesQuery: Directive1[ProcessesQuery] = {
+    parameters(
+      'isSubprocess.as[Boolean].?,
+      'isArchived.as[Boolean].?,
+      'isDeployed.as[Boolean].?,
+      'categories.as(CsvSeq[String]).?,
+      'processingTypes.as(CsvSeq[String]).?,
+      'names.as(CsvSeq[String]).?,
+    ).as(ProcessesQuery.apply _)
+  }
 }
 
 object ProcessesResources {
@@ -341,4 +343,21 @@ object ProcessesResources {
   case class ProcessNotInitializedError(id: String) extends Exception(s"Scenario $id is not initialized") with NotFoundError
 
   case class NodeNotFoundError(processId: String, nodeId: String) extends Exception(s"Node $nodeId not found inside scenario $processId") with NotFoundError
+
+  case class ProcessesQuery(isSubprocess: Option[Boolean],
+                            isArchived: Option[Boolean],
+                            isDeployed: Option[Boolean],
+                            categories: Option[Seq[String]],
+                            processingTypes: Option[Seq[String]],
+                            names: Option[Seq[String]],
+                           ) {
+    def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
+      isSubprocess = isSubprocess,
+      isArchived = isArchived.orElse(Option(false)), //Back compatibility,
+      isDeployed = isDeployed,
+      categories = categories,
+      processingTypes = processingTypes,
+      names = names.map(_.map(ProcessName(_))),
+    )
+  }
 }

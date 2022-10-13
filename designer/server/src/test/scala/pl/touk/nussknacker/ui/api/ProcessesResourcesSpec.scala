@@ -17,14 +17,13 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
-import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
-import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ProcessDetails, ValidatedProcessDetails}
+import pl.touk.nussknacker.restmodel.processdetails.{ProcessDetails, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.ValidationResult
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.config.processtoolbar.ProcessToolbarsConfigProvider
 import pl.touk.nussknacker.ui.config.processtoolbar.ToolbarButtonConfigType.{CustomLink, ProcessDeploy, ProcessSave}
@@ -207,7 +206,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
+    forScenariosReturned(ProcessesQuery().subprocess()) { processes =>
       processes should have size 1
       val process = processes.head
       process.id shouldBe sampleSubprocess.id
@@ -218,10 +217,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(false))) { processes =>
+    forScenariosReturned(ProcessesQuery().subprocess()) { processes =>
       processes shouldBe 'empty
     }
-    forScenariosReturned(ProcessesQuery.subprocess(isArchived = Some(true))) { processes =>
+    forScenariosReturned(ProcessesQuery().subprocess().archived()) { processes =>
       processes should have size 1
       val process = processes.head
       process.id shouldBe sampleSubprocess.id
@@ -261,7 +260,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       responseAs[String] should include(processName.value)
     }
 
-    forScenariosReturned(ProcessesQuery.archived()) { processes =>
+    forScenariosReturned(ProcessesQuery().archived()) { processes =>
       processes.find(_.name == processName.value).map(_.name) shouldBe Some(processName.value)
     }
   }
@@ -353,16 +352,39 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       processes.size shouldBe 2
     }
 
-    forScenariosReturned(ProcessesQuery.categories(List(TestCat))) { processes =>
+    forScenariosReturned(ProcessesQuery().categories(List(TestCat))) { processes =>
       processes.size shouldBe 1
     }
 
-    forScenariosReturned(ProcessesQuery.categories(List(TestCat2))) { processes =>
+    forScenariosReturned(ProcessesQuery().categories(List(TestCat2))) { processes =>
       processes.size shouldBe 1
     }
 
-    forScenariosReturned(ProcessesQuery.categories(List(TestCat, TestCat2))) { processes =>
+    forScenariosReturned(ProcessesQuery().categories(List(TestCat, TestCat2))) { processes =>
       processes.size shouldBe 2
+    }
+  }
+
+  test("search processes by processing types") {
+    createEmptyProcess(processName)
+
+    forScenariosReturned(ProcessesQuery().processingTypes(List(Streaming))) { processes =>
+      processes.size shouldBe 1
+    }
+    forScenariosReturned(ProcessesQuery().processingTypes(List(Fraud))) { processes =>
+      processes.size shouldBe 0
+    }
+  }
+
+  test("search processes by names") {
+    createEmptyProcess(ProcessName("proc1"))
+    createEmptyProcess(ProcessName("proc2"))
+
+    forScenariosReturned(ProcessesQuery().names(List("proc1"))) { processes =>
+      processes.loneElement.name shouldBe "proc1"
+    }
+    forScenariosReturned(ProcessesQuery().names(List("proc3"))) { processes =>
+      processes.size shouldBe 0
     }
   }
 
@@ -381,13 +403,13 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldBe Some(SimpleStateStatus.NotDeployed.name)
     }
 
-    forScenariosReturned(ProcessesQuery.deployed()) { processes =>
+    forScenariosReturned(ProcessesQuery().deployed()) { processes =>
       processes.size shouldBe 1
       val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
       status shouldBe Some(SimpleStateStatus.Running.name)
     }
 
-    forScenariosReturned(ProcessesQuery.notDeployed()) { processes =>
+    forScenariosReturned(ProcessesQuery().notDeployed()) { processes =>
       processes.size shouldBe 2
 
       val status = processes.find(_.name == thirdProcessor.value).flatMap(_.stateStatus)
