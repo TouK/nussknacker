@@ -35,7 +35,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       query.isArchived.map(arg => process => process.isArchived === arg),
       query.categories.map(arg => process => process.processCategory.inSet(arg)),
       query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
-      query.names.map(arg => process => process.name.inSet(arg.map(_.value))),
+      query.names.map(arg => process => process.name.inSet(arg)),
     )
 
     run(fetchProcessDetailsByQueryAction({ process =>
@@ -93,15 +93,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
-    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => id)))
+    run(processesTable.filter(_.name === processName).map(_.id).result.headOption.map(_.map(id => id)))
   }
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
-    run(processesTable.filter(_.id === processId).map(_.name).result.headOption.map(_.map(ProcessName(_))))
+    run(processesTable.filter(_.id === processId).map(_.name).result.headOption)
   }
 
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessEntityData]] = {
-    run(processesTable.filter(_.name === processName.value).result.headOption)
+    run(processesTable.filter(_.name === processName).result.headOption)
   }
 
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
@@ -154,9 +154,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                tags: Seq[TagsEntityData] = List.empty,
                                                                history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
-      id = process.name, //TODO: replace by Long / ProcessId
+      id = process.name.value, //TODO: replace by Long / ProcessId
       processId = process.id, //TODO: Remove it weh we will support Long / ProcessId
-      name = process.name,
+      name = process.name.value,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,

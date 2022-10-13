@@ -62,7 +62,7 @@ trait ProcessService {
 
   def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
+  def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
 
   def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]]
 
@@ -179,14 +179,14 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
-  override def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
+  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
       withNotRunningState(process, "Can't change name still running scenario.") { _ =>
         repositoryManager.runInTransaction(
           processRepository
             .renameProcess(processIdWithName, name)
             .map {
-              case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name))
+              case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name.value))
               case Left(value) => Left(value)
             }
         )

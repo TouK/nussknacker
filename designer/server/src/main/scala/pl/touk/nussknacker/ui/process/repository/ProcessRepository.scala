@@ -52,7 +52,7 @@ trait ProcessRepository[F[_]] {
 
   def deleteProcess(processId: ProcessId): F[XError[Unit]]
 
-  def renameProcess(processId: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): F[XError[Unit]]
+  def renameProcess(processId: ProcessIdWithName, newName: ProcessName)(implicit loggedUser: LoggedUser): F[XError[Unit]]
 }
 
 class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTypeDataProvider[Int])
@@ -68,7 +68,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     */
   def saveNewProcess(action: CreateProcessAction)(implicit loggedUser: LoggedUser): DB[XError[Option[ProcessCreated]]] = {
     val processToSave = ProcessEntityData(
-      id = ProcessId(-1L), name = action.processName.value, processCategory = action.category, description = None,
+      id = ProcessId(-1L), name = action.processName, processCategory = action.category, description = None,
       processingType = action.processingType, isSubprocess = action.isSubprocess, isArchived = false,
       createdAt = Timestamp.from(now), createdBy = loggedUser.username
     )
@@ -78,7 +78,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     val insertAction = logDebug(s"Saving scenario ${action.processName.value} by user $loggedUser").flatMap { _ =>
       latestProcessVersionsNoJsonQuery(action.processName).result.headOption.flatMap {
         case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
-        case None => processesTable.filter(_.name === action.processName.value).result.headOption.flatMap {
+        case None => processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
             .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, false))
@@ -161,11 +161,11 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       case 1 => Right(())
     }
 
-  def renameProcess(process: ProcessIdWithName, newName: String)(implicit loggedUser: LoggedUser): DB[XError[Unit]] = {
+  def renameProcess(process: ProcessIdWithName, newName: ProcessName)(implicit loggedUser: LoggedUser): DB[XError[Unit]] = {
     def updateNameInSingleProcessVersion(processVersion: ProcessVersionEntityData, process: ProcessEntityData) = {
       processVersion.json match {
         case Some(json) =>
-          val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName))
+          val updatedProcess = json.copy(metaData = json.metaData.copy(id = newName.value))
           val updatedProcessVersion = processVersion.copy(json = Some(updatedProcess))
           processVersionsTable.filter(version => version.id === processVersion.id && version.processId === process.id)
             .update(updatedProcessVersion)
@@ -196,7 +196,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
     }
 
     val action = processesTable.filter(_.name === newName).result.headOption.flatMap {
-      case Some(_) => DBIO.successful(ProcessAlreadyExists(newName).asLeft)
+      case Some(_) => DBIO.successful(ProcessAlreadyExists(newName.value).asLeft)
       case None =>
         DBIO.seq[Effect.All](
           updateNameInProcess,

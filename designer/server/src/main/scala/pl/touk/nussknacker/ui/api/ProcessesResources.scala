@@ -177,7 +177,7 @@ class ProcessesResources(
             canWrite(processId) {
               complete {
                 processService
-                  .renameProcess(processId, newName)
+                  .renameProcess(processId, ProcessName(newName))
                   .withSideEffect(response => sideEffectAction(response) { resp =>
                     OnRenamed(processId.id, resp.oldName, resp.newName)
                   })

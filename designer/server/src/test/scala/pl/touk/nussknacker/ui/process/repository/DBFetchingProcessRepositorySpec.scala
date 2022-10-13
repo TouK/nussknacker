@@ -95,7 +95,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName.value) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe 'right
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -122,7 +122,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName.value) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe 'right
 
     val comments = fetching.fetchProcessId(newName)
       .flatMap(v => activities.findActivity(ProcessIdWithName(v.get, newName)).map(_.comments))
@@ -155,7 +155,7 @@ class DBFetchingProcessRepositorySpec
     processExists(oldName) shouldBe true
     processExists(existingName) shouldBe true
 
-    renameProcess(oldName, existingName.value) shouldBe ProcessAlreadyExists(existingName.value).asLeft
+    renameProcess(oldName, existingName) shouldBe ProcessAlreadyExists(existingName.value).asLeft
   }
 
   test("should generate new process version id based on latest version id") {
@@ -228,7 +228,7 @@ class DBFetchingProcessRepositorySpec
     repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }
 
-  private def renameProcess(processName: ProcessName, newName: String) = {
+  private def renameProcess(processName: ProcessName, newName: ProcessName) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
     repositoryManager.runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName)).futureValue
   }
