@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.typeinformation.{KeyedValueType, ValueWithContextType}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MapAggregator, OptionAggregator}
 
@@ -104,7 +105,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               val sanitizedId = ContextTransformation.sanitizeBranchName(id)
               (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
             }))
-            .returns(ValueWithContextType.info(context, KeyedValueType.infoGeneric))
+            .returns(ValueWithContextType.infoBranch(context, id, KeyedValueType.infoGeneric))
       }
 
       val types = aggregateByByBranchId.mapValues(_.returnType)
@@ -117,7 +118,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
 
       val stream = keyedStreams
         .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])
-        .reduce(_.union(_))
+        .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
         .process(aggregatorFunction)
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
