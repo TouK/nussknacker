@@ -87,7 +87,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       result.fold(_ => List(), _.history)
     }
 
-  protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
+  protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
   override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
@@ -156,6 +156,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchSubProcessesDetails(implicit ec: ExecutionContext): Future[Either[EspError, List[ValidatedProcessDetails]]] = {
+    // To be switched to processesDetails?isSubprocess=true in NU 1.8.
     invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("subProcessesDetails"))
   }
 

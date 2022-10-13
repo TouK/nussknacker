@@ -6,12 +6,16 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.unmarshalling.Unmarshal
 import akka.stream.Materializer
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import org.scalatest.EitherValues
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
+import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -20,7 +24,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport {
+class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with PatientScalaFutures with FailFastCirceSupport with EitherValues {
 
   implicit val system = ActorSystem("nussknacker-designer")
 
@@ -36,7 +40,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     override implicit val materializer = Materializer(system)
 
-    override def testModelMigrations: TestModelMigrations = ???
+    override def testModelMigrations: TestModelMigrations = new TestModelMigrations(mapProcessingTypeDataProvider(), TestFactory.processValidation)
 
   }
 
@@ -51,13 +55,13 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
                                   onMigrate: Future[UpdateProcessCommand] => Unit) = new MockRemoteEnvironment with TriedToAddProcess {
     private var remoteProcessList = initialRemoteProcessList
 
-    override protected def request(path: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
+    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity) : Future[HttpResponse] = {
       import HttpMethods._
       import StatusCodes._
 
       // helpers
       def is(relative: String, m: HttpMethod): Boolean = {
-        path.toString.startsWith(s"$baseUri$relative") && method == m
+        uri.toString.startsWith(s"$baseUri$relative") && method == m
       }
 
       object Validation {
@@ -75,7 +79,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       object AddProcess {
         def unapply(arg: (String, HttpMethod)): Option[Boolean] = {
           if (is(s"/processes/$expectedProcessId/$expectedProcessCategory", POST)) {
-            path.query().get("isSubprocess").map(_.toBoolean).orElse(Some(false))
+            uri.query().get("isSubprocess").map(_.toBoolean).orElse(Some(false))
           } else {
             None
           }
@@ -83,7 +87,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       }
       // end helpers
 
-      (path.toString(), method) match {
+      (uri.toString(), method) match {
         case Validation() =>
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
@@ -115,9 +119,50 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
           Future.failed(new Exception("Scenario does not exist"))
 
         case _ =>
-          throw new AssertionError(s"Not expected $path")
+          throw new AssertionError(s"Not expected $uri")
       }
     }
+  }
+
+  private def environmentForTestMigration(processes: List[ValidatedProcessDetails],
+                                          subProcesses: List[ValidatedProcessDetails]) = new MockRemoteEnvironment {
+
+    private def basicProcesses: List[BasicProcess] = (processes ++ subProcesses).map(BasicProcess.apply(_))
+
+    override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
+      object GetBasicProcesses {
+        def unapply(arg: (Uri, HttpMethod)): Boolean = {
+          arg._1.toString() == s"$baseUri/processes" && arg._2 == HttpMethods.GET
+        }
+      }
+
+      object GetProcessesDetails {
+        def unapply(arg: (Uri, HttpMethod)): Option[Set[String]] = {
+          val uri = arg._1
+          if (uri.toString().startsWith(s"$baseUri/processesDetails") && arg._2 == HttpMethods.GET) {
+            uri.query().get("names").map(_.split(",").toSet)
+          } else {
+            None
+          }
+        }
+      }
+
+      object GetSubProcessesDetails {
+        def unapply(arg: (Uri, HttpMethod)): Boolean = {
+          arg._1.toString() == s"$baseUri/subProcessesDetails" && arg._2 == HttpMethods.GET
+        }
+      }
+
+      (uri, method) match {
+        case GetBasicProcesses() =>
+          Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+        case GetProcessesDetails(names) =>
+          Marshal(processes.filter(p => names(p.name))).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+        case GetSubProcessesDetails() =>
+          Marshal(subProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+      }
+    }
+
   }
 
   it should "not migrate not validating scenario" in {
@@ -253,5 +298,14 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       processToSave.comment shouldBe UpdateProcessComment("Scenario migrated from testEnv by test")
       processToSave.process shouldBe subprocess
     }
+  }
+
+  it should "test migration" in {
+    val remoteEnvironment = environmentForTestMigration(
+      processes = ProcessTestData.validProcessDetails :: Nil,
+      subProcesses = TestProcessUtil.validatedToProcess(toValidatedDisplayable(ProcessTestData.sampleSubprocess)) :: Nil
+    )
+
+    remoteEnvironment.testMigration().futureValue.value
   }
 }
