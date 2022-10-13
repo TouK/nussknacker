@@ -15,6 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -40,7 +41,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
     override implicit val materializer = Materializer(system)
 
-    override def testModelMigrations: TestModelMigrations = new TestModelMigrations(mapProcessingTypeDataProvider(), TestFactory.processValidation)
+    override def testModelMigrations: TestModelMigrations = new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> new TestMigrations(1, 2)), TestFactory.processValidation)
 
   }
 
@@ -306,6 +307,9 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       subProcesses = TestProcessUtil.validatedToProcess(toValidatedDisplayable(ProcessTestData.sampleSubprocess)) :: Nil
     )
 
-    remoteEnvironment.testMigration().futureValue.value
+    val migrationResult = remoteEnvironment.testMigration().futureValue.value
+
+    migrationResult should have size 2
+    migrationResult.map(_.converted.id) should contain only (ProcessTestData.validProcessDetails.name, ProcessTestData.sampleSubprocess.id)
   }
 }
