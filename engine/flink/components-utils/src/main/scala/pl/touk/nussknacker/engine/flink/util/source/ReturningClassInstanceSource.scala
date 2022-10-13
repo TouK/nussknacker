@@ -15,7 +15,7 @@ class ReturningClassInstanceSource extends SourceFactory  {
                defaultMode = DualEditorMode.SIMPLE
              )  additionalClass: String) = {
     val resultClass = Class.forName(additionalClass)
-    new CollectionSource[Any](List.empty, None, Typed.typedClass(resultClass))(TypeInformation.of(resultClass))
+    CollectionSource(List.empty, None, Typed.typedClass(resultClass))(TypeInformation.of(resultClass))
   }
 
 }
