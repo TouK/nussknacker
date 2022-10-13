@@ -22,7 +22,7 @@ import pl.touk.nussknacker.processCounts.influxdb.InfluxCountsReporterCreator
 import pl.touk.nussknacker.processCounts.{CountsReporter, CountsReporterCreator}
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.component.DefaultComponentService
-import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig, UiConfigLoader}
+import pl.touk.nussknacker.ui.config.{AnalyticsConfig, AttachmentsConfig, FeatureTogglesConfig, UiConfigLoader, UsageStatisticsReportsConfig}
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import pl.touk.nussknacker.ui.initialization.Initialization
 import pl.touk.nussknacker.ui.listener.ProcessChangeListenerLoader
@@ -210,8 +210,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       authenticationResources.routeWithPathPrefix
     )
 
+    val usageStatisticsReports = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(config.getString("http.publicPath"))
+    val webResources = new WebResources(config.getString("http.publicPath"), usageStatisticsReports)
     val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), SecurityHeadersSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route

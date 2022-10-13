@@ -22,6 +22,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   From now import scenario with nodes from other categories than scenario category will be not allowed.
 * [#3436](https://github.com/TouK/nussknacker/pull/3436) Division by zero will cause validation error. Tests that rely on `1/0` to generate exceptions should have it changed to code like `1/{0, 1}[0]`
 * [#3473](https://github.com/TouK/nussknacker/pull/3473) JsonRequestResponseSinkFactory provides also 'raw editor', to turn on 'raw editor' add `SinkRawEditorParamName -> "true"`
+* [#3608](https://github.com/TouK/nussknacker/pull/3608) Use `ZonedDateTime` for `date-time` JsonSchema format, `OffsetTime` for `time` format. 
 
 ### Code API changes
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Migration from Scalatest 3.0.8 to Scalatest 3.2.10 - if necessary, see the Scalatest migration guides, https://www.scalatest.org/release_notes/3.1.0 and https://www.scalatest.org/release_notes/3.2.0
@@ -57,7 +58,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### Other changes
 * [#3441](https://github.com/TouK/nussknacker/pull/3441) Updated Flink 1.14.5 -> 1.15.2. Some Flink artefacts no longer have Scala version. Test using Flink may need to disable checkpointing or reduce time between checkpoints to prevent timeouts or long waits for tasks to finish.
-
+                                   
 ## In version 1.5.0
 
 ### Configuration changes

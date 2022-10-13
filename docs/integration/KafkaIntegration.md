@@ -11,7 +11,7 @@ To fully understand how Nussknacker works with Kafka topics, it's best to read t
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 * [Kafka topic key](https://kafka.apache.org/intro)
 
-If you want to use Streaming-Flink processing engine, this is also recommended:
+If you want to use Flink engine, this is also recommended:
 * [Flink keyed state](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
 
 ## Sources and sinks
@@ -58,7 +58,7 @@ Both streaming Engines (Lite and Flink) share some of the common Kafka settings 
 
 Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:
 - Nussknacker Designer host (to enable schema discovery and scenario testing)
-- Streaming-Lite/Streaming-Flink runtime - to be able to run job
+- Lite/Flink engine - to be able to run job
 
 | Name                                                                        | Importance | Type     | Default value    | Description                                                                                                                                                                                                                                                  |
 |-----------------------------------------------------------------------------|------------|----------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -97,7 +97,7 @@ Errors can be sent to specified Kafka topic in following json format (see below 
 ```
 
 
-Following properties can be configured (please look at correct engine page : [Streaming-Lite](/docs/installation_configuration_guide/model/Lite#exception-handling) or [Streaming-Flink](/docs/installation_configuration_guide/model/Flink#configuring-exception-handling), 
+Following properties can be configured (please look at correct engine page : [Lite](/docs/installation_configuration_guide/model/Lite#exception-handling) or [Flink](/docs/installation_configuration_guide/model/Flink#configuring-exception-handling), 
 to see where they should be set):
 
 | Name                   | Default value | Description                                                                                                                                                                                                                                                                                                                |
@@ -110,9 +110,9 @@ to see where they should be set):
 | additionalParams       | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                                                                                                                                                 |
 
 
-## Configuration for Streaming-Flink
+## Configuration for Flink engine
 
-With Streaming-Flink engine, the Kafka sources and sinks are configured as any other component. In particular,
+With Flink engine, the Kafka sources and sinks are configured as any other component. In particular,
 you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
 Below we give two example configurations, one for default setup with one Kafka cluster and standard component names:
 ```
@@ -155,19 +155,19 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 - Nussknacker Designer host (to enable schema discovery and scenario testing)
 - Flink cluster (both jobmanagers and taskmanagers) hosts - to be able to run job
 
-See [common config](../ModelConfiguration#kafka-connection-configuration) for the details of Kafka configuration, the table below presents additional options available only in Streaming-Flink:
+See [common config](../ModelConfiguration#kafka-connection-configuration) for the details of Kafka configuration, the table below presents additional options available only in Flink engine:
       
 
-| Name                                                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                                                                  |
-| ----------                                                                        | ---------- | ----------------           | -------------    | ------------                                                                                                                                                                                                                                                 |
-| kafkaEspProperties.defaultMaxOutOfOrdernessMillis                           | Medium     | duration                   | 60s              | Configuration of [bounded of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources                                                  |
-| consumerGroupNamingStrategy                                                 | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                                                                              |
-| avroKryoGenericRecordSchemaIdSerialization                                  | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                                                                           |
+| Name                                              | Importance | Type                       | Default value    | Description                                                                                                                                                                                                 |
+|---------------------------------------------------|------------|----------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| kafkaEspProperties.defaultMaxOutOfOrdernessMillis | Medium     | duration                   | 60s              | Configuration of [bounded of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources |
+| consumerGroupNamingStrategy                       | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                             |
+| avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
             
 
-## Configuration for Streaming-Lite
+## Configuration for Lite engine
 
-The Streaming-Lite uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
+The Lite engine in Streaming processing mode uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
 Kafka based sources and sinks (you don't need to configure them separately). See [common config](#kafka-connection-configuration) for the details.
 ```
 modelConfig {

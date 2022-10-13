@@ -17,7 +17,7 @@ Nussknacker nodes process events; once the node finishes processing of the event
 Typically events processed by Nussknacker come from Kafka topics;  Nussknacker source components are used to read events from Kafka topic and inject them into Nussknacker scenarios. 
 There are cases though when a node can produce a new event, a Tumbling-window or and Session-window component being good examples. 
 
-## Streaming-Flink | Flink engine only
+## Streaming | Flink engine
 
 ### Notion of time
 
@@ -26,7 +26,7 @@ Please see following excellent references to learn about basic concepts:
 * [Notion of time in Flink](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
 * [Streaming 101: The world beyond batch by O'Reilly](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
 
-For Streaming-Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
+For Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
 
 ### Sources and Sinks - Kafka
 
@@ -40,7 +40,7 @@ In general following rules apply:
 
 If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
 
-## Lite engine
+## Streaming | Lite engine
 
 ### Notion of time
 
