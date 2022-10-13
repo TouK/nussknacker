@@ -43,7 +43,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
-          private val processedTypeInfo = ValueWithContextType.info(
+          private def processedTypeInfo(ctx: FlinkCustomNodeContext) = ValueWithContextType.info(ctx,
             KeyedValueType.info(
               TupleType.tuple2Info(
                 TypeInformation.of(classOf[String]),
@@ -60,12 +60,12 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
-                  .returns(processedTypeInfo)
+                  .returns(processedTypeInfo(context))
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
             val afterOptionalAssigner = timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_)(processedTypeInfo(context)).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(context, afterOptionalAssigner

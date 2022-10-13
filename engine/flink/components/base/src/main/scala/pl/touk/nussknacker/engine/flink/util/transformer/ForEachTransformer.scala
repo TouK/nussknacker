@@ -27,7 +27,7 @@ object ForEachTransformer extends CustomStreamTransformer {
           valueWithContext.value.asScala
             .map(new ValueWithContext[AnyRef](_, valueWithContext.context))
             .foreach(c.collect)
-        }, ValueWithContextType.info)
+        }, ValueWithContextType.info[AnyRef](ctx))
     }, returnType(elements))
   }
 

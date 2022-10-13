@@ -104,7 +104,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               val sanitizedId = ContextTransformation.sanitizeBranchName(id)
               (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
             }))
-            .returns(ValueWithContextType.info(KeyedValueType.genericInfo))
+            .returns(ValueWithContextType.info(context, KeyedValueType.infoGeneric))
       }
 
       val types = aggregateByByBranchId.mapValues(_.returnType)
@@ -123,7 +123,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
       timestampAssigner
-        .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info).assignWatermarks(stream))
+        .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(stream))
         .getOrElse(stream)
     }
   }

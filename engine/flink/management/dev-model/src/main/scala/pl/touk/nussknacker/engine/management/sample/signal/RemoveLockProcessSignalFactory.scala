@@ -14,6 +14,7 @@ import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
 import pl.touk.nussknacker.engine.api.queryablestate.QueryableState
 import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
 import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
@@ -66,14 +67,14 @@ object SampleSignalHandlingTransformer {
             new EitherTypeInfo(
               classOf[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]],
               TypeInformation.of(classOf[LockOutputStateChanged]),
-              ValueWithContextType.info(TypeInformation.of(classOf[LockOutput]))
+              ValueWithContextType.info[LockOutput](context)
             ),
             new LockStreamFunction(context.metaData)
           )
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
           .transform(
             "queryableStateTransform",
-            ValueWithContextType.info,
+            ValueWithContextType.info[AnyRef](context),
             new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](
               lockQueryName,
               lockOutput => Json.fromFields(List(

@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
@@ -208,7 +208,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           val typ = part.node.data.ref.typ
           val collectingSink = SinkInvocationCollector(runId, part.id, typ)
           withValuePrepared
-            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), ValueWithContextType.info)
+            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), ValueWithContextType.info[AnyRef](customNodeContext))
             //FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
       }

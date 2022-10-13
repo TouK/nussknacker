@@ -40,10 +40,10 @@ object TypeInformationDetectionUtils extends LazyLogging {
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
-    ContextType.genericInfo
+    ContextType.infoGeneric
 
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = ValueWithContextType.info(forType(value).asInstanceOf[TypeInformation[T]], ContextType.genericInfo)
+    = ValueWithContextType.infoGeneric.asInstanceOf[TypeInformation[ValueWithContext[T]]]
 
   override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
 }

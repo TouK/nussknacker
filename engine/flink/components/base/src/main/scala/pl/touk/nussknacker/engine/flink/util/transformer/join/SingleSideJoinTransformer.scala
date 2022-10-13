@@ -92,7 +92,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
         timestampAssigner
-          .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info).assignWatermarks(statefulStreamWithUid))
+          .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(statefulStreamWithUid))
           .getOrElse(statefulStreamWithUid)
       }
     }

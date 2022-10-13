@@ -52,10 +52,6 @@ object SampleNodes {
     TypeInformation.of(classOf[Long])
   implicit val stringTypeInformation: TypeInformation[String] =
     TypeInformation.of(classOf[String])
-  implicit val stringWithContext: TypeInformation[ValueWithContext[String]] =
-    ValueWithContextType.info(TypeInformation.of(classOf[String]))
-  implicit val valueWithContextTypeInformation: TypeInformation[ValueWithContext[AnyRef]] =
-    ValueWithContextType.info
   implicit val simpleRecordTypeInformation: TypeInformation[SimpleRecord] =
     TypeInformation.of(classOf[SampleNodes.SimpleRecord])
   implicit val simpleJsonRecordTypeInformation: TypeInformation[SimpleJsonRecord] =
@@ -244,7 +240,7 @@ object SampleNodes {
             case (SimpleFromValueWithContext(ctx, sr), None) =>
               (ValueWithContext(
                 SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-          })
+          }(ValueWithContextType.info[AnyRef](context), TypeInformation.of(classOf[Long])))
     })
 
     object SimpleFromValueWithContext {
@@ -263,7 +259,7 @@ object SampleNodes {
         .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info)
+        .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
     })
   }
 
@@ -279,7 +275,7 @@ object SampleNodes {
               .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info)
+              .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
           })
     }
 
@@ -295,7 +291,8 @@ object SampleNodes {
           start
             .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
             .keyBy((value: ValueWithContext[String]) => value.value)
-            .map((_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")), ValueWithContextType.info)
+            .map((_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")),
+              ValueWithContextType.info[AnyRef](context))
         }))
     }
 
@@ -349,7 +346,7 @@ object SampleNodes {
 
     @MethodToInvoke(returnType = classOf[Long])
     def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
-      def trans(str: DataStream[Context]): DataStream[ValueWithContext[AnyRef]] = {
+      def trans(str: DataStream[Context], ctx: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
             val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
@@ -357,10 +354,10 @@ object SampleNodes {
             output.collect(outputResult)
           }
         }
-        str.transform("collectTimestammp", ValueWithContextType.info, streamOperator)
+        str.transform("collectTimestammp", ValueWithContextType.info[AnyRef](ctx), streamOperator)
       }
 
-      FlinkCustomStreamTransformation(trans(_))
+      FlinkCustomStreamTransformation(trans(_, _))
     }
 
   }
@@ -431,7 +428,8 @@ object SampleNodes {
               .keyBy((_: java.lang.Integer) => "")
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
-              .map((i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)), ValueWithContextType.info)
+              .map((i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),
+                ValueWithContextType.info[AnyRef](context))
           }))
     }
 
@@ -455,7 +453,8 @@ object SampleNodes {
       FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
         val componentUseCase = flinkCustomNodeContext.componentUseCase
         start
-          .map((ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx), ValueWithContextType.info)
+          .map((ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx),
+            ValueWithContextType.info[AnyRef](flinkCustomNodeContext))
       })
     }
 
@@ -561,7 +560,8 @@ object SampleNodes {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
-          .map((ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx), ValueWithContextType.info)
+          .map((ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
+            ValueWithContextType.info[AnyRef](fctx))
       })
     }
 
@@ -586,7 +586,8 @@ object SampleNodes {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
-          .map((ctx: Context) => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx), ValueWithContextType.info)
+          .map((ctx: Context) => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx),
+            ValueWithContextType.info[AnyRef](fctx))
       })
     }
 
@@ -741,7 +742,7 @@ object SampleNodes {
         dataStream
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
           .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"),
-            ValueWithContextType.info(TypeInformation.of(classOf[String])))
+            ValueWithContextType.info[String](flinkNodeContext))
       }
 
       override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =

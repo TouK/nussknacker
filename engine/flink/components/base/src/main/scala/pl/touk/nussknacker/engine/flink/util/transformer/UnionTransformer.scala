@@ -92,7 +92,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
             ))
 
             timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(ValueWithContextType.info).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
           }
         }

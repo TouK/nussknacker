@@ -38,18 +38,18 @@ class DelayTransformer extends CustomStreamTransformer with ExplicitUidInOperato
             .keyBy((v: ValueWithContext[String]) => v.value)
         }
       setUidToNodeIdIfNeed(nodeCtx, keyedStream
-        .process(prepareDelayFunction(nodeCtx.nodeId, delay)))
+        .process(prepareDelayFunction(nodeCtx, delay)))
     }
 
   protected def defaultKey(ctx: Context): String = ""
 
-  protected def prepareDelayFunction(nodeId: String, delay: Duration): DelayFunction = {
-    new DelayFunction(delay)
+  protected def prepareDelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration): DelayFunction = {
+    new DelayFunction(nodeCtx, delay)
   }
 
 }
 
-class DelayFunction(delay: Duration)
+class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
   extends KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[String], ValueWithContext[AnyRef]]#Context
@@ -58,7 +58,7 @@ class DelayFunction(delay: Duration)
   private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
     TypeInformation.of(new TypeHint[Long] {}),
-    new ListTypeInfo(ContextType.genericInfo)
+    new ListTypeInfo(ContextType.info(nodeCtx))
   )
 
   @transient private var state : MapState[Long, java.util.List[api.Context]] = _
@@ -73,7 +73,7 @@ class DelayFunction(delay: Duration)
     val currentState = readStateValueOrInitial(fireTime)
     currentState.add(0, value.context)
     state.put(fireTime, currentState)
-    
+
     ctx.timerService().registerEventTimeTimer(fireTime)
   }
 

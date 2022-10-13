@@ -17,6 +17,6 @@ object KeyedValueType {
     info(TypeInformation.of(classOf[String]), value)
   }
 
-  def genericInfo: TypeInformation[KeyedValue[String, AnyRef]] =
+  def infoGeneric: TypeInformation[KeyedValue[String, AnyRef]] =
     info(TypeInformation.of(classOf[AnyRef]))
 }

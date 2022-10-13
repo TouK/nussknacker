@@ -20,7 +20,7 @@ case object StatefulTransformer extends CustomStreamTransformer with LazyLogging
         logger.info(s"received: $sr, current state: $oldState")
         val nList = sr :: oldState.getOrElse(Nil)
         (ValueWithContext(nList, ir.context), Some(nList))
-      }(ValueWithContextType.info, TypeInformation.of(new TypeHint[List[String]] {}))
+      }(ValueWithContextType.info[AnyRef](ctx), TypeInformation.of(new TypeHint[List[String]] {}))
   })
 
   object StringFromIr {
