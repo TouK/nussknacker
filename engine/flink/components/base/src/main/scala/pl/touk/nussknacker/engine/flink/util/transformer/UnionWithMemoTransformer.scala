@@ -44,24 +44,26 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
-          private val processedInnerTypeInfo = Typed.fromDetailedType[StringKeyedValue[(String, AnyRef)]]
+          private val processedInnerTypeInfo = KeyedValueType.info(
+            TupleType.tuple2Info(
+              TypeInformation.of(classOf[String]),
+              TypeInformation.of(classOf[AnyRef])
+            )
+          )
+
           private def processedTypeInfoBranch(ctx: FlinkCustomNodeContext, key: String):
             TypeInformation[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] =
-            ValueWithContextType.infoBranch(ctx, key, processedInnerTypeInfo)
+            ValueWithContextTypeHelpers.infoFromValueAndContext(
+              processedInnerTypeInfo,
+              ctx.typeInformationDetection.forContext(ctx.validationContext.right.get(key))
+            )
 
           private def processedTypeInfo(ctx: FlinkCustomNodeContext, finalCtx: ValidationContext):
-            TypeInformation[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] = {
-            val contextTypeInfo = ctx.typeInformationDetection.forContext(finalCtx)
+            TypeInformation[ValueWithContext[StringKeyedValue[(String, AnyRef)]]] =
             ValueWithContextTypeHelpers.infoFromValueAndContext(
-              KeyedValueType.info(
-                TupleType.tuple2Info(
-                  TypeInformation.of(classOf[String]),
-                  TypeInformation.of(classOf[AnyRef])
-                )
-              ),
-              contextTypeInfo
+              processedInnerTypeInfo,
+              ctx.typeInformationDetection.forContext(finalCtx)
             )
-          }
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
