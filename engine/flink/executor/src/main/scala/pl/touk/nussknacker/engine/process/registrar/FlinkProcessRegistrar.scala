@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
@@ -265,7 +265,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       resultStream
         .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        .process(new SplitFunction(outputContexts, typeInformationDetection), new UnitTypeInfo)
+        .process(new SplitFunction(outputContexts, typeInformationDetection), TypeInformation.of(classOf[Unit]))
     }
 
   }
