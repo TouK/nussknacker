@@ -12,6 +12,7 @@ import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -51,7 +52,7 @@ class QueryableStateResources(typeToConfig: ProcessingTypeDataProvider[Processin
   }
 
   private def prepareQueryableStates()(implicit user: LoggedUser): Future[Map[String, List[QueryableStateName]]] = {
-    processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processList =>
+    processRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived).map { processList =>
       ProcessObjectsFinder.findQueries(processList, typeToConfig.all.values.map(_.modelData.processDefinition))
     }
   }

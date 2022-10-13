@@ -17,6 +17,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Validat
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -122,7 +123,7 @@ class AppResources(config: Config,
 
   private def notRunningProcessesThatShouldRun(implicit ec: ExecutionContext, user: LoggedUser): Future[Map[String, ProcessState]] = {
     for {
-      processes <- processRepository.fetchDeployedProcessesDetails[Unit]()
+      processes <- processRepository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.deployed)
       statusMap <- Future.sequence(statusList(processes)).map(_.toMap)
     } yield {
       statusMap.filterNot{
@@ -134,7 +135,7 @@ class AppResources(config: Config,
   }
 
   private def processesWithValidationErrors(implicit ec: ExecutionContext, user: LoggedUser): Future[List[String]] = {
-    processRepository.fetchProcessesDetails[DisplayableProcess]().map { processes =>
+    processRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchivedProcesses).map { processes =>
       val processesWithErrors = processes
         .map(process => new ValidatedDisplayableProcess(process.json, processValidation.validate(process.json, process.processCategory)))
         .filter(process => !process.validationResult.errors.isEmpty)

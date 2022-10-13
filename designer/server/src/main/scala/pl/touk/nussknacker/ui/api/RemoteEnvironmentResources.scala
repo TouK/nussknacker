@@ -20,6 +20,7 @@ import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.process.{ProcessId, VersionId}
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
@@ -39,9 +40,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
             get {
               complete {
                 for {
-                  processes <- processRepository.fetchProcessesDetails[DisplayableProcess]()
-                  subprocesses <- processRepository.fetchSubProcessesDetails[DisplayableProcess]()
-                  comparison <- compareProcesses(processes ++ subprocesses)
+                  processes <- processRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived)
+                  comparison <- compareProcesses(processes)
                 } yield EspErrorToHttp.toResponseEither(comparison)
               }
             }

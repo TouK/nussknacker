@@ -43,25 +43,6 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
     }, query.isDeployed))
   }
 
-  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
-  }
-
-  override def fetchDeployedProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] =
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess, Option(true)))
-
-  override def fetchSubProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess))
-  }
-
-  override def fetchAllProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(_ => true))
-  }
-
-  private def fetchProcessDetailsByQueryActionUnarchived[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean], isDeployed: Option[Boolean] = None)
-                                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
-    fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived, isDeployed)
-
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
                                                                               isDeployed: Option[Boolean])(implicit loggedUser: LoggedUser, ec: ExecutionContext): DBIOAction[List[BaseProcessDetails[PS]], NoStream, Effect.All with Effect.Read] = {
     (for {

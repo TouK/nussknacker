@@ -108,7 +108,8 @@ class ProcessesResources(
           // To be removed in NU 1.8.
           get {
             complete {
-              val subProcesses = processRepository.fetchSubProcessesDetails[CanonicalProcess]()
+              val query = FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(false))
+              val subProcesses = processRepository.fetchProcessesDetails[CanonicalProcess](query)
               validateAndReverseResolveAll(subProcesses)
             }
           }

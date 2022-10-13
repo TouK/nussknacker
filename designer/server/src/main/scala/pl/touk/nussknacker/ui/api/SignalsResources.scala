@@ -11,6 +11,7 @@ import pl.touk.nussknacker.ui.process.ProcessObjectsFinder
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -52,7 +53,7 @@ class SignalsResources(modelData: ProcessingTypeDataProvider[ModelData],
 
   private def prepareSignalDefinitions(implicit user: LoggedUser): Future[Map[String, SignalDefinition]] = {
     //TODO: only processes that are deployed right now??
-    processRepository.fetchAllProcessesDetails[DisplayableProcess]().map { processList =>
+    processRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchivedProcesses).map { processList =>
       ProcessObjectsFinder.findSignals(processList, modelData.all.values.map(_.processDefinition))
     }
   }

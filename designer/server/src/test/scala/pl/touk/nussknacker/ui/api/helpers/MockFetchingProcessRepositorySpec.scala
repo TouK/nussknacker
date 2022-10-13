@@ -75,7 +75,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchProcessesDetails()(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedProcesses)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
@@ -89,7 +89,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchDeployedProcessesDetails()(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.deployed)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
@@ -118,7 +118,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchSubProcessesDetails()(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }
@@ -132,9 +132,9 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     val canonicalSubProcesses = displayableSubProcesses.map(p => p.copy(json = ProcessConverter.fromDisplayable(p.json)))
     val noneSubProcesses = displayableSubProcesses.map(p => p.copy(json = ()))
 
-    mixedMockRepository.fetchSubProcessesDetails()(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
-    mixedMockRepository.fetchSubProcessesDetails()(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses
-    mixedMockRepository.fetchSubProcessesDetails()(NoneShape, admin, global).futureValue shouldBe noneSubProcesses
+    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(DisplayableShape, admin, global).futureValue shouldBe displayableSubProcesses
+    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(CanonicalShape, admin, global).futureValue shouldBe canonicalSubProcesses
+    mixedMockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchivedSubProcesses)(NoneShape, admin, global).futureValue shouldBe noneSubProcesses
   }
 
   it should "fetchAllProcessesDetails for each user" in {
@@ -146,7 +146,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
     )
 
     forAll(testingData) { (user: LoggedUser, expected: List[ProcessDetails]) =>
-      val result = mockRepository.fetchAllProcessesDetails()(DisplayableShape, user, global).futureValue
+      val result = mockRepository.fetchProcessesDetails(FetchProcessesDetailsQuery.unarchived)(DisplayableShape, user, global).futureValue
       result shouldBe expected
     }
   }

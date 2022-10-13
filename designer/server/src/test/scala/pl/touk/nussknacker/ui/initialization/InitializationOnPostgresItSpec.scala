@@ -10,6 +10,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
 import scala.concurrent.ExecutionContextExecutor
@@ -45,7 +46,7 @@ class InitializationOnPostgresItSpec
 
     Initialization.init(migrations, db, "env1")
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when fragments present" in {
@@ -54,7 +55,7 @@ class InitializationOnPostgresItSpec
 
     Initialization.init(migrations, db, "env1")
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("id1", Some(2)))
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("id1", Some(2)))
   }
 
   private def saveSampleProcess(processName: String = processId, subprocess: Boolean = false): Unit = {
@@ -73,7 +74,7 @@ class InitializationOnPostgresItSpec
 
     exception.getMessage shouldBe "made to fail.."
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
 }
