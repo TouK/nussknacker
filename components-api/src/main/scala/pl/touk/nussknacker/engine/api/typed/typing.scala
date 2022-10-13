@@ -258,6 +258,7 @@ object typing {
         case None =>
           TypedClass(klass, klass.getTypeParameters.map(_ => Unknown).toList)
         case Some(params) if params.size != klass.getTypeParameters.size =>
+          // This error may be incorrectly triggered when using things like "type B[T] = A[String, T]".
           throw new IllegalArgumentException(s"Passed generic parameters: $params doesn't match declared type parameters: ${klass.getName}${klass.getTypeParameters.mkString("[", ", ", "]")}")
         case Some(params) =>
           TypedClass(klass, params)
