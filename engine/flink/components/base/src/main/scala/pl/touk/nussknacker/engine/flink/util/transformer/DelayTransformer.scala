@@ -58,7 +58,7 @@ class DelayFunction(delay: Duration)
   private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
     TypeInformation.of(new TypeHint[Long] {}),
-    new ListTypeInfo(ContextType.info)
+    new ListTypeInfo(ContextType.genericInfo)
   )
 
   @transient private var state : MapState[Long, java.util.List[api.Context]] = _

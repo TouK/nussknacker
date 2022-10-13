@@ -11,7 +11,7 @@ object ValueWithContextType {
     )
 
   def info[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
-    info(value, ContextType.info)
+    info(value, ContextType.genericInfo)
 
   def info: TypeInformation[ValueWithContext[AnyRef]] =
     info(TypeInformation.of(classOf[AnyRef]))

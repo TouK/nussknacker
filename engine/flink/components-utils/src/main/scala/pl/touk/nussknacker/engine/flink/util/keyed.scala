@@ -25,8 +25,8 @@ object keyed {
     def unapply[V](keyedValue: StringKeyedValue[V]): Option[(String, V)] = KeyedValue.unapply(keyedValue)
 
     // It is helper function for interop with java - e.g. in case when you want to have StringKeyedEvent[POJO]
-    def typeInformation[V](valueTypeInformation: TypeInformation[V]): TypeInformation[KeyedValue[String, V]] = {
-      KeyedValueType.info(TypeInformation.of(classOf[String]), valueTypeInformation)
+    def typeInformation[V](valueTypeInformation: TypeInformation[V]): TypeInformation[StringKeyedValue[V]] = {
+      KeyedValueType.info(valueTypeInformation)
     }
 
   }

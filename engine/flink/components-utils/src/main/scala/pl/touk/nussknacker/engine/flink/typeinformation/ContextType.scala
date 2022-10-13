@@ -15,7 +15,7 @@ object ContextType {
   def info(variables: TypeInformation[Map[String, Any]]): TypeInformation[Context] =
     info(variables, Some(simpleTypeInformation))
 
-  def info: TypeInformation[Context] =
+  def genericInfo: TypeInformation[Context] =
     info(TypeInformation.of(new TypeHint[Map[String, Any]] {}))
 
   private def simpleTypeInformation = TypeInformation.of(classOf[Context])
