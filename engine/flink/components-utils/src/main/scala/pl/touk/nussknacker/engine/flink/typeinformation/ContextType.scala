@@ -1,13 +1,9 @@
 package pl.touk.nussknacker.engine.flink.typeinformation
 
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
-import org.apache.flink.api.common.typeutils.{SimpleTypeSerializerSnapshot, TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.scala.typeutils.OptionTypeInfo
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
-import pl.touk.nussknacker.engine.flink.typeinformation.FixedValueTypeInformationHelper.NullSerializer
-
-import java.util.function.Supplier
 
 object ContextType {
   def infoFromVariablesAndParent(variables: TypeInformation[Map[String, Any]], parentCtx: TypeInformation[Option[Context]]): TypeInformation[Context] =
