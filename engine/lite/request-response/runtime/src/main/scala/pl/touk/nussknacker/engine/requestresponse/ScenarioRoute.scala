@@ -3,7 +3,12 @@ package pl.touk.nussknacker.engine.requestresponse
 import akka.event.Logging
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.{HttpEntity, HttpResponse, ResponseEntity, StatusCodes}
-import akka.http.scaladsl.server.directives.{AuthenticationDirective, Credentials, DebuggingDirectives, SecurityDirectives}
+import akka.http.scaladsl.server.directives.{
+  AuthenticationDirective,
+  Credentials,
+  DebuggingDirectives,
+  SecurityDirectives
+}
 import akka.http.scaladsl.server.{Directive0, Directives, Route}
 import cats.data.NonEmptyList
 import com.typesafe.scalalogging.LazyLogging
@@ -14,10 +19,14 @@ import pl.touk.nussknacker.engine.api.exception.NuExceptionInfo
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApiGenerator
 
-class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
-                    config: RequestResponseConfig,
-                    scenarioName: ProcessName)
-  extends Directives with LazyLogging {
+import scala.concurrent.Future
+
+class ScenarioRoute(
+                     handler: RequestResponseHttpHandler[Future],
+                     config: RequestResponseConfig,
+                     scenarioName: ProcessName
+) extends Directives
+    with LazyLogging {
 
   // Regarding https://spec.openapis.org/oas/v3.1.0#serverObject server url accept urls "relative to the location where the OpenAPI document is being served"
   // We use this relative reference instead of default '/' because runtime can by server reverse proxies (i.e. ingress controller) that can rewrite this url
@@ -30,18 +39,15 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
 
       def rrAuthenticator(credentials: Credentials): Option[String] =
         credentials match {
-          case p@Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
-          case _ => None
+          case p @ Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
+          case _                                                                            => None
         }
 
       rrAuthenticator
     }
 
     val authenticationDirective = config.security.flatMap(_.basicAuth.flatMap { conf =>
-      Some(SecurityDirectives.authenticateBasic(
-        authenticator = prepareAuthenticator(conf),
-        realm = "request-response"
-      ))
+      Some(SecurityDirectives.authenticateBasic(authenticator = prepareAuthenticator(conf), realm = "request-response"))
     })
 
     authenticationDirective
@@ -49,13 +55,25 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
 
   val invocationRoute: Route = {
     logDirective {
-      handler.invoke {
-        case Left(errors) => complete {
-          logErrors(scenarioName, errors)
-          HttpResponse(status = StatusCodes.InternalServerError, entity = toEntity(errors.toList.map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))))
-        }
-        case Right(results) => complete {
-          HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
+      extractExecutionContext { implicit ec =>
+        extractRequest { request =>
+          entity(as[Array[Byte]]) { entity =>
+            complete {
+              handler.invoke(request, entity).map {
+                case Left(errors) =>
+                  logErrors(scenarioName, errors)
+                  HttpResponse(
+                    status = StatusCodes.InternalServerError,
+                    entity = toEntity(
+                      errors.toList
+                        .map(info => NuError(info.nodeComponentInfo.map(_.nodeId), Option(info.throwable.getMessage)))
+                    )
+                  )
+                case Right(results) =>
+                  HttpResponse(status = StatusCodes.OK, entity = toEntity(results))
+              }
+            }
+          }
         }
       }
     }
@@ -64,7 +82,8 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
   val definitionRoute: Route = {
     val interpreter = handler.requestResponseInterpreter
     val openApiInfo = interpreter.generateInfoOpenApiDefinitionPart()
-    val oApiJson = new RequestResponseOpenApiGenerator(config.definitionMetadata.openApiVersion, openApiInfo).generateOpenApiDefinition(interpreter, config.definitionMetadata.servers, defaultServerUrl)
+    val oApiJson = new RequestResponseOpenApiGenerator(config.definitionMetadata.openApiVersion, openApiInfo)
+      .generateOpenApiDefinition(interpreter, config.definitionMetadata.servers, defaultServerUrl)
     val oApiJsonAsString = jsonStringToEntity(oApiJson.spaces2)
 
     get {
@@ -80,19 +99,23 @@ class ScenarioRoute(handler: RequestResponseAkkaHttpHandler,
     }
     val invocationRouteWithSecurity: Route = securityDirectiveOpt match {
       case Some(securityDirective) => securityDirective { _: String => invocationRoutePath }
-      case None => invocationRoutePath
+      case None                    => invocationRoutePath
     }
     SwaggerUiRoute.route ~ path("definition") {
       definitionRoute
     } ~ invocationRouteWithSecurity
   }
 
-  protected def logDirective: Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
+  protected def logDirective: Directive0 =
+    DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   private def logErrors(scenarioName: ProcessName, errors: NonEmptyList[NuExceptionInfo[_ <: Throwable]]): Unit = {
     logger.info(s"Failed to invoke: $scenarioName with errors: ${errors.map(_.throwable.getMessage)}")
     errors.toList.foreach { error =>
-      logger.debug(s"Invocation failed $scenarioName, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}", error.throwable)
+      logger.debug(
+        s"Invocation failed $scenarioName, error in ${error.nodeComponentInfo.map(_.nodeId)}: ${error.throwable.getMessage}",
+        error.throwable
+      )
     }
   }
 

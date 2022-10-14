@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.lite.util.test.SynchronousLiteInterpreter.SynchronousResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
-import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, ModelWithTestComponents, RunListResult, RunResult, TestComponentsHolder, TestScenarioRunner, TestScenarioRunnerBuilder}
+import pl.touk.nussknacker.engine.util.test._
 
 import scala.reflect.ClassTag
 
@@ -70,14 +70,11 @@ class LiteTestScenarioRunner(components: List[ComponentDefinition], config: Conf
   def runWithDataReturningDetails[T: ClassTag](scenario: CanonicalProcess, data: List[T]): SynchronousResult = {
     val testSource = ComponentDefinition(TestScenarioRunner.testDataSource, new SimpleSourceFactory(Typed[T]))
     val testSink = ComponentDefinition(TestScenarioRunner.testResultSink, SimpleSinkFactory)
-    val (modelData, runId) = ModelWithTestComponents.prepareModelWithTestComponents(config, testSource :: testSink :: components)
     val inputId = scenario.nodes.head.id
+    val inputBatch = ScenarioInputBatch(data.map(d => (SourceId(inputId), d: Any)))
 
-    try {
-      SynchronousLiteInterpreter
-        .run(modelData, scenario, ScenarioInputBatch(data.map(d => (SourceId(inputId), d))))
-    } finally {
-      TestComponentsHolder.clean(runId)
+    ModelWithTestComponents.withTestComponents(config, testSource :: testSink :: components) { modelData =>
+      SynchronousLiteInterpreter.run(modelData, scenario, inputBatch)
     }
   }
 }
