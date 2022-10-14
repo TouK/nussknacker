@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.requestresponse.DefaultResponseEncoder
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
 import pl.touk.nussknacker.engine.requestresponse.RequestResponseInterpreter.RequestResponseResultType
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponsePostSource}
-import pl.touk.nussknacker.engine.requestresponse.metrics.InvocationMetrics
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -24,8 +23,6 @@ class RequestResponseHandler(requestResponseInterpreter: InterpreterType) extend
   private val source = requestResponseInterpreter.source
 
   private val encoder = source.responseEncoder.getOrElse(DefaultResponseEncoder)
-
-  private val invocationMetrics = new InvocationMetrics(requestResponseInterpreter.context)
 
   private def catchParseException(parseRequest: => () => Any): ValidatedNel[ErrorType, Any] = {
     Validated.fromTry(Try(parseRequest())).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
@@ -47,10 +44,9 @@ class RequestResponseHandler(requestResponseInterpreter: InterpreterType) extend
         .flatMap(onSuccess(_))
     }
 
-  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] = invocationMetrics.measureTime {
+  private def invokeInterpreter(input: Any)(implicit ec: ExecutionContext): Future[RequestResponseResultType[Json]] =
     requestResponseInterpreter.invokeToOutput(input).map(_.andThen { data =>
       Validated.fromTry(Try(encoder.toJsonResponse(input, data))).leftMap(ex => NonEmptyList.one(NuExceptionInfo(None, ex, Context(""))))
     })
-  }
 
 }
