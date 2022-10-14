@@ -121,9 +121,11 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
 
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
-      basicProcesses <- EitherT(fetchProcesses)
-      processes      <- fetchGroupByGroup(basicProcesses.filter(processToInclude))
-      subProcesses   <- EitherT(fetchSubProcessesDetails)
+      allBasicProcesses <- EitherT(fetchProcesses)
+      basicProcesses = allBasicProcesses.filter(!_.isSubprocess).filter(processToInclude)
+      basicSubProcesses = allBasicProcesses.filter(_.isSubprocess)
+      processes <- fetchGroupByGroup(basicProcesses)
+      subProcesses <- fetchGroupByGroup(basicSubProcesses)
     } yield testModelMigrations.testMigrations(processes, subProcesses)).value
   }
 
@@ -139,7 +141,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchProcesses(implicit ec: ExecutionContext): Future[Either[EspError, List[BasicProcess]]] = {
-    invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"), Query(("isArchived", "false"), ("isSubprocess", "false")))
+    invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"), Query(("isArchived", "false")))
   }
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])
@@ -156,11 +158,6 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
         ("isArchived", "false"),
       )
     )
-  }
-
-  private def fetchSubProcessesDetails(implicit ec: ExecutionContext): Future[Either[EspError, List[ValidatedProcessDetails]]] = {
-    // To be switched to processesDetails?isSubprocess=true in NU 1.8.
-    invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("subProcessesDetails"))
   }
 
   private def validateProcess(process: DisplayableProcess)(implicit ec: ExecutionContext): Future[Either[EspError, ValidationResult]] = {
