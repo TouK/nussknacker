@@ -22,7 +22,7 @@ classPath: ["model/defaultModel.jar", "model/flinkExecutor.jar", "components/fli
 Make sure you have all necessary entries properly configured:
 - Jar with model - unless you used custom model, this should be `model/defaultModel.jar`
 - All jars with additional components, e.g. `"components/flink/flinkBase.jar", "components/flink/flinkKafka.jar"`
-- `flinkExecutor.jar` for Flink Engine. This contains executor of scenarios in Flink cluster.
+- `flinkExecutor.jar` for Flink engine. This contains executor of scenarios in Flink cluster.
 
 Note that as classPath elements you can use:
 - full URLs (e.g. "https://repo1.maven.org/maven2/pl/touk/nussknacker/nussknacker-lite-base-components_2.12/1.1.0/nussknacker-lite-base-components_2.12-1.1.0.jar")

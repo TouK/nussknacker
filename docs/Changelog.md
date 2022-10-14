@@ -6,11 +6,11 @@
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
-* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-response mode available for k8s deployment
+* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-Response mode available for k8s deployment
 * [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
 * [#3436](https://github.com/TouK/nussknacker/pull/3436) Added types with value to results of operators
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
-* [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-response mode publishes OpenApi specification for its services
+* [#3401](https://github.com/TouK/nussknacker/pull/3401) Request-Response mode publishes OpenApi specification for its services
 * [#3427](https://github.com/TouK/nussknacker/pull/3427) Added components/common/extra,components/lite/extra,.. directories for purpose of easier components adding
 * [#3437](https://github.com/TouK/nussknacker/pull/3437) Switch RR typing to SwaggerBasedJsonSchemaTypeDefinitionExtractor
 * [#3451](https://github.com/TouK/nussknacker/pull/3451) SwaggerEnrichers as well as RequestResponse support now primitive schemas
@@ -135,7 +135,7 @@
   * API cleanup, some classes moved to `utils` or `interpreter`, 
     untangling dependencies, see [migration guide](MigrationGuide.md) for the details
 * [#2886](https://github.com/TouK/nussknacker/pull/2886) Add explicit serialVersionUID for classes registered by `Serializers.registerSerializers`.
-* [#2887](https://github.com/TouK/nussknacker/pull/2887) Request-response engine in embedded mode                                                 
+* [#2887](https://github.com/TouK/nussknacker/pull/2887) Request-Response engine in embedded mode                                                 
 * [#2890](https://github.com/TouK/nussknacker/pull/2890) Fixed displaying configured labels for node details fields.
 * [#2920](https://github.com/TouK/nussknacker/pull/2920) Close periodic engine actors. Reverse processing type reload - close and then reload.
 * [#2941](https://github.com/TouK/nussknacker/pull/2941) Update Flink to 1.14.4
