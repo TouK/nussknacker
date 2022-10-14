@@ -6,7 +6,6 @@
 * [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
-  to be available at path `<nu host>/assets/img/instance-logo.svg`
 
 1.6.0 (Not released yet)
 ------------------------
@@ -41,6 +40,7 @@
 * [#3598](https://github.com/TouK/nussknacker/pull/3598) Introducing configuration for controlling anonymous usage reporting by FE  
 * [#3608](https://github.com/TouK/nussknacker/pull/3608) Use `ZonedDateTime` for `date-time` JsonSchema format
 * [#3574](https://github.com/TouK/nussknacker/pull/3574) Feature: instance logo can be shown next to Nu logo, by convention it has
+  to be available at path `<nu host>/assets/img/instance-logo.svg`
 
 1.5.0 (16 Aug 2022)
 ------------------------
