@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.typeinformation
 
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 // Must be in object because of Java interop (problems with package object) and abstract type StringKeyedValue[V]
@@ -17,6 +17,4 @@ object KeyedValueType {
     info(TypeInformation.of(classOf[String]), value)
   }
 
-  def infoGeneric: TypeInformation[KeyedValue[String, AnyRef]] =
-    info(TypeInformation.of(classOf[AnyRef]))
 }

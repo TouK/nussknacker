@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.api.typeinfo.either.EitherTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaUtils}
@@ -63,11 +62,7 @@ object SampleSignalHandlingTransformer {
           .keyBy((v: ValueWithContext[String]) => v.value, (v: SampleProcessSignal) => v.action.key)
           .transform(
             "lockStreamTransform",
-            new EitherTypeInfo(
-              classOf[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]],
-              TypeInformation.of(classOf[LockOutputStateChanged]),
-              ValueWithContextType.info[LockOutput](context)
-            ),
+            TypeInformation.of(classOf[Either[LockOutputStateChanged, ValueWithContext[LockOutput]]]),
             new LockStreamFunction(context.metaData)
           )
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
