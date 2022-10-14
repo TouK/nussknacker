@@ -138,9 +138,9 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
       const freeOutputEdges = state.processToDisplay.edges
         .filter(e => e.from === action.fromNode.id && !e.to)
         //we do this to skip e.g. edges that became incorrect/unavailable
-        .filter(e => availableEdges.find(available => available?.name == e.edgeType.name && available?.type == e.edgeType.type))
+        .filter(e => availableEdges.find(available => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type))
       
-      const freeOutputEdge = freeOutputEdges.find(e => e.edgeType === action.edgeType) || freeOutputEdges[0]
+      const freeOutputEdge = freeOutputEdges.find(e => e.edgeType === action.edgeType) || (freeOutputEdges.length == 0 ? null : freeOutputEdges[0])
       if (freeOutputEdge) {
         newEdges = state.processToDisplay.edges.map(e => e === freeOutputEdge ?
           {
