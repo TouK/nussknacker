@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
 
@@ -190,13 +191,13 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     deployProcess(SampleProcess.process.id) ~> check {
       status shouldBe StatusCodes.OK
 
-      forScenariosReturned(ProcessesQuery()) { processes =>
+      forScenariosReturned(ProcessesQuery.empty) { processes =>
         val process = processes.find(_.name == SampleProcess.process.id).head
         process.lastActionVersionId shouldBe Some(2L)
         process.isDeployed shouldBe true
 
         cancelProcess(SampleProcess.process.id) ~> check {
-          forScenariosReturned(ProcessesQuery()) { processes =>
+          forScenariosReturned(ProcessesQuery.empty) { processes =>
             val process = processes.find(_.name == SampleProcess.process.id).head
             process.lastActionVersionId shouldBe Some(2L)
             process.isCanceled shouldBe true

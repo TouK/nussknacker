@@ -362,4 +362,8 @@ object ProcessesResources {
       names = names.map(_.map(ProcessName(_))),
     )
   }
+
+  object ProcessesQuery {
+    def empty: ProcessesQuery = ProcessesQuery(None, None, None, None, None, None)
+  }
 }
