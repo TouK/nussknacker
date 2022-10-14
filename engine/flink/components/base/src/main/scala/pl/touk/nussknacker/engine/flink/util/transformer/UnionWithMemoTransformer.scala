@@ -70,6 +70,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
             val finalContextValidated = transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.right.get)
             val finalContext = finalContextValidated.toOption.get
 
+            // TODO: Add better TypeInformation
             val afterOptionalAssigner = timestampAssigner
               .map(new TimestampAssignmentHelper[ValueWithContext[KeyedValue[String, (String, AnyRef)]]](_)(processedTypeInfo(context, finalContext))
                 .assignWatermarks(connectedStream))
