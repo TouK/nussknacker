@@ -14,6 +14,9 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalTime, OffsetTime, ZonedDateTime}
+
 class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
   val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
@@ -60,6 +63,96 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val encoded = encoder.encode("1", schema)
 
     encoded shouldEqual Valid(Json.fromString("1"))
+  }
+
+  test("should encode date time") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "date-time"
+        |}""".stripMargin))
+
+    val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
+  }
+
+  test("should encode date") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "date"
+        |}""".stripMargin))
+
+    val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldEqual Valid(Json.fromString("2020-07-10"))
+  }
+
+  test("should encode time") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "time"
+        |}""".stripMargin))
+
+    val date = OffsetTime.parse("20:20:39+01:00", DateTimeFormatter.ISO_OFFSET_TIME)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldEqual Valid(Json.fromString("20:20:39+01:00"))
+  }
+
+  test("should throw when wrong date-time") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "date-time"
+        |}""".stripMargin))
+
+    val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldBe 'invalid
+  }
+
+  test("should throw when wrong time") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "time"
+        |}""".stripMargin))
+
+    val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldBe 'invalid
+  }
+
+  test("should throw when wrong date") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "string",
+        |  "format": "date"
+        |}""".stripMargin))
+
+    val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
+
+    val encoded = encoder.encode(date, schema)
+
+    encoded shouldBe 'invalid
   }
 
   test("should encode number") {

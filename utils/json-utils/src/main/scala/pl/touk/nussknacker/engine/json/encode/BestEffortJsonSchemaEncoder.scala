@@ -8,6 +8,7 @@ import org.everit.json.schema.{ArraySchema, BooleanSchema, EnumSchema, NullSchem
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonBasedOnSchemaEncoder, ToJsonEncoder}
 
+import java.time.{LocalDate, LocalDateTime, LocalTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
@@ -50,7 +51,7 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
       case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema)
       case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema)
-      case (_: StringSchema, value: String) => Valid(jsonEncoder.encode(value))
+      case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Double) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Float) => Valid(jsonEncoder.encode(value))
@@ -58,24 +59,29 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: NumberSchema, value: java.math.BigDecimal) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: java.math.BigInteger) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Number) => Valid(jsonEncoder.encode(value.doubleValue()))
-      // todo dates
-      //      case a: LocalDate => Encoder[LocalDate].apply(a)
-      //      case a: LocalTime => Encoder[LocalTime].apply(a)
-      //      case a: LocalDateTime => Encoder[LocalDateTime].apply(a)
-      //      Default implementation serializes to ISO_ZONED_DATE_TIME which is not handled well by some parsers...
-      //      case a: ZonedDateTime => encodeZonedDateTimeWithFormatter(DateTimeFormatter.ISO_OFFSET_DATE_TIME).apply(a)
-      //      case a: Instant => Encoder[Instant].apply(a)
-      //      case a: OffsetDateTime => Encoder[OffsetDateTime].apply(a)
       //      case a: UUID => safeString(a.toString)
       //      case a: DisplayJson => a.asJson
       case (_: NullSchema, null) => Valid(Json.Null)
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
-      case (null, value: Any) if validationMode == ValidationMode.lax => Valid(Json.fromString(value.toString))
+      case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
       case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (_, _) if validationMode != ValidationMode.lax => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+    }
+  }
+
+  private def encodeStringSchema(schema: StringSchema, value: Any, fieldName: Option[String] = None) = {
+    (schema.getFormatValidator.formatName(), value) match {
+      case ("date-time", zdt: ZonedDateTime) => Valid(jsonEncoder.encode(zdt))
+      case ("date-time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("date", ldt: LocalDate) => Valid(jsonEncoder.encode(ldt))
+      case ("date", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("time", ot: OffsetTime) => Valid(jsonEncoder.encode(ot))
+      case ("time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("unnamed-format", _: Any) => Valid(jsonEncoder.encode(value))
+      case _ => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
 
