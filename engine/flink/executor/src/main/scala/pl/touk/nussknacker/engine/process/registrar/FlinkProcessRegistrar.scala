@@ -2,9 +2,11 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
