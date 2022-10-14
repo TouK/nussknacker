@@ -258,8 +258,10 @@ object typing {
         case None =>
           TypedClass(klass, klass.getTypeParameters.map(_ => Unknown).toList)
         case Some(params) if params.size != klass.getTypeParameters.size =>
-          // This error may be incorrectly triggered when using things like "type B[T] = A[String, T]".
-          throw new IllegalArgumentException(s"Passed generic parameters: $params doesn't match declared type parameters: ${klass.getName}${klass.getTypeParameters.mkString("[", ", ", "]")}")
+          val className = klass.getSimpleName
+          val paramGiven = s"$className[${params.map(_.display).mkString(", ")}]"
+          val paramExpected = s"$className[${klass.getTypeParameters.map(_.getName).mkString(", ")}]"
+          throw new IllegalArgumentException(s"Type's generic parameters don't match expected type parameters: found $paramGiven, expected $paramExpected. This may be caused by passing incorrect arguments or using type aliases.")
         case Some(params) =>
           TypedClass(klass, params)
       }
