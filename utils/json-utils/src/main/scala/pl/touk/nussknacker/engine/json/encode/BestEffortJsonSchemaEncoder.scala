@@ -26,7 +26,7 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
 
-  def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): WithError[Json] = {
+  private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): WithError[Json] = {
     fields
       .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {

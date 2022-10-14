@@ -27,11 +27,8 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
     case TransformationStep(Nil, _) =>
       val inputSchema = jsonSchemaExtractor.getSchemaFromProperty(InputSchemaProperty, dependencies)
       val outputSchema = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
-      val validationResult = inputSchema.swap.toList.flatMap(_.toList)
-      val finalState = List(inputSchema.toOption, outputSchema.toOption) match {
-        case List(Some(a), Some(b)) => Some(a -> b)
-        case List(_, _) => None
-      }
+      val validationResult = inputSchema.product(outputSchema).swap.toList.flatMap(_.toList)
+      val finalState = inputSchema.product(outputSchema).toOption
       val finalInitializer = inputSchema.toOption.fold(new BasicContextInitializer(Unknown)) { schema =>
         val schemaTypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
         new BasicContextInitializer(schemaTypingResult)
@@ -42,8 +39,7 @@ class JsonSchemaRequestResponseSourceFactory extends RequestResponseSourceFactor
   override def implementation(params: Map[String, Any],
                               dependencies: List[NodeDependencyValue],
                               finalStateOpt: Option[(Schema, Schema)]): RequestResponseSource[Any] = {
-    val inputSchemaState = finalStateOpt.map(_._1).getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
-    val outputSchemaState = finalStateOpt.map(_._2).getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
+    val (inputSchemaState, outputSchemaState) = finalStateOpt.getOrElse(throw new IllegalStateException("Unexpected (not defined) final state determined during parameters validation"))
     val nodeId = nodeIdDependency.extract(dependencies)
     val metaData = metaDataDependency.extract(dependencies)
     new JsonSchemaRequestResponseSource(inputSchemaState.toString, metaData, inputSchemaState, outputSchemaState, nodeId)

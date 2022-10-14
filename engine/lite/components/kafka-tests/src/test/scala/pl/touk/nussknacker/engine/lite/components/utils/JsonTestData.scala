@@ -35,4 +35,21 @@ object JsonTestData {
       |  }
       |}
       |""".stripMargin))
+
+  val personSchema: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "$schema": "https://json-schema.org/draft-07/schema",
+      |  "type": "object",
+      |  "properties": {
+      |    "first": {
+      |      "type": "string"
+      |    },
+      |    "last": {
+      |      "type": "string"
+      |    },
+      |    "age": {
+      |      "type": "integer"
+      |    }
+      |  }
+      |}""".stripMargin))
 }
