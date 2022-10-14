@@ -957,7 +957,7 @@ lazy val liteKafkaComponentsTests: Project =  (project in lite("components/kafka
         "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
       )
     },
-  ).dependsOn(liteComponentsTestkit % Test)
+  ).dependsOn(liteEngineKafkaComponentsApi % Provided, liteComponentsTestkit % Test)
 
 lazy val liteRequestResponseComponents = (project in lite("components/request-response")).
   settings(commonSettings).
