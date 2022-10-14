@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -492,9 +492,10 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
 
 class Creator(input: List[TestRecord]) extends EmptyProcessConfigCreator {
 
-  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] =
+  override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map("start" -> WithCategories(SourceFactory.noParam[TestRecord](EmitWatermarkAfterEachElementCollectionSource
-      .create[TestRecord](input, _.timestamp, Duration.ofHours(1)))))
+      .create[TestRecord](input, _.timestamp, Duration.ofHours(1))(TypeInformation.of(classOf[TestRecord])))))
+  }
 
 
 }

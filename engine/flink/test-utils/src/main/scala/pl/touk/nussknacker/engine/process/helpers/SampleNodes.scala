@@ -6,13 +6,10 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.java.functions.KeySelector
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
 import org.apache.flink.streaming.api.functions.sink.SinkFunction
 import org.apache.flink.streaming.api.operators.{AbstractStreamOperator, OneInputStreamOperator}
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.runtime.streamrecord.StreamRecord
@@ -38,6 +35,7 @@ import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, T
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
@@ -47,6 +45,19 @@ import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
 object SampleNodes {
+
+  implicit val intTypeInformation: TypeInformation[Int] =
+    TypeInformation.of(classOf[Int])
+  implicit val longTypeInformation: TypeInformation[Long] =
+    TypeInformation.of(classOf[Long])
+  implicit val stringTypeInformation: TypeInformation[String] =
+    TypeInformation.of(classOf[String])
+  implicit val simpleRecordTypeInformation: TypeInformation[SimpleRecord] =
+    TypeInformation.of(classOf[SampleNodes.SimpleRecord])
+  implicit val simpleJsonRecordTypeInformation: TypeInformation[SimpleJsonRecord] =
+    TypeInformation.of(classOf[SampleNodes.SimpleJsonRecord])
+  implicit val typedMapTypeInformation: TypeInformation[TypedMap] =
+    TypeInformation.of(classOf[TypedMap])
 
   // Unfortunately we can't use scala Enumeration because of limited scala TypeInformation macro - see note in TypedDictInstance
   case class SimpleRecord(id: String, value1: Long, value2: String, date: Date, value3Opt: Option[BigDecimal] = None,
@@ -229,7 +240,7 @@ object SampleNodes {
             case (SimpleFromValueWithContext(ctx, sr), None) =>
               (ValueWithContext(
                 SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-          })
+          }(ValueWithContextType.info[AnyRef](context), TypeInformation.of(classOf[Long])))
     })
 
     object SimpleFromValueWithContext {
@@ -248,8 +259,7 @@ object SampleNodes {
         .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext[AnyRef](null, _))
-        .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+        .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
     })
   }
 
@@ -265,8 +275,7 @@ object SampleNodes {
               .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext[AnyRef](null, _))
-              .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+              .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
           })
     }
 
@@ -282,8 +291,8 @@ object SampleNodes {
           start
             .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
             .keyBy((value: ValueWithContext[String]) => value.value)
-            .map(_ => ValueWithContext[AnyRef](null, Context("new")))
-            .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+            .map((_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")),
+              ValueWithContextType.info[AnyRef](context))
         }))
     }
 
@@ -337,7 +346,7 @@ object SampleNodes {
 
     @MethodToInvoke(returnType = classOf[Long])
     def methodToInvoke(@ParamName("timestampToSet") timestampToSet: Long): FlinkCustomStreamTransformation = {
-      def trans(str: DataStream[Context]): DataStream[ValueWithContext[AnyRef]] = {
+      def trans(str: DataStream[Context], ctx: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
             val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
@@ -345,10 +354,10 @@ object SampleNodes {
             output.collect(outputResult)
           }
         }
-        str.transform("collectTimestammp", implicitly[TypeInformation[ValueWithContext[AnyRef]]], streamOperator)
+        str.transform("collectTimestammp", ValueWithContextType.info[AnyRef](ctx), streamOperator)
       }
 
-      FlinkCustomStreamTransformation(trans(_))
+      FlinkCustomStreamTransformation(trans(_, _))
     }
 
   }
@@ -419,8 +428,8 @@ object SampleNodes {
               .keyBy((_: java.lang.Integer) => "")
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
-              .map(i => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)))
-              .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+              .map((i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),
+                ValueWithContextType.info[AnyRef](context))
           }))
     }
 
@@ -444,8 +453,8 @@ object SampleNodes {
       FlinkCustomStreamTransformation((start: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext) => {
         val componentUseCase = flinkCustomNodeContext.componentUseCase
         start
-          .map(context => ValueWithContext[AnyRef](componentUseCase, context))
-          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+          .map((ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx),
+            ValueWithContextType.info[AnyRef](flinkCustomNodeContext))
       })
     }
 
@@ -551,8 +560,8 @@ object SampleNodes {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
-          .map(ctx => ValueWithContext[AnyRef](TypedMap(map), ctx))
-          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+          .map((ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
+            ValueWithContextType.info[AnyRef](fctx))
       })
     }
 
@@ -577,8 +586,8 @@ object SampleNodes {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): AnyRef = {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
-          .map(ctx => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx))
-          .returns(implicitly[TypeInformation[ValueWithContext[AnyRef]]])
+          .map((ctx: Context) => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx),
+            ValueWithContextType.info[AnyRef](fctx))
       })
     }
 
@@ -732,8 +741,8 @@ object SampleNodes {
       override def prepareValue(dataStream: DataStream[Context], flinkNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] = {
         dataStream
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
-          .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"))
-          .returns(implicitly[TypeInformation[ValueWithContext[Value]]])
+          .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"),
+            ValueWithContextType.info[String](flinkNodeContext))
       }
 
       override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =

@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample.source
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.flink.api.process.BasicFlinkSource
 import pl.touk.nussknacker.engine.management.sample.DevProcessConfigCreator
 
@@ -30,5 +29,5 @@ class OneSource extends BasicFlinkSource[String] {
     }
   }
 
-  override val typeInformation: TypeInformation[String] = implicitly[TypeInformation[String]]
+  override val typeInformation: TypeInformation[String] = TypeInformation.of(classOf[String])
 }

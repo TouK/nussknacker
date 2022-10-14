@@ -8,8 +8,8 @@ import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
 import net.ceedubs.ficus.Ficus._
 import org.apache.flink.api.common.serialization.{DeserializationSchema, SimpleStringSchema}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.sink.DiscardingSink
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ParameterConfig, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, StringParameterEditor}
@@ -93,7 +93,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       ),
       "real-kafka-json-SampleProduct" -> all(fixedValueKafkaSource(
         processObjectDependencies,
-        new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)
+        new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)(TypeInformation.of(classOf[SampleProduct]))
       )),
       "real-kafka-avro" -> all(avroSourceFactory),
       "kafka" -> all(universalSourceFactory),
@@ -163,8 +163,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "noneReturnTypeTransformer" -> tests(NoneReturnTypeTransformer),
     "stateful" -> categories(StatefulTransformer),
     "customFilter" -> categories(CustomFilter),
-    "constantStateTransformer" -> categories(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces)),
-    "constantStateTransformerLongValue" -> categories(ConstantStateTransformer[Long](12333)),
+    "constantStateTransformer" -> categories(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces)(TypeInformation.of(classOf[String]))),
+    "constantStateTransformerLongValue" -> categories(ConstantStateTransformer[Long](12333)(TypeInformation.of(classOf[Long]))),
     "additionalVariable" -> categories(AdditionalVariableTransformer),
     "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
     "unionWithEditors" -> all(JoinTransformerWithEditors),

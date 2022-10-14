@@ -4,16 +4,15 @@ import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.TypeSerializer
 import org.apache.flink.api.java.typeutils.{ListTypeInfo, MapTypeInfo}
-import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, OptionTypeInfo, ScalaCaseClassSerializer, TraversableSerializer, TraversableTypeInfo}
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.scala.typeutils.{TraversableSerializer, TraversableTypeInfo}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
-import pl.touk.nussknacker.engine.api.{Context, PartReference, ValueWithContext}
+import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
 import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{TypedJavaMapTypeInformation, TypedMapTypeInformation, TypedScalaMapTypeInformation}
-import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.ContextTypeHelpers
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
@@ -47,20 +46,16 @@ class TypingResultAwareTypeInformationDetection(customisation:
 
   private val registeredTypeInfos: Set[TypeInformation[_]] = {
     Set(
-      implicitly[TypeInformation[BigDecimal]]
+      TypeInformation.of(classOf[BigDecimal])
     )
   }
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
-    val id = TypeInformation.of(classOf[String])
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
-    val parentCtx = new OptionTypeInfo[Context, Option[Context]](validationContext.parent.map(forContext).getOrElse(FixedValueSerializers.nullValueTypeInfo))
+      .asInstanceOf[TypeInformation[Map[String, Any]]]
+    val parentCtx = validationContext.parent.map(forContext)
 
-    ConcreteCaseClassTypeInfo[Context](
-      ("id", id),
-      ("variables", variables),
-      ("parentContext", parentCtx)
-    )
+    ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
   //This is based on TypeInformationGen macro

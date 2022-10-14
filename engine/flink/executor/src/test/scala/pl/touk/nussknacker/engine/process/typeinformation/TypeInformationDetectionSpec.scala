@@ -30,13 +30,6 @@ class TypeInformationDetectionSpec extends AnyFunSuite with Matchers {
     tr.asInstanceOf[CaseClassTypeInfo[Context]].getTypeAt("variables")
   }
 
-  test("Uses generic detection if TypingResultAware turned off") {
-
-    val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(Some(false)), loader)
-    val tr = typeInformationForVariables(detection, ValidationContext(Map("test1" -> Typed[String])))
-    tr.isInstanceOf[TraversableTypeInfo[_, _]] shouldBe true
-  }
-
   test("Uses TypingResultAware by default") {
 
     val detection = TypeInformationDetectionUtils.forExecutionConfig(executionConfig(), loader)

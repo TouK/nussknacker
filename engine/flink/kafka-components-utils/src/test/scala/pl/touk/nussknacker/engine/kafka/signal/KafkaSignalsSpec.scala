@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
+import org.apache.flink.api.common.typeinfo.PrimitiveArrayTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -70,7 +70,9 @@ object CustomSignalReader extends CustomStreamTransformer {
 
   @SignalTransformer(signalClass = classOf[TestProcessSignalFactory])
   @MethodToInvoke(returnType = classOf[Void])
-  def execute(): FlinkCustomStreamTransformation =
+  def execute(): FlinkCustomStreamTransformation = {
+    implicit val byteArrayTypeInformation: PrimitiveArrayTypeInfo[Array[Byte]] = PrimitiveArrayTypeInfo.BYTE_PRIMITIVE_ARRAY_TYPE_INFO
+
     FlinkCustomStreamTransformation.apply((start: DataStream[Context], context: FlinkCustomNodeContext) => {
       context.signalSenderProvider.get[TestProcessSignalFactory]
         .connectWithSignals(start, context.metaData.id, context.nodeId, new EspDeserializationSchema(identity))
@@ -79,6 +81,7 @@ object CustomSignalReader extends CustomStreamTransformer {
           override def map2(value: Array[Byte]): ValueWithContext[AnyRef] = ValueWithContext[AnyRef]("", Context("id"))
         })
   })
+  }
 }
 
 class TestProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)

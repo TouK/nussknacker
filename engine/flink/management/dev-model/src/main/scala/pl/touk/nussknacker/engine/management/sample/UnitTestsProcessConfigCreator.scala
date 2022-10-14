@@ -4,7 +4,6 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
@@ -60,10 +59,10 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     Map(
       "PageVisits" -> recommendation(new RunningSourceFactory[PageVisit]((count: Int) => PageVisit(s"${count % 20}", LocalDateTime.now(),
         s"/products/product${count % 14}", s"10.1.3.${count % 15}"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-        line => PageVisit(line(0), LocalDateTime.parse(line(1)), line(2), line(3)))),
+        line => PageVisit(line(0), LocalDateTime.parse(line(1)), line(2), line(3)))(TypeInformation.of(classOf[PageVisit]))),
       "Transactions" -> fraud(new RunningSourceFactory[Transaction]((count: Int) => Transaction(s"${count % 20}", LocalDateTime.now(),
         count % 34, if (count % 3 == 1) "PREMIUM" else "NORMAL"), _.date.toInstant(ZoneOffset.UTC).toEpochMilli,
-        line => Transaction(line(0), LocalDateTime.parse(line(1)), line(2).toInt, line(3)))),
+        line => Transaction(line(0), LocalDateTime.parse(line(1)), line(2).toInt, line(3)))(TypeInformation.of(classOf[Transaction]))),
       "Notifications" -> fraud(new RunningSourceFactory[Notification]((count: Int) =>
         Notification(
           msisdn = s"4869312312${count % 9}",
@@ -72,7 +71,7 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
           tariffId = count % 5 + 1000,
           timestamp = System.currentTimeMillis()
         ), _.timestamp,
-        line => Notification(line(0), line(1).toInt, BigDecimal.apply(line(2)), line(3).toLong, line(4).toLong)))
+        line => Notification(line(0), line(1).toInt, BigDecimal.apply(line(2)), line(3).toLong, line(4).toLong))(TypeInformation.of(classOf[Notification])))
     )
   }
 

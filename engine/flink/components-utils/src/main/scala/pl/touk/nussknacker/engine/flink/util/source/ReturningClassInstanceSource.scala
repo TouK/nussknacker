@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.flink.util.source
 
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.editor.{DualEditor, DualEditorMode, SimpleEditor, SimpleEditorType}
 import pl.touk.nussknacker.engine.api.process.SourceFactory
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
@@ -13,8 +13,10 @@ class ReturningClassInstanceSource extends SourceFactory  {
              @DualEditor(
                simpleEditor = new SimpleEditor(`type` = SimpleEditorType.STRING_EDITOR),
                defaultMode = DualEditorMode.SIMPLE
-             )  additionalClass: String) =
-    new CollectionSource[Any](List.empty, None, Typed.typedClass(Class.forName(additionalClass)))
+             )  additionalClass: String) = {
+    val resultClass = Class.forName(additionalClass)
+    CollectionSource(List.empty, None, Typed.typedClass(resultClass))(TypeInformation.of(resultClass))
+  }
 
 }
 case class ReturningTestCaseClass(someMethod: String)

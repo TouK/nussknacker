@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import org.apache.flink.api.common.state.ValueStateDescriptor
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.java.typeutils.MapTypeInfo
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -20,9 +20,11 @@ import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.UnionWithMemoTransformer.KeyField
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
+import pl.touk.nussknacker.engine.flink.typeinformation.{KeyedValueType, TupleType, ValueWithContextType}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
+import java.util
 
 object UnionWithMemoTransformer extends UnionWithMemoTransformer(None)
 
@@ -42,6 +44,16 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       .join.definedBy(transformContextsDefinition(valueByBranchId, variableName)(_))
       .implementedBy(
         new FlinkCustomJoinTransformation {
+          private val processedInnerTypeInfo = Typed.fromDetailedType[KeyedValue[String, (String, AnyRef)]]
+
+          private def processedTypeInfoBranch(ctx: FlinkCustomNodeContext, key: String):
+            TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]] =
+            ValueWithContextType.infoBranch(ctx, key, processedInnerTypeInfo)
+
+          private def processedTypeInfo(ctx: FlinkCustomNodeContext, finalCtx: ValidationContext):
+            TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]] =
+            ValueWithContextType.infoWithCustomContext(ctx, finalCtx, processedInnerTypeInfo)
+
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
             val keyedInputStreams = inputs.toList.map {
@@ -51,16 +63,21 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
                 stream
                   .flatMap(new StringKeyedValueMapper(context, keyParam, valueParam))
                   .map(_.map(_.mapValue(v => (ContextTransformation.sanitizeBranchName(branchId), v))))
-                  .returns(implicitly[TypeInformation[ValueWithContext[KeyedValue[String, (String, AnyRef)]]]])
+                  .returns(processedTypeInfoBranch(context, branchId))
             }
             val connectedStream = keyedInputStreams.reduce(_.connectAndMerge(_))
 
+            val finalContextValidated = transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.right.get)
+            val finalContext = finalContextValidated.toOption.get
+
+            // TODO: Add better TypeInformation
             val afterOptionalAssigner = timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[StringKeyedValue[(String, AnyRef)]]](_).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[KeyedValue[String, (String, AnyRef)]]](_)(processedTypeInfo(context, finalContext))
+                .assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
 
             setUidToNodeIdIfNeed(context, afterOptionalAssigner
-              .keyBy((v: ValueWithContext[StringKeyedValue[(String, AnyRef)]]) => v.value.key)
+              .keyBy((v: ValueWithContext[KeyedValue[String, (String, AnyRef)]]) => v.value.key)
               .process(new UnionMemoFunction(stateTimeout)))
           }
         }
@@ -94,25 +111,22 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
   }
 }
 
-class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef], Map[String, AnyRef]] {
+class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunction[ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef], java.util.Map[String, AnyRef]] {
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef]]#Context
 
-  import scala.collection.JavaConverters._
-
-  override protected def stateDescriptor: ValueStateDescriptor[Map[String, AnyRef]] =
-    new ValueStateDescriptor("state", implicitly[TypeInformation[Map[String, AnyRef]]])
+  // TODO: Add TypeInformation depending on context.
+  override protected def stateDescriptor: ValueStateDescriptor[java.util.Map[String, AnyRef]] = {
+    new ValueStateDescriptor("state", new MapTypeInfo(TypeInformation.of(classOf[String]), TypeInformation.of(classOf[AnyRef])))
+  }
 
   override def processElement(valueWithCtx: ValueWithContext[StringKeyedValue[(String, AnyRef)]], ctx: FlinkCtx, out: Collector[ValueWithContext[AnyRef]]): Unit = {
-    val currentState = Option(readState()).getOrElse(Map.empty)
+    val currentState = Option(readState()).getOrElse(new util.HashMap[String, AnyRef]())
     val (sanitizedBranchName, value) = valueWithCtx.value.value
-    val newValue = Map(
-      KeyField -> valueWithCtx.value.key,
-      sanitizedBranchName -> value
-    )
-    val mergedValue = currentState ++ newValue
-    updateState(mergedValue, ctx.timestamp() + stateTimeout.toMillis, ctx.timerService())
-    out.collect(new ValueWithContext[AnyRef](mergedValue.asJava, valueWithCtx.context))
+    currentState.put(KeyField, valueWithCtx.value.key)
+    currentState.put(sanitizedBranchName, value)
+    updateState(currentState, ctx.timestamp() + stateTimeout.toMillis, ctx.timerService())
+    out.collect(new ValueWithContext[AnyRef](currentState, valueWithCtx.context))
   }
 
 }

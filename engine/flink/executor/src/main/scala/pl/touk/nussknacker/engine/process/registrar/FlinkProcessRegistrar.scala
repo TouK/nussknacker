@@ -2,17 +2,16 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.scala.typeutils.UnitTypeInfo
 import org.apache.flink.streaming.api.datastream.{AsyncDataStream, DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.{RemoteStreamEnvironment, StreamExecutionEnvironment}
 import org.apache.flink.streaming.api.windowing.time.Time
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.util.OutputTag
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.NodeComponentInfo
 import pl.touk.nussknacker.engine.api.context.{JoinContextTransformation, ValidationContext}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, Unknown}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compiledgraph.part._
 import pl.touk.nussknacker.engine.component.NodeComponentInfoExtractor.fromNodeData
@@ -21,6 +20,7 @@ import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.graph.node.{BranchEndDefinition, NodeData}
 import pl.touk.nussknacker.engine.process.compiler.{FlinkEngineRuntimeContextImpl, FlinkProcessCompiler, FlinkProcessCompilerData, UsedNodes}
 import pl.touk.nussknacker.engine.process.typeinformation.TypeInformationDetectionUtils
@@ -208,7 +208,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
           val typ = part.node.data.ref.typ
           val collectingSink = SinkInvocationCollector(runId, part.id, typ)
           withValuePrepared
-            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), TypeInformation.of(classOf[ValueWithContext[AnyRef]]))
+            .map((ds: ValueWithContext[sink.Value]) => ds.map(sink.prepareTestValue), ValueWithContextType.info[AnyRef](customNodeContext))
             //FIXME: ...
             .addSink(new CollectingSinkFunction[AnyRef](compiledProcessWithDeps(None), collectingSink, part.id))
       }
@@ -267,7 +267,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
 
       resultStream
         .name(interpretationOperatorName(metaData, node, name, shouldUseAsyncInterpretation))
-        .process(new SplitFunction(outputContexts, typeInformationDetection), createTypeInformation[Unit])
+        .process(new SplitFunction(outputContexts, typeInformationDetection), new UnitTypeInfo)
     }
 
   }

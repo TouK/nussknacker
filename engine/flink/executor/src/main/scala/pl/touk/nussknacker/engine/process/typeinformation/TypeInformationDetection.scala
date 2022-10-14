@@ -3,12 +3,12 @@ package pl.touk.nussknacker.engine.process.typeinformation
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala.createTypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
+import pl.touk.nussknacker.engine.process.typeinformation.internal.{ContextTypeHelpers, ValueWithContextTypeHelpers}
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 
 object TypeInformationDetectionUtils extends LazyLogging {
@@ -39,10 +39,11 @@ object TypeInformationDetectionUtils extends LazyLogging {
 
 object GenericTypeInformationDetection extends TypeInformationDetection {
 
-  override def forContext(validationContext: ValidationContext): TypeInformation[Context] = implicitly[TypeInformation[Context]]
+  override def forContext(validationContext: ValidationContext): TypeInformation[Context] =
+    ContextTypeHelpers.infoGeneric
 
   override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = implicitly[TypeInformation[ValueWithContext[AnyRef]]].asInstanceOf[TypeInformation[ValueWithContext[T]]]
+    = ValueWithContextTypeHelpers.infoGeneric.asInstanceOf[TypeInformation[ValueWithContext[T]]]
 
-  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = implicitly[TypeInformation[AnyRef]]
+  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
 }

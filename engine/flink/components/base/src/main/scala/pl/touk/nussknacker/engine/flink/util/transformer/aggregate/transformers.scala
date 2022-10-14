@@ -1,9 +1,8 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
-import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import org.apache.flink.streaming.api.datastream.DataStream
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
@@ -24,6 +23,7 @@ import scala.concurrent.duration.Duration
 @PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
 // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
+  private implicit val anyRefTypeInformation = TypeInformation.of(classOf[AnyRef])
 
   def slidingTransformer(groupBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
@@ -128,6 +128,7 @@ object transformers {
             case SessionWindowTrigger.OnEvent => FireOnEachEvent(baseTrigger)
             case SessionWindowTrigger.OnEnd => baseTrigger
           }
+          implicit val pairTypeInformation: TypeInformation[(AnyRef, java.lang.Boolean)] = TypeInformation.of(new TypeHint[(AnyRef, java.lang.Boolean)] {})
           start
             .groupByWithValue(groupBy, aggregateBy.product(endSessionCondition))
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))

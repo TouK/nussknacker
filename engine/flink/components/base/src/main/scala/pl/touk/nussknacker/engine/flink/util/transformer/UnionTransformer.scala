@@ -5,7 +5,6 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.FlatMapFunction
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoMapFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
@@ -18,6 +17,7 @@ import pl.touk.nussknacker.engine.flink.api.process.{AbstractLazyParameterInterp
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 case object UnionTransformer extends UnionTransformer(None) {
 
@@ -92,7 +92,7 @@ class UnionTransformer(timestampAssigner: Option[TimestampWatermarkHandler[Times
             ))
 
             timestampAssigner
-              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_).assignWatermarks(connectedStream))
+              .map(new TimestampAssignmentHelper[ValueWithContext[AnyRef]](_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(connectedStream))
               .getOrElse(connectedStream)
           }
         }

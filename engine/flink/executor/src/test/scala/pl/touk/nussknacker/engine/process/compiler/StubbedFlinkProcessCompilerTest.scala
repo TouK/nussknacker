@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
@@ -23,6 +23,8 @@ import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 
 class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
+
+  private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
   private val scenarioWithSingleSource = ScenarioBuilder.streaming("test")
     .source("left-source", "test-source")

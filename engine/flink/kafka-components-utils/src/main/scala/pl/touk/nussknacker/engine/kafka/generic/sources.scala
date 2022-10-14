@@ -1,9 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.generic
 
 import io.circe.Decoder
-import org.apache.flink.api.common.eventtime.SerializableTimestampAssigner
-import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.api.typed._
@@ -35,9 +33,9 @@ object sources {
       processObjectDependencies,
       new FlinkKafkaDelayedSourceImplFactory(timestampAssigner, TypedJsonTimestampFieldAssigner(_)))
 
-  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)
+  object JsonMapDeserialization extends EspDeserializationSchema[java.util.Map[_, _]](deserializeToMap)(TypeInformation.of(new TypeHint[java.util.Map[_, _]] {}))
 
-  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](deserializeToTypedMap)
+  object JsonTypedMapDeserialization extends EspDeserializationSchema[TypedMap](deserializeToTypedMap)(TypeInformation.of(classOf[TypedMap]))
 
   //TOOD: better error handling?
   class JsonDecoderDeserialization[T:Decoder:TypeInformation] extends EspDeserializationSchema[T](CirceUtil.decodeJsonUnsafe[T](_))

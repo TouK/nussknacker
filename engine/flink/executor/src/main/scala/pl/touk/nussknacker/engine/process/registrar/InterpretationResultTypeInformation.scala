@@ -9,8 +9,8 @@ import pl.touk.nussknacker.engine.api.PartReference
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
-import pl.touk.nussknacker.engine.flink.typeinformation.ConcreteCaseClassTypeInfo
-import pl.touk.nussknacker.engine.process.typeinformation.internal.{FixedValueSerializers, InterpretationResultMapTypeInfo}
+import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.InterpretationResultMapTypeInfo
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object InterpretationResultTypeInformation {
@@ -18,7 +18,7 @@ object InterpretationResultTypeInformation {
   def create(detection: TypeInformationDetection, validationContext: ValidationContext, outputRes: Option[TypingResult]): TypeInformation[InterpretationResult] = {
     //TODO: here we still use Kryo :/
     val reference = TypeInformation.of(classOf[PartReference])
-    val output = outputRes.map(detection.forType).getOrElse(FixedValueSerializers.nullValueTypeInfo)
+    val output = outputRes.map(detection.forType).getOrElse(FixedValueTypeInformationHelper.nullValueTypeInfo)
     val finalContext = detection.forContext(validationContext)
 
     ConcreteCaseClassTypeInfo[InterpretationResult](

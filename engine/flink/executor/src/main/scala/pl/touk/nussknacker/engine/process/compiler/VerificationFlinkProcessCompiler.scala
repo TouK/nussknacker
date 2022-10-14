@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
-import org.apache.flink.api.scala.createTypeInformation
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.ProcessListener
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessConfigCreator, ProcessObjectDependencies}
@@ -20,6 +20,9 @@ class VerificationFlinkProcessCompiler(process: CanonicalProcess,
   override protected def prepareService(service: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
     overrideObjectWithMethod(service, (_, _) => null)
 
-  override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef
-    = overrideObjectWithMethod(sourceFactory, (_, returnType) =>  new EmptySource[Object](returnType))
+  override protected def prepareSourceFactory(sourceFactory: DefinitionExtractor.ObjectWithMethodDef): DefinitionExtractor.ObjectWithMethodDef =
+    overrideObjectWithMethod(
+      sourceFactory,
+      (_, returnType) =>  new EmptySource[Object](returnType)(TypeInformation.of(classOf[Object]))
+    )
 }

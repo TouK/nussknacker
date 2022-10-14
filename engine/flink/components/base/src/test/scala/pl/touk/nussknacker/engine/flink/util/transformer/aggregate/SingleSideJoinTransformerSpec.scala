@@ -5,7 +5,6 @@ import org.apache.flink.api.common.functions.RuntimeContext
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.runtime.execution.ExecutionState
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
-import org.apache.flink.api.scala.createTypeInformation
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
@@ -123,6 +122,8 @@ class SingleSideJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matc
 object SingleSideJoinTransformerSpec {
 
   private val customElementName = "single-side-join-in-test"
+
+  private implicit val oneRecordTypeInformation: TypeInformation[OneRecord] = TypeInformation.of(classOf[OneRecord])
 
   val elementsAddedToState = new ConcurrentLinkedQueue[StringKeyedValue[AnyRef]]()
 
