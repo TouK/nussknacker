@@ -67,8 +67,6 @@ class TypingResultAwareTypeInformationDetection(customisation:
 
       case a: TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[AnyRef](forType(a.params.head))
 
-      case TraversableType(traversableClass, elementType) => throw new NotImplementedError("Traversables are not supported.")
-
       case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
 
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
