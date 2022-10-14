@@ -115,6 +115,7 @@ class UnionMemoFunction(stateTimeout: Duration) extends LatelyEvictableStateFunc
 
   type FlinkCtx = KeyedProcessFunction[String, ValueWithContext[StringKeyedValue[(String, AnyRef)]], ValueWithContext[AnyRef]]#Context
 
+  // TODO: Add TypeInformation depending on context.
   override protected def stateDescriptor: ValueStateDescriptor[java.util.Map[String, AnyRef]] = {
     new ValueStateDescriptor("state", new MapTypeInfo(TypeInformation.of(classOf[String]), TypeInformation.of(classOf[AnyRef])))
   }
