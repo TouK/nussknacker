@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
+import com.typesafe.config.ConfigFactory
+import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import io.circe.parser.parse
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.funsuite.AnyFunSuite
@@ -40,7 +42,9 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
   test("should read data with json payload on avro schema based topic") {
     //Given
-    val runner = TestScenarioRunner.kafkaLiteBased().build()
+    val config = ConfigFactory.load()
+      .withValue("kafka.avroAsJsonSerialization", fromAnyRef(true))
+    val runner = TestScenarioRunner.kafkaLiteBased(config).build()
     runner.registerAvroSchema(inputTopic, schema)
     runner.registerAvroSchema(outputTopic, schema)
 
@@ -54,7 +58,7 @@ class UniversalSourceAvroSchemaLiteTest extends AnyFunSuite with Matchers with V
 
     val input = new ConsumerRecord(inputTopic, 1, 1, null.asInstanceOf[Array[Byte]], jsonRecord)
 
-    val list: List[ConsumerRecord[Array[Byte],Array[Byte]]] = List(input)
+    val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
     val result = runner.runWithRawData(scenario, list).validValue
     val resultWithValue = result.copy(success = result.successes.map(_.value()))
 
