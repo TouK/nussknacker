@@ -59,8 +59,6 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: NumberSchema, value: java.math.BigDecimal) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: java.math.BigInteger) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Number) => Valid(jsonEncoder.encode(value.doubleValue()))
-      //      case a: UUID => safeString(a.toString)
-      //      case a: DisplayJson => a.asJson
       case (_: NullSchema, null) => Valid(Json.Null)
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
