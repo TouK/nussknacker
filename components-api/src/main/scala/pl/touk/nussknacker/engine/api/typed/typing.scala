@@ -195,7 +195,7 @@ object typing {
       if (runtimeClass == classOf[Any])
         Unknown
       else
-        genericTypeClass(runtimeClass, typ.typeArgs.map(fromType))
+        genericTypeClass(runtimeClass, typ.dealias.typeArgs.map(fromType))
     }
 
     def genericTypeClass[T:ClassTag](params: List[TypingResult]): TypedClass = genericTypeClass(toRuntime[T], params)
