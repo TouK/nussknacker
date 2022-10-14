@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.engine.process.typeinformation.internal
 
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
-import org.apache.flink.api.scala.typeutils.OptionTypeInfo
 import pl.touk.nussknacker.engine.api.Context
+import pl.touk.nussknacker.engine.flink.api.typeinfo.option.OptionTypeInfo
 import pl.touk.nussknacker.engine.flink.typeinformation.{ConcreteCaseClassTypeInfo, FixedValueTypeInformationHelper}
 
 object ContextTypeHelpers {
