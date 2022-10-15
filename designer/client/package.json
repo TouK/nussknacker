@@ -159,7 +159,6 @@
     "@types/color": "3.0.2",
     "@types/dagre": "0.7.47",
     "@types/enzyme": "3.10.11",
-    "@types/jest": "27.4.0",
     "@types/jquery": "3.5.13",
     "@types/jsonwebtoken": "8.5.8",
     "@types/kefir": "3.8.7",

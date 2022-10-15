@@ -1,5 +1,6 @@
 import * as TemplatesUtils from "../components/graph/node-modal/editors/expression/TemplatesUtils"
 import {QuotationMark} from "../components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {describe, expect} from '@jest/globals';
 
 const templates = `
 Lorem ipsum #{dolor}# sit amet enim. Etiam #{
