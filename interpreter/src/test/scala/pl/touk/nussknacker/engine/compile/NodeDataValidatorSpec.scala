@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.api.context.ValidationContext
+import pl.touk.nussknacker.engine.api.context.{OutputVar, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
@@ -240,12 +240,31 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     }
   }
 
-  test("should validate fragment") {
+  test("should validate fragment parameters") {
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
-      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")))), ValidationContext.empty)
+      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")), Some(Map("out1" -> "test1")))), ValidationContext.empty)
     ) {
       case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
+    }
+  }
+
+  test("should validate output parameters") {
+
+    val incorrectVarName = "very bad var name"
+    val varFieldName = OutputVar.fragmentOutput("out1", "").fieldName
+    val nodeId = "frInput"
+    inside(
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> incorrectVarName)))), ValidationContext.empty)
+    ) {
+      case ValidationPerformed(List(InvalidVariableOutputName(incorrectVarName, nodeId, Some(varFieldName))), None, None) =>
+    }
+
+    val existingVar = "var1"
+    inside(
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> existingVar)))), ValidationContext(Map(existingVar -> Typed[String])))
+    ) {
+      case ValidationPerformed(List(OverwrittenVariable(existingVar, nodeId, Some(varFieldName))), None, None) =>
     }
   }
 
@@ -274,7 +293,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
                        outgoingEdges: List[OutgoingEdge] = Nil): ValidationResponse = {
     val fragmentDef = CanonicalProcess(MetaData("fragment", FragmentSpecificData()), List(
       FlatNode(SubprocessInputDefinition("in", List(SubprocessParameter("param1", SubprocessClazzRef[String])))),
-      FlatNode(SubprocessOutputDefinition("out", "out1", Nil)),
+      FlatNode(SubprocessOutputDefinition("out", "out1", List(Field("strField", "'value'")))),
     ))
     NodeDataValidator.validate(nodeData, modelData, ctx, branchCtxs, Map("fragment1" -> fragmentDef).get, outgoingEdges)(MetaData("id", StreamMetaData()))
   }
