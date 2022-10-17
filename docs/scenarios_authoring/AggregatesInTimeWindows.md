@@ -4,7 +4,7 @@ sidebar_position: 5
 
 # Aggregates in time windows
 
-**(Streaming-Flink only)**
+**(Flink engine only)**
 
 ## Concepts
 
