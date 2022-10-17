@@ -82,6 +82,10 @@ export default function OutputParametersList({
     setProperty(outputVariablePath, params)
   }, [params, setProperty])
 
+  outputParameters.filter(paramName => params[paramName] === undefined).forEach(paramName => {
+    setParams(prevState => ({...prevState, [paramName]: paramName}))
+  })
+  
   return outputParameters && outputParameters.length === 0 ?
     null :
     (
@@ -100,7 +104,7 @@ export default function OutputParametersList({
                   key={paramName}
                   isEditMode={isEditMode}
                   showValidation={showValidation}
-                  value={params[paramName]}
+                  value={params[paramName] === undefined ? paramName : params[paramName]}
                   renderedFieldLabel={renderFieldLabel(paramName)}
                   onChange={value => setParams(prevState => ({...prevState, [paramName]: value}))}
                   fieldType={FieldType.input}
