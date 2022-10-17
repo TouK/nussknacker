@@ -42,7 +42,9 @@ object node {
 
   case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
 
-  case class SubprocessEnd(id: String, varName: String, fields: List[Field], next: Next) extends Node
+  case class SubprocessEnd(id: String, outputVarDefinition: Option[SubprocessOutputVarDefinition], next: Next) extends Node
+
+  case class SubprocessOutputVarDefinition(name: String, fields: List[Field])
 
   case class SplitNode(id: String, nexts: List[Next]) extends Node
 

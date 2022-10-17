@@ -84,7 +84,7 @@ class DefaultComponentIdProviderSpec extends AnyFlatSpec with Matchers with Pati
       (CustomNode("custom", None, componentName, Nil), Some(cid(ComponentType.CustomNode))),
       (SubprocessInput("subprocess", SubprocessRef(componentName, Nil)), Some(cid(ComponentType.Fragments))),
 
-      (SubprocessOutput("output", componentName, Nil), None),
+      (SubprocessOutput("output", componentName, None), None),
       (BranchEndData(BranchEndDefinition("", "")), None),
 
       (Source("source", SourceRef(componentNameToOverride, Nil)), Some(overriddenId)),

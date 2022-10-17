@@ -50,8 +50,13 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     }
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], List[SubprocessParameter]] =
-    initialSubprocessChecks(subprocessInput).run.map(_._2._1)
+  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], (List[SubprocessParameter], Set[String])] =
+    initialSubprocessChecks(subprocessInput).run.map { case (_, (l, v, v2)) =>
+      val names = (v :: v2).flatten.flatMap(canonicalnode.collectAllNodes).collect {
+        case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => name
+      }.toSet
+      (l,  names)
+    }
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
@@ -64,7 +69,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessOutput(outputId, output, List.empty, None)) :: resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessOutput(outputId, output, None, None)) :: resolvedNexts
         }
       //here is the only interesting part - not disabled subprocess
       case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
@@ -124,8 +129,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
           case Some(map) => map.get(name)
         }
         (replacement.get(name), maybeOutputName) match {
-          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
-          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
+          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, name, None, add)) :: nodes)
+          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
           case _ => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
         }
       }

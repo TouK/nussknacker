@@ -121,7 +121,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty, None)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxV, compiledFields, _) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+          nodeCompiler.compileFields(fields, ctx, outputVar = None)
         CompilationResult.map2(
           fa = CompilationResult(ctxV),
           fb = toCompilationResult(compiledFields, typingInfo, parameters)
@@ -187,25 +187,25 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo, parameters), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
           compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
 
-      case SubprocessOutput(id, outPutName, List(), _) =>
+      case SubprocessOutput(id, outputName, None, _) =>
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentContext = ctx.popContextOrEmptyWithGlobals()
         compile(next, parentContext)
-          .andThen(compiledNext => toCompilationResult(Valid(SubprocessEnd(id, outPutName, List(), compiledNext)), Map.empty, None))
-      case SubprocessOutput(id, outputName, fields, _) =>
+          .andThen(compiledNext => toCompilationResult(Valid(SubprocessEnd(id, None, compiledNext)), Map.empty, None))
+      case SubprocessOutput(id, outputName, Some(outputVar), _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+          nodeCompiler.compileFields(outputVar.fields, ctx, outputVar = None)
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentCtx = ctx.popContextOrEmptyWithGlobals()
         val parentCtxWithSubOut = parentCtx
-          .withVariable(OutputVar.subprocess(outputName), typingResult.getOrElse(Unknown))
+          .withVariable(OutputVar.fragmentOutput(outputName, outputVar.name), typingResult.getOrElse(Unknown))
           .getOrElse(parentCtx)
         CompilationResult.map3(
           f0 = CompilationResult(ctxWithSubOutV),
           f1 = toCompilationResult(compiledFields, typingInfo, parameters),
           f2 = compile(next, parentCtxWithSubOut)) {
           (_, compiledFields, compiledNext) =>
-            compiledgraph.node.SubprocessEnd(id, outputName, compiledFields, compiledNext)
+            compiledgraph.node.SubprocessEnd(id, Some(node.SubprocessOutputVarDefinition(outputVar.name, compiledFields)), compiledNext)
         }
     }
   }
