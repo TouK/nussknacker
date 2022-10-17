@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
 import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalTime, OffsetTime, ZonedDateTime}
+import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 
 class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
@@ -276,7 +276,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
   test("should encode avro generic record") {
     type WithError[T] = ValidatedNel[String, T]
-    val avroToJsonEncoder: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] = new AvroToJsonBasedOnSchemaEncoder().encoder(encoder.encode)
+    val avroToJsonEncoder: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] = new AvroToJsonBasedOnSchemaEncoder().encoder(encoder.encodeBasedOnSchema)
 
     val avroSchema =
       SchemaBuilder.builder().record("test").fields()

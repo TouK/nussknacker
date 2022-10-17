@@ -14,7 +14,7 @@ class SchemaResponseEncoder(schema: Schema) extends ResponseEncoder[Any] {
     result
       .map(bestEffortEncoder.encodeOrError(_, schema))
       .headOption
-      .getOrElse(throw new IllegalArgumentException(s"Process did not return any result"))
+      .getOrElse(throw new IllegalArgumentException(s"Scenario did not return any result"))
   }
 
 }
