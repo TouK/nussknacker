@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
 import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
@@ -37,9 +37,6 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
                         additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator]],
                         subprocessResolver: SubprocessResolver,
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
-
-  private val syntax: ValidatedSyntax[ProcessCompilationError] = ValidatedSyntax[ProcessCompilationError]
-  import syntax._
 
   val uiValidationError = "UiValidation"
 

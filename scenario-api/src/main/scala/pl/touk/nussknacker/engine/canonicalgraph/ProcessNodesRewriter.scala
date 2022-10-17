@@ -133,7 +133,7 @@ trait ExpressionRewriter {
           fields = rewriteFields(n.fields))
       case n: SubprocessOutput =>
         n.copy(
-          fields = rewriteFields(n.fields))
+          outputVar = n.outputVar.map(ov => ov.copy(fields = rewriteFields(ov.fields))))
       case _: BranchEndData | _: Split | _: SubprocessInputDefinition => data
     }
 

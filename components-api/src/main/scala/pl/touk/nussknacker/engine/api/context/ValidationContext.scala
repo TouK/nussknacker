@@ -72,8 +72,6 @@ object OutputVar {
 
   val EnricherFieldName = "output"
 
-  val SubprocessFieldName = "outputName"
-
   val SwitchFieldName = "exprVal"
 
   val CustomNodeFieldName = "outputVar"
@@ -84,8 +82,8 @@ object OutputVar {
   def enricher(outputName: String): OutputVar =
     OutputVar(EnricherFieldName, outputName)
 
-  def subprocess(outputName: String): OutputVar =
-    OutputVar(SubprocessFieldName, outputName)
+  def fragmentOutput(outputName: String, varName: String): OutputVar =
+    OutputVar(s"ref.outputVariableNames.$outputName", varName)
 
   def switch(outputName: String): OutputVar =
     OutputVar(SwitchFieldName, outputName)

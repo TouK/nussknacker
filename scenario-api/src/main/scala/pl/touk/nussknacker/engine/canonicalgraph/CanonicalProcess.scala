@@ -92,16 +92,7 @@ case class CanonicalProcess(metaData: MetaData,
 
   lazy val withoutDisabledNodes: CanonicalProcess = mapAllNodes(withoutDisabled)
 
-  def collectAllNodes: List[NodeData] = {
-    def nextNodes(node: CanonicalNode): List[NodeData] = node match {
-      case canonicalnode.FlatNode(data) => List(data)
-      case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(nextNodes)
-      case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(nextNodes) ::: defaultNext.flatMap(nextNodes)
-      case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(nextNodes)
-      case canonicalnode.Subprocess(data, outputs) => data :: outputs.values.flatten.toList.flatMap(nextNodes)
-    }
-    allStartNodes.toList.flatten.flatMap(nextNodes)
-  }
+  def collectAllNodes: List[NodeData] = allStartNodes.toList.flatten.flatMap(canonicalnode.collectAllNodes)
 
   @deprecated("This method does nothing, serves only as a help to make transition EspProcess to CanonicalProcess easier when using DSL", "1.6")
   val toCanonicalProcess: CanonicalProcess = this
@@ -127,5 +118,13 @@ object canonicalnode {
 
   case class Subprocess(data: SubprocessInput,
                         outputs: Map[String, List[CanonicalNode]]) extends CanonicalNode
+
+  def collectAllNodes(node: CanonicalNode): List[NodeData] =  node match {
+      case canonicalnode.FlatNode(data) => List(data)
+      case canonicalnode.FilterNode(data, nextFalse) => data :: nextFalse.flatMap(collectAllNodes)
+      case canonicalnode.SwitchNode(data, nexts, defaultNext) => data :: nexts.flatMap(_.nodes).flatMap(collectAllNodes) ::: defaultNext.flatMap(collectAllNodes)
+      case canonicalnode.SplitNode(data, nexts) => data :: nexts.flatten.flatMap(collectAllNodes)
+      case canonicalnode.Subprocess(data, outputs) => data :: outputs.values.flatten.toList.flatMap(collectAllNodes)
+  }
 
 }

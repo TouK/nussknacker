@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedClass, TypedObje
 import pl.touk.nussknacker.engine.api.typed.{NumberTypeUtils, typing}
 import pl.touk.nussknacker.engine.util.Implicits._
 import pl.touk.nussknacker.engine.util.MathUtils
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import java.util
 import scala.collection.JavaConverters._
@@ -16,9 +16,6 @@ import scala.collection.JavaConverters._
   This class lists some simple aggregates
  */
 object aggregates {
-
-  private val syntax = ValidatedSyntax[String]
-  import syntax._
 
   object SumAggregator extends ReducingAggregator with MathAggregator {
 
