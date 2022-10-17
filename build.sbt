@@ -308,7 +308,7 @@ val jmxPrometheusJavaagentV = "0.16.1"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "openjdk:11-jre-slim",
+    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildCommand := {
@@ -343,8 +343,7 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    //we use openjdk:11-jre for designer because *-slim based images lack /usr/local/openjdk-11/lib/libfontmanager.so file necessary during pdf export
-    dockerBaseImage := "openjdk:11-jre",
+    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
     dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
