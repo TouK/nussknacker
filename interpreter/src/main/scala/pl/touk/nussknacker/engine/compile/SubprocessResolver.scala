@@ -69,7 +69,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessOutput(outputId, output, None, None)) :: resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessUsageOutput(outputId, output, None, None)) :: resolvedNexts
         }
       //here is the only interesting part - not disabled subprocess
       case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
@@ -129,8 +129,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
           case Some(map) => map.get(name)
         }
         (replacement.get(name), maybeOutputName) match {
-          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, name, None, add)) :: nodes)
-          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
+          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
+          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
           case _ => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
         }
       }

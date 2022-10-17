@@ -40,9 +40,9 @@ object node {
 
   case class EndingCustomNode(id: String, ref: String) extends Node
 
-  case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
+  case class SubprocessUsageStart(id: String, params: List[Parameter], next: Next) extends Node
 
-  case class SubprocessEnd(id: String, outputVarDefinition: Option[SubprocessOutputVarDefinition], next: Next) extends Node
+  case class SubprocessUsageEnd(id: String, outputVarDefinition: Option[SubprocessOutputVarDefinition], next: Next) extends Node
 
   case class SubprocessOutputVarDefinition(name: String, fields: List[Field])
 

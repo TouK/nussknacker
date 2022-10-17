@@ -204,7 +204,7 @@ object PdfExporter extends LazyLogging {
       case Split(_, _) => ("No parameters", "") :: Nil
       //This should not happen in properly resolved scenario...
       case _: BranchEndData => throw new IllegalArgumentException("Should not happen during PDF export")
-      case _: SubprocessOutput => throw new IllegalArgumentException("Should not happen during PDF export")
+      case _: SubprocessUsageOutput => throw new IllegalArgumentException("Should not happen during PDF export")
     }
     val data = node.additionalFields
       .flatMap(_.description)

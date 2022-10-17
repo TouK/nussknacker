@@ -219,7 +219,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(SubprocessOutput(_, _, _, _)) =>
+          case FlatNode(SubprocessUsageOutput(_, _, _, _)) =>
             // output id is unpredictable
           case e => fail(e.toString)
         }

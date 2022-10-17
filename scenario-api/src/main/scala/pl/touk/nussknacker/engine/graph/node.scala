@@ -198,7 +198,7 @@ object node {
   }
 
   //this is used after resolving subprocess, used for detecting when subprocess ends and context should change
-  case class SubprocessOutput(id: String, outputName: String, outputVar: Option[SubprocessOutputVarDefinition], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
+  case class SubprocessUsageOutput(id: String, outputName: String, outputVar: Option[SubprocessOutputVarDefinition], additionalFields: Option[UserDefinedAdditionalNodeFields] = None)
     extends OneOutputSubsequentNodeData
 
   @JsonCodec case class SubprocessOutputVarDefinition(name: String, fields: List[Field])
