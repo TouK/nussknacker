@@ -11,13 +11,13 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedSingleParameter}
-import pl.touk.nussknacker.engine.api.context.{ContextTransformation, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
+import pl.touk.nussknacker.engine.api.context.{ContextTransformation, OutputVar, PartSubGraphCompilationError, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ClassExtractionSettings, ComponentUseCase, LanguageConfiguration, WithCategories}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.typed.typing._
-import pl.touk.nussknacker.engine.build.{ScenarioBuilder, GraphBuilder}
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectDefinition, ObjectWithMethodDef, StandardObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{CustomTransformerAdditionalData, ExpressionDefinition, ProcessDefinition}
@@ -1178,6 +1178,30 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
       case Invalid(NonEmptyList(
       ExpressionParserCompilationError("Unresolved reference 'input'", "customNodeId", Some("param"), _),
       Nil)) =>
+    }
+  }
+
+  test("validates fragment variables") {
+    val usedVarName = "sampleVar"
+
+    def scenario(outputName: String) = ScenarioBuilder
+      .streaming("scenario1")
+      .source("id1", "source")
+      .buildSimpleVariable("var1", usedVarName, "''")
+      .subprocessOneOut("sample", "frag1", "output1", outputName)
+      .emptySink("emptySink", "sink")
+    val fragment = ScenarioBuilder
+      .fragment("frag1")
+      .fragmentOutput("out", "output1", "field1" -> "''")
+    val resolver = SubprocessResolver(Set(fragment))
+
+    val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
+    withNonUsed shouldBe 'valid
+
+    val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
+    val outputVar = OutputVar.fragmentOutput("output1", "")
+    withUsed should matchPattern {
+      case Invalid(NonEmptyList(OverwrittenVariable(usedVarName, "sample-out", Some(outputVar)), Nil)) =>
     }
   }
 

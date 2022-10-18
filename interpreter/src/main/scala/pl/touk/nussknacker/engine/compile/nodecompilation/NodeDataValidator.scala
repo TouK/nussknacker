@@ -1,22 +1,26 @@
 package pl.touk.nussknacker.engine.compile.nodecompilation
 
 import cats.Applicative
+import cats.data.Validated.Valid
+import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 sealed trait ValidationResponse
 
@@ -29,6 +33,8 @@ case object ValidationNotPerformed extends ValidationResponse
 object NodeDataValidator {
 
   case class OutgoingEdge(target: String, edgeType: Option[EdgeType])
+
+
 
   def validate(nodeData: NodeData, modelData: ModelData,
                validationContext: ValidationContext,
@@ -55,21 +61,32 @@ object NodeDataValidator {
         case a: Filter => toValidationResponse(compiler.compileExpression(a.expression, validationContext, expectedType = Typed[Boolean], outputVar = None))
         case a: Variable => toValidationResponse(compiler.compileExpression(a.value, validationContext, expectedType = typing.Unknown, outputVar = Some(OutputVar.variable(a.varName))))
         case a: VariableBuilder => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.variable(a.varName))))
-        case a: SubprocessOutputDefinition => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = Some(OutputVar.subprocess(a.outputName))))
+        case a: SubprocessOutputDefinition => toValidationResponse(compiler.compileFields(a.fields, validationContext, outputVar = None))
         case a: Switch => toValidationResponse(compiler.compileSwitch(Applicative[Option].product(a.exprVal, a.expression), outgoingEdges.collect {
           case OutgoingEdge(k, Some(NextSwitch(expression))) => (k, expression)
         }, validationContext))
         case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
           errors => ValidationPerformed(errors.toList, None, None),
-          params => toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))
+          { case InputValidationResponse(params, outputs) =>
+            val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
+              val outputName = a.ref.outputVariableNames.map(names =>
+                Validated.fromOption(names.get(output), NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))).getOrElse(Valid(output))
+              outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
+            }.toList.sequence.swap.toList.flatMap(_.toList)
+            val outgoingEdgesErrors = outputs.collect {
+              case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
+                FragmentOutputNotDefined(name, Set(a.id))
+            }
+            val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))
+            parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors ++ outgoingEdgesErrors)
+          }
         )
-        //TODO: handle properties
         case _ => ValidationNotPerformed
       }
     }
   }
 
-  private def toValidationResponse[T<:TypedValue](nodeCompilationResult: NodeCompilationResult[_]): ValidationResponse =
+  private def toValidationResponse[T<:TypedValue](nodeCompilationResult: NodeCompilationResult[_]): ValidationPerformed =
     ValidationPerformed(nodeCompilationResult.errors, nodeCompilationResult.parameters, expressionType = nodeCompilationResult.expressionType)
 }
 

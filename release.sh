@@ -23,7 +23,7 @@ echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin;
 ARGS="release $@"
 JAVA_OPTS_VAL="-Xmx2G -XX:ReservedCodeCacheSize=256M -Xss6M -XX:+UseConcMarkSweepGC -XX:+CMSClassUnloadingEnabled"
 echo "Executing: JAVA_OPTS=\"$JAVA_OPTS_VAL\" sbt \"$ARGS\""
-JAVA_OPTS="$JAVA_OPTS_VAL" ./sbtwrapper -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
+JAVA_OPTS="$JAVA_OPTS_VAL" sbt -DdockerUpLatest=${dockerUpdateLatest} "$ARGS"
 
 if [[ "$BACKPORT" == "true" ]]; then
   echo "Backport release - Skipping update of master and dockerhub readme"

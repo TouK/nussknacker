@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.graph.evaluatedparam.{BranchParameters, Parame
 import pl.touk.nussknacker.engine.graph.expression.{Expression, NodeExpressionId}
 import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
-import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessOutput, SubprocessOutputDefinition}
+import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessUsageOutput, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
 
 import scala.reflect._
@@ -131,9 +131,9 @@ trait ExpressionRewriter {
       case n: SubprocessOutputDefinition =>
         n.copy(
           fields = rewriteFields(n.fields))
-      case n: SubprocessOutput =>
+      case n: SubprocessUsageOutput =>
         n.copy(
-          fields = rewriteFields(n.fields))
+          outputVar = n.outputVar.map(ov => ov.copy(fields = rewriteFields(ov.fields))))
       case _: BranchEndData | _: Split | _: SubprocessInputDefinition => data
     }
 

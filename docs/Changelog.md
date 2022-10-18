@@ -8,7 +8,7 @@
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
 
-1.6.0 (Not released yet)
+1.6.0 (18 Oct 2022)
 ------------------------
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
@@ -44,6 +44,7 @@
 * [#3574](https://github.com/TouK/nussknacker/pull/3574) Feature: instance logo can be shown next to Nu logo, by convention it has
   to be available at path `<nu host>/assets/img/instance-logo.svg`
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+* [#3632](https://github.com/TouK/nussknacker/pull/3632) Fix presenting validation errors for properties.
 
 1.5.0 (16 Aug 2022)
 ------------------------
