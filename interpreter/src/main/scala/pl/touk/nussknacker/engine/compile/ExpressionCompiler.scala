@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.Flavour
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.util.Implicits._
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{ModelData, TypeDefinitionSet, compiledgraph}
 
 object ExpressionCompiler {
@@ -72,10 +72,6 @@ object ExpressionCompiler {
 
 class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
 
-  private val syntax = ValidatedSyntax[PartSubGraphCompilationError]
-
-  import syntax._
-
   //used only for services
   def compileEagerObjectParameters(parameterDefinitions: List[Parameter],
                                    parameters: List[evaluatedparam.Parameter],
@@ -96,8 +92,6 @@ class ExpressionCompiler(expressionParsers: Map[String, ExpressionParser]) {
                               ctx: ValidationContext, branchContexts: Map[String, ValidationContext], eager: Boolean)
                              (implicit nodeId: NodeId)
   : ValidatedNel[PartSubGraphCompilationError, List[(compiledgraph.evaluatedparam.TypedParameter, Parameter)]] = {
-    val syntax = ValidatedSyntax[PartSubGraphCompilationError]
-    import syntax._
 
     val allParameters = parameters ++ branchParameters.flatMap(_.parameters)
     Validations.validateParameters(parameterDefinitions, allParameters).andThen { _ =>

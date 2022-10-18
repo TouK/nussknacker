@@ -5,7 +5,7 @@ import {Edge, NodeType} from "../../../../types"
 import NodeUtils from "../../NodeUtils"
 import {ContentSize} from "./ContentSize"
 import {SubprocessContent} from "./SubprocessContent"
-import {getErrors} from "./selectors"
+import {getNodeErrors, getPropertiesErrors} from "./selectors"
 import {RootState} from "../../../../reducers"
 import {NodeDetailsContent} from "../NodeDetailsContent"
 
@@ -16,7 +16,8 @@ interface Props {
 }
 
 export function NodeGroupContent({node, edges, onChange}: Props): JSX.Element {
-  const nodeErrors = useSelector((state: RootState) => getErrors(state, node.id))
+  const errors = node.type ? // for properties node `type` is undefined
+      useSelector((state: RootState) => getNodeErrors(state, node.id)) : useSelector(getPropertiesErrors)
 
   return (
     <div className={css({height: "100%", display: "grid", gridTemplateRows: "auto 1fr"})}>
@@ -25,7 +26,7 @@ export function NodeGroupContent({node, edges, onChange}: Props): JSX.Element {
           node={node}
           edges={edges}
           onChange={onChange}
-          nodeErrors={nodeErrors}
+          nodeErrors={errors}
           showValidation
           showSwitch
         />

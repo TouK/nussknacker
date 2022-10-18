@@ -128,7 +128,8 @@ export function NodeTypeDetailsContent({
 
   useEffect(() => {
     dispatch(validateNodeData(processId, {
-      outgoingEdges: edges,
+      //see NODES_CONNECTED/NODES_DISCONNECTED
+      outgoingEdges: edges.filter(e => e.to != ""),
       nodeData: node,
       processProperties,
       branchVariableTypes: getBranchVariableTypes(node.id),
