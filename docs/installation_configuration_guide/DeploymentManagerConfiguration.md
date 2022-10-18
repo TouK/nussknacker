@@ -195,7 +195,7 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 
 ## Request-Response embedded
 
-`request-response-embedded` Deployment Manager has the following configuration options:
+Deployment Manager of type `request-response-embedded` has the following configuration options:
 
 | Parameter                                                 | Type   | Default value   | Description                                                                                                                      |
 |-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------|
@@ -207,9 +207,9 @@ Just like in [Designer installation](./Installation.md#Basic environment variabl
 | request-response.security.basicAuth.user                  | string |                 | (Optional) Basic auth user                                                                                                       | 
 | request-response.security.basicAuth.password              | string |                 | (Optional) Basic auth password                                                                                                   | 
 
-## Streaming-Flink 
+## Flink engine 
 
-`flinkStreaming` Deployment Manager has the following configuration options:
+Deployment Manager of type `flinkStreaming` has the following configuration options:
 
 | Parameter                 | Type     | Default value | Description                                                                                                                                                                                                                                                                                                          |
 |---------------------------|----------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|

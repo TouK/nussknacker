@@ -8,11 +8,11 @@ sidebar_position: 4
 
 ### Concepts
 
-In Request-response mode you interact with Nussknacker Lite runtime engine in a similar way as with any "server" in the
+In Request-Response mode you interact with Nussknacker Lite runtime engine in a similar way as with any "server" in the
 Internet. You send request which contains request parameters and you get response from the server. The protocol for this
 communication is HTTP - the same protocol is used by browsers when they communicate with web servers. One of the
 differences is that the content of the communication with the Nussknacker Lite engine ("the server") is encoded as JSON,
-not HTML. Not very surprisingly, in Request-response processing mode the only possible Source component is Request and
+not HTML. Not very surprisingly, in Request-Response processing mode the only possible Source component is Request and
 the only Sink component is Response.
 
 ## Request-Response schema

@@ -51,11 +51,12 @@ class ProcessMetaDataBuilder private[build](metaData: MetaData) {
 
   def sources(source: SourceNode, rest: SourceNode*): CanonicalProcess = EspProcess(metaData, NonEmptyList.of(source, rest: _*)).toCanonicalProcess
 
-  class ProcessGraphBuilder private[ProcessMetaDataBuilder](val creator: Creator[CanonicalProcess])
-    extends GraphBuilder[CanonicalProcess] {
+}
 
-    override def build(inner: Creator[CanonicalProcess]) = new ProcessGraphBuilder(inner)
-  }
+class ProcessGraphBuilder private[build](val creator: Creator[CanonicalProcess])
+  extends GraphBuilder[CanonicalProcess] {
+
+  override def build(inner: Creator[CanonicalProcess]) = new ProcessGraphBuilder(inner)
 }
 
 object ScenarioBuilder {
@@ -72,4 +73,9 @@ object ScenarioBuilder {
   def requestResponse(id: String, slug: String) =
     new ProcessMetaDataBuilder(MetaData(id, RequestResponseMetaData(Some(slug))))
 
+  def fragment(id: String, params: (String, Class[_])*): ProcessGraphBuilder = {
+    new ProcessGraphBuilder(GraphBuilder.fragmentInput(id, params:_*)
+      .creator
+      .andThen(r => EspProcess(MetaData(id, FragmentSpecificData()), NonEmptyList.of(r)).toCanonicalProcess))
+  }
 }
