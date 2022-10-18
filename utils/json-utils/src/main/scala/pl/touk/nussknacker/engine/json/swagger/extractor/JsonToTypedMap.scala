@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 
 // TODO: Validated
-object JsonToObject {
+object JsonToTypedMap {
 
   import scala.collection.JavaConverters._
 
@@ -28,13 +28,17 @@ object JsonToObject {
         else null
       }
 
+      def notNullOrRequired(fieldName: String, value: Any, required: Set[PropertyName]): Boolean = {
+        value != null || required.contains(fieldName)
+      }
+
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
-          elementType.collect {
-            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToObject(_, jsonDef)).getOrElse(nullOrError(jsonField))
+          elementType.map {
+            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef)).getOrElse(nullOrError(jsonField))
           }
-            .filter(e => e._2 != null || required.contains(e._1))
+            .filter(e => notNullOrRequired(e._1, e._2, required))
         )
       )
     }
@@ -62,7 +66,7 @@ object JsonToObject {
       case SwaggerBigDecimal =>
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
-        extract[Vector[Json]](_.asArray, _.map(JsonToObject(_, elementType)).asJava)
+        extract[Vector[Json]](_.asArray, _.map(JsonToTypedMap(_, elementType)).asJava)
       case SwaggerObject(elementType, required) =>
         extractObject(elementType, required)
     }

@@ -6,12 +6,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
-class JsonToObjectTest extends AnyFunSuite
+class JsonToTypedMapTest extends AnyFunSuite
   with Matchers {
 
   private val json = Json.obj(
@@ -38,7 +38,7 @@ class JsonToObjectTest extends AnyFunSuite
       "doubleField" -> SwaggerDouble
     ), required = Set("field2"))
 
-    val value = JsonToObject(json, definition)
+    val value = JsonToTypedMap(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
@@ -56,8 +56,8 @@ class JsonToObjectTest extends AnyFunSuite
   test("should fail for object with all required field absent") {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), required = Set("field3"))
 
-    assertThrows[JsonToObject.JsonToObjectError] {
-      extractor.JsonToObject(json, definition)
+    assertThrows[JsonToTypedMap.JsonToObjectError] {
+      extractor.JsonToTypedMap(json, definition)
     }
   }
 }

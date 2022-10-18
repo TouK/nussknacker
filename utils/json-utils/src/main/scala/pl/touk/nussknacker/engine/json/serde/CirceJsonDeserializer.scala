@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToObject
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
 
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.asScalaBufferConverter
@@ -30,7 +30,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val jsonObject = new JSONTokener(string).nextValue()
     //after validate jsonObject has set default field values
     catchValidationError(jsonSchema.validate(jsonObject))
-    Validated.fromEither(CirceUtil.decodeJson[Json](jsonObject.toString).map(JsonToObject.apply(_, swaggerTyped)))
+    Validated.fromEither(CirceUtil.decodeJson[Json](jsonObject.toString).map(JsonToTypedMap.apply(_, swaggerTyped)))
   }
 
   protected def prepareValidationErrorMessage(exception: Throwable): String = {
