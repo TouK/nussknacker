@@ -10,7 +10,8 @@ import {HistoryItem, VersionType} from "./HistoryItem"
 import {ProcessVersionType} from "./Process/types"
 
 export function ProcessHistoryComponent(props: {isReadOnly?: boolean}): JSX.Element {
-  const {history = [], lastDeployedAction, name, processVersionId} = useSelector(getFetchedProcessDetails)
+  const processDetails = useSelector(getFetchedProcessDetails)
+  const {history = [], lastDeployedAction, name, processVersionId} = processDetails || {}
   const nothingToSave = useSelector(isSaveDisabled)
   const selectedVersion = useMemo(
     () => history.find(v => v.processVersionId === processVersionId),
