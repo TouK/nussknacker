@@ -123,7 +123,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocessOutput("badoutput", Set("sub-out1", "sub"))))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
   }
 
@@ -219,7 +219,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(SubprocessOutput(_, _, _, _)) =>
+          case FlatNode(SubprocessUsageOutput(_, _, _, _)) =>
             // output id is unpredictable
           case e => fail(e.toString)
         }

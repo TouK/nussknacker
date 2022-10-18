@@ -62,7 +62,8 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
 
 /**
   * Right now we have a few different ways to name output param in node.. OutputVar allows us to skip using strings.
-  * @TODO: Provide one way for naming output in all nodes.
+  * The fieldName should be consistent with field path in model in pl.touk.nussknacker.engine.graph.node,
+  * so that errors are displayed correctly
   */
 case class OutputVar(fieldName: String, outputName: String)
 
@@ -71,8 +72,6 @@ object OutputVar {
   val VariableFieldName = "varName"
 
   val EnricherFieldName = "output"
-
-  val SubprocessFieldName = "outputName"
 
   val SwitchFieldName = "exprVal"
 
@@ -84,8 +83,8 @@ object OutputVar {
   def enricher(outputName: String): OutputVar =
     OutputVar(EnricherFieldName, outputName)
 
-  def subprocess(outputName: String): OutputVar =
-    OutputVar(SubprocessFieldName, outputName)
+  def fragmentOutput(outputName: String, varName: String): OutputVar =
+    OutputVar(s"ref.outputVariableNames.$outputName", varName)
 
   def switch(outputName: String): OutputVar =
     OutputVar(SwitchFieldName, outputName)

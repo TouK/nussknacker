@@ -19,7 +19,7 @@ import pl.touk.nussknacker.engine.definition.parameter.StandardParameterEnrichme
 import pl.touk.nussknacker.engine.expression.ExpressionEvaluator
 import pl.touk.nussknacker.engine.graph.evaluatedparam
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax
+import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.annotation.tailrec
@@ -107,8 +107,7 @@ class GenericNodeTransformationValidator(expressionCompiler: ExpressionCompiler,
     //TODO: this method is a bit duplicating ExpressionCompiler.compileObjectParameters
     //we should unify them a bit in the future
     private def compileParameter(parameter: Parameter, nodeParameters: List[evaluatedparam.Parameter]): ValidatedNel[ProcessCompilationError, (compiledgraph.evaluatedparam.TypedParameter, Option[evaluatedparam.Parameter])] = {
-      val syntax = ValidatedSyntax[ProcessCompilationError]
-      import syntax._
+
       if (parameter.branchParam) {
         val params = branchParametersFromNode
           .map(bp => bp.parameters.find(_.name == parameter.name) match {

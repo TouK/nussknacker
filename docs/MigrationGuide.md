@@ -38,6 +38,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3471](https://github.com/TouK/nussknacker/pull/3471), [#3553](https://github.com/TouK/nussknacker/pull/3553) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
   `V1_033__RequestResponseUrlToSlug` migration is ready for that, the change also applies to Scenario DSL.
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Scenario DSL returns `CanonicalProcess` instead of `EspProcess`. 
+* [#3630](https://github.com/TouK/nussknacker/pull/3630) `SubprocessOutput` changed to `SubprocessUsageOutput`, changes in `OutputVar` definition               
 
 ### Configuration changes
 * [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:
