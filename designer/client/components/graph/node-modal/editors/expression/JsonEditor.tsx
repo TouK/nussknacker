@@ -42,10 +42,10 @@ export default class JsonEditor extends React.Component<Props, { value: string }
     const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
 
     return (
-      <React.Fragment>
+      <div className="node-value">
         <AceEditor
           mode={"json"}
-          width={"70%"}
+          width={"100%"}
           minLines={5}
           maxLines={50}
           theme={THEME}
@@ -69,7 +69,7 @@ export default class JsonEditor extends React.Component<Props, { value: string }
         />
         {this.props.showValidation &&
           <ValidationLabels validators={this.props.validators} values={[this.state.value]}/>}
-      </React.Fragment>
+      </div>
     )
   }
 }
