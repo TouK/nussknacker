@@ -62,7 +62,8 @@ case class ValidationContext(localVariables: Map[String, TypingResult] = Map.emp
 
 /**
   * Right now we have a few different ways to name output param in node.. OutputVar allows us to skip using strings.
-  * @TODO: Provide one way for naming output in all nodes.
+  * The fieldName should be consistent with field path in model in pl.touk.nussknacker.engine.graph.node,
+  * so that errors are displayed correctly
   */
 case class OutputVar(fieldName: String, outputName: String)
 

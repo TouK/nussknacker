@@ -67,16 +67,16 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case VariableBuilder(_, varName, Left(expression), next) =>
         val valueWithModifiedContext = expressionEvaluator.evaluate[Any](expression, varName, node.id, ctx)
         interpretNext(next, ctx.withVariable(varName, valueWithModifiedContext.value))
-      case SubprocessUsageStart(_, params, next) =>
+      case FragmentUsageStart(_, params, next) =>
         val (newCtx, vars) = expressionEvaluator.evaluateParameters(params, ctx)
         interpretNext(next, newCtx.pushNewContext(vars))
-      case SubprocessUsageEnd(_, outputVar, next) =>
+      case FragmentUsageEnd(_, outputVar, next) =>
         // Here we need parent context so we can compile rest of scenario. Unfortunately some component inside fragment
         // could've cleared that context. In that case, we take current (fragment's) context so we can keep the id,
         // clear it's variables, and keep using it in further processing.
         val parentContext = ctx.parentContext.getOrElse(ctx.copy(variables = Map.empty))
         val newParentContext = outputVar match {
-          case Some(SubprocessOutputVarDefinition(varName, fields)) =>
+          case Some(FragmentOutputVarDefinition(varName, fields)) =>
             //TODO simplify
             val withModifiedVariable = createOrUpdateVariable(ctx, varName, fields)
             parentContext.withVariable(varName, withModifiedVariable(varName))

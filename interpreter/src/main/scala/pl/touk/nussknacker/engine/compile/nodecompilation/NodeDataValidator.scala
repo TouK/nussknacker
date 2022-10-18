@@ -4,7 +4,7 @@ import cats.Applicative
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated}
 import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.UnknownSubprocessOutput
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{FragmentOutputNotDefined, UnknownFragmentOutput}
 import pl.touk.nussknacker.engine.api.context.{OutputVar, ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.expression.TypedValue
@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
-import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, SubprocessResolver}
+import pl.touk.nussknacker.engine.compile.{ExpressionCompiler, InputValidationResponse, Output, SubprocessResolver}
 import pl.touk.nussknacker.engine.graph.EdgeType
 import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
 import pl.touk.nussknacker.engine.graph.node._
@@ -67,14 +67,18 @@ object NodeDataValidator {
         }, validationContext))
         case a: SubprocessInput => SubprocessResolver(getFragment).resolveInput(a).fold(
           errors => ValidationPerformed(errors.toList, None, None),
-          { case (params, nonEmptyOutputs) =>
-            val outputFieldsValidationErrors = nonEmptyOutputs.map { output =>
+          { case InputValidationResponse(params, outputs) =>
+            val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
               val outputName = a.ref.outputVariableNames.map(names =>
-                Validated.fromOption(names.get(output), NonEmptyList.one(UnknownSubprocessOutput(output, Set(a.id))))).getOrElse(Valid(output))
+                Validated.fromOption(names.get(output), NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))).getOrElse(Valid(output))
               outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
             }.toList.sequence.swap.toList.flatMap(_.toList)
+            val outgoingEdgesErrors = outputs.collect {
+              case Output(name, _) if !outgoingEdges.exists(_.edgeType.contains(EdgeType.SubprocessOutput(name))) =>
+                FragmentOutputNotDefined(name, Set(a.id))
+            }
             val parametersResponse = toValidationResponse(compiler.compileSubprocessInput(a.copy(subprocessParams = Some(params)), validationContext))
-            parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors)
+            parametersResponse.copy(errors = parametersResponse.errors ++ outputFieldsValidationErrors ++ outgoingEdgesErrors)
           }
         )
         case _ => ValidationNotPerformed

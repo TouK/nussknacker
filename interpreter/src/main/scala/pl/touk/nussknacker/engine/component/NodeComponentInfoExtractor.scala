@@ -23,8 +23,8 @@ object NodeComponentInfoExtractor {
       case enricher: Enricher => NodeComponentInfo(node.id, enricher.service.id, ComponentType.Enricher)
       case processor: Processor => NodeComponentInfo(node.id, processor.service.id, ComponentType.Processor)
       case endingProcessor: EndingProcessor => NodeComponentInfo(node.id, endingProcessor.service.id, ComponentType.Processor)
-      case _: SubprocessUsageStart => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentInput)
-      case _: SubprocessUsageEnd => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentOutput)
+      case _: FragmentUsageStart => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentInput)
+      case _: FragmentUsageEnd => NodeComponentInfo.forBaseNode(node.id, ComponentType.FragmentOutput)
       case _: BranchEnd => NodeComponentInfo(node.id, None)
     }
   }

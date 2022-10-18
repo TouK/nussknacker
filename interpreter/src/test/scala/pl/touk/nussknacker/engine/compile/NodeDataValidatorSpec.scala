@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationPerformed, ValidationResponse}
 import pl.touk.nussknacker.engine.compile.validationHelpers._
-import pl.touk.nussknacker.engine.graph.EdgeType.NextSwitch
+import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SubprocessOutput}
 import pl.touk.nussknacker.engine.graph.evaluatedparam.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node
@@ -243,7 +243,8 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
   test("should validate fragment parameters") {
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
-      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")), Some(Map("out1" -> "test1")))), ValidationContext.empty)
+      validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")),
+        Some(Map("out1" -> "test1")))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
     }
@@ -255,17 +256,30 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val varFieldName = OutputVar.fragmentOutput("out1", "").fieldName
     val nodeId = "frInput"
     inside(
-      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> incorrectVarName)))), ValidationContext.empty)
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")),
+        Some(Map("out1" -> incorrectVarName)))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(InvalidVariableOutputName(incorrectVarName, nodeId, Some(varFieldName))), None, None) =>
     }
 
     val existingVar = "var1"
     inside(
-      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> existingVar)))), ValidationContext(Map(existingVar -> Typed[String])))
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")),
+        Some(Map("out1" -> existingVar)))), ValidationContext(Map(existingVar -> Typed[String])), outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(OverwrittenVariable(existingVar, nodeId, Some(varFieldName))), None, None) =>
     }
+  }
+
+  test("should validate fragment output edges") {
+    val nodeId = "frInput"
+    val nodes = Set("aa")
+    inside(
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> "ok")))), ValidationContext.empty)
+    ) {
+      case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None) =>
+    }
+
   }
 
   test("should validate switch") {

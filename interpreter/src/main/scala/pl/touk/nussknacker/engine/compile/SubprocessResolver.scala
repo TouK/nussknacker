@@ -50,12 +50,12 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     }
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], (List[SubprocessParameter], Set[String])] =
+  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], InputValidationResponse] =
     initialSubprocessChecks(subprocessInput).run.map { case (_, (l, v, v2)) =>
       val names = (v :: v2).flatten.flatMap(canonicalnode.collectAllNodes).collect {
-        case SubprocessOutputDefinition(_, name, fields, _) if fields.nonEmpty => name
+        case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
       }.toSet
-      (l,  names)
+      InputValidationResponse(l,  names)
     }
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
@@ -131,7 +131,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         (replacement.get(name), maybeOutputName) match {
           case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
           case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
-          case _ => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
+          case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
         }
       }
     }, NodeDataFun.id)
@@ -193,3 +193,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
 }
+
+case class InputValidationResponse(parameters: List[SubprocessParameter], outputs: Set[Output])
+
+case class Output(name: String, nonEmptyFields: Boolean)
