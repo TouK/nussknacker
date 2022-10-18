@@ -195,9 +195,9 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   }
 
   test("should accept redundant parameters if validation modes allows this") {
-    val schema: Schema = SchemaLoader.load(new JSONObject(
+    val allowAdditionalProperties: Schema = SchemaLoader.load(new JSONObject(
       """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "$allowAdditionalProperties": "https://json-schema.org/draft-07/schema",
         |  "type": "object",
         |  "properties": {
         |    "foo": {
@@ -206,8 +206,22 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}""".stripMargin))
 
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), schema) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), schema) shouldBe 'invalid
+    val rejectAdditionalProperties: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$allowAdditionalProperties": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "additionalProperties": false
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
   }
 
   test("should encode not required property with empty map") {
