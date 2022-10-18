@@ -73,7 +73,7 @@ export default function OutputParametersList({
 }): JSX.Element {
   const outputParameters = ProcessUtils.findNodeObjectTypeDefinition(editedNode, processDefinitionData.processDefinition)?.outputParameters
   const [params, setParams] = useState(() => outputParameters.reduce((previousValue, currentValue) => ({
-    ...previousValue, [currentValue]: editedNode.ref?.outputVariableNames ? editedNode.ref?.outputVariableNames[currentValue] : undefined,
+    ...previousValue, [currentValue]: editedNode.ref?.outputVariableNames?.[currentValue],
   }), {}))
 
   const {t} = useTranslation()
