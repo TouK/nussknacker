@@ -12,8 +12,8 @@ Base API of Lite components is [here](https://github.com/TouK/nussknacker/tree/s
 This is a generic API that is used by Lite engine, but can be used to implement own engines, e.g. running in Request-Response way, or embedded in your application.
 For that reason, this API has a few parameters, that are fixed in StreamingLite:
 - `F` - the effect monad, in Lite it is Scala `Future`
-- `Input` - the type of data (e.g. events processed by the given engine). In Lite it's `ConsumerRecord[Array[Byte], Array[Byte]]` 
-- `Result` - the type of data produced by sinks of a given engine. In Lite it's `ProducerRecord[Array[Byte], Array[Byte]]`
+- `Input` - the type of data (e.g. events processed by the given engine). In Lite, it's `ConsumerRecord[Array[Byte], Array[Byte]]` 
+- `Result` - the type of data produced by sinks of a given engine. In Lite, it's `ProducerRecord[Array[Byte], Array[Byte]]`
 You can see [sample](https://github.com/TouK/nussknacker/blob/staging/engine/lite/runtime/src/test/scala/pl/touk/nussknacker/engine/lite/sample.scala) implementation of different Lite engine.
 
 The data can be processed in [microbatches](https://github.com/TouK/nussknacker/blob/staging/engine/lite/components-api/src/main/scala/pl/touk/nussknacker/engine/lite/api/commonTypes.scala#L18), 

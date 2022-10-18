@@ -24,8 +24,6 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
 
   type CanonicalBranch = List[CanonicalNode]
 
-  type WithAdditionalBranches[T] = Writer[List[CanonicalBranch], T]
-
   type ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T]
 
   private def additionalApply[T](value: CompilationValid[T]): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](value.map((Nil, _)))
@@ -125,14 +123,11 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
           case None => Some(name)
           case Some(map) => map.get(name)
         }
-
-        maybeOutputName
-          .map{ outputName => replacement.get(name) match {
-            case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
-            case None => invalidBranches(UnknownSubprocessOutput(outputName, Set(id, parentId)))
-          }}
-          .getOrElse(invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId))))
-          .asInstanceOf[ValidatedWithBranches[CanonicalBranch]]
+        (replacement.get(name), maybeOutputName) match {
+          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessOutput(id, name, fields, add)) :: nodes)
+          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
+          case _ => invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId)))
+        }
       }
     }, NodeDataFun.id)
   }

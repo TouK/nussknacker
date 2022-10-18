@@ -121,7 +121,7 @@ Please note, that the #input variable used in the Output expression field refers
 
 ## UnionMemo
 
-**(Streaming-Flink only)**
+**(Flink engine only)**
 
 ![union_memo_window](img/union_memo_window.png)
 
@@ -151,7 +151,7 @@ UnionMemo merges multiple branches into one stream. For each incoming branch two
 
 ## PreviousValue
 
-**(Streaming-Flink only)**
+**(Flink engine only)**
 
 ![previous_value_window](img/previous_value_window.png)
 
@@ -168,7 +168,7 @@ then the value of the output variable is the previous location for the current u
 
 ## Delay
 
-**(Streaming-Flink only)**
+**(Flink engine only)**
 
 Holds event in the node until 
   *event time* + `delay` >= max (*event time* ever seen by the delay node). 
@@ -184,7 +184,7 @@ It is handy when you want to end your scenario without specifying exact data sin
 
 ## Periodic
 
-**(Streaming-Flink only)**
+**(Flink engine only)**
 
 ![periodic_window](img/periodic.png)
 
@@ -199,7 +199,7 @@ This source has the following parameters:
 
 ![collect](img/collect.png)
 
-**(Request-response only)**
+**(Request-Response processing mode only)**
 
 `collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and stores them in a list.
 
