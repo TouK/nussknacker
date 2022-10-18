@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.common.eventtime.{SerializableTimestampAssigner, WatermarkStrategy}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
 import org.apache.flink.streaming.api.functions.source.SourceFunction
@@ -42,7 +43,7 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(value))
           .flatMap { (v: ValueWithContext[AnyRef], c: Collector[AnyRef]) =>
             1.to(count).map(_ => v.value).foreach(c.collect)
-          }
+          }.returns(TypeInformation.of(classOf[AnyRef]))
 
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 
