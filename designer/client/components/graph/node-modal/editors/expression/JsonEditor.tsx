@@ -42,7 +42,7 @@ export default class JsonEditor extends React.Component<Props, { value: string }
     const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
 
     return (
-      <div className="node-value">
+      <div className={this.props.className}>
         <AceEditor
           mode={"json"}
           width={"100%"}
