@@ -32,7 +32,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig))
+  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators))
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)

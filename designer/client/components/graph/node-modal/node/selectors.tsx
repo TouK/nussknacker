@@ -15,7 +15,7 @@ export const getNodeErrors = createSelector(
 
 export const getPropertiesErrors = createSelector(
     getProcessToDisplay,
-    (process) => ProcessUtils.getValidationErrors(process).processPropertiesErrors || [],
+    (process) => ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [],
 )
 
 export const getReadOnly = createSelector(
