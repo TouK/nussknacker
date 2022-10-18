@@ -1,7 +1,7 @@
 
 # Changelog
 
-1.6.0 (Not released yet)
+1.6.0 (18 Oct 2022)
 ------------------------
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.

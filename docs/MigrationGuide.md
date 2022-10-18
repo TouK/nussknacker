@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.6.0 (Not released yet)
+## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
   * Right now using fragments in scenario is changed. We have to provide each outputName for outputs defined in fragment.
 
