@@ -24,6 +24,7 @@ import sttp.client.{Response, SttpBackend}
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
+import java.util
 import scala.concurrent.{ExecutionContext, Future}
 
 class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll with Matchers with FlinkSpec with LazyLogging with VeryPatientScalaFutures with ValidatedValuesDetailedMessage {
@@ -46,6 +47,10 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("POST"))))
   }
 
+  def withAdditionalProperties(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-additional-properties-swagger.yaml").withCustomerService { port =>
+    test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("GET", "POST"))))
+  }
+
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
     case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
   }
@@ -63,7 +68,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   }
 
 
-  it should "call enricher with primitive request body" in withPrimitiveRequestBody (stubbedBackend) { testScenarioRunner =>
+  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) { testScenarioRunner =>
     //given
     val data = List("10")
     val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
@@ -89,6 +94,59 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     result.validValue shouldBe RunResult.success("justAString")
   }
 
+  it should "call enricher with additional properties" in withAdditionalProperties(SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
+    case _ => Response.ok((s"""{
+                              |  "sentences": [
+                              |    {
+                              |      "0": {
+                              |        "sentIndex": 0,
+                              |        "characterOffsetBegin": 1,
+                              |        "characterOffsetEnd": 20,
+                              |        "match": "(NP (DT The) (JJ quick) (JJ brown) (NN fox))",
+                              |        "spanString": "The quick brown fox"
+                              |      }
+                              |    }
+                              |  ]
+                              |}""".stripMargin))
+  }) { testScenarioRunner =>
+    //given
+    val data = List("10")
+    val scenario = tregex(
+      (SingleBodyParameter.name, "#input"),
+      ("pipelineLanguage", "'en'"),
+      ("pattern", "'NP < NN=animal'"),
+      ("properties", "'{\"annotators\": \"tokenize,ssplit,pos,ner,depparse,parse\" }'")
+    )
+
+    //when
+    val result = testScenarioRunner.runWithData(scenario, data)
+
+    //then
+    result.validValue shouldBe RunResult.success(
+      TypedMap(Map(
+        "sentences" -> util.Arrays.asList(
+          TypedMap(Map("0" -> TypedMap(Map(
+            "characterOffsetEnd" -> 20L,
+            "characterOffsetBegin" -> 1L,
+            "spanString" -> "The quick brown fox",
+            "sentIndex" -> 0L,
+            "match" -> "(NP (DT The) (JJ quick) (JJ brown) (NN fox))",
+            "namedNodes" -> null
+          ))
+          ))
+        ))
+      ))
+  }
+
+  private def tregex(params: (String, Expression)*) = {
+    ScenarioBuilder
+      .streaming("openapi-test")
+      .parallelism(1)
+      .source("start", TestScenarioRunner.testDataSource)
+      .enricher("tregex", "customer", "getCustomer", params: _*)
+      .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#customer")
+  }
+
   private def scenarioWithEnricher(params: (String, Expression)*) = {
     ScenarioBuilder
       .streaming("openapi-test")
@@ -102,6 +160,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
                                     openAPIsConfig: OpenAPIServicesConfig = OpenAPIServicesConfig()) = {
     val url = new URL(s"http://localhost:$port/swagger")
     val finalConfig = ConfigFactory.load()
+      .withValue("components.openAPI.allowedMethods", fromAnyRef(util.Arrays.asList("GET", "POST")))
       .withValue("components.openAPI.url", fromAnyRef(url.toString))
       .withValue("components.openAPI.rootUrl", fromAnyRef(rootUrl(port)))
     val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config

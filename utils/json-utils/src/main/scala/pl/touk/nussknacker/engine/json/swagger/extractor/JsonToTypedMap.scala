@@ -22,7 +22,7 @@ object JsonToTypedMap {
       fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition))
 
 
-    def extractObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]): AnyRef = {
+    def extractObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName], additionalProperties: Option[SwaggerTyped]): AnyRef = {
       def nullOrError(jsonField: PropertyName): AnyRef = {
         if (required.contains(jsonField)) throw JsonToObjectError(json, definition)
         else null
@@ -39,6 +39,13 @@ object JsonToTypedMap {
             case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef)).getOrElse(nullOrError(jsonField))
           }
             .filter(e => notNullOrRequired(e._1, e._2, required))
+            ++
+            jo.keys.toSet.diff(elementType.keys.toSet)
+              .map(a => a -> jo(a))
+              .toMap
+              .map(kv => kv._1 -> {
+                JsonToObject(kv._2.get, additionalProperties.get)
+              })
         )
       )
     }
@@ -67,8 +74,8 @@ object JsonToTypedMap {
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
         extract[Vector[Json]](_.asArray, _.map(JsonToTypedMap(_, elementType)).asJava)
-      case SwaggerObject(elementType, required) =>
-        extractObject(elementType, required)
+      case SwaggerObject(elementType, required, additionalProperties) =>
+        extractObject(elementType, required, additionalProperties)
     }
   }
 

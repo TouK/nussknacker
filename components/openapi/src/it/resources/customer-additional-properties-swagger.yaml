@@ -1,0 +1,102 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/trombka/corenlp/1.0.0
+  - description: CoreNLP Demo Site
+    url: https://corenlp.run
+info:
+  description: This is a simple API
+  version: "1.0.0"
+  title: CoreNLP API
+  contact:
+    email: you@your-company.com
+  license:
+    name: GNU General Public License v3
+    url: 'https://www.tldrlegal.com/l/gpl-3.0'
+paths:
+  /tregex:
+    post:
+      parameters:
+        - in: query
+          name: pipelineLanguage
+          required: false
+          schema:
+            type: string
+            default: en
+        - in: query
+          name: pattern
+          required: true
+          schema:
+            type: string
+            example: "NP < NN=animal"
+        - in: query
+          name: properties
+          required: false
+          schema:
+            type: string
+            example: "{\"annotators\": \"tokenize,ssplit,pos,ner,depparse,parse\" }"
+      requestBody:
+        required: true
+        content:
+          'application/json':
+            schema:
+              type: string
+              example: "The quick brown fox jumped over the lazy dog."
+      responses:
+        '200':
+          description: 'default'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentences:
+                    $ref: '#/components/schemas/Sentences'
+components:
+  schemas:
+    Match:
+      type: object
+      properties:
+        sentIndex:
+          type: integer
+          example: 0
+        characterOffsetBegin:
+          type: integer
+          example: 0
+        characterOffsetEnd:
+          type: integer
+          example: 19
+        match:
+          type: string
+          example: "(NP (DT The) (JJ quick) (JJ brown) (NN fox))\n"
+        spanString:
+          type: string
+          example: "The quick brown fox"
+        namedNodes:
+          type: array
+          items:
+            type: object
+            additionalProperties:
+              type: object
+              properties:
+                characterOffsetBegin:
+                  type: integer
+                  example: 16
+                characterOffsetEnd:
+                  type: integer
+                  example: 19
+                match:
+                  type: string
+                  example: "(NN fox))\n"
+                spanString:
+                  type: string
+                  example: "fox"
+    Sentence:
+      type: object
+      additionalProperties:
+        $ref: '#/components/schemas/Match'
+    Sentences:
+      type: array
+      items:
+        $ref: '#/components/schemas/Sentence'
