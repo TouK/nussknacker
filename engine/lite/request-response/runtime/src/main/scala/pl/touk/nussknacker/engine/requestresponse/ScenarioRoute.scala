@@ -21,12 +21,12 @@ import pl.touk.nussknacker.engine.requestresponse.openapi.RequestResponseOpenApi
 
 import scala.concurrent.Future
 
-class ScenarioRoute(
-                     handler: RequestResponseHttpHandler[Future],
-                     config: RequestResponseConfig,
-                     scenarioName: ProcessName
-) extends Directives
-    with LazyLogging {
+private[requestresponse] class ScenarioRoute(
+                                              handler: RequestResponseHttpHandler[Future],
+                                              config: RequestResponseConfig,
+                                              scenarioName: ProcessName
+                                            ) extends Directives
+  with LazyLogging {
 
   // Regarding https://spec.openapis.org/oas/v3.1.0#serverObject server url accept urls "relative to the location where the OpenAPI document is being served"
   // We use this relative reference instead of default '/' because runtime can by server reverse proxies (i.e. ingress controller) that can rewrite this url
@@ -39,8 +39,8 @@ class ScenarioRoute(
 
       def rrAuthenticator(credentials: Credentials): Option[String] =
         credentials match {
-          case p @ Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
-          case _                                                                            => None
+          case p@Credentials.Provided(username) if username == user && p.verify(password) => Some(username)
+          case _ => None
         }
 
       rrAuthenticator
@@ -99,7 +99,7 @@ class ScenarioRoute(
     }
     val invocationRouteWithSecurity: Route = securityDirectiveOpt match {
       case Some(securityDirective) => securityDirective { _: String => invocationRoutePath }
-      case None                    => invocationRoutePath
+      case None => invocationRoutePath
     }
     SwaggerUiRoute.route ~ path("definition") {
       definitionRoute

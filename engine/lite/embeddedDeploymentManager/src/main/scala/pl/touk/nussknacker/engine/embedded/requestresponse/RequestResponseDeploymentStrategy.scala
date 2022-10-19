@@ -3,34 +3,33 @@ package pl.touk.nussknacker.engine.embedded.requestresponse
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
+import akka.http.scaladsl.server.Route
 import akka.stream.Materializer
-import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.FatalUnknownError
-import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.deployment.StateStatus
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
+import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
 import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseHttpHandler, RequestResponseConfig, RequestResponseInterpreter, ScenarioRoute}
-import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext}
 import scala.util.{Failure, Success, Try}
 
 object RequestResponseDeploymentStrategy {
 
   import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
   import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 
   def apply(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): RequestResponseDeploymentStrategy = {
@@ -55,7 +54,7 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 
   private val akkaHttpSetupTimeout = 10 seconds
 
-  private val slugToScenarioRoute = TrieMap[String, ScenarioRoute]()
+  private val slugToScenarioRoute = TrieMap[String, Route]()
 
   private var server: ServerBinding = _
 
@@ -80,23 +79,22 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
 
   override def onScenarioAdded(jobData: JobData,
                                parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[RequestResponseDeployment] = synchronized {
-    import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter._
+    // RequestResponseScenarioInterpreter is 'opened' in constructor of RequestResponseRunnableScenarioInterpreter
+    lazy val interpreterTry = Try(new RequestResponseRunnableScenarioInterpreter(jobData, parsedResolvedScenario, modelData, contextPreparer, config))
 
-    val interpreter = RequestResponseInterpreter[Future](parsedResolvedScenario, jobData.processVersion, contextPreparer, modelData, Nil,
-      ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
-    val interpreterWithSlug = slugForScenario(jobData.metaData).product(interpreter)
-    interpreterWithSlug.foreach { case (slug, interpreter) =>
-      slugToScenarioRoute += (slug -> new ScenarioRoute(new RequestResponseHttpHandler(interpreter), config, jobData.processVersion.processName))
-      interpreter.open()
+    for {
+      slug <- slugForScenario(jobData.metaData).fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
+      interpreter <- interpreterTry
+      route <- Try(interpreter.routes.getOrElse(throw new RuntimeException("Route should always be defined for Request-Response interpreter")))
+    } yield {
+      slugToScenarioRoute += (slug -> route)
+      new RequestResponseDeployment(slug, interpreter)
     }
-    interpreterWithSlug
-      .map { case (slug, deployment) => new RequestResponseDeployment(slug, deployment) }
-      .fold(errors => Failure(new IllegalArgumentException(errors.toString())), Success(_))
   }
 
   override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner
 
-  class RequestResponseDeployment(path: String, interpreter: FutureBasedRequestResponseScenarioInterpreter.InterpreterType) extends Deployment {
+  class RequestResponseDeployment(path: String, interpreter: RequestResponseRunnableScenarioInterpreter) extends Deployment {
 
     override def status(): StateStatus = SimpleStateStatus.Running
 
