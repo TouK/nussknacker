@@ -40,14 +40,16 @@ object JsonToTypedMap {
           }
             .filter(e => notNullOrRequired(e._1, e._2, required))
             ++
-            jo.keys.toSet.diff(elementType.keys.toSet)
-              .map(a => a -> jo(a))
-              .toMap
-              .map(kv => kv._1 -> {
-                JsonToObject(kv._2.get, additionalProperties.get)
-              })
-        )
-      )
+            additionalProperties.map(ap=> Map("additionalProperties" -> TypedMap(
+              jo.keys.toSet.diff(elementType.keys.toSet)
+                .map(a => a -> jo(a))
+                .toMap
+                .map(kv => kv._1 -> {
+                  JsonToObject(kv._2.get, ap)
+                })
+              ))
+            ).getOrElse(Map())
+        ))
     }
 
     definition match {

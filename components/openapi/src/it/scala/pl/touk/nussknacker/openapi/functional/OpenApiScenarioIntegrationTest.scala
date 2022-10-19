@@ -125,14 +125,13 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     result.validValue shouldBe RunResult.success(
       TypedMap(Map(
         "sentences" -> util.Arrays.asList(
-          TypedMap(Map("0" -> TypedMap(Map(
+          TypedMap(Map("additionalProperties" -> TypedMap(Map("0" -> TypedMap(Map(
             "characterOffsetEnd" -> 20L,
             "characterOffsetBegin" -> 1L,
             "spanString" -> "The quick brown fox",
             "sentIndex" -> 0L,
             "match" -> "(NP (DT The) (JJ quick) (JJ brown) (NN fox))",
-            "namedNodes" -> null
-          ))
+            "namedNodes" -> null))))
           ))
         ))
       ))
