@@ -82,7 +82,10 @@ object SwaggerTyped {
     //todo what to do with additionalProperties
     case SwaggerObject(elementType, _, additionalProperties) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-      TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
+      TypedObjectTypingResult(
+        elementType.mapValuesNow(typingResult).toList.sortBy(_._1) ++
+          additionalProperties.map(prop=>List("additionalProperties"-> typingResult(prop))).getOrElse(List())
+      )
     case SwaggerArray(ofType) =>
       Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
     case SwaggerEnum(_) =>
