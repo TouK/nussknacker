@@ -6,6 +6,8 @@
 
 # Nussknacker
 
+![image](https://nussknacker.io/documentation/assets/images/nu_designer-87526e47584a5eeb9ce59ad7509d2e7b.png)
+
 Nussknacker lets you design, deploy and monitor real time decision algorithms with easy to use GUI.
 
 For stateless use cases we provide lightweight, but scalable and performant engine deploying to Kubernetes. 

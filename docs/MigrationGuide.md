@@ -3,8 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-1.7.0 (Not released yet)
-------------------------
+## In version 1.7.0 (Not released yet)
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) 
    Remove dependency on `flink-scala`. In particular: 
   * Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
@@ -15,8 +14,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `request-response-embedded` Deployment Manager
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
 
-
-## In version 1.6.0 (Not released yet)
+## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
   * Right now using fragments in scenario is changed. We have to provide each outputName for outputs defined in fragment.
 
@@ -51,6 +49,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3471](https://github.com/TouK/nussknacker/pull/3471), [#3553](https://github.com/TouK/nussknacker/pull/3553) `RequestResponseMetaData(path)` is changed to `RequestResponseMetaData(slug)`.
   `V1_033__RequestResponseUrlToSlug` migration is ready for that, the change also applies to Scenario DSL.
 * [#3513](https://github.com/TouK/nussknacker/pull/3513) Scenario DSL returns `CanonicalProcess` instead of `EspProcess`. 
+* [#3630](https://github.com/TouK/nussknacker/pull/3630) `SubprocessOutput` changed to `SubprocessUsageOutput`, changes in `OutputVar` definition               
 
 ### Configuration changes
 * [#3425](https://github.com/TouK/nussknacker/pull/3425) Deployment Manager for `request-response-embedded` configuration parameters changed:

@@ -123,7 +123,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolvedValidated shouldBe Invalid(NonEmptyList.of(UnknownSubprocessOutput("badoutput", Set("sub-out1", "sub"))))
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(FragmentOutputNotDefined("badoutput", Set("sub-out1", "sub"))))
 
   }
 
@@ -219,7 +219,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
           case e => fail(e.toString)
         }
         flatNodes(2) match {
-          case FlatNode(SubprocessOutput(_, _, _, _)) =>
+          case FlatNode(SubprocessUsageOutput(_, _, _, _)) =>
             // output id is unpredictable
           case e => fail(e.toString)
         }
@@ -243,14 +243,12 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
       .source("source", "source1")
       .subprocessEnd("sub", "subProcess1", "ala" -> "'makota'")
 
-    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
-      List(
-        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("ala", SubprocessClazzRef[String])))),
-        canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(Sink("end", SinkRef("sink1", List())))) , List.empty
-    )
+    val subprocess = ScenarioBuilder
+      .fragment("subProcess1", "ala" -> classOf[String])
+      .filter("f1", "false")
+      .emptySink("end", "sink1")
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process)
-
 
     resolvedValidated shouldBe 'valid
     val resolved = resolvedValidated.toOption.get
@@ -295,6 +293,26 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     resolvedValidated.toList.foreach { branch =>
       println(branch)
     }
+  }
+
+  test("handle subprocess with empty outputs") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1")
+      .split("split",
+        GraphBuilder.fragmentOutput("end1", "output1", "field" -> "false"),
+        GraphBuilder.fragmentOutput("end2", "output2"),
+      )
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source1")
+      .subprocess("fragment", "fragment1", Nil, Map("output1" -> "outVar1"), Map(
+        "output1" -> GraphBuilder.emptySink("id1", "sink"),
+        "output2" -> GraphBuilder.emptySink("id2", "sink"),
+      ))
+    
+    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
+    resolvedValidated shouldBe 'valid
+
   }
 
   //FIXME: not sure if it's good way.

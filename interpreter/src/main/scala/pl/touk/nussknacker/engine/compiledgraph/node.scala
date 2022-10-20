@@ -40,9 +40,11 @@ object node {
 
   case class EndingCustomNode(id: String, ref: String) extends Node
 
-  case class SubprocessStart(id: String, params: List[Parameter], next: Next) extends Node
+  case class FragmentUsageStart(id: String, params: List[Parameter], next: Next) extends Node
 
-  case class SubprocessEnd(id: String, varName: String, fields: List[Field], next: Next) extends Node
+  case class FragmentUsageEnd(id: String, outputVarDefinition: Option[FragmentOutputVarDefinition], next: Next) extends Node
+
+  case class FragmentOutputVarDefinition(name: String, fields: List[Field])
 
   case class SplitNode(id: String, nexts: List[Next]) extends Node
 

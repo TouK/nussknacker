@@ -1,15 +1,18 @@
+import {css, cx} from "@emotion/css"
 import {isEmpty} from "lodash"
-import React from "react"
+import React, {MouseEventHandler, SyntheticEvent} from "react"
 import {useSelector} from "react-redux"
 import {Link} from "react-router-dom"
 import NodeUtils from "../../components/graph/NodeUtils"
 import {getProcessUnsavedNewName} from "../../reducers/selectors/graph"
-import {Process} from "../../types"
+import {NodeId, NodeType, Process} from "../../types"
+import {useNkTheme} from "../../containers/theme"
+import Color from "color"
 
 interface NodeErrorsLinkSectionProps {
-  nodeIds: $TodoType[],
-  message: $TodoType,
-  showDetails: $TodoType,
+  nodeIds: NodeId[],
+  message: string,
+  showDetails: (event: SyntheticEvent, details: NodeType) => void,
   currentProcess: Process,
   className?: string,
 }
@@ -17,6 +20,7 @@ interface NodeErrorsLinkSectionProps {
 export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps): JSX.Element {
   const {nodeIds, message, showDetails, currentProcess, className} = props
   const name = useSelector(getProcessUnsavedNewName)
+  const separator = ", "
 
   return !isEmpty(nodeIds) && (
     <div className={className}>
@@ -27,12 +31,14 @@ export default function NodeErrorsLinkSection(props: NodeErrorsLinkSectionProps)
             NodeUtils.getProcessProperties(currentProcess, name) :
             NodeUtils.getNodeById(nodeId, currentProcess)
           return (
-            <NodeErrorLink
-              key={nodeId}
-              onClick={event => showDetails(event, details)}
-              nodeId={nodeId}
-              addSeparator={index < nodeIds.length - 1}
-            />
+            <React.Fragment key={nodeId}>
+              <NodeErrorLink
+                onClick={event => showDetails(event, details)}
+                nodeId={nodeId}
+                disabled={!details}
+              />
+              {index < nodeIds.length - 1 ? separator : null}
+            </React.Fragment>
           )
         })
       }
@@ -46,15 +52,41 @@ const ErrorHeader = (props) => {
   return <span className={className}>{message}</span>
 }
 
-const NodeErrorLink = (props) => {
-  const {onClick, nodeId, addSeparator} = props
+const NodeErrorLink = (props: { onClick: MouseEventHandler<HTMLAnchorElement>, nodeId: NodeId, disabled?: boolean }) => {
+  const {onClick, nodeId, disabled} = props
+  const {theme} = useNkTheme()
 
-  const separator = ", "
+  const styles = css({
+    whiteSpace: "normal",
+    fontWeight: 600,
+    color: theme.colors.error,
+    "a&": {
+      "&:hover": {
+        color: Color(theme.colors.error).lighten(.25).hex(),
+      },
+      "&:focus": {
+        color: theme.colors.error,
+        textDecoration: "none",
+      },
+    },
+  })
 
-  return (
-    <Link key={nodeId} className={"node-error-link"} to={""} onClick={onClick}>
-      {nodeId}
-      {addSeparator ? separator : null}
-    </Link>
-  )
+  return disabled ?
+    (
+      <span className={cx(styles, css({
+        color: Color(theme.colors.error).desaturate(.5).lighten(.1).hex(),
+      }))}
+      >
+        {nodeId}
+      </span>
+    ) :
+    (
+      <Link
+        className={styles}
+        to={`?nodeId=${nodeId}`}
+        onClick={onClick}
+      >
+        {nodeId}
+      </Link>
+    )
 }

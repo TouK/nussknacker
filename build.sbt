@@ -101,6 +101,7 @@ def modelMergeStrategy: String => MergeStrategy = {
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
   case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
+  case PathList(ps@_*) if ps.last == "KafkaMetricWrapper.class" => MergeStrategy.first // delete after update Flink to 1.15.3 and when we do not have to overwrite this class
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 

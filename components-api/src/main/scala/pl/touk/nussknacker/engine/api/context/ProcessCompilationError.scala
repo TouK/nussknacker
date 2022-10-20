@@ -187,7 +187,9 @@ object ProcessCompilationError {
       InvalidVariableOutputName(variableName, nodeId.id, paramName)
   }
 
-  case class UnknownSubprocessOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+  case class FragmentOutputNotDefined(id: String, nodeIds: Set[String]) extends ProcessCompilationError
+
+  case class UnknownFragmentOutput(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 
   case class DisablingManyOutputsSubprocess(id: String, nodeIds: Set[String]) extends ProcessCompilationError
 

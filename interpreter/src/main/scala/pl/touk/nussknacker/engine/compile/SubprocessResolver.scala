@@ -24,8 +24,6 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
 
   type CanonicalBranch = List[CanonicalNode]
 
-  type WithAdditionalBranches[T] = Writer[List[CanonicalBranch], T]
-
   type ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T]
 
   private def additionalApply[T](value: CompilationValid[T]): ValidatedWithBranches[T] = WriterT[CompilationValid, List[CanonicalBranch], T](value.map((Nil, _)))
@@ -52,8 +50,13 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     }
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], List[SubprocessParameter]] =
-    initialSubprocessChecks(subprocessInput).run.map(_._2._1)
+  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], InputValidationResponse] =
+    initialSubprocessChecks(subprocessInput).run.map { case (_, (l, v, v2)) =>
+      val names = (v :: v2).flatten.flatMap(canonicalnode.collectAllNodes).collect {
+        case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
+      }.toSet
+      InputValidationResponse(l,  names)
+    }
 
   private def resolveCanonical(idPrefix: List[String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
@@ -66,7 +69,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         val output = nextNodesMap.keys.head
         resolveCanonical(idPrefix)(nextNodesMap.values.head).map { resolvedNexts =>
           val outputId = s"${NodeDataFun.nodeIdPrefix(idPrefix)(data).id}-$output"
-          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessOutput(outputId, output, List.empty, None)) :: resolvedNexts
+          FlatNode(NodeDataFun.nodeIdPrefix(idPrefix)(data)) :: FlatNode(SubprocessUsageOutput(outputId, output, None, None)) :: resolvedNexts
         }
       //here is the only interesting part - not disabled subprocess
       case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
@@ -125,14 +128,11 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
           case None => Some(name)
           case Some(map) => map.get(name)
         }
-
-        maybeOutputName
-          .map{ outputName => replacement.get(name) match {
-            case Some(nodes) => validBranches(FlatNode(SubprocessOutput(id, outputName, fields, add)) :: nodes)
-            case None => invalidBranches(UnknownSubprocessOutput(outputName, Set(id, parentId)))
-          }}
-          .getOrElse(invalidBranches(UnknownSubprocessOutput(name, Set(id, parentId))))
-          .asInstanceOf[ValidatedWithBranches[CanonicalBranch]]
+        (replacement.get(name), maybeOutputName) match {
+          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
+          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
+          case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
+        }
       }
     }, NodeDataFun.id)
   }
@@ -193,3 +193,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
 }
+
+case class InputValidationResponse(parameters: List[SubprocessParameter], outputs: Set[Output])
+
+case class Output(name: String, nonEmptyFields: Boolean)

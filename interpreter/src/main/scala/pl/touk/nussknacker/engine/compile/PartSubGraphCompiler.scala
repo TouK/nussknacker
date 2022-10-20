@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler.NodeCompilationResult
 import pl.touk.nussknacker.engine.compiledgraph
 import pl.touk.nussknacker.engine.compiledgraph.node
-import pl.touk.nussknacker.engine.compiledgraph.node.{Node, SubprocessEnd}
+import pl.touk.nussknacker.engine.compiledgraph.node.{Node, FragmentUsageEnd}
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor._
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.splittedgraph._
@@ -121,7 +121,7 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
         toCompilationResult(Valid(compiledgraph.node.Sink(id, outputName, isDisabled = false)), Map.empty, None)
       case SubprocessOutputDefinition(id, outputName, fields, _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxV, compiledFields, _) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+          nodeCompiler.compileFields(fields, ctx, outputVar = None)
         CompilationResult.map2(
           fa = CompilationResult(ctxV),
           fb = toCompilationResult(compiledFields, typingInfo, parameters)
@@ -185,27 +185,28 @@ class PartSubGraphCompiler(expressionCompiler: ExpressionCompiler,
       case subprocessInput: SubprocessInput =>
         val NodeCompilationResult(typingInfo, parameters, newCtx, combinedValidParams, _) = nodeCompiler.compileSubprocessInput(subprocessInput, ctx)
         CompilationResult.map2(toCompilationResult(combinedValidParams, typingInfo, parameters), compile(next, newCtx.getOrElse(ctx)))((params, next) =>
-          compiledgraph.node.SubprocessStart(subprocessInput.id, params, next))
+          compiledgraph.node.FragmentUsageStart(subprocessInput.id, params, next))
 
-      case SubprocessOutput(id, outPutName, List(), _) =>
+      case SubprocessUsageOutput(id, outputName, None, _) =>
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentContext = ctx.popContextOrEmptyWithGlobals()
         compile(next, parentContext)
-          .andThen(compiledNext => toCompilationResult(Valid(SubprocessEnd(id, outPutName, List(), compiledNext)), Map.empty, None))
-      case SubprocessOutput(id, outputName, fields, _) =>
+          .andThen(compiledNext => toCompilationResult(Valid(FragmentUsageEnd(id, None, compiledNext)), Map.empty, None))
+      case SubprocessUsageOutput(id, outputName, Some(outputVar), _) =>
         val NodeCompilationResult(typingInfo, parameters, ctxWithSubOutV, compiledFields, typingResult) =
-          nodeCompiler.compileFields(fields, ctx, outputVar = Some(OutputVar.subprocess(outputName)))
+          nodeCompiler.compileFields(outputVar.fields, ctx, outputVar = None)
         // Missing 'parent context' means that fragment has used some component which cleared context. We compile next parts using empty context (but with copied global variables).
         val parentCtx = ctx.popContextOrEmptyWithGlobals()
         val parentCtxWithSubOut = parentCtx
-          .withVariable(OutputVar.subprocess(outputName), typingResult.getOrElse(Unknown))
-          .getOrElse(parentCtx)
-        CompilationResult.map3(
+          .withVariable(OutputVar.fragmentOutput(outputName, outputVar.name), typingResult.getOrElse(Unknown))
+
+        CompilationResult.map4(
           f0 = CompilationResult(ctxWithSubOutV),
-          f1 = toCompilationResult(compiledFields, typingInfo, parameters),
-          f2 = compile(next, parentCtxWithSubOut)) {
-          (_, compiledFields, compiledNext) =>
-            compiledgraph.node.SubprocessEnd(id, outputName, compiledFields, compiledNext)
+          f1 = CompilationResult(parentCtxWithSubOut),
+          f2 = toCompilationResult(compiledFields, typingInfo, parameters),
+          f3 = compile(next, parentCtxWithSubOut.getOrElse(parentCtx))) {
+          (_, _, compiledFields, compiledNext) =>
+            compiledgraph.node.FragmentUsageEnd(id, Some(node.FragmentOutputVarDefinition(outputVar.name, compiledFields)), compiledNext)
         }
     }
   }

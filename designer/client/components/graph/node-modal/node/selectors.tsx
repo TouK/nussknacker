@@ -5,14 +5,17 @@ import {getProcessToDisplay} from "../../../../reducers/selectors/graph"
 import {NodeId} from "../../../../types"
 import ProcessUtils from "../../../../common/ProcessUtils"
 
-export const getErrors = createSelector(
+export const getNodeErrors = createSelector(
   getProcessToDisplay,
   (state: RootState, nodeId: NodeId) => nodeId,
   (process, nodeId) => {
-    const errors = ProcessUtils.getValidationErrors(process)
-    const validationErrors = nodeId ? errors?.invalidNodes[nodeId] : errors?.processPropertiesErrors
-    return validationErrors || []
+    return ProcessUtils.getValidationErrors(process)?.invalidNodes[nodeId] || []
   },
+)
+
+export const getPropertiesErrors = createSelector(
+    getProcessToDisplay,
+    (process) => ProcessUtils.getValidationErrors(process)?.processPropertiesErrors || [],
 )
 
 export const getReadOnly = createSelector(
