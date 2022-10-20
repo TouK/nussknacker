@@ -11,9 +11,4 @@ object ValueWithContextTypeHelpers {
       ("context", context)
     )
 
-  def infoFromValue[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
-    infoFromValueAndContext(value, ContextTypeHelpers.infoGeneric)
-
-  def infoGeneric: TypeInformation[ValueWithContext[AnyRef]] =
-    infoFromValue(TypeInformation.of(classOf[AnyRef]))
 }

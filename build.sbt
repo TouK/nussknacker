@@ -509,7 +509,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
     libraryDependencies ++= {
       Seq(
         "org.typelevel" %% "cats-core" % catsV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % flinkScope
+        "org.apache.flink" % "flink-streaming-java" % flinkV % flinkScope
           excludeAll(
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
@@ -561,7 +561,7 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
       Seq(
         "com.cronutils" % "cron-utils" % cronParserV,
         "javax.validation" % "validation-api" % javaxValidationApiV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests"
       )
@@ -584,7 +584,7 @@ lazy val flinkDevModelJava = (project in flink("management/dev-model-java")).
     libraryDependencies ++= {
       Seq(
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided"
       )
     }
   ).dependsOn(flinkComponentsUtils % Provided, componentsUtils)
@@ -595,7 +595,7 @@ lazy val flinkTests = (project in flink("tests")).
     name := "nussknacker-flink-tests",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided"
       )
     })
@@ -626,7 +626,7 @@ lazy val flinkExecutor = (project in flink("executor")).
     name := "nussknacker-flink-executor",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" % "flink-runtime" % flinkV % "provided",
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
@@ -658,7 +658,7 @@ lazy val benchmarks = (project in file("benchmarks")).
     name := "nussknacker-benchmarks",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV,
         "org.apache.flink" % "flink-runtime" % flinkV
       )
     },
@@ -730,7 +730,7 @@ lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-com
     name := "nussknacker-flink-schemed-kafka-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" % "flink-avro" % flinkV,
         "org.apache.flink" % s"flink-connector-kafka" % flinkV % "test",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
@@ -747,7 +747,7 @@ lazy val flinkKafkaComponentsUtils = (project in flink("kafka-components-utils")
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-connector-kafka" % flinkV,
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }
@@ -796,7 +796,7 @@ lazy val flinkComponentsTestkit = (project in utils("flink-components-testkit"))
     name := "nussknacker-flink-components-testkit",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV,
+        "org.apache.flink" % "flink-streaming-java" % flinkV,
       )
     }
   ).dependsOn(componentsTestkit, flinkExecutor, flinkTestUtils)
@@ -885,11 +885,25 @@ lazy val flinkComponentsUtils = (project in flink("components-utils")).
     name := "nussknacker-flink-components-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         "org.apache.flink" % "flink-metrics-dropwizard" % flinkV,
       )
     }
-  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, componentsUtils % "provided", testUtils % "test")
+  ).dependsOn(flinkComponentsApi, flinkExtensionsApi, mathUtils, flinkScalaUtils, componentsUtils % "provided", testUtils % "test")
+
+lazy val flinkScalaUtils = (project in flink("scala-utils")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-flink-scala-utils",
+    libraryDependencies ++= {
+      Seq(
+        "com.twitter" %% "chill" % "0.7.6",
+        "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
+      )
+    }
+  )
+
 
 lazy val flinkTestUtils = (project in flink("test-utils")).
   settings(commonSettings).
@@ -897,7 +911,7 @@ lazy val flinkTestUtils = (project in flink("test-utils")).
     name := "nussknacker-flink-test-utils",
     libraryDependencies ++= {
       Seq(
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
         //intellij has some problems with provided...
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV,
         "org.apache.flink" % "flink-test-utils" % flinkV excludeAll (
@@ -1211,7 +1225,7 @@ lazy val flinkComponentsApi = (project in flink("components-api")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
+        "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
       )
     }
   ).dependsOn(componentsApi)
@@ -1223,7 +1237,6 @@ lazy val flinkExtensionsApi = (project in flink("extensions-api")).
     libraryDependencies ++= {
       Seq(
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
-        "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided"
       )
     }
   ).dependsOn(flinkComponentsApi, extensionsApi)
@@ -1279,7 +1292,7 @@ lazy val openapiComponents = (project in component("openapi")).
         ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
         ),
       "io.netty" % "netty-transport-native-epoll" % nettyV,
-      "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+      "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test"
     ),
   ).dependsOn(componentsApi % Provided, jsonUtils % Provided, httpUtils, requestResponseComponentsUtils % "it,test", flinkComponentsTestkit % "it,test")
@@ -1311,7 +1324,7 @@ lazy val flinkBaseComponents = (project in flink("components/base")).
   settings(
     name := "nussknacker-flink-base-components",
     libraryDependencies ++= Seq(
-      "org.apache.flink" %% "flink-streaming-scala" % flinkV % Provided,
+      "org.apache.flink" % "flink-streaming-java" % flinkV % Provided,
       "org.scalatest" %% "scalatest" % scalaTestV % "it,test",
       "com.clearspring.analytics" % "stream" % "2.9.8" excludeAll (
         //It is used only in QDigest which we don't use, while it's >20MB in size...
@@ -1481,7 +1494,6 @@ lazy val bom = (project in file("bom"))
       Maybe we need other BOM for ComponentProvider dependencies, which have more 'provided' dependencies
      */
     libraryDependencies ++= (dependencyOverrides.value ++ Seq(
-      "org.apache.flink" %% "flink-streaming-scala" % flinkV % "provided",
       "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
       "org.apache.flink" % "flink-runtime" % flinkV % "provided",
       "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % "provided"

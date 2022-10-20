@@ -1,9 +1,6 @@
 package pl.touk.nussknacker.engine.process.registrar
 
-import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.api.common.typeutils.TypeSerializer
-import org.apache.flink.api.scala.typeutils.{CaseClassTypeInfo, ScalaCaseClassSerializer}
 import pl.touk.nussknacker.engine.InterpretationResult
 import pl.touk.nussknacker.engine.api.PartReference
 import pl.touk.nussknacker.engine.api.context.ValidationContext
