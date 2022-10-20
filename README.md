@@ -18,7 +18,11 @@ See [nussknacker.io](https://nussknacker.io) to learn more.
 
 ## Demo
 
-Demo is available at [demo.nussknacker.io](https://demo.nussknacker.io)
+Demo is available at [demo.nussknacker.io](https://demo.nussknacker.io).
+
+## Nussknacker Cloud
+
+You can try [Nussknacker Cloud](https://cloud.nussknacker.io) for free.
 
 ## Documentation
 
