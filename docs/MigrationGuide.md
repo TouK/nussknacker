@@ -5,7 +5,10 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 1.7.0 (Not released yet)
 ------------------------
-* [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
+* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) 
+   Remove dependency on `flink-scala`. In particular: 
+  * Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
+  * Scala based `TypeInformation` derivation is no longer used, for remaining cases `flink-scala-utils` module is provided (probably will be removed in the future)
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
   * Lite k8s engine with request-response processing mode

@@ -7,6 +7,7 @@
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
+* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Remove Flink Scala API
 
 1.6.0 (Not released yet)
 ------------------------
