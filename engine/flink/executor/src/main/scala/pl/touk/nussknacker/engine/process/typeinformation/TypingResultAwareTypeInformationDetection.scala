@@ -59,16 +59,8 @@ class TypingResultAwareTypeInformationDetection(customisation:
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a: TypedTaggedValue => forType(a.underlying)
-      case a: TypedDict => forType(a.objType)
-      case a: TypedClass if a.params.isEmpty =>
-        //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
-        registeredTypeInfos.find(_.getTypeClass == a.klass).getOrElse(TypeInformation.of(a.klass))
-
-      case a: TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[AnyRef](forType(a.params.head))
-
-      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
-
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 => new ListTypeInfo[AnyRef](forType(a.params.head))
+      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
@@ -76,6 +68,10 @@ class TypingResultAwareTypeInformationDetection(customisation:
       //TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
+      case a: SingleTypingResult if a.objType.params.isEmpty =>
+        val klass = a.objType.klass
+        //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
+        registeredTypeInfos.find(_.getTypeClass == klass).getOrElse(TypeInformation.of(klass))
       //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
