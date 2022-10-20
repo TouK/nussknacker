@@ -92,13 +92,14 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case EndingProcessor(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref.id, ctx, metaData))
         invoke(ref, ctx).map {
-          case Left(ValueWithContext(output, newCtx)) =>
-            List(Left(InterpretationResult(EndReference(id), output, newCtx)))
+          //for processor Result should be null
+          case Left(ValueWithContext(_, newCtx)) =>
+            List(Left(InterpretationResult(EndReference(id), newCtx)))
           case r@Right(exInfo) => List(Right(exInfo))
         }
       case EndingProcessor(id, _, true) =>
         //FIXME: null??
-        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
           case Left(ValueWithContext(out, newCtx)) => interpretNext(next, newCtx.withVariable(outName, out))
@@ -134,18 +135,17 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
             interpretOptionalNext(node, defaultNext, accCtx)
         }
       case Sink(id, _, true) =>
-        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case Sink(id, ref, false) =>
-        val valueWithModifiedContext = ValueWithContext(null, ctx)
         listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(EndReference(id), valueWithModifiedContext))))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case BranchEnd(e) =>
-        monad.pure(List(Left(InterpretationResult(e.joinReference, null, ctx))))
+        monad.pure(List(Left(InterpretationResult(e.joinReference, ctx))))
       case CustomNode(_, _, next) =>
         interpretNext(next, ctx)
       case EndingCustomNode(id, ref) =>
         listeners.foreach(_.endEncountered(id, ref, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(EndReference(id), null, ctx))))
+        monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case SplitNode(_, nexts) =>
         import cats.implicits._
         nexts.map(interpretNext(_, ctx)).sequence.map(_.flatten)
@@ -158,7 +158,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, ctx)
       case None =>
         listeners.foreach(_.deadEndEncountered(node.id, ctx, metaData))
-        monad.pure(List(Left(InterpretationResult(DeadEndReference(node.id), null, ctx))))
+        monad.pure(List(Left(InterpretationResult(DeadEndReference(node.id), ctx))))
     }
   }
 
@@ -166,7 +166,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
     case NextNode(node) => interpret(node, ctx)
     case pr@PartRef(ref) => {
       listeners.foreach(_.nodeEntered(pr.id, ctx, metaData))
-      monad.pure(List(Left(InterpretationResult(NextPartReference(ref), null, ctx))))
+      monad.pure(List(Left(InterpretationResult(NextPartReference(ref), ctx))))
     }
   }
 

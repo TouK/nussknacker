@@ -108,8 +108,9 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
         interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.left.get.finalContext.get(resultVariable).orNull
+      //we handle it on other level
       case _: EndReference =>
-        resultBeforeSink.output
+        null
       case _: DeadEndReference =>
         throw new IllegalStateException("Shouldn't happen")
       case _: JoinReference =>

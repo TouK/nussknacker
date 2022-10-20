@@ -161,7 +161,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
     //the method returns all possible branch ends in part, together with DataStream leading to them
     def registerNextParts(start: SingleOutputStreamOperator[Unit], part: PotentiallyStartPart): Map[BranchEndDefinition, BranchEndData] = {
       val branchesForParts = part.nextParts.map { part =>
-        val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore, None)
+        val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
         registerSubsequentPart(start.getSideOutput(new OutputTag[InterpretationResult](part.id, typeInformationForTi))
@@ -171,7 +171,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       }
       val branchForEnds = part.ends.collect {
         case TypedEnd(be: BranchEnd, validationContext) =>
-          val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext, None)
+          val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext)
           be.definition -> BranchEndData(validationContext, start.getSideOutput(new OutputTag[InterpretationResult](be.nodeId, ti)))
       }.toMap
       branchesForParts ++ branchForEnds
@@ -192,7 +192,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
                             part: SinkPart,
                             sink: FlinkSink,
                             contextBefore: ValidationContext): Map[BranchEndDefinition, BranchEndData] = {
-      val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore, Some(Unknown))
+      val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore)
       val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
       val afterInterpretation = registerInterpretationPart(start, part, SinkInterpretationName)

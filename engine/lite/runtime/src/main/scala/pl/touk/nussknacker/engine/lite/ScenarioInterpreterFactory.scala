@@ -267,7 +267,7 @@ object ScenarioInterpreterFactory {
       val results: InterpreterOutputType = pr match {
         case er: EndReference =>
           //FIXME: do we need it at all
-          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, ir.output.asInstanceOf[Res]))))
+          monad.pure[ResultType[PartResult]](Writer.value(irs.map(ir => EndPartResult(er.nodeId, ir.finalContext, null.asInstanceOf[Res]))))
         case _: DeadEndReference =>
           monad.pure[ResultType[PartResult]](Writer.value(Nil))
         case r: JoinReference =>
