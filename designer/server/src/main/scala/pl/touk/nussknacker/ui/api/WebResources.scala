@@ -45,7 +45,7 @@ class WebResources(publicPath: String, usageStatisticsReports: UsageStatisticsRe
   }
 
   private def withUsageStatisticsReporting(html: String) = {
-    if(usageStatisticsReports.enabled) html.replace("</body>", s"""<img src="${UsageStatisticsUrl(usageStatisticsReports.fingerprint, BuildInfo.version)}" alt="anonymous usage reporting" hidden /></body>""")
+    if(usageStatisticsReports.enabled) html.replace("</body>", s"""<img src="${UsageStatisticsUrl(usageStatisticsReports.fingerprint, BuildInfo.version)}" alt="anonymous usage reporting" referrerpolicy="origin" hidden /></body>""")
     else html
   }
 
