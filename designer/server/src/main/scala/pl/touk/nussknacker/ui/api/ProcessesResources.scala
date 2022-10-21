@@ -355,7 +355,7 @@ object ProcessesResources {
                            ) {
     def toRepositoryQuery: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(
       isSubprocess = isSubprocess,
-      isArchived = isArchived.orElse(Option(false)), //Back compatibility,
+      isArchived = isArchived,
       isDeployed = isDeployed,
       categories = categories,
       processingTypes = processingTypes,

@@ -225,10 +225,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       status shouldEqual StatusCodes.OK
     }
 
-    forScenariosReturned(ProcessesQuery.empty.subprocess()) { processes =>
+    forScenariosReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
       processes shouldBe 'empty
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.subprocess()) { processes =>
+    forScenariosDetailsReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
       processes shouldBe 'empty
     }
     forScenariosReturned(ProcessesQuery.empty.subprocess().archived()) { processes =>
@@ -254,10 +254,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   test("return list of process without archived process") {
     createArchivedProcess(processName)
 
-    forScenariosReturned(ProcessesQuery.empty) { processes =>
+    forScenariosReturned(ProcessesQuery.empty.unarchived()) { processes =>
       processes shouldBe 'empty
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+    forScenariosDetailsReturned(ProcessesQuery.empty.unarchived()) { processes =>
       processes shouldBe 'empty
     }
   }
@@ -282,6 +282,18 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.archived()) { processes =>
       processes.find(_.name == processName.value).map(_.name) shouldBe Some(processName.value)
+    }
+  }
+
+  test("return list of all processes") {
+    createValidProcess(ProcessName("unarchived"))
+    createArchivedProcess(ProcessName("archived"))
+
+    forScenariosReturned(ProcessesQuery.empty) { processes =>
+      processes.map(_.name) should contain only("unarchived", "archived")
+    }
+    forScenariosDetailsReturned(ProcessesQuery.empty) { processes =>
+      processes.map(_.name) should contain only("unarchived", "archived")
     }
   }
 
@@ -443,10 +455,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createEmptyProcess(ProcessName("proc2"), TestCat2)
     createArchivedProcess(ProcessName("proc3"))
 
-    forScenariosReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming))) { processes =>
+    forScenariosReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).unarchived()) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
-    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming))) { processes =>
+    forScenariosDetailsReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).unarchived()) { processes =>
       processes.loneElement.name shouldBe "proc1"
     }
     forScenariosReturned(ProcessesQuery.empty.names(List("proc1", "proc3", "procNotExisting")).categories(List(TestCat)).processingTypes(List(Streaming)).archived()) { processes =>

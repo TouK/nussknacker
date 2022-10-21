@@ -425,6 +425,9 @@ object ProcessesQueryEnrichments {
     def subprocess(): ProcessesQuery =
       query.copy(isSubprocess = Some(true))
 
+    def unarchived(): ProcessesQuery =
+      query.copy(isArchived = Some(false))
+
     def archived(): ProcessesQuery =
       query.copy(isArchived = Some(true))
 

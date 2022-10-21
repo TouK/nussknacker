@@ -133,14 +133,14 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
       object GetBasicProcesses {
         def unapply(arg: (Uri, HttpMethod)): Boolean = {
-          arg._1.toString() == s"$baseUri/processes" && arg._2 == HttpMethods.GET
+          arg._1.toString() == s"$baseUri/processes?isArchived=false&isSubprocess=false" && arg._2 == HttpMethods.GET
         }
       }
 
       object GetProcessesDetails {
         def unapply(arg: (Uri, HttpMethod)): Option[Set[String]] = {
           val uri = arg._1
-          if (uri.toString().startsWith(s"$baseUri/processesDetails") && arg._2 == HttpMethods.GET) {
+          if (uri.toString().startsWith(s"$baseUri/processesDetails") && uri.query().get("isArchived").contains("false") && arg._2 == HttpMethods.GET) {
             uri.query().get("names").map(_.split(",").toSet)
           } else {
             None

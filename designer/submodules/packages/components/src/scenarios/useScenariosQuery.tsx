@@ -12,8 +12,8 @@ function useScenariosQuery(): UseQueryResult<ProcessType[]> {
     return useQuery({
         queryKey: ["scenarios"],
         queryFn: async () => {
-            const results = await Promise.all([api.fetchProcesses(), api.fetchProcesses({ isArchived: true })]);
-            return results.flatMap(({ data }) => data).map(({ createdAt, modificationDate, ...row }) => ({
+            const results = await api.fetchProcesses();
+            return results.data.map(({ createdAt, modificationDate, ...row }) => ({
                 ...row,
                 createdAt: createdAt && DateTime.fromISO(createdAt).toFormat("yyyy-MM-dd HH:mm:ss"),
                 modificationDate: modificationDate && DateTime.fromISO(modificationDate).toFormat("yyyy-MM-dd HH:mm:ss"),

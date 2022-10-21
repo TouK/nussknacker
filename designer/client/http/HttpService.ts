@@ -215,7 +215,7 @@ class HttpService {
     return api.get<ComponentUsageType[]>(`/components/${encodeURIComponent(componentId)}/usages`)
   }
 
-  fetchProcesses(data: FetchProcessQueryParams = {}) {
+  fetchProcesses(data: FetchProcessQueryParams = {}): Promise<AxiosResponse<ProcessType[]>> {
     return api.get<ProcessType[]>("/processes", {params: data})
   }
 
@@ -521,16 +521,6 @@ class HttpService {
 
   fetchAuthenticationSettings(authenticationProvider: string) {
     return api.get<AuthenticationSettings>(`/authentication/${authenticationProvider.toLowerCase()}/settings`)
-  }
-
-  async fetchProcessesNames() {
-    const responses = await Promise.all([
-      this.fetchProcesses(),
-      this.fetchProcesses({isArchived: true}),
-    ])
-    return responses
-      .reduce((result, {data}) => result.concat(data), [])
-      .map(process => process.name)
   }
 
   #addInfo(message: string) {
