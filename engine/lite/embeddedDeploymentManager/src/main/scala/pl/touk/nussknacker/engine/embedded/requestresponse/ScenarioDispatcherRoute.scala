@@ -15,7 +15,7 @@ class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Scena
   protected def logDirective(scenarioName: String): Directive0 = DebuggingDirectives.logRequestResult((s"request-response-$scenarioName", Logging.DebugLevel))
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
-    path("scenario" / Segment) { scenarioSlug =>
+    pathPrefix("scenario" / Segment) { scenarioSlug =>
       handle(scenarioSlug)(_.combinedRoute)
     }
 
