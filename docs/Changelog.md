@@ -9,6 +9,9 @@
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Remove Flink Scala API
 
+1.6.1 (Not released yet)
+* [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
+
 1.6.0 (18 Oct 2022)
 ------------------------
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
