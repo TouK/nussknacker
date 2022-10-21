@@ -1,19 +1,18 @@
 package pl.touk.nussknacker.engine.flink.util.transformer.aggregate
 
 import org.apache.flink.annotation.PublicEvolving
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.windowing.assigners.{EventTimeSessionWindows, TumblingEventTimeWindows}
 import org.apache.flink.streaming.api.windowing.time.Time
 import org.apache.flink.streaming.api.windowing.triggers.EventTimeTrigger
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.{Context => NkContext, _}
+import pl.touk.nussknacker.engine.api.{NodeId, Context => NkContext, _}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.triggers.{ClosingEndEventTrigger, FireOnEachEvent}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import scala.collection.immutable.SortedMap
@@ -23,7 +22,6 @@ import scala.concurrent.duration.Duration
 @PublicEvolving // will be only one version for each method, with explicitUidInStatefulOperators = true
 // in the future - see ExplicitUidInOperatorsCompat for more info
 object transformers {
-  private implicit val anyRefTypeInformation = TypeInformation.of(classOf[AnyRef])
 
   def slidingTransformer(groupBy: LazyParameter[CharSequence],
                          aggregateBy: LazyParameter[AnyRef],
@@ -54,7 +52,7 @@ object transformers {
               new AggregatorFunction[SortedMap](aggregator, windowLength.toMillis, nodeId, aggregateBy.returnType, typeInfos.storedTypeInfo, fctx.convertToEngineRuntimeContext)
           start
             .groupByWithValue(groupBy, aggregateBy)
-            .process(aggregatorFunction)
+            .process(aggregatorFunction, typeInfos.returnedValueTypeInfo)
             .setUidWithName(ctx, explicitUidInStatefulOperators)
         }))
   }
@@ -82,6 +80,7 @@ object transformers {
         FlinkCustomStreamTransformation((start: DataStream[NkContext], ctx: FlinkCustomNodeContext) => {
           implicit val fctx: FlinkCustomNodeContext = ctx
           val typeInfos = AggregatorTypeInformations(ctx, aggregator, aggregateBy)
+          val aggregatByTypeInfo = ctx.typeInformationDetection.forType[AnyRef](groupBy.returnType)
 
           val keyedStream = start
             .groupByWithValue(groupBy, aggregateBy)
@@ -128,9 +127,9 @@ object transformers {
             case SessionWindowTrigger.OnEvent => FireOnEachEvent(baseTrigger)
             case SessionWindowTrigger.OnEnd => baseTrigger
           }
-          implicit val pairTypeInformation: TypeInformation[(AnyRef, java.lang.Boolean)] = TypeInformation.of(new TypeHint[(AnyRef, java.lang.Boolean)] {})
+          val groupByValue = aggregateBy.product(endSessionCondition)
           start
-            .groupByWithValue(groupBy, aggregateBy.product(endSessionCondition))
+            .groupByWithValue(groupBy, groupByValue)
             .window(EventTimeSessionWindows.withGap(Time.milliseconds(sessionTimeout.toMillis)))
             .trigger(trigger)
             .aggregate(
@@ -153,7 +152,6 @@ object transformers {
     lazy val storedTypeInfo: TypeInformation[AnyRef] = detection.forType(storedType)
     lazy val returnTypeInfo: TypeInformation[AnyRef] = detection.forType(returnType)
 
-    lazy val contextTypeInfo: TypeInformation[NkContext] = detection.forContext(vctx)
     lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] = detection.forValueWithContext(vctx, returnType)
 
   }

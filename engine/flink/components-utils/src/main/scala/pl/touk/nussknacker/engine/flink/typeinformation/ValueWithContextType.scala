@@ -9,6 +9,14 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkCustomNodeContext
 import scala.reflect.ClassTag
 
 object ValueWithContextType {
+
+
+  def infoWithCustomContext[T](nodeCtx: FlinkCustomNodeContext, ctx: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+    nodeCtx.typeInformationDetection.forValueWithContext(ctx, value)
+
+  def infoBranch[T](nodeCtx: FlinkCustomNodeContext, key: String, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+    infoWithCustomContext(nodeCtx, nodeCtx.validationContext.right.get(key), value)
+
   def infoWithCustomContext[T](nodeCtx: FlinkCustomNodeContext, ctx: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] =
     nodeCtx.typeInformationDetection.forValueWithContext(ctx, value)
 

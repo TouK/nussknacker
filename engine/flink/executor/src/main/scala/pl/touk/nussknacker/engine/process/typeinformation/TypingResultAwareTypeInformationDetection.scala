@@ -53,12 +53,12 @@ class TypingResultAwareTypeInformationDetection(customisation:
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  def forType(typingResult: TypingResult): TypeInformation[AnyRef] = {
+  def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 => new ListTypeInfo[AnyRef](forType(a.params.head))
-      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 => new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
+      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 => new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
@@ -74,15 +74,13 @@ class TypingResultAwareTypeInformationDetection(customisation:
       //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
-    }).asInstanceOf[TypeInformation[AnyRef]]
+    }).asInstanceOf[TypeInformation[T]]
   }
 
-  def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] = {
-    val valueType = forType(value)
+  def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] = {
     val finalContext = forContext(validationContext)
-
     ConcreteCaseClassTypeInfo[ValueWithContext[T]](
-      ("value", valueType),
+      ("value", value),
       ("context", finalContext)
     )
   }

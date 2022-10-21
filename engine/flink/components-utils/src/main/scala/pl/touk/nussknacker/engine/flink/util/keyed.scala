@@ -6,9 +6,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext, VariableConstants}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -29,6 +28,12 @@ object keyed {
       KeyedValueType.info(valueTypeInformation)
     }
 
+  }
+  def typeInfo[K<:AnyRef, V<:AnyRef](flinkNodeContext: FlinkCustomNodeContext, key: LazyParameter[K], value: LazyParameter[V]): TypeInformation[ValueWithContext[KeyedValue[K, V]]] = {
+    val detection = flinkNodeContext.typeInformationDetection
+    detection.forValueWithContext(flinkNodeContext.validationContext.left.get,
+      KeyedValueType.info(detection.forType[K](key.returnType), detection.forType[V](value.returnType))
+    )
   }
 
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef : TypeTag, OutputValue <: AnyRef : TypeTag] extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {
