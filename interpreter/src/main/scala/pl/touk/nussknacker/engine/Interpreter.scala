@@ -85,6 +85,7 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
         interpretNext(next, newParentContext)
       case Processor(_, ref, next, false) =>
         invoke(ref, ctx).flatMap {
+          //for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) => interpretNext(next, newCtx)
           case Right(exInfo) => monad.pure(List(Right(exInfo)))
         }
@@ -92,13 +93,12 @@ private class InterpreterInternal[F[_]](listeners: Seq[ProcessListener],
       case EndingProcessor(id, ref, false) =>
         listeners.foreach(_.endEncountered(id, ref.id, ctx, metaData))
         invoke(ref, ctx).map {
-          //for processor Result should be null
+          //for Processor the result is null/BoxedUnit/Void etc. so we ignore it
           case Left(ValueWithContext(_, newCtx)) =>
             List(Left(InterpretationResult(EndReference(id), newCtx)))
-          case r@Right(exInfo) => List(Right(exInfo))
+          case Right(exInfo) => List(Right(exInfo))
         }
       case EndingProcessor(id, _, true) =>
-        //FIXME: null??
         monad.pure(List(Left(InterpretationResult(EndReference(id), ctx))))
       case Enricher(_, ref, outName, next) =>
         invoke(ref, ctx).flatMap {
