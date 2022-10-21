@@ -10,8 +10,9 @@ import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, Process
 import pl.touk.nussknacker.restmodel.processdetails
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.db.DbConfig
-import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
+import pl.touk.nussknacker.ui.db.entity.ProcessEntityData
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.{BasicRepository, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import slick.jdbc.{HsqldbProfile, JdbcBackend}
@@ -25,20 +26,10 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   private val config: Config = ConfigFactory.parseString("""db {url: "jdbc:hsqldb:mem:none"}""".stripMargin)
   val dbConfig: DbConfig = DbConfig(JdbcBackend.Database.forConfig("db", config), HsqldbProfile)
 
-  override def fetchProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false))
-
-  override def fetchDeployedProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(true))
-
-  override def fetchProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy](processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(false), isArchived = Some(false)).map(_.filter(p => processNames.contains(p.idWithName.name)))
-
-  override def fetchSubProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isSubprocess = Some(true), isArchived = Some(false))
-
-  override def fetchAllProcessesDetails[PS: processdetails.ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    filterProcesses[PS](isArchived = Some(false))
+  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](q: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[BaseProcessDetails[PS]]] =
+    getUserProcesses[PS].map(_.filter(
+      p => check(q.isSubprocess, p.isSubprocess) && check(q.isArchived, p.isArchived) && check(q.isDeployed, p.isDeployed) && checkSeq(q.categories, p.processCategory) && checkSeq(q.processingTypes, p.processingType)
+    ))
 
   override def fetchLatestProcessDetailsForProcessId[PS: ProcessShapeFetchStrategy](id: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[Option[BaseProcessDetails[PS]]] =
     getUserProcesses[PS].map(_.filter(p => p.idWithName.id == id).lastOption)
@@ -55,22 +46,11 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
   override def fetchProcessingType(processId: ProcessId)(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[String] =
     getUserProcesses[Unit].map(_.find(p => p.processId == processId).map(_.processingType).get)
 
-  override def fetchProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])(implicit loggedUser: LoggedUser, ec: ExecutionContext): Future[List[processdetails.BaseProcessDetails[PS]]] =
-    getUserProcesses[PS].map(_.filter(
-      p => check(isSubprocess, p.isSubprocess) && check(isArchived, p.isArchived) && check(isDeployed, p.isDeployed) && checkSeq(categories, p.processCategory) && checkSeq(processingTypes, p.processingType)
-    ))
-
   //TODO: Implement
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): Future[List[processdetails.ProcessAction]] = ???
 
   //TODO: Implement
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): Future[Option[ProcessEntityData]] = ???
-
-  private def filterProcesses[PS: processdetails.ProcessShapeFetchStrategy](isSubprocess: Option[Boolean] = None, isArchived: Option[Boolean] = None, isDeployed: Option[Boolean] = None, categories: Option[Seq[String]] = None, processingTypes: Option[Seq[String]] = None)(implicit loggedUser: LoggedUser, ec: ExecutionContext) = {
-    getUserProcesses[PS].map(_.filter(p => {
-      check(isSubprocess, p.isSubprocess) && check(isArchived, p.isArchived) && check(isDeployed, p.isDeployed) && checkSeq(categories, p.processCategory) && checkSeq(processingTypes, p.processingType)
-    }))
-  }
 
   private def getUserProcesses[PS: ProcessShapeFetchStrategy](implicit loggedUser: LoggedUser) = getProcesses[PS].map(_.filter(p =>
     loggedUser.isAdmin || loggedUser.can(p.processCategory, Permission.Read)

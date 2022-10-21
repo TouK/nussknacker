@@ -8,6 +8,9 @@
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Remove Flink Scala API
+* [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
+  Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
+  to return scenario JSON omitting validation and dictionary resolving.
 
 1.6.0 (18 Oct 2022)
 ------------------------

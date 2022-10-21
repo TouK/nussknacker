@@ -6,7 +6,8 @@ export function useClashedNames(shouldDownload: boolean): string[] {
   useEffect(
     () => {
       if (shouldDownload) {
-        HttpService.fetchProcessesNames().then(names => {
+        HttpService.fetchProcesses().then(processes => {
+          const names = processes.data.map(process => process.name)
           setClashedNames(prevState => [].concat(prevState, names))
         })
       }

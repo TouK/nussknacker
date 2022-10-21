@@ -13,6 +13,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Lite k8s engine with request-response processing mode
   * `request-response-embedded` Deployment Manager
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
+* [#3576](https://github.com/TouK/nussknacker/pull/3576) `/processes` endpoint without query parameters returns all scenarios - the previous behaviour was to return only unarchived ones.
+  To fetch only unarchived scenarios `isArchived=false` query parameter has to be passed.
 
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs

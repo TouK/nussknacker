@@ -87,7 +87,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
       result.fold(_ => List(), _.history)
     }
 
-  protected def request(path: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
+  protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse]
 
   override def compare(localProcess: DisplayableProcess, remoteProcessVersion: Option[VersionId])(implicit ec: ExecutionContext) : Future[Either[EspError, Map[String, Difference]]] = {
     val id = localProcess.id
@@ -139,7 +139,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   }
 
   private def fetchProcesses(implicit ec: ExecutionContext): Future[Either[EspError, List[BasicProcess]]] = {
-    invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"))
+    invokeJson[List[BasicProcess]](HttpMethods.GET, List("processes"), Query(("isArchived", "false"), ("isSubprocess", "false")))
   }
 
   private def fetchProcessVersion(id: String, remoteProcessVersion: Option[VersionId])
@@ -151,11 +151,15 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
     invokeJson[List[ValidatedProcessDetails]](
       HttpMethods.GET,
       "processesDetails" :: Nil,
-      Query(("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8.displayName())).mkString(",")))
+      Query(
+        ("names", names.map(ns => URLEncoder.encode(ns.value, StandardCharsets.UTF_8.displayName())).mkString(",")),
+        ("isArchived", "false"),
+      )
     )
   }
 
   private def fetchSubProcessesDetails(implicit ec: ExecutionContext): Future[Either[EspError, List[ValidatedProcessDetails]]] = {
+    // To be switched to processesDetails?isSubprocess=true in NU 1.8.
     invokeJson[List[ValidatedProcessDetails]](HttpMethods.GET, List("subProcessesDetails"))
   }
 

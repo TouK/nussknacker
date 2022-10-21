@@ -12,6 +12,7 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.ui.db.entity._
 import pl.touk.nussknacker.ui.db.DbConfig
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
@@ -27,50 +28,19 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
 
   import api._
 
-  override def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean], isArchived: Option[Boolean],
-                                                             isDeployed: Option[Boolean], categories: Option[Seq[String]], processingTypes: Option[Seq[String]])
-                                                            (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-
+  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)
+                                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
     val expr: List[Option[ProcessEntityFactory#ProcessEntity => Rep[Boolean]]] = List(
-      isSubprocess.map(arg => process => process.isSubprocess === arg),
-      isArchived.map(arg => process => process.isArchived === arg),
-      categories.map(arg => process => process.processCategory.inSet(arg)),
-      processingTypes.map(arg => process => process.processingType.inSet(arg))
+      query.isSubprocess.map(arg => process => process.isSubprocess === arg),
+      query.isArchived.map(arg => process => process.isArchived === arg),
+      query.categories.map(arg => process => process.processCategory.inSet(arg)),
+      query.processingTypes.map(arg => process => process.processingType.inSet(arg)),
+      query.names.map(arg => process => process.name.inSet(arg)),
     )
 
     run(fetchProcessDetailsByQueryAction({ process =>
       expr.flatten.foldLeft(true: Rep[Boolean])((x, y) => x && y(process))
-    }, isDeployed))
-  }
-
-  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess))
-  }
-
-  override def fetchDeployedProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] =
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess, Option(true)))
-
-  override def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](processNames: List[ProcessName])
-                                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    val processNamesSet = processNames.map(_.value).toSet
-    run(fetchProcessDetailsByQueryActionUnarchived(p => !p.isSubprocess && p.name.inSet(processNamesSet)))
-  }
-
-  override def fetchSubProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(p => p.isSubprocess))
-  }
-
-  override def fetchAllProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]] = {
-    run(fetchProcessDetailsByQueryActionUnarchived(_ => true))
-  }
-
-  private def fetchProcessDetailsByQueryActionUnarchived[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean], isDeployed: Option[Boolean] = None)
-                                                                                       (implicit loggedUser: LoggedUser, ec: ExecutionContext) =
-    fetchProcessDetailsByQueryAction(e => query(e) && !e.isArchived, isDeployed)
-
-  private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean])
-                                                                             (implicit loggedUser: LoggedUser, ec: ExecutionContext): api.DBIOAction[List[BaseProcessDetails[PS]], api.NoStream, Effect.All with Effect.Read] = {
-    fetchProcessDetailsByQueryAction(query, None) //Back compatibility
+    }, query.isDeployed))
   }
 
   private def fetchProcessDetailsByQueryAction[PS: ProcessShapeFetchStrategy](query: ProcessEntityFactory#ProcessEntity => Rep[Boolean],
@@ -104,15 +74,15 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
   }
 
   override def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]] = {
-    run(processesTable.filter(_.name === processName.value).map(_.id).result.headOption.map(_.map(id => id)))
+    run(processesTable.filter(_.name === processName).map(_.id).result.headOption.map(_.map(id => id)))
   }
 
   def fetchProcessName(processId: ProcessId)(implicit ec: ExecutionContext): F[Option[ProcessName]] = {
-    run(processesTable.filter(_.id === processId).map(_.name).result.headOption.map(_.map(ProcessName(_))))
+    run(processesTable.filter(_.id === processId).map(_.name).result.headOption)
   }
 
   override def fetchProcessDetails(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessEntityData]] = {
-    run(processesTable.filter(_.name === processName.value).result.headOption)
+    run(processesTable.filter(_.name === processName).result.headOption)
   }
 
   override def fetchProcessActions(processId: ProcessId)(implicit ec: ExecutionContext): F[List[ProcessAction]] =
@@ -165,9 +135,9 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
                                                                tags: Seq[TagsEntityData] = List.empty,
                                                                history: Seq[ProcessVersion] = List.empty)(implicit loggedUser: LoggedUser): BaseProcessDetails[PS] = {
     BaseProcessDetails[PS](
-      id = process.name, //TODO: replace by Long / ProcessId
+      id = process.name.value, //TODO: replace by Long / ProcessId
       processId = process.id, //TODO: Remove it weh we will support Long / ProcessId
-      name = process.name,
+      name = process.name.value,
       processVersionId = processVersion.id,
       isLatestVersion = isLatestVersion,
       isArchived = process.isArchived,

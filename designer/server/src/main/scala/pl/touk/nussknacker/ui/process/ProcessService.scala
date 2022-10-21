@@ -24,6 +24,7 @@ import pl.touk.nussknacker.ui.process.ProcessService.{CreateProcessCommand, Empt
 import pl.touk.nussknacker.ui.process.deployment.{Cancel, CheckStatus, Deploy}
 import pl.touk.nussknacker.ui.process.exception.{DeployingInvalidScenarioError, ProcessIllegalAction, ProcessValidationError}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessCreated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.process.repository.{FetchingProcessRepository, ProcessActionRepository, ProcessRepository, RepositoryManager, UpdateProcessComment}
@@ -61,7 +62,7 @@ trait ProcessService {
 
   def cancelProcess(processIdWithName: ProcessIdWithName, deploymentComment: Option[DeploymentComment])(implicit user: LoggedUser): Future[EmptyResponse]
 
-  def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
+  def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]]
 
   def updateCategory(processIdWithName: ProcessIdWithName, category: String)(implicit user: LoggedUser): Future[XError[UpdateProcessCategoryResponse]]
 
@@ -178,14 +179,14 @@ class DBProcessService(managerActor: ActorRef,
       }
     }
 
-  override def renameProcess(processIdWithName: ProcessIdWithName, name: String)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
+  override def renameProcess(processIdWithName: ProcessIdWithName, name: ProcessName)(implicit user: LoggedUser): Future[XError[UpdateProcessNameResponse]] =
     withNotArchivedProcess(processIdWithName, "Can't rename archived scenario.") { process =>
       withNotRunningState(process, "Can't change name still running scenario.") { _ =>
         repositoryManager.runInTransaction(
           processRepository
             .renameProcess(processIdWithName, name)
             .map {
-              case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name))
+              case Right(_) => Right(UpdateProcessNameResponse.create(process.name, name.value))
               case Left(value) => Left(value)
             }
         )
@@ -272,7 +273,7 @@ class DBProcessService(managerActor: ActorRef,
   //TODO: It's temporary solution to return Set[SubprocessDetails], in future we should replace it by Set[BaseProcessDetails[PS]]
   override def getSubProcesses(processingTypes: Option[List[ProcessingType]])(implicit user: LoggedUser): Future[Set[SubprocessDetails]] = {
     fetchingProcessRepository
-      .fetchProcesses[CanonicalProcess](isSubprocess = Some(true), isArchived = Some(false), None, None, processingTypes = processingTypes)
+      .fetchProcessesDetails[CanonicalProcess](FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(false), processingTypes = processingTypes))
       .map(processes => processes.map(sub => {
         SubprocessDetails(sub.json, sub.processCategory)
       }).toSet)
@@ -371,7 +372,7 @@ class DBProcessService(managerActor: ActorRef,
   private def getProcesses[PS: ProcessShapeFetchStrategy](user: LoggedUser, isArchived: Boolean): Future[List[BaseProcessDetails[PS]]] = {
     val userCategories = processCategoryService.getUserCategories(user)
     val shapeStrategy = implicitly[ProcessShapeFetchStrategy[PS]]
-    fetchingProcessRepository.fetchProcesses(None, isArchived = Some(isArchived), None, categories = Some(userCategories), None)(shapeStrategy, user, ec)
+    fetchingProcessRepository.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(isArchived), categories = Some(userCategories)))(shapeStrategy, user, ec)
   }
 
 }

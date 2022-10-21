@@ -15,6 +15,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Comment
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessAlreadyExists
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.{CreateProcessAction, ProcessUpdated, UpdateProcessAction}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -62,7 +63,7 @@ class DBFetchingProcessRepositorySpec
 
     saveProcessForCategory("c1")
     saveProcessForCategory("c2")
-    val processes= fetching.fetchProcesses(None, isArchived = Some(false), None, None, None)(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
+    val processes= fetching.fetchProcessesDetails(FetchProcessesDetailsQuery(isArchived = Some(false)))(ProcessShapeFetchStrategy.NotFetch, c1Reader, implicitly[ExecutionContext]).futureValue
 
     processes.map(_.name) shouldEqual "categorized-c1"::Nil
   }
@@ -94,7 +95,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName.value) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe 'right
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -121,7 +122,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName.value) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe 'right
 
     val comments = fetching.fetchProcessId(newName)
       .flatMap(v => activities.findActivity(ProcessIdWithName(v.get, newName)).map(_.comments))
@@ -154,7 +155,7 @@ class DBFetchingProcessRepositorySpec
     processExists(oldName) shouldBe true
     processExists(existingName) shouldBe true
 
-    renameProcess(oldName, existingName.value) shouldBe ProcessAlreadyExists(existingName.value).asLeft
+    renameProcess(oldName, existingName) shouldBe ProcessAlreadyExists(existingName.value).asLeft
   }
 
   test("should generate new process version id based on latest version id") {
@@ -227,14 +228,14 @@ class DBFetchingProcessRepositorySpec
     repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
   }
 
-  private def renameProcess(processName: ProcessName, newName: String) = {
+  private def renameProcess(processName: ProcessName, newName: ProcessName) = {
     val processId = fetching.fetchProcessId(processName).futureValue.get
     repositoryManager.runInTransaction(writingRepo.renameProcess(ProcessIdWithName(processId, processName), newName)).futureValue
   }
 
   private def fetchMetaDataIdsForAllVersions(name: ProcessName) = {
     fetching.fetchProcessId(name).futureValue.toSeq.flatMap { processId =>
-      fetching.fetchAllProcessesDetails[DisplayableProcess]().futureValue
+      fetching.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived).futureValue
         .filter(_.processId.value == processId.value)
         .map(_.json)
         .map(_.metaData.id)

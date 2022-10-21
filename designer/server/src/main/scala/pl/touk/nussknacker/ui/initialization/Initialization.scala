@@ -12,6 +12,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
 import pl.touk.nussknacker.ui.db.entity.EnvironmentsEntityData
 import pl.touk.nussknacker.ui.process.migrate.ProcessModelMigrator
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.security.api.{LoggedUser, NussknackerInternalUser}
 import slick.dbio.DBIOAction
@@ -84,9 +85,7 @@ class AutomaticMigration(migrations: ProcessingTypeDataProvider[ProcessMigration
 
   def runOperation(implicit ec: ExecutionContext, lu: LoggedUser): DB[Unit] = {
     val results : DB[List[Unit]] = for {
-      processes <- fetchingProcessRepository.fetchProcessesDetails[DisplayableProcess]()
-      subprocesses <- fetchingProcessRepository.fetchSubProcessesDetails[DisplayableProcess]()
-      allToMigrate = processes ++ subprocesses
+      allToMigrate <- fetchingProcessRepository.fetchProcessesDetails[DisplayableProcess](FetchProcessesDetailsQuery.unarchived)
       migrated <- allToMigrate.map(migrateOne).sequence[DB, Unit]
     } yield migrated
     results.map(_ => ())

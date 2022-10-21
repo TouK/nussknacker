@@ -8,8 +8,25 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.concurrent.ExecutionContext
 import scala.language.higherKinds
-
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
+
+object FetchingProcessRepository {
+  case class FetchProcessesDetailsQuery(isSubprocess: Option[Boolean] = None,
+                                        isArchived: Option[Boolean] = None,
+                                        isDeployed: Option[Boolean] = None,
+                                        categories: Option[Seq[String]] = None,
+                                        processingTypes: Option[Seq[String]] = None,
+                                        names: Option[Seq[ProcessName]] = None,
+                                       )
+
+  object FetchProcessesDetailsQuery {
+    def unarchived: FetchProcessesDetailsQuery = FetchProcessesDetailsQuery(isArchived = Some(false))
+    def unarchivedProcesses: FetchProcessesDetailsQuery = unarchived.copy(isSubprocess = Some(false))
+    def unarchivedSubProcesses: FetchProcessesDetailsQuery = unarchived.copy(isSubprocess = Some(true))
+    def deployed: FetchProcessesDetailsQuery = unarchivedProcesses.copy(isDeployed = Some(true))
+  }
+}
 
 abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepository[F] {
 
@@ -18,22 +35,7 @@ abstract class FetchingProcessRepository[F[_]: Monad] extends ProcessDBQueryRepo
   def fetchProcessDetailsForId[PS: ProcessShapeFetchStrategy](processId: ProcessId, versionId: VersionId)
                                                              (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[Option[BaseProcessDetails[PS]]]
 
-  def fetchProcesses[PS: ProcessShapeFetchStrategy](isSubprocess: Option[Boolean],
-                                                    isArchived: Option[Boolean],
-                                                    isDeployed: Option[Boolean],
-                                                    categories: Option[Seq[String]],
-                                                    processingTypes: Option[Seq[String]])
-                                                   (implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
-
-  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
-
-  def fetchDeployedProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
-
-  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](processNames: List[ProcessName])(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
-
-  def fetchSubProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
-
-  def fetchAllProcessesDetails[PS: ProcessShapeFetchStrategy]()(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
+  def fetchProcessesDetails[PS: ProcessShapeFetchStrategy](query: FetchProcessesDetailsQuery)(implicit loggedUser: LoggedUser, ec: ExecutionContext): F[List[BaseProcessDetails[PS]]]
 
   def fetchProcessId(processName: ProcessName)(implicit ec: ExecutionContext): F[Option[ProcessId]]
 

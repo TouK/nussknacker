@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
 

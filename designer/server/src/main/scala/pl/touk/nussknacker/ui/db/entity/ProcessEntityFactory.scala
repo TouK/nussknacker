@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.db.entity
 
-import pl.touk.nussknacker.engine.api.process.ProcessId
+import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import slick.lifted.{ProvenShape, TableQuery => LTableQuery}
 import slick.sql.SqlProfile.ColumnOption.NotNull
@@ -17,7 +17,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
     
     def id: Rep[ProcessId] = column[ProcessId]("id", O.PrimaryKey, O.AutoInc)
 
-    def name: Rep[String] = column[String]("name", NotNull)
+    def name: Rep[ProcessName] = column[ProcessName]("name", NotNull)
 
     def description: Rep[Option[String]] = column[Option[String]]("description", O.Length(1000))
 
@@ -40,7 +40,7 @@ trait ProcessEntityFactory extends BaseEntityFactory {
 }
 
 case class ProcessEntityData(id: ProcessId,
-                             name: String,
+                             name: ProcessName,
                              description: Option[String],
                              processCategory: String,
                              processingType: ProcessingType,

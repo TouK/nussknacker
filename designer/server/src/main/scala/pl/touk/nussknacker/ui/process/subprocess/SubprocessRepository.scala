@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.ui.process.subprocess
 
-import pl.touk.nussknacker.engine.api.process.VersionId
+import pl.touk.nussknacker.engine.api.process.{ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.ui.db.entity.{ProcessEntityData, ProcessVersionEntityData}
 import pl.touk.nussknacker.ui.db.{DbConfig, EspTables}
@@ -48,7 +48,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
   def listSubprocesses(versions: Map[String, VersionId], category: Option[String]) : Future[Set[SubprocessDetails]] = {
     val versionSubprocesses = Future.sequence {
       versions.map { case (subprocessId, subprocessVersion) =>
-        fetchSubprocess(subprocessId, subprocessVersion, category)
+        fetchSubprocess(ProcessName(subprocessId), subprocessVersion, category)
       }
     }
     val fetchedSubprocesses = for {
@@ -74,7 +74,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
     db.run(action).map(_.flatten.toSet)
   }
 
-  private def fetchSubprocess(subprocessName: String, version: VersionId, category: Option[String]) : Future[SubprocessDetails] = {
+  private def fetchSubprocess(subprocessName: ProcessName, version: VersionId, category: Option[String]) : Future[SubprocessDetails] = {
     val action = for {
       subprocessVersion <- processVersionsTable.filter(p => p.id === version)
         .join(subprocessesQueryByName(subprocessName, category))
@@ -101,7 +101,7 @@ class DbSubprocessRepository(db: DbConfig, ec: ExecutionContext) extends Subproc
       .getOrElse(query)
   }
 
-  private def subprocessesQueryByName(subprocessName: String, category: Option[String]) =
+  private def subprocessesQueryByName(subprocessName: ProcessName, category: Option[String]) =
     subprocessesQuery(category).filter(_.name === subprocessName)
 }
 

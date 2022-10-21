@@ -83,7 +83,7 @@ trait ProcessDBQueryRepository[F[_]] extends Repository[F] with EspTables {
 
   protected def latestProcessVersionsNoJsonQuery(processName: ProcessName): Query[ProcessVersionEntityFactory#BaseProcessVersionEntity, ProcessVersionEntityData, Seq] =
     processesTable
-      .filter(_.name === processName.value)
+      .filter(_.name === processName)
       .join(processVersionsTableNoJson)
       .on { case (process, version) => process.id === version.processId }
       .map(_._2)

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.ui.initialization
 
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.{BeforeAndAfterEach}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.flatspec.AnyFlatSpec
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -9,6 +9,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessingTypes, WithHsqlDbTesting}
 import pl.touk.nussknacker.ui.process.migrate.TestMigrations
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 
 class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with PatientScalaFutures with BeforeAndAfterEach with WithHsqlDbTesting {
@@ -33,7 +34,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
 
     Initialization.init(migrations, db, "env1")
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(2)))
   }
 
   it should "migrate processes when fragments present" in {
@@ -47,7 +48,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
 
     Initialization.init(migrations, db, "env1")
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)).toSet shouldBe (1 to 20).map(id => (s"id$id", Some(2))).toSet
 
   }
 
@@ -67,7 +68,7 @@ class InitializationOnHsqlItSpec extends AnyFlatSpec with ScalatestRouteTest wit
 
     exception.getMessage shouldBe "made to fail.."
 
-    repository.fetchProcessesDetails[Unit]().futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
+    repository.fetchProcessesDetails[Unit](FetchProcessesDetailsQuery.unarchivedProcesses).futureValue.map(d => (d.name, d.modelVersion)) shouldBe List(("proc1", Some(1)))
   }
 
 }

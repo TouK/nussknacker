@@ -4,12 +4,14 @@ import akka.actor.{ActorRef, ActorSystem}
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import cats.instances.all._
 import cats.syntax.semigroup._
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import db.util.DBIOActionInstances.DB
-import io.circe.{Encoder, Json, parser}
+import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.matchers.should.Matchers
@@ -22,7 +24,9 @@ import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProv
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.processdetails.{BasicProcess, ValidatedProcessDetails}
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, processdetails}
+import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 import pl.touk.nussknacker.ui.api._
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
@@ -30,6 +34,7 @@ import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process._
 import pl.touk.nussknacker.ui.process.deployment.{DeploymentService, ManagementActor}
+import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeDeploymentService, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReader}
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
@@ -48,6 +53,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   import TestCategories._
   import TestProcessingTypes._
+  import ProcessesQueryEnrichments.RichProcessesQuery
 
   protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
@@ -179,6 +185,11 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       callback(status)
     }
 
+  protected def saveSubProcess(process: CanonicalProcess)(testCode: => Assertion): Assertion = {
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    saveSubProcess(displayable)(testCode)
+  }
+
   protected def saveSubProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion =
     Post(s"/processes/${process.id}/$TestCat?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
@@ -245,59 +256,28 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
 
   protected def forScenariosReturned(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ProcessJson] => Unit): Unit = {
-    val url = ProcessesQuery.createQueryParamsUrl(query)
+    implicit val basicProcessesUnmarshaller: FromEntityUnmarshaller[List[BasicProcess]] = FailFastCirceSupport.unmarshaller(implicitly[Decoder[List[BasicProcess]]])
+    val url = query.createQueryParamsUrl("/processes")
 
     Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
       val processes = parseResponseToListJsonProcess(responseAs[String])
+      responseAs[List[BasicProcess]] // just to test if decoder succeds
       callback(processes)
     }
   }
 
-  object ProcessesQuery {
-    def empty: ProcessesQuery =
-      ProcessesQuery(List.empty, isArchived = None, isSubprocess = None, isDeployed = None)
+  protected def forScenariosDetailsReturned(query: ProcessesQuery, isAdmin: Boolean = false)(callback: List[ValidatedProcessDetails] => Unit): Unit = {
+    import FailFastCirceSupport._
 
-    def categories(categories: List[String]): ProcessesQuery =
-      ProcessesQuery(categories, isArchived = None, isSubprocess = None, isDeployed = None)
+    val url = query.createQueryParamsUrl("/processesDetails")
 
-    def archived(categories: List[String] = List.empty, isSubprocess: Option[Boolean] = Some(false)): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = isSubprocess, isArchived = Some(true), isDeployed = None)
-
-    def subprocess(categories: List[String ] = List.empty, isArchived: Option[Boolean] = Some(false)): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(true), isArchived = isArchived, isDeployed = None)
-
-    def deployed(categories: List[String ] = List.empty): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(true))
-
-    def notDeployed(categories: List[String ] = List.empty): ProcessesQuery =
-      ProcessesQuery(categories, isSubprocess = Some(false), isArchived = Some(false), isDeployed = Some(false))
-
-    def createQueryParamsUrl(query: ProcessesQuery): String = {
-      var url = s"/processes?fake=true"
-
-      if (query.categories.nonEmpty) {
-        url += s"&categories=${query.categories.mkString(",")}"
-      }
-
-      query.isArchived.foreach { isArchived =>
-        url += s"&isArchived=$isArchived"
-      }
-
-      query.isSubprocess.foreach { isSubprocess =>
-        url += s"&isSubprocess=$isSubprocess"
-      }
-
-      query.isDeployed.foreach { isDeployed =>
-        url += s"&isDeployed=$isDeployed"
-      }
-
-      url
+    Get(url) ~> routeWithPermissions(processesRoute, isAdmin) ~> check {
+      status shouldEqual StatusCodes.OK
+      val processes = responseAs[List[ValidatedProcessDetails]]
+      callback(processes)
     }
-
   }
-
-  case class ProcessesQuery(categories: List[String], isSubprocess: Option[Boolean], isArchived: Option[Boolean], isDeployed: Option[Boolean])
 
   protected def routeWithPermissions(route: RouteWithUser, isAdmin: Boolean = false): Route =
     if (isAdmin) withAdminPermissions(route) else withAllPermissions(route)
@@ -437,3 +417,64 @@ object CreateProcessResponse {
 }
 
 final case class CreateProcessResponse(id: ProcessId, versionId: VersionId, processName: ProcessName)
+
+object ProcessesQueryEnrichments {
+
+  implicit class RichProcessesQuery(query: ProcessesQuery) {
+
+    def subprocess(): ProcessesQuery =
+      query.copy(isSubprocess = Some(true))
+
+    def unarchived(): ProcessesQuery =
+      query.copy(isArchived = Some(false))
+
+    def archived(): ProcessesQuery =
+      query.copy(isArchived = Some(true))
+
+    def deployed(): ProcessesQuery =
+      query.copy(isDeployed = Some(true))
+
+    def notDeployed(): ProcessesQuery =
+      query.copy(isDeployed = Some(false))
+
+    def names(names: List[String]): ProcessesQuery =
+      query.copy(names = Some(names))
+
+    def categories(categories: List[String]): ProcessesQuery =
+      query.copy(categories = Some(categories))
+
+    def processingTypes(processingTypes: List[String]): ProcessesQuery =
+      query.copy(processingTypes = Some(processingTypes))
+
+    def createQueryParamsUrl(path: String): String = {
+      var url = s"$path?fake=true"
+
+      query.isArchived.foreach { isArchived =>
+        url += s"&isArchived=$isArchived"
+      }
+
+      query.isSubprocess.foreach { isSubprocess =>
+        url += s"&isSubprocess=$isSubprocess"
+      }
+
+      query.isDeployed.foreach { isDeployed =>
+        url += s"&isDeployed=$isDeployed"
+      }
+
+      query.categories.foreach { categories =>
+        url += s"&categories=${categories.mkString(",")}"
+      }
+
+      query.processingTypes.foreach { processingTypes =>
+        url += s"&processingTypes=${processingTypes.mkString(",")}"
+      }
+
+      query.names.foreach { names =>
+        url += s"&names=${names.mkString(",")}"
+      }
+
+      url
+    }
+  }
+
+}
