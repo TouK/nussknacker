@@ -38,8 +38,10 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = AvroSinkValueParameter(schema.cast().rawSchema())
 
-  override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef =
-    (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.cast().rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef = {
+    val encoder = BestEffortAvroEncoder(validationMode)
+    (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
+  }
 
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
@@ -61,9 +63,10 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
 
-  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
-    (value: Any) => new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
-    .encodeOrError(value, schema.cast().rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
+    val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+    (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
+  }
 
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
@@ -83,8 +86,10 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =  AvroSinkValueParameter(schema.cast().rawSchema())
 
-  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
-    (value: Any) => BestEffortAvroEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
+  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
+    val encoder = BestEffortAvroEncoder(mode)
+    (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
+  }
 
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
