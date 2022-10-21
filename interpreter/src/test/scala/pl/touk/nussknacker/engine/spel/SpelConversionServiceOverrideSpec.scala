@@ -61,19 +61,20 @@ class SpelConversionServiceOverrideSpec extends AnyFunSuite with Matchers with O
       .streaming("test")
       .source("start", "stringSource")
       // here is done conversion from comma separated string to list[string] which is currently not supported by nussknacker typing
-      // system so is also disabled in spel evaluation but can be tunred on by passing customConversionsProviders with SpEL's DefaultConversionService
-      .processorEnd("invoke-service", "service", "listParam" -> "#CONV.toAny(#input)")
+      // system so is also disabled in spel evaluation but can be turned on by passing customConversionsProviders with SpEL's DefaultConversionService
+      .enricher("invoke-service", "output", "service", "listParam" -> "#CONV.toAny(#input)")
+      .processorEnd("dummy", "service", "listParam" -> "{}")
     val inputValue = "123,234"
 
     interpret(process, None, inputValue) should matchPattern {
-      case Invalid(NonEmptyList(NuExceptionInfo(Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Processor)))), ex, _), Nil)) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
+      case Invalid(NonEmptyList(NuExceptionInfo(Some(NodeComponentInfo("invoke-service", Some(ComponentInfo("service", ComponentType.Enricher)))), ex, _), Nil)) if ex.getMessage.contains("cannot convert from java.lang.String to java.util.List<?>") =>
     }
 
     val defaultSpelConversionServiceProvider = new SpelConversionsProvider {
       override def getConversionService: ConversionService =
         new DefaultConversionService
     }
-    val outputValue = interpret(process, Some(defaultSpelConversionServiceProvider), inputValue).value.output
+    val outputValue = interpret(process, Some(defaultSpelConversionServiceProvider), inputValue).value.finalContext[AnyRef]("output")
     outputValue shouldEqual List("123", "234").asJava
   }
 
