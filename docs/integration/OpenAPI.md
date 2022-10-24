@@ -45,7 +45,7 @@ Sample configuration:
 ```
 components {
   service1: {
-      type: openAPI  
+      providerType: openAPI  
       url = "http://myservice.com/swagger"
       rootUrl = "http://myservice.com/endpoint"
       security {
