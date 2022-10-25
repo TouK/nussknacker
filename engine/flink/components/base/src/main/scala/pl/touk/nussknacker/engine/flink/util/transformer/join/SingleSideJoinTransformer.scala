@@ -17,7 +17,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult, Unknown
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
-import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
@@ -72,6 +71,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
     val aggregator: Aggregator = AggregatorParam.extractValue(params)
     val window: Duration = WindowLengthParam.extractValue(params)
     val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val outputType = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {
       override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
@@ -90,7 +90,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
         timestampAssigner
-          .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(statefulStreamWithUid))
+          .map(new TimestampAssignmentHelper(_)(context.valueWithContextInfo.forType[AnyRef](outputType)).assignWatermarks(statefulStreamWithUid))
           .getOrElse(statefulStreamWithUid)
       }
     }

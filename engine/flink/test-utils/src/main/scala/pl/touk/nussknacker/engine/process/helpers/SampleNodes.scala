@@ -4,7 +4,7 @@ import cats.data.Validated.Valid
 import cats.data.ValidatedNel
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
-import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction, MapFunction, RichMapFunction}
+import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.{DataStream, DataStreamSink}
 import org.apache.flink.streaming.api.functions.co.{CoMapFunction, RichCoFlatMapFunction}
@@ -35,7 +35,6 @@ import pl.touk.nussknacker.engine.util.service.{EnricherContextTransformation, T
 import pl.touk.nussknacker.engine.util.typing.TypingUtils
 import pl.touk.nussknacker.test.WithDataList
 import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
-import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
@@ -240,7 +239,7 @@ object SampleNodes {
             case (SimpleFromValueWithContext(ctx, sr), None) =>
               (ValueWithContext(
                 SimpleRecordWithPreviousValue(sr, 0, stringVal), ctx), Some(sr.value1))
-          }(ValueWithContextType.info[AnyRef](context), TypeInformation.of(classOf[Long])))
+          }(context.valueWithContextInfo.forUnknown, TypeInformation.of(classOf[Long])))
     })
 
     object SimpleFromValueWithContext {
@@ -259,7 +258,7 @@ object SampleNodes {
         .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
           override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
         })
-        .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
+        .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
     })
   }
 
@@ -275,7 +274,7 @@ object SampleNodes {
               .filter(new AbstractOneParamLazyParameterFunction(input, context.lazyParameterHelper) with FilterFunction[Context] {
                 override def filter(value: Context): Boolean = evaluateParameter(value) == stringVal
               })
-              .map(ValueWithContext[AnyRef](null, _), ValueWithContextType.info[AnyRef](context))
+              .map(ValueWithContext[AnyRef](null, _), context.valueWithContextInfo.forUnknown)
           })
     }
 
@@ -292,7 +291,7 @@ object SampleNodes {
             .flatMap(context.lazyParameterHelper.lazyMapFunction(value))
             .keyBy((value: ValueWithContext[String]) => value.value)
             .map((_: ValueWithContext[String]) => ValueWithContext[AnyRef](null, Context("new")),
-              ValueWithContextType.info[AnyRef](context))
+              context.valueWithContextInfo.forUnknown)
         }))
     }
 
@@ -354,7 +353,7 @@ object SampleNodes {
             output.collect(outputResult)
           }
         }
-        str.transform("collectTimestammp", ValueWithContextType.info[AnyRef](ctx), streamOperator)
+        str.transform("collectTimestammp", ctx.valueWithContextInfo.forUnknown, streamOperator)
       }
 
       FlinkCustomStreamTransformation(trans(_, _))
@@ -429,7 +428,7 @@ object SampleNodes {
               .window(TumblingEventTimeWindows.of(Time.seconds(seconds)))
               .reduce((k, v) => k + v: java.lang.Integer)
               .map((i: java.lang.Integer) => ValueWithContext[AnyRef](i, Context(UUID.randomUUID().toString)),
-                ValueWithContextType.info[AnyRef](context))
+                context.valueWithContextInfo.forUnknown)
           }))
     }
 
@@ -454,7 +453,7 @@ object SampleNodes {
         val componentUseCase = flinkCustomNodeContext.componentUseCase
         start
           .map((ctx: Context) => ValueWithContext[AnyRef](componentUseCase, ctx),
-            ValueWithContextType.info[AnyRef](flinkCustomNodeContext))
+            flinkCustomNodeContext.valueWithContextInfo.forUnknown)
       })
     }
 
@@ -561,7 +560,7 @@ object SampleNodes {
         stream
           .filter(new LazyParameterFilterFunction(bool, fctx.lazyParameterHelper))
           .map((ctx: Context) => ValueWithContext[AnyRef](TypedMap(map), ctx),
-            ValueWithContextType.info[AnyRef](fctx))
+            fctx.valueWithContextInfo.forUnknown)
       })
     }
 
@@ -587,7 +586,7 @@ object SampleNodes {
       FlinkCustomStreamTransformation((stream, fctx) => {
         stream
           .map((ctx: Context) => ValueWithContext[AnyRef](finalState.get: java.lang.Boolean, ctx),
-            ValueWithContextType.info[AnyRef](fctx))
+            fctx.valueWithContextInfo.forUnknown)
       })
     }
 
@@ -742,7 +741,7 @@ object SampleNodes {
         dataStream
           .flatMap(flinkNodeContext.lazyParameterHelper.lazyMapFunction(params("value").asInstanceOf[LazyParameter[String]]))
           .map((v: ValueWithContext[String]) => v.copy(value = s"${v.value}+$typ-$version+componentUseCase:${componentUseCaseDependency.extract(dependencies)}"),
-            ValueWithContextType.info[String](flinkNodeContext))
+            flinkNodeContext.valueWithContextInfo.forType(TypeInformation.of(classOf[String])))
       }
 
       override def registerSink(dataStream: DataStream[ValueWithContext[String]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =

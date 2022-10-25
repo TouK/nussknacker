@@ -48,14 +48,13 @@ trait FlinkIntermediateRawSource[Raw] extends ExplicitUidInOperatorsSupport { se
       .getOrElse(rawSourceWithUid)
 
     //4. initialize Context and spool Context to the stream
-    val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
     val nodeId = flinkNodeContext.nodeId
     rawSourceWithUidAndTimestamp
       .map(
         new FlinkContextInitializingFunction(
           contextInitializer, nodeId,
           flinkNodeContext.convertToEngineRuntimeContext),
-        typeInformationFromNodeContext
+        flinkNodeContext.contextTypeInfo
       )
   }
 }

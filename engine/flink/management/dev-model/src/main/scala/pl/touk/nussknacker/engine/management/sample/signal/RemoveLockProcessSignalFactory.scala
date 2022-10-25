@@ -15,10 +15,8 @@ import pl.touk.nussknacker.engine.api.signal.SignalTransformer
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.flink.util.signal.KafkaSignalStreamConnector
 import pl.touk.nussknacker.engine.kafka.{DefaultProducerCreator, KafkaConfig, KafkaUtils}
-
 
 class RemoveLockProcessSignalFactory(val kafkaConfig: KafkaConfig, val signalsTopic: String)
   extends FlinkProcessSignalSender with KafkaSignalStreamConnector {
@@ -68,7 +66,7 @@ object SampleSignalHandlingTransformer {
           .keyBy((_: Either[LockOutputStateChanged, ValueWithContext[LockOutput]]) => QueryableState.defaultKey)
           .transform(
             "queryableStateTransform",
-            ValueWithContextType.info[AnyRef](context),
+            context.valueWithContextInfo.forUnknown,
             new MakeStateQueryableTransformer[LockOutputStateChanged, LockOutput](
               lockQueryName,
               lockOutput => Json.fromFields(List(

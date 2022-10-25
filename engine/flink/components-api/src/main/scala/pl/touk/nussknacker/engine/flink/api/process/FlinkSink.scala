@@ -33,8 +33,7 @@ trait BasicFlinkSink extends FlinkSink with ExplicitUidInOperatorsSupport {
   def typeResult: TypingResult = Unknown
 
   override def prepareValue(dataStream: DataStream[Context], flinkCustomNodeContext: FlinkCustomNodeContext): DataStream[ValueWithContext[Value]] =
-    dataStream.flatMap(valueFunction(flinkCustomNodeContext.lazyParameterHelper), flinkCustomNodeContext
-      .typeInformationDetection.forValueWithContext(flinkCustomNodeContext.validationContext.left.get, typeResult))
+    dataStream.flatMap(valueFunction(flinkCustomNodeContext.lazyParameterHelper), flinkCustomNodeContext.valueWithContextInfo.forType(typeResult))
 
   override def registerSink(dataStream: DataStream[ValueWithContext[Value]], flinkNodeContext: FlinkCustomNodeContext): DataStreamSink[_] =
     setUidToNodeIdIfNeed(flinkNodeContext, dataStream.map((k: ValueWithContext[Value]) => k.value, flinkNodeContext

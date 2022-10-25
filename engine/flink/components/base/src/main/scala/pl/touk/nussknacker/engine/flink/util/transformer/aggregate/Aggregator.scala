@@ -44,6 +44,11 @@ abstract class Aggregator extends AggregateFunction[AnyRef, AnyRef, AnyRef] {
   @Hidden
   def computeOutputType(input: TypingResult): Validated[String, TypingResult]
 
+  @Hidden
+  def computeOutputTypeUnsafe(input: TypingResult): TypingResult = computeOutputType(input)
+    .valueOr(e => throw new IllegalArgumentException(s"Error $e, should be handled with Validation"))
+
+
   //this can be used e.g. to compute Flink TypeInformation to store
   @Hidden
   def computeStoredType(input: TypingResult): Validated[String, TypingResult]

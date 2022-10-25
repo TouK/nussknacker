@@ -72,6 +72,7 @@ object FlinkRangeMap {
 
   }
 
+  //FIXME: this seems to have bugs, the tests won't work with it
   /**
    * This implementation is based on java's mutable HashMap.
    * It has good O(1) characteristics for updates but worse than TreeMap for range filtering O(n).

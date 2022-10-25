@@ -142,8 +142,6 @@ object transformers {
 
     private val detection = ctx.typeInformationDetection
 
-    private val vctx = ctx.validationContext.left.get
-
     private val returnType = aggregator.computeOutputType(aggregateBy.returnType)
       .valueOr(e => throw new IllegalArgumentException(s"Validation error should have happened, got $e"))
     private val storedType = aggregator.computeStoredType(aggregateBy.returnType)
@@ -152,7 +150,7 @@ object transformers {
     lazy val storedTypeInfo: TypeInformation[AnyRef] = detection.forType(storedType)
     lazy val returnTypeInfo: TypeInformation[AnyRef] = detection.forType(returnType)
 
-    lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] = detection.forValueWithContext(vctx, returnType)
+    lazy val returnedValueTypeInfo: TypeInformation[ValueWithContext[AnyRef]] = ctx.valueWithContextInfo.forType(returnType)
 
   }
 

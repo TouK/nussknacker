@@ -23,7 +23,7 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
     setUidToNodeIdIfNeed(ctx,
       start
         .groupBy(groupBy)(ctx)
-        .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo), ctx.typeInformationDetection.forValueWithContext[AnyRef](ctx.validationContext.left.get, valueTypeInfo)))}, value.returnType)
+        .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo), ctx.valueWithContextInfo.forType(valueTypeInfo)))}, value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],
                               val lazyParameterHelper: FlinkLazyParameterFunctionHelper, typeInformation: TypeInformation[Value]) extends RichFlatMapFunction[ValueWithContext[String], ValueWithContext[AnyRef]]
