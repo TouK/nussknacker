@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.api.helpers
 
+import com.typesafe.config.ConfigFactory
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.ProcessName
@@ -23,7 +24,8 @@ object MockDeploymentManager {
   val maxParallelism = 10
 }
 
-class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)), shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED") {
+class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends FlinkDeploymentManager(ModelData(ProcessingTypeConfig.read(ConfigWithScalaVersion.StreamingProcessTypeConfig)),
+  shouldVerifyBeforeDeploy = false, mainClassName = "UNUSED", overrides = ConfigFactory.empty()) {
 
   import MockDeploymentManager._
 

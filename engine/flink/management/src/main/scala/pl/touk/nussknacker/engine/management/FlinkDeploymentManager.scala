@@ -2,22 +2,24 @@ package pl.touk.nussknacker.engine.management
 
 import cats.data.OptionT
 import cats.implicits._
+import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax.EncoderOps
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.BaseModelData
+import pl.touk.nussknacker.engine.ModelData._
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.FlinkDeploymentManager.prepareProgramArgs
-import ModelData._
+import pl.touk.nussknacker.engine.modelconfig.InputConfigDuringExecution
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 
 import scala.concurrent.{ExecutionContext, Future}
 
-abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
+abstract class FlinkDeploymentManager(modelData: BaseModelData, overrides: Config, shouldVerifyBeforeDeploy: Boolean, mainClassName: String)(implicit ec: ExecutionContext)
   extends DeploymentManager with LazyLogging {
 
   private lazy val testRunner = new FlinkProcessTestRunner(modelData.asInvokableModelData)
@@ -54,7 +56,7 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
       runResult <- runProgram(
         processName,
         mainClassName,
-        prepareProgramArgs(modelData.inputConfigDuringExecution.serialized, processVersion, deploymentData, canonicalProcess),
+        prepareProgramArgs(InputConfigDuringExecution.serialize(overrides.withFallback(modelData.inputConfigDuringExecution.config)), processVersion, deploymentData, canonicalProcess),
         savepointPath.orElse(maybeSavepoint)
       )
     } yield runResult

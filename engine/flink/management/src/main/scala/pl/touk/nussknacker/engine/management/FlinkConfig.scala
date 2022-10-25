@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.management
 
+import com.typesafe.config.{Config, ConfigFactory}
+
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.duration.DurationInt
 
@@ -14,6 +16,7 @@ import scala.concurrent.duration.DurationInt
   */
 case class FlinkConfig(restUrl: String,
                        queryableStateProxyUrl: Option[String],
+                       overrides: Config = ConfigFactory.empty(),
                        jobManagerTimeout: FiniteDuration = 1 minute,
                        shouldVerifyBeforeDeploy: Boolean = true,
                        shouldCheckAvailableSlots: Boolean = true)
