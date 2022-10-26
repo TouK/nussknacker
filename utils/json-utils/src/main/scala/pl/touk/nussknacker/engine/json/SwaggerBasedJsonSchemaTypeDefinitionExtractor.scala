@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.json
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
 import io.swagger.v3.oas.models.media
 import io.swagger.v3.parser.ObjectMapperFactory
 import org.everit.json.schema._
@@ -22,7 +22,7 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
       case (extKey, extNode: java.util.Map[String@unchecked, _]) =>
         extNode.asScala.collect {
           case (key, node: java.util.Map[String@unchecked, _]) =>
-            s"#/$extKey/$key" -> OpenAPISchemaParser.parseSchema(mapper.valueToTree(node), s"#/$extKey")
+            s"#/$extKey/$key" -> OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
         }.toMap[String, media.Schema[_]]
     }.flatten.toMap[String, media.Schema[_]]
     SwaggerTyped(schema, refSchemas)

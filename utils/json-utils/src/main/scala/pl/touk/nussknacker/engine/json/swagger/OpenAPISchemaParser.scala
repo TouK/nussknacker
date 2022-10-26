@@ -13,13 +13,14 @@ object OpenAPISchemaParser {
 
   def parseSchema(schema: String): media.Schema[_] = {
     val jsonNode = mapper.readTree(schema)
-    parseSchema(jsonNode, "#")
+    parseSchema(jsonNode)
   }
 
-  def parseSchema(jsonNode: JsonNode, location: String): media.Schema[_] = {
+  def parseSchema(jsonNode: JsonNode): media.Schema[_] = {
     val deserializer: OpenAPIDeserializer = new OpenAPIDeserializer()
     val parseResult = new OpenAPIDeserializer.ParseResult()
     parseResult.setOpenapi31(true)
-    deserializer.getSchema(jsonNode.asInstanceOf[ObjectNode], location, parseResult)
+    // it looks like location is not important on this level
+    deserializer.getSchema(jsonNode.asInstanceOf[ObjectNode], "", parseResult)
   }
 }
