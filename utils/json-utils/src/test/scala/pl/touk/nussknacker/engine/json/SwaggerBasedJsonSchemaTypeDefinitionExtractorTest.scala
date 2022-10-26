@@ -89,6 +89,75 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should support refs using /schemas") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "type": "object",
+        |  "title": "test_pfl",
+        |  "description": "sample schema",
+        |  "id": "/schema/sampleschema1",
+        |  "$defs": {
+        |    "nestedObject": {
+        |      "id": "/schemas/nestedObject",
+        |      "$schema": "http://json-schema.org/draft-04/schema#",
+        |      "type": "object",
+        |      "properties": {
+        |        "numFieldObj": {
+        |          "type": "number"
+        |        },
+        |        "strFieldObj": {
+        |          "type": "string"
+        |        }
+        |      }
+        |    }
+        |  },
+        |  "$schema": "http://json-schema.org/draft-04/schema#",
+        |  "required": [
+        |    "intField"
+        |  ],
+        |  "properties": {
+        |    "numField": {
+        |      "type": "number"
+        |    },
+        |    "strField": {
+        |      "type": "string",
+        |      "default": "defaultValue"
+        |    },
+        |    "intArrayField": {
+        |      "type": "array",
+        |      "items": {
+        |        "type": "integer"
+        |      }
+        |    },
+        |    "intField": {
+        |      "type": "integer"
+        |    },
+        |    "nestedObject": {
+        |      "$ref": "/schemas/nestedObject"
+        |    },
+        |    "boolField": {
+        |      "type": "boolean"
+        |    }
+        |  }
+        |}
+        |""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List(
+      "boolField" -> Typed.apply[Boolean],
+      "intArrayField" -> Typed.genericTypeClass(classOf[java.util.List[Long]], List(Typed[Long])),
+      "intField" -> Typed.apply[Long],
+      "nestedObject" -> TypedObjectTypingResult(List(
+        "numFieldObj" -> Typed.apply[java.math.BigDecimal],
+        "strFieldObj" -> Typed.apply[String]
+      )),
+      "strField" -> Typed.apply[String],
+      "numField" -> Typed.apply[java.math.BigDecimal]
+    )
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
   test("should support enums") {
     val schema = SchemaLoader.load(new JSONObject(
       """{

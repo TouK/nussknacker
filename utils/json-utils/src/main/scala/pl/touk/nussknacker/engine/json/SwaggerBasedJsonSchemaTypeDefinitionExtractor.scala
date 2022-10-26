@@ -18,13 +18,21 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
   }
 
   def swaggerType(schema: media.Schema[_]): SwaggerTyped = {
-    val refSchemas = schema.getExtensions.asScala.collect {
+    val refSchemas = Option(schema.getExtensions).map(_.asScala.collect {
       case (extKey, extNode: java.util.Map[String@unchecked, _]) =>
-        extNode.asScala.collect {
-          case (key, node: java.util.Map[String@unchecked, _]) =>
-            s"#/$extKey/$key" -> OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
-        }.toMap[String, media.Schema[_]]
-    }.flatten.toMap[String, media.Schema[_]]
+        extNode.asScala.flatMap {
+          case (key: String, node: java.util.Map[String@unchecked, _]) =>
+            val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
+            if (extKey == "$defs") {
+              Map[String, media.Schema[_]](
+                s"#/$extKey/$key" -> nodeSchema,
+                s"/schemas/$key" -> nodeSchema)
+            } else {
+              Map[String, media.Schema[_]](s"#/$extKey/$key" -> nodeSchema)
+            }
+          case _ => Map.empty[String, media.Schema[_]]
+        }
+    }.flatten.toMap).getOrElse(Map.empty)
     SwaggerTyped(schema, refSchemas)
   }
 
