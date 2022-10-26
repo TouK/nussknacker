@@ -6,13 +6,13 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, ProcessObjectDependencies, SinkFactory, WithCategories}
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.GraphBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{CorrectExceptionHandlingSpec, FlinkSpec, MiniClusterExecutionEnvironment}
 import pl.touk.nussknacker.engine.process.runner.TestFlinkRunner
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider

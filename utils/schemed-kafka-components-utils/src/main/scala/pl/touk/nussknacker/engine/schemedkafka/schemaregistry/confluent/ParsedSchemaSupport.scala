@@ -9,6 +9,8 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
@@ -64,7 +66,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
 
   override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
-    val encoder = new BestEffortJsonSchemaEncoder(ValidationMode.lax) //todo: pass real validation mode, when BestEffortJsonSchemaEncoder supports it
+    val encoder = new BestEffortJsonSchemaEncoder(mode)
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 

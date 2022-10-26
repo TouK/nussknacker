@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components.utils
 
+import org.apache.avro
 import org.apache.avro.Schema.Type
 import org.apache.avro.data.TimeConversions.TimestampMicrosConversion
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
@@ -254,4 +255,17 @@ object AvroTestData {
   private def createSimpleRecord(schema: Schema*) = createRecord(createField(RecordFieldName, schema: _*))
 
   private def createSimpleRecord(default: Any, schema: Schema*) = createRecord(createField(RecordFieldName, default, schema: _*))
+
+  val personSchema: avro.Schema = AvroUtils.parseSchema(
+    s"""{
+       |  "type": "record",
+       |  "namespace": "pl.touk.nussknacker.engine.schemedkafka",
+       |  "name": "FullName",
+       |  "fields": [
+       |    { "name": "first", "type": "string" },
+       |    { "name": "last", "type": "string" },
+       |    { "name": "age", "type": "int" }
+       |  ]
+       |}
+    """.stripMargin)
 }

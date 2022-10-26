@@ -8,7 +8,8 @@ import pl.touk.nussknacker.engine.lite.api.utils.sinks.LazyParamSink
 import org.json.JSONObject
 
 trait ResponseRequestSinkImplFactory {
-  def createSink(value: LazyParameter[AnyRef], schema: Schema): Sink
+  def createSink(value: LazyParameter[AnyRef],
+                 schema: Schema): Sink
 }
 
 object DefaultResponseRequestSinkImplFactory extends ResponseRequestSinkImplFactory with LazyLogging {
