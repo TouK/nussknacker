@@ -11,14 +11,12 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.api.{ValueWithContext, Context => NkContext}
+import pl.touk.nussknacker.engine.api.{NodeId, ValueWithContext, Context => NkContext}
 import pl.touk.nussknacker.engine.flink.api.state.{LatelyEvictableStateFunction, StateHolder}
 import pl.touk.nussknacker.engine.flink.util.keyed.{KeyEnricher, StringKeyedValue}
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 import pl.touk.nussknacker.engine.util
-import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.util.metrics.common.naming.nodeIdTag
 import pl.touk.nussknacker.engine.util.metrics.{MetricIdentifier, MetricsProviderForScenario}
 
@@ -129,6 +127,7 @@ trait AggregatorFunctionMixin[MapT[K,V]] extends RichFunction { self: StateHolde
     val foldedState = if (newStateTruncatedToTimestamp.toScalaMapRO.isEmpty) {
       aggregator.createAccumulator()
     } else {
+      //here we need ordering for start, end etc.
       newStateTruncatedToTimestamp.toScalaMapRO.values.reduce(aggregator.merge)
     }
     aggregator.getResult(foldedState)

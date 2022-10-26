@@ -6,7 +6,6 @@ import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, Unknown}
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
-import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 
 import java.util
 import scala.collection.JavaConverters._
@@ -27,7 +26,7 @@ object ForEachTransformer extends CustomStreamTransformer {
           valueWithContext.value.asScala
             .map(new ValueWithContext[AnyRef](_, valueWithContext.context))
             .foreach(c.collect)
-        }, ValueWithContextType.info[AnyRef](ctx))
+        }, ctx.valueWithContextInfo.forType[AnyRef](returnType(elements)))
     }, returnType(elements))
   }
 

@@ -4,7 +4,7 @@ import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.{Encoder, Json}
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
-import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, ToJsonEncoder}
+import pl.touk.nussknacker.engine.util.json.ToJsonEncoder
 
 import scala.collection.immutable.ListMap
 

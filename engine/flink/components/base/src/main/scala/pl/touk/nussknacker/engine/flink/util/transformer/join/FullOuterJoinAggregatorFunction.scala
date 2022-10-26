@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.flink.api.state.LatelyEvictableStateFunction
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{Aggregator, AggregatorFunctionMixin}
-import pl.touk.nussknacker.engine.api.NodeId
 
 import scala.language.higherKinds
 
@@ -31,6 +30,6 @@ class FullOuterJoinAggregatorFunction[MapT[_, _]](protected val aggregator: Aggr
     val current: MapT[Long, aggregator.Aggregate] = addElementToState(in, ctx.timestamp(), ctx.timerService(), out)
     val res = computeFinalValue(current, ctx.timestamp()).asInstanceOf[java.util.Map[String, AnyRef]]
     res.put(keyFieldName, in.value.key)
-    out.collect(ValueWithContext(res, in.context))
+    out.collect(ValueWithContext(res, in.context.clearUserVariables))
   }
 }

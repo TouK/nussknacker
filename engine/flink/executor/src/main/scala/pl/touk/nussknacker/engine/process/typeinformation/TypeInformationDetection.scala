@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
@@ -43,8 +43,14 @@ object GenericTypeInformationDetection extends TypeInformationDetection {
     ContextTypeHelpers.infoFromVariablesAndParentOption(TypeInformation.of(new TypeHint[Map[String, Any]] {}),
       validationContext.parent.map(forContext))
 
-  override def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]]
-    = ValueWithContextTypeHelpers.infoFromValueAndContext(forType(value).asInstanceOf[TypeInformation[T]], forContext(validationContext))
+  override def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]]
+    = ValueWithContextTypeHelpers.infoFromValueAndContext(value, forContext(validationContext))
 
-  override def forType(typingResult: TypingResult): TypeInformation[AnyRef] = TypeInformation.of(classOf[AnyRef])
+  override def forType[T](typingResult: TypingResult): TypeInformation[T] = {
+    val classNeeded = typingResult match {
+      case e: SingleTypingResult => e.objType.klass
+      case _ => classOf[AnyRef]
+    }
+    TypeInformation.of(classNeeded).asInstanceOf[TypeInformation[T]]
+  }
 }

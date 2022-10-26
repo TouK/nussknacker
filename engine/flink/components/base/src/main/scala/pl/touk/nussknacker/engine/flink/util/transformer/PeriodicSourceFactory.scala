@@ -47,13 +47,12 @@ class PeriodicSourceFactory(timestampAssigner: TimestampWatermarkHandler[AnyRef]
 
         val rawSourceWithTimestamp = timestampAssigner.assignTimestampAndWatermarks(stream)
 
-        val typeInformationFromNodeContext = flinkNodeContext.typeInformationDetection.forContext(flinkNodeContext.validationContext.left.get)
         rawSourceWithTimestamp
           .map(
             new FlinkContextInitializingFunction[AnyRef](
               new BasicContextInitializer[AnyRef](Unknown), flinkNodeContext.nodeId,
               flinkNodeContext.convertToEngineRuntimeContext),
-            typeInformationFromNodeContext
+            flinkNodeContext.contextTypeInfo
           )
       }
 

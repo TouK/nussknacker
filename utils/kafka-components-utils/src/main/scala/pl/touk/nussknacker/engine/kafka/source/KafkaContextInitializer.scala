@@ -38,7 +38,8 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
   override def initContext(contextIdGenerator: ContextIdGenerator): ContextInitializingFunction[ConsumerRecord[K, V]] =
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
       override def apply(input: ConsumerRecord[K, V]): Context = {
-        val headers: util.Map[String, String] = ConsumerRecordUtils.toMap(input.headers).asJava
+        //Scala map wrapper causes some serialization problems
+        val headers: util.Map[String, String] = new util.HashMap(ConsumerRecordUtils.toMap(input.headers).asJava)
         //null won't be serialized properly
         val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
         val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)

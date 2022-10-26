@@ -37,7 +37,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
     val typingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String],
       "longF" -> Typed[Long], "fixedLong" -> Typed.fromInstance(12L), "taggedString" -> Typed.tagged(Typed.typedClass[String], "someTag")), Typed.typedClass[Map[String, Any]])
 
-    val typeInfo = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
     serializeRoundTrip(map, typeInfo)()
     serializeRoundTrip(map - "longF", typeInfo)(map + ("longF" -> null))
@@ -57,7 +57,7 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
     val map = Map("obj" -> SomeTestClass("name"))
     val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
-    val typeInfo = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
     an [UnsupportedOperationException] shouldBe thrownBy (serializeRoundTrip(map, typeInfo)())
     serializeRoundTrip(map, typeInfo, executionConfigWithKryo)()
@@ -122,14 +122,14 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
     val map = Map("obj" -> SomeTestClass("name"))
     val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
-    val oldSerializer = informationDetection.forType(typingResult).createSerializer(executionConfigWithKryo)
+    val oldSerializer = informationDetection.forType[Map[String, Any]](typingResult).createSerializer(executionConfigWithKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     //we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
     val newExecutionConfig = new ExecutionConfig {
       registerTypeWithKryoSerializer(classOf[CustomTypedObject], classOf[DummySerializer])
     }
-    val newSerializer = informationDetection.forType(typingResult).createSerializer(newExecutionConfig)
+    val newSerializer = informationDetection.forType[Map[String, Any]](typingResult).createSerializer(newExecutionConfig)
     val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
 
     compatibility.isCompatibleWithReconfiguredSerializer shouldBe true

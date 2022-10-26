@@ -17,16 +17,14 @@ import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
+import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomJoinTransformation, FlinkCustomNodeContext}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyedValue, StringKeyedValueMapper}
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
-import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits.DataStreamExtension
-import pl.touk.nussknacker.engine.flink.typeinformation.{KeyedValueType, ValueWithContextType}
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.aggregates.{MapAggregator, OptionAggregator}
+import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.time.Duration
@@ -106,7 +104,8 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
               val sanitizedId = ContextTransformation.sanitizeBranchName(id)
               (baseElement + (sanitizedId -> Some(x))).asJava.asInstanceOf[AnyRef]
             }))
-            .returns(ValueWithContextType.infoBranch[StringKeyedValue[AnyRef]](context, id, Typed.fromDetailedType[KeyedValue[String, AnyRef]]))
+            //FIXME: TypeInformation better map type
+            .returns(context.valueWithContextInfo.forBranch[StringKeyedValue[AnyRef]](id, Typed.fromDetailedType[KeyedValue[String, AnyRef]]))
       }
 
       val types = aggregateByByBranchId.mapValues(_.returnType)
@@ -114,18 +113,21 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
       val inputType = TypedObjectTypingResult(optionTypes.toList, objType = Typed.typedClass[java.util.Map[_, _]])
 
       val storedType = aggregator.computeStoredTypeUnsafe(inputType)
-      val storedTypeInfo = context.typeInformationDetection.forType(storedType)
-      val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), inputType, storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
+      val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](storedType)
+      val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), inputType,
+        storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
+      val outputType = aggregator.computeOutputTypeUnsafe(inputType)
+      val outputTypeInfo = context.valueWithContextInfo.forCustomContext[AnyRef](ValidationContext(), outputType)
 
       val stream = keyedStreams
         .map(_.asInstanceOf[DataStream[ValueWithContext[StringKeyedValue[AnyRef]]]])
         .reduce(_.connectAndMerge(_))
         .keyBy((v: ValueWithContext[StringKeyedValue[AnyRef]]) => v.value.key)
-        .process(aggregatorFunction)
+        .process(aggregatorFunction, outputTypeInfo)
         .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
       timestampAssigner
-        .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(stream))
+        .map(new TimestampAssignmentHelper(_)(outputTypeInfo).assignWatermarks(stream))
         .getOrElse(stream)
     }
   }
