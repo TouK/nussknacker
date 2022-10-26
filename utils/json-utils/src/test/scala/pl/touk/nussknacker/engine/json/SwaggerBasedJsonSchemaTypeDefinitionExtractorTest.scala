@@ -46,7 +46,6 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
-  //todo nested refs not work in openapi 3.0.x
   test("should support refs") {
     val schema = SchemaLoader.load(new JSONObject(
       """{
@@ -63,10 +62,16 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
         |			"type" : "object",
         |			"properties" : {
         |				"a" : {"$ref" : "#/definitions/size"},
-        |				"b" : {"$ref" : "#/definitions/size"}
+        |				"b" : {"$ref" : "#/definitions/size"},
+        |				"c" : {"$ref" : "#/$defs/name"}
         |			}
-        |		}
-        |	}
+        |		},
+        |   "foo": "bar"
+        |	},
+        |	"$defs" : {
+        |   "name": { "type": "string" }
+        | },
+        | "foo": "bar"
         |}
         |""".stripMargin))
 
@@ -76,7 +81,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
       "rectangle" -> TypedObjectTypingResult.apply(
         List(
           "a" -> Typed.apply[java.math.BigDecimal],
-          "b" -> Typed.apply[java.math.BigDecimal]
+          "b" -> Typed.apply[java.math.BigDecimal],
+          "c" -> Typed.apply[String]
         )
       ),
     )
