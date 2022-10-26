@@ -41,11 +41,9 @@ object TypingResultAwareTypeInformationDetection {
 class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  private val registeredTypeInfos: Set[TypeInformation[_]] = {
-    Set(
-      TypeInformation.of(classOf[BigDecimal])
-    )
-  }
+  private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
+    Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
+  )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
@@ -68,10 +66,11 @@ class TypingResultAwareTypeInformationDetection(customisation:
       //TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
+      case a: SingleTypingResult if registeredTypeInfos.contains(a.objType) =>
+        registeredTypeInfos(a.objType)
+      //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
       case a: SingleTypingResult if a.objType.params.isEmpty =>
-        val klass = a.objType.klass
-        //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
-        registeredTypeInfos.find(_.getTypeClass == klass).getOrElse(TypeInformation.of(klass))
+        TypeInformation.of(a.objType.klass)
       //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
