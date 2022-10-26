@@ -29,7 +29,7 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   componentUseCase: ComponentUseCase) {
   def metaData: MetaData = jobData.metaData
 
-  lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(validationContext.left.get)
+  lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(asOneOutputContext)
 
   val valueWithContextInfo = new valueWithContextInfo
 
@@ -42,19 +42,24 @@ case class FlinkCustomNodeContext(jobData: JobData,
       typeInformationDetection.forValueWithContext(ctx, value)
 
     def forBranch[T](key: String, value: TypingResult): TypeInformation[ValueWithContext[T]] =
-      forCustomContext(validationContext.right.get(key), value)
+      forCustomContext(asJoinContext(key), value)
 
     def forBranch[T](key: String, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
-      forCustomContext(validationContext.right.get(key), value)
+      forCustomContext(asJoinContext(key), value)
 
     def forType[T](value: TypingResult): TypeInformation[ValueWithContext[T]] =
-      forCustomContext(validationContext.left.get, value)
+      forCustomContext(asOneOutputContext, value)
 
     def forType[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
-      forCustomContext(validationContext.left.get, value)
+      forCustomContext(asOneOutputContext, value)
 
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
   }
+
+  private def asOneOutputContext = validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
+
+  private def asJoinContext = validationContext.right.getOrElse(throw new IllegalArgumentException("This node is not a join, use asOneOutputContext"))
+
 }
 
 case class SignalSenderKey(id: String, klass: Class[_])
