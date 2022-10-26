@@ -73,11 +73,12 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  "format": "date-time"
         |}""".stripMargin))
 
-    val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
+    val zdt = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
+    val encodedZdt = encoder.encode(zdt, schema)
+    encodedZdt shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
 
-    val encoded = encoder.encode(date, schema)
-
-    encoded shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
+    val encodedOdt = encoder.encode(zdt.toOffsetDateTime, schema)
+    encodedOdt shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
   }
 
   test("should encode date") {
@@ -189,9 +190,11 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  "type": "number"
         |}""".stripMargin))
 
-    val encoded = encoder.encode("1", schema)
+    val encodedLax = new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode("1", schema)
+    val encodedStrict = new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode("1", schema)
 
-    encoded shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedLax shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedStrict shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
   }
 
   test("should accept redundant parameters if validation modes allows this") {

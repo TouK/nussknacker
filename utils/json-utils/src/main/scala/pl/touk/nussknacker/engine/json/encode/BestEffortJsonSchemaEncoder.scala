@@ -8,7 +8,7 @@ import org.everit.json.schema.{ArraySchema, BooleanSchema, EnumSchema, NullSchem
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, EncodeInput, EncodeOutput, ToJsonBasedOnSchemaEncoder}
 
-import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
@@ -30,8 +30,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     fields
       .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {
-        case (field, propertySchema) if (propertySchema != null) && notNullOrRequired(field._1, field._2, parentSchema) => encode(field._2, propertySchema).map(field._1 -> _)
-        case (filed, null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${filed._1} for schema: $parentSchema and policy $validationMode does not allow redundant")
+        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
+        case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
@@ -66,13 +66,14 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
       case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (_, _) if validationMode != ValidationMode.lax => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
 
   private def encodeStringSchema(schema: StringSchema, value: Any, fieldName: Option[String] = None) = {
     (schema.getFormatValidator.formatName(), value) match {
       case ("date-time", zdt: ZonedDateTime) => Valid(jsonEncoder.encode(zdt))
+      case ("date-time", odt: OffsetDateTime) => Valid(jsonEncoder.encode(odt))
       case ("date-time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
       case ("date", ldt: LocalDate) => Valid(jsonEncoder.encode(ldt))
       case ("date", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
