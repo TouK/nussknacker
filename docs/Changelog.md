@@ -1,6 +1,15 @@
 
 # Changelog
 
+1.6.1-schema-json (16 Nov 2022)
+------------------------
+* [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
+* [#3656](https://github.com/TouK/nussknacker/pull/3656) OpenAPI 3.1.0 support + basic support for type references in json schemas
+* [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
+* [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
+* [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor
+* [#3699](https://github.com/TouK/nussknacker/pull/3699) Fix: handling null on json schema
+
 1.6.1 (8 Nov 2022)
 ------------------------
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode

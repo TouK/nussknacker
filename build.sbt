@@ -973,7 +973,7 @@ lazy val requestResponseComponentsApi = (project in lite("request-response/compo
   settings(commonSettings).
   settings(
     name := "nussknacker-request-response-components-api"
-  ).dependsOn(liteComponentsApi)
+  ).dependsOn(liteComponentsApi, jsonUtils)
 
 lazy val liteComponentsApi = (project in lite("components-api")).
   settings(commonSettings).

@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka.sink.flink
 import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.BeforeAndAfter
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
-import pl.touk.nussknacker.engine.schemedkafka.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.TestSchemaWithRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider

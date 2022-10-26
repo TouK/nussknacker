@@ -3,6 +3,14 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
+1.6.1-schema-json (16 Nov 2022)
+------------------------
+* [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
+  * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
+  * BestEffortJsonSchemaEncoder moved to package `pl.touk.nussknacker.engine.json.encode` in `nussknacker-json-utils`
+* [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor:
+  * Right now access to not existing field on TypedMap won't throw exception, just will return `null`
+
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
   * Right now using fragments in scenario is changed. We have to provide each outputName for outputs defined in fragment.

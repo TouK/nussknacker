@@ -2,10 +2,10 @@ package pl.touk.nussknacker.defaultmodel
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.avro.generic.GenericData
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils
 import pl.touk.nussknacker.engine.schemedkafka._
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.test.PatientScalaFutures

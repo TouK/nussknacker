@@ -138,7 +138,7 @@ class LiteKafkaTestScenarioRunner(components: List[ComponentDefinition], config:
     deserializeAvroData[T](payload)
   }
 
-  private def deserializeAvroData[T](payload: Array[Byte]): T =
+  def deserializeAvroData[T](payload: Array[Byte]): T =
     Option(payload)
       .map { p =>
         val schemaId = ConfluentUtils.readId(p)

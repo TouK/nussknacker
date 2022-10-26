@@ -11,3 +11,4 @@ object DefaultResponseEncoder extends ResponseEncoder[Any] {
   override def toJsonResponse(input: Any, result: List[Any]): Json = bestEffortEncoder.encode(result)
 
 }
+

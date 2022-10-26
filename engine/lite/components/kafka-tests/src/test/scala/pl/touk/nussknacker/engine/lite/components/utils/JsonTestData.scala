@@ -20,4 +20,36 @@ object JsonTestData {
       |  "type": "integer"
       |}""".stripMargin))
 
+  val objectSchema: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "outgoing" :  {
+      |      "type": "object",
+      |      "properties": {
+      |        "first" : { "type": "string" },
+      |        "last" : { "type": "string" }
+      |      },
+      |      "required": ["first", "last"]
+      |    }
+      |  }
+      |}
+      |""".stripMargin))
+
+  val personSchema: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "$schema": "https://json-schema.org/draft-07/schema",
+      |  "type": "object",
+      |  "properties": {
+      |    "first": {
+      |      "type": "string"
+      |    },
+      |    "last": {
+      |      "type": "string"
+      |    },
+      |    "age": {
+      |      "type": "integer"
+      |    }
+      |  }
+      |}""".stripMargin))
 }

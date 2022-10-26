@@ -3,10 +3,10 @@ package pl.touk.nussknacker.engine.lite.kafka.sample
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, LogicalTypesGenericRecordBuilder}
 
 object NuKafkaRuntimeTestSamples {

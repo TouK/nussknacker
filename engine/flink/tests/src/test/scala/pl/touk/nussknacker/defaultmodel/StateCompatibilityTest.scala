@@ -11,6 +11,7 @@ import org.scalatest.concurrent.Eventually
 import pl.touk.nussknacker.defaultmodel.MockSchemaRegistry.RecordSchemaV1
 import pl.touk.nussknacker.defaultmodel.StateCompatibilityTest.{InputEvent, OutputEvent}
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -77,7 +78,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
       KafkaUniversalComponentTransformer.SchemaVersionParamName -> "'latest'",
       KafkaUniversalComponentTransformer.SinkKeyParamName -> "",
       KafkaUniversalComponentTransformer.SinkRawEditorParamName -> s"true",
-      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> "'strict'",
+      KafkaUniversalComponentTransformer.SinkValidationModeParameterName -> s"'${ValidationMode.lax.name}'",
       KafkaUniversalComponentTransformer.SinkValueParamName -> "{ input: #input, previousInput: #previousValue }")
 
   private val event1: InputEvent = InputEvent("Jan", "Kowalski")

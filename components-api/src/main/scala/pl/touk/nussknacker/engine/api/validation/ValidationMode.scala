@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.encode
+package pl.touk.nussknacker.engine.api.validation
 
 final case class ValidationMode private(name: String, label: String)
 
