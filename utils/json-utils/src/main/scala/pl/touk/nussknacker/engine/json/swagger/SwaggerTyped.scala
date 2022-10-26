@@ -51,7 +51,7 @@ object SwaggerTyped {
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
       case None => (extractType(schema), Option(schema.getFormat)) match {
         case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
-        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[ObjectSchema], swaggerRefSchemas)
+        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate

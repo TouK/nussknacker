@@ -47,7 +47,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
   }
 
   //todo nested refs not work in openapi 3.0.x
-  ignore("should support refs") {
+  test("should support refs") {
     val schema = SchemaLoader.load(new JSONObject(
       """{
         |	"type" : "object",
