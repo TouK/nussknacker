@@ -6,6 +6,7 @@ import io.swagger.v3.parser.ObjectMapperFactory
 import org.everit.json.schema._
 import pl.touk.nussknacker.engine.json.swagger.{OpenAPISchemaParser, SwaggerTyped}
 
+import java.util
 import scala.collection.JavaConverters._
 
 object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
@@ -18,10 +19,19 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
   }
 
   def swaggerType(schema: media.Schema[_]): SwaggerTyped = {
-    val refSchemas = Option(schema.getExtensions).map(_.asScala.collect {
-      case (extKey, extNode: java.util.Map[String@unchecked, _]) =>
+    val refSchemas = collectSchemaDefs(schema)
+    SwaggerTyped(schema, refSchemas)
+  }
+
+  // We extract schema definitions that can be used in refs using lowlevel schema extension mechanism.
+  // Extensions are all redundant elements in schema. This mechanism will work onl for limited usages,
+  // some constructions described here: http://json-schema.org/understanding-json-schema/structuring.html
+  // like anchors, recursive schemas, nested relative schemas won't work.
+  private def collectSchemaDefs(schema: media.Schema[_]) = {
+    Option(schema.getExtensions).map(_.asScala.collect {
+      case (extKey, extNode: util.Map[String@unchecked, _]) =>
         extNode.asScala.flatMap {
-          case (key: String, node: java.util.Map[String@unchecked, _]) =>
+          case (key: String, node: util.Map[String@unchecked, _]) =>
             val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
             if (extKey == "$defs") {
               Map[String, media.Schema[_]](
@@ -33,7 +43,6 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
           case _ => Map.empty[String, media.Schema[_]]
         }
     }.flatten.toMap).getOrElse(Map.empty)
-    SwaggerTyped(schema, refSchemas)
   }
 
 }
