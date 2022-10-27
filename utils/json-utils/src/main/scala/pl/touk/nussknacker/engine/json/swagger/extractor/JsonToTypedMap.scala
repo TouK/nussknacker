@@ -45,7 +45,7 @@ object JsonToTypedMap {
                 .map(a => a -> jo(a))
                 .toMap
                 .map(kv => kv._1 -> {
-                  JsonToObject(kv._2.get, ap)
+                  JsonToTypedMap(kv._2.get, ap)
                 })
               ))
             ).getOrElse(Map())

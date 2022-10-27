@@ -130,8 +130,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
             "characterOffsetBegin" -> 1L,
             "spanString" -> "The quick brown fox",
             "sentIndex" -> 0L,
-            "match" -> "(NP (DT The) (JJ quick) (JJ brown) (NN fox))",
-            "namedNodes" -> null))))
+            "match" -> "(NP (DT The) (JJ quick) (JJ brown) (NN fox))"))))
           ))
         ))
       ))
