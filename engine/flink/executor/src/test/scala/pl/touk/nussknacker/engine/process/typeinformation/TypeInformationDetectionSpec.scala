@@ -72,8 +72,8 @@ class CustomTypeInformationDetection extends TypeInformationDetection {
 
   override def forContext(validationContext: ValidationContext): TypeInformation[Context] = throw new IllegalArgumentException("Checking loader :)")
 
-  override def forValueWithContext[T](validationContext: ValidationContext, value: typing.TypingResult): TypeInformation[ValueWithContext[T]] = throw new IllegalArgumentException("Checking loader :)")
+  override def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] = throw new IllegalArgumentException("Checking loader :)")
 
-  override def forType(typingResult: typing.TypingResult): TypeInformation[AnyRef] = throw new IllegalArgumentException("Checking loader :)")
+  override def forType[T](typingResult: typing.TypingResult): TypeInformation[T] = throw new IllegalArgumentException("Checking loader :)")
 }
 

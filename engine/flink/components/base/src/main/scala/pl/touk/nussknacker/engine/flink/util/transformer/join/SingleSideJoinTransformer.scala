@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.flink.util.transformer.join
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.api.common.functions.RuntimeContext
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.streaming.api.functions.co.CoProcessFunction
 import org.apache.flink.streaming.runtime.operators.windowing.TimestampedValue
@@ -21,9 +21,6 @@ import pl.touk.nussknacker.engine.flink.util.keyed.{StringKeyOnlyMapper, StringK
 import pl.touk.nussknacker.engine.flink.util.richflink._
 import pl.touk.nussknacker.engine.flink.util.timestamp.TimestampAssignmentHelper
 import pl.touk.nussknacker.engine.flink.util.transformer.aggregate.{AggregateHelper, Aggregator}
-import pl.touk.nussknacker.engine.flink.util.richflink._
-import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.flink.typeinformation.ValueWithContextType
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.Duration
@@ -74,6 +71,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
     val aggregator: Aggregator = AggregatorParam.extractValue(params)
     val window: Duration = WindowLengthParam.extractValue(params)
     val aggregateBy: LazyParameter[AnyRef] = params(AggregateByParamName).asInstanceOf[LazyParameter[AnyRef]]
+    val outputType = aggregator.computeOutputTypeUnsafe(aggregateBy.returnType)
 
     new FlinkCustomJoinTransformation with Serializable {
       override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
@@ -83,7 +81,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
         val keyedJoinedStream = inputs(joinedId(branchTypeByBranchId).get)
           .flatMap(new StringKeyedValueMapper(context, keyByBranchId(joinedId(branchTypeByBranchId).get), aggregateBy))
 
-        val storedTypeInfo = context.typeInformationDetection.forType(aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
+        val storedTypeInfo = context.typeInformationDetection.forType[AnyRef](aggregator.computeStoredTypeUnsafe(aggregateBy.returnType))
         val aggregatorFunction = prepareAggregatorFunction(aggregator, FiniteDuration(window.toMillis, TimeUnit.MILLISECONDS), aggregateBy.returnType, storedTypeInfo, context.convertToEngineRuntimeContext)(NodeId(context.nodeId))
         val statefulStreamWithUid = keyedMainBranchStream
           .connect(keyedJoinedStream)
@@ -92,7 +90,7 @@ class SingleSideJoinTransformer(timestampAssigner: Option[TimestampWatermarkHand
           .setUidWithName(context, ExplicitUidInOperatorsSupport.defaultExplicitUidInStatefulOperators)
 
         timestampAssigner
-          .map(new TimestampAssignmentHelper(_)(ValueWithContextType.info[AnyRef](context)).assignWatermarks(statefulStreamWithUid))
+          .map(new TimestampAssignmentHelper(_)(context.valueWithContextInfo.forType[AnyRef](outputType)).assignWatermarks(statefulStreamWithUid))
           .getOrElse(statefulStreamWithUid)
       }
     }

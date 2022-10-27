@@ -28,7 +28,7 @@ class InputMetaDeserializationSpec extends AnyFunSuite with Matchers with FlinkT
 
   test("should serialize and deserialize input metadata with TypingResultAwareTypeInformationDetection and customisations") {
     val inputMetaTypingResult = InputMeta.withType(Typed[SampleKey])
-    val typeInformation = TypingResultAwareTypeInformationDetection(getClass.getClassLoader).forType(inputMetaTypingResult)
+    val typeInformation: TypeInformation[InputMeta[SampleKey]] = TypingResultAwareTypeInformationDetection(getClass.getClassLoader).forType(inputMetaTypingResult)
     val givenObj = InputMeta[SampleKey](SampleKey("one", 2), "dummy", 3, 4L, 5L, TimestampType.CREATE_TIME, Map("one" -> "header value", "two" -> null).asJava, 6)
     serializeRoundTrip(givenObj, typeInformation, executionConfigWithoutKryo)()
     serializeRoundTrip(givenObj, typeInformation, executionConfigWithKryo)()

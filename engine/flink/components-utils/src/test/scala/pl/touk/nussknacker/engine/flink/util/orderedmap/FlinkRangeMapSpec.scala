@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.flink.util.orderedmap
 
-import java.{util => jul}
-
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.flink.util.orderedmap.FlinkRangeMap._
 
+import java.{util => jul}
 import scala.collection.immutable.SortedMap
 import scala.language.higherKinds
 
@@ -14,7 +13,6 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
 
   test("adding") {
     verifyAdding[SortedMap]
-    verifyAdding[jul.Map]
   }
 
   private def verifyAdding[MapT[_, _]: FlinkRangeMap] = {
@@ -26,7 +24,18 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
 
   test("read-only filtering") {
     verifyReadOnlyFiltering[SortedMap](shouldThrowExceptionAfterROFiltering = false)
-    verifyReadOnlyFiltering[jul.Map](shouldThrowExceptionAfterROFiltering = true)
+  }
+
+  test("ordering") {
+    verifyOrder[SortedMap]
+  }
+
+  private def verifyOrder[MapT[_, _]: FlinkRangeMap] = {
+    val withSomeElements = implicitly[FlinkRangeMap[MapT]].empty[Int, Int]
+          .updated(10, 0)
+          .updated(5, 0)
+          .updated(20, 0)
+    withSomeElements.toScalaMapRO.keys.toList shouldBe List(5, 10, 20)
   }
 
   private def verifyReadOnlyFiltering[MapT[_, _]: FlinkRangeMap](shouldThrowExceptionAfterROFiltering: Boolean) = {
@@ -49,7 +58,6 @@ class FlinkRangeMapSpec extends AnyFunSuite with TableDrivenPropertyChecks with 
 
   test("mutating filtering") {
     verifyMutatingFiltering[SortedMap]
-    verifyMutatingFiltering[jul.Map]
   }
 
   private def verifyMutatingFiltering[MapT[_, _]: FlinkRangeMap] = {

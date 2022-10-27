@@ -3,8 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka.schema
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.specific.SpecificRecordBase
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.encode.{BestEffortAvroEncoder, ValidationMode}
+import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 
 trait TestSchema {
   lazy val schema: Schema = AvroUtils.parseSchema(stringSchema)

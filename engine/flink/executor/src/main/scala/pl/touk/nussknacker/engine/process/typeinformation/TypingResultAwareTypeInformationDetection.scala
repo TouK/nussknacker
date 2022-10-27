@@ -41,11 +41,9 @@ object TypingResultAwareTypeInformationDetection {
 class TypingResultAwareTypeInformationDetection(customisation:
                                                 TypingResultAwareTypeInformationCustomisation) extends TypeInformationDetection {
 
-  private val registeredTypeInfos: Set[TypeInformation[_]] = {
-    Set(
-      TypeInformation.of(classOf[BigDecimal])
-    )
-  }
+  private val registeredTypeInfos: Map[TypedClass, TypeInformation[_]] = Map(
+    Typed.typedClass[BigDecimal] -> TypeInformation.of(classOf[BigDecimal])
+  )
 
   def forContext(validationContext: ValidationContext): TypeInformation[Context] = {
     val variables = forType(TypedObjectTypingResult(validationContext.localVariables.toList, Typed.typedClass[Map[String, AnyRef]]))
@@ -55,20 +53,12 @@ class TypingResultAwareTypeInformationDetection(customisation:
     ContextTypeHelpers.infoFromVariablesAndParentOption(variables, parentCtx)
   }
 
-  def forType(typingResult: TypingResult): TypeInformation[AnyRef] = {
+  def forType[T](typingResult: TypingResult): TypeInformation[T] = {
     (typingResult match {
       case a if additionalTypeInfoDeterminer.isDefinedAt(a) =>
         additionalTypeInfoDeterminer.apply(a)
-      case a: TypedTaggedValue => forType(a.underlying)
-      case a: TypedDict => forType(a.objType)
-      case a: TypedClass if a.params.isEmpty =>
-        //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
-        registeredTypeInfos.find(_.getTypeClass == a.klass).getOrElse(TypeInformation.of(a.klass))
-
-      case a: TypedClass if a.klass == classOf[java.util.List[_]] => new ListTypeInfo[AnyRef](forType(a.params.head))
-
-      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] => new MapTypeInfo[AnyRef, AnyRef](forType(a.params.head), forType(a.params.last))
-
+      case a: TypedClass if a.klass == classOf[java.util.List[_]] && a.params.size == 1 => new ListTypeInfo[AnyRef](forType[AnyRef](a.params.head))
+      case a: TypedClass if a.klass == classOf[java.util.Map[_, _]] && a.params.size == 2 => new MapTypeInfo[AnyRef, AnyRef](forType[AnyRef](a.params.head), forType[AnyRef](a.params.last))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[Map[String, _]] =>
         TypedScalaMapTypeInformation(a.fields.mapValuesNow(forType))
       case a: TypedObjectTypingResult if a.objType.klass == classOf[TypedMap] =>
@@ -76,18 +66,21 @@ class TypingResultAwareTypeInformationDetection(customisation:
       //TODO: better handle specific map implementations - other than HashMap?
       case a: TypedObjectTypingResult if classOf[java.util.Map[String, _]].isAssignableFrom(a.objType.klass) =>
         TypedJavaMapTypeInformation(a.fields.mapValuesNow(forType))
+      case a: SingleTypingResult if registeredTypeInfos.contains(a.objType) =>
+        registeredTypeInfos(a.objType)
+      //TODO: scala case classes are not handled nicely here... CaseClassTypeInfo is created only via macro, here Kryo is used
+      case a: SingleTypingResult if a.objType.params.isEmpty =>
+        TypeInformation.of(a.objType.klass)
       //TODO: how can we handle union - at least of some types?
       case _ =>
         fallback[Any]
-    }).asInstanceOf[TypeInformation[AnyRef]]
+    }).asInstanceOf[TypeInformation[T]]
   }
 
-  def forValueWithContext[T](validationContext: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] = {
-    val valueType = forType(value)
+  def forValueWithContext[T](validationContext: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] = {
     val finalContext = forContext(validationContext)
-
     ConcreteCaseClassTypeInfo[ValueWithContext[T]](
-      ("value", valueType),
+      ("value", value),
       ("context", finalContext)
     )
   }

@@ -11,6 +11,7 @@
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
   Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
   to return scenario JSON omitting validation and dictionary resolving.
+* [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
 * [#3656](https://github.com/TouK/nussknacker/pull/3656) OpenAPI 3.1.0 support + basic support for type references in json schemas
 
 1.6.1 (Not released yet)

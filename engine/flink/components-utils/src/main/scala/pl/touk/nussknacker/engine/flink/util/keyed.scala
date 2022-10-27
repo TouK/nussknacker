@@ -6,9 +6,8 @@ import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
-import pl.touk.nussknacker.engine.api.{Context, LazyParameter, LazyParameterInterpreter, ValueWithContext, VariableConstants}
+import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkLazyParameterFunctionHelper, LazyParameterInterpreterFunction}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.flink.typeinformation.KeyedValueType
 import pl.touk.nussknacker.engine.util.KeyedValue
 
@@ -24,11 +23,11 @@ object keyed {
 
     def unapply[V](keyedValue: StringKeyedValue[V]): Option[(String, V)] = KeyedValue.unapply(keyedValue)
 
-    // It is helper function for interop with java - e.g. in case when you want to have StringKeyedEvent[POJO]
-    def typeInformation[V](valueTypeInformation: TypeInformation[V]): TypeInformation[StringKeyedValue[V]] = {
-      KeyedValueType.info(valueTypeInformation)
-    }
+  }
 
+  def typeInfo[K<:AnyRef, V<:AnyRef](flinkNodeContext: FlinkCustomNodeContext, key: LazyParameter[K], value: LazyParameter[V]): TypeInformation[ValueWithContext[KeyedValue[K, V]]] = {
+    val detection = flinkNodeContext.typeInformationDetection
+    flinkNodeContext.valueWithContextInfo.forType(KeyedValueType.info(detection.forType[K](key.returnType), detection.forType[V](value.returnType)))
   }
 
   abstract class BaseKeyedValueMapper[OutputKey <: AnyRef : TypeTag, OutputValue <: AnyRef : TypeTag] extends RichFlatMapFunction[Context, ValueWithContext[KeyedValue[OutputKey, OutputValue]]] with LazyParameterInterpreterFunction {

@@ -14,15 +14,19 @@ object richflink {
 
   implicit class FlinkKeyOperations(dataStream: DataStream[Context]) {
 
-    def groupBy(groupBy: LazyParameter[CharSequence])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] =
+    def groupBy(groupBy: LazyParameter[CharSequence])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[String], String] = {
+      val typeInfo = ctx.valueWithContextInfo.forType(TypeInformation.of(classOf[String]))
       dataStream
-        .flatMap(new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy))
+        .flatMap(new StringKeyOnlyMapper(ctx.lazyParameterHelper, groupBy), typeInfo)
         .keyBy((k: ValueWithContext[String]) => k.value)
+    }
 
-    def groupByWithValue[T <: AnyRef: TypeTag: TypeInformation](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] =
+    def groupByWithValue[T <: AnyRef: TypeTag](groupBy: LazyParameter[CharSequence], value: LazyParameter[T])(implicit ctx: FlinkCustomNodeContext): KeyedStream[ValueWithContext[KeyedValue[String, T]], String] = {
+      val typeInfo = keyed.typeInfo(ctx, groupBy.map[String]((k: CharSequence) => k.toString), value)
       dataStream
-        .flatMap(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value))
+        .flatMap(new StringKeyedValueMapper(ctx.lazyParameterHelper, groupBy, value), typeInfo)
         .keyBy((k: ValueWithContext[KeyedValue[String, T]]) => k.value.key)
+    }
   }
 
   implicit class ExplicitUid[T](dataStream: DataStream[T]) {

@@ -6,8 +6,8 @@ import org.apache.kafka.common.record.TimestampType
 import org.scalatest.{Assertion, BeforeAndAfter}
 import pl.touk.nussknacker.engine.api.component.{ComponentType, NodeComponentInfo}
 import pl.touk.nussknacker.engine.api.exception.NonTransientException
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.encode.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._

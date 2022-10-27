@@ -2,64 +2,62 @@ package pl.touk.nussknacker.engine.process.typeinformation
 
 import com.esotericsoftware.kryo.io.{Input, Output}
 import com.esotericsoftware.kryo.{Kryo, Serializer}
-
-import java.util.Collections
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.common.typeutils.base.{IntSerializer, LongSerializer, StringSerializer}
 import org.apache.flink.api.common.typeutils.{TypeSerializer, TypeSerializerSnapshot}
 import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
-import org.scalatest.Inside.inside
 import org.scalatest.Assertion
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.api.{Context, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer
-import pl.touk.nussknacker.engine.flink.api.typeinformation.{TypeInformationDetection, TypingResultAwareTypeInformationCustomisation}
+import pl.touk.nussknacker.engine.flink.api.typeinformation.TypeInformationDetection
 import pl.touk.nussknacker.engine.flink.serialization.FlinkTypeInformationSerializationMixin
-import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject.{BaseJavaMapBasedSerializer, TypedObjectBasedSerializerSnapshot, TypedObjectBasedTypeInformation, TypedObjectBasedTypeSerializer, TypedScalaMapSerializer}
+import pl.touk.nussknacker.engine.process.typeinformation.internal.typedobject._
 import pl.touk.nussknacker.engine.process.typeinformation.testTypedObject.{CustomObjectTypeInformation, CustomTypedObject}
 import pl.touk.nussknacker.engine.util.Implicits._
 
+import java.util.Collections
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 
 class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Matchers with FlinkTypeInformationSerializationMixin {
 
-  private val informationDetection = new TypingResultAwareTypeInformationDetection(new TypingResultAwareTypeInformationCustomisation {
-    override def customise(originalDetection: TypeInformationDetection): PartialFunction[typing.TypingResult, TypeInformation[_]] = {
-      case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
-        CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
-    }
+  private val informationDetection = new TypingResultAwareTypeInformationDetection((originalDetection: TypeInformationDetection) => {
+    case e: TypedObjectTypingResult if e.objType == Typed.typedClass[CustomTypedObject] =>
+      CustomObjectTypeInformation(e.fields.mapValuesNow(originalDetection.forType))
   })
 
   test("test map serialization") {
-    val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L)
+    val map = Map("intF" -> 11, "strF" -> "sdfasf", "longF" -> 111L, "fixedLong" -> 12L, "taggedString" -> "1")
     val typingResult = TypedObjectTypingResult(ListMap("intF" -> Typed[Int], "strF" -> Typed[String],
-      "longF" -> Typed[Long]), Typed.typedClass[Map[String, Any]])
+      "longF" -> Typed[Long], "fixedLong" -> Typed.fromInstance(12L), "taggedString" -> Typed.tagged(Typed.typedClass[String], "someTag")), Typed.typedClass[Map[String, Any]])
 
-    val typeInfo = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
     serializeRoundTrip(map, typeInfo)()
     serializeRoundTrip(map - "longF", typeInfo)(map + ("longF" -> null))
     serializeRoundTrip(map + ("unknown" -> "???"), typeInfo)(map)
 
     assertMapSerializers(typeInfo.createSerializer(executionConfigWithoutKryo),
+      ("fixedLong", new LongSerializer),
       ("intF", new IntSerializer),
       ("longF", new LongSerializer),
-      ("strF", new StringSerializer)
+      ("strF", new StringSerializer),
+      ("taggedString", new StringSerializer)
     )
   }
-
+  
   test("map serialization fallbacks to Kryo when available") {
 
     val map = Map("obj" -> SomeTestClass("name"))
     val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
-    val typeInfo = informationDetection.forType(typingResult)
+    val typeInfo: TypeInformation[Map[String, Any]] = informationDetection.forType(typingResult)
 
     an [UnsupportedOperationException] shouldBe thrownBy (serializeRoundTrip(map, typeInfo)())
     serializeRoundTrip(map, typeInfo, executionConfigWithKryo)()
@@ -124,14 +122,14 @@ class TypingResultAwareTypeInformationDetectionSpec extends AnyFunSuite with Mat
     val map = Map("obj" -> SomeTestClass("name"))
     val typingResult = TypedObjectTypingResult(ListMap("obj" -> Typed[SomeTestClass]), Typed.typedClass[Map[String, Any]])
 
-    val oldSerializer = informationDetection.forType(typingResult).createSerializer(executionConfigWithKryo)
+    val oldSerializer = informationDetection.forType[Map[String, Any]](typingResult).createSerializer(executionConfigWithKryo)
     val oldSerializerSnapshot = oldSerializer.snapshotConfiguration()
 
     //we prepare ExecutionConfig with different Kryo config, it causes need to reconfigure kryo serializer, used for SomeTestClass
     val newExecutionConfig = new ExecutionConfig {
       registerTypeWithKryoSerializer(classOf[CustomTypedObject], classOf[DummySerializer])
     }
-    val newSerializer = informationDetection.forType(typingResult).createSerializer(newExecutionConfig)
+    val newSerializer = informationDetection.forType[Map[String, Any]](typingResult).createSerializer(newExecutionConfig)
     val compatibility = oldSerializerSnapshot.resolveSchemaCompatibility(newSerializer)
 
     compatibility.isCompatibleWithReconfiguredSerializer shouldBe true

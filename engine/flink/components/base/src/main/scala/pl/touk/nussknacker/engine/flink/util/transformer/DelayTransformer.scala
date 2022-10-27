@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.common.state.{MapState, MapStateDescriptor}
-import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.api.java.typeutils.ListTypeInfo
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
@@ -56,8 +56,8 @@ class DelayFunction(nodeCtx: FlinkCustomNodeContext, delay: Duration)
 
   private val descriptor = new MapStateDescriptor[Long, java.util.List[api.Context]](
     "state",
-    TypeInformation.of(new TypeHint[Long] {}),
-    new ListTypeInfo(nodeCtx.typeInformationDetection.forContext(nodeCtx.validationContext.left.get))
+    TypeInformation.of(classOf[Long]),
+    new ListTypeInfo(nodeCtx.contextTypeInfo)
   )
 
   @transient private var state : MapState[Long, java.util.List[api.Context]] = _

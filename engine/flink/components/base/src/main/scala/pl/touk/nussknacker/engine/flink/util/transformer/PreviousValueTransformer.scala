@@ -2,12 +2,14 @@ package pl.touk.nussknacker.engine.flink.util.transformer
 
 import org.apache.flink.api.common.functions.RichFlatMapFunction
 import org.apache.flink.api.common.state.{ValueState, ValueStateDescriptor}
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.configuration.Configuration
 import org.apache.flink.streaming.api.datastream.DataStream
 import org.apache.flink.util.Collector
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.process._
+import pl.touk.nussknacker.engine.flink.util.richflink.FlinkKeyOperations
 
 case object PreviousValueTransformer extends CustomStreamTransformer with ExplicitUidInOperatorsSupport {
 
@@ -16,27 +18,27 @@ case object PreviousValueTransformer extends CustomStreamTransformer with Explic
   @MethodToInvoke(returnType = classOf[Value])
   def execute(@ParamName("groupBy") groupBy: LazyParameter[CharSequence],
               @ParamName("value") value: LazyParameter[Value])
-  = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) =>
+  = FlinkCustomStreamTransformation((start: DataStream[Context], ctx: FlinkCustomNodeContext) => {
+    val valueTypeInfo = ctx.typeInformationDetection.forType[AnyRef](value.returnType)
     setUidToNodeIdIfNeed(ctx,
       start
-        .flatMap(ctx.lazyParameterHelper.lazyMapFunction(groupBy))
-        .keyBy((vCtx: ValueWithContext[CharSequence]) => Option(vCtx.value).map(_.toString).orNull)
-        .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper))), value.returnType)
+        .groupBy(groupBy)(ctx)
+        .flatMap(new PreviousValueFunction(value, ctx.lazyParameterHelper, valueTypeInfo), ctx.valueWithContextInfo.forType(valueTypeInfo)))}, value.returnType)
 
   class PreviousValueFunction(val parameter: LazyParameter[Value],
-                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper) extends RichFlatMapFunction[ValueWithContext[CharSequence], ValueWithContext[AnyRef]]
+                              val lazyParameterHelper: FlinkLazyParameterFunctionHelper, typeInformation: TypeInformation[Value]) extends RichFlatMapFunction[ValueWithContext[String], ValueWithContext[AnyRef]]
     with OneParamLazyParameterFunction[AnyRef] {
 
     private[this] var state: ValueState[Value] = _
 
     override def open(c: Configuration): Unit = {
       super.open(c)
-      val info = new ValueStateDescriptor[Value]("state", classOf[AnyRef])
+      val info = new ValueStateDescriptor[Value]("state", typeInformation)
       state = getRuntimeContext.getState(info)
     }
 
 
-    override def flatMap(valueWithContext: ValueWithContext[CharSequence], out: Collector[ValueWithContext[AnyRef]]): Unit = {
+    override def flatMap(valueWithContext: ValueWithContext[String], out: Collector[ValueWithContext[AnyRef]]): Unit = {
       collectHandlingErrors(valueWithContext.context, out) {
         val currentValue = evaluateParameter(valueWithContext.context)
         val toReturn = Option(state.value()).getOrElse(currentValue)

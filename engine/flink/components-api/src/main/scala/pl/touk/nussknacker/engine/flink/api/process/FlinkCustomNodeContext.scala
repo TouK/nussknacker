@@ -1,10 +1,12 @@
 package pl.touk.nussknacker.engine.flink.api.process
 
 import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
-import pl.touk.nussknacker.engine.api.{JobData, MetaData}
+import pl.touk.nussknacker.engine.api.typed.typing.{TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.{Context, JobData, MetaData, ValueWithContext}
 import pl.touk.nussknacker.engine.flink.api.NkGlobalParameters
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
 import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
@@ -26,6 +28,38 @@ case class FlinkCustomNodeContext(jobData: JobData,
                                   typeInformationDetection: TypeInformationDetection,
                                   componentUseCase: ComponentUseCase) {
   def metaData: MetaData = jobData.metaData
+
+  lazy val contextTypeInfo: TypeInformation[Context] = typeInformationDetection.forContext(asOneOutputContext)
+
+  val valueWithContextInfo = new valueWithContextInfo
+
+  class valueWithContextInfo {
+
+    def forCustomContext[T](ctx: ValidationContext, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+      typeInformationDetection.forValueWithContext(ctx, value)
+
+    def forCustomContext[T](ctx: ValidationContext, value: TypingResult): TypeInformation[ValueWithContext[T]] =
+      typeInformationDetection.forValueWithContext(ctx, value)
+
+    def forBranch[T](key: String, value: TypingResult): TypeInformation[ValueWithContext[T]] =
+      forCustomContext(asJoinContext(key), value)
+
+    def forBranch[T](key: String, value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+      forCustomContext(asJoinContext(key), value)
+
+    def forType[T](value: TypingResult): TypeInformation[ValueWithContext[T]] =
+      forCustomContext(asOneOutputContext, value)
+
+    def forType[T](value: TypeInformation[T]): TypeInformation[ValueWithContext[T]] =
+      forCustomContext(asOneOutputContext, value)
+
+    lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
+  }
+
+  private def asOneOutputContext = validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
+
+  private def asJoinContext = validationContext.right.getOrElse(throw new IllegalArgumentException("This node is not a join, use asOneOutputContext"))
+
 }
 
 case class SignalSenderKey(id: String, klass: Class[_])
