@@ -96,6 +96,24 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
     }
   }
 
+  it should "should handle additionalProperties without required" in {
+    assertProcessNotRunning(procId)
+    Post("/deploy", toEntity(deploymentData(
+      jsonSchemaProcess(
+        inputSchema = """{"type":"object","properties": {"field1": {"type": "integer"}}}""",
+        outputSchema = """{"type":"object","properties": {"field1": {"type": "integer"}}, "additionalProperties": false}""",
+        outputValue = """{"field1": #input.field1}""".strip()
+      )
+    ))) ~> managementRoute ~> check {
+      status shouldBe StatusCodes.OK
+      Post(s"/${procId.value}", toEntity(Map("field1" -> 101))) ~> processesRoute ~> check {
+        status shouldBe StatusCodes.OK
+        responseAs[String] shouldBe """{"field1":101}""".strip()
+        cancelProcess(procId)
+      }
+    }
+  }
+
   it should "should fill empty request with default values" in {
     assertProcessNotRunning(procId)
     Post("/deploy", toEntity(deploymentData(
