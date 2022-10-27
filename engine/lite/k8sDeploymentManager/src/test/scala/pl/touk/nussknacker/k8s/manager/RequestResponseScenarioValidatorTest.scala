@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.k8s.manager
 
+import cats.data.Validated.Valid
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.RequestResponseMetaData
@@ -27,6 +28,10 @@ class RequestResponseScenarioValidatorTest extends AnyFunSuite with Matchers {
     val longInstanceNameValidator = new RequestResponseScenarioValidator(Some(nussknackerInstanceName))
     longInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some("a"))) shouldBe 'valid
     longInstanceNameValidator.validateRequestResponse(notImportantScenarioName, RequestResponseMetaData(Some("aaaa"))) shouldBe 'invalid
+  }
+
+  test("validates fragment") {
+    noInstanceNameValidator.validate(ScenarioBuilder.fragment("fragment").emptySink("end", "end")) shouldBe Valid(())
   }
 
 }
