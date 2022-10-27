@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.{AbstractKafkaAvroDeserializer, AbstractKafkaSchemaSerDe}
 import org.apache.avro.Schema
 import org.apache.avro.io.DecoderFactory
@@ -11,8 +10,8 @@ import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{DatumReaderWriterMixin, RecordDeserializer}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
-import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
 
 import java.io.IOException
 import java.nio.ByteBuffer
@@ -88,11 +87,11 @@ object ConfluentJsonPayloadDeserializer extends UniversalSchemaPayloadDeserializ
 object ConfluentJsonSchemaPayloadDeserializer extends UniversalSchemaPayloadDeserializer {
 
   override def deserialize(expectedSchemaData: Option[RuntimeSchemaData[ParsedSchema]], writerSchemaData: RuntimeSchemaData[ParsedSchema], buffer: ByteBuffer, bufferDataStart: Int): Any = {
-    val readerSchemaData = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[JsonSchema]]
+    val jsonSchema = expectedSchemaData.getOrElse(writerSchemaData).asInstanceOf[RuntimeSchemaData[OpenAPIJsonSchema]].schema
     val length = buffer.limit() - bufferDataStart
     val bytes = new Array[Byte](length)
     buffer.get(bytes, 0, length)
-    new CirceJsonDeserializer(readerSchemaData.schema.rawSchema()).deserialize(bytes).valueOr(e => throw new RuntimeException("Deserialization error", e)) //todo: maybe better exception
+    jsonSchema.deserializer.deserialize(bytes)
   }
 }
 

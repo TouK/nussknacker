@@ -10,8 +10,8 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
 import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
-import pl.touk.nussknacker.engine.json.{JsonSinkValueParameter, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode._
@@ -58,7 +58,7 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     case _ => throw new SerializationException(s"Expecting json but got: $data")
   }
 
-  override def typeDefinition(schema: ParsedSchema): TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema.cast().swaggerJsonSchema).typingResult
+  override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
