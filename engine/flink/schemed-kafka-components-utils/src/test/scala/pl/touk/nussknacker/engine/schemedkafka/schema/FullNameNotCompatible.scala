@@ -28,7 +28,7 @@ case class FullNameNotCompatible(var first: CharSequence, var middle: CharSequen
     }
 }
 
-object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
+object FullNameNotCompatible extends TestSchemaWithRecord {
   final val BaseSex = "man"
 
   val stringSchema: String =
@@ -50,10 +50,5 @@ object FullNameNotCompatible extends TestSchemaWithSpecificRecord {
   def createRecord(first: String, middle: String, last: String, sex: String): GenericData.Record =
     avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last, "middle" -> middle, "sex" -> sex), schema)
 
-  def createSpecificRecord(first: String, middle: String, last: String, sex: String): FullNameNotCompatible =
-    new FullNameNotCompatible(first, middle, last, sex)
-
-  lazy val specificRecord: SpecificRecordBase =
-    createSpecificRecord(FullNameV1.BaseFirst, FullNameV2.BaseMiddle, FullNameV1.BaseLast, BaseSex)
 }
 

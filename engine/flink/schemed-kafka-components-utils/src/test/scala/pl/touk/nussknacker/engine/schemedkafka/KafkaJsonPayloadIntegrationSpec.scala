@@ -3,9 +3,9 @@ package pl.touk.nussknacker.engine.schemedkafka
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.apache.kafka.common.serialization.{Deserializer, Serializer}
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.{BeforeAndAfter}
+import org.scalatest.BeforeAndAfter
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{KafkaAvroSpecMixin, SimpleKafkaJsonDeserializer, SimpleKafkaJsonSerializer}
-import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSampleSchema, PaymentV1}
+import pl.touk.nussknacker.engine.schemedkafka.schema.PaymentV1
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaBasedSerdeProvider}
@@ -47,18 +47,6 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
     val process = createAvroProcess(sourceParam, sinkParam)
 
     runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData))
-  }
-
-  test("should read and write json of specific record via avro schema") {
-    val topicConfig = createAndRegisterTopicConfig("simple-specific", GeneratedAvroClassSampleSchema.schema)
-    val sourceParam = SourceAvroParam.forSpecific(topicConfig)
-    val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
-    val process = createAvroProcess(sourceParam, sinkParam)
-
-    val givenObj = GeneratedAvroClassSampleSchema.specificRecord
-    val expectedJson = BestEffortJsonEncoder.defaultForTests.encode(givenObj)
-
-    runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
   }
 
 }

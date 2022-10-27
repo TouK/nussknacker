@@ -40,16 +40,6 @@ class DefaultAvroSchemaEvolutionSpec extends AnyFunSpec with Matchers {
     }
   }
 
-  it("should convert specific record to the same schema") {
-    val record = schemaEvolutionHandler.alignRecordToSchema(FullNameV1.specificRecord, FullNameV1.schema)
-    record shouldBe FullNameV1.specificRecord
-  }
-
-  it("should convert specific record to newer compatible schema") {
-    val record = schemaEvolutionHandler.alignRecordToSchema(FullNameV1.specificRecord, FullNameV2.schema)
-    record shouldBe FullNameV2.migratedGenericRecordFromV1
-  }
-
   it("should convert specific record to older compatible schema") {
     val record = schemaEvolutionHandler.alignRecordToSchema(FullNameV2.specificRecord, FullNameV1.schema)
     record shouldBe FullNameV1.record

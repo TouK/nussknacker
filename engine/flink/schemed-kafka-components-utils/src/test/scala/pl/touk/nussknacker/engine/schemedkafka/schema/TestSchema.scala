@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.schema
 
 import org.apache.avro.Schema
 import org.apache.avro.generic.{GenericData, GenericRecord}
-import org.apache.avro.specific.SpecificRecordBase
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
@@ -17,8 +16,4 @@ trait TestSchemaWithRecord extends TestSchema {
   def encode(data: Map[String, Any]): GenericData.Record = avroEncoder.encodeRecordOrError(data, schema)
   lazy val record: GenericRecord = encode(exampleData)
   def exampleData: Map[String, Any]
-}
-
-trait TestSchemaWithSpecificRecord extends TestSchemaWithRecord {
-  def specificRecord: SpecificRecordBase
 }

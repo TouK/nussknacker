@@ -26,7 +26,7 @@ case class FullNameV2(var first: CharSequence, var middle: CharSequence, var las
     }
 }
 
-object FullNameV2 extends TestSchemaWithSpecificRecord {
+object FullNameV2 extends TestSchemaWithRecord {
   final val BaseMiddle = "SP"
 
   val stringSchema: String =

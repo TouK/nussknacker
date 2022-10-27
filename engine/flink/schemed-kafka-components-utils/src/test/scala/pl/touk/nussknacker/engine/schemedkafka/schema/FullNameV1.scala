@@ -24,7 +24,7 @@ case class FullNameV1(var first: CharSequence, var last: CharSequence) extends S
     }
 }
 
-object FullNameV1 extends TestSchemaWithSpecificRecord {
+object FullNameV1 extends TestSchemaWithRecord {
   final val BaseFirst = "Lucas"
   final val BaseLast = "Touk"
 
@@ -45,9 +45,4 @@ object FullNameV1 extends TestSchemaWithSpecificRecord {
   def createRecord(first: String, last: String): GenericData.Record =
     avroEncoder.encodeRecordOrError(Map("first" -> first, "last" -> last), schema)
 
-  def createSpecificRecord(first: String, last: String): FullNameV1 =
-    new FullNameV1(first, last)
-
-  lazy val specificRecord: SpecificRecordBase =
-    createSpecificRecord(BaseFirst, BaseLast)
 }

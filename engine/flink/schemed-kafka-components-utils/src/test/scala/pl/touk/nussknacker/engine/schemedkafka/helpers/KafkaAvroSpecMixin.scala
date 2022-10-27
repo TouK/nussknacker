@@ -35,7 +35,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.C
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
-import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
@@ -75,14 +75,6 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     new UniversalKafkaSourceFactory[Any, Any](confluentClientFactory, universalPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
       override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey)
     }
-  }
-
-  // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
-  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaSource = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, avroPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
-      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
-    }
-    factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
   }
 
   protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
@@ -223,10 +215,11 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
 
   protected def readLastMessageAndVerify(sourceFactory: KafkaSource, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    val parameterValues = sourceFactory match {
-      case _: SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaUniversalComponentTransformer.TopicParamName -> topic)
-      case _ => Map(KafkaUniversalComponentTransformer.TopicParamName -> topic, KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption))
-    }
+    val parameterValues = Map(
+      KafkaUniversalComponentTransformer.TopicParamName -> topic,
+      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption)
+    )
+
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {
         val bytes = source.generateTestData(1)

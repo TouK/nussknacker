@@ -31,7 +31,6 @@ trait KafkaAvroSourceSpecMixin {
     val IntTopicNoKey: String = "testAvroIntTopic1NoKey"
     val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
     val PaymentDateTopic: String = "testPaymentDateTopic"
-    val GeneratedWithLogicalTypesTopic: String = "testGeneratedWithLogicalTypesTopic"
 
     val IntSchema: Schema = AvroUtils.parseSchema(
       """{
@@ -67,7 +66,6 @@ trait KafkaAvroSourceSpecMixin {
       .register(IntTopicWithKey, IntSchema, 1, isKey = true)
       .register(InvalidDefaultsTopic, InvalidDefaultsSchema, 1, isKey = false)
       .register(PaymentDateTopic, PaymentDate.schema, 1, isKey = false)
-      .register(GeneratedWithLogicalTypesTopic, GeneratedAvroClassWithLogicalTypes.getClassSchema, 1, isKey = false)
       .build
 
     val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)

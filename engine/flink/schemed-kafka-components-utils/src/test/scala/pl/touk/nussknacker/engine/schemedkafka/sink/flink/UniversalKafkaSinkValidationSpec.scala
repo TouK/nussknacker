@@ -74,7 +74,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       TopicParamName -> "'tereferer'",
       SchemaVersionParamName -> "'1'")
 
-    result.errors shouldBe InvalidPropertyFixedValue(TopicParamName, None, "'tereferer'", List("", "'fullname'", "'generated-avro'"), "id") ::
+    result.errors shouldBe InvalidPropertyFixedValue(TopicParamName, None, "'tereferer'", List("", "'fullname'"), "id") ::
       InvalidPropertyFixedValue(SchemaVersionParamName, None, "'1'", List("'latest'"), "id") :: Nil
   }
 

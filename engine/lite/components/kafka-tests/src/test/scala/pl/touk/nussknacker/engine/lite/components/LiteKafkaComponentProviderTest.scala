@@ -28,6 +28,6 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
-    components.size shouldBe 11
+    components.size shouldBe 5
   }
 }
