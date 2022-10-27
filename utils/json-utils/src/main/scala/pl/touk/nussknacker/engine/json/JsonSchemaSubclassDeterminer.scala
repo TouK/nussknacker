@@ -53,7 +53,7 @@ class JsonSchemaSubclassDeterminer(parentSchema: Schema) extends LazyLogging {
     }
 
     val additionalPropertiesValidation = {
-      val additionalProperties = e.fields.keySet.diff(requiredFieldNames)
+      val additionalProperties = e.fields.keySet.diff(objectProperties.keySet)
       condNel(objectSchema.permitsAdditionalProperties || additionalProperties.isEmpty, (),
         msgWithLocation(s"The object has redundant fields: $additionalProperties"))
     }
