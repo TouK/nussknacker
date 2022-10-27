@@ -34,7 +34,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  "age": 21
         |}""".stripMargin)
 
-    result.validValue shouldEqual Map(
+    result shouldEqual Map(
       "firstName" -> "John",
       "lastName" -> "Doe",
       "age" -> 21L
@@ -52,7 +52,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}""".stripMargin))
     val result = new CirceJsonDeserializer(schema).deserialize("""["John", "Doe"]""")
 
-    result.validValue shouldEqual List("John", "Doe").asJava
+    result shouldEqual List("John", "Doe").asJava
   }
 
 }
