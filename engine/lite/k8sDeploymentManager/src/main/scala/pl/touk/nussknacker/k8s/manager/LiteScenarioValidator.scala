@@ -3,10 +3,10 @@ package pl.touk.nussknacker.k8s.manager
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.CustomProcessValidator
+import pl.touk.nussknacker.engine.api.{FragmentSpecificData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.SpecificDataValidationError
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, RequestResponseMetaData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
 
@@ -16,6 +16,8 @@ class RequestResponseScenarioValidator(nussknackerInstanceName: Option[String]) 
     scenario.metaData.typeSpecificData match {
       case rrMetaData: RequestResponseMetaData =>
         validateRequestResponse(ProcessName(scenario.id), rrMetaData)
+      case _: FragmentSpecificData =>
+        Valid(())
       //should not happen
       case other =>
         throw new IllegalArgumentException("This validator supports only Request-Response mode, got: " + other)
