@@ -253,7 +253,7 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.15.2"
+val flinkV = "1.16.0"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 //TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
