@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import org.scalatest.funsuite.AnyFunSuite
-import org.scalatest.matchers.should.Matchers.{contain, convertToAnyShouldWrapper}
+import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.KafkaConfigProperties
@@ -28,6 +28,6 @@ class LiteKafkaComponentProviderTest extends AnyFunSuite {
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
-    components.size shouldBe 11
+    components.size shouldBe 5
   }
 }

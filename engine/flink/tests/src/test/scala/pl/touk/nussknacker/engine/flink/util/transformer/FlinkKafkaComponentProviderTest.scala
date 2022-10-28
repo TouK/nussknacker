@@ -18,7 +18,7 @@ class FlinkKafkaComponentProviderTest extends AnyFunSuite {
 
     val components = provider.create(config, ProcessObjectDependencies(config, DefaultNamespacedObjectNaming))
 
-    components.size shouldBe 11
+    components.size shouldBe 4
   }
 
   test("should not add low level kafka components by default") {

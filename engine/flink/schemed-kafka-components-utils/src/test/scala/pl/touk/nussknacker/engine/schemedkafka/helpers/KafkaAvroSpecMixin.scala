@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.schemedkafka.helpers
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated}
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.avro.specific.SpecificRecord
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.scalatest.Assertion
@@ -35,13 +34,12 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.C
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaBasedSerdeProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSinkImplFactory
-import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
+import pl.touk.nussknacker.engine.schemedkafka.source.UniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
 import java.nio.charset.StandardCharsets
-import scala.reflect.ClassTag
 
 trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperations with FlinkSpec with SchemaRegistryMixin with Matchers with LazyLogging with NussknackerAssertions with PatientScalaFutures with Serializable {
 
@@ -52,8 +50,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
   protected var registrar: FlinkProcessRegistrar = _
 
   protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory
-
-  private lazy val avroPayload: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentClientFactory)
+  
   private lazy val universalPayload = ConfluentSchemaBasedSerdeProvider.universal(confluentClientFactory)
 
   protected def executionConfigPreparerChain(modelData: LocalModelData): ExecutionConfigPreparer =
@@ -77,14 +74,6 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     }
   }
 
-  // For now SpecificRecord source factory requires KafkaConfig with useStringForKey=true. Parameter is used to test scenario with wrong configuration.
-  protected def specificSourceFactory[V <: SpecificRecord : ClassTag](useStringForKey: Boolean = true): KafkaSource = {
-    val factory = new SpecificRecordKafkaAvroSourceFactory[V](confluentClientFactory, avroPayload, testProcessObjectDependencies, new FlinkKafkaSourceImplFactory(None)) {
-      override protected def prepareKafkaConfig: KafkaConfig = super.prepareKafkaConfig.copy(useStringForKey = useStringForKey) // TODO: check what happens with false
-    }
-    factory.asInstanceOf[KafkaAvroSourceFactory[Any, Any]]
-  }
-
   protected lazy val universalSinkFactory: UniversalKafkaSinkFactory = {
     new UniversalKafkaSinkFactory(confluentClientFactory, universalPayload, testProcessObjectDependencies, FlinkKafkaUniversalSinkImplFactory)
   }
@@ -99,8 +88,6 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     val sourceParams = List(TopicParamName -> asSpelExpression(sourceTopicParamValue(source.topic))) ++ (source match {
       case UniversalSourceParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
       case UniversalSourceWithKeySupportParam(_, version) => List(SchemaVersionParamName -> asSpelExpression(formatVersionParam(version)))
-      case SpecificSourceAvroParam(_) => List.empty
-      case SpecificWithLogicalTypesSourceAvroParam(_) => List.empty
     })
 
     val baseSinkParams: List[(String, expression.Expression)] = List(
@@ -179,26 +166,12 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     override def sourceType: String = "kafka-key-value"
   }
 
-  case class SpecificSourceAvroParam(topic: String) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro-specific"
-  }
-
-  case class SpecificWithLogicalTypesSourceAvroParam(topic: String) extends SourceAvroParam {
-    override def sourceType: String = "kafka-avro-specific-with-logical-types"
-  }
-
   object SourceAvroParam {
     def forUniversal(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
       UniversalSourceParam(topicConfig.input, versionOption)
 
     def forUniversalWithKeySchemaSupport(topicConfig: TopicConfig, versionOption: SchemaVersionOption): SourceAvroParam =
       UniversalSourceWithKeySupportParam(topicConfig.input, versionOption)
-
-    def forSpecific(topicConfig: TopicConfig): SourceAvroParam =
-      SpecificSourceAvroParam(topicConfig.input)
-
-    def forSpecificWithLogicalTypes(topicConfig: TopicConfig): SourceAvroParam =
-      SpecificWithLogicalTypesSourceAvroParam(topicConfig.input)
   }
 
   case class UniversalSinkParam(topic: String,
@@ -223,10 +196,11 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
 
   protected def readLastMessageAndVerify(sourceFactory: KafkaSource, topic: String, versionOption: SchemaVersionOption, givenKey: Any, givenValue: Any):
   Validated[NonEmptyList[ProcessCompilationError], Assertion] = {
-    val parameterValues = sourceFactory match {
-      case _: SpecificRecordKafkaAvroSourceFactory[_] => Map(KafkaUniversalComponentTransformer.TopicParamName -> topic)
-      case _ => Map(KafkaUniversalComponentTransformer.TopicParamName -> topic, KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption))
-    }
+    val parameterValues = Map(
+      KafkaUniversalComponentTransformer.TopicParamName -> topic,
+      KafkaUniversalComponentTransformer.SchemaVersionParamName -> versionOptionToString(versionOption)
+    )
+
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {
         val bytes = source.generateTestData(1)

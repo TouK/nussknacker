@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
-import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
+import pl.touk.nussknacker.engine.kafka.generic.sources.GenericJsonSourceFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
@@ -170,8 +170,6 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
     }
 
     generatedForSource(new GenericJsonSourceFactory(processObjectDependencies)) shouldBe
-      List(singletonMap("key", "value1"), singletonMap("key", "value2"))
-    generatedForSource(new GenericTypedJsonSourceFactory(processObjectDependencies)) shouldBe
       List(singletonMap("key", "value1"), singletonMap("key", "value2"))
 
   }
