@@ -15,11 +15,14 @@ class ScenarioDispatcherRoute(scenarioRoutes: scala.collection.Map[String, Route
 
   def route(implicit ec: ExecutionContext, mat: Materializer): Route =
     pathPrefix("scenario" / Segment) { scenarioSlug =>
-      scenarioRoutes.get(scenarioSlug) match {
-        case None => complete {
-          HttpResponse(status = StatusCodes.NotFound)
-        }
-        case Some(r) => r
-      }
+      handle(scenarioSlug)
     }
+
+  private def handle(scenarioSlug: String): Route = scenarioRoutes.get(scenarioSlug) match {
+    case None => complete {
+      HttpResponse(status = StatusCodes.NotFound)
+    }
+    case Some(r) => r
+  }
+
 }
