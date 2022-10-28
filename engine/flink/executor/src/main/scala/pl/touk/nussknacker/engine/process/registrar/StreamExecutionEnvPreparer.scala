@@ -1,9 +1,9 @@
 package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.flink.runtime.execution.librarycache.FlinkUserCodeClassLoaders
 import org.apache.flink.runtime.state.StateBackend
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
+import org.apache.flink.util.FlinkUserCodeClassLoaders
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
