@@ -22,9 +22,11 @@ object ForEachTransformer extends CustomStreamTransformer {
     FlinkCustomStreamTransformation({ (stream: DataStream[Context], ctx: FlinkCustomNodeContext) =>
       stream
         .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
-        .flatMap(valueWithContext => valueWithContext.value.asScala.map(
-          new ValueWithContext[AnyRef](_, valueWithContext.context)
-        ))
+        .flatMap(valueWithContext =>
+          valueWithContext.value.asScala.zipWithIndex
+            .map { case (partToRun, index) =>
+              new ValueWithContext[AnyRef](partToRun, valueWithContext.context.copy(id = s"${valueWithContext.context.id}-$index"))
+            })
     }, returnType(elements))
   }
 
