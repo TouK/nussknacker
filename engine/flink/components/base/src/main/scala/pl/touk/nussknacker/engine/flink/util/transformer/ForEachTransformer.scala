@@ -23,7 +23,7 @@ object ForEachTransformer extends CustomStreamTransformer {
       stream
         .flatMap(ctx.lazyParameterHelper.lazyMapFunction(elements))
         .flatMap((valueWithContext: ValueWithContext[util.Collection[AnyRef]], c: Collector[ValueWithContext[AnyRef]]) => {
-          valueWithContext.value.asScala.toList.zipWithIndex
+          valueWithContext.value.asScala.zipWithIndex
             .map { case (partToRun, index) =>
               new ValueWithContext[AnyRef](partToRun, valueWithContext.context.copy(id=s"${valueWithContext.context.id}-$index"))
             }
