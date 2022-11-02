@@ -130,7 +130,7 @@ object ComponentDefinitionPreparer {
             case (id, definition) =>
               val nodes = EvaluatedParameterPreparer.prepareEvaluatedParameter(definition.parameters)
               val outputs = definition.outputParameters.map(name => (name, name)).toMap
-              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes, Some(outputs))), userProcessingTypeCategories.intersect(definition.categories))
+              ComponentTemplate(ComponentType.Fragments, id, SubprocessInput("", SubprocessRef(id, nodes, outputs)), userProcessingTypeCategories.intersect(definition.categories))
           }.toList))
     } else {
       List.empty
