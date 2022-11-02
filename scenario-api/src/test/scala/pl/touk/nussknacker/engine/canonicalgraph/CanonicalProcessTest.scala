@@ -167,7 +167,7 @@ class CanonicalProcessTest extends AnyFunSuite with Matchers {
     Subprocess(
       SubprocessInput(
         "sub1",
-        SubprocessRef("sub1", Nil, None),
+        SubprocessRef("sub1", Nil, Map.empty),
         isDisabled = Some(isDisabled)
       ),
       Map("subOut" -> output)
