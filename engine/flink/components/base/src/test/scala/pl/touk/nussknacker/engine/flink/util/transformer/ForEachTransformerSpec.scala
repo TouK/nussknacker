@@ -40,6 +40,16 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
     extractResultValues(results) shouldBe List("one_1", "other_1")
   }
 
+  test("should produce unique contextId for each element in list") {
+    val collectingListener = initializeListener
+    val model = modelData(List(TestRecord()), collectingListener)
+
+    val testProcess = aProcessWithForEachNode(elements = "{'one', 'other'}", resultExpression = s"#$forEachOutputVariableName + '_1'")
+
+    val results = collectTestResults[String](model, testProcess, collectingListener)
+    extractContextIds(results) shouldBe List("forEachProcess-start-0-0-0", "forEachProcess-start-0-0-1")
+  }
+
   test("should set return type based on element types") {
     val collectingListener = initializeListener
     val model = modelData(List(TestRecord()), collectingListener)
@@ -83,6 +93,9 @@ class ForEachTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers wi
 
   private def extractResultValues(results: TestProcess.TestResults[Any]): List[String] = results.nodeResults(sinkId)
     .map(_.variableTyped[String](resultVariableName).get)
+
+  private def extractContextIds(results: TestProcess.TestResults[Any]): List[String] = results.nodeResults(forEachNodeResultId)
+    .map(_.context.id)
 
   private def runProcess(model: LocalModelData, testProcess: CanonicalProcess): Unit = {
     val stoppableEnv = flinkMiniCluster.createExecutionEnvironment()
