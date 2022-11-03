@@ -19,6 +19,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
   * BestEffortJsonSchemaEncoder moved to package `pl.touk.nussknacker.engine.json.encode` in `nussknacker-json-utils`
 
+### Code API changes
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
+
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
   * Right now using fragments in scenario is changed. We have to provide each outputName for outputs defined in fragment.

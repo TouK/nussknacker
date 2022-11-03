@@ -38,13 +38,13 @@ trait GraphBuilder[R] {
     build(node => creator(OneOutputSubsequentNode(Processor(id, ServiceRef(svcId, params.map(Parameter.tupled).toList), isDisabled = Some(true)), node)))
 
   def subprocessOneOut(id: String, subProcessId: String, fragmentOutputDefinitionName: String, outputParamName: String, params: (String, Expression)*): GraphBuilder[R] =
-    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, Some(Map(fragmentOutputDefinitionName -> outputParamName)))), Map(fragmentOutputDefinitionName -> node))))
+    build(node => creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, Map(fragmentOutputDefinitionName -> outputParamName))), Map(fragmentOutputDefinitionName -> node))))
 
   def subprocess(id: String, subProcessId: String, params: List[(String, Expression)], outputParameters: Map[String, String], outputs: Map[String, SubsequentNode]): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled), Some(outputParameters))), outputs))
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled), outputParameters)), outputs))
 
   def subprocessEnd(id: String, subProcessId: String, params: (String, Expression)*): R =
-    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map()))
+    creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, Map.empty)), Map()))
 
   def fragmentInput(id: String, params: (String, Class[_])*): GraphBuilder[SourceNode] =
     new SimpleGraphBuilder(SourceNode(SubprocessInputDefinition(id, params.map(kv => SubprocessParameter(kv._1, SubprocessClazzRef(kv._2.getName))).toList), _))
