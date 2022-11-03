@@ -28,6 +28,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -80,7 +81,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     saveProcess(testProcess) {
       val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
         Parameter("value", Expression("spel", "notvalidspelexpression")),
-        Parameter("topic", Expression("spel", "'test-topic'")))),
+        Parameter(TopicParamName, Expression("spel", "'test-topic'")))),
         None, None)
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 

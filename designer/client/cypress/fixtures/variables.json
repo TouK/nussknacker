@@ -25,7 +25,7 @@
         "typ" : "real-kafka",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'input'"
@@ -83,7 +83,7 @@
         "typ" : "kafka-string",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'output'"

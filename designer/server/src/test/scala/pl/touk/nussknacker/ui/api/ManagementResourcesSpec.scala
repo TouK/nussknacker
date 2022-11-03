@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
@@ -219,7 +220,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .streaming("sampleProcess")
       .parallelism(1)
       .source("start", "not existing")
-      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+      .emptySink("end", "kafka-string", KafkaFactory.TopicParamName -> "'end.topic'", "value" -> "#output")
     saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
     deploymentManager.withFailingDeployment {
@@ -308,7 +309,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .parallelism(1)
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
+          .emptySink("end", "kafka-string", KafkaFactory.TopicParamName -> "'end.topic'", "value" -> "''")
     }
 
     saveProcessAndAssertSuccess(process.id, process)
@@ -330,7 +331,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
+          .emptySink("end", "kafka-string", KafkaFactory.TopicParamName -> "'end.topic'")
     }
 
     saveProcessAndAssertSuccess(process.id, process)

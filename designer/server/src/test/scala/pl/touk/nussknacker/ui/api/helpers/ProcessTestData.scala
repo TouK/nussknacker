@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{Subproce
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder._
 import pl.touk.nussknacker.engine.{TypeSpecificInitialData, spel}
@@ -65,7 +66,7 @@ object ProcessTestData {
     .withSourceFactory(secretExistingSourceFactory, TestCategories.SecretCategory)
     .withSinkFactory(otherExistingSinkFactory)
     .withSinkFactory(existingSinkFactory)
-    .withSinkFactory(existingSinkFactoryKafkaString, Parameter[String]("topic"), Parameter[Any]("value").copy(isLazyParameter = true))
+    .withSinkFactory(existingSinkFactoryKafkaString, Parameter[String](KafkaFactory.TopicParamName), Parameter[Any]("value").copy(isLazyParameter = true))
     .withService(existingServiceId)
     .withService(otherExistingServiceId)
     .withService(processorId, classOf[Void])

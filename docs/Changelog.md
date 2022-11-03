@@ -13,6 +13,7 @@
   to return scenario JSON omitting validation and dictionary resolving.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
 * [#3656](https://github.com/TouK/nussknacker/pull/3656) OpenAPI 3.1.0 support + basic support for type references in json schemas
+* [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize topic param name
 
 1.6.1 (Not released yet)
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode

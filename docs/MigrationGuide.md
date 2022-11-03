@@ -18,6 +18,8 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
   * BestEffortJsonSchemaEncoder moved to package `pl.touk.nussknacker.engine.json.encode` in `nussknacker-json-utils`
+* [#3675](https://github.com/TouK/nussknacker/pull/3675) Improvements: Normalize topic param name:
+  * Renamed kafka topic param name from `topic` to `Topic`
 
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs

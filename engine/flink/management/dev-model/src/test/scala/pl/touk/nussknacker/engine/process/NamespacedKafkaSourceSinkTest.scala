@@ -27,6 +27,7 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
 
   import KafkaTestUtils._
   import spel.Implicits._
+  import KafkaFactory._
 
   override lazy val config = ConfigFactory.load()
     .withValue(KafkaConfigProperties.bootstrapServersProperty(), fromAnyRef(kafkaServer.kafkaAddress))
@@ -44,8 +45,8 @@ class NamespacedKafkaSourceSinkTest extends AnyFunSuite with FlinkSpec with Kafk
     val process = ScenarioBuilder
       .streaming("id")
       .parallelism(1)
-      .source("input", "real-kafka", "topic" -> s"'$inputTopic'")
-      .emptySink("output", "kafka-string", "topic" -> s"'$outputTopic'", "value" -> "#input")
+      .source("input", "real-kafka", TopicParamName -> s"'$inputTopic'")
+      .emptySink("output", "kafka-string", TopicParamName -> s"'$outputTopic'", "value" -> "#input")
 
     run(process) {
       val consumer = kafkaClient.createConsumer()

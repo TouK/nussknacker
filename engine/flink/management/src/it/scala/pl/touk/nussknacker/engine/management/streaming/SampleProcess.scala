@@ -20,8 +20,8 @@ object SampleProcess {
   def kafkaProcess(id: String, topic: String) : CanonicalProcess = {
     ScenarioBuilder
       .streaming(id)
-      .source("startProcess", "real-kafka", "topic" -> s"'$topic'")
-      .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#input")
+      .source("startProcess", "real-kafka", "Topic" -> s"'$topic'")
+      .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "value" -> "#input")
   }
 
   private def endWithMessage(idSuffix: String, message: String): SubsequentNode = {
