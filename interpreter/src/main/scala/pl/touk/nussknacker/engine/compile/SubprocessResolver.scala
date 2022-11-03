@@ -126,7 +126,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         replacement.get(name) match {
           case Some(nodes) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
           case Some(nodes) =>
-            val outputName = outputs.getOrElse(name, name) // when no `outputVariableName` defined we use output name from fragment as variable name
+            val outputName = outputs.getOrElse(name, default = name) // when no `outputVariableName` defined we use output name from fragment as variable name
             validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
           case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
         }
