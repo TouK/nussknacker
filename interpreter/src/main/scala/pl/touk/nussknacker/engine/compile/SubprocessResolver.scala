@@ -120,17 +120,14 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
   //we replace outputs in subprocess with part of parent process
-  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Option[Map[String, String]]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
+  private def replaceCanonicalList(replacement: Map[String, CanonicalBranch], parentId: String, outputs: Map[String, String]): CanonicalBranch => ValidatedWithBranches[CanonicalBranch] = {
     iterateOverCanonicals({
       case FlatNode(SubprocessOutputDefinition(id, name, fields, add)) => {
-        //it's temporary solutions
-        val maybeOutputName = outputs match {
-          case None => Some(name)
-          case Some(map) => map.get(name)
-        }
-        (replacement.get(name), maybeOutputName) match {
-          case (Some(nodes), None) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
-          case (Some(nodes), Some(outputName)) => validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
+        replacement.get(name) match {
+          case Some(nodes) if fields.isEmpty => validBranches(FlatNode(SubprocessUsageOutput(id, name, None, add)) :: nodes)
+          case Some(nodes) =>
+            val outputName = outputs.getOrElse(name, default = name) // when no `outputVariableName` defined we use output name from fragment as variable name
+            validBranches(FlatNode(SubprocessUsageOutput(id, name, Some(SubprocessOutputVarDefinition(outputName, fields)), add)) :: nodes)
           case _ => invalidBranches(FragmentOutputNotDefined(name, Set(id, parentId)))
         }
       }
