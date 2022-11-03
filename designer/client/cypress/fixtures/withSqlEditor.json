@@ -48,14 +48,14 @@
         "typ" : "kafka-string",
         "parameters" : [
           {
-            "name" : "topic",
+            "name" : "Topic",
             "expression" : {
               "language" : "spel",
               "expression" : "'out'"
             }
           },
           {
-            "name" : "value",
+            "name" : "Value",
             "expression" : {
               "language" : "spel",
               "expression" : "''"

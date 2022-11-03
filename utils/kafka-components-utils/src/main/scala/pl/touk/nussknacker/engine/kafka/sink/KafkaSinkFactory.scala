@@ -5,9 +5,10 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 import pl.touk.nussknacker.engine.kafka.serialization.{FixedKafkaSerializationSchemaFactory, KafkaSerializationSchema, KafkaSerializationSchemaFactory}
-import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, KafkaUtils, PreparedKafkaTopic, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic, serialization}
 
 import javax.validation.constraints.NotBlank
+
 
 class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFactory[AnyRef],
                        processObjectDependencies: ProcessObjectDependencies,
@@ -26,7 +27,7 @@ class KafkaSinkFactory(serializationSchemaFactory: KafkaSerializationSchemaFacto
                defaultMode = DualEditorMode.RAW
              )
              @ParamName(`TopicParamName`) @NotBlank topic: String,
-             @ParamName("value") value: LazyParameter[AnyRef]): Sink =
+             @ParamName(`SinkValueParamName`) value: LazyParameter[AnyRef]): Sink =
     createSink(topic, value, processMetaData)
 }
 

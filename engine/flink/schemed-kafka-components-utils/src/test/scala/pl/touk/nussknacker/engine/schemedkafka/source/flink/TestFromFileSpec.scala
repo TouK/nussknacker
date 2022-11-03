@@ -26,7 +26,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.test.KafkaConfigProperties
-
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import java.util.Collections
 
 class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
@@ -51,7 +51,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .source(
         "start", "kafka", TopicParamName -> s"'$topic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
       ).customNode("transform", "extractedTimestamp", "extractAndTransformTimestamp", "timestampToSet" -> "0L")
-      .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
+      .emptySink("end", "sinkForInputMeta", SingleValueParamName -> "#inputMeta")
 
     val consumerRecord = new InputMetaToJson()
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)

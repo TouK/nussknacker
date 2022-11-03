@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Outcome}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
+import pl.touk.nussknacker.engine.flink.util.sink.SingleValueSinkFactory.SingleValueParamName
 import pl.touk.nussknacker.engine.graph.node.{Case, DeadEndingData, EndingNodeData}
 import pl.touk.nussknacker.engine.process.helpers.ProcessTestHelpers
 import pl.touk.nussknacker.engine.process.helpers.SampleNodes.{MockService, SimpleRecord, SinkForStrings}
@@ -156,7 +157,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
     val process = ScenarioBuilder.streaming(scenarioName.value)
       .source("id", "input")
       .enricher("enricher1", "outputValue", "enricherWithOpenService")
-      .emptySink("out", "sinkForStrings", "value" -> "#outputValue")
+      .emptySink("out", "sinkForStrings", SingleValueParamName -> "#outputValue")
 
     val data = List(
       SimpleRecord("1", 12, "a", new Date(0))
@@ -182,7 +183,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
         .customNodeNoOutput("custom", "customFilter", "input" -> "''", "stringVal" -> "''")
         .processor("proc1", "lifecycleService")
         .switch("switch1", "false", "any2",
-          GraphBuilder.emptySink("outE1", "sinkForStrings", "value" -> "''"),
+          GraphBuilder.emptySink("outE1", "sinkForStrings", SingleValueParamName -> "''"),
           Case("true", GraphBuilder.processorEnd("procE1", "lifecycleService")),
           Case("false", GraphBuilder.endingCustomNode("customE1", None,"optionalEndingCustom", "param" -> "''"))
         )

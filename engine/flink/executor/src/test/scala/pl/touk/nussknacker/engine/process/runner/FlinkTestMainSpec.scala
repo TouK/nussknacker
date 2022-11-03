@@ -44,7 +44,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .buildSimpleVariable("v1", "variable1", "'ala'")
         .processor("eager1", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.id")
         .processor("proc2", "logService", "all" -> "#input.id")
-        .emptySink("out", "valueMonitor", "value" -> "#input.value1")
+        .emptySink("out", "valueMonitor", "Value" -> "#input.value1")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -68,7 +68,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       List(ExpressionInvocationResult("proc1-id-0-1", "all", "0"))
 
     invocationResults("out") shouldBe
-      List(ExpressionInvocationResult("proc1-id-0-1", "value", 11))
+      List(ExpressionInvocationResult("proc1-id-0-1", "Value", 11))
 
     results.externalInvocationResults("proc2") shouldBe List(ExternalInvocationResult("proc1-id-0-1", "logService", "0-collectedDuringServiceInvocation"))
     results.externalInvocationResults("out") shouldBe List(ExternalInvocationResult("proc1-id-0-1", "valueMonitor", 11))
@@ -102,7 +102,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .streaming("proc1")
         .source("id", "input")
         .customNode("cid", "out", "stateCustom", "groupBy" -> "#input.id", "stringVal" -> "'s'")
-        .emptySink("out", "valueMonitor", "value" -> "#input.value1 + ' ' + #out.previous")
+        .emptySink("out", "valueMonitor", "Value" -> "#input.value1 + ' ' + #out.previous")
 
     val input = SimpleRecord("0", 1, "2", new Date(3), Some(4), 5, "6")
     val input2 = SimpleRecord("0", 11, "2", new Date(3), Some(4), 5, "6")
@@ -132,8 +132,8 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
     invocationResults("out") shouldBe
       List(
-        ExpressionInvocationResult("proc1-id-0-0", "value", "1 0"),
-        ExpressionInvocationResult("proc1-id-0-1", "value", "11 1")
+        ExpressionInvocationResult("proc1-id-0-0", "Value", "1 0"),
+        ExpressionInvocationResult("proc1-id-0-1", "Value", "11 1")
       )
 
     results.externalInvocationResults("out") shouldBe
@@ -240,7 +240,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "jsonInput")
-        .emptySink("out", "valueMonitor", "value" -> "#input")
+        .emptySink("out", "valueMonitor", "Value" -> "#input")
     val testData = ScenarioTestData(List(
       ScenarioTestRecord("id", Json.obj("id" -> Json.fromString("1"), "field" -> Json.fromString("11"))),
       ScenarioTestRecord("id", Json.obj("id" -> Json.fromString("2"), "field" -> Json.fromString("22"))),
@@ -262,7 +262,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     val process = ScenarioBuilder
       .streaming("proc1")
       .source("id", "genericSourceWithCustomVariables", "elements" -> "{'abc'}")
-      .emptySink("out", "valueMonitor", "value" -> "#additionalOne + '|' + #additionalTwo")
+      .emptySink("out", "valueMonitor", "Value" -> "#additionalOne + '|' + #additionalTwo")
     val testData = ScenarioTestData(List(ScenarioTestRecord("id", Json.fromString("abc"))))
 
     val results = runFlinkTest(process, testData)
@@ -279,7 +279,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "input")
-        .emptySink("out", "sinkForInts", "value" -> "15 / {0, 1}[0]")
+        .emptySink("out", "sinkForInts", "Value" -> "15 / {0, 1}[0]")
 
     val results = runFlinkTest(process, ScenarioTestData(List(createTestRecord(id = "2", value1 = 2))))
 
@@ -319,7 +319,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
-        .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
+        .emptySink("out", "valueMonitor", "Value" -> "#input.field1 + #input.field2")
 
     val results = runFlinkTest(process, ScenarioTestData(ScenarioTestRecord("id", Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))) :: Nil))
 
@@ -335,7 +335,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       .source("id", "input")
       .enricher("dependent", "parsed", "returningDependentTypeService",
         "definition" -> "{'field1', 'field2'}", "toFill" -> "#input.value1.toString()", "count" -> countToPass.toString)
-      .emptySink("out", "valueMonitor", "value" ->  "#parsed.size + ' ' + #parsed[0].field2")
+      .emptySink("out", "valueMonitor", "Value" ->  "#parsed.size + ' ' + #parsed[0].field2")
 
     val results = runFlinkTest(process, ScenarioTestData(List(createTestRecord(value1 = valueToReturn))))
 
@@ -352,7 +352,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       .switch("switch", "#input.id == 'ala'", "output",
         Case(
           "#output == false",
-          GraphBuilder.emptySink("out", "valueMonitor", "value" -> "'any'")
+          GraphBuilder.emptySink("out", "valueMonitor", "Value" -> "'any'")
         )
       )
 
@@ -447,7 +447,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
       .source("start", "input")
       .enricher("componentUseCaseService", "componentUseCaseService", "returningComponentUseCaseService")
       .customNode("componentUseCaseCustomNode", "componentUseCaseCustomNode", "transformerAddingComponentUseCase")
-      .emptySink("out", "valueMonitor", "value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
+      .emptySink("out", "valueMonitor", "Value" -> "{#componentUseCaseService, #componentUseCaseCustomNode}")
 
     val results = runFlinkTest(process, ScenarioTestData(List(createTestRecord(sourceId = "start"))))
 
