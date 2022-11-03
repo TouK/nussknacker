@@ -147,9 +147,9 @@ class DelayedKafkaFetcher[T](sourceContext: SourceFunction.SourceContext[T],
       val remainingDelay = delay - currentDelay
       val sleepTime = Math.min(maxSleepTime, remainingDelay)
 
-      val logMessage = s"Sleeping for $sleepTime ms of total $remainingDelay ms for ${records.size()} events. Max event timestamp is $maxEventTimestamp, fetcher delay is $delay."
-
       if (sleepTime >= maxSleepTime) {
+        val logMessage = s"Sleeping for $sleepTime ms of total $remainingDelay ms for ${records.size()} events. " +
+          s"Max event timestamp is $maxEventTimestamp, fetcher delay is $delay, partition:offset is ${partitionState.getPartition}:$offset"
         logger.info(logMessage)
       }
 
