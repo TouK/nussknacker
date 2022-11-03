@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.spel.Implicits._
 
 class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbeddedDeploymentManagerTest {
+  import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 
   // This test is in separate suite to make sure that restarting of kafka server have no influence on other test case scenarios
   test("Set status to restarting when scenario fails and back to running when the problems are fixed") {
@@ -15,9 +16,9 @@ class StreamingEmbeddedDeploymentManagerRestartTest extends BaseStreamingEmbedde
     val name = ProcessName("testName")
     val scenario = ScenarioBuilder
       .streamingLite(name.value)
-      .source("source", "kafka", "Topic" -> s"'$inputTopic'", "Schema version" -> "'latest'")
-      .emptySink("sink", "kafka", "Topic" -> s"'$outputTopic'", "Schema version" -> "'latest'", "Key" -> "null",
-        "Raw editor" -> "true", "Value validation mode" -> "'strict'", "Value" -> "#input")
+      .source("source", "kafka", TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> "'latest'")
+      .emptySink("sink", "kafka", TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> "'latest'", "Key" -> "null",
+        SinkRawEditorParamName -> "true", SinkValidationModeParameterName -> "'strict'", SinkValueParamName -> "#input")
 
     wrapInFailingLoader {
       fixture.deployScenario(scenario)

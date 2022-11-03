@@ -13,7 +13,6 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.util.Random
 
-
 class KafkaErrorTopicInitializerTest extends AnyFunSuite with KafkaSpec with Matchers with PatientScalaFutures {
 
   private def initializer(topic: String): KafkaErrorTopicInitializer = {

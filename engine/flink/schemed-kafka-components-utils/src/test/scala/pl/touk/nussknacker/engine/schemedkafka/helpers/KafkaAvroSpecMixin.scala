@@ -133,7 +133,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
           "kafka",
           baseSinkParams ++ editorParams ++ validationParams ++ sink.valueParams: _*
         ),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "value" -> "#inputMeta")
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "Value" -> "#inputMeta")
       )
   }
 

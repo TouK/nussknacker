@@ -97,7 +97,7 @@
         "typ" : "sendSms",
         "parameters" : [
           {
-            "name" : "value",
+            "name" : "Value",
             "expression" : {
               "language" : "spel",
               "expression" : "''"

@@ -22,7 +22,6 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -30,6 +29,7 @@ import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.Pro
 import pl.touk.nussknacker.ui.util.MultipartUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.kafka.KafkaFactory
 import pl.touk.nussknacker.ui.api.ProcessesResources.ProcessesQuery
 
 import java.time.Instant
@@ -38,6 +38,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
   import TestCategories._
+  import KafkaFactory._
 
   private implicit final val string: FromEntityUnmarshaller[String] = Unmarshaller.stringUnmarshaller.forContentTypes(ContentTypeRange.*)
 
@@ -219,7 +220,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .streaming("sampleProcess")
       .parallelism(1)
       .source("start", "not existing")
-      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#output")
+      .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "#output")
     saveProcessAndAssertSuccess(invalidScenario.id, invalidScenario)
 
     deploymentManager.withFailingDeployment {
@@ -308,7 +309,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .parallelism(1)
           .source("startProcess", "csv-source")
           .filter("input", "new java.math.BigDecimal(null) == 0")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
+          .emptySink("end", "kafka-string", TopicParamName -> "'end.topic'", SinkValueParamName -> "''")
     }
 
     saveProcessAndAssertSuccess(process.id, process)
@@ -330,7 +331,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
           .streaming("sampleProcess")
           .parallelism(1)
           .source("startProcess", "csv-source")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'")
+          .emptySink("end", "kafka-string", KafkaFactory.TopicParamName -> "'end.topic'")
     }
 
     saveProcessAndAssertSuccess(process.id, process)

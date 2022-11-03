@@ -229,7 +229,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       .streaming(processId)
       .source("source", "csv-source")
       .enricher("enricher", "out", "complexReturnObjectService")
-      .emptySink("end", "sendSms", "value" -> "''")
+      .emptySink("end", "sendSms", "Value" -> "''")
 
     saveProcess(process)
 

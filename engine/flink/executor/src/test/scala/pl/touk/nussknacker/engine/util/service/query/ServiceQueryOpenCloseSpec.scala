@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
-import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import scala.concurrent.{ExecutionContext, Future}

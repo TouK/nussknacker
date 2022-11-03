@@ -15,7 +15,7 @@ object StatefulSampleProcess {
       .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "stateful", "groupBy" -> "#input")
-        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
+        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
 
   def prepareProcessStringWithStringState(id: String): CanonicalProcess = {
@@ -24,7 +24,7 @@ object StatefulSampleProcess {
       .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformer")
-        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
+        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
 
   def processWithAggregator(id: String, aggregatorExpression: String): CanonicalProcess = ScenarioBuilder
@@ -39,7 +39,7 @@ object StatefulSampleProcess {
     )
     // Add enricher to force creating async operator which buffers elements emitted by aggregation. These elements can be incompatible.
     .enricher("enricher", "output", "paramService", "param" -> "'a'")
-    .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "'test'")
+    .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "'test'")
 
   def prepareProcessWithLongState(id: String): CanonicalProcess = {
 
@@ -47,6 +47,6 @@ object StatefulSampleProcess {
       .streaming(id)
       .source("state", "oneSource")
         .customNode("stateful", "stateVar", "constantStateTransformerLongValue")
-        .emptySink("end", "kafka-string", "topic" -> s"'output-$id'", "value" -> "#stateVar")
+        .emptySink("end", "kafka-string", "Topic" -> s"'output-$id'", "Value" -> "#stateVar")
   }
 }

@@ -28,6 +28,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.kafka.KafkaFactory._
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
@@ -79,8 +80,8 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
     val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
-        Parameter("value", Expression("spel", "notvalidspelexpression")),
-        Parameter("topic", Expression("spel", "'test-topic'")))),
+        Parameter(SinkValueParamName, Expression("spel", "notvalidspelexpression")),
+        Parameter(TopicParamName, Expression("spel", "'test-topic'")))),
         None, None)
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
@@ -89,7 +90,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
           parameters = None,
           expressionType = None,
           validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-            data.id, Some("value"), "notvalidspelexpression"))),
+            data.id, Some(SinkValueParamName), "notvalidspelexpression"))),
           validationPerformed = true)
       }
     }

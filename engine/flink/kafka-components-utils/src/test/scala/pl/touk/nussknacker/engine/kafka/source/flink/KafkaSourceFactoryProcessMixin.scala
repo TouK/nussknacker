@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMetho
 import pl.touk.nussknacker.engine.definition.{DefinitionExtractor, ProcessDefinitionExtractor, TypeInfos}
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.test.{FlinkSpec, RecordingExceptionConsumer}
-import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
+import pl.touk.nussknacker.engine.kafka.KafkaFactory.{SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.kafka.source.InputMeta
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin.ObjToSerialize
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryProcessConfigCreator.SinkForSampleValue
@@ -115,8 +115,8 @@ trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with Kafk
 
     processWithVariables
       .split("split",
-        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", "value" -> "#input"),
-        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", "value" -> "#inputMeta")
+        GraphBuilder.emptySink("outputInput", "sinkForSimpleJsonRecord", SinkValueParamName -> "#input"),
+        GraphBuilder.emptySink("outputInputMeta", "sinkForInputMeta", SinkValueParamName -> "#inputMeta")
       )
 
   }
