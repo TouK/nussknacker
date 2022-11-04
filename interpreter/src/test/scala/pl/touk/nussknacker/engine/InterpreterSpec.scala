@@ -420,6 +420,40 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
     interpretValidatedProcess(resolved, Transaction(msisdn = "a", accountId = "a"), List()) shouldBe "result"
   }
 
+  // delete when SubprocessRef::outputVariableNames type is changed from Option[Map[]] to Map[]
+  test("handle fragment with two occurrences [legacy case]") {
+    implicit class LegacyGraphBuilder[R](gb: GraphBuilder[R]) {
+      def subprocessOneOutLegacy(id: String, subProcessId: String, fragmentOutputDefinitionName: String, params: (String, Expression)*): GraphBuilder[R] =
+        gb.build(node => gb.creator(SubprocessNode(SubprocessInput(id, SubprocessRef(subProcessId, params.map(Parameter.tupled).toList, None)), Map(fragmentOutputDefinitionName -> node))))
+    }
+
+    val process = ScenarioBuilder.streaming("test")
+      .source("source", "transaction-source")
+      .subprocessOneOutLegacy("first", "subProcess1", "output", "param" -> "#input.accountId")
+      .subprocessOneOutLegacy("second", "subProcess1", "output", "param" -> "#input.msisdn")
+      .buildSimpleVariable("result-sink", resultVariable, "'result'")
+      .emptySink("end-sink", "dummySink")
+
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+      List(
+        FlatNode(SubprocessInputDefinition("start", List(SubprocessParameter("param", SubprocessClazzRef[String])))),
+        canonicalnode.FilterNode(
+          Filter("f1", "#param == 'a'"),
+          List(FlatNode(Variable("result", resultVariable, "'deadEnd'")), FlatNode(Sink("deadEnd", SinkRef("dummySink", List()))))
+        ),
+        FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))
+      ), List.empty)
+
+    val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
+
+    resolved shouldBe 'valid
+
+    interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(msisdn = "a"), List()) shouldBe "deadEnd"
+    interpretValidatedProcess(resolved, Transaction(msisdn = "a", accountId = "a"), List()) shouldBe "result"
+  }
+
   test("handle fragment result in other fragment") {
     val process = ScenarioBuilder.streaming("test")
       .source("source", "transaction-source")
