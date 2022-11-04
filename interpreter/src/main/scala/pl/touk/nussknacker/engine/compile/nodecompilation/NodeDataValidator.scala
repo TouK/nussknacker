@@ -69,8 +69,8 @@ object NodeDataValidator {
           errors => ValidationPerformed(errors.toList, None, None),
           { case InputValidationResponse(params, outputs) =>
             val outputFieldsValidationErrors = outputs.collect { case Output(name, true) => name }.map { output =>
-              val maybeOutputName: Option[String] = a.ref.outputVariableNames.get(output)
-              val outputName = Validated.fromOption(maybeOutputName, NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))
+              val outputName = a.ref.outputVariableNames.map(names =>
+                Validated.fromOption(names.get(output), NonEmptyList.one(UnknownFragmentOutput(output, Set(a.id))))).getOrElse(Valid(output))
               outputName.andThen(name => validationContext.withVariable(OutputVar.fragmentOutput(output, name), Unknown))
             }.toList.sequence.swap.toList.flatMap(_.toList)
             val outgoingEdgesErrors = outputs.collect {

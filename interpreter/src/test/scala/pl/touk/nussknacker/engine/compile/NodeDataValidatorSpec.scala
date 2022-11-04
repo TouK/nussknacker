@@ -244,7 +244,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val expectedMsg = s"Bad expression type, expected: String, found: ${Typed.fromInstance(145).display}"
     inside(
       validate(SubprocessInput("frInput", SubprocessRef("fragment1", List(Parameter("param1", "145")),
-        Map("out1" -> "test1"))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
+        Some(Map("out1" -> "test1")))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(ExpressionParserCompilationError(expectedMsg, "frInput", Some("param1"), "145")), None, None) =>
     }
@@ -257,7 +257,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodeId = "frInput"
     inside(
       validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")),
-        Map("out1" -> incorrectVarName))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
+        Some(Map("out1" -> incorrectVarName)))), ValidationContext.empty, outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(InvalidVariableOutputName(incorrectVarName, nodeId, Some(varFieldName))), None, None) =>
     }
@@ -265,7 +265,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val existingVar = "var1"
     inside(
       validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")),
-        Map("out1" -> existingVar))), ValidationContext(Map(existingVar -> Typed[String])), outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
+        Some(Map("out1" -> existingVar)))), ValidationContext(Map(existingVar -> Typed[String])), outgoingEdges = List(OutgoingEdge("any", Some(SubprocessOutput("out1")))))
     ) {
       case ValidationPerformed(List(OverwrittenVariable(existingVar, nodeId, Some(varFieldName))), None, None) =>
     }
@@ -275,7 +275,7 @@ class NodeDataValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val nodeId = "frInput"
     val nodes = Set("aa")
     inside(
-      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Map("out1" -> "ok"))), ValidationContext.empty)
+      validate(SubprocessInput(nodeId, SubprocessRef("fragment1", List(Parameter("param1", "'someValue'")), Some(Map("out1" -> "ok")))), ValidationContext.empty)
     ) {
       case ValidationPerformed(List(FragmentOutputNotDefined("out1", nodes)), None, None) =>
     }
