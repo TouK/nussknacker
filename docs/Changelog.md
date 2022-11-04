@@ -7,6 +7,7 @@
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
 * [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (flink)
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix: do not show extra scrollbar on scenario screen when panel too large
+* [#3679](https://github.com/TouK/nussknacker/pull/3679) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
 
 1.6.0 (18 Oct 2022)
 ------------------------
