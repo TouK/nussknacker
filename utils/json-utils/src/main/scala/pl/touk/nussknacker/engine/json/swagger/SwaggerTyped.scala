@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Sch
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
-import java.time.{LocalDate, LocalDateTime, LocalTime}
+import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -94,7 +94,7 @@ object SwaggerTyped {
     case SwaggerBigDecimal =>
       Typed.typedClass[java.math.BigDecimal]
     case SwaggerDateTime =>
-      Typed.typedClass[LocalDateTime]
+      Typed.typedClass[ZonedDateTime]
     case SwaggerDate =>
       Typed.typedClass[LocalDate]
     case SwaggerTime =>
