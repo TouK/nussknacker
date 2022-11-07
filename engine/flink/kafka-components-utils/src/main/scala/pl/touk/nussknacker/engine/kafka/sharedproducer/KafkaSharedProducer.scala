@@ -15,7 +15,7 @@ import scala.concurrent.{ExecutionContext, Future}
   Flink Kafka connector. In the future probably also exception handling would be refactored to use Flink connectors (and e.g.
   benefit from exactly-once guarantees etc.)
  */
-object SharedKafkaProducerHolder extends SharedServiceHolder[KafkaProducerCreator[Array[Byte], Array[Byte]], DefaultSharedKafkaProducer] {
+object DefaultSharedKafkaProducerHolder extends SharedServiceHolder[KafkaProducerCreator[Array[Byte], Array[Byte]], DefaultSharedKafkaProducer] {
 
   override protected def createService(creator: KafkaProducerCreator[Array[Byte], Array[Byte]], metaData: MetaData): DefaultSharedKafkaProducer = {
     val clientId = s"$name-${metaData.id}-${creator.hashCode()}"
@@ -31,7 +31,7 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
     KafkaUtils.sendToKafka(producerRecord)(producer).map(_ => ())
   }
 
-  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = SharedKafkaProducerHolder
+  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = DefaultSharedKafkaProducerHolder
 
   override def internalClose(): Unit = {
     producer.close()
@@ -52,14 +52,21 @@ trait SharedKafkaProducer {
 
 }
 
-trait WithSharedKafkaProducer extends Lifecycle {
+trait WithSharedKafkaProducer extends BaseSharedKafkaProducer[DefaultSharedKafkaProducer] {
+
+  override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, DefaultSharedKafkaProducer] = DefaultSharedKafkaProducerHolder
+
+}
+
+trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaProducerCreator.Binary]] extends Lifecycle {
 
   def kafkaProducerCreator: KafkaProducerCreator.Binary
 
-  private var sharedProducer: SharedKafkaProducer = _
+  protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, P]
 
-  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])
-                 (implicit ec: ExecutionContext): Future[Unit] = {
+  private var sharedProducer: P = _
+
+  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit] = {
     sharedProducer.sendToKafka(producerRecord)
   }
 
@@ -69,19 +76,15 @@ trait WithSharedKafkaProducer extends Lifecycle {
 
   override def open(context: EngineRuntimeContext): Unit = {
     super.open(context)
-    sharedProducer = SharedKafkaProducerHolder.retrieveService(kafkaProducerCreator)(context.jobData.metaData)
+    sharedProducer = sharedServiceHolder.retrieveService(kafkaProducerCreator)(context.jobData.metaData)
   }
 
   override def close(): Unit = {
-    super.close()
-    closeSharedProducer()
-  }
-
-  protected def closeSharedProducer(): Unit = {
     super.close()
     if (sharedProducer != null) {
       sharedProducer.close()
     }
   }
+
 }
 

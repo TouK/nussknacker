@@ -18,8 +18,8 @@ class KafkaSharedProducerSpec extends AnyFunSuite with Matchers {
     val mockProducer = new MockProducer[Array[Byte], Array[Byte]](false, new ByteArraySerializer, new ByteArraySerializer)
     val creator = MockProducerCreator(mockProducer)
 
-    val service = SharedKafkaProducerHolder.retrieveService(creator)(MetaData("id", StreamMetaData()))
-    val service2 = SharedKafkaProducerHolder.retrieveService(creator)(MetaData("id", StreamMetaData()))
+    val service = DefaultSharedKafkaProducerHolder.retrieveService(creator)(MetaData("id", StreamMetaData()))
+    val service2 = DefaultSharedKafkaProducerHolder.retrieveService(creator)(MetaData("id", StreamMetaData()))
 
     service.sendToKafka(new ProducerRecord("t1", Array[Byte](),"testValue1".getBytes(StandardCharsets.UTF_8)))
     service2.sendToKafka(new ProducerRecord("t2", Array[Byte](),"testValue2".getBytes(StandardCharsets.UTF_8)))
