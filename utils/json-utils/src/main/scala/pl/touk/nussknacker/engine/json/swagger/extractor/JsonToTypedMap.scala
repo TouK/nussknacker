@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import scala.util.Try
 
 // TODO: Validated
 object JsonToTypedMap {
@@ -69,6 +70,8 @@ object JsonToTypedMap {
         extract[Vector[Json]](_.asArray, _.map(JsonToTypedMap(_, elementType)).asJava)
       case SwaggerObject(elementType, required) =>
         extractObject(elementType, required)
+      case u@SwaggerUnion(types) => types.foldLeft[Option[AnyRef]](None)((acc, i) =>
+        if (acc.isEmpty) Try(apply(json, i)).toOption else acc).getOrElse(throw JsonToObjectError(json, u))
     }
   }
 

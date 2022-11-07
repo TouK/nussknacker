@@ -55,4 +55,28 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     result shouldEqual List("John", "Doe").asJava
   }
 
+  test("json object with union") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "type": ["string", "integer"]
+        |    }
+        |  }
+        |}""".stripMargin))
+    val deserializer = new CirceJsonDeserializer(schema)
+
+    deserializer.deserialize(
+      """{
+        |  "a": "1",
+        |}""".stripMargin) shouldEqual Map("a" -> "1").asJava
+
+    deserializer.deserialize(
+      """{
+        |  "a": 1,
+        |}""".stripMargin) shouldEqual Map("a" -> 1L).asJava
+  }
+
 }

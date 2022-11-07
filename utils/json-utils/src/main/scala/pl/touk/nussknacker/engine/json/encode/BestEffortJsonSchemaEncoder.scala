@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Json
-import org.everit.json.schema.{ArraySchema, BooleanSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
+import org.everit.json.schema.{ArraySchema, BooleanSchema, CombinedSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, EncodeInput, EncodeOutput, ToJsonBasedOnSchemaEncoder}
 
@@ -66,6 +66,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
       case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
+      case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.foldLeft[Option[Json]](None)((acc, s) => if (acc.isEmpty)
+        encodeBasedOnSchema(value, s, fieldName).toOption else acc).map(Valid(_)).getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
       case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }

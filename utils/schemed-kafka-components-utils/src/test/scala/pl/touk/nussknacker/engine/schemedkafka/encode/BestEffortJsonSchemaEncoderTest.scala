@@ -258,6 +258,25 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
   }
 
+  test("should encode union") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": ["string", "integer"]
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> 1), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> 1), schema) shouldBe 'valid
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "1"), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "1"), schema) shouldBe 'valid
+  }
+
   test("should encode not required field") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{

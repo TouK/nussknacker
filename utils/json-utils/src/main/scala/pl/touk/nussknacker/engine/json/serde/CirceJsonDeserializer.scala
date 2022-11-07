@@ -38,7 +38,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     case a: java.lang.Long => fromLong(a)
     case a: java.lang.String => fromString(a)
     case a: JSONArray => fromValues(a.asScala.map(toCirce))
-    case a: JSONObject if a == JSONObject.NULL => Null
+    case a if a == JSONObject.NULL => Null
     case a: JSONObject => fromJsonObject(JsonObject.fromIterable(a.keys().asScala.map(name => (name, toCirce(a.get(name)))).toIterable))
     //should not happen, based on JSONTokener.nextValue docs
     case a => throw new IllegalArgumentException(s"Should not happen, JSON: ${a.getClass}")
