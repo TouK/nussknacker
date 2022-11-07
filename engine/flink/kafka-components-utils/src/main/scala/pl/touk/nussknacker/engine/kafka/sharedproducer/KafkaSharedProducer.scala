@@ -31,10 +31,6 @@ final case class DefaultSharedKafkaProducer(creationData: KafkaProducerCreator.B
     KafkaUtils.sendToKafka(producerRecord)(producer).map(_ => ())
   }
 
-  override def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit = {
-    KafkaUtils.sendToKafka(producerRecord, callback)(producer)
-  }
-
   override protected def sharedServiceHolder: SharedServiceHolder[KafkaProducerCreator.Binary, _] = DefaultSharedKafkaProducerHolder
 
   override def internalClose(): Unit = {
@@ -54,8 +50,6 @@ trait SharedKafkaProducer {
 
   def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit]
 
-  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit
-
 }
 
 trait WithSharedKafkaProducer extends BaseSharedKafkaProducer[DefaultSharedKafkaProducer] {
@@ -74,10 +68,6 @@ trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaP
 
   def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]])(implicit ec: ExecutionContext): Future[Unit] = {
     sharedProducer.sendToKafka(producerRecord)
-  }
-
-  def sendToKafka(producerRecord: ProducerRecord[Array[Byte], Array[Byte]], callback: Callback): Unit = {
-    sharedProducer.sendToKafka(producerRecord, callback)
   }
 
   def flush(): Unit = {
