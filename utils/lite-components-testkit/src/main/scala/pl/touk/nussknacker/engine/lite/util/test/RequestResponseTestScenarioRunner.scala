@@ -2,11 +2,12 @@ package pl.touk.nussknacker.engine.lite.util.test
 
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
 import cats.Id
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, ValidatedNel}
 import com.typesafe.config.{Config, ConfigFactory}
 import io.circe.Json
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentDefinition
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase.EngineRuntime
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
@@ -43,9 +44,9 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], c
 
   def runWithRequests[T](
     scenario: CanonicalProcess
-  )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): T = {
+  )(run: (HttpRequest => Either[NonEmptyList[ErrorType], Json]) => T): ValidatedNel[ProcessCompilationError, T] = {
     ModelWithTestComponents.withTestComponents(config, components) { modelData =>
-      val interpreter = RequestResponseInterpreter[Id](
+      RequestResponseInterpreter[Id](
         scenario,
         ProcessVersion.empty,
         LiteEngineRuntimeContextPreparer.noOp,
@@ -53,16 +54,17 @@ class RequestResponseTestScenarioRunner(components: List[ComponentDefinition], c
         additionalListeners = Nil,
         resultCollector = ProductionServiceInvocationCollector,
         componentUseCase = EngineRuntime
-      ).fold(error => throw new AssertionError(s"Failed to compile: $error"), identity)
-      interpreter.open()
-      try {
-        val handler = new RequestResponseHttpHandler(interpreter)
-        run(req => {
-          val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
-          handler.invoke(req, entity)
-        })
-      } finally {
-        interpreter.close()
+      ).map { interpreter =>
+        interpreter.open()
+        try {
+          val handler = new RequestResponseHttpHandler(interpreter)
+          run(req => {
+            val entity = req.entity.asInstanceOf[HttpEntity.Strict].data.toArray(implicitly[ClassTag[Byte]])
+            handler.invoke(req, entity)
+          })
+        } finally {
+          interpreter.close()
+        }
       }
     }
   }

@@ -1,9 +1,13 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse
 
 import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
+import cats.data.NonEmptyList
+import cats.data.Validated.Invalid
 import io.circe.syntax.EncoderOps
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
@@ -30,9 +34,12 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       .source("input", "request")
       .emptySink("output", "response", "Raw editor" -> "true", "Value" -> outputValueExpression)
 
-    val thrown = the[AssertionError] thrownBy runner.runWithRequests(scenario("""{field1: #input.field1, invalid: 1}""")) { _ =>
+    val redundantField = """invalid"""
+    val redundantFieldScenarioCompilationResult = runner.runWithRequests(scenario(s"""{field1: #input.field1, $redundantField: 1}""")) { _ => }
+    inside(redundantFieldScenarioCompilationResult) {
+      case Invalid(NonEmptyList(CustomNodeError("output", msg, Some("Value")), Nil)) =>
+        msg should include (s"The object has redundant fields: Set($redundantField)")
     }
-    thrown.getMessage shouldBe "Failed to compile: NonEmptyList(CustomNodeError(output,Provided value does not match scenario output JSON schema - errors:\n[#] The object has redundant fields: Set(invalid),Some(Value)))"
 
     runner.runWithRequests(scenario("""{field1: #input.field1}""")) { invoker =>
       val inputField = 123
