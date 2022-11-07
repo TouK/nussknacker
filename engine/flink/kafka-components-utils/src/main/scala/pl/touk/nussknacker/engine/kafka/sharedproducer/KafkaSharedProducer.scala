@@ -81,14 +81,10 @@ trait BaseSharedKafkaProducer[P <: SharedKafkaProducer with SharedService[KafkaP
 
   override def close(): Unit = {
     super.close()
-    closeSharedProducer()
-  }
-
-  protected def closeSharedProducer(): Unit = {
-    super.close()
     if (sharedProducer != null) {
       sharedProducer.close()
     }
   }
+
 }
 
