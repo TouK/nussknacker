@@ -177,10 +177,6 @@ trait KafkaUtils extends LazyLogging {
     promise.future
   }
 
-  def sendToKafka[K, V](record: ProducerRecord[K, V], callback: Callback)(producer: Producer[K, V]): Unit = {
-    producer.send(record, callback)
-  }
-
   def producerCallback(promise: Promise[RecordMetadata]): Callback =
     new Callback {
       override def onCompletion(metadata: RecordMetadata, exception: Exception): Unit = {
