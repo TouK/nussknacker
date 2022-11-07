@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import java.io.ByteArrayOutputStream
+import java.util.Optional
 
 class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
@@ -66,7 +67,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
         |}""".stripMargin.getBytes()
 
     val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
-    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], record, headers)
+    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], record, headers, Optional.empty[Integer]())
 
     val list: List[ConsumerRecord[Array[Byte], Array[Byte]]] = List(input)
     val result = runner.runWithRawData(scenario, list).validValue

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
+import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
@@ -23,10 +24,12 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
   /**
     * Converts SerializableConsumerRecord to ConsumerRecord, uses default values in case of missing attributes.
     */
+  @silent("deprecated")
   def toKafkaConsumerRecord(formatterTopic: String, serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])): ConsumerRecord[Array[Byte], Array[Byte]] = {
     // serialize Key and Value to Array[Byte]
     val (keyBytes, valueBytes) = serializeKeyValue(key, value)
     // use defaults and ignore checksum, serializedKeySize and serializedValueSize
+
     new ConsumerRecord(
       topic.getOrElse(formatterTopic),
       partition.getOrElse(0),
