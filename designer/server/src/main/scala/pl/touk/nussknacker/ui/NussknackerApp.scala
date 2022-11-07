@@ -47,7 +47,8 @@ import sttp.client.{NothingT, SttpBackend}
 
 import java.lang.Thread.UncaughtExceptionHandler
 import scala.collection.JavaConverters.getClass
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.duration._
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -146,6 +147,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
+    Await.result(ScenarioImporter(processRepository, processService, config).importScenarios(), 1.minute)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 

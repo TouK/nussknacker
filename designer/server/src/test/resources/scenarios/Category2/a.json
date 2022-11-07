@@ -1,0 +1,9 @@
+{
+  "metaData" : {
+    "id" : "name-from-a-json",
+    "typeSpecificData" : {
+      "type" : "StreamMetaData"
+    }
+  },
+  "nodes" : []
+}
