@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.kafka.sharedproducer
 
 import com.typesafe.scalalogging.LazyLogging
-import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord}
+import org.apache.kafka.clients.producer.{Producer, ProducerRecord}
 import pl.touk.nussknacker.engine.api.runtimecontext.EngineRuntimeContext
 import pl.touk.nussknacker.engine.api.{Lifecycle, MetaData}
 import pl.touk.nussknacker.engine.kafka.{KafkaProducerCreator, KafkaUtils}
