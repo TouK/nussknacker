@@ -48,7 +48,6 @@ abstract class KafkaSchemaBasedKeyValueDeserializationSchemaFactory
           record.offset(),
           record.timestamp(),
           record.timestampType(),
-          ConsumerRecord.NULL_CHECKSUM.longValue(),
           record.serializedKeySize(),
           record.serializedValueSize(),
           key,
