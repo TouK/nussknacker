@@ -52,8 +52,10 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnionAnyOf(schema, swaggerRefSchemas)
-        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnionOneOf(schema, swaggerRefSchemas)
+        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas)
+        // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
+        // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
+        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas)
         case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("boolean"), _) => SwaggerBool
@@ -74,8 +76,7 @@ object SwaggerTyped {
     }
   }
 
-  private def swaggerUnionAnyOf(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schema.getAnyOf.asScala.map(s => SwaggerTyped(s, swaggerRefSchemas)).toList)
-  private def swaggerUnionOneOf(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schema.getOneOf.asScala.map(s => SwaggerTyped(s, swaggerRefSchemas)).toList)
+  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)
