@@ -30,11 +30,11 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
         ))
       }
       {
-        results.testResultsToShow && !isEmpty(results.testResultsToShow.mockedResultsForCurrentContext) ?
-          results.testResultsToShow.mockedResultsForCurrentContext.map((mockedValue, index) => (
+        results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForCurrentContext) ?
+          results.testResultsToShow.externalInvocationResultsForCurrentContext.map((mockedValue, index) => (
             <span key={index} className="testResultDownload">
               <a
-                download={`${nodeId}-single-input`}
+                download={`${nodeId}-single-input.log`}
                 href={downloadableHref(stringifyMockedValue(mockedValue))}
               >
                 <span className="glyphicon glyphicon-download"/> Results for this input</a></span>
@@ -42,12 +42,12 @@ export default function TestResults({nodeId}: { nodeId: NodeId }): JSX.Element {
           null
       }
       {
-        results.testResultsToShow && !isEmpty(results.testResultsToShow.mockedResultsForEveryContext) ?
+        results.testResultsToShow && !isEmpty(results.testResultsToShow.externalInvocationResultsForEveryContext) ?
           (
             <span className="testResultDownload">
               <a
-                download={`${nodeId}-all-inputs`}
-                href={downloadableHref(mergedMockedResults(results.testResultsToShow.mockedResultsForEveryContext))}
+                download={`${nodeId}-all-inputs.log`}
+                href={downloadableHref(mergedMockedResults(results.testResultsToShow.externalInvocationResultsForEveryContext))}
               >
                 <span className="glyphicon glyphicon-download"/> Results for all inputs</a></span>
           ) :

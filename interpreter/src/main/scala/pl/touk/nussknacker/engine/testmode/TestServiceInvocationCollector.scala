@@ -15,11 +15,17 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
     mockValue match {
       case Some(mockVal) =>
         ResultsCollectingListenerHolder.updateResults(
-          testRunId, _.updateMockedResult(nodeId.id, contextId, serviceRef, request)
+          testRunId, _.updateExternalInvocation(nodeId.id, contextId, serviceRef, request)
         )
         mockVal.pure[F]
       case None =>
-        action.map(_.result)
+        action.map { case CollectableAction(resultToCollect, result) =>
+          val invocationResult = Map("request" -> request, "response" -> resultToCollect())
+          ResultsCollectingListenerHolder.updateResults(
+            testRunId, _.updateExternalInvocation(nodeId.id, contextId, serviceRef, invocationResult)
+          )
+          result
+        }
     }
   }
 }
@@ -28,6 +34,6 @@ class TestServiceInvocationCollector(testRunId: TestRunId) extends ResultCollect
 case class SinkInvocationCollector(runId: TestRunId, nodeId: String, ref: String) {
 
   def collect(context: Context, result: Any): Unit = {
-    ResultsCollectingListenerHolder.updateResults(runId, _.updateMockedResult(nodeId, ContextId(context.id), ref, result))
+    ResultsCollectingListenerHolder.updateResults(runId, _.updateExternalInvocation(nodeId, ContextId(context.id), ref, result))
   }
 }
