@@ -16,7 +16,7 @@
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
-
+* [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
 
 1.6.1 (Not released yet)
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode

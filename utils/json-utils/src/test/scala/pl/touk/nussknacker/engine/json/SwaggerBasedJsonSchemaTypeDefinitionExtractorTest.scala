@@ -250,4 +250,106 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should support union - constructed with 'type' array") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |         "type":["string", "integer"]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support union - constructed with 'oneOf'") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "oneOf": [
+        |          { "type": "string" },
+        |          { "type": "integer" }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support union - constructed with 'anyOf'") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "anyOf": [
+        |          { "type": "string" },
+        |          { "type": "integer" }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support support multiple schemas but of the same type") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "oneOf": [
+        |          { "type": "integer", "multipleOf": 5 },
+        |          { "type": "integer", "multipleOf": 3 }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[Long])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support support multiple schemas but of the same type - factored version") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "type": "integer",
+        |        "oneOf": [
+        |          { "multipleOf": 5 },
+        |          { "multipleOf": 3 }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[Long])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
 }

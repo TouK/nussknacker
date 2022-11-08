@@ -33,6 +33,8 @@ case object SwaggerDate extends SwaggerTyped
 
 case object SwaggerTime extends SwaggerTyped
 
+case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
+
 case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
@@ -50,6 +52,10 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
       case None => (extractType(schema), Option(schema.getFormat)) match {
+        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas)
+        // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
+        // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
+        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas)
         case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("boolean"), _) => SwaggerBool
@@ -65,11 +71,12 @@ object SwaggerTyped {
         case (Some("number"), Some("double")) => SwaggerDouble
         case (Some("number"), Some("float")) => SwaggerDouble
         case (Some("null"), None) => SwaggerNull
-        //todo handle unions
         case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
       }
     }
   }
+
+  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)
@@ -99,6 +106,7 @@ object SwaggerTyped {
       Typed.typedClass[LocalDate]
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
+    case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
     case SwaggerNull =>
       TypedNull
   }

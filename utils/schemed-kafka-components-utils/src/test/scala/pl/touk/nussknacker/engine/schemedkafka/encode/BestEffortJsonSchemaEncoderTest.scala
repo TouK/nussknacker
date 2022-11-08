@@ -10,9 +10,11 @@ import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
+import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
@@ -256,6 +258,50 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin))
 
     new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
+  }
+
+  test("should encode union") {
+    forAll(Table(
+      "schema",
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": ["string", "integer"]
+        |    }
+        |  }
+        |}""".stripMargin,
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "anyOf": [
+        |        { "type": "string" },
+        |        { "type": "integer" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin,
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "oneOf": [
+        |        { "type": "string" },
+        |        { "type": "integer" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin
+    )) { schemaString =>
+      val schema: Schema = SchemaLoader.load(new JSONObject(schemaString))
+
+      new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
+      new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
+
+      new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
+      new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
+    }
   }
 
   test("should encode not required field") {
