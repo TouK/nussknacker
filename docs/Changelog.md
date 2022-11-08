@@ -18,7 +18,7 @@
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
 
-1.6.1 (Not released yet)
+1.6.1 (8 Nov 2022)
 ------------------------
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
