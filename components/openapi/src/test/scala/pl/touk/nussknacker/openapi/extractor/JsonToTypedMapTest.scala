@@ -60,4 +60,14 @@ class JsonToTypedMapTest extends AnyFunSuite
       extractor.JsonToTypedMap(json, definition)
     }
   }
+
+  test("should parse union") {
+    val definition = SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), required = Set())
+
+    val value = JsonToTypedMap(json, definition)
+
+    value shouldBe a[TypedMap]
+    val fields = value.asInstanceOf[TypedMap]
+    fields.get("field2") shouldBe 1L
+  }
 }
