@@ -270,11 +270,11 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}""".stripMargin))
 
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> 1), schema) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> 1), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
 
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "1"), schema) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "1"), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
   }
 
   test("should encode not required field") {

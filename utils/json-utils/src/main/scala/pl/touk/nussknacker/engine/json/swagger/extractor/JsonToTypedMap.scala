@@ -70,8 +70,8 @@ object JsonToTypedMap {
         extract[Vector[Json]](_.asArray, _.map(JsonToTypedMap(_, elementType)).asJava)
       case SwaggerObject(elementType, required) =>
         extractObject(elementType, required)
-      case u@SwaggerUnion(types) => types.foldLeft[Option[AnyRef]](None)((acc, i) =>
-        if (acc.isEmpty) Try(apply(json, i)).toOption else acc).getOrElse(throw JsonToObjectError(json, u))
+      case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
+        .headOption.getOrElse(throw JsonToObjectError(json, u))
     }
   }
 

@@ -52,7 +52,8 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if !schema.getAnyOf.isEmpty => swaggerUnion(schema, swaggerRefSchemas)
+        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnionAnyOf(schema, swaggerRefSchemas)
+        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnionOneOf(schema, swaggerRefSchemas)
         case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
         case (Some("boolean"), _) => SwaggerBool
@@ -73,7 +74,8 @@ object SwaggerTyped {
     }
   }
 
-  private def swaggerUnion(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schema.getAnyOf.asScala.map(s => SwaggerTyped(s, swaggerRefSchemas)).toList)
+  private def swaggerUnionAnyOf(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schema.getAnyOf.asScala.map(s => SwaggerTyped(s, swaggerRefSchemas)).toList)
+  private def swaggerUnionOneOf(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schema.getOneOf.asScala.map(s => SwaggerTyped(s, swaggerRefSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)

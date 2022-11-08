@@ -66,8 +66,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
       case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.foldLeft[Option[Json]](None)((acc, s) => if (acc.isEmpty)
-        encodeBasedOnSchema(value, s, fieldName).toOption else acc).map(Valid(_)).getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
+      case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
+        .getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
       case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
