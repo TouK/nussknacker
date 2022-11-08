@@ -23,7 +23,7 @@
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
 * [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (flink)
-* [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix: do not show extra scrollbar on scenario screen when panel too large
+* [#3671](https://github.com/TouK/nussknacker/pull/3671) Fix: do not show extra scrollbar on scenario screen when panel too large
 * [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
 * [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
 
