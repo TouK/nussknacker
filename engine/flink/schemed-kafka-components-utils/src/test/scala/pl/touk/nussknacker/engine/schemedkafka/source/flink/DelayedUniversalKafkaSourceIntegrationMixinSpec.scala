@@ -1,8 +1,8 @@
+
 package pl.touk.nussknacker.engine.schemedkafka.source.flink
 
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.BeforeAndAfter
-import org.scalatest.funsuite.AnyFunSuite
 import pl.touk.nussknacker.engine.api.CustomStreamTransformer
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -17,16 +17,16 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaReg
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroTestProcessConfigCreator
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
-import pl.touk.nussknacker.engine.schemedkafka.schema.LongFieldV1
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.source.delayed.DelayedUniversalKafkaSourceFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
 import java.time.Instant
 
-class DelayedUniversalKafkaSourceIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixin with BeforeAndAfter  {
+trait DelayedUniversalKafkaSourceIntegrationMixinSpec extends KafkaAvroSpecMixin with BeforeAndAfter  {
 
   private lazy val creator: ProcessConfigCreator = new DelayedKafkaUniversalProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
@@ -46,37 +46,9 @@ class DelayedUniversalKafkaSourceIntegrationSpec extends AnyFunSuite with KafkaA
     SinkForLongs.clear()
   }
 
-  test("properly process data using kafka-generic-delayed source") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-long-field", LongFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'field'", "0L")
-    runAndVerify(topicConfig, process, LongFieldV1.record)
-  }
-
-  test("timestampField and delay param are null") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-null-params", LongFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "null", "null")
-    runAndVerify(topicConfig, process, LongFieldV1.record)
-  }
-
-  test("handle not exist timestamp field param") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-unknown-field", LongFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "'unknownField'", "null")
-    intercept[IllegalArgumentException] {
-      runAndVerify(topicConfig, process, LongFieldV1.record)
-    }.getMessage should include ("Field: 'unknownField' doesn't exist in definition: field.")
-  }
-
-  test("handle invalid negative param") {
-    val topicConfig = createAndRegisterTopicConfig("simple-topic-with-negative-delay", LongFieldV1.schema)
-    val process = createProcessWithDelayedSource(topicConfig.input, ExistingSchemaVersion(1), "null", "-10L")
-    intercept[IllegalArgumentException] {
-      runAndVerify(topicConfig, process, LongFieldV1.record)
-    }.getMessage should include ("LowerThanRequiredParameter(This field value has to be a number greater than or equal to 0,Please fill field with proper number,delayInMillis,start)")
-  }
-
-  private def runAndVerify(topicConfig: TopicConfig, process: CanonicalProcess, givenObj: AnyRef): Unit = {
-    kafkaClient.createTopic(topicConfig.input, partitions = 1)
-    pushMessage(givenObj, topicConfig.input)
+  protected def runAndVerify(topic: String, process: CanonicalProcess, givenObj: AnyRef): Unit = {
+    kafkaClient.createTopic(topic, partitions = 1)
+    pushMessage(givenObj, topic)
     run(process) {
       eventually {
         RecordingExceptionConsumer.dataFor(runId) shouldBe empty
@@ -85,7 +57,7 @@ class DelayedUniversalKafkaSourceIntegrationSpec extends AnyFunSuite with KafkaA
     }
   }
 
-  private def createProcessWithDelayedSource(topic: String, version: SchemaVersionOption, timestampField: String,  delay: String) = {
+  protected def createProcessWithDelayedSource(topic: String, version: SchemaVersionOption, timestampField: String, delay: String): CanonicalProcess = {
 
     import spel.Implicits._
 
@@ -109,7 +81,7 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
     Map(
       "kafka-universal-delayed" -> defaultCategory(new DelayedUniversalKafkaSourceFactory[String, GenericRecord](schemaRegistryClientFactory, createSchemaBasedMessagesSerdeProvider,
-        processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, GenericRecordTimestampFieldAssigner(_))))
+        processObjectDependencies, new FlinkKafkaDelayedSourceImplFactory(None, UniversalTimestampFieldAssigner(_))))
     )
   }
 
@@ -125,4 +97,7 @@ class DelayedKafkaUniversalProcessConfigCreator extends KafkaAvroTestProcessConf
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {
     super.expressionConfig(processObjectDependencies).copy(additionalClasses = List(classOf[Instant]))
   }
+
+  override protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+
 }
