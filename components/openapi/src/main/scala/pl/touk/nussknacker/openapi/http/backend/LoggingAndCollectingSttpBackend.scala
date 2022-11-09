@@ -3,29 +3,29 @@ package pl.touk.nussknacker.openapi.http.backend
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.{CollectableAction, ServiceInvocationCollector, TransmissionNames}
-import pl.touk.nussknacker.openapi.http.backend.OpenapiSttpBackend.HttpBackend
+import pl.touk.nussknacker.openapi.http.backend.LoggingAndCollectingSttpBackend.HttpBackend
 import sttp.client.monad.MonadError
 import sttp.client.ws.WebSocketResponse
-import sttp.client.{NothingT, Request, Response, _}
+import sttp.client._
 
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 import scala.concurrent.{ExecutionContext, Future}
 
-object OpenapiSttpBackend {
+object LoggingAndCollectingSttpBackend {
 
   type HttpBackend = SttpBackend[Future, Nothing, Nothing]
 
-  private case class WithStringResponseBody[T](original: T, stringResponseBody: Option[String])
+  private case class WithStringResponseBody[T](original: T, stringResponseBody: () => Option[String])
 
   private val transmissionNames = TransmissionNames("request", "response")
 
 }
 
-class OpenapiSttpBackend(delegate: HttpBackend, httpClientConfig: HttpClientConfig, baseLoggerName: String)
-                        (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends HttpBackend {
+class LoggingAndCollectingSttpBackend(delegate: HttpBackend, baseLoggerName: String)
+                                     (implicit ec: ExecutionContext, serviceInvocationCollector: ServiceInvocationCollector) extends HttpBackend {
 
-  import OpenapiSttpBackend._
+  import LoggingAndCollectingSttpBackend._
 
   private val requestLogger = Logger(LoggerFactory.getLogger(s"$baseLoggerName.request"))
   private val responseLogger = Logger(LoggerFactory.getLogger(s"$baseLoggerName.response"))
@@ -34,9 +34,7 @@ class OpenapiSttpBackend(delegate: HttpBackend, httpClientConfig: HttpClientConf
     val correlationId = UUID.randomUUID()
     lazy val requestLog = RequestResponseLog(request)
     requestLogger.debug(s"[$correlationId]: ${requestLog.pretty}")
-    // Read timeout is set per request.
-    val withReadTimeoutRequest = httpClientConfig.timeout.map(request.readTimeout).getOrElse(request)
-    val withLoggedStringResponseBody = withReadTimeoutRequest.response(withStringResponseBody(request.response))
+    val withLoggedStringResponseBody = request.response(withStringResponseBody(request.response))
     val reqTime = System.currentTimeMillis()
     lazy val response = delegate.send(withLoggedStringResponseBody)
       .transform(
@@ -51,13 +49,13 @@ class OpenapiSttpBackend(delegate: HttpBackend, httpClientConfig: HttpClientConf
   private def withStringResponseBody[T](responseAs: ResponseAs[T, Nothing]): ResponseAs[WithStringResponseBody[T], Nothing] = {
     responseAs match {
       case ResponseAsByteArray =>
-        ResponseAsByteArray.map(byteArray => WithStringResponseBody(byteArray, Some(new String(byteArray, StandardCharsets.UTF_8))))
+        ResponseAsByteArray.map(byteArray => WithStringResponseBody(byteArray, () => Some(new String(byteArray, StandardCharsets.UTF_8))))
       case MappedResponseAs(raw, g) =>
         val nested = withStringResponseBody(raw)
         MappedResponseAs(nested, (withSRB: WithStringResponseBody[Any], responseMetadata: ResponseMetadata) =>
           withSRB.copy(original = g(withSRB.original, responseMetadata)))
       case other =>
-        other.map(WithStringResponseBody(_, None))
+        other.map(WithStringResponseBody(_, () => None))
     }
   }
 
@@ -65,7 +63,7 @@ class OpenapiSttpBackend(delegate: HttpBackend, httpClientConfig: HttpClientConf
                                 request: Request[T, Nothing],
                                 requestTimestamp: Long,
                                 response: Response[WithStringResponseBody[T]]): CollectableAction[Response[T]] = {
-    val responseLog = RequestResponseLog(request, response, resBody = response.body.stringResponseBody)
+    def responseLog = RequestResponseLog(request, response, resBody = response.body.stringResponseBody())
     responseLogger.debug(s"[$correlationId][took ${System.currentTimeMillis() - requestTimestamp}ms]: ${responseLog.pretty}")
     val targetResponse = response.copy(body = response.body.original)
     CollectableAction(() => responseLog, targetResponse)

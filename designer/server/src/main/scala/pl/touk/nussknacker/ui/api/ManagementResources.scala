@@ -25,19 +25,19 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessIdWithNameAndCategory}
+import pl.touk.nussknacker.restmodel.process.ProcessIdWithNameAndCategory
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
+import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
-import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -73,17 +73,17 @@ object ManagementResources {
 
     implicit val nodeResult: Encoder[NodeResult[Json]] = deriveConfiguredEncoder
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val mockedResult: Encoder[MockedResult[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] = deriveConfiguredEncoder
     implicit val resultContext: Encoder[ResultContext[Json]] = deriveConfiguredEncoder
     //TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))
     implicit val exceptionResult: Encoder[ExceptionResult[Json]] = deriveConfiguredEncoder
 
     override def apply(a: TestResults[Json]): Json = a match {
-      case TestResults(nodeResults, invocationResults, mockedResults, exceptions, _) => Json.obj(
+      case TestResults(nodeResults, invocationResults, externalInvocationResults, exceptions, _) => Json.obj(
         "nodeResults" -> nodeResults.map { case (node, list) => node -> list.sortBy(_.context.id) }.asJson,
         "invocationResults" -> invocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
-        "mockedResults" -> mockedResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
+        "externalInvocationResults" -> externalInvocationResults.map { case (node, list) => node -> list.sortBy(_.contextId) }.asJson,
         "exceptions" -> exceptions.sortBy(_.context.id).asJson
       )
     }
