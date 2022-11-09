@@ -73,7 +73,7 @@ object ManagementResources {
 
     implicit val nodeResult: Encoder[NodeResult[Json]] = deriveConfiguredEncoder
     implicit val expressionInvocationResult: Encoder[ExpressionInvocationResult[Json]] = deriveConfiguredEncoder
-    implicit val externalInvocationResult: Encoder[ExternalInvocation[Json]] = deriveConfiguredEncoder
+    implicit val externalInvocationResult: Encoder[ExternalInvocationResult[Json]] = deriveConfiguredEncoder
     implicit val resultContext: Encoder[ResultContext[Json]] = deriveConfiguredEncoder
     //TODO: do we want more information here?
     implicit val throwable: Encoder[Throwable] = Encoder[Option[String]].contramap(th => Option(th.getMessage))

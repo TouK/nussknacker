@@ -53,10 +53,10 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExpressionInvocationResult(secondId, "expression", false)
     )
 
-    results.externalInvocation("processor").toSet shouldBe Set(ExternalInvocation(firstId, "processorService", "processor service invoked"))
-    results.externalInvocation("eagerProcessor").toSet shouldBe Set(ExternalInvocation(firstId, "collectingEager", "static-s-dynamic-a"))
+    results.externalInvocationResults("processor").toSet shouldBe Set(ExternalInvocationResult(firstId, "processorService", "processor service invoked"))
+    results.externalInvocationResults("eagerProcessor").toSet shouldBe Set(ExternalInvocationResult(firstId, "collectingEager", "static-s-dynamic-a"))
 
-    results.externalInvocation("endNodeIID").toSet shouldBe Set(ExternalInvocation(firstId, "endNodeIID", Response(s"alamakota-$firstId")))
+    results.externalInvocationResults("endNodeIID").toSet shouldBe Set(ExternalInvocationResult(firstId, "endNodeIID", Response(s"alamakota-$firstId")))
 
     RequestResponseConfigCreator.processorService.get().invocationsCount.get shouldBe 0
 
@@ -112,8 +112,8 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b"))))
     )
 
-    results.externalInvocation("endNodeIID").toSet shouldBe Set(
-      ExternalInvocation(firstId, "endNodeIID", "a withRandomString")
+    results.externalInvocationResults("endNodeIID").toSet shouldBe Set(
+      ExternalInvocationResult(firstId, "endNodeIID", "a withRandomString")
     )
 
   }

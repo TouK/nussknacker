@@ -7,7 +7,7 @@ object TestProcess {
 
   case class TestResults[T](nodeResults: Map[String, List[NodeResult[T]]],
                             invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
-                            externalInvocation: Map[String, List[ExternalInvocation[T]]],
+                            externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
                             exceptions: List[ExceptionResult[T]], variableEncoder: Any => T) {
 
     def updateNodeResult(nodeId: String, context: Context) = {
@@ -19,9 +19,9 @@ object TestProcess {
       copy(invocationResults = invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List()))))
     }
 
-    def updateExternalInvocation(nodeId: String, contextId: ContextId, name: String, result: Any) = {
-      val invocation = ExternalInvocation(contextId.value, name, variableEncoder(result))
-      copy(externalInvocation = externalInvocation + (nodeId -> (externalInvocation.getOrElse(nodeId, List()) :+ invocation)))
+    def updateExternalInvocationResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
+      val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
+      copy(externalInvocationResults = externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation)))
     }
 
     def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
@@ -49,7 +49,7 @@ object TestProcess {
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
-  case class ExternalInvocation[T](contextId: String, name: String, value: T)
+  case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
 
   case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
 
