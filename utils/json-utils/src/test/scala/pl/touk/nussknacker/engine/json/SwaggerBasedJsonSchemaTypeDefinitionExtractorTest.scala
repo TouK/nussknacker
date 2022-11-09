@@ -1,11 +1,16 @@
 package pl.touk.nussknacker.engine.json
 
+import io.circe.Json
+import io.circe.Json.fromString
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
 
@@ -232,6 +237,28 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("typed schema should produce same typingResult as typed swagger for SwaggerDateTime") {
+    val jsonSchema = new JSONObject(
+      """{
+        |   "properties":{
+        |      "time":{
+        |         "type":"string",
+        |         "format":"date-time"
+        |      }
+        |   }
+        |}""".stripMargin)
+
+    val schema = SchemaLoader.load(jsonSchema)
+    val swaggerTypeExtracted = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val jsonObject = Json.obj("time" -> fromString("2022-07-11T18:12:27+02:00"))
+    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime), Set())
+    val jsonToObjectExtracted = JsonToTypedMap.apply(jsonObject, swaggerObject)
+
+    swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
+      Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))
+
+  }
 
   test("should support schema without type") {
     val schema = SchemaLoader.load(new JSONObject(
