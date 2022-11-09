@@ -18,6 +18,7 @@
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
 * [#3692](https://github.com/TouK/nussknacker/pull/3692) Better logging from OpenAPI enrichers
+* [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
 
 1.6.1 (8 Nov 2022)
 ------------------------
