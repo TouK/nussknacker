@@ -981,6 +981,19 @@ lazy val liteRequestResponseComponents = (project in lite("components/request-re
     name := "nussknacker-lite-request-response-components",
   ).dependsOn(requestResponseComponentsApi % "provided", liteComponentsApi % "provided", componentsUtils % Provided, jsonUtils, requestResponseComponentsUtils)
 
+lazy val liteRequestResponseComponentsTests: Project =  (project in lite("components/request-response-tests")).
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-lite-request-response-components-tests",
+    libraryDependencies ++= {
+      Seq(
+        "org.scalacheck" %% "scalacheck" % scalaCheckV % "test",
+        "org.scalatestplus" %% s"scalacheck-$scalaCheckVshort" % scalaTestPlusV % "test"
+      )
+    },
+  ).dependsOn(requestResponseComponentsApi % Provided, liteComponentsTestkit % Test)
+
+
 lazy val liteEngineRuntime = (project in lite("runtime")).
   settings(commonSettings).
   settings(
@@ -1507,7 +1520,7 @@ lazy val modules = List[ProjectReference](
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
-  liteRequestResponseComponents, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
+  liteRequestResponseComponents, liteRequestResponseComponentsTests, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
 

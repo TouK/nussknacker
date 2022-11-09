@@ -4,7 +4,9 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
+import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import scala.collection.JavaConverters._
 
@@ -34,7 +36,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  "age": 21
         |}""".stripMargin)
 
-    result.validValue shouldEqual Map(
+    result shouldEqual Map(
       "firstName" -> "John",
       "lastName" -> "Doe",
       "age" -> 21L
@@ -52,7 +54,56 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}""".stripMargin))
     val result = new CirceJsonDeserializer(schema).deserialize("""["John", "Doe"]""")
 
-    result.validValue shouldEqual List("John", "Doe").asJava
+    result shouldEqual List("John", "Doe").asJava
+  }
+
+  test("json object with union") {
+    forAll(Table(
+      "schema",
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "type": ["string", "integer"]
+        |    }
+        |  }
+        |}""".stripMargin,
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "anyOf": [
+        |        { "type": "string" },
+        |        { "type": "integer" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin,
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "oneOf": [
+        |        { "type": "string" },
+        |        { "type": "integer" }
+        |      ]
+        |    }
+        |  }
+        |}""".stripMargin
+    )) { schemaString =>
+      val schema = SchemaLoader.load(new JSONObject(schemaString))
+      val deserializer = new CirceJsonDeserializer(schema)
+
+      deserializer.deserialize(
+        """{
+          |  "a": "1",
+          |}""".stripMargin) shouldEqual Map("a" -> "1").asJava
+
+      deserializer.deserialize(
+        """{
+          |  "a": 1,
+          |}""".stripMargin) shouldEqual Map("a" -> 1L).asJava
+    }
   }
 
 }

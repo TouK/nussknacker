@@ -23,19 +23,19 @@ export interface Error {
   throwable,
 }
 
-interface MockedResult {
+interface ExternalInvocationResult {
   contextId: Context["id"],
 }
 
 export interface TestResults {
-  mockedResults: Record<NodeId, MockedResult[]>,
+  externalInvocationResults: Record<NodeId, ExternalInvocationResult[]>,
   invocationResults: Record<NodeId, InvocationResult[]>,
   nodeResults: Record<NodeId, NodeResult[]>,
   exceptions: Error[],
 }
 
 export interface NodeTestResults {
-  mockedResults: MockedResult[],
+  externalInvocationResults: ExternalInvocationResult[],
   invocationResults: InvocationResult[],
   nodeResults: NodeResult[],
   errors: Error[],
@@ -48,9 +48,9 @@ export interface StateForSelectTestResults {
 
 export interface NodeResultsForContext {
   context: Context,
-  mockedResultsForEveryContext: MockedResult[],
+  externalInvocationResultsForEveryContext: ExternalInvocationResult[],
   expressionResults: Record<string, any>,
-  mockedResultsForCurrentContext: MockedResult[],
+  externalInvocationResultsForCurrentContext: ExternalInvocationResult[],
   error: Error,
 }
 
@@ -63,7 +63,7 @@ class TestResultUtils {
       return {
         nodeResults,
         invocationResults: this._invocationResults(testResults, nodeId),
-        mockedResults: this._mockedResults(testResults, nodeId),
+        externalInvocationResults: this._externalInvocationResults(testResults, nodeId),
         errors: this._errors(testResults, nodeId),
       }
     }
@@ -98,8 +98,8 @@ class TestResultUtils {
     return results?.invocationResults?.[nodeId] || []
   }
 
-  private _mockedResults(results: TestResults, nodeId: NodeId): MockedResult[] {
-    return results?.mockedResults?.[nodeId] || []
+  private _externalInvocationResults(results: TestResults, nodeId: NodeId): ExternalInvocationResult[] {
+    return results?.externalInvocationResults?.[nodeId] || []
   }
 
   private _errors(results: TestResults, nodeId: NodeId): Error[] {
@@ -119,14 +119,14 @@ class TestResultUtils {
       .invocationResults
       .filter(result => result.contextId == contextId)
       .map(result => [result.name, result.value]))
-    const mockedResultsForCurrentContext = nodeTestResults.mockedResults.filter(result => result.contextId == contextId)
-    const mockedResultsForEveryContext = nodeTestResults.mockedResults
+    const externalInvocationResultsForCurrentContext = nodeTestResults.externalInvocationResults.filter(result => result.contextId == contextId)
+    const externalInvocationResultsForEveryContext = nodeTestResults.externalInvocationResults
     const error = nodeTestResults.errors?.find((error) => error.context.id === contextId)?.throwable
     return {
       context,
       expressionResults,
-      mockedResultsForCurrentContext,
-      mockedResultsForEveryContext,
+      externalInvocationResultsForCurrentContext,
+      externalInvocationResultsForEveryContext,
       error,
     }
   }

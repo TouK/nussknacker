@@ -13,6 +13,7 @@
 
     <logger name="ch.qos.logback" level="warn"/>
 
+    <logger name="pl.touk.nussknacker.openapi.enrichers" level="debug"/>
 
 </configuration>
 

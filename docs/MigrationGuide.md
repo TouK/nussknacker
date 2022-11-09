@@ -18,6 +18,12 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
   * BestEffortJsonSchemaEncoder moved to package `pl.touk.nussknacker.engine.json.encode` in `nussknacker-json-utils`
+* [#3668](https://github.com/TouK/nussknacker/pull/3668) Method `runWithRequests` of `RequestResponseTestScenarioRunner` (returned by `TestScenarioRunner.requestResponseBased()`)
+  now returns `ValidatedNel` with scenario compilation errors instead of throwing exception in that case 
+
+### Code API changes
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
+* [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
 
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs

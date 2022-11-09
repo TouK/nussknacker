@@ -6,9 +6,9 @@ import pl.touk.nussknacker.engine.api.{Context, ContextId}
 object TestProcess {
 
   case class TestResults[T](nodeResults: Map[String, List[NodeResult[T]]],
-                         invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
-                         mockedResults: Map[String, List[MockedResult[T]]],
-                         exceptions: List[ExceptionResult[T]], variableEncoder: Any => T) {
+                            invocationResults: Map[String, List[ExpressionInvocationResult[T]]],
+                            externalInvocationResults: Map[String, List[ExternalInvocationResult[T]]],
+                            exceptions: List[ExceptionResult[T]], variableEncoder: Any => T) {
 
     def updateNodeResult(nodeId: String, context: Context) = {
       copy(nodeResults = nodeResults + (nodeId -> (nodeResults.getOrElse(nodeId, List()) :+ NodeResult(toResult(context)))))
@@ -19,9 +19,9 @@ object TestProcess {
       copy(invocationResults = invocationResults + (nodeId -> addResults(invocationResult, invocationResults.getOrElse(nodeId, List()))))
     }
 
-    def updateMockedResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
-      val mockedResult = MockedResult(contextId.value, name, variableEncoder(result))
-      copy(mockedResults = mockedResults + (nodeId -> (mockedResults.getOrElse(nodeId, List()) :+ mockedResult)))
+    def updateExternalInvocationResult(nodeId: String, contextId: ContextId, name: String, result: Any) = {
+      val invocation = ExternalInvocationResult(contextId.value, name, variableEncoder(result))
+      copy(externalInvocationResults = externalInvocationResults + (nodeId -> (externalInvocationResults.getOrElse(nodeId, List()) :+ invocation)))
     }
 
     def updateExceptionResult(espExceptionInfo: NuExceptionInfo[_ <: Throwable]) = {
@@ -49,7 +49,7 @@ object TestProcess {
 
   case class ExpressionInvocationResult[T](contextId: String, name: String, value: T)
 
-  case class MockedResult[T](contextId: String, name: String, value: T)
+  case class ExternalInvocationResult[T](contextId: String, name: String, value: T)
 
   case class ExceptionResult[T](context: ResultContext[T], nodeId: Option[String], throwable: Throwable)
 

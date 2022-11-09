@@ -46,8 +46,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
-  //todo nested refs not work in openapi 3.0.x
-  ignore("should support refs") {
+  test("should support refs") {
     val schema = SchemaLoader.load(new JSONObject(
       """{
         |	"type" : "object",
@@ -63,10 +62,16 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
         |			"type" : "object",
         |			"properties" : {
         |				"a" : {"$ref" : "#/definitions/size"},
-        |				"b" : {"$ref" : "#/definitions/size"}
+        |				"b" : {"$ref" : "#/definitions/size"},
+        |				"c" : {"$ref" : "#/$defs/name"}
         |			}
-        |		}
-        |	}
+        |		},
+        |   "foo": "bar"
+        |	},
+        |	"$defs" : {
+        |   "name": { "type": "string" }
+        | },
+        | "foo": "bar"
         |}
         |""".stripMargin))
 
@@ -76,9 +81,79 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
       "rectangle" -> TypedObjectTypingResult.apply(
         List(
           "a" -> Typed.apply[java.math.BigDecimal],
-          "b" -> Typed.apply[java.math.BigDecimal]
+          "b" -> Typed.apply[java.math.BigDecimal],
+          "c" -> Typed.apply[String]
         )
       ),
+    )
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support refs using /schemas") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "type": "object",
+        |  "title": "test_pfl",
+        |  "description": "sample schema",
+        |  "id": "/schema/sampleschema1",
+        |  "$defs": {
+        |    "nestedObject": {
+        |      "id": "/schemas/nestedObject",
+        |      "$schema": "http://json-schema.org/draft-04/schema#",
+        |      "type": "object",
+        |      "properties": {
+        |        "numFieldObj": {
+        |          "type": "number"
+        |        },
+        |        "strFieldObj": {
+        |          "type": "string"
+        |        }
+        |      }
+        |    }
+        |  },
+        |  "$schema": "http://json-schema.org/draft-04/schema#",
+        |  "required": [
+        |    "intField"
+        |  ],
+        |  "properties": {
+        |    "numField": {
+        |      "type": "number"
+        |    },
+        |    "strField": {
+        |      "type": "string",
+        |      "default": "defaultValue"
+        |    },
+        |    "intArrayField": {
+        |      "type": "array",
+        |      "items": {
+        |        "type": "integer"
+        |      }
+        |    },
+        |    "intField": {
+        |      "type": "integer"
+        |    },
+        |    "nestedObject": {
+        |      "$ref": "/schemas/nestedObject"
+        |    },
+        |    "boolField": {
+        |      "type": "boolean"
+        |    }
+        |  }
+        |}
+        |""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List(
+      "boolField" -> Typed.apply[Boolean],
+      "intArrayField" -> Typed.genericTypeClass(classOf[java.util.List[Long]], List(Typed[Long])),
+      "intField" -> Typed.apply[Long],
+      "nestedObject" -> TypedObjectTypingResult(List(
+        "numFieldObj" -> Typed.apply[java.math.BigDecimal],
+        "strFieldObj" -> Typed.apply[String]
+      )),
+      "strField" -> Typed.apply[String],
+      "numField" -> Typed.apply[java.math.BigDecimal]
     )
     result shouldBe TypedObjectTypingResult.apply(results)
   }
@@ -175,4 +250,106 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should support union - constructed with 'type' array") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |         "type":["string", "integer"]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support union - constructed with 'oneOf'") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "oneOf": [
+        |          { "type": "string" },
+        |          { "type": "integer" }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support union - constructed with 'anyOf'") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "anyOf": [
+        |          { "type": "string" },
+        |          { "type": "integer" }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support support multiple schemas but of the same type") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "oneOf": [
+        |          { "type": "integer", "multipleOf": 5 },
+        |          { "type": "integer", "multipleOf": 3 }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[Long])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support support multiple schemas but of the same type - factored version") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "type": "integer",
+        |        "oneOf": [
+        |          { "multipleOf": 5 },
+        |          { "multipleOf": 3 }
+        |        ]
+        |      }
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[Long])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
 }

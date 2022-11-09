@@ -261,9 +261,9 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         .processorEnd(nodeUsingDynamicServiceId, "dynamicService", params: _*)
     }
 
-    def firstMockedResult(result: Json): Option[String] = result.hcursor
+    def firstInvocationResult(result: Json): Option[String] = result.hcursor
       .downField("results")
-      .downField("mockedResults")
+      .downField("externalInvocationResults")
       .downField("end")
       .downArray
       .downField("value")
@@ -288,7 +288,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    firstMockedResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+    firstInvocationResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
 
 
     //we generate random parameter
@@ -311,7 +311,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
     resultAfterReload.errors shouldBe ValidationErrors.success
     resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(parameterUUID)
-    firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
+    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
   }
 

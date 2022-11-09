@@ -63,8 +63,11 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   }
 
   override def getSchemaById(id: Int): SchemaWithMetadata = {
-    val rawSchema = client.getSchemaById(id)
-    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+    //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
+    caches.schemaByIdCache.getOrCreate(id) {
+      val rawSchema = client.getSchemaById(id)
+      SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+    }
   }
 
   override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int] = {
