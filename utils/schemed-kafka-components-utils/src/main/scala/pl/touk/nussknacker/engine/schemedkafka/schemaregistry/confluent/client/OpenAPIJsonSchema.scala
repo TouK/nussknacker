@@ -1,15 +1,24 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import io.confluent.kafka.schemaregistry.json.JsonSchema
+import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.typed.typing
-import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.json.{JsonSchemaParser, SwaggerBasedJsonSchemaTypeDefinitionExtractor}
 import pl.touk.nussknacker.engine.json.serde.CirceJsonDeserializer
+
+import scala.collection.JavaConverters._
 
 case class OpenAPIJsonSchema(schemaString: String) extends JsonSchema(schemaString) {
 
-  val returnType: typing.TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(rawSchema()).typingResult
+  private val schema = {
+    val jsonSchemaParser = new JsonSchemaParser(resolvedReferences.asScala.toMap)
+    jsonSchemaParser.parseSchema(schemaString)
+  }
 
-  //we want to create it once, as it can be a bit costly
-  val deserializer = new CirceJsonDeserializer(rawSchema())
+  val returnType: typing.TypingResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+  val deserializer = new CirceJsonDeserializer(schema)
+
+  override def rawSchema(): Schema = schema
 
 }

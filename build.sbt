@@ -874,7 +874,12 @@ lazy val jsonUtils = (project in utils("json-utils")).
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "com.github.erosb" % "everit-json-schema" % everitSchemaV
+      "com.github.erosb" % "everit-json-schema" % everitSchemaV,
+      "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-jdk8" % jacksonV,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-joda" % jacksonV,
+      "com.fasterxml.jackson.datatype" % "jackson-datatype-guava" % jacksonV,
+      "com.fasterxml.jackson.module" % "jackson-module-parameter-names" % jacksonV,
     )
   ).dependsOn(componentsUtils, testUtils % "test")
 

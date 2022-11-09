@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter}
 
-class CirceJsonDeserializer(jsonSchema: Schema) {
+class CirceJsonDeserializer(val jsonSchema: Schema) {
 
   private val swaggerTyped: SwaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(jsonSchema)
 

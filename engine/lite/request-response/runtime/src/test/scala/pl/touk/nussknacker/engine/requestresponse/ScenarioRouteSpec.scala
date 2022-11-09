@@ -89,11 +89,9 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
        |            "application/json" : {
        |              "schema" : {
        |                "type" : "object",
-       |                "nullable" : false,
        |                "properties" : {
        |                  "city" : {
        |                    "type" : "string",
-       |                    "nullable" : false,
        |                    "default" : "Warsaw"
        |                  }
        |                }
@@ -132,7 +130,8 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
   test("get scenario openapi definition") {
     Get("/definition") ~> openRoutes ~> check {
       status shouldEqual StatusCodes.OK
-      responseAs[String] shouldBe expectedOApiDef
+      val response = responseAs[String]
+      response shouldBe expectedOApiDef
     }
   }
 
