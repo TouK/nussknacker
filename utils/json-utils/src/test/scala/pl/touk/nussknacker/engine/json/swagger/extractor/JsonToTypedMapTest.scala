@@ -1,18 +1,17 @@
-package pl.touk.nussknacker.openapi.extractor
+package pl.touk.nussknacker.engine.json.swagger.extractor
 
 import io.circe.Json
-import io.circe.Json.fromString
+import io.circe.Json.{fromBoolean, fromLong, fromString, fromValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap.JsonToObjectError
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
-class JsonToTypedMapTest extends AnyFunSuite
-  with Matchers {
+class JsonToTypedMapTest extends AnyFunSuite with Matchers {
 
   private val json = Json.obj(
     "field1" -> fromString("value"),
@@ -26,17 +25,20 @@ class JsonToTypedMapTest extends AnyFunSuite
   )
 
   test("should parse object with all required fields present") {
-    val definition = SwaggerObject(elementType = Map(
-      "field1" -> SwaggerString,
-      "field2" -> SwaggerLong,
-      "field3" -> SwaggerLong,
-      "field4" -> SwaggerDateTime,
-      "field5" -> SwaggerDateTime,
-      "field6" -> SwaggerTime,
-      "field7" -> SwaggerDate,
-      "decimalField" -> SwaggerBigDecimal,
-      "doubleField" -> SwaggerDouble
-    ), required = Set("field2"))
+    val definition = SwaggerObject(
+      elementType = Map(
+        "field1" -> SwaggerString,
+        "field2" -> SwaggerLong,
+        "field3" -> SwaggerLong,
+        "field4" -> SwaggerDateTime,
+        "field5" -> SwaggerDateTime,
+        "field6" -> SwaggerTime,
+        "field7" -> SwaggerDate,
+        "decimalField" -> SwaggerBigDecimal,
+        "doubleField" -> SwaggerDouble
+      ),
+      required = Set("field2")
+    )
 
     val value = JsonToTypedMap(json, definition)
 
@@ -62,12 +64,47 @@ class JsonToTypedMapTest extends AnyFunSuite
   }
 
   test("should parse union") {
-    val definition = SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), required = Set())
+    val definition =
+      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), required = Set())
 
     val value = JsonToTypedMap(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
     fields.get("field2") shouldBe 1L
+  }
+
+  test("should handle display path in error") {
+    val definition = SwaggerObject(
+      elementType = Map(
+        "string" -> SwaggerString,
+        "long" -> SwaggerLong,
+        "array" -> SwaggerArray(SwaggerBool),
+        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString), required = Set("string"))
+      ),
+      required = Set("string", "long", "array", "nested")
+    )
+
+    def assertPath(json: Json, path: String) =
+      intercept[JsonToObjectError](JsonToTypedMap(json, definition)).path shouldBe path
+
+    assertPath(Json.obj("string" -> fromLong(1)), "string")
+    assertPath(
+      Json.obj(
+        "string" -> fromString(""),
+        "long" -> fromLong(1),
+        "array" -> fromValues(List(fromBoolean(false), fromString("string")))
+      ),
+      "array[1]"
+    )
+    assertPath(
+      Json.obj(
+        "string" -> fromString(""),
+        "long" -> fromLong(1),
+        "array" -> fromValues(Nil),
+        "nested" -> Json.obj("string" -> fromLong(1))
+      ),
+      "nested.string"
+    )
   }
 }
