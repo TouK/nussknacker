@@ -7,7 +7,7 @@ import org.json.{JSONArray, JSONException, JSONObject, JSONTokener}
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 import java.nio.charset.StandardCharsets
 import scala.jdk.CollectionConverters.{asScalaBufferConverter, asScalaIteratorConverter, iterableAsScalaIterableConverter}
@@ -28,7 +28,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val jsonObject = new JSONTokener(string).nextValue()
     //after validate jsonObject has set default field values
     catchValidationError(jsonSchema.validate(jsonObject))
-    val result = JsonToTypedMap(toCirce(jsonObject), swaggerTyped) //TODO: Add support for json primitive type?
+    val result = JsonToNuStruct(toCirce(jsonObject), swaggerTyped)
     result
   }
 

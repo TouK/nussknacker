@@ -245,21 +245,6 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map(), schema) shouldBe 'valid
   }
 
-  test("should encode null value for nullable field") {
-    val schema: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": ["string", "null"]
-        |    }
-        |  }
-        |}""".stripMargin))
-
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
-  }
-
   test("should encode union") {
     forAll(Table(
       "schema",
@@ -304,7 +289,23 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     }
   }
 
-  test("should encode not required field") {
+  test("should encode null value for nullable field - union with null") {
+    val schema: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$schema": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": ["string", "null"]
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'valid
+  }
+
+  test("should not encode null value for not nullable field") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{
         |  "$schema": "https://json-schema.org/draft-07/schema",
@@ -316,8 +317,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}""".stripMargin))
 
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'invalid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'invalid
   }
 
   ignore("should reject when missing required field") {

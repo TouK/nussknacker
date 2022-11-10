@@ -35,9 +35,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
-        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong), Set[String]())),
+        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong))),
         "otherField" -> SwaggerString
-      ), Set[String]()))
+      )))
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))

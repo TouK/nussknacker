@@ -62,11 +62,11 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
-      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
-        .getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
-      case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+        .getOrElse(error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $cs"))
+      case (_, null) => error(s"Not expected null for field: $fieldName with schema: $schema")
+      case (_, _) =>
+        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
 

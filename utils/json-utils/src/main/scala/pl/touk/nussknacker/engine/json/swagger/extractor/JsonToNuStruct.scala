@@ -10,8 +10,7 @@ import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
-// TODO: Missing filling fields by defaults?
-object JsonToTypedMap {
+object JsonToNuStruct {
 
   import scala.collection.JavaConverters._
 
@@ -23,27 +22,18 @@ object JsonToTypedMap {
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
       fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition, path))
 
-    def addPath(next: String) = if (path.isEmpty) next else s"$path.$next"
+    def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]): AnyRef = {
-      def noneOrError(jsonField: PropertyName): Option[AnyRef] = {
-        if (required.contains(jsonField)) throw JsonToObjectError(json, definition, addPath(jsonField))
-        else None
-      }
-
+    def extractObject(elementType: Map[PropertyName, SwaggerTyped]): AnyRef =
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
-          elementType
-            .map { case (jsonField, jsonDef) =>
-              jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef, addPath(jsonField))).orElse(noneOrError(jsonField))
-            }.collect {
-              case (key, Some(value)) => key -> value
-            }
-            .filter{ case (key, _) => jo.contains(key) }
+          jo.toMap.collect {
+            case (key, value) if elementType.contains(key) =>
+              key -> JsonToNuStruct(value, elementType(key), addPath(key))
+          }
         )
       )
-    }
 
     definition match {
       case _ if json.isNull =>
@@ -68,9 +58,9 @@ object JsonToTypedMap {
       case SwaggerBigDecimal =>
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
-        extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToTypedMap(el, elementType, s"$path[$idx]") }.asJava)
-      case SwaggerObject(elementType, required) =>
-        extractObject(elementType, required)
+        extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
+      case SwaggerObject(elementType) =>
+        extractObject(elementType)
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
         .headOption.getOrElse(throw JsonToObjectError(json, u, path))
     }
@@ -96,4 +86,5 @@ object JsonToTypedMap {
       OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
     }.orNull
   }
+
 }
