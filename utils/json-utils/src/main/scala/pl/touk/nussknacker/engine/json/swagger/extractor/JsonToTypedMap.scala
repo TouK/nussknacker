@@ -14,18 +14,19 @@ object JsonToTypedMap {
 
   import scala.collection.JavaConverters._
 
-  case class JsonToObjectError(json: Json, definition: SwaggerTyped)
-    extends Exception(s"JSON returned by service has invalid type. Expected: $definition. Returned json: $json")
+  case class JsonToObjectError(json: Json, definition: SwaggerTyped, path: String)
+    extends Exception(s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json")
 
-  def apply(json: Json, definition: SwaggerTyped): AnyRef = {
+  def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
-      fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition))
+      fun(json).map(trans).getOrElse(throw JsonToObjectError(json, definition, path))
 
+    def addPath(next: String) = if (path.isEmpty) next else s"$path.$next"
 
     def extractObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]): AnyRef = {
       def nullOrError(jsonField: PropertyName): AnyRef = {
-        if (required.contains(jsonField)) throw JsonToObjectError(json, definition)
+        if (required.contains(jsonField)) throw JsonToObjectError(json, definition, addPath(jsonField))
         else null
       }
 
@@ -37,7 +38,7 @@ object JsonToTypedMap {
         _.asObject,
         jo => TypedMap(
           elementType.map {
-            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef)).getOrElse(nullOrError(jsonField))
+            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef, addPath(jsonField))).getOrElse(nullOrError(jsonField))
           }
             .filter(e => notNullOrRequired(e._1, e._2, required))
         )
@@ -67,11 +68,11 @@ object JsonToTypedMap {
       case SwaggerBigDecimal =>
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
-        extract[Vector[Json]](_.asArray, _.map(JsonToTypedMap(_, elementType)).asJava)
+        extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToTypedMap(el, elementType, s"$path[$idx]") }.asJava)
       case SwaggerObject(elementType, required) =>
         extractObject(elementType, required)
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
-        .headOption.getOrElse(throw JsonToObjectError(json, u))
+        .headOption.getOrElse(throw JsonToObjectError(json, u, path))
     }
   }
 
