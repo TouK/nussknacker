@@ -21,7 +21,8 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
     "field6" -> fromString("12:12:35+02:00"),
     "field7" -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
-    "doubleField" -> Json.fromDoubleOrNull(1.55)
+    "doubleField" -> Json.fromDoubleOrNull(1.55),
+    "nullField" -> Json.Null,
   )
 
   test("should parse object with all required fields present") {
@@ -35,7 +36,8 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
         "field6" -> SwaggerTime,
         "field7" -> SwaggerDate,
         "decimalField" -> SwaggerBigDecimal,
-        "doubleField" -> SwaggerDouble
+        "doubleField" -> SwaggerDouble,
+        "nullField" -> SwaggerNull
       ),
       required = Set("field2")
     )
@@ -53,6 +55,7 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
     fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55
+    fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
   }
 
   test("should fail for object with all required field absent") {

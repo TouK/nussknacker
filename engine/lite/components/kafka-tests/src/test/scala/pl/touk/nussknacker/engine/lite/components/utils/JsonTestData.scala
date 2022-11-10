@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components.utils
 
+import io.circe.Json
+import io.circe.Json.{fromString, obj}
 import org.everit.json.schema.Schema
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
@@ -39,6 +41,19 @@ object JsonTestData {
       |  }
       |}
       |""".stripMargin))
+
+  val objectSchemaWithNull: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "first" : { "type": "string" },
+      |    "nullField" : { "type": "null" }
+      |   },
+      |   "required": ["first"]
+      |}
+      |""".stripMargin))
+
+  val sampleDataWithNull: Json = obj("first" -> fromString("lcl"), "nullField" -> Json.Null)
 
   val personSchema: Schema = SchemaLoader.load(new JSONObject(
     """{

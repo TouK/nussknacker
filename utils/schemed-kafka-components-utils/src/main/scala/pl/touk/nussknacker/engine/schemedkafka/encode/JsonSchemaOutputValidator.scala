@@ -44,9 +44,6 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         validateUnionInput(union, schema, path)
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) =>
         validateRecordSchema(typingResult, s, path)
-      case (_@TypedNull, _) if !schema.isNullable =>
-        invalid(typingResult, schema, path)
-      case (_@TypedNull, _) if schema.isNullable => valid
       case (_, _) => canBeSubclassOf(typingResult, schema, path)
     }
   }

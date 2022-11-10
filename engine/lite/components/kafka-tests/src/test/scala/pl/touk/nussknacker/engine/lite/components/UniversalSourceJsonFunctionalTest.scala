@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.Valid
-import cats.data.Validated
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.Json.{fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -12,14 +12,16 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData.{InputEmptyObject, schemaObjNull, _}
+import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
 import pl.touk.nussknacker.engine.lite.util.test.{KafkaConsumerRecord, LiteKafkaTestScenarioRunner}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
@@ -29,7 +31,6 @@ import java.util.UUID
 class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
-  import pl.touk.nussknacker.test.LiteralSpELImplicits._
   import LiteKafkaComponentProvider._
   import LiteKafkaTestScenarioRunner._
   import SpecialSpELElement._
@@ -51,9 +52,8 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
       (sConfig(fromInt(1), integerRangeSchema, longSchema), valid(fromInt(1))),
       (sConfig(fromLong(Integer.MAX_VALUE), integerRangeSchema, integerRangeSchema), valid(fromInt(Integer.MAX_VALUE))),
       (sConfig(obj(), objectSchema, objectSchema), valid(obj())),
-      (oConfig(obj("first" -> fromString(""), "last" -> fromString("")), objectSchema, objectSchema, Input), oValid(obj("first" -> fromString(""), "last" -> fromString("")))),
-      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), valid(obj())),
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), valid(obj())),
+      (sConfig(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString(""))), objectSchema, objectSchema), valid(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString(""))))),
+      (sConfig(sampleDataWithNull, objectSchemaWithNull, objectSchemaWithNull), valid(sampleDataWithNull)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -65,9 +65,9 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   test("should catch runtime errors") {
     val testData = Table(
       ("config", "result"),
-      (oConfig(Json.Null, objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: Null"),
-      (oConfig(obj("first" -> fromString("")), objectSchema, objectSchema, Input), "#/field: required key [last] not found"),
-      (oConfig(fromString("invalid"), objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: String"),
+      (sConfig(obj("outgoing" -> Json.Null), objectSchema, objectSchema), "#/outgoing: expected type: JSONObject, found: Null"),
+      (sConfig(obj("outgoing" -> obj("first" -> fromString(""))), objectSchema, objectSchema), "#/outgoing: required key [last] not found"),
+      (sConfig(obj("outgoing" -> fromString("invalid")), objectSchema, objectSchema), "#/outgoing: expected type: JSONObject, found: String"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
@@ -114,28 +114,16 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     lazy val sinkTopic = s"$topic-output"
   }
 
-  //ObjectValid -> config with record as a input
-  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
-    val sinkDefinition = output match {
-      case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
-      case any => Map(ObjectFieldName -> any)
-    }
-
-    val input = inputData match {
-      case InputEmptyObject => obj()
-      case in: Json => obj(ObjectFieldName -> in)
-      case in => throw new IllegalArgumentException(s"Not allowed type of data: $in.")
-    }
-
-    ScenarioConfig(randomTopic, input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
-  }
-
-  //ObjectValid -> valid success record with base field
-  private def oValid(data: Json): Valid[RunListResult[Json]] =
-    valid(obj(ObjectFieldName -> data))
-
   private def valid[T](data: T): Valid[RunListResult[T]] =
     Valid(RunResult.success(data))
+
+  private def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
+    invalid(typeErrors.toList, Nil, Nil)
+
+  private def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
+    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError)
+    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(SinkValueParamName))))
+  }
 
   private def sConfig(inputData: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: SpecialSpELElement = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
     ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, output.value, validationMode)

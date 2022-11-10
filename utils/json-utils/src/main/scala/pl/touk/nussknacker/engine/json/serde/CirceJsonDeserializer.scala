@@ -28,7 +28,8 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val jsonObject = new JSONTokener(string).nextValue()
     //after validate jsonObject has set default field values
     catchValidationError(jsonSchema.validate(jsonObject))
-    JsonToTypedMap(toCirce(jsonObject), swaggerTyped)
+    val result = JsonToTypedMap(toCirce(jsonObject), swaggerTyped) //TODO: Add support for json primitive type?
+    result
   }
 
   private def toCirce(json: Object): Json = json match {

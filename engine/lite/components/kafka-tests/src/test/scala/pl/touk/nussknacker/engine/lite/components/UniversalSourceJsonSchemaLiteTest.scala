@@ -37,6 +37,9 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       |    },
       |    "age": {
       |      "type": "integer"
+      |    },
+      |    "sex": {
+      |      "type": "null"
       |    }
       |  }
       |}""".stripMargin))
@@ -47,7 +50,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
   private val scenario = ScenarioBuilder.streamingLite("check json serialization")
     .source("my-source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
     .emptySink("my-sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'", SinkKeyParamName -> "", SinkRawEditorParamName -> "false",
-      "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age")
+      "first" -> s"#input.first", "last" -> "#input.last", "age" -> "#input.age", "sex" -> "#input.sex")
 
   test("should read data on json schema based universal source when schemaId in header") {
     //Given
@@ -60,7 +63,8 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       """{
         |  "first": "John",
         |  "last": "Doe",
-        |  "age": 21
+        |  "age": 21,
+        |  "sex": null
         |}""".stripMargin.getBytes()
 
     val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
@@ -84,7 +88,8 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       """{
         |  "first": "John",
         |  "last": "Doe",
-        |  "age": 21
+        |  "age": 21,
+        |  "sex": null
         |}""".stripMargin
     val record = stringRecord.getBytes()
 

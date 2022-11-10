@@ -10,6 +10,7 @@ import java.time.{LocalDate, OffsetTime, ZonedDateTime}
 import scala.util.Try
 
 // TODO: Validated
+// TODO: Missing filling fields by defaults?
 object JsonToTypedMap {
 
   import scala.collection.JavaConverters._
@@ -25,22 +26,21 @@ object JsonToTypedMap {
     def addPath(next: String) = if (path.isEmpty) next else s"$path.$next"
 
     def extractObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]): AnyRef = {
-      def nullOrError(jsonField: PropertyName): AnyRef = {
+      def noneOrError(jsonField: PropertyName): Option[AnyRef] = {
         if (required.contains(jsonField)) throw JsonToObjectError(json, definition, addPath(jsonField))
-        else null
-      }
-
-      def notNullOrRequired(fieldName: String, value: Any, required: Set[PropertyName]): Boolean = {
-        value != null || required.contains(fieldName)
+        else None
       }
 
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
-          elementType.map {
-            case (jsonField, jsonDef) => jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef, addPath(jsonField))).getOrElse(nullOrError(jsonField))
-          }
-            .filter(e => notNullOrRequired(e._1, e._2, required))
+          elementType
+            .map { case (jsonField, jsonDef) =>
+              jsonField -> jo(jsonField).map(JsonToTypedMap(_, jsonDef, addPath(jsonField))).orElse(noneOrError(jsonField))
+            }.collect {
+              case (key, Some(value)) => key -> value
+            }
+            .filter{ case (key, _) => jo.contains(key) }
         )
       )
     }
@@ -50,7 +50,7 @@ object JsonToTypedMap {
         null
       case SwaggerString =>
         extract(_.asString)
-      case SwaggerEnum(values) =>
+      case SwaggerEnum(_) =>
         extract(_.asString)
       case SwaggerBool =>
         extract(_.asBoolean, boolean2Boolean)

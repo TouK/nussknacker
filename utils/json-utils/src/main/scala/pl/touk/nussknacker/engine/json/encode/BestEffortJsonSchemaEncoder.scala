@@ -21,7 +21,6 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
   private val optionalEncoders = ServiceLoader.load(classOf[ToJsonBasedOnSchemaEncoder], classLoader).asScala.map(_.encoder(this.encodeBasedOnSchema))
   private val highPriority: PartialFunction[EncodeInput, EncodeOutput] = Map()
 
-
   final def encodeOrError(value: Any, schema: Schema): Json = {
     encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
@@ -30,15 +29,14 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     fields
       .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {
-        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
+        case ((fieldName, value), propertySchema) if (propertySchema != null) && availableField(fieldName, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
         case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
 
-  private def notNullOrRequired(fieldName: String, value: Any, parentSchema: ObjectSchema): Boolean = {
-    value != null || parentSchema.getRequiredProperties.contains(fieldName)
-  }
+  private def availableField(fieldName: String, parentSchema: ObjectSchema): Boolean =
+    parentSchema.getPropertySchemas.keys.exists(_ == fieldName)
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
