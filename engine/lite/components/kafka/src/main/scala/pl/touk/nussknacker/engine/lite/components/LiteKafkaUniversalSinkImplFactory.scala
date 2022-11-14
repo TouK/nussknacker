@@ -17,7 +17,7 @@ object LiteKafkaUniversalSinkImplFactory extends UniversalKafkaSinkImplFactory {
   override def createSink(preparedTopic: PreparedKafkaTopic, keyParam: LazyParameter[AnyRef], valueParam: LazyParameter[AnyRef],
                           kafkaConfig: KafkaConfig, serializationSchema: KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]], clientId: String,
                           schema: RuntimeSchemaData[ParsedSchema], validationMode: ValidationMode): Sink = {
-    lazy val encode = UniversalSchemaSupport.forSchemaType(schema.schema.schemaType()).sinkValueEncoder(schema.schema,validationMode)
+    lazy val encode = UniversalSchemaSupport.forSchemaType(schema.schema.schemaType()).sinkValueEncoder(schema.schema, validationMode)
 
     new LazyParamSink[ProducerRecord[Array[Byte], Array[Byte]]] {
       override def prepareResponse(implicit evaluateLazyParameter: LazyParameterInterpreter): LazyParameter[ProducerRecord[Array[Byte], Array[Byte]]] = {
