@@ -54,6 +54,7 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
       (sConfig(obj(), objectSchema, objectSchema), valid(obj())),
       (sConfig(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString(""))), objectSchema, objectSchema), valid(obj("outgoing" -> obj("first" -> fromString(""), "last" -> fromString(""))))),
       (sConfig(sampleDataWithNull, objectSchemaWithNull, objectSchemaWithNull), valid(sampleDataWithNull)),
+      (sConfig(obj(), personSchema, personSchema), valid(obj())),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
