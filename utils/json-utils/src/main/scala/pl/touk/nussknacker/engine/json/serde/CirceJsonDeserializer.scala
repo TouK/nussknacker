@@ -28,8 +28,7 @@ class CirceJsonDeserializer(jsonSchema: Schema) {
     val jsonObject = new JSONTokener(string).nextValue()
     //after validate jsonObject has set default field values
     catchValidationError(jsonSchema.validate(jsonObject))
-    val result = JsonToNuStruct(toCirce(jsonObject), swaggerTyped)
-    result
+    JsonToNuStruct(toCirce(jsonObject), swaggerTyped)
   }
 
   private def toCirce(json: Object): Json = json match {

@@ -68,9 +68,9 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     val testData = Table(
       ("config", "result"),
       (oConfig(Json.Null, objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: Null"),
-//      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), "Not expected null for field: None with schema: {\"type\":\"string\"}"),
-//      (oConfig(obj("first" -> fromString("")), objectSchema, objectSchema, Input), "#/field: required key [last] not found"),
-//      (oConfig(fromString("invalid"), objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: String"),
+      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), "Not expected null for field: None with schema: {\"type\":\"string\"}"),
+      (oConfig(obj("first" -> fromString("")), objectSchema, objectSchema, Input), "#/field: required key [last] not found"),
+      (oConfig(fromString("invalid"), objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: String"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
