@@ -128,10 +128,8 @@ object propertyAccessors {
 
   object MapPropertyAccessor extends PropertyAccessor with ReadOnly {
 
-    // For normal Maps, we always return true to have the same behaviour for missing key nad null value
-    // For TypedMaps, we want to distinguish both cases and in first one, throw an exception
     override def canRead(context: EvaluationContext, target: scala.Any, name: String): Boolean =
-      !target.isInstanceOf[TypedMap] || target.asInstanceOf[TypedMap].containsKey(name)
+      true
 
     override def read(context: EvaluationContext, target: scala.Any, name: String) =
       new TypedValue(target.asInstanceOf[java.util.Map[_, _]].get(name))

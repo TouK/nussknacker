@@ -422,9 +422,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     val ctxWithTypedMap = ctx.withVariable("map", TypedMap(Map.empty))
     val parseResult = parseV[Integer]("#map.foo", validationCtx).validExpression
-    a[SpelExpressionEvaluationException] should be thrownBy {
-      parseResult.evaluateSync[Integer](ctxWithTypedMap)
-    }
+    parseResult.evaluateSync[Integer](ctxWithTypedMap) shouldBe null
   }
 
   test("check return type for map property accessed in dot notation") {
