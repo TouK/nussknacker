@@ -6,6 +6,10 @@ import org.json.JSONObject
 
 object JsonTestData {
 
+  val ObjectFieldName: String = "field"
+
+  val InputEmptyObject = "{}"
+
   val integerRangeSchema: Schema = SchemaLoader.load(new JSONObject(
     s"""{
        |  "$$schema": "https://json-schema.org/draft-07/schema",
@@ -24,7 +28,7 @@ object JsonTestData {
     """{
       |  "type": "object",
       |  "properties": {
-      |    "outgoing" :  {
+      |    "field" :  {
       |      "type": "object",
       |      "properties": {
       |        "first" : { "type": "string" },
@@ -52,4 +56,31 @@ object JsonTestData {
       |    }
       |  }
       |}""".stripMargin))
+
+  val schemaObjString: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "field" : { "type": "string" }
+      |   }
+      |}
+      |""".stripMargin))
+
+  val schemaObjNull: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "field" : { "type": "null" }
+      |   }
+      |}
+      |""".stripMargin))
+
+  val schemaObjUnionNullString: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "field" : { "type": ["null", "string"] }
+      |   }
+      |}
+      |""".stripMargin))
 }

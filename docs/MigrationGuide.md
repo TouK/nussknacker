@@ -21,7 +21,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) Method `runWithRequests` of `RequestResponseTestScenarioRunner` (returned by `TestScenarioRunner.requestResponseBased()`)
   now returns `ValidatedNel` with scenario compilation errors instead of throwing exception in that case 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor:
-  * Right now access to not exist field on TypedMap won't throw exception, just will return `null`
+  * Right now access to not existing field on TypedMap won't throw exception, just will return `null`
 
 ### Code API changes
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
