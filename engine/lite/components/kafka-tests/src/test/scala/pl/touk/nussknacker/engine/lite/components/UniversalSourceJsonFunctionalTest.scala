@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.Valid
 import cats.data.Validated
 import io.circe.Json
-import io.circe.Json.{fromInt, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
@@ -52,8 +52,20 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
       (sConfig(fromLong(Integer.MAX_VALUE), integerRangeSchema, integerRangeSchema), valid(fromInt(Integer.MAX_VALUE))),
       (sConfig(obj(), objectSchema, objectSchema), valid(obj())),
       (oConfig(obj("first" -> fromString(""), "last" -> fromString("")), objectSchema, objectSchema, Input), oValid(obj("first" -> fromString(""), "last" -> fromString("")))),
+
+      //trimming not nullable and not required field when we sent null / empty object
+      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull), valid(obj())),
+      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull, SpecialSpELElement("#input.field")), oValid(Null)),
+      (oConfig(Null, schemaObjNull, schemaObjNull), oValid(Null)),
+      (oConfig(Null, schemaObjNull, schemaObjNull, SpecialSpELElement("#input.field")), oValid(Null)),
+
+      (oConfig(InputEmptyObject, schemaObjString, schemaObjString), valid(obj())),
       (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), valid(obj())),
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), valid(obj())),
+
+      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), oValid(Null)),
+      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString), valid(obj())),
+      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString), oValid(Null)),
+      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), oValid(Null)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -72,7 +84,7 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
       val results = runWithValueResults(config)
-      val message = results.validValue.errors.head.throwable.asInstanceOf[CustomNodeValidationException].getMessage
+      val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
       message shouldBe expected
     }
@@ -87,7 +99,8 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
 
     val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
-    runner.runWithStringData(jsonScenario, List(input))
+    val result = runner.runWithStringData(jsonScenario, List(input))
+    result
   }
 
   private def createScenario(config: ScenarioConfig) =
@@ -114,8 +127,8 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     lazy val sinkTopic = s"$topic-output"
   }
 
-  //ObjectValid -> config with record as a input
-  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
+  //ObjectValid -> config with object as a input
+  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
       case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
       case any => Map(ObjectFieldName -> any)
@@ -130,7 +143,7 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     ScenarioConfig(randomTopic, input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
   }
 
-  //ObjectValid -> valid success record with base field
+  //ObjectValid -> valid success object with base field
   private def oValid(data: Json): Valid[RunListResult[Json]] =
     valid(obj(ObjectFieldName -> data))
 

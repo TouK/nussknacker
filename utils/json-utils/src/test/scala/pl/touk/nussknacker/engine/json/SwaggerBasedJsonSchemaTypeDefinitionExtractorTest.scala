@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
 
@@ -252,8 +252,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     val swaggerTypeExtracted = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val jsonObject = Json.obj("time" -> fromString("2022-07-11T18:12:27+02:00"))
-    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime), Set())
-    val jsonToObjectExtracted = JsonToTypedMap.apply(jsonObject, swaggerObject)
+    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime))
+    val jsonToObjectExtracted = JsonToNuStruct(jsonObject, swaggerObject)
 
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
       Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))

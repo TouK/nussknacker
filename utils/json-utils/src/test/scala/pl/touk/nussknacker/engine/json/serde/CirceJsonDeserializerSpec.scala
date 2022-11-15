@@ -106,4 +106,41 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     }
   }
 
+  test("handling nulls and empty json") {
+    val unionSchemaWithNull = SchemaLoader.load(new JSONObject(
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "type": ["null", "string"]
+        |    }
+        |  }
+        |}
+        |""".stripMargin))
+
+    val schemaWithNotRequiredField = SchemaLoader.load(new JSONObject(
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "type": "string"
+        |    }
+        |  }
+        |}
+        |""".stripMargin))
+
+    forAll(Table(
+      ("json", "schema", "result"),
+      ("""{"a": "test"}""", unionSchemaWithNull, Map("a" -> "test")),
+      ("""{"a": null}""", unionSchemaWithNull, Map("a" -> null)),
+      ("""{}""", unionSchemaWithNull, Map()),
+      ("""{}""", schemaWithNotRequiredField, Map())
+    )) { (json, schema, result) =>
+      val deserializer = new CirceJsonDeserializer(schema)
+      deserializer.deserialize(json) shouldEqual result.asJava
+    }
+  }
+
 }

@@ -6,12 +6,12 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToTypedMap.JsonToObjectError
+import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct.JsonToObjectError
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
-class JsonToTypedMapTest extends AnyFunSuite with Matchers {
+class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
   private val json = Json.obj(
     "field1" -> fromString("value"),
@@ -21,7 +21,8 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
     "field6" -> fromString("12:12:35+02:00"),
     "field7" -> fromString("2020-07-10"),
     "decimalField" -> Json.fromDoubleOrNull(1.33),
-    "doubleField" -> Json.fromDoubleOrNull(1.55)
+    "doubleField" -> Json.fromDoubleOrNull(1.55),
+    "nullField" -> Json.Null,
   )
 
   test("should parse object with all required fields present") {
@@ -35,12 +36,12 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
         "field6" -> SwaggerTime,
         "field7" -> SwaggerDate,
         "decimalField" -> SwaggerBigDecimal,
-        "doubleField" -> SwaggerDouble
-      ),
-      required = Set("field2")
+        "doubleField" -> SwaggerDouble,
+        "nullField" -> SwaggerNull
+      )
     )
 
-    val value = JsonToTypedMap(json, definition)
+    val value = JsonToNuStruct(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
@@ -53,21 +54,19 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
     fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55
+    fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
   }
 
-  test("should fail for object with all required field absent") {
-    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), required = Set("field3"))
-
-    assertThrows[JsonToTypedMap.JsonToObjectError] {
-      extractor.JsonToTypedMap(json, definition)
-    }
+  test("should trim useless fields") {
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
+    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map.empty)
   }
 
   test("should parse union") {
     val definition =
-      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), required = Set())
+      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))))
 
-    val value = JsonToTypedMap(json, definition)
+    val value = JsonToNuStruct(json, definition)
 
     value shouldBe a[TypedMap]
     val fields = value.asInstanceOf[TypedMap]
@@ -80,13 +79,12 @@ class JsonToTypedMapTest extends AnyFunSuite with Matchers {
         "string" -> SwaggerString,
         "long" -> SwaggerLong,
         "array" -> SwaggerArray(SwaggerBool),
-        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString), required = Set("string"))
-      ),
-      required = Set("string", "long", "array", "nested")
+        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString))
+      )
     )
 
     def assertPath(json: Json, path: String) =
-      intercept[JsonToObjectError](JsonToTypedMap(json, definition)).path shouldBe path
+      intercept[JsonToObjectError](JsonToNuStruct(json, definition)).path shouldBe path
 
     assertPath(Json.obj("string" -> fromLong(1)), "string")
     assertPath(
