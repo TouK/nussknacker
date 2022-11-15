@@ -34,7 +34,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
   private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
     val source = createSource(sourceFactory, topic)
     val bytes = source.generateTestData(numberOfMessages)
-    source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
+    source.testDataParser.parseTestData(TestData(bytes))
   }
 
   private def createSource[K, V](sourceFactory: KafkaSourceFactory[K, V], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
@@ -164,7 +164,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
 
       val data = source.generateTestData(2)
 
-      val parsed = source.testDataParser.parseTestData(TestData(data, 2))
+      val parsed = source.testDataParser.parseTestData(TestData(data))
       parsed.map(_.value())
     }
 

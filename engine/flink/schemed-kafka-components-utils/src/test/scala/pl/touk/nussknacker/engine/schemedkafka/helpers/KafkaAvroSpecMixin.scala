@@ -231,7 +231,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
       .map(source => {
         val bytes = source.generateTestData(1)
         info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-        val deserializedObj = source.testDataParser.parseTestData(TestData(bytes, 1)).head.asInstanceOf[ConsumerRecord[Any, Any]]
+        val deserializedObj = source.testDataParser.parseTestData(TestData(bytes)).head.asInstanceOf[ConsumerRecord[Any, Any]]
 
         deserializedObj.key() shouldEqual givenKey
         deserializedObj.value() shouldEqual givenValue

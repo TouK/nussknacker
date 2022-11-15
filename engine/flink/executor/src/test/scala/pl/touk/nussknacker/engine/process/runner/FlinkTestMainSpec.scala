@@ -244,7 +244,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         | "id": "3",
         | "field": "33"
         |}
-        |""".stripMargin.getBytes(StandardCharsets.UTF_8), 3), 3)
+        |""".stripMargin.getBytes(StandardCharsets.UTF_8)), 3)
 
     val results = runFlinkTest(process, testJsonData)
 
@@ -417,8 +417,8 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     val recC = "c|1|2|3|4|5|6"
     val testData = MultipleSourcesScenarioTestData(
       Map(
-        "input1" -> TestData(s"$recA\n$recC".getBytes(StandardCharsets.UTF_8), samplesLimit = 3),
-        "input2" -> TestData(s"$recA\n$recB\n$recC".getBytes(StandardCharsets.UTF_8), samplesLimit = 3),
+        "input1" -> TestData(s"$recA\n$recC".getBytes(StandardCharsets.UTF_8)),
+        "input2" -> TestData(s"$recA\n$recB\n$recC".getBytes(StandardCharsets.UTF_8)),
       ),
       3
     )

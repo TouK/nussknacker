@@ -12,7 +12,7 @@ class QueryStringTestDataParserSpec extends AnyFunSuite with Matchers {
   test("should parse query") {
     val parser = new QueryStringTestDataParser
 
-    parser.parseTestData(TestData("no=12&id=123&id=155&mode=test\nno=15&id=555&mode=prod".getBytes(StandardCharsets.UTF_8), 2)) shouldBe List(
+    parser.parseTestData(TestData("no=12&id=123&id=155&mode=test\nno=15&id=555&mode=prod".getBytes(StandardCharsets.UTF_8))) shouldBe List(
       TypedMap(Map("no" -> "12", "id" -> util.Arrays.asList("123", "155"), "mode" -> "test")),
       TypedMap(Map("no" -> "15", "id" -> "555", "mode" -> "prod"))
     )

@@ -57,7 +57,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   test("stubbing for test purpose should work for one source") {
-    val testData = SingleSourceScenarioTestData(TestData(Array(1, 2, 3), 3), 3)
+    val testData = SingleSourceScenarioTestData(TestData(Array(1, 2, 3)), 3)
     val compiledProcess = testCompile(scenarioWithSingleSource, testData)
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
@@ -70,8 +70,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   test("stubbing for test purpose should work for multiple sources") {
     val testData = MultipleSourcesScenarioTestData(
       Map(
-        "left-source" -> TestData(Array(11, 12, 13), 3),
-        "right-source" -> TestData(Array(21, 22, 23), 3),
+        "left-source" -> TestData(Array(11, 12, 13)),
+        "right-source" -> TestData(Array(21, 22, 23)),
       ),
       samplesLimit = 3
     )

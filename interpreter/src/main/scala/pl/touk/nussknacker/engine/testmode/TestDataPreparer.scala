@@ -27,9 +27,6 @@ object TestDataPreparer {
   def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], testData: TestData): ParsedTestData[T] = {
     val testParserForSource = sourceTestSupport.testDataParser
     val testSamples = testParserForSource.parseTestData(testData)
-    if (testSamples.size > testData.samplesLimit) {
-      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.samplesLimit}")
-    }
     ParsedTestData(testSamples)
   }
 
