@@ -20,7 +20,7 @@ import io.circe.{Decoder, Encoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{SingleSourceScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -253,7 +253,8 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
+        // TODO ljd: parse test data.
+        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, SingleSourceScenarioTestData(TestData(testData, testDataSettings.maxSamplesCount), testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>
           ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))

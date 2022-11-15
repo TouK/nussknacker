@@ -7,7 +7,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{MultipleSourcesScenarioTestData, ScenarioTestData, SingleSourceScenarioTestData, TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -57,7 +57,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   test("stubbing for test purpose should work for one source") {
-    val testData = TestData(Array(1, 2, 3), 3)
+    val testData = SingleSourceScenarioTestData(TestData(Array(1, 2, 3), 3), 3)
     val compiledProcess = testCompile(scenarioWithSingleSource, testData)
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
@@ -67,14 +67,29 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("stubbing for test purpose should fail on multiple sources") {
-    val testData = TestData(Array(1, 2, 3), 3)
-    an[Exception] shouldBe thrownBy {
-      testCompile(scenarioWithMultipleSources, testData)
+  test("stubbing for test purpose should work for multiple sources") {
+    val testData = MultipleSourcesScenarioTestData(
+      Map(
+        "left-source" -> TestData(Array(11, 12, 13), 3),
+        "right-source" -> TestData(Array(21, 22, 23), 3),
+      ),
+      samplesLimit = 3
+    )
+
+    val compiledProcess = testCompile(scenarioWithMultipleSources, testData)
+
+    val sources = compiledProcess.sources.collect {
+      case source: SourcePart => source.node.id -> source.obj
+    }.toMap
+    sources("left-source") should matchPattern {
+      case CollectionSource(List(11, 12, 13), _, _) =>
+    }
+    sources("right-source") should matchPattern {
+      case CollectionSource(List(21, 22, 23), _, _) =>
     }
   }
 
-  private def testCompile(scenario: CanonicalProcess, testData: TestData) = {
+  private def testCompile(scenario: CanonicalProcess, testData: ScenarioTestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
       scenario, testData, DefaultNamespacedObjectNaming)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()

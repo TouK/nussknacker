@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{SingleSourceScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
@@ -195,8 +195,8 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
 
-    val testData = TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
-        scenario.nodes.head.data.asInstanceOf[Source], 2).get, 2)
+    val testData = SingleSourceScenarioTestData(TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
+        scenario.nodes.head.data.asInstanceOf[Source], 2).get, 2), 2)
 
     val results = wrapInFailingLoader {
       manager.test(name, scenario, testData, identity[Any]).futureValue

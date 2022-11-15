@@ -6,7 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{MultipleSourcesScenarioTestData, ScenarioTestData, SingleSourceScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
@@ -228,7 +228,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .streaming("proc1")
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "value" -> "#input")
-    val testJsonData = TestData(
+    val testJsonData = SingleSourceScenarioTestData(TestData(
       """{
         | "id": "1",
         | "field": "11"
@@ -244,7 +244,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         | "id": "3",
         | "field": "33"
         |}
-        |""".stripMargin.getBytes(StandardCharsets.UTF_8), 3)
+        |""".stripMargin.getBytes(StandardCharsets.UTF_8), 3), 3)
 
     val results = runFlinkTest(process, testJsonData)
 
@@ -368,7 +368,6 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     invocationResults("out").head.contextId shouldBe "sampleProcess-id-0-1"
   }
 
-  //TODO: in the future we should also handle multiple sources tests...
   test("should handle joins for one input (diamond-like) ") {
     val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder.source("id", "input")
@@ -395,6 +394,40 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "b", "c", "c").map(_ + "-collectedDuringServiceInvocation")
   }
 
+  test("should handle joins for multiple inputs") {
+    val process = ScenarioBuilder.streaming("proc1").sources(
+      GraphBuilder
+        .source("input1", "input")
+        .filter("left", "#input.id != 'a'")
+        .branchEnd("end1", "join1"),
+      GraphBuilder
+        .source("input2", "input")
+        .filter("right", "#input.id != 'b'")
+        .branchEnd("end2", "join1"),
+      GraphBuilder.join("join1", "joinBranchExpression", Some("input33"),
+        List(
+          "end1" -> List("value" -> "#input"),
+          "end2" -> List("value" -> "#input")
+        ))
+        .processorEnd("proc2", "logService", "all" -> "#input33.id")
+    )
+
+    val recA = "a|1|2|1|4|5|6"
+    val recB = "b|1|2|2|4|5|6"
+    val recC = "c|1|2|3|4|5|6"
+    val testData = MultipleSourcesScenarioTestData(
+      Map(
+        "input1" -> TestData(s"$recA\n$recC".getBytes(StandardCharsets.UTF_8), samplesLimit = 3),
+        "input2" -> TestData(s"$recA\n$recB\n$recC".getBytes(StandardCharsets.UTF_8), samplesLimit = 3),
+      ),
+      3
+    )
+
+    val results = runFlinkTest(process, testData)
+
+    results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "c", "c").map(_ + "-collectedDuringServiceInvocation")
+  }
+
   test("should have correct run mode") {
     val process = ScenarioBuilder
       .streaming("proc")
@@ -408,7 +441,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
-  def runFlinkTest(process: CanonicalProcess, testData: TestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
+  def runFlinkTest(process: CanonicalProcess, testData: ScenarioTestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {

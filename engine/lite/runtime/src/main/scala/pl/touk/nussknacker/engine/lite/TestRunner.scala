@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -24,7 +24,7 @@ import scala.language.higherKinds
 
 trait TestRunner {
   def runTest[T](modelData: ModelData,
-                 testData: TestData,
+                 testData: ScenarioTestData,
                  process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T]
 }
@@ -33,7 +33,7 @@ trait TestRunner {
 class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] extends TestRunner {
 
   def runTest[T](modelData: ModelData,
-                 testData: TestData,
+                 testData: ScenarioTestData,
                  process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T] = {
 

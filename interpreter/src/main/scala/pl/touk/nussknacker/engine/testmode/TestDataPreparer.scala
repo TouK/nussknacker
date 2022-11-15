@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.testmode
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport}
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, SingleSourceScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -15,11 +15,20 @@ case class ParsedTestData[T](samples: List[T])
 
 object TestDataPreparer {
 
+  def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], scenarioTestData: SingleSourceScenarioTestData): ParsedTestData[T] = {
+    val testParserForSource = sourceTestSupport.testDataParser
+    val testSamples = testParserForSource.parseTestData(scenarioTestData.testData)
+    if (testSamples.size > scenarioTestData.samplesLimit) {
+      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${scenarioTestData.samplesLimit}")
+    }
+    ParsedTestData(testSamples)
+  }
+
   def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], testData: TestData): ParsedTestData[T] = {
     val testParserForSource = sourceTestSupport.testDataParser
     val testSamples = testParserForSource.parseTestData(testData)
-    if (testSamples.size > testData.rowLimit) {
-      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.rowLimit}")
+    if (testSamples.size > testData.samplesLimit) {
+      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.samplesLimit}")
     }
     ParsedTestData(testSamples)
   }
@@ -36,7 +45,12 @@ class TestDataPreparer(modelData: ModelData) {
       expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.TestDataGeneration)
   }
 
+  def prepareDataForTest[T](scenario: CanonicalProcess, testData: ScenarioTestData): ParsedTestData[T] = {
+    prepareDataForTest(scenario, testData.asInstanceOf[SingleSourceScenarioTestData].testData)
+  }
+
   def prepareDataForTest[T](scenario: CanonicalProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {
+    // TODO ljd: first
     val sourceTestSupport = (scenario.allStartNodes.map(_.head.data).collect {
       case e: SourceNodeData => e
     } match {
