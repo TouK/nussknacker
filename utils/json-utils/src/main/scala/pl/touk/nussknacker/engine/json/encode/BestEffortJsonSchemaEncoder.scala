@@ -23,7 +23,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
 
 
   final def encodeOrError(value: Any, schema: Schema): Json = {
-    encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
+    val json = encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
+    json
   }
 
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {

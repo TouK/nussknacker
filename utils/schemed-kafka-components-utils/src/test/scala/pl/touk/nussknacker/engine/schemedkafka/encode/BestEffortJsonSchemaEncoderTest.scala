@@ -229,6 +229,37 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
   }
 
+  // delete above test if this one passes
+  ignore("should accept and encode redundant parameters if validation modes allows this") {
+    val allowAdditionalProperties: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$allowAdditionalProperties": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  }
+        |}""".stripMargin))
+
+    val rejectAdditionalProperties: Schema = SchemaLoader.load(new JSONObject(
+      """{
+        |  "$allowAdditionalProperties": "https://json-schema.org/draft-07/schema",
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "additionalProperties": false
+        |}""".stripMargin))
+
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+  }
+
   test("should encode not required property with empty map") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{
@@ -320,6 +351,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'valid
   }
 
+  // For now, Encoder does not rejects this, but we validate it on rr-response layer // but not on streaming-sink layer
   ignore("should reject when missing required field") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{
