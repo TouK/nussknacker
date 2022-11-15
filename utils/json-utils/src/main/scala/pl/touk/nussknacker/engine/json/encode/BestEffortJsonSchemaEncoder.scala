@@ -29,14 +29,28 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     fields
       .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {
-        case ((fieldName, value), propertySchema) if (propertySchema != null) && availableField(fieldName, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
+        case ((fieldName, null), schema) if isNullableSchema(schema) => Valid((fieldName, Json.Null))
+        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
         case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
 
-  private def availableField(fieldName: String, parentSchema: ObjectSchema): Boolean =
-    parentSchema.getPropertySchemas.keys.exists(_ == fieldName)
+  private def isNullableSchema(schema: Schema) = {
+    def isNullSchema(sch: Schema) = sch match {
+      case _: NullSchema => true
+      case _ => false
+    }
+
+    schema match {
+      case combined: CombinedSchema => combined.getSubschemas.asScala.exists(isNullSchema)
+      case sch: Schema => isNullSchema(sch)
+    }
+  }
+
+  private def notNullOrRequired(fieldName: String, value: Any, parentSchema: ObjectSchema): Boolean = {
+    value != null || parentSchema.getRequiredProperties.contains(fieldName)
+  }
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
@@ -62,11 +76,11 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
+      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
+      case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
-        .getOrElse(error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $cs"))
-      case (_, null) => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (_, _) =>
-        error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+        .getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
+      case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
 

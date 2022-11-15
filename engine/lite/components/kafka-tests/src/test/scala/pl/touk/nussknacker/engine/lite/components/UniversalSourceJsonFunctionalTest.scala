@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import cats.data.Validated.Valid
 import cats.data.Validated
 import io.circe.Json
-import io.circe.Json.{fromInt, fromLong, fromString, obj}
+import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
@@ -45,17 +45,27 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   test("should test end to end kafka json data at sink / source") {
     val testData = Table(
       ("config", "result"),
-//      //Primitive integer validations
+      //Primitive integer validations
       // FIXME handle minimum > MIN_VALUE && maximum < MAX_VALUE) as an Integer to make better interoperability between json and avro?
       //      (sConfig(fromLong(Integer.MAX_VALUE.toLong + 1), longSchema, integerRangeSchema), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
       (sConfig(fromInt(1), integerRangeSchema, longSchema), valid(fromInt(1))),
       (sConfig(fromLong(Integer.MAX_VALUE), integerRangeSchema, integerRangeSchema), valid(fromInt(Integer.MAX_VALUE))),
       (sConfig(obj(), objectSchema, objectSchema), valid(obj())),
       (oConfig(obj("first" -> fromString(""), "last" -> fromString("")), objectSchema, objectSchema, Input), oValid(obj("first" -> fromString(""), "last" -> fromString("")))),
-      (oConfig(Json.Null, schemaObjNull, schemaObjNull, Input), oValid(Json.Null)),
-      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, Input), valid(obj())),
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), oValid(Json.Null)),
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, Input), valid(obj())),
+
+      //trimming not nullable and not required field when we sent null / empty object
+      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull), valid(obj())),
+      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull, SpecialSpELElement("#input.field")), oValid(Null)),
+      (oConfig(Null, schemaObjNull, schemaObjNull), oValid(Null)),
+      (oConfig(Null, schemaObjNull, schemaObjNull, SpecialSpELElement("#input.field")), oValid(Null)),
+
+      (oConfig(InputEmptyObject, schemaObjString, schemaObjString), valid(obj())),
+      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), valid(obj())),
+
+      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), oValid(Null)),
+      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString), valid(obj())),
+      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString), oValid(Null)),
+      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString, SpecialSpELElement("#input.field")), oValid(Null)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -68,7 +78,6 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     val testData = Table(
       ("config", "result"),
       (oConfig(Json.Null, objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: Null"),
-      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, SpecialSpELElement("#input.field")), "Not expected null for field: None with schema: {\"type\":\"string\"}"),
       (oConfig(obj("first" -> fromString("")), objectSchema, objectSchema, Input), "#/field: required key [last] not found"),
       (oConfig(fromString("invalid"), objectSchema, objectSchema, Input), "#/field: expected type: JSONObject, found: String"),
     )
@@ -90,7 +99,8 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
     runner.registerJsonSchema(config.sinkTopic, config.sinkSchema)
 
     val input = KafkaConsumerRecord[String, String](config.sourceTopic, config.inputData.toString())
-    runner.runWithStringData(jsonScenario, List(input))
+    val result = runner.runWithStringData(jsonScenario, List(input))
+    result
   }
 
   private def createScenario(config: ScenarioConfig) =
@@ -118,7 +128,7 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   }
 
   //ObjectValid -> config with object as a input
-  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
+  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
       case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
       case any => Map(ObjectFieldName -> any)
