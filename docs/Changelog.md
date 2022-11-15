@@ -20,6 +20,7 @@
 * [#3692](https://github.com/TouK/nussknacker/pull/3692) Better logging from OpenAPI enrichers
 * [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor
+* [#3699](https://github.com/TouK/nussknacker/pull/3699) Fix: handling null on json schema
 
 1.6.1 (8 Nov 2022)
 ------------------------

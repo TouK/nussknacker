@@ -39,7 +39,7 @@ case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], required: Set[PropertyName]) extends SwaggerTyped
+case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped]) extends SwaggerTyped
 
 object SwaggerTyped {
 
@@ -83,7 +83,7 @@ object SwaggerTyped {
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
   def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
-    case SwaggerObject(elementType, _) =>
+    case SwaggerObject(elementType) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
@@ -120,8 +120,7 @@ object SwaggerArray {
 object SwaggerObject {
   def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerObject = {
     SwaggerObject(
-      elementType = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
-      required = Option(schema.getRequired).map(_.asScala.toSet).getOrElse(Set.empty)
+      Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
     )
   }
 }
