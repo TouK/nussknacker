@@ -23,7 +23,7 @@ class ConsumerRecordDeserializationSpec extends AnyFunSuite with Matchers with K
   type TestConsumerRecord = ConsumerRecord[SampleKey, SampleValue]
   test("should serialize and deserialize ConsumerRecord with TypeInformation serializer") {
     val givenObj: TestConsumerRecord = new TestConsumerRecord("loremIpsum", 11, 22L, constTimestamp, TimestampType.CREATE_TIME,
-      44, 55, sampleKey, sampleValue, sampleHeaders, Optional.empty[Integer])
+      ConsumerRecord.NULL_CHECKSUM.longValue(), 44, 55, sampleKey, sampleValue, sampleHeaders, Optional.empty[Integer])
 
     val typeInformation: TypeInformation[TestConsumerRecord] = TypeInformation.of(classOf[TestConsumerRecord])
 

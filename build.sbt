@@ -101,6 +101,7 @@ def modelMergeStrategy: String => MergeStrategy = {
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
   case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
+  case PathList(ps@_*) if ps.last == "KafkaMetricWrapper.class" => MergeStrategy.first // delete after update Flink to 1.15.3 and when we do not have to overwrite this class
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -254,7 +255,8 @@ lazy val commonSettings =
 val flinkV = "1.16.0"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV = "3.2.3"
+//TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
+val kafkaV = "2.8.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.2.10"
