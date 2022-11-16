@@ -126,17 +126,20 @@ export function NodeTypeDetailsContent({
     dispatch(nodeValidationDataClear(node.id))
   }, [dispatch, node.id])
 
-  useEffect(() => {
-    dispatch(validateNodeData(processId, {
-      //see NODES_CONNECTED/NODES_DISCONNECTED
-      outgoingEdges: edges.filter(e => e.to != ""),
-      nodeData: node,
-      processProperties,
-      branchVariableTypes: getBranchVariableTypes(node.id),
-      variableTypes,
-    }))
-  }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
-
+  
+  if (showValidation) {
+    useEffect(() => {
+      dispatch(validateNodeData(processId, {
+        //see NODES_CONNECTED/NODES_DISCONNECTED
+        outgoingEdges: edges.filter(e => e.to != ""),
+        nodeData: node,
+        processProperties,
+        branchVariableTypes: getBranchVariableTypes(node.id),
+        variableTypes,
+      }))
+    }, [dispatch, edges, getBranchVariableTypes, node, processId, processProperties, variableTypes])
+  }
+  
   useEffect(() => {
     setEditedNode((node) => {
       const adjustedNode = adjustNode(node)
