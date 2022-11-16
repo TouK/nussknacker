@@ -7,13 +7,21 @@ import io.circe.Json
 import org.everit.json.schema.{ArraySchema, BooleanSchema, CombinedSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, EncodeInput, EncodeOutput, ToJsonBasedOnSchemaEncoder}
-
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
 class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
+
+  import pl.touk.nussknacker.engine.json.JsonSchemaImplicits._
+
+  case class ObjectElement(fieldName: String, schema: Schema, value: Any, isRequired: Boolean, existValue: Boolean) {
+    def getValue: Any = value match {
+      case null if schema.hasDefaultValue => schema.getDefaultValue
+      case v => v
+    }
+  }
 
   private val classLoader = this.getClass.getClassLoader
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, this.getClass.getClassLoader)
@@ -26,30 +34,19 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
   }
 
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
-    fields
-      .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
+    parentSchema.getPropertySchemas
+      .map{ case (fieldName, schema) =>
+        ObjectElement(fieldName, schema, fields.getOrElse(fieldName, null), parentSchema.getRequiredProperties.contains(fieldName), fields.contains(fieldName))
+      }
       .collect {
-        case ((fieldName, null), schema) if isNullableSchema(schema) => Valid((fieldName, Json.Null))
-        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
-        case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
+        case el if el.getValue != null => encode(el.getValue, el.schema).map(el.fieldName -> _)
+        case el if el.getValue == null && el.schema.isNullAllowed && el.existValue => Valid((el.fieldName, Json.Null))
+        case el if el.getValue == null && el.isRequired && !el.existValue =>
+          error(s"Missing required field: ${el.fieldName}.")
+        case el if el.getValue == null && !parentSchema.permitsAdditionalProperties() =>
+          error(s"Not expected field with name: ${el.fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
       }
       .toList.sequence.map { values => Json.fromFields(values) }
-  }
-
-  private def isNullableSchema(schema: Schema) = {
-    def isNullSchema(sch: Schema) = sch match {
-      case _: NullSchema => true
-      case _ => false
-    }
-
-    schema match {
-      case combined: CombinedSchema => combined.getSubschemas.asScala.exists(isNullSchema)
-      case sch: Schema => isNullSchema(sch)
-    }
-  }
-
-  private def notNullOrRequired(fieldName: String, value: Any, parentSchema: ObjectSchema): Boolean = {
-    value != null || parentSchema.getRequiredProperties.contains(fieldName)
   }
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {

@@ -83,4 +83,15 @@ object JsonTestData {
       |   }
       |}
       |""".stripMargin))
+
+
+  val schemaObjRequiredUnionNullString: Schema = SchemaLoader.load(new JSONObject(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "field" : { "type": ["null", "string"] }
+      |   },
+      |   "required": ["field"]
+      |}
+      |""".stripMargin))
 }

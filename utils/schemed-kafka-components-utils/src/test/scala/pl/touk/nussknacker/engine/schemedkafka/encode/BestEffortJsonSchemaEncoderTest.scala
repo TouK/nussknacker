@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
@@ -23,6 +24,72 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
   private val encoderStrict = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
   private val encoderLax = new BestEffortJsonSchemaEncoder(ValidationMode.lax)
+
+  private val objString: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": "string"
+      |    }
+      |  }
+      |}""".stripMargin)
+
+  private val objRequiredString: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": "string"
+      |    }
+      |  },
+      |  "required": ["foo"]
+      |}""".stripMargin)
+
+  private val objRequiredWithDefault: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": "string",
+      |      "default": "default"
+      |    }
+      |  },
+      |  "required": ["foo"]
+      |}""".stripMargin)
+
+  private val objUnionNullString: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": ["null", "string"]
+      |    }
+      |  }
+      |}""".stripMargin)
+
+  private val objRequiredUnionNullString: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": ["null", "string"]
+      |    }
+      |  },
+      |  "required": ["foo"]
+      |}""".stripMargin)
+
+  private val objRequiredUnionNullStringWithDefault: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "foo": {
+      |      "type": ["null", "string"],
+      |      "default": "default"
+      |    }
+      |  },
+      |  "required": ["foo"]
+      |}""".stripMargin)
 
   test("should encode object") {
     val schema = SchemaLoader.load(new JSONObject(
@@ -41,7 +108,6 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |    }
         |  }
         |}""".stripMargin))
-
 
     val encoded = encoderStrict.encode(Map(
       "firstName" -> "John",
@@ -230,37 +296,6 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
   }
 
-  test("should encode not required property with empty map") {
-    val schema: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": ["string"]
-        |    }
-        |  }
-        |}""".stripMargin))
-
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> null), schema) shouldBe 'valid
-  }
-
-  test("should encode null value for nullable field") {
-    val schema: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": ["string", "null"]
-        |    }
-        |  }
-        |}""".stripMargin))
-
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> null), schema) shouldBe 'valid
-  }
-
   test("should encode union") {
     forAll(Table(
       "schema",
@@ -305,70 +340,31 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     }
   }
 
-  test("handling encode null value") {
-    val objString: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": "string"
-        |    }
-        |  }
-        |}""".stripMargin))
-
-    val objUnionNullString: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": ["null", "string"]
-        |    }
-        |  }
-        |}""".stripMargin))
-
-    val objUnionNullStringRequired: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": ["null", "string"]
-        |    }
-        |  },
-        |  "required": ["foo"]
-        |}""".stripMargin))
-
+  test("handling encode null and empty map value") {
     forAll(Table(
       ("data", "schema", "result"),
       (Map(), objString, obj()),
       (Map("foo" -> null), objString, obj()),
       (Map(), objUnionNullString, obj()),
       (Map("foo" -> null), objUnionNullString, obj("foo" -> Null)),
-      (Map(), objUnionNullStringRequired, obj()),
-      (Map("foo" -> null), objUnionNullStringRequired, obj("foo" -> Null)),
+      (Map("foo" -> null), objRequiredUnionNullString, obj("foo" -> Null)),
+      (Map(), objRequiredWithDefault, obj("foo" -> fromString("default"))),
+      (Map(), objRequiredUnionNullStringWithDefault, obj("foo" -> fromString("default"))),
     )) { (data, schema, result) =>
       encoderLax.encode(data, schema) shouldBe Valid(result)
       encoderStrict.encode(data, schema) shouldBe Valid(result)
     }
   }
 
-  ignore("should reject when missing required field") {
-    val schema: Schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "object",
-        |  "properties": {
-        |    "foo": {
-        |      "type": "string"
-        |    }
-        |  },
-        |  "required": ["foo"]
-        |}""".stripMargin))
-
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map(), schema) shouldBe 'invalid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map(), schema) shouldBe 'invalid
+  test("should reject when missing required field") {
+    forAll(Table(
+      ("data", "schema"),
+      (Map(), objRequiredUnionNullString),
+      (Map(), objRequiredString),
+    )) { (data, schema) =>
+      encoderLax.encode(data, schema) shouldBe 'invalid
+      encoderStrict.encode(data, schema) shouldBe 'invalid
+    }
   }
 
   test("should encode avro generic record") {
