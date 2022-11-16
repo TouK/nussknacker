@@ -2,8 +2,9 @@ package pl.touk.nussknacker.engine.process.registrar
 
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.flink.runtime.state.StateBackend
+import org.apache.flink.streaming.api.datastream.{DataStream, SingleOutputStreamOperator}
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment
-import org.apache.flink.util.FlinkUserCodeClassLoaders
+import org.apache.flink.util.{FlinkUserCodeClassLoaders, OutputTag}
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.process.compiler.FlinkProcessCompilerData
@@ -24,6 +25,8 @@ trait StreamExecutionEnvPreparer {
   def postRegistration(env: StreamExecutionEnvironment, compiledProcessWithDeps: FlinkProcessCompilerData, deploymentData: DeploymentData): Unit
 
   def flinkClassLoaderSimulation: ClassLoader
+
+  def sideOutputGetter[T](singleOutputStreamOperator: SingleOutputStreamOperator[_], outputTag: OutputTag[T]): DataStream[T]
 }
 
 class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfig],
@@ -74,5 +77,9 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
     FlinkUserCodeClassLoaders.childFirst(Array.empty,
       Thread.currentThread().getContextClassLoader, Array.empty, (t: Throwable) => throw t, true
     )
+  }
+
+  override def sideOutputGetter[T](singleOutputStreamOperator: SingleOutputStreamOperator[_], outputTag: OutputTag[T]): DataStream[T] = {
+    singleOutputStreamOperator.getSideOutput(outputTag)
   }
 }
