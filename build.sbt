@@ -226,7 +226,6 @@ lazy val commonSettings =
         "com.typesafe.akka" %% "akka-stream" % akkaV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV,
 
-        // akka-actor depends on old, 0.8 version
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
 
         //security features
@@ -272,7 +271,7 @@ val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
-val scalaCompatV = "0.9.1"
+val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
 val configV = "1.4.1"
 val commonsLangV = "3.3.2"
