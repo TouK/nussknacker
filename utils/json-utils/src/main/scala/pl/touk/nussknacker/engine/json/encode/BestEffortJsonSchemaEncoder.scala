@@ -5,15 +5,16 @@ import cats.data.Validated.{Invalid, Valid}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema.{ArraySchema, BooleanSchema, CombinedSchema, EnumSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.json.JsonSchemaUtils
 import pl.touk.nussknacker.engine.util.json.{BestEffortJsonEncoder, EncodeInput, EncodeOutput, ToJsonBasedOnSchemaEncoder}
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+import scala.util.Try
 
-class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
+class BestEffortJsonSchemaEncoder {
 
   private val classLoader = this.getClass.getClassLoader
   private val jsonEncoder = BestEffortJsonEncoder(failOnUnkown = false, this.getClass.getClassLoader)
@@ -25,31 +26,23 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     encode(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
 
-  private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
-    fields
-      .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
-      .collect {
-        case ((fieldName, null), schema) if isNullableSchema(schema) => Valid((fieldName, Json.Null))
-        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
-        case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
-      }
-      .toList.sequence.map { values => Json.fromFields(values) }
-  }
+  private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema, fieldName: Option[String]): EncodeOutput = {
+    val json = JsonSchemaUtils.toJson(fields)
 
-  private def isNullableSchema(schema: Schema) = {
-    def isNullSchema(sch: Schema) = sch match {
-      case _: NullSchema => true
-      case _ => false
+    val result = Try(parentSchema.validate(json)).toEither match {
+      case Left(exc) => error(s"Error at encode object: $fields with schema: $parentSchema on path: $fieldName. Exception: $exc.")
+      case Right(_) =>
+        fields.keys.toList.union(parentSchema.getPropertySchemas.keySet.asScala.toList).map{ key =>
+          val schema = Option(parentSchema.getPropertySchemas.get(key))
+          val result = fields.get(key)
+          (key, result.orNull, schema, fields.contains(key))
+      }.collect {
+        case (key, value, Some(schema), exists) if exists => encode(value, schema, Some(key)).map(key -> _)
+        case (key, value, None, _) => Valid(key, jsonEncoder.encode(value)) //additional parameters without defined schema
+      }.sequence.map{ values => Json.fromFields(values) }
     }
 
-    schema match {
-      case combined: CombinedSchema => combined.getSubschemas.asScala.exists(isNullSchema)
-      case sch: Schema => isNullSchema(sch)
-    }
-  }
-
-  private def notNullOrRequired(fieldName: String, value: Any, parentSchema: ObjectSchema): Boolean = {
-    value != null || parentSchema.getRequiredProperties.contains(fieldName)
+    result
   }
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
@@ -59,8 +52,8 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
-      case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
-      case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
+      case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema, fieldName)
+      case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.toMap, schema, fieldName)
       case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema)
       case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema)
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
@@ -75,9 +68,6 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
-      case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
-      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
       case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")

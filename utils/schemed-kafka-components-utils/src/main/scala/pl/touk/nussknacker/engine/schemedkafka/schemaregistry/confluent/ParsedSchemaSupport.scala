@@ -53,7 +53,10 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
 
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
+
   override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonSchemaPayloadDeserializer
+
+  private val encoder = new BestEffortJsonSchemaEncoder
 
   override def serializer[T](schema: ParsedSchema, c: ConfluentSchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[T] = (topic: String, data: T) => data match {
     case j: Json => j.noSpaces.getBytes()
@@ -65,10 +68,8 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
     JsonSinkValueParameter(schema.cast().rawSchema(), defaultParamName = SinkValueParamName)
 
-  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef = {
-    val encoder = new BestEffortJsonSchemaEncoder(mode)
+  override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
-  }
 
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
     new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())

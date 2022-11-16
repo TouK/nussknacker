@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.ResponseEncoder
 
 class SchemaResponseEncoder(schema: Schema) extends ResponseEncoder[Any] {
 
-  private val bestEffortEncoder = new BestEffortJsonSchemaEncoder(ValidationMode.lax)
+  private val bestEffortEncoder = new BestEffortJsonSchemaEncoder
 
   override def toJsonResponse(input: Any, result: List[Any]): Json = {
     result
