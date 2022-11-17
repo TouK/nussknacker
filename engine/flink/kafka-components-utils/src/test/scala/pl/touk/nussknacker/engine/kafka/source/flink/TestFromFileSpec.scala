@@ -49,7 +49,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
 
-    val results = run(process, TestData.newLineSeparated(consumerRecord.noSpaces))
+    val results = run(process, ScenarioTestData.newLineSeparated(consumerRecord.noSpaces))
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
@@ -66,7 +66,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
         .add("value", obj("id" -> fromString("1234"), "field" -> fromString("abcd"))))
 
-    val results = run(process, TestData.newLineSeparated(consumerRecord.noSpaces))
+    val results = run(process, ScenarioTestData.newLineSeparated(consumerRecord.noSpaces))
 
     results.nodeResults shouldBe 'nonEmpty
   }

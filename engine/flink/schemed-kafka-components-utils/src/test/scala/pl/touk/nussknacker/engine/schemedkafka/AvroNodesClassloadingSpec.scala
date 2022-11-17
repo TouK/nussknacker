@@ -4,7 +4,7 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import io.confluent.kafka.schemaregistry.testutil.MockSchemaRegistry
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaRegistry.schemaRegistryMockClient
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -46,7 +46,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
         scenario.nodes.head.data.asInstanceOf[Source]) shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
 
       intercept[IllegalArgumentException] {
-        new TestDataPreparer(modelData).prepareDataForTest(scenario, TestData.newLineSeparated())
+        new TestDataPreparer(modelData).prepareDataForTest(scenario, ScenarioTestData.newLineSeparated())
       }.getMessage.contains("InvalidPropertyFixedValue") shouldBe true
     }
   }
