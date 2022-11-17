@@ -19,3 +19,11 @@ sealed trait SecurityInHeader extends SwaggerSecurity {
 case class ApiKeyInHeader(name: String, key: String) extends SecurityInHeader {
   def value: String = key
 }
+
+case class ApiKeyInQuery(name: String, key: String) extends SwaggerSecurity {
+  def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.method(request.method, request.uri.param(name, key))
+}
+
+case class ApiKeyInCookie(name: String, key: String) extends SwaggerSecurity {
+  def addSecurity(request: SwaggerRequestType): SwaggerRequestType = request.cookie(name, key)
+}

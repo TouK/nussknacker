@@ -1,0 +1,58 @@
+openapi: "3.0.0"
+info:
+  title: Simple API overview
+  version: 2.0.0
+servers:
+  - url: http://dummy.io
+paths:
+  /headerPath:
+    get:
+      security:
+        - headerConfig: []
+      responses:
+        '200':
+          description: "-"
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: header
+  /queryPath:
+    get:
+      security:
+        - queryConfig: []
+      responses:
+        '200':
+          description: "-"
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: query
+  /cookiePath:
+    get:
+      security:
+        - cookieConfig: []
+      responses:
+        '200':
+          description: "-"
+          content:
+            application/json:
+              schema:
+                type: object
+      operationId: cookie
+components:
+  schemas: {}
+  securitySchemes:
+    headerConfig:
+      type: apiKey
+      name: keyHeader
+      in: header
+    queryConfig:
+      type: apiKey
+      name: keyParam
+      in: query
+    cookieConfig:
+      type: apiKey
+      name: keyCookie
+      in: cookie
