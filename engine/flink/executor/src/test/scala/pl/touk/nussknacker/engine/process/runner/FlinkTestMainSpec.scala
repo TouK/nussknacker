@@ -397,35 +397,53 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
   test("should handle joins for multiple inputs") {
     val process = ScenarioBuilder.streaming("proc1").sources(
       GraphBuilder
-        .source("input1", "input")
-        .filter("left", "#input.id != 'a'")
-        .branchEnd("end1", "join1"),
+        .source("source1", "input")
+        .filter("filter1", "#input.id != 'a'")
+        .branchEnd("end1", "join"),
       GraphBuilder
-        .source("input2", "input")
-        .filter("right", "#input.id != 'b'")
-        .branchEnd("end2", "join1"),
-      GraphBuilder.join("join1", "joinBranchExpression", Some("input33"),
+        .source("source2", "input")
+        .filter("filter2", "#input.id != 'b'")
+        .branchEnd("end2", "join"),
+      GraphBuilder.join("join", "joinBranchExpression", Some("joinInput"),
         List(
           "end1" -> List("value" -> "#input"),
           "end2" -> List("value" -> "#input")
         ))
-        .processorEnd("proc2", "logService", "all" -> "#input33.id")
+        .processorEnd("proc2", "logService", "all" -> "#joinInput.id")
     )
 
-    val recA = "a|1|2|1|4|5|6"
-    val recB = "b|1|2|2|4|5|6"
-    val recC = "c|1|2|3|4|5|6"
+    val rawRecordA = "a|1|2|1|4|5|6"
+    val rawRecordB = "b|1|2|2|4|5|6"
+    val rawRecordC = "c|1|2|3|4|5|6"
+    val rawRecordD = "d|1|2|4|4|5|6"
     val testData = MultipleSourcesScenarioTestData(
       Map(
-        "input1" -> TestData(s"$recA\n$recC".getBytes(StandardCharsets.UTF_8)),
-        "input2" -> TestData(s"$recA\n$recB\n$recC".getBytes(StandardCharsets.UTF_8)),
+        "source1" -> TestData(s"$rawRecordA\n$rawRecordD".getBytes(StandardCharsets.UTF_8)),
+        "source2" -> TestData(s"$rawRecordA\n$rawRecordB\n$rawRecordC".getBytes(StandardCharsets.UTF_8)),
       ),
       3
     )
+    val recordA = SimpleRecord("a", 1, "2", new Date(1), Some(4), 5, "6")
+    val recordB = recordA.copy(id = "b", date = new Date(2))
+    val recordC = recordA.copy(id = "c", date = new Date(3))
+    val recordD = recordA.copy(id = "d", date = new Date(4))
 
     val results = runFlinkTest(process, testData)
 
-    results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted shouldBe List("a", "c", "c").map(_ + "-collectedDuringServiceInvocation")
+    val nodeResults = results.nodeResults
+    nodeResults("source1") shouldBe List(nodeResult(0, "source1", "input" -> recordA), nodeResult(1, "source1", "input" -> recordD))
+    nodeResults("source2") shouldBe List(nodeResult(0, "source2", "input" -> recordA), nodeResult(1, "source2", "input" -> recordB), nodeResult(2, "source2", "input" -> recordC))
+    nodeResults("filter1") shouldBe nodeResults("source1")
+    nodeResults("filter2") shouldBe nodeResults("source2")
+    nodeResults("$edge-end1-join") shouldBe List(nodeResult(1, "source1", "input" -> recordD))
+    nodeResults("$edge-end2-join") shouldBe List(nodeResult(0, "source2", "input" -> recordA), nodeResult(2, "source2", "input" -> recordC))
+    nodeResults("join") should contain only(nodeResult(1, "source1", "input" -> recordD, "joinInput" -> recordD),
+      nodeResult(0, "source2", "input" -> recordA, "joinInput" -> recordA), nodeResult(2, "source2", "input" -> recordC, "joinInput" -> recordC))
+
+    results.invocationResults("proc2") should contain only(ExpressionInvocationResult("proc1-source1-0-1", "all", "d"),
+      ExpressionInvocationResult("proc1-source2-0-0", "all", "a"), ExpressionInvocationResult("proc1-source2-0-2", "all", "c"))
+
+    results.externalInvocationResults("proc2").map(_.value.asInstanceOf[String]).sorted should contain theSameElementsAs List("a", "c", "d").map(_ + "-collectedDuringServiceInvocation")
   }
 
   test("should have correct run mode") {
@@ -450,6 +468,9 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
   }
 
   def nodeResult(count: Int, vars: (String, Any)*): NodeResult[Any] =
-    NodeResult(ResultContext[Any](s"proc1-id-0-$count", Map(vars: _*)))
+    nodeResult(count, "id", vars: _*)
+
+  def nodeResult(count: Int, nodeId: String, vars: (String, Any)*): NodeResult[Any] =
+    NodeResult(ResultContext[Any](s"proc1-$nodeId-0-$count", Map(vars: _*)))
 }
 
