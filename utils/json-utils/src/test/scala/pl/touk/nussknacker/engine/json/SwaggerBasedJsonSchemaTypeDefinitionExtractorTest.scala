@@ -8,7 +8,8 @@ import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped.typingResult
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
@@ -376,6 +377,53 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val results = List("id" -> Typed.apply[Long])
+
+    result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support generic map") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "additionalProperties": true
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    result shouldBe Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown))
+  }
+
+  test("should support map with typed values") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "additionalProperties": {
+        |     "type":"integer"
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    result shouldBe Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Typed[Long]))
+  }
+
+  test("should ignore additionalProperties when at least one property is defined explicitly") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "properties":{
+        |      "id":{
+        |        "type": "string",
+        |      }
+        |   },
+        |   "additionalProperties": {
+        |     "type":"integer"
+        |   }
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    val results = List("id" -> Typed.apply[String])
 
     result shouldBe TypedObjectTypingResult.apply(results)
   }
