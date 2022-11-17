@@ -10,7 +10,9 @@ package object openapi {
 
   implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toExternalForm)
   implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
+}
 
+package openapi {
   @JsonCodec sealed trait SwaggerParameter {
 
     def name: String
