@@ -74,12 +74,21 @@ class DefaultStreamExecutionEnvPreparer(checkpointConfig: Option[CheckpointConfi
   }
 
   override def flinkClassLoaderSimulation: ClassLoader = {
-    FlinkUserCodeClassLoaders.childFirst(Array.empty,
+    wrapInLambda(() => FlinkUserCodeClassLoaders.childFirst(Array.empty,
       Thread.currentThread().getContextClassLoader, Array.empty, (t: Throwable) => throw t, true
-    )
+    ))
   }
 
   override def sideOutputGetter[T](singleOutputStreamOperator: SingleOutputStreamOperator[_], outputTag: OutputTag[T]): DataStream[T] = {
-    singleOutputStreamOperator.getSideOutput(outputTag)
+    wrapInLambda(() => singleOutputStreamOperator.getSideOutput(outputTag))
   }
+
+  /*
+  * This is a bit hacky way to make compatibility overrides easier.
+  * We wrap incompatible API invocation with a lambda (i.e. new class in bytecode) to defer initialization,
+  * and make DefaultStreamExecutionEnvPreparer usable with older Flink versions.
+  * Otherwise, during class initialization, ClassNotFound/MethodNotFound exception are thrown
+  * */
+  private def wrapInLambda[T](obj: ()=>T): T = obj()
 }
+
