@@ -55,7 +55,6 @@ class TestInfoResources(providers: ProcessingTypeDataProvider[TestInfoProvider],
             canDeploy(processId) {
               val provider = providers.forTypeUnsafe(displayableProcess.processingType)
 
-              // TODO ljd: multiple sources
               val source = displayableProcess.nodes.flatMap(asSource).headOption
               val metadata = displayableProcess.metaData
 

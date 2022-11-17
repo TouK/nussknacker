@@ -37,7 +37,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
-      testData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
+      scenarioTestData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
 
     val contextIds = firstIdForFirstSource(process)
     val firstId = contextIds.nextContextId()
@@ -82,7 +82,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
-      testData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
+      scenarioTestData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
 
     results.invocationResults("occasionallyThrowFilter").toSet shouldBe Set(ExpressionInvocationResult(secondId, "expression", true))
     results.exceptions should have size 1
@@ -106,7 +106,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
       modelData = modelData,
-      testData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
+      scenarioTestData = SingleSourceScenarioTestData(TestData(input.getBytes(StandardCharsets.UTF_8)), 10), variableEncoder = identity)
 
     results.nodeResults("endNodeIID").toSet shouldBe Set(
       NodeResult(ResultContext(firstId, Map("input" -> Request1("a","b"))))

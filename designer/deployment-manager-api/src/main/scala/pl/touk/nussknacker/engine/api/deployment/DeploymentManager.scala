@@ -24,7 +24,7 @@ trait DeploymentManager extends AutoCloseable {
 
   def cancel(name: ProcessName, user: User): Future[Unit]
 
-  def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
+  def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]]
 
   def findJobStatus(name: ProcessName): Future[Option[ProcessState]]
 

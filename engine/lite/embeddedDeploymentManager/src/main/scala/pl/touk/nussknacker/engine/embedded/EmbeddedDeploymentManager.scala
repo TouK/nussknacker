@@ -163,10 +163,10 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.withThisAsContextClassLoader {
-        deploymentStrategy.testRunner.runTest(modelData, testData, canonicalProcess, variableEncoder)
+        deploymentStrategy.testRunner.runTest(modelData, scenarioTestData, canonicalProcess, variableEncoder)
       }
     }
   }

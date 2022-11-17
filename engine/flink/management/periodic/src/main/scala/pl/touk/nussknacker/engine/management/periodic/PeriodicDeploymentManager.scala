@@ -134,8 +134,8 @@ class PeriodicDeploymentManager private[periodic](val delegate: DeploymentManage
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
-    delegate.test(name, canonicalProcess, testData, variableEncoder)
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] =
+    delegate.test(name, canonicalProcess, scenarioTestData, variableEncoder)
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     def createScheduledProcessState(processDeployment: PeriodicProcessDeployment): ProcessState = {

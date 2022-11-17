@@ -253,7 +253,6 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        // TODO ljd: parse test data.
         (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, SingleSourceScenarioTestData(TestData(testData), testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
           assertTestResultsAreNotTooBig(results)
         }.map { results =>

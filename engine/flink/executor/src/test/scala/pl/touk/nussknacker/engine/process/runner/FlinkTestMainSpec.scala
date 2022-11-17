@@ -459,11 +459,11 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     results.invocationResults("out").map(_.value) shouldBe List(List(ComponentUseCase.TestRuntime, ComponentUseCase.TestRuntime).asJava)
   }
 
-  def runFlinkTest(process: CanonicalProcess, testData: ScenarioTestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
+  def runFlinkTest(process: CanonicalProcess, scenarioTestData: ScenarioTestData, config: Config= ConfigFactory.load()): TestResults[Any] = {
     //We need to set context loader to avoid forking in sbt
     val modelData = ModelData(config, ModelClassLoader.empty)
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(modelData, process, testData, FlinkTestConfiguration.configuration(), identity)
+      FlinkTestMain.run(modelData, process, scenarioTestData, FlinkTestConfiguration.configuration(), identity)
     }
   }
 

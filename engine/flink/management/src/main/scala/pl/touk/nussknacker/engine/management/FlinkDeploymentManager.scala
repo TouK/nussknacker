@@ -83,8 +83,8 @@ abstract class FlinkDeploymentManager(modelData: BaseModelData, shouldVerifyBefo
     }
   }
 
-  override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]] = {
-    testRunner.test(processName, canonicalProcess, testData, variableEncoder)
+  override def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+    testRunner.test(processName, canonicalProcess, scenarioTestData, variableEncoder)
   }
 
   override def customActions: List[CustomAction] = List.empty

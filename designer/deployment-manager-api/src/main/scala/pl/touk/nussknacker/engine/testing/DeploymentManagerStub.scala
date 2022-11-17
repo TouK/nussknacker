@@ -29,7 +29,7 @@ class DeploymentManagerStub extends DeploymentManager {
 
   override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = ???
 
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = Future.successful(None)
 

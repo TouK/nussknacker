@@ -71,9 +71,9 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     results.nodeResults shouldBe 'nonEmpty
   }
 
-  private def run(process: CanonicalProcess, testData: ScenarioTestData): TestResults[Any] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(LocalModelData(config, creator), process, testData,
+      FlinkTestMain.run(LocalModelData(config, creator), process, scenarioTestData,
         FlinkTestConfiguration.configuration(), identity
       )
     }

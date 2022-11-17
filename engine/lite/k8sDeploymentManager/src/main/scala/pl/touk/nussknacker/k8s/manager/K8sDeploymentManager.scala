@@ -175,10 +175,10 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
+  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
     Future {
       modelData.asInvokableModelData.withThisAsContextClassLoader {
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, canonicalProcess, variableEncoder)
+        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, scenarioTestData, canonicalProcess, variableEncoder)
       }
     }
   }

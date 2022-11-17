@@ -19,7 +19,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
                                inputConfigDuringExecution: Config,
                                collectingListener: ResultsCollectingListener,
                                process: CanonicalProcess,
-                               testData: ScenarioTestData,
+                               scenarioTestData: ScenarioTestData,
                                objectNaming: ObjectNaming)
   extends StubbedFlinkProcessCompiler(process, creator, inputConfigDuringExecution, diskStateBackendSupport = false, objectNaming, ComponentUseCase.TestRuntime) {
 
@@ -32,7 +32,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     overrideObjectWithMethod(sourceFactory, (originalSource, returnType, nodeId) => {
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
-          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, testData.forNodeId(nodeId))
+          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, scenarioTestData.forNodeId(nodeId))
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
               new CollectionSource[Object](parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {

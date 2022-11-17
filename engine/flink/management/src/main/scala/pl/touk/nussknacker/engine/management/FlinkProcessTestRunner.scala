@@ -13,8 +13,8 @@ import scala.concurrent.Future
 class FlinkProcessTestRunner(modelData: ModelData) extends StaticMethodRunner(modelData.modelClassLoader.classLoader,
   "pl.touk.nussknacker.engine.process.runner.FlinkTestMain", "run") {
 
-  def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, testData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]] = {
-    Future.successful(tryToInvoke(modelData, canonicalProcess, testData, new Configuration(), variableEncoder).asInstanceOf[TestResults[T]])
+  def test[T](processName: ProcessName, canonicalProcess: CanonicalProcess, scenarioTestData: ScenarioTestData, variableEncoder: Any => T): Future[TestResults[T]] = {
+    Future.successful(tryToInvoke(modelData, canonicalProcess, scenarioTestData, new Configuration(), variableEncoder).asInstanceOf[TestResults[T]])
   }
 
 }

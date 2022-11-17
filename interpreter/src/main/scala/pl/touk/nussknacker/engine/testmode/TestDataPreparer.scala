@@ -42,8 +42,8 @@ class TestDataPreparer(modelData: ModelData) {
       expressionCompiler, modelData.modelClassLoader.classLoader, PreventInvocationCollector, ComponentUseCase.TestDataGeneration)
   }
 
-  def prepareDataForTest[T](scenario: CanonicalProcess, testData: ScenarioTestData): ParsedTestData[T] = {
-    prepareDataForTest(scenario, testData.asInstanceOf[SingleSourceScenarioTestData].testData)
+  def prepareDataForTest[T](scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): ParsedTestData[T] = {
+    prepareDataForTest(scenario, scenarioTestData.asInstanceOf[SingleSourceScenarioTestData].testData)
   }
 
   def prepareDataForTest[T](scenario: CanonicalProcess, testData: TestData): ParsedTestData[T] = modelData.withThisAsContextClassLoader {
