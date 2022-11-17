@@ -59,8 +59,8 @@ object JsonToNuStruct {
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
         extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
-      case SwaggerObject(elementType, _) => //todo
-        extractObject(elementType)
+      case SwaggerObject(elementType) => extractObject(elementType)
+      case SwaggerMap(maybeTyped) => ???
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
         .headOption.getOrElse(throw JsonToObjectError(json, u, path))
     }

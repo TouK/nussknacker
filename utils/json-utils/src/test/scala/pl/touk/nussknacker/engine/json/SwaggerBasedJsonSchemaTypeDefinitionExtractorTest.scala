@@ -427,4 +427,16 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
 
     result shouldBe TypedObjectTypingResult.apply(results)
   }
+
+  test("should type empty object when additionalProperties is false and no explicitly defined properties") {
+    val schema = SchemaLoader.load(new JSONObject(
+      """{
+        |   "type":"object",
+        |   "additionalProperties": false
+        |}""".stripMargin))
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    result shouldBe TypedObjectTypingResult.apply(List.empty)
+  }
 }

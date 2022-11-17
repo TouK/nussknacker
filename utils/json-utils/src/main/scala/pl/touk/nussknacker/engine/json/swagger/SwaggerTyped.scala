@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefS
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
-import pl.touk.nussknacker.engine.util.json.EitherCodecs._
 
 @JsonCodec sealed trait SwaggerTyped {
   self =>
@@ -40,9 +39,9 @@ case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
-                         additionalProperties: Either[Boolean, SwaggerTyped] = Left(true),
-                        ) extends SwaggerTyped
+case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped]) extends SwaggerTyped
+
+case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
 object SwaggerTyped {
 
@@ -86,9 +85,9 @@ object SwaggerTyped {
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
   def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
-    case SwaggerObject(elementType, additionalProperties) if elementType.isEmpty && additionalProperties != Left(false) =>
-      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], additionalProperties.map(typingResult).getOrElse(Unknown)))
-    case SwaggerObject(elementType, _) =>
+    case SwaggerMap(valueType: Option[SwaggerTyped]) =>
+      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], valueType.map(typingResult).getOrElse(Unknown)))
+    case SwaggerObject(elementType) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
@@ -123,14 +122,14 @@ object SwaggerArray {
 }
 
 object SwaggerObject {
-  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerObject = {
-    SwaggerObject(
-      elementType = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
-      additionalProperties = schema.getAdditionalProperties match {
-        case a: Schema[_] => Right(SwaggerTyped(a, swaggerRefSchemas))
-        case b if b == false => Left(false)
-        case _ => Left(true)
+  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = {
+    val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map())
+    if(properties.isEmpty){
+      schema.getAdditionalProperties match {
+        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas)))
+        case b if b == false => SwaggerObject(Map.empty)
+        case _ => SwaggerMap(None)
       }
-    )
+    } else SwaggerObject(properties)
   }
 }

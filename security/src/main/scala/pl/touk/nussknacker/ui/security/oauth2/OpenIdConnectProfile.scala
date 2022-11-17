@@ -5,7 +5,6 @@ import io.circe.{Decoder, Encoder, Json}
 import java.time.{Instant, LocalDate}
 import io.circe.generic.extras.{Configuration, ConfiguredJsonCodec, JsonKey}
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import pl.touk.nussknacker.engine.util.json.EitherCodecs
 import pl.touk.nussknacker.ui.security.api.AuthenticatedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2Profile.getUserRoles
 
