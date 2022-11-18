@@ -54,6 +54,12 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       "lastName" -> Json.fromString("Smith"),
       "age" -> Json.fromLong(1),
     ))
+
+    encoderStrict.encode(Map(
+      "firstName" -> "John",
+      "lastName" -> 1,
+      "age" -> 1L
+    ), schema) shouldBe Invalid(NonEmptyList.of("""Not expected type: java.lang.Integer for field: 'lastName' with schema: {"type":"string"}"""))
   }
 
   test("should encode string") {
@@ -196,8 +202,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val encodedLax = new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode("1", schema)
     val encodedStrict = new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode("1", schema)
 
-    encodedLax shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
-    encodedStrict shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedLax shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedStrict shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
   }
 
   test("should accept and encode redundant parameters if schema allows this") {
@@ -245,7 +251,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin))
 
     encoderLax.encode(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
-      Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field: None with schema: {"type":"number"}"""))
+      Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field with schema: {"type":"number"}"""))
     encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
       Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
     encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
