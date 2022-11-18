@@ -54,6 +54,12 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       "lastName" -> Json.fromString("Smith"),
       "age" -> Json.fromLong(1),
     ))
+
+    encoderStrict.encode(Map(
+      "firstName" -> "John",
+      "lastName" -> 1,
+      "age" -> 1L
+    ), schema) shouldBe Invalid(NonEmptyList.of("""Not expected type: java.lang.Integer for field: 'lastName' with schema: {"type":"string"}"""))
   }
 
   test("should encode string") {
@@ -196,11 +202,11 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val encodedLax = new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode("1", schema)
     val encodedStrict = new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode("1", schema)
 
-    encodedLax shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
-    encodedStrict shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field: None with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedLax shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
+    encodedStrict shouldEqual Invalid(NonEmptyList("Not expected type: java.lang.String for field with schema: {\"type\":\"number\",\"$schema\":\"https://json-schema.org/draft-07/schema\"}", List()))
   }
 
-  test("should accept redundant parameters if validation modes allows this") {
+  test("should accept and encode redundant parameters if schema allows this") {
     val allowAdditionalProperties: Schema = SchemaLoader.load(new JSONObject(
       """{
         |  "$allowAdditionalProperties": "https://json-schema.org/draft-07/schema",
@@ -224,10 +230,31 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  "additionalProperties": false
         |}""".stripMargin))
 
-    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe 'valid
-    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe 'valid
+    new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), allowAdditionalProperties) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
     new BestEffortJsonSchemaEncoder(ValidationMode.lax).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+  }
+
+  test("should validate additionalParameters type") {
+    def schema(additionalPropertiesType: String): Schema = SchemaLoader.load(new JSONObject(
+      s"""{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "additionalProperties": {
+        |     "type": "${additionalPropertiesType}"
+        |  }
+        |}""".stripMargin))
+
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
+      Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field with schema: {"type":"number"}"""))
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
+      Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
   }
 
   test("should encode not required property with empty map") {

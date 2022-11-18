@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.json.swagger.extractor
 
 import io.circe.Json
-import io.circe.Json.{fromBoolean, fromLong, fromString, fromValues}
+import io.circe.Json.{fromBoolean, fromInt, fromLong, fromString, fromValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.typed.TypedMap
@@ -23,6 +23,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     "decimalField" -> Json.fromDoubleOrNull(1.33),
     "doubleField" -> Json.fromDoubleOrNull(1.55),
     "nullField" -> Json.Null,
+    "mapField" -> Json.obj(("a", fromString("1")), ("b", fromInt(2)), ("c", fromValues(List(fromString("d"))))),
+    "mapOfStringsField" -> Json.obj(("a", fromString("b")), ("c", fromString("d")), ("e", fromString("f"))),
   )
 
   test("should parse object with all required fields present") {
@@ -37,7 +39,9 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "field7" -> SwaggerDate,
         "decimalField" -> SwaggerBigDecimal,
         "doubleField" -> SwaggerDouble,
-        "nullField" -> SwaggerNull
+        "nullField" -> SwaggerNull,
+        "mapField" -> SwaggerMap(None),
+        "mapOfStringsField" -> SwaggerMap(Some(SwaggerString))
       )
     )
 
@@ -55,6 +59,20 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal
     fields.get("doubleField") shouldBe 1.55
     fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
+    val mapField = fields.get("mapField").asInstanceOf[TypedMap]
+    mapField.get("a") shouldBe "1"
+    mapField.get("b") shouldBe 2
+    mapField.get("c") shouldBe a[java.util.List[_]]
+    fields.get("mapOfStringsField") shouldBe a[TypedMap]
+  }
+
+  test("should reject map with incorrect values types") {
+    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))))
+
+    val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
+
+    ex.getMessage shouldBe "JSON returned by service has invalid type at mapField.b. Expected: SwaggerString. Returned json: 2"
+    ex.path shouldBe "mapField.b"
   }
 
   test("should trim useless fields") {
