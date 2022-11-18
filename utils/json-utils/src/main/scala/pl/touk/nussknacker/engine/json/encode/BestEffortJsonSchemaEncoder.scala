@@ -30,8 +30,12 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       .map(field => (field, parentSchema.getPropertySchemas.get(field._1)))
       .collect {
         case ((fieldName, null), schema) if isNullableSchema(schema) => Valid((fieldName, Json.Null))
-        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
+        case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema, Some(fieldName)).map(fieldName -> _)
         case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
+        case ((fieldName, value), null) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
+          case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
+          case None =>  Valid(jsonEncoder.encode(value)).map(fieldName -> _)
+        }
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
@@ -76,11 +80,11 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
       case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
       case (null, value: Any) if validationMode == ValidationMode.lax => Valid(jsonEncoder.encode(value))
-      case (_, null) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
-      case (null, _) if validationMode != ValidationMode.lax => error(s"Not expected null for field: $fieldName with schema: $schema")
+      case (_, null) if validationMode != ValidationMode.lax => error("null", schema.toString, fieldName)
+      case (null, _) if validationMode != ValidationMode.lax => error("null", schema.toString, fieldName)
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
-        .getOrElse(error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $cs"))
-      case (_, _) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+        .getOrElse(error(value.getClass.getName, cs.toString, fieldName))
+      case (_, _) => error(value.getClass.getName, schema.toString, fieldName)
     }
   }
 
@@ -88,17 +92,20 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
     (schema.getFormatValidator.formatName(), value) match {
       case ("date-time", zdt: ZonedDateTime) => Valid(jsonEncoder.encode(zdt))
       case ("date-time", odt: OffsetDateTime) => Valid(jsonEncoder.encode(odt))
-      case ("date-time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("date-time", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
       case ("date", ldt: LocalDate) => Valid(jsonEncoder.encode(ldt))
-      case ("date", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("date", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
       case ("time", ot: OffsetTime) => Valid(jsonEncoder.encode(ot))
-      case ("time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
-      case ("unnamed-format", _: Any) => Valid(jsonEncoder.encode(value))
-      case _ => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
+      case ("time", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
+      case ("unnamed-format", _: String) => Valid(jsonEncoder.encode(value))
+      case _ => error(value.getClass.getName, schema.toString, fieldName)
     }
   }
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
+
+  private def error(runtimeType: String, schema: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] =
+    Invalid(NonEmptyList.of(s"Not expected type: ${runtimeType} for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema"))
 
   def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
     optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, fieldName), encodeBasedOnSchema)
