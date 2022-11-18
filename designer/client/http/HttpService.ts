@@ -14,7 +14,7 @@ import {WithId, Instant} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
-import {NodeAdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
+import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -386,8 +386,8 @@ class HttpService {
     return promise
   }
 
-  getNodeAdditionalInfo(processId, node): Promise<AxiosResponse<NodeAdditionalInfo>> {
-    const promise = api.post<NodeAdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalInfo`, node)
+  getNodeAdditionalInfo(processId, node): Promise<AxiosResponse<AdditionalInfo>> {
+    const promise = api.post<AdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalInfo`, node)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToFetchNodeAdditionalInfo", "Failed to get node additional info"),
       error,
@@ -396,8 +396,8 @@ class HttpService {
     return promise
   }
 
-  getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<NodeAdditionalInfo>> {
-    const promise = api.post<NodeAdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties)
+  getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<AdditionalInfo>> {
+    const promise = api.post<AdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties)
     promise.catch(error => this.#addError(
       i18next.t("notification.error.failedToFetchPropertiesAdditionalInfo", "Failed to get properties additional info"),
       error,
