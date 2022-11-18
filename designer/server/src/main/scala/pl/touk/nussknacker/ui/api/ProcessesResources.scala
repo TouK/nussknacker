@@ -56,6 +56,8 @@ class ProcessesResources(
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
 
+  private val resources = new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators))
+
   def securedRoute(implicit user: LoggedUser): Route = {
       encodeResponse {
         path("archive") {
@@ -249,7 +251,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators)).securedRoute
+        } ~ resources.securedRoute
 
       }
   }
