@@ -6,7 +6,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.security.{SecurityRequirement, SecurityScheme}
 import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
-import pl.touk.nussknacker.openapi.{ApiKeyConfig, ApiKeyInHeader, OpenAPISecurityConfig, SwaggerSecurity}
+import pl.touk.nussknacker.openapi.{ApiKeyConfig, ApiKeyInCookie, ApiKeyInHeader, ApiKeyInQuery, OpenAPISecurityConfig, SwaggerSecurity}
 
 import scala.collection.JavaConverters._
 
@@ -63,10 +63,12 @@ private[parser] object SecuritiesParser extends LazyLogging {
     val key = apiKeyConfig.apiKeyValue
     import SecurityScheme.In._
     securityScheme.getIn match {
+      case QUERY =>
+        (ApiKeyInQuery(name, key) :: Nil).validNel
       case HEADER =>
         (ApiKeyInHeader(name, key) :: Nil).validNel
-      case otherIn =>
-        s"Putting APIKEY in $otherIn is not supported yet".invalidNel
+      case COOKIE =>
+        (ApiKeyInCookie(name, key) :: Nil).validNel
     }
   }
 }

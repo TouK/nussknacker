@@ -26,6 +26,7 @@
   * When `"additionalProperties": true` type is `Map[String, Unknown]`
   * When `"additionalProperties": T` type is `Map[String, T]`
 * [#3709](https://github.com/TouK/nussknacker/pull/3709) Fix BestEffortJsonSchemaEncoder - fix encoding only strings when `"type": String`
+* [#3707](https://github.com/TouK/nussknacker/pull/3707) Handling apikey in OpenAPI
 
 1.6.1 (8 Nov 2022)
 ------------------------
