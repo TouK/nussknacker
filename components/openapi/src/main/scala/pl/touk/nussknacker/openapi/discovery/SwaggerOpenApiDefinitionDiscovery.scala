@@ -1,13 +1,11 @@
 package pl.touk.nussknacker.openapi.discovery
 
-import com.typesafe.config.{ConfigFactory, ConfigObject}
 import com.typesafe.scalalogging.LazyLogging
-import io.circe.syntax.EncoderOps
 import org.apache.commons.io.FileUtils
 import org.asynchttpclient.DefaultAsyncHttpClient
-import pl.touk.nussknacker.openapi.OpenAPIServicesConfig
 import pl.touk.nussknacker.openapi.http.backend.HttpClientConfig
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 import sttp.client.asynchttpclient.future.AsyncHttpClientFutureBackend
 import sttp.client.{SttpBackend, basicRequest}
 import sttp.model.Uri
@@ -28,7 +26,7 @@ object SwaggerOpenApiDefinitionDiscovery extends SwaggerOpenApiDefinitionDiscove
 
 class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Future, Nothing, Nothing]) extends LazyLogging {
 
-  def discoverOpenAPIServices(discoveryUrl: URL, openAPIsConfig: OpenAPIServicesConfig): List[ConfigObject] = {
+  def discoverOpenAPIServices(discoveryUrl: URL, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
     val definition = if (discoveryUrl.getProtocol == "file") {
       FileUtils.readFileToString(new File(discoveryUrl.getPath), StandardCharsets.UTF_8)
     } else {
@@ -39,7 +37,7 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
 
     logger.info(s"Discovered OpenAPI: ${services.map(_.name)}")
 
-    services.map(service => ConfigFactory.parseString(service.asJson.spaces2).root())
+    services
   }
 
 }
