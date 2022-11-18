@@ -230,6 +230,27 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     new BestEffortJsonSchemaEncoder(ValidationMode.strict).encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
   }
 
+  test("should validate additionalParameters type") {
+    def schema(additionalPropertiesType: String): Schema = SchemaLoader.load(new JSONObject(
+      s"""{
+        |  "type": "object",
+        |  "properties": {
+        |    "foo": {
+        |      "type": "string"
+        |    }
+        |  },
+        |  "additionalProperties": {
+        |     "type": "${additionalPropertiesType}"
+        |  }
+        |}""".stripMargin))
+
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
+      Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field: None with schema: {"type":"number"}"""))
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
+      Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
+  }
+
   test("should encode not required property with empty map") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{

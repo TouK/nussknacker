@@ -97,7 +97,7 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case ("date", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
       case ("time", ot: OffsetTime) => Valid(jsonEncoder.encode(ot))
       case ("time", _: Any) => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
-      case ("unnamed-format", _: Any) => Valid(jsonEncoder.encode(value))
+      case ("unnamed-format", _: String) => Valid(jsonEncoder.encode(value))
       case _ => error(s"Not expected type: ${value.getClass.getName} for field: $fieldName with schema: $schema")
     }
   }
