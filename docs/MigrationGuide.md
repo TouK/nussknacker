@@ -128,7 +128,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3542](https://github.com/TouK/nussknacker/pull/3542) Numerous renames:
   * trait `NodeAdditionalInfo` -> `AdditionalInfo`,
   * class `MarkdownNodeAdditionalInfo` -> `MarkdownAdditionalInfo`
-  * trait `NodeAdditionalInfoProvider` -> `AdditionalInfoProvider`
+  * trait `NodeAdditionalInfoProvider` -> `AdditionalInfoProvider` - the SPI provider's configuration files must be renamed from `pl.touk.nussknacker.engine.additionalInfo.NodeAdditionalInfoProvider` to `pl.touk.nussknacker.engine.additionalInfo.AdditionalInfoProvider`
   * method `AdditionalInfoProvider.additionalInfo` renamed to `nodeAdditionalInfo` and new method added `propertiesAdditionalInfo`
 
 ### REST API changes
