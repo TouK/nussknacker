@@ -15,7 +15,6 @@ object JsonSchemaBuilder {
     SchemaLoader
       .builder()
       .useDefaults(useDefaults)
-      .nullableSupport(nullableSupport)
       .schemaJson(rawSchema)
       .draftV7Support()
       .build()

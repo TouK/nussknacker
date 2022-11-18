@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyList, Validated, ValidatedNel}
+import cats.data.Validated.Valid
+import cats.data.{Validated, ValidatedNel}
 import org.apache.avro.Schema.Type
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.{AvroRuntimeException, Schema}
@@ -18,29 +18,24 @@ import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.lite.components.utils.AvroGen.genValueForSchema
 import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
-import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, LiteKafkaTestScenarioRunner}
+import pl.touk.nussknacker.engine.lite.util.test.KafkaAvroConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaUniversalComponentTransformer}
-import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
-import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult, TestScenarioRunner}
+import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 import java.nio.ByteBuffer
-import java.util.UUID
 
-class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
+class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+  with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._
-  import LiteKafkaTestScenarioRunner._
   import SpecialSpELElement._
   import ValidationMode._
   import pl.touk.nussknacker.engine.lite.components.utils.LiteralSpELWithAvroImplicits._
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
-
-  private val sourceName = "my-source"
-  private val sinkName = "my-sink"
 
   implicit override val generatorDrivenConfig: PropertyCheckConfiguration = PropertyCheckConfiguration(minSuccessful = 1000, minSize = 0, workers = 5)
 
@@ -454,7 +449,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
 
   private def runWithResults(config: ScenarioConfig): RunnerListResult[ProducerRecord[String, Any]] = {
     val avroScenario = createScenario(config)
-    val runner = TestScenarioRunner.kafkaLiteBased().build()
     val sourceSchemaId = runner.registerAvroSchema(config.sourceTopic, config.sourceSchema)
     runner.registerAvroSchema(config.sinkTopic, config.sinkSchema)
 
@@ -478,8 +472,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
         SinkValidationModeParameterName -> s"'${config.validationModeName}'"
       )
 
-  private def randomTopic = UUID.randomUUID().toString
-
   case class ScenarioConfig(topic: String, inputData: Any, sourceSchema: Schema, sinkSchema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
     lazy val sourceTopic = s"$topic-input"
@@ -489,17 +481,6 @@ class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with S
   //RecordValid -> valid success record with base field
   private def rValid(data: Any, schema: Schema): Valid[RunListResult[GenericRecord]] = {
     valid(AvroUtils.createRecord(schema, Map(RecordFieldName -> data)))
-  }
-
-  private def valid[T](data: T): Valid[RunListResult[T]] =
-    Valid(RunResult.success(data))
-
-  private def invalidTypes(typeErrors: String*): Invalid[NonEmptyList[CustomNodeError]] =
-    invalid(typeErrors.toList, Nil, Nil)
-
-  private def invalid(typeFieldErrors: List[String], missingFieldsError: List[String], redundantFieldsError: List[String]): Invalid[NonEmptyList[CustomNodeError]] = {
-    val finalMessage = OutputValidatorErrorsMessageFormatter.makeMessage(typeFieldErrors, missingFieldsError, redundantFieldsError)
-    Invalid(NonEmptyList.one(CustomNodeError(sinkName, finalMessage, Some(KafkaUniversalComponentTransformer.SinkValueParamName))))
   }
 
   //RecordConfig -> config with record as a input
