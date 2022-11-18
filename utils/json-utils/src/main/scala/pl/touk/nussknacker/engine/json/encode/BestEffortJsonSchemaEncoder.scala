@@ -32,6 +32,10 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
         case ((fieldName, null), schema) if isNullableSchema(schema) => Valid((fieldName, Json.Null))
         case ((fieldName, value), propertySchema) if (propertySchema != null) && notNullOrRequired(fieldName, value, parentSchema) => encode(value, propertySchema).map(fieldName -> _)
         case ((fieldName, _), null) if !parentSchema.permitsAdditionalProperties() => error(s"Not expected field with name: ${fieldName} for schema: $parentSchema and policy $validationMode does not allow redundant")
+        case ((fieldName, value), null) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
+          case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
+          case None =>  Valid(jsonEncoder.encode(value)).map(fieldName -> _)
+        }
       }
       .toList.sequence.map { values => Json.fromFields(values) }
   }
