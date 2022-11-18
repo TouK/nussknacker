@@ -12,11 +12,11 @@ interface Props {
   node: NodeType,
 }
 
-//Types should match implementations of NodeAdditionalInfo on Backend!
-export type NodeAdditionalInfo = MarkdownNodeAdditionalInfo
+//Types should match implementations of AdditionalInfo on Backend!
+export type AdditionalInfo = MarkdownAdditionalInfo
 
-interface MarkdownNodeAdditionalInfo {
-  type: "MarkdownNodeAdditionalInfo",
+interface MarkdownAdditionalInfo {
+  type: "MarkdownAdditionalInfo",
   content: string,
 }
 
@@ -24,7 +24,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
   const {node} = props
   const processId = useSelector(getProcessId)
 
-  const [additionalInfo, setAdditionalInfo] = useState<NodeAdditionalInfo>(null)
+  const [additionalInfo, setAdditionalInfo] = useState<AdditionalInfo>(null)
 
   //We don't use redux here since this additionalInfo is local to this component. We use debounce, as
   //we don't wat to query BE on each key pressed (we send node parameters to get additional data)
@@ -45,7 +45,7 @@ export default function NodeAdditionalInfoBox(props: Props): JSX.Element {
   }
 
   switch (additionalInfo.type) {
-    case "MarkdownNodeAdditionalInfo":
+    case "MarkdownAdditionalInfo":
       // eslint-disable-next-line i18next/no-literal-string
       const linkTarget = "_blank"
       return <ReactMarkdown className="markdownDisplay" linkTarget={linkTarget}>{additionalInfo.content}</ReactMarkdown>
