@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
@@ -40,6 +40,8 @@ case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
 case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped]) extends SwaggerTyped
+
+case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
 object SwaggerTyped {
 
@@ -83,6 +85,8 @@ object SwaggerTyped {
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
   def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
+    case SwaggerMap(valueType: Option[SwaggerTyped]) =>
+      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], valueType.map(typingResult).getOrElse(Unknown)))
     case SwaggerObject(elementType) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
@@ -118,9 +122,14 @@ object SwaggerArray {
 }
 
 object SwaggerObject {
-  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerObject = {
-    SwaggerObject(
-      Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map()),
-    )
+  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = {
+    val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map())
+    if(properties.isEmpty){
+      schema.getAdditionalProperties match {
+        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas)))
+        case b if b == false => SwaggerObject(Map.empty)
+        case _ => SwaggerMap(None)
+      }
+    } else SwaggerObject(properties)
   }
 }

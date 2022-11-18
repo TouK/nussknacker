@@ -21,6 +21,11 @@
 * [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor
 * [#3699](https://github.com/TouK/nussknacker/pull/3699) Fix: handling null on json schema
+* [#3709](https://github.com/TouK/nussknacker/pull/3709) Support for typing `Map[String, T]` using JsonSchema.
+  * When `properties` are defined `additionalProperties` is ignored and type is determined by `properties` - as it was before.
+  * When `"additionalProperties": true` type is `Map[String, Unknown]`
+  * When `"additionalProperties": T` type is `Map[String, T]`
+* [#3709](https://github.com/TouK/nussknacker/pull/3709) Fix BestEffortJsonSchemaEncoder - fix encoding only strings when `"type": String`
 
 1.6.1 (8 Nov 2022)
 ------------------------
