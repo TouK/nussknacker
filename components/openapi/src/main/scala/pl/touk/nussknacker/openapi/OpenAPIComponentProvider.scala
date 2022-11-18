@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.openapi
 
-import com.typesafe.config.{Config, ConfigRenderOptions, ConfigValueFactory}
+import com.typesafe.config.{Config, ConfigFactory, ConfigRenderOptions, ConfigValueFactory}
 import com.typesafe.scalalogging.LazyLogging
+import io.circe.syntax.EncoderOps
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.component.{ComponentDefinition, ComponentProvider, NussknackerVersion}
@@ -23,13 +24,14 @@ class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {
   override def resolveConfigForExecution(config: Config): Config = {
     val discoveryUrl = config.as[URL]("url")
     val openAPIsConfig = config.rootAs[OpenAPIServicesConfig]
-    val serviceConfigs = try {
+    val services = try {
       SwaggerOpenApiDefinitionDiscovery.discoverOpenAPIServices(discoveryUrl, openAPIsConfig)
     } catch {
       case NonFatal(ex) =>
         logger.error("OpenAPI service resolution failed. Will be used empty services lists", ex)
         List.empty
     }
+    val serviceConfigs = services.map(service => ConfigFactory.parseString(service.asJson.spaces2).root())
     config.withValue("services", ConfigValueFactory.fromIterable(serviceConfigs.asJava))
   }
 
