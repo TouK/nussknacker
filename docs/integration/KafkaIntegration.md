@@ -2,12 +2,12 @@
 sidebar_position: 1
 ---
 
-# Kafka
+# Kafka | Streaming only
 
 ## Prerequisites
 
 To fully understand how Nussknacker works with Kafka topics, it's best to read the following first:
-* [Role of Schema Registry](/about/TypicalImplementation)
+* [Role of Schema Registry](/about/TypicalImplementation/)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
 * [Kafka topic key](https://kafka.apache.org/intro)
 
@@ -22,7 +22,7 @@ Kafka topics are native streaming data input to Nussknacker and the native outpu
 
 Nussknacker integrates with a schema registry. It is the source of topics available to choose from in sources and sinks. It also allows Nussknacker to provide syntax suggestions and validation. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the schema registry.
 
-Schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions.
+Schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation/) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions.
 
 Nussknacker supports both JSON and AVRO schemas, and JSON and AVRO topic payloads. Detailed information on how AVRO data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format).
 
