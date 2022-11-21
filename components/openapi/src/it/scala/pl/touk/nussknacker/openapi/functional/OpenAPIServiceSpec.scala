@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.openapi.functional
 
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.asynchttpclient.DefaultAsyncHttpClient
 import org.scalatest.{BeforeAndAfterAll, Outcome}
@@ -40,7 +41,9 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
         val config = OpenAPIServicesConfig(security = Some(securities),
           rootUrl = Some(new URL(s"http://localhost:$port")))
-        val services = SwaggerParser.parse(definition, config)
+        val services = SwaggerParser.parse(definition, config).collect {
+          case Valid(service) => service
+        }
 
         val enricher = new SwaggerEnrichers(new URL("http://foo"), Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
           .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]

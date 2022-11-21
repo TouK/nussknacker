@@ -24,7 +24,7 @@ class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
                       fixedParams: Map[String, () => AnyRef],
                       httpBackendProvider: HttpBackendProvider) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
 
-  override protected def serviceName: String = swaggerService.name
+  override protected def serviceName: String = swaggerService.name.value
 
   private val swaggerHttpService = new SwaggerSttpService(baseUrl, swaggerService)
 

@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.openapi.enrichers
 
 import pl.touk.nussknacker.engine.api.EagerService
-import pl.touk.nussknacker.openapi.SwaggerService
+import pl.touk.nussknacker.openapi.{ServiceName, SwaggerService}
 
 import java.net.URL
 
@@ -21,5 +21,5 @@ class SwaggerEnrichers(definitionUrl: URL, rootUrl: Option[URL], creator: Swagge
   }
 }
 
-final case class SwaggerEnricherDefinition(name: String, documentation: Option[String], categories: List[String], service: EagerService)
+final case class SwaggerEnricherDefinition(name: ServiceName, documentation: Option[String], categories: List[String], service: EagerService)
 

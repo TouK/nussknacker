@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.openapi.functional
 
+import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
@@ -115,7 +116,9 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
 
   private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Nothing, Nothing], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
-    val services = SwaggerParser.parse(definition, openAPIsConfig)
+    val services = SwaggerParser.parse(definition, openAPIsConfig).collect {
+      case Valid(service) => service
+    }
     val stubbedGetCustomerOpenApiService = new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
   }

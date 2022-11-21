@@ -12,12 +12,10 @@
   Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
   to return scenario JSON omitting validation and dictionary resolving.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
-* [#3656](https://github.com/TouK/nussknacker/pull/3656) OpenAPI 3.1.0 support + basic support for type references in json schemas
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
-* [#3692](https://github.com/TouK/nussknacker/pull/3692) Better logging from OpenAPI enrichers
 * [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor
 * [#3699](https://github.com/TouK/nussknacker/pull/3699) Fix: handling null on json schema
@@ -26,12 +24,18 @@
   * When `"additionalProperties": true` type is `Map[String, Unknown]`
   * When `"additionalProperties": T` type is `Map[String, T]`
 * [#3709](https://github.com/TouK/nussknacker/pull/3709) Fix BestEffortJsonSchemaEncoder - fix encoding only strings when `"type": String`
-* [#3707](https://github.com/TouK/nussknacker/pull/3707) Handling apikey in OpenAPI
 * [#3716](https://github.com/TouK/nussknacker/pull/3716) Fix: JsonSchema sinks allow to add additional fields also in `strict validation mode`, if schema permits them.
 * [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 * [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
+* [#3707](https://github.com/TouK/nussknacker/pull/3707), [#3719](https://github.com/TouK/nussknacker/pull/3719), [#3692](https://github.com/TouK/nussknacker/pull/3692), [#3656](https://github.com/TouK/nussknacker/pull/3656) Improvements in OpenAPI:
+  * Support for OpenAPI 3.1.0
+  * Basic support for type references in JSON schemas
+  * Better logging from OpenAPI enrichers
+  * Handling of API Keys in query parameter and cookie
+  * It's possible to configure which HTTP codes (404 by default) can be used as successful, empty response
+  * Documentation link is taken from global configuration, if operation doesn't provide one
 
 1.6.1 (8 Nov 2022)
 ------------------------

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.openapi.functional
 
+import cats.data.Validated.Valid
 import com.typesafe.scalalogging.LazyLogging
 import org.scalatest.{Assertion, BeforeAndAfterAll}
 import org.scalatest.funsuite.AnyFunSuite
@@ -12,7 +13,7 @@ import pl.touk.nussknacker.engine.util.runtimecontext.TestEngineRuntimeContext
 import pl.touk.nussknacker.engine.util.service.EagerServiceWithStaticParametersAndReturnType
 import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnrichers}
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
-import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig}
+import pl.touk.nussknacker.openapi.{ApiKeyConfig, OpenAPIServicesConfig, ServiceName}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{Request, Response}
@@ -53,7 +54,7 @@ class SecurityTest extends AnyFunSuite with BeforeAndAfterAll with Matchers with
       enrichersForSecurityConfig(backend, configs.map(c => c.securityName -> ApiKeyConfig(c.key)).toMap)
     configs.foreach { config =>
       withClue(config.serviceName) {
-        withCorrectConfig(config.serviceName).invoke(Map()).futureValue shouldBe TypedMap(Map.empty)
+        withCorrectConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue shouldBe TypedMap(Map.empty)
       }
     }
 
@@ -61,7 +62,7 @@ class SecurityTest extends AnyFunSuite with BeforeAndAfterAll with Matchers with
     configs.foreach { config =>
       withClue(config.serviceName) {
         intercept[Exception] {
-          withBadConfig(config.serviceName).invoke(Map()).futureValue
+          withBadConfig(ServiceName(config.serviceName)).invoke(Map()).futureValue
         }
       }
     }
@@ -72,7 +73,9 @@ class SecurityTest extends AnyFunSuite with BeforeAndAfterAll with Matchers with
   private def enrichersForSecurityConfig(backend: SttpBackendStub[Future, Nothing, Nothing], securities: Map[String, ApiKeyConfig]) = {
     val definition = Source.fromInputStream(getClass.getClassLoader.getResourceAsStream("service-security.yml")).mkString
     val config = OpenAPIServicesConfig(security = Some(securities))
-    val services = SwaggerParser.parse(definition, config)
+    val services = SwaggerParser.parse(definition, config).collect {
+      case Valid(service) => service
+    }
 
     val enrichers = new SwaggerEnrichers(new URL("http://foo"), None,
       new SwaggerEnricherCreator((_: ExecutionContext) => backend))

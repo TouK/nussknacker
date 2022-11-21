@@ -1,37 +1,20 @@
 package pl.touk.nussknacker.openapi.parser
 
+import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
 import io.swagger.v3.parser.converter.SwaggerConverter
 import io.swagger.v3.parser.core.models.ParseOptions
-import pl.touk.nussknacker.engine.json.swagger.parser.ParseSwaggerRefSchemas
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SwaggerService}
 
 import java.util.Collections
-import scala.collection.JavaConverters._
 
 object SwaggerParser extends LazyLogging {
 
-  def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[SwaggerService] = {
+  def parse(rawSwagger: String, openAPIsConfig: OpenAPIServicesConfig): List[Validated[ServiceParseError, SwaggerService]] = {
     val openapi = parseToSwagger(rawSwagger)
-    val maybeSecuritySchemas = Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes))
-    val securitySchemas = maybeSecuritySchemas.map(_.asScala.toMap)
-    val allServices = ParseToSwaggerServices(
-      paths = openapi.getPaths.asScala.toMap,
-      swaggerRefSchemas = ParseSwaggerRefSchemas(openapi),
-      openapi.getServers.asScala.toList,
-      Option(openapi.getSecurity).map(_.asScala.toList).getOrElse(Nil),
-      securitySchemas,
-      openAPIsConfig.security.getOrElse(Map.empty)
-    )
-    val (acceptedServices, droppedServices)
-    = allServices.partition(service => openAPIsConfig.allowedMethods.contains(service.method) && service.name.matches(openAPIsConfig.namePattern.regex))
-    if (droppedServices.nonEmpty) {
-      logger.info(s"Following services were filtered out by rules (name must match: ${openAPIsConfig.namePattern}, allowed HTTP methods: ${openAPIsConfig.allowedMethods.mkString(", ")}): " +
-        s"${droppedServices.map(_.name).mkString(", ")}")
-    }
-    acceptedServices
+    ParseToSwaggerServices(openapi, openAPIsConfig)
   }
 
   private[parser] def parseToSwagger(rawSwagger: String): OpenAPI = {

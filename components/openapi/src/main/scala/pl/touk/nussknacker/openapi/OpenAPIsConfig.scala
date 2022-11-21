@@ -3,12 +3,14 @@ package pl.touk.nussknacker.openapi
 import com.typesafe.config.Config
 import io.swagger.v3.oas.models.PathItem.HttpMethod
 import net.ceedubs.ficus.readers.{ArbitraryTypeReader, ValueReader}
+import sttp.model.StatusCode
 
 import java.net.URL
 import scala.util.matching.Regex
 
 case class OpenAPIServicesConfig(//by default we allow only GET, as enrichers should be idempotent and not change data
                                  allowedMethods: List[String] = List(HttpMethod.GET.name()),
+                                 codesToInterpretAsEmpty: List[Int] = List(StatusCode.NotFound.code),
                                  namePattern: Regex = ".*".r,
                                  rootUrl: Option[URL] = None,
                                  security: Option[Map[String, OpenAPISecurityConfig]] = None)
