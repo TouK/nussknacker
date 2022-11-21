@@ -23,7 +23,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
-class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._
@@ -98,10 +98,15 @@ class UniversalSourceJsonFunctionalTest extends AnyFunSuite with Matchers with S
   test("should catch runtime errors") {
     val testData = Table(
       ("config", "result"),
-      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), s"Not expected type: java.lang.String for field with schema: $schemaInteger"), //TODO: It should be validated by JsonSchemaOutputValidator
+      //Errors at sources
+      (oConfig(fromString("invalid"), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: expected type: JSONObject, found: String"),
       (oConfig(Json.Null, schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: expected type: JSONObject, found: Null"),
       (oConfig(obj("first" -> fromString("")), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: required key [last] not found"),
-      (oConfig(fromString("invalid"), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: expected type: JSONObject, found: String"),
+      (oConfig(obj("t1" -> fromString("1")), schemaObjMapInteger, schemaObjMapAny), "#/field/t1: expected type: Integer, found: String"),
+      (sConfig(obj("t1" -> fromString("1"), "field" -> fromString("1")), schemaObjString, schemaMapAny), "#: extraneous key [t1] is not permitted"),
+
+      //Errors at sinks
+      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), s"Not expected type: java.lang.String for field with schema: $schemaInteger"), //TODO: It should be validated by JsonSchemaOutputValidator
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>

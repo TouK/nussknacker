@@ -27,7 +27,7 @@ import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMess
 
 import java.nio.ByteBuffer
 
-class LiteKafkaAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._

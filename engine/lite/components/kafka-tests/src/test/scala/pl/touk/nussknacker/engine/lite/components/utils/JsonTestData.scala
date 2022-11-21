@@ -33,11 +33,11 @@ object JsonTestData {
       |  "additionalProperties": false
       |}""".stripMargin)
 
-  val schemaInteger: Schema = JsonSchemaBuilder.parseSchema("""{"type": "integer"}""")
+  val schemaInteger: Schema = JsonSchemaBuilder.parseSchema("""{"type": "integer"}""".stripMargin)
 
-  val schemaString: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string"}""")
+  val schemaString: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string"}""".stripMargin)
 
-  val schemaNull: Schema = JsonSchemaBuilder.parseSchema("""{"type": "null"}""")
+  val schemaNull: Schema = JsonSchemaBuilder.parseSchema("""{"type": "null"}""".stripMargin)
 
   val schemaIntegerRange: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
@@ -64,21 +64,29 @@ object JsonTestData {
       |}
       |""".stripMargin)
 
+  val schemaMapAny: Schema = JsonSchemaBuilder.parseSchema(
+    """{"type": "object", "additionalProperties": true}""".stripMargin
+  )
+
   val schemaObjMapAny: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
        |  "type": "object",
        |  "properties": {
-       |    "field" : {"type": "object", "additionalProperties": true}
+       |    "field" : $schemaMapAny
        |   }
        |}
        |""".stripMargin
+  )
+
+  val schemaMapInteger: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $schemaInteger}""".stripMargin
   )
 
   val schemaObjMapInteger: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
       |  "type": "object",
       |  "properties": {
-      |    "field": {"type": "object", "additionalProperties": $schemaInteger}
+      |    "field": $schemaMapInteger
       |   },
       |   "additionalProperties": false
       |}
