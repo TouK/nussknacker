@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.{ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
@@ -19,6 +18,16 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 
 object JsonSchemaOutputValidator {
   private[encode] val SimplePath = "Value"
+
+  private implicit class RichObjectSchema(s: ObjectSchema) {
+    val representsMap = s.permitsAdditionalProperties() && s.getPropertySchemas.isEmpty
+  }
+
+  private implicit class RichTypedClass(t: TypedClass) {
+    val representsMapWithStringKeys = {
+      t.klass == classOf[java.util.Map[_, _]] && t.params.size == 2 && t.params.head == Typed.typedClass[String]
+    }
+  }
 }
 
 class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
@@ -32,20 +41,30 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
    * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
    */
-  def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, parentSchema, None)
+  def validateTypingResultAgainstSchema(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
+    validateTypingResult(typingResult, schema, None)
 
   //todo: add support for: unions, enums, nested types, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
-      case (Unknown, _) if validationMode == ValidationMode.lax =>
-        valid
+      case (Unknown, _) if validationMode == ValidationMode.lax => valid
+      case (Unknown, _) if validationMode == ValidationMode.strict => invalid(typingResult, schema, path)
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
-      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) =>
-        validateRecordSchema(typingResult, s, path)
-      case (_, _) => canBeSubclassOf(typingResult, schema, path)
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if s.representsMap => validateMapSchema(path, s, typingResult.fields.toList: _*)
+      case (tc: TypedClass, s: ObjectSchema) if s.representsMap && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("field", tc.params.tail.head))
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if !s.representsMap => validateRecordSchema(typingResult, s, path)
+      case (t, _) if t != Unknown || validationMode == ValidationMode.lax => canBeSubclassOf(typingResult, schema, path)
     }
+  }
+
+  private def validateMapSchema(path: Option[String], mapSchema: ObjectSchema, fields: (String, TypingResult)*): ValidatedNel[OutputValidatorError, Unit] = {
+    if (mapSchema.getSchemaOfAdditionalProperties == null)
+      valid
+    else
+      fields.map {
+        case (fName, fType) => validateTypingResult(fType, mapSchema.getSchemaOfAdditionalProperties, buildPath(fName, path))
+      }.reduce(_ combine _)
   }
 
   private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {

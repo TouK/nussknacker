@@ -87,6 +87,10 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (oConfig(sampleMapInteger, schemaObjMapInteger, schemaObjMapInteger), oValid(sampleMapInteger)),
       (oConfig(sampleInteger, schemaObjInteger, schemaObjMapInteger, sampleMapSpELInteger), oValid(sampleMapInteger)),
       (sConfig(sampleInteger, schemaInteger, schemaObjString, Map("redundant" -> "red")), invalid(Nil, List("field"), List("redundant"))),
+
+      (sConfig(sampleMapString, schemaMapString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
+      (sConfig(sampleMapString, schemaObjString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
+      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.field' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -104,9 +108,6 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (oConfig(obj("first" -> fromString("")), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: required key [last] not found"),
       (oConfig(obj("t1" -> fromString("1")), schemaObjMapInteger, schemaObjMapAny), "#/field/t1: expected type: Integer, found: String"),
       (sConfig(obj("t1" -> fromString("1"), "field" -> fromString("1")), schemaObjString, schemaMapAny), "#: extraneous key [t1] is not permitted"),
-
-      //Errors at sinks
-      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), s"Not expected type: java.lang.String for field with schema: $schemaInteger"), //TODO: It should be validated by JsonSchemaOutputValidator
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>

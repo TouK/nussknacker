@@ -82,6 +82,10 @@ object JsonTestData {
     s"""{"type": "object", "additionalProperties": $schemaInteger}""".stripMargin
   )
 
+  val schemaMapString: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $schemaString}""".stripMargin
+  )
+
   val schemaObjMapInteger: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
       |  "type": "object",
@@ -153,6 +157,8 @@ object JsonTestData {
   val sampleMapAny: Json = obj("first" -> fromString("Nu"), "year" -> fromInt(Year.now.getValue))
 
   val sampleMapInteger: Json = obj("year" -> fromInt(Year.now.getValue))
+
+  val sampleMapString: Json = obj("foo" -> fromString("bar"))
 
   val sampleMapSpELAny: Map[String, Any] = Map("first" -> "Nu", "year" -> Year.now.getValue)
 
