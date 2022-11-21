@@ -79,12 +79,12 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         schemaFields.get(key).map(f => validateTypingResult(value, f, fieldPath))
       }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
     }
-    val redundantFieldsVadlidation = {
+    val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
-      condNel(redundantFields.isEmpty || validationMode != ValidationMode.strict, (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
+      condNel(redundantFields.isEmpty || schema.permitsAdditionalProperties(), (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
-    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsVadlidation
+    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
   }
 
   /**

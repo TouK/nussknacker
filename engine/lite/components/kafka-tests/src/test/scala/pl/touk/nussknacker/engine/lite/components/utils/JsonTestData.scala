@@ -1,8 +1,12 @@
 package pl.touk.nussknacker.engine.lite.components.utils
 
+import io.circe.Json
 import org.everit.json.schema.Schema
-import org.everit.json.schema.loader.SchemaLoader
-import org.json.JSONObject
+import pl.touk.nussknacker.test.SpecialSpELElement
+import io.circe.Json._
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+
+import java.time.Year
 
 object JsonTestData {
 
@@ -10,39 +14,10 @@ object JsonTestData {
 
   val InputEmptyObject = "{}"
 
-  val integerRangeSchema: Schema = SchemaLoader.load(new JSONObject(
-    s"""{
-       |  "$$schema": "https://json-schema.org/draft-07/schema",
-       |  "type": "integer",
-       |  "minimum": ${Integer.MIN_VALUE},
-       |  "maximum": ${Integer.MAX_VALUE}
-       |}""".stripMargin))
+  val OutputField: SpecialSpELElement = SpecialSpELElement(s"#input.$ObjectFieldName")
 
-  val longSchema: Schema = SchemaLoader.load(new JSONObject(
+  val personSchema: Schema = JsonSchemaBuilder.parseSchema(
     """{
-      |  "$schema": "https://json-schema.org/draft-07/schema",
-      |  "type": "integer"
-      |}""".stripMargin))
-
-  val objectSchema: Schema = SchemaLoader.load(new JSONObject(
-    """{
-      |  "type": "object",
-      |  "properties": {
-      |    "field" :  {
-      |      "type": "object",
-      |      "properties": {
-      |        "first" : { "type": "string" },
-      |        "last" : { "type": "string" }
-      |      },
-      |      "required": ["first", "last"]
-      |    }
-      |  }
-      |}
-      |""".stripMargin))
-
-  val personSchema: Schema = SchemaLoader.load(new JSONObject(
-    """{
-      |  "$schema": "https://json-schema.org/draft-07/schema",
       |  "type": "object",
       |  "properties": {
       |    "first": {
@@ -54,33 +29,133 @@ object JsonTestData {
       |    "age": {
       |      "type": "integer"
       |    }
-      |  }
-      |}""".stripMargin))
+      |  },
+      |  "additionalProperties": false
+      |}""".stripMargin)
 
-  val schemaObjString: Schema = SchemaLoader.load(new JSONObject(
+  val schemaInteger: Schema = JsonSchemaBuilder.parseSchema("""{"type": "integer"}""".stripMargin)
+
+  val schemaString: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string"}""".stripMargin)
+
+  val schemaNull: Schema = JsonSchemaBuilder.parseSchema("""{"type": "null"}""".stripMargin)
+
+  val schemaIntegerRange: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+       |  "type": "integer",
+       |  "minimum": ${Integer.MIN_VALUE},
+       |  "maximum": ${Integer.MAX_VALUE}
+       |}""".stripMargin)
+
+  val schemaObjObjFirstLastNameRequired: Schema = JsonSchemaBuilder.parseSchema(
     """{
       |  "type": "object",
       |  "properties": {
-      |    "field" : { "type": "string" }
-      |   }
+      |    "field" :  {
+      |      "type": "object",
+      |      "properties": {
+      |        "first" : { "type": "string" },
+      |        "last" : { "type": "string" }
+      |      },
+      |      "required": ["first", "last"],
+      |      "additionalProperties": false
+      |    }
+      |  },
+      |  "additionalProperties": false
       |}
-      |""".stripMargin))
+      |""".stripMargin)
 
-  val schemaObjNull: Schema = SchemaLoader.load(new JSONObject(
+  val schemaMapAny: Schema = JsonSchemaBuilder.parseSchema(
+    """{"type": "object", "additionalProperties": true}""".stripMargin
+  )
+
+  val schemaObjMapAny: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+       |  "type": "object",
+       |  "properties": {
+       |    "field" : $schemaMapAny
+       |   }
+       |}
+       |""".stripMargin
+  )
+
+  val schemaMapInteger: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $schemaInteger}""".stripMargin
+  )
+
+  val schemaObjMapInteger: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+      |  "type": "object",
+      |  "properties": {
+      |    "field": $schemaMapInteger
+      |   },
+      |   "additionalProperties": false
+      |}
+      |""".stripMargin
+  )
+
+  val schemaObjInteger: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+      |  "type": "object",
+      |  "properties": {
+      |    "field": $schemaInteger
+      |   },
+      |   "additionalProperties": false
+      |}
+      |""".stripMargin)
+
+  val schemaObjString: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+      |  "type": "object",
+      |  "properties": {
+      |    "field": $schemaString
+      |   },
+      |   "additionalProperties": false
+      |}
+      |""".stripMargin)
+
+  val schemaObjNull: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+      |  "type": "object",
+      |  "properties": {
+      |    "field": $schemaNull
+      |   },
+      |   "additionalProperties": false
+      |}
+      |""".stripMargin)
+
+  val schemaObjUnionNullString: Schema = JsonSchemaBuilder.parseSchema(
     """{
       |  "type": "object",
       |  "properties": {
-      |    "field" : { "type": "null" }
-      |   }
+      |    "field": { "type": ["null", "string"] }
+      |   },
+      |   "additionalProperties": false
       |}
-      |""".stripMargin))
+      |""".stripMargin)
 
-  val schemaObjUnionNullString: Schema = SchemaLoader.load(new JSONObject(
+  val schemaObjRequiredUnionNullString: Schema = JsonSchemaBuilder.parseSchema(
     """{
       |  "type": "object",
       |  "properties": {
-      |    "field" : { "type": ["null", "string"] }
-      |   }
+      |    "field": { "type": ["null", "string"] }
+      |   },
+      |   "required": ["field"],
+      |   "additionalProperties": false
       |}
-      |""".stripMargin))
+      |""".stripMargin)
+
+  val sampleInteger: Json = fromInt(1)
+
+  val sampleObjFirstLastName: Json = obj("first" -> fromString("Nu"), "last" -> fromString("TouK"))
+
+  val sampleSpELFirstLastName: Map[String, Any] = Map("first" -> "Nu", "last" -> "TouK")
+
+  val sampleMapAny: Json = obj("first" -> fromString("Nu"), "year" -> fromInt(Year.now.getValue))
+
+  val sampleMapInteger: Json = obj("year" -> fromInt(Year.now.getValue))
+
+  val sampleMapSpELAny: Map[String, Any] = Map("first" -> "Nu", "year" -> Year.now.getValue)
+
+  val sampleMapSpELInteger: Map[String, Integer] = Map("year" -> Year.now.getValue)
+
 }
