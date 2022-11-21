@@ -6,7 +6,7 @@ import QueriedStateTable from "../components/QueriedStateTable"
 import {InputWithFocus, SelectWithFocus} from "../components/withFocus"
 import HttpService from "../http/HttpService"
 import i18next from "i18next"
-import {NodeTable} from "../components/graph/node-modal/NodeDetailsContent/NodeTable"
+import {NodeTable, NodeTableBody} from "../components/graph/node-modal/NodeDetailsContent/NodeTable"
 
 //this needs some love
 export class Signals extends React.Component {
