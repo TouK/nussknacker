@@ -133,7 +133,7 @@ class DBProcessService(managerActor: ActorRef,
       .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json, pd.processCategory))) // validating the same way, as UI does
       .flatMap {
         case l@Left(_) => Future(l.map(_ => ()))
-        case Right(value) if !value.isOk => Future(Left(DeployingInvalidScenarioError))
+        case Right(value) if value.hasErrors => Future(Left(DeployingInvalidScenarioError))
         case _ => callback
       }
 
