@@ -11,43 +11,30 @@ This document is intended for those who will use Nussknacker Designer to configu
 
 **Please try [Quickstart](/quickstart/demo) to quickly understand how to move around Nussknacker Designer, create a simple scenario and see SpEL in action.**
 
+&nbsp;
+## Data records
+Nussknacker nodes process data records; once the node finishes processing of the data record it hands it over to the next node in the processing flow. Filter, Split, Switch nodes behave exactly like this. 
 
-## Events 
-Nussknacker nodes process events; once the node finishes processing of the event it hands it over to the next node in the flow for processing. Filter, Split, Switch nodes behave exactly like this. 
-Typically events processed by Nussknacker come from Kafka topics;  Nussknacker source components are used to read events from Kafka topic and inject them into Nussknacker scenarios. 
-There are cases though when a node can produce a new event, a Tumbling-window or and Session-window component being good examples. 
+In the Streaming [processing mode](https://docs.nussknacker.io/documentation/documentation/about/ProcessingModes) data records are often referred to as events. They are read from Kafka topics and processed by the [engine](https://nussknacker.io/documentation/about/engines/) of choice: Flink or Lite. 
 
-## Streaming | Flink engine
+In the Request-Response processing mode there is no special name for a data record, even though the same term is also used in the Streaming case. 
 
-### Notion of time
+&nbsp;
+## Nussknacker scenario diagram
 
-Notion of passing time is very important in dealing with real time events processing. 
-Please see following excellent references to learn about basic concepts:
-* [Notion of time in Flink](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
-* [Streaming 101: The world beyond batch by O'Reilly](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
+Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer) allowing to define decision algorithms – we call them scenarios – without the need to write code.
 
-For Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
+A scenario is a sequence of different nodes:
 
-### Sources and Sinks - Kafka
+- flow control functions: filter, switch, split etc.
+- data enrichments from external sources (JDBC, OpenAPI)
+- aggregates in different types of time windows (available with Flink engine)
+- custom, tailor-made components, which extend default functionality
+- and more
 
-In general following rules apply:
-* We use _event time_ in scenarios to handle notion of passing time
-* Kafka record timestamps are used to assign event time to Flink events
-* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
-* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
+The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches. If there are [for-each](./BasicNodes.md#foreach) nodes, multiple records are produced as the result. Finally, the filter node by its very nature can terminate the data record.
 
-### Aggregations, window processing 
-
-If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
-
-## Streaming | Lite engine
-
-### Notion of time
-
-Lite engine is stateless, so many concepts important for windows or aggregations do not apply, but following rules apply for Kafka sources and sinks:
-* Kafka record timestamps are used to determine time of the event
-* Kafka records produced by Nussknacker sinks have timestamp of event that generated them
-
+&nbsp;
 ## SpEL
 
 Configuring Nussknacker nodes to a large degree is about using SpEL; knowledge of how to write valid expressions in SpEL is an important part of using Nussknacker.
@@ -76,21 +63,25 @@ SpEL is used in Nussknacker to access data processed by a node and expand node's
 
 The [SpEL Cheat Sheet page](Spel)  provides an exhaustive list of examples of how to write expressions with SpEL.
 
-
+&nbsp;
 ## Data Types
 
 Every SpEL expression returns a value of one of the predefined SpEL data types, like integer, double or boolean, map, etc. Data types in Nussknacker can be a confusing aspect at the beginning, as depending on the context in which data are processed or displayed, different data type schemes are in use - please refer to the [SpEL Cheat Sheet page](Spel#data-types-and-structures) for more information. 
 
 In some contexts data type conversions may be necessary - conversion functions are described [here](Spel#type-conversions).
 
-
+&nbsp;
 ## Variables
 
-Nussknacker uses variables as containers for data; they can be referred to in SpEL expressions. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable.
+Nussknacker uses variables as containers for data. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are attached to data records, they do not exist by themselves. 
 
 There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 
-If the event which arrived to some node originally came from the Kafka topic, the data carried in the event record are available in the `#input` variable. The metadata associated with this event are available in `#inputMeta` variable. The following meta information fields are available in `#inputMeta`:
+In the Streaming processing mode the `#input` variable is associated with the event which originally came from the Kafka topic. In the case of Flink engine some nodes not only terminate the input events, but also create new ones. Aas the result, the #input data record is no longer available after such a node, while the newly created event (and the variable associated with it) is available "downstream". 
+
+In the Request-Response processing mode the `#input` variable carries the request data of REST call which invoked Nussknacker scenario.
+
+If the event which arrived to some node originally came from the Kafka topic, the metadata associated with this event are available in `#inputMeta` variable. The following meta information fields are available in `#inputMeta`:
 * headers 
 * key
 * leaderEpoch
@@ -108,3 +99,34 @@ The `#meta` variable carries meta information about the currently executed scena
 * properties  
 
 Check [Basic Nodes](BasicNodes#Variable-component) page for examples how to use variables. 
+
+&nbsp;
+## Notion of time | Streaming | Flink engine
+
+Notion of passing time is very important in dealing with real time events processing. 
+Please see following excellent references to learn about basic concepts:
+* [Notion of time in Flink](https://ci.apache.org/projects/flink/flink-docs-stable/docs/concepts/time/)
+* [Streaming 101: The world beyond batch by O'Reilly](https://www.oreilly.com/radar/the-world-beyond-batch-streaming-101/)
+
+For Flink engine Flink documentation applies. Certain Nussknacker components make assumptions and have predefined settings, so that the end users don't have to configure all by themselves.
+
+&nbsp;
+### Sources and Sinks - Kafka
+
+In general following rules apply:
+* We use _event time_ in scenarios to handle notion of passing time
+* Kafka record timestamps are used to assign event time to Flink events
+* Kafka records produced by Nussknacker sinks have timestamp of event (in the sense of _event time_) that generated them
+* We use *bound of order watermark generator*, with configurable amount of lateness (see [kafka.kafkaEspProperties.defaultMaxOutOfOrdernessMillis property in Configuration](../installation_configuration_guide/ModelConfiguration#kafka-configuration) for details). 
+
+&nbsp;
+### Aggregations, window processing 
+
+If a new event is triggered by e.g. tumbling time window, its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. See [Aggregates in Time Windows](AggregatesInTimeWindows#tumbling-window) for more details.
+
+&nbsp;
+## Notion of time | Streaming | Lite engine
+
+Lite engine is stateless, so many concepts important for windows or aggregations do not apply, but following rules apply for Kafka sources and sinks:
+* Kafka record timestamps are used to determine time of the event
+* Kafka records produced by Nussknacker sinks have timestamp of event that generated them
