@@ -213,6 +213,20 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     }
   }
 
+  test("should allow deployment of scenario with warning") {
+    val processWithDisabledFilter = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "#input != null", Some(true))
+      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#input")
+
+    saveProcessAndAssertSuccess(SampleProcess.process.id, processWithDisabledFilter)
+    deployProcess(processName.value) ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
   test("should return failure for not validating scenario") {
     val invalidScenario = ScenarioBuilder
       .streaming("sampleProcess")
