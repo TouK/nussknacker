@@ -72,7 +72,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
 
 @JsonCodec case class TestMigrationResult(converted: ValidatedDisplayableProcess, newErrors: ValidationResult, shouldFailOnNewErrors: Boolean) {
   def shouldFail: Boolean = {
-    shouldFailOnNewErrors && !newErrors.isOk
+    shouldFailOnNewErrors && (newErrors.hasErrors || newErrors.hasWarnings)
   }
 }
 private case class MigratedProcessDetails(newProcess: DisplayableProcess, oldProcessErrors: ValidationResult, shouldFail: Boolean, processCategory: String)

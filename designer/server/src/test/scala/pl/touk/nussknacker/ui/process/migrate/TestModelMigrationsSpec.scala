@@ -138,8 +138,10 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     val results = testMigration.testMigrations(List(validatedToProcess(process)), List(validatedToProcess(subprocess).copy(modelVersion = Some(10))))
 
     val processMigrationResult = results.find(_.converted.id == process.id).get
-    processMigrationResult.newErrors.isOk shouldBe true
-    processMigrationResult.converted.validationResult.isOk shouldBe true
+    processMigrationResult.newErrors.hasErrors shouldBe false
+    processMigrationResult.newErrors.hasWarnings shouldBe false
+    processMigrationResult.converted.validationResult.hasErrors shouldBe false
+    processMigrationResult.converted.validationResult.hasWarnings shouldBe false
   }
 
   private def getFirst[T: ClassTag](result: TestMigrationResult): T =
