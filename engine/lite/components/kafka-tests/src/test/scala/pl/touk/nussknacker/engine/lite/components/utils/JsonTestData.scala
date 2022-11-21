@@ -86,6 +86,22 @@ object JsonTestData {
     s"""{"type": "object", "additionalProperties": $schemaString}""".stripMargin
   )
 
+  val schemaMapStringOrInt: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": { "type": ["string", "integer" ]}}""".stripMargin
+  )
+
+  val schemaMapObjPerson: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $personSchema}""".stripMargin
+  )
+
+  val schemaListIntegers: Schema = JsonSchemaBuilder.parseSchema(
+    s"""
+      |{
+      |  "type": "array",
+      |  "items": $schemaInteger
+      |}
+      |""".stripMargin)
+
   val schemaObjMapInteger: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
       |  "type": "object",

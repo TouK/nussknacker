@@ -99,6 +99,48 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
     }
   }
 
+  test("sink with schema with additionalProperties: true/{schema}") {
+    def config(sinkSchema: EveritSchema, sourceSchema: EveritSchema, validationMode: Option[ValidationMode] = None) =
+      oConfig(InputEmptyObject, sourceSchema, sinkSchema, output = Input, validationMode)
+
+    val testData = Table(
+      ("config", "is valid"),
+
+      (config(schemaMapAny, schemaMapAny), true),
+      (config(schemaMapAny, schemaMapString), true),
+      (config(schemaMapAny, schemaMapObjPerson), true),
+      (config(schemaMapAny, schemaListIntegers), false),
+      (config(schemaMapAny, personSchema), true),
+
+      (config(schemaMapString, schemaMapAny, Some(ValidationMode.strict)), false),
+      (config(schemaMapString, schemaMapAny, Some(ValidationMode.lax)), true),
+      (config(schemaMapString, schemaMapString), true),
+      (config(schemaMapString, schemaMapStringOrInt, Some(ValidationMode.strict)), false),
+      (config(schemaMapString, schemaMapStringOrInt, Some(ValidationMode.lax)), true),
+      (config(schemaMapString, schemaMapObjPerson), false),
+      (config(schemaMapString, schemaListIntegers), false),
+      (config(schemaMapString, personSchema), false),
+
+      (config(schemaMapStringOrInt, schemaMapAny, Some(ValidationMode.strict)), false),
+      (config(schemaMapStringOrInt, schemaMapAny, Some(ValidationMode.lax)), true),
+      (config(schemaMapStringOrInt, schemaMapString), true),
+      (config(schemaMapStringOrInt, schemaMapStringOrInt), true),
+      (config(schemaMapStringOrInt, schemaMapObjPerson), false),
+      (config(schemaMapStringOrInt, schemaListIntegers), false),
+      (config(schemaMapStringOrInt, personSchema), true),
+    )
+
+    forAll(testData) { (config: ScenarioConfig, isExpectedToBeValid: Boolean) =>
+      //if validation mode not defined test against both
+      config.validationMode.map(List(_))
+        .getOrElse(List(ValidationMode.strict, ValidationMode.lax))
+        .foreach { mode =>
+          val results = runWithValueResults(config.copy(validationMode = Some(mode)))
+          results.isValid shouldBe isExpectedToBeValid
+        }
+    }
+  }
+
   test("should catch runtime errors") {
     val testData = Table(
       ("config", "result"),

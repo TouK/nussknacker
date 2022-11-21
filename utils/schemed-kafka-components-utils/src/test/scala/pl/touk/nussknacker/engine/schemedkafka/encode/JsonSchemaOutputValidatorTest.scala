@@ -23,7 +23,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     val testData = Table(
       ("typing", "is valid"),
       (typedClass[String], false),
-      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[Integer], Unknown)), false),
+      (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[Integer], Unknown)), false),  //not tested in functional tests
       (genericTypeClass(classOf[Map[_, _]], List(typedClass[String], Unknown)), false),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], Unknown)), true),
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], typedClass[String])), true),
@@ -31,7 +31,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       (genericTypeClass(classOf[java.util.Map[_, _]], List(typedClass[String], TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])))), true),
       (genericTypeClass(classOf[java.util.List[_]], List(typedClass[String])), false),
       (TypedObjectTypingResult(ListMap("foo" -> Typed[String], "bar" -> Typed[Integer], "baz" -> Typed[String])), true),
-      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true),
+      (TypedObjectTypingResult(ListMap("foo" -> Unknown)), true), //not tested in functional tests
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
