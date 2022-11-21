@@ -14,6 +14,7 @@
   * When `"additionalProperties": true` type is `Map[String, Unknown]`
   * When `"additionalProperties": T` type is `Map[String, T]`
 * [#3709](https://github.com/TouK/nussknacker/pull/3709) Fix BestEffortJsonSchemaEncoder - fix encoding only strings when `"type": String`
+* [#3716](https://github.com/TouK/nussknacker/pull/3716) Fix: JsonSchema sinks allow to add additional fields also in `strict validation mode`, if schema permits them.
 
 1.6.1 (8 Nov 2022)
 ------------------------
