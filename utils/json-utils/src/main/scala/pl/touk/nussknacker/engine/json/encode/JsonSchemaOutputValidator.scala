@@ -5,12 +5,12 @@ import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
 import org.everit.json.schema.{ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputValidatorExpected {
@@ -19,6 +19,16 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 
 object JsonSchemaOutputValidator {
   private[encode] val SimplePath = "Value"
+
+  implicit class RichObjectSchema(s: ObjectSchema) {
+    val representsMap = s.permitsAdditionalProperties() && s.getPropertySchemas.isEmpty
+  }
+
+  private implicit class RichTypedClass(t: TypedClass) {
+    val representsMapWithStringKeys = {
+      t.klass == classOf[java.util.Map[_, _]] && t.params.size == 2 && t.params.head == Typed.typedClass[String]
+    }
+  }
 }
 
 class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
@@ -32,20 +42,30 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
    * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
    */
-  def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, parentSchema, None)
+  def validateTypingResultAgainstSchema(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
+    validateTypingResult(typingResult, schema, None)
 
   //todo: add support for: unions, enums, nested types, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
-      case (Unknown, _) if validationMode == ValidationMode.lax =>
-        valid
+      case (Unknown, _) if validationMode == ValidationMode.lax => valid
+      case (Unknown, _) if validationMode == ValidationMode.strict => invalid(typingResult, schema, path)
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
-      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) =>
-        validateRecordSchema(typingResult, s, path)
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if s.representsMap => validateMapSchema(path, s, typingResult.fields.toList: _*)
+      case (tc: TypedClass, s: ObjectSchema) if s.representsMap && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("value", tc.params.tail.head))
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if !s.representsMap => validateRecordSchema(typingResult, s, path)
       case (_, _) => canBeSubclassOf(typingResult, schema, path)
     }
+  }
+
+  private def validateMapSchema(path: Option[String], mapSchema: ObjectSchema, fields: (String, TypingResult)*): ValidatedNel[OutputValidatorError, Unit] = {
+    if (mapSchema.getSchemaOfAdditionalProperties == null)
+      valid
+    else
+      fields.map {
+        case (fName, fType) => validateTypingResult(fType, mapSchema.getSchemaOfAdditionalProperties, buildPath(fName, path))
+      }.reduce(_ combine _)
   }
 
   private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {
@@ -58,8 +78,15 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: ObjectSchema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
-    val schemaFields = schema.getPropertySchemas.asScala
+    val schemaFields: Map[String, Schema] = schema.getPropertySchemas.asScala.toMap
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
+
+    def validateFieldsType(schemas: Map[String, Schema], fieldsToValidate: Map[String, TypingResult]) = {
+      fieldsToValidate.flatMap { case (key, value) =>
+        val fieldPath = buildPath(key, path)
+        schemas.get(key).map(f => validateTypingResult(value, f, fieldPath))
+      }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
+    }
 
     val requiredFieldsValidation = {
       val requiredFieldNames = if (validationMode == ValidationMode.strict) {
@@ -72,19 +99,23 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
       }
     }
-    val schemaFieldsValidation = {
-      val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
-      fieldsToValidate.flatMap { case (key, value) =>
-        val fieldPath = buildPath(key, path)
-        schemaFields.get(key).map(f => validateTypingResult(value, f, fieldPath))
-      }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
-    }
+
+    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.filterKeys(schemaFields.contains))
+
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
       condNel(redundantFields.isEmpty || schema.permitsAdditionalProperties(), (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
-    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
+    val additionalFieldsValidation = {
+      val additionalFields = typingResult.fields.filterKeys(k => !schemaFields.keySet.contains(k))
+      if(additionalFields.isEmpty || schema.getSchemaOfAdditionalProperties == null)
+        valid
+       else
+        validateFieldsType(additionalFields.mapValues(_ => schema.getSchemaOfAdditionalProperties), additionalFields)
+    }
+
+    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation combine additionalFieldsValidation
   }
 
   /**
