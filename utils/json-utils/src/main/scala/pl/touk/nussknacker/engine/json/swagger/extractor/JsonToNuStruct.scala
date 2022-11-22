@@ -3,12 +3,10 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
-import java.util
 import scala.util.Try
 
 // TODO: Validated
@@ -33,10 +31,12 @@ object JsonToNuStruct {
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
-            case (key, value) if obj.additionalProperties.isInstanceOf[AdditionalPropertiesSwaggerTyped] =>
-              key -> JsonToNuStruct(value, obj.additionalProperties.asInstanceOf[AdditionalPropertiesSwaggerTyped].value, addPath(key))
-            case (key, value) if obj.additionalProperties.asInstanceOf[AdditionalPropertiesBoolean].value =>
-              key -> jsonToAny(value)
+            case (key, value) => obj.additionalProperties match {
+              case add: AdditionalPropertiesSwaggerTyped =>
+                key -> JsonToNuStruct(value, add.value, addPath(key))
+              case add: AdditionalPropertiesBoolean if add.value =>
+                key -> jsonToAny(value)
+            }
           }
         )
       )

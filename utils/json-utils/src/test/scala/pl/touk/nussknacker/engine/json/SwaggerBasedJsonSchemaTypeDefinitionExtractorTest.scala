@@ -9,7 +9,6 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped.typingResult
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
