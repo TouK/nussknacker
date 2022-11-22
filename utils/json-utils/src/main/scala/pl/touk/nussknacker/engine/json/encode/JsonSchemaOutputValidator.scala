@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 
+import scala.collection.mutable
 import scala.language.implicitConversions
 
 private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputValidatorExpected {
@@ -77,8 +78,15 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateRecordSchema(typingResult: TypedObjectTypingResult, schema: ObjectSchema, path: Option[String]): Validated[NonEmptyList[OutputValidatorError], Unit] = {
-    val schemaFields = schema.getPropertySchemas.asScala
+    val schemaFields: Map[String, Schema] = schema.getPropertySchemas.asScala.toMap
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
+
+    def validateFieldsType(schemas: Map[String, Schema], fieldsToValidate: Map[String, TypingResult]) = {
+      fieldsToValidate.flatMap { case (key, value) =>
+        val fieldPath = buildPath(key, path)
+        schemas.get(key).map(f => validateTypingResult(value, f, fieldPath))
+      }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
+    }
 
     val requiredFieldsValidation = {
       val requiredFieldNames = if (validationMode == ValidationMode.strict) {
@@ -91,19 +99,23 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
         condNel(missingFields.isEmpty, (), OutputValidatorMissingFieldsError(prepareFields(missingFields)))
       }
     }
-    val schemaFieldsValidation = {
-      val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeys(schemaFields.contains)
-      fieldsToValidate.flatMap { case (key, value) =>
-        val fieldPath = buildPath(key, path)
-        schemaFields.get(key).map(f => validateTypingResult(value, f, fieldPath))
-      }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
-    }
+
+    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.filterKeys(schemaFields.contains))
+
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
       condNel(redundantFields.isEmpty || schema.permitsAdditionalProperties(), (), OutputValidatorRedundantFieldsError(prepareFields(redundantFields)))
     }
 
-    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation
+    val additionalFieldsValidation = {
+      val additionalFields = typingResult.fields.filterKeys(k => !schemaFields.keySet.contains(k))
+      if(additionalFields.isEmpty || schema.getSchemaOfAdditionalProperties == null)
+        valid
+       else
+        validateFieldsType(additionalFields.mapValues(_ => schema.getSchemaOfAdditionalProperties), additionalFields)
+    }
+
+    requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation combine additionalFieldsValidation
   }
 
   /**
