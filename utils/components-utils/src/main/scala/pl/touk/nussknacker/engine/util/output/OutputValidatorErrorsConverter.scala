@@ -20,14 +20,14 @@ class OutputValidatorErrorsConverter(schemaParamName: String) {
       }.toList
 
     val messageTypeFieldErrors = typeFieldsError.map(err =>
-      s"path '${err.field}' actual: '${err.displayActual}' expected: '${err.displayExpected}'"
+      s"${err.field.map(f => s"path '$f' ").getOrElse("")}actual: '${err.displayActual}' expected: '${err.displayExpected}'"
     )
 
     val message = makeMessage(messageTypeFieldErrors, missingFieldsError, redundantFieldsError)
     CustomNodeError(message, Option(schemaParamName))
   }
 
-  case class OutputValidatorGroupTypeError(field: String, actual: TypingResult, expected: List[OutputValidatorExpected]) {
+  case class OutputValidatorGroupTypeError(field: Option[String], actual: TypingResult, expected: List[OutputValidatorExpected]) {
     def displayExpected: String = expected.map(_.expected).mkString(TypesSeparator)
     def displayActual: String = actual.display
   }
@@ -40,7 +40,7 @@ trait OutputValidatorExpected {
 
 sealed trait OutputValidatorError
 
-case class OutputValidatorTypeError(field: String, actual: TypingResult, expected: OutputValidatorExpected) extends OutputValidatorError
+case class OutputValidatorTypeError(field: Option[String], actual: TypingResult, expected: OutputValidatorExpected) extends OutputValidatorError
 
 case class OutputValidatorMissingFieldsError(fields: Set[String]) extends OutputValidatorError
 

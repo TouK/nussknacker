@@ -100,7 +100,7 @@ class UniversalKafkaSinkValidationSpec extends KafkaAvroSpecMixin with KafkaAvro
       SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe CustomNodeError("id",
-      "Provided value does not match scenario output - errors:\nType validation: path 'Value' actual: 'String{}' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | Null}'.",
+      "Provided value does not match scenario output - errors:\nIncorrect type: actual: 'String{}' expected: '{id: String, amount: Double, currency: EnumSymbol[PLN | EUR | GBP | USD] | String, company: {name: String, address: {street: String, city: String}}, products: List[{id: String, name: String, price: Double}], vat: Integer | Null}'.",
       Some(SinkValueParamName)) :: Nil
   }
 
