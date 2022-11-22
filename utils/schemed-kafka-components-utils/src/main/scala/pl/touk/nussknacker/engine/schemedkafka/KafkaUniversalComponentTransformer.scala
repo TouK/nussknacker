@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.TopicParamName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
@@ -24,7 +23,8 @@ object KafkaUniversalComponentTransformer {
   final val SinkRawEditorParamName = "Raw editor"
 
   def extractValidationMode(value: String): ValidationMode =
-    ValidationMode.byName(value).getOrElse(throw CustomNodeValidationException(s"Unknown validation mode: $value", Some(SinkValidationModeParameterName)))
+    ValidationMode.fromString(value, SinkValidationModeParameterName)
+
 }
 
 trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransformation[T] with WithCachedTopicsExistenceValidator {

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.encode
+package pl.touk.nussknacker.engine.json.encode
 
 import org.everit.json.schema.{ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
