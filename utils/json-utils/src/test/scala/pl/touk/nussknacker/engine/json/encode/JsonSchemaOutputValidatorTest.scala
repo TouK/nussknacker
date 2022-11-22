@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.encode
+package pl.touk.nussknacker.engine.json.encode
 
 import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
