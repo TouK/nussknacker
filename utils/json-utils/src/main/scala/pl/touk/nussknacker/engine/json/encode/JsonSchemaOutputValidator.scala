@@ -52,9 +52,9 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if s.representsMap => validateMapSchema(path, s, typingResult.fields.toList: _*)
-      case (tc: TypedClass, s: ObjectSchema) if s.representsMap && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("field", tc.params.tail.head))
+      case (tc: TypedClass, s: ObjectSchema) if s.representsMap && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("value", tc.params.tail.head))
       case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if !s.representsMap => validateRecordSchema(typingResult, s, path)
-      case (t, _) if t != Unknown || validationMode == ValidationMode.lax => canBeSubclassOf(typingResult, schema, path)
+      case (_, _) => canBeSubclassOf(typingResult, schema, path)
     }
   }
 
