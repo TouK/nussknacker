@@ -74,26 +74,26 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
   test("should test end to end kafka avro record data at sink / source with primitive integers") {
     testEnd2End(Table(
       ("config", "result"),
-      (sConfig(sampleInteger, longSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), invalidTypes(s"path 'Value' actual: '${typedLong.display}' expected: 'Integer'")),
-      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Integer'")),
-      (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Integer'")),
-      (sConfig(sampleString, stringSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Integer'")),
-      (sConfig(sampleFloat, floatSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Float' expected: 'Integer'")),
-      (sConfig(sampleDouble, doubleSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Integer'")),
-      (sConfig(sampleBytes, bytesSchema, integerSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"path 'Value' actual: '${typedFloat.display}' expected: 'Integer'")),
-      (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"path 'Value' actual: 'Double' expected: 'Integer'")),
+      (sConfig(sampleInteger, longSchema, integerSchema, Input), invalidTypes("actual: 'Long' expected: 'Integer'")),
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, sampleLong), invalidTypes(s"actual: '${typedLong.display}' expected: 'Integer'")),
+      (sConfig(null, nullSchema, integerSchema, Input), invalidTypes("actual: 'Null' expected: 'Integer'")),
+      (sConfig(sampleBoolean, booleanSchema, integerSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Integer'")),
+      (sConfig(sampleString, stringSchema, integerSchema, Input), invalidTypes("actual: 'String' expected: 'Integer'")),
+      (sConfig(sampleFloat, floatSchema, integerSchema, Input), invalidTypes("actual: 'Float' expected: 'Integer'")),
+      (sConfig(sampleDouble, doubleSchema, integerSchema, Input), invalidTypes("actual: 'Double' expected: 'Integer'")),
+      (sConfig(sampleBytes, bytesSchema, integerSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, null), invalidTypes("actual: 'Null' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, sampleFloat), invalidTypes(s"actual: '${typedFloat.display}' expected: 'Integer'")),
+      (sConfig(sampleInteger, integerSchema, double(1)), invalidTypes(s"actual: 'Double' expected: 'Integer'")),
     ))
   }
 
   test("should test end to end kafka avro record data at sink with Unknown type") {
     testEnd2End(Table(
       ("config", "result"),
-      (sConfig(null, nullSchema, integerSchema, SpecialSpELElement(s"""{$sampleInteger, "$sampleString"}[0]""")), invalidTypes(s"path 'Value' actual: 'Unknown' expected: 'Integer'")),
+      (sConfig(null, nullSchema, integerSchema, SpecialSpELElement(s"""{$sampleInteger, "$sampleString"}[0]""")), invalidTypes(s"actual: 'Unknown' expected: 'Integer'")),
       (sConfig(null, nullSchema, integerSchema, SpecialSpELElement(s"""{$sampleInteger, "$sampleString"}[0]"""), Some(ValidationMode.lax)), valid(sampleInteger)),
     ))
   }
@@ -103,36 +103,36 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       ("config", "result"),
       (sConfig(sampleInteger, integerSchema, longSchema, Input), valid(sampleInteger.toLong)),
       (sConfig(sampleBoolean, booleanSchema, longSchema, sampleInteger), valid(sampleInteger.toLong)),
-      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Long'")),
-      (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Long'")),
-      (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Long'")),
-      (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Float' expected: 'Long'")),
-      (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Long'")),
-      (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"path 'Value' actual: '${typedFloat.display}' expected: 'Long'")),
-      (sConfig(sampleLong, longSchema, double(1)), invalidTypes("path 'Value' actual: 'Double' expected: 'Long'"))
+      (sConfig(null, nullSchema, longSchema, Input), invalidTypes("actual: 'Null' expected: 'Long'")),
+      (sConfig(sampleBoolean, booleanSchema, longSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Long'")),
+      (sConfig(sampleString, stringSchema, longSchema, Input), invalidTypes("actual: 'String' expected: 'Long'")),
+      (sConfig(sampleFloat, floatSchema, longSchema, Input), invalidTypes("actual: 'Float' expected: 'Long'")),
+      (sConfig(sampleDouble, doubleSchema, longSchema, Input), invalidTypes("actual: 'Double' expected: 'Long'")),
+      (sConfig(sampleBytes, bytesSchema, longSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, null), invalidTypes("actual: 'Null' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, sampleFloat), invalidTypes(s"actual: '${typedFloat.display}' expected: 'Long'")),
+      (sConfig(sampleLong, longSchema, double(1)), invalidTypes("actual: 'Double' expected: 'Long'"))
     ))
   }
 
   test("should test end to end kafka avro record data at sink / source with primitive float") {
     testEnd2End(Table(
       ("config", "result"),
-      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Double' expected: 'Float'")),
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), invalidTypes(s"path 'Value' actual: '${typedDouble.display}' expected: 'Float'")),
+      (sConfig(sampleDouble, doubleSchema, floatSchema, Input), invalidTypes("actual: 'Double' expected: 'Float'")),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleDouble), invalidTypes(s"actual: '${typedDouble.display}' expected: 'Float'")),
       (sConfig(sampleInteger, integerSchema, floatSchema, Input), valid(sampleInteger.toFloat)),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleInteger), valid(sampleInteger.toFloat)),
       (sConfig(sampleLong, longSchema, floatSchema, Input), valid(sampleLong.toFloat)),
       (sConfig(sampleBoolean, booleanSchema, floatSchema, sampleLong), valid(sampleLong.toFloat)),
-      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Float'")),
-      (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Float'")),
-      (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Float'")),
-      (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Float'")),
-      (sConfig(sampleFloat, floatSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Float'")),
-      (sConfig(sampleFloat, floatSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Float'")),
-      (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Float'")),
+      (sConfig(null, nullSchema, floatSchema, Input), invalidTypes("actual: 'Null' expected: 'Float'")),
+      (sConfig(sampleBoolean, booleanSchema, floatSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Float'")),
+      (sConfig(sampleString, stringSchema, floatSchema, Input), invalidTypes("actual: 'String' expected: 'Float'")),
+      (sConfig(sampleBytes, bytesSchema, floatSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, null), invalidTypes("actual: 'Null' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Float'")),
+      (sConfig(sampleFloat, floatSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Float'")),
     ))
   }
 
@@ -145,13 +145,13 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       (sConfig(sampleBoolean, booleanSchema, doubleSchema, sampleInteger), valid(sampleInteger.toDouble)),
       (sConfig(sampleLong, longSchema, doubleSchema, Input), valid(sampleLong.toDouble)),
       (sConfig(sampleLong, longSchema, doubleSchema, sampleLong), valid(sampleLong.toDouble)),
-      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'Null' expected: 'Double'")),
-      (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'Boolean' expected: 'Double'")),
-      (sConfig(sampleString, stringSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: 'Double'")),
-      (sConfig(sampleBytes, bytesSchema, doubleSchema, Input), invalidTypes("path 'Value' actual: 'ByteBuffer' expected: 'Double'")),
-      (sConfig(sampleDouble, doubleSchema, null), invalidTypes("path 'Value' actual: 'Null' expected: 'Double'")),
-      (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"path 'Value' actual: '${typedStr.display}' expected: 'Double'")),
-      (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"path 'Value' actual: '${typedBool.display}' expected: 'Double'")),
+      (sConfig(null, nullSchema, doubleSchema, Input), invalidTypes("actual: 'Null' expected: 'Double'")),
+      (sConfig(sampleBoolean, booleanSchema, doubleSchema, Input), invalidTypes("actual: 'Boolean' expected: 'Double'")),
+      (sConfig(sampleString, stringSchema, doubleSchema, Input), invalidTypes("actual: 'String' expected: 'Double'")),
+      (sConfig(sampleBytes, bytesSchema, doubleSchema, Input), invalidTypes("actual: 'ByteBuffer' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, null), invalidTypes("actual: 'Null' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, sampleString), invalidTypes(s"actual: '${typedStr.display}' expected: 'Double'")),
+      (sConfig(sampleDouble, doubleSchema, sampleBoolean), invalidTypes(s"actual: '${typedBool.display}' expected: 'Double'")),
     ))
   }
 
@@ -174,7 +174,7 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
       (rConfig(sampleUnionMapOfIntsAndInt, recordUnionMapOfIntsAndIntSchema, recordMapOfIntsSchema, Input, Some(ValidationMode.lax)), valid(sampleMapOfIntsAndInt)),
       (rConfig(sampleString, recordUnionStringAndRecordIntSchema, recordUnionRecordIntAndStringSchema, Input), rValid(sampleString, recordUnionRecordIntAndStringSchema)),
       (rConfig(sampleString, recordUnionRecordIntAndStringSchema, recordUnionRecordIntAndStringSchema, Input), rValid(sampleString, recordUnionRecordIntAndStringSchema)),
-      (sConfig(sampleString, stringSchema, recordUnionStringAndIntegerSchema, Input), invalidTypes("path 'Value' actual: 'String' expected: '{field: String | Integer}'")),
+      (sConfig(sampleString, stringSchema, recordUnionStringAndIntegerSchema, Input), invalidTypes("actual: 'String' expected: '{field: String | Integer}'")),
       (rConfig(sampleBoolean, recordUnionStringAndBooleanSchema, recordUnionStringAndIntegerSchema, Input), invalidTypes("path 'field' actual: 'String | Boolean' expected: 'String | Integer'")),
       (rConfig(sampleBoolean, recordMaybeBooleanSchema, recordUnionStringAndIntegerSchema, Input), invalidTypes("path 'field' actual: 'Boolean' expected: 'String | Integer'")),
     ))
