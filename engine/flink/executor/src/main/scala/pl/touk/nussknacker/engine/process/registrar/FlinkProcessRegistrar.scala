@@ -162,7 +162,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
         val typeInformationForTi = InterpretationResultTypeInformation.create(typeInformationDetection, part.contextBefore)
         val typeInformationForVC = typeInformationDetection.forContext(part.contextBefore)
 
-        registerSubsequentPart(start.getSideOutput(new OutputTag[InterpretationResult](part.id, typeInformationForTi))
+        registerSubsequentPart(sideOutput(start, new OutputTag[InterpretationResult](part.id, typeInformationForTi))
           .map((value: InterpretationResult) => value.finalContext, typeInformationForVC), part)
       }.foldLeft(Map[BranchEndDefinition, BranchEndData]()) {
         _ ++ _
@@ -170,7 +170,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       val branchForEnds = part.ends.collect {
         case TypedEnd(be: BranchEnd, validationContext) =>
           val ti = InterpretationResultTypeInformation.create(typeInformationDetection, validationContext)
-          be.definition -> BranchEndData(validationContext, start.getSideOutput(new OutputTag[InterpretationResult](be.nodeId, ti)))
+          be.definition -> BranchEndData(validationContext, sideOutput(start, new OutputTag[InterpretationResult](be.nodeId, ti)))
       }.toMap
       branchesForParts ++ branchForEnds
     }
@@ -193,8 +193,8 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       val typeInformationForIR = InterpretationResultTypeInformation.create(typeInformationDetection, contextBefore)
       val typeInformationForCtx = typeInformationDetection.forContext(contextBefore)
       // TODO: for sinks there are no further nodes to interpret but the function is registered to invoke listeners (e.g. to measure end metrics).
-      val afterInterpretation = registerInterpretationPart(start, part, SinkInterpretationName)
-        .getSideOutput(new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR))
+      val afterInterpretation = sideOutput(registerInterpretationPart(start, part, SinkInterpretationName),
+        new OutputTag[InterpretationResult](FlinkProcessRegistrar.EndId, typeInformationForIR))
         .map((value: InterpretationResult) => value.finalContext, typeInformationForCtx)
       val customNodeContext = nodeContext(nodeComponentInfoFrom(part), Left(contextBefore))
       val withValuePrepared = sink.prepareValue(afterInterpretation, customNodeContext)
@@ -269,6 +269,9 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
     }
 
   }
+
+  private def sideOutput[T](stream: SingleOutputStreamOperator[_], tag: OutputTag[T])
+    = streamExecutionEnvPreparer.sideOutputGetter(stream, tag)
 
   private def nodeComponentInfoFrom(processPart: ProcessPart): NodeComponentInfo = {
     fromNodeData(processPart.node.data)

@@ -227,7 +227,6 @@ lazy val commonSettings =
         "com.typesafe.akka" %% "akka-stream" % akkaV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV,
 
-        // akka-actor depends on old, 0.8 version
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
 
         //security features
@@ -253,7 +252,7 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.15.2"
+val flinkV = "1.16.0"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
 //TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
@@ -274,7 +273,7 @@ val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
-val scalaCompatV = "0.9.1"
+val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
 val configV = "1.4.1"
 val commonsLangV = "3.3.2"
@@ -1516,7 +1515,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
-  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
+  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
