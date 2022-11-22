@@ -4,10 +4,12 @@ import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.json.swagger
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerBool, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalProperties, SwaggerArray, SwaggerBool, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.openapi._
 
 class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
+
+  import AdditionalProperties._
 
   test("reads swagger 2.0") {
 
@@ -35,9 +37,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
-        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong))),
+        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong), AdditionalPropertiesWithoutType)),
         "otherField" -> SwaggerString
-      )))
+      ), AdditionalPropertiesWithoutType))
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))

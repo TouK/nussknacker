@@ -15,6 +15,8 @@ import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
 
+  import pl.touk.nussknacker.engine.json.swagger.AdditionalProperties._
+
   test("should extract object with simple fields") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
       """{
@@ -253,7 +255,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     val swaggerTypeExtracted = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val jsonObject = Json.obj("time" -> fromString("2022-07-11T18:12:27+02:00"))
-    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime))
+    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime), AdditionalPropertiesDisabled)
     val jsonToObjectExtracted = JsonToNuStruct(jsonObject, swaggerObject)
 
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe

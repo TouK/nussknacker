@@ -13,6 +13,8 @@ import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
 class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
+  import pl.touk.nussknacker.engine.json.swagger.AdditionalProperties._
+
   private val json = Json.obj(
     "field1" -> fromString("value"),
     "field2" -> Json.fromInt(1),
@@ -42,7 +44,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "nullField" -> SwaggerNull,
         "mapField" -> SwaggerMap(None),
         "mapOfStringsField" -> SwaggerMap(Some(SwaggerString))
-      )
+      ), AdditionalPropertiesDisabled
     )
 
     val value = JsonToNuStruct(json, definition)
@@ -67,7 +69,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should reject map with incorrect values types") {
-    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))))
+    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))), AdditionalPropertiesDisabled)
 
     val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
 
@@ -76,13 +78,41 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should trim useless fields") {
-    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
     extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map.empty)
+  }
+
+  test("should not trim useless fields when additionalPropertiesOn") {
+    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesWithoutType)
+    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
+      "field1" -> "value",
+      "field2"-> 1
+    ))
+
+    val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
+    val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+    extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(Map(
+      "field1" -> 2L,
+      "field2"-> 1L
+    ))
+  }
+
+  test("should throw exception on trying convert string to integer") {
+    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+
+    intercept[JsonToObjectError] {
+      extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
+        "field1" -> "value",
+        "field2"-> 1
+      ))
+    }
   }
 
   test("should parse union") {
     val definition =
-      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))))
+      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), AdditionalPropertiesWithoutType)
 
     val value = JsonToNuStruct(json, definition)
 
@@ -97,8 +127,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "string" -> SwaggerString,
         "long" -> SwaggerLong,
         "array" -> SwaggerArray(SwaggerBool),
-        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString))
-      )
+        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString), AdditionalPropertiesWithoutType)
+      ), AdditionalPropertiesWithoutType
     )
 
     def assertPath(json: Json, path: String) =

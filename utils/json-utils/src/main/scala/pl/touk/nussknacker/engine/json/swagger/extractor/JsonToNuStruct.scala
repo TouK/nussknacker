@@ -26,13 +26,17 @@ object JsonToNuStruct {
 
     def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(elementType: Map[PropertyName, SwaggerTyped]): AnyRef =
+    def extractObject(obj: SwaggerObject): AnyRef =
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
           jo.toMap.collect {
-            case (key, value) if elementType.contains(key) =>
-              key -> JsonToNuStruct(value, elementType(key), addPath(key))
+            case (key, value) if obj.elementType.contains(key) =>
+              key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+            case (key, value) if obj.additionalProperties.isInstanceOf[AdditionalPropertiesSwaggerTyped] =>
+              key -> JsonToNuStruct(value, obj.additionalProperties.asInstanceOf[AdditionalPropertiesSwaggerTyped].value, addPath(key))
+            case (key, value) if obj.additionalProperties.asInstanceOf[AdditionalPropertiesBoolean].value =>
+              key -> jsonToAny(value)
           }
         )
       )
@@ -69,7 +73,7 @@ object JsonToNuStruct {
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
         extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
-      case SwaggerObject(elementType) => extractObject(elementType)
+      case obj: SwaggerObject => extractObject(obj)
       case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
         .headOption.getOrElse(throw JsonToObjectError(json, u, path))

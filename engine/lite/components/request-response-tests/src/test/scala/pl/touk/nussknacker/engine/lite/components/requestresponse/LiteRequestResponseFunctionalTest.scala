@@ -102,12 +102,12 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
       //Testing additional properties
       //(config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), invalid(Nil, Nil, List(AdditionalFieldName))), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
-      //(config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
+      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
       (spelConfig(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (spelConfig(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
 
       //(config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString()), invalid(Nil, Nil, List(AdditionalFieldName))), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
-      //(config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
+      (config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
       (spelConfig(schemaObjString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (spelConfig(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
     )
