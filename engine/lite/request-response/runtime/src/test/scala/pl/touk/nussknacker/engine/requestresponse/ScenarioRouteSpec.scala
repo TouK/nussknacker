@@ -89,11 +89,9 @@ class ScenarioRouteSpec extends AnyFunSuite with ScalatestRouteTest with Matcher
        |            "application/json" : {
        |              "schema" : {
        |                "type" : "object",
-       |                "nullable" : false,
        |                "properties" : {
        |                  "city" : {
        |                    "type" : "string",
-       |                    "nullable" : false,
        |                    "default" : "Warsaw"
        |                  }
        |                }

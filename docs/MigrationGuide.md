@@ -22,6 +22,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   now returns `ValidatedNel` with scenario compilation errors instead of throwing exception in that case 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor:
   * Right now access to not existing field on TypedMap won't throw exception, just will return `null`
+* [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
+  * Added param `Value validation mode` at RR response component
+  * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 
 ### Code API changes
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`

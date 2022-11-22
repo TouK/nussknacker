@@ -5,12 +5,14 @@ import cats.data.Validated.valid
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, MandatoryParameterValidator, NodeDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, NodeDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSchemaSubclassDeterminer, JsonSinkValueParameter}
-import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.{SinkRawEditorParamName, SinkRawValueParamName}
+import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
+import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
 
@@ -18,15 +20,21 @@ object JsonRequestResponseSink {
 
   final val SinkRawValueParamName: String = "Value"
   final val SinkRawEditorParamName: String = "Raw editor"
+  final val SinkValidationModeParameterName: String = "Value validation mode"
 
 }
 
 class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactory) extends SingleInputGenericNodeTransformation[Sink] with SinkFactory {
-
+  import JsonRequestResponseSink._
   override type State = EditorTransformationState
   private val jsonSchemaExtractor = new JsonSchemaExtractor()
   private val rawModeParam: Parameter = Parameter[Boolean](SinkRawEditorParamName).copy(defaultValue = Some("false"), editor = Some(BoolParameterEditor), validators = List(MandatoryParameterValidator))
   private val rawValueParam = ParameterWithExtractor.lazyMandatory[AnyRef](SinkRawValueParamName)
+  private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(
+    editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label))))
+  )
+
+  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(SinkRawValueParamName)
 
   def rawParamStep()(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
@@ -42,13 +50,20 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
 
   protected def rawEditorParamStep(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
-      NextParameters(rawValueParam.parameter :: Nil)
-    case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: (SinkRawValueParamName, value) :: Nil, _) =>
+      NextParameters(validationModeParam :: rawValueParam.parameter :: Nil)
+    case TransformationStep(
+      (SinkRawEditorParamName, DefinedEagerParameter(true, _)) ::
+      (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
+      (SinkRawValueParamName, value) :: Nil, _
+    ) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
-          val validationResult = new JsonSchemaSubclassDeterminer(schema).validateTypingResultToSchema(value.returnType, SinkRawValueParamName)
+          val validationResult = new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName))
+            .validateTypingResultToSchema(value.returnType, schema)
+            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
             .swap.toList.flatMap(_.toList)
+
           val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter)
           val state = EditorTransformationState(schema, valueParam)
           valid(FinalResults(context, validationResult, Option(state)))

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.encode
+package pl.touk.nussknacker.engine.json.encode
 
 import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
