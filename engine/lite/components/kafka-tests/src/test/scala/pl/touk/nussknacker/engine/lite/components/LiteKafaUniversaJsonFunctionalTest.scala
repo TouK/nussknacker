@@ -105,6 +105,7 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
   }
 
   test("sink with schema with additionalProperties: true/{schema}") {
+    //This tests runs scenario which passes #input directly to Sink using raw editor. Scenario is triggered with `{}` message.
     val lax = List(ValidationMode.lax)
     val strict = List(ValidationMode.strict)
     val strictAndLax = ValidationMode.values
@@ -116,7 +117,7 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (schemaMapAny,          schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaMapString,       schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaMapObjPerson,    schemaMapAny,                         strictAndLax,       valid(obj())),
-      (schemaListIntegers,    schemaMapAny,                         strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, Any]'")),
+      (schemaListIntegers,    schemaMapAny,                         strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, Any]'")),
       (personSchema,          schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaMapAny,          schemaMapString,                      strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String'")),
       (schemaMapAny,          schemaMapString,                      lax,                valid(obj())),
@@ -124,14 +125,14 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (schemaMapStringOrInt,  schemaMapString,                      strict,             invalidType("path 'value' actual: 'String | Long' expected: 'String'")),
       (schemaMapStringOrInt,  schemaMapString,                      lax,                valid(obj())),
       (schemaMapObjPerson,    schemaMapString,                      strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
-      (schemaListIntegers,    schemaMapString,                      strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String]'")),
+      (schemaListIntegers,    schemaMapString,                      strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, String]'")),
       (personSchema,          schemaMapString,                      strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
       (schemaMapAny,          schemaMapStringOrInt,                 strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String | Long'")),
       (schemaMapAny,          schemaMapStringOrInt,                 lax,                valid(obj())),
       (schemaMapString,       schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
       (schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
       (schemaMapObjPerson,    schemaMapStringOrInt,                 strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
-      (schemaListIntegers,    schemaMapStringOrInt,                 strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (schemaListIntegers,    schemaMapStringOrInt,                 strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
       (personSchema,          schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
       (personSchema,          nameAndLastNameSchema,                strictAndLax,       valid(obj())),
       (personSchema,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(obj())),

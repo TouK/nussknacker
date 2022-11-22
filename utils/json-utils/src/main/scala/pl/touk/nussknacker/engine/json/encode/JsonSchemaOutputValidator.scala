@@ -18,8 +18,6 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 }
 
 object JsonSchemaOutputValidator {
-  private[encode] val SimplePath = "Value"
-
   implicit class RichObjectSchema(s: ObjectSchema) {
     val representsMap = s.permitsAdditionalProperties() && s.getPropertySchemas.isEmpty
   }
@@ -127,7 +125,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   private def canBeSubclassOf(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     val schemaAsTypedResult = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
     condNel(typingResult.canBeSubclassOf(schemaAsTypedResult), (),
-      OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
+      OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema))
     )
   }
 
@@ -135,7 +133,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     Validated.invalidNel(typeError(typingResult, schema, path))
 
   private def typeError(typingResult: TypingResult, schema: Schema, path: Option[String]) =
-    OutputValidatorTypeError(path.getOrElse(SimplePath), typingResult, JsonSchemaExpected(schema))
+    OutputValidatorTypeError(path, typingResult, JsonSchemaExpected(schema))
 
   private def buildPath(key: String, path: Option[String], useIndexer: Boolean = false) = Some(
     path.map(p => if (useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)
