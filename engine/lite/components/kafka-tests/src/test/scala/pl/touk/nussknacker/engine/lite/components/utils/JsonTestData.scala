@@ -33,6 +33,21 @@ object JsonTestData {
       |  "additionalProperties": false
       |}""".stripMargin)
 
+  val nameAndLastNameSchema: Schema = JsonSchemaBuilder.parseSchema(
+    """{
+      |  "type": "object",
+      |  "properties": {
+      |    "first": {
+      |      "type": "string"
+      |    },
+      |    "last": {
+      |      "type": "string"
+      |    }
+      |  },
+      |  "additionalProperties": true
+      |}""".stripMargin)
+
+
   val schemaInteger: Schema = JsonSchemaBuilder.parseSchema("""{"type": "integer"}""".stripMargin)
 
   val schemaString: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string"}""".stripMargin)
@@ -167,6 +182,8 @@ object JsonTestData {
   val sampleInteger: Json = fromInt(1)
 
   val sampleObjFirstLastName: Json = obj("first" -> fromString("Nu"), "last" -> fromString("TouK"))
+
+  val sampleObPerson: Json = obj("first" -> fromString("Nu"), "last" -> fromString("TouK"), "age" -> fromInt(10))
 
   val sampleSpELFirstLastName: Map[String, Any] = Map("first" -> "Nu", "last" -> "TouK")
 

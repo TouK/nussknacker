@@ -8,7 +8,6 @@ import org.apache.avro.Schema.Type
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -51,7 +50,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
     * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
     */
-  def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
+  def validateTypingResultAgainstSchema(typingResult: TypingResult, parentSchema: Schema): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, parentSchema, None)
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {

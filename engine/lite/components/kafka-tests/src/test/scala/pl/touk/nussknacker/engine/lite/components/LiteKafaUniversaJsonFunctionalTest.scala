@@ -91,6 +91,9 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (sConfig(sampleMapString, schemaMapString, schemaMapInteger), invalid(List("path 'value' actual: 'String' expected: 'Long'"), Nil, Nil)),
       (sConfig(sampleMapString, schemaObjString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
       (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.value' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
+
+      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema), valid(sampleObPerson)),
+      (sConfig(sampleObPerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(sampleObjFirstLastName)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -107,32 +110,33 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
 
     //@formatter:off
     val testData = Table(
-      ("sinkSchema",          "sourceSchema",        "validationModes",   "result"),
+      ("sourceSchema",        "sinkSchema",          "validationModes",   "result"),
       (schemaMapAny,          schemaMapAny,          strictAndLax,        valid(obj())),
-      (schemaMapAny,          schemaMapString,       strictAndLax,        valid(obj())),
-      (schemaMapAny,          schemaMapObjPerson,    strictAndLax,        valid(obj())),
-      (schemaMapAny,          schemaListIntegers,    strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, Any]'")),
-      (schemaMapAny,          personSchema,          strictAndLax,        valid(obj())),
-      (schemaMapString,       schemaMapAny,          strict,              invalidType("path 'value' actual: 'Unknown' expected: 'String'")),
-      (schemaMapString,       schemaMapAny,          lax,                 valid(obj())),
+      (schemaMapString,       schemaMapAny,          strictAndLax,        valid(obj())),
+      (schemaMapObjPerson,    schemaMapAny,          strictAndLax,        valid(obj())),
+      (schemaListIntegers,    schemaMapAny,          strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, Any]'")),
+      (personSchema,          schemaMapAny,          strictAndLax,        valid(obj())),
+      (schemaMapAny,          schemaMapString,       strict,              invalidType("path 'value' actual: 'Unknown' expected: 'String'")),
+      (schemaMapAny,          schemaMapString,       lax,                 valid(obj())),
       (schemaMapString,       schemaMapString,       strictAndLax,        valid(obj())),
-      (schemaMapString,       schemaMapStringOrInt,  strict,              invalidType("path 'value' actual: 'String | Long' expected: 'String'")),
-      (schemaMapString,       schemaMapStringOrInt,  lax,                 valid(obj())),
-      (schemaMapString,       schemaMapObjPerson,    strictAndLax,        invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
-      (schemaMapString,       schemaListIntegers,    strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String]'")),
-      (schemaMapString,       personSchema,          strictAndLax,        invalidType("path 'age' actual: 'Long' expected: 'String'")),
-      (schemaMapStringOrInt,  schemaMapAny,          strict,              invalidType("path 'value' actual: 'Unknown' expected: 'String | Long'")),
-      (schemaMapStringOrInt,  schemaMapAny,          lax,                 valid(obj())),
-      (schemaMapStringOrInt,  schemaMapString,       strictAndLax,        valid(obj())),
+      (schemaMapStringOrInt,  schemaMapString,       strict,              invalidType("path 'value' actual: 'String | Long' expected: 'String'")),
+      (schemaMapStringOrInt,  schemaMapString,       lax,                 valid(obj())),
+      (schemaMapObjPerson,    schemaMapString,       strictAndLax,        invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
+      (schemaListIntegers,    schemaMapString,       strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String]'")),
+      (personSchema,          schemaMapString,       strictAndLax,        invalidType("path 'age' actual: 'Long' expected: 'String'")),
+      (schemaMapAny,          schemaMapStringOrInt,  strict,              invalidType("path 'value' actual: 'Unknown' expected: 'String | Long'")),
+      (schemaMapAny,          schemaMapStringOrInt,  lax,                 valid(obj())),
+      (schemaMapString,       schemaMapStringOrInt,  strictAndLax,        valid(obj())),
       (schemaMapStringOrInt,  schemaMapStringOrInt,  strictAndLax,        valid(obj())),
-      (schemaMapStringOrInt,  schemaMapObjPerson,    strictAndLax,        invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
-      (schemaMapStringOrInt,  schemaListIntegers,    strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
-      (schemaMapStringOrInt,  personSchema,          strictAndLax,        valid(obj())),
+      (schemaMapObjPerson,    schemaMapStringOrInt,  strictAndLax,        invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
+      (schemaListIntegers,    schemaMapStringOrInt,  strictAndLax,        invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (personSchema,          schemaMapStringOrInt,  strictAndLax,        valid(obj())),
+      (personSchema,          nameAndLastNameSchema, strictAndLax,        valid(obj())),
     )
     //@formatter:on
 
     forAll(testData) {
-      (sinkSchema: EveritSchema, sourceSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+      (sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
         validationModes.foreach { mode =>
           val results = runWithValueResults(oConfig(InputEmptyObject, sourceSchema, sinkSchema, output = Input, Some(mode)))
           results shouldBe expected

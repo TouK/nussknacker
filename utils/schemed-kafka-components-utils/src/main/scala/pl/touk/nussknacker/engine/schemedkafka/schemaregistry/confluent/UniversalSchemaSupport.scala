@@ -31,7 +31,7 @@ trait UniversalSchemaSupport {
   def typeDefinition(schema: ParsedSchema): TypingResult
   def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
   def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
-  def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit]
+  def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit]
   val recordFormatterSupport: RecordFormatterSupport
 }
 
