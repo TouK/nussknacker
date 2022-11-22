@@ -68,17 +68,17 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     val testData = Table(
       ("config", "result"),
       (config(obj(), schemaObjNull, schemaObjNull), Valid(obj())),
-      (config(obj(), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
-      (config(JsonObject(Null), schemaObjNull, schemaObjNull), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
-      (config(JsonObject(Null), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
+      (config(obj(), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(JsonObject(Null), schemaObjNull, schemaObjNull), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(JsonObject(Null), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
 
       (config(obj(), schemaObjString(), schemaObjString()), Valid(obj())),
       (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should throw exception at runtime
 
-      (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
+      (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
       (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())),
-      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
-      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
+      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -96,7 +96,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       //Union testing
       (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
       (config(JsonObject(fromString(sampleStr)), schemaObjString(), schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
-      (config(JsonObject(Null), schemaObjNull, schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert MAp(field->null) to empty json
+      (config(JsonObject(Null), schemaObjNull, schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
       (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjString()), validJObj(fromString(sampleStr))),
       (spelConfig(schemaObjUnionNullString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
