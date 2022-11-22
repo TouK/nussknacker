@@ -59,7 +59,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
           val validationResult = new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName))
-            .validateTypingResultToSchema(value.returnType, schema)
+            .validateTypingResultAgainstSchema(value.returnType, schema)
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
             .swap.toList.flatMap(_.toList)

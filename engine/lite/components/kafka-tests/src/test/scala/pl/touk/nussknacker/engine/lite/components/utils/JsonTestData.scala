@@ -33,21 +33,6 @@ object JsonTestData {
       |  "additionalProperties": false
       |}""".stripMargin)
 
-  val nameAndLastNameSchema: Schema = JsonSchemaBuilder.parseSchema(
-    """{
-      |  "type": "object",
-      |  "properties": {
-      |    "first": {
-      |      "type": "string"
-      |    },
-      |    "last": {
-      |      "type": "string"
-      |    }
-      |  },
-      |  "additionalProperties": true
-      |}""".stripMargin)
-
-
   val schemaInteger: Schema = JsonSchemaBuilder.parseSchema("""{"type": "integer"}""".stripMargin)
 
   val schemaString: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string"}""".stripMargin)
@@ -59,6 +44,22 @@ object JsonTestData {
        |  "type": "integer",
        |  "minimum": ${Integer.MIN_VALUE},
        |  "maximum": ${Integer.MAX_VALUE}
+       |}""".stripMargin)
+
+  val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
+
+  def nameAndLastNameSchema(additionalProperties: Any): Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+       |  "type": "object",
+       |  "properties": {
+       |    "first": {
+       |      "type": "string"
+       |    },
+       |    "last": {
+       |      "type": "string"
+       |    }
+       |  },
+       |  "additionalProperties": ${additionalProperties.toString}
        |}""".stripMargin)
 
   val schemaObjObjFirstLastNameRequired: Schema = JsonSchemaBuilder.parseSchema(
