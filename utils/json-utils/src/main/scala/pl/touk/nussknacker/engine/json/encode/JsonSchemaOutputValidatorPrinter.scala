@@ -10,6 +10,7 @@ import scala.collection.JavaConverters
 object JsonSchemaOutputValidatorPrinter {
 
   import OutputValidatorErrorsMessageFormatter._
+  import JsonSchemaOutputValidator._
 
   import JavaConverters._
 
@@ -18,6 +19,9 @@ object JsonSchemaOutputValidatorPrinter {
   }
 
   def print(schema: Schema): String = schema match {
+    case s: ObjectSchema if s.representsMap =>
+      val valuesType = Option(s.getSchemaOfAdditionalProperties).map(print).getOrElse("Any")
+      s"Map[String, ${valuesType}]"
     case s: ObjectSchema => s.getPropertySchemas.asScala.map {
       case (name, fieldSchema) => s"$name:${print(fieldSchema)}"
     }.mkString("{", ", ", "}")

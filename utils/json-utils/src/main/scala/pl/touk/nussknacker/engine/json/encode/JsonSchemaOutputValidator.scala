@@ -19,7 +19,7 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 object JsonSchemaOutputValidator {
   private[encode] val SimplePath = "Value"
 
-  private implicit class RichObjectSchema(s: ObjectSchema) {
+  implicit class RichObjectSchema(s: ObjectSchema) {
     val representsMap = s.permitsAdditionalProperties() && s.getPropertySchemas.isEmpty
   }
 
