@@ -32,7 +32,7 @@ A scenario is a sequence of different nodes:
 - custom, tailor-made components, which extend default functionality
 - and more
 
-The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches. If there are [for-each](./BasicNodes.md#foreach) nodes, multiple records are produced as the result. Finally, the filter node by its very nature can terminate the data record.
+The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches.  Multiple data records can be produced by the node; for example the [for-each](./BasicNodes.md#foreach) node. Finally, some nodes may terminate the data record - for exxample the [filter](BasicNodes.md#filter] node.
 
 &nbsp;
 ## SpEL
@@ -57,7 +57,7 @@ SpEL is used in Nussknacker to access data processed by a node and expand node's
 
 * create boolean expression (for example in filters) based on logical or relational (equal, greater than, etc) operators
 * access, query and manipulate fields of the incoming data record
-* format records (events) written to data sinks
+* format data records written to sinks
 * provide helper functions like date and time, access to system variables
 * and many more.
 
@@ -73,13 +73,12 @@ In some contexts data type conversions may be necessary - conversion functions a
 &nbsp;
 ## Variables
 
-Nussknacker uses variables as containers for data. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are attached to data records, they do not exist by themselves. 
+Nussknacker uses variables as containers for data. Variables have to be declared; a `variable` or `mapVariable` component are used for this. Once declared, a hash sign `"#"` is used to refer to a variable from a SpEL expression. Variables are attributes of the data record, they do not exist by themselves. 
 
 There are three predefined variables: `#input`, `#inputMeta` and `#meta`. 
 
-In the Streaming processing mode the `#input` variable is associated with the event which originally came from the Kafka topic. In the case of Flink engine some nodes not only terminate the input events, but also create new ones. Aas the result, the #input data record is no longer available after such a node, while the newly created event (and the variable associated with it) is available "downstream". 
+In the Streaming processing mode the `#input` variable is associated with the event which originally came from the Kafka topic. In the Request-Response processing mode the `#input` variable carries the request data of REST call which invoked Nussknacker scenario. Both in the Streaming and Request-Response cases some nodes not only terminate the input events, but also create new ones. As the result, the #input data record is no longer available after such a node, while the newly created data record (and the variable associated with it) is available "downstream". 
 
-In the Request-Response processing mode the `#input` variable carries the request data of REST call which invoked Nussknacker scenario.
 
 If the event which arrived to some node originally came from the Kafka topic, the metadata associated with this event are available in `#inputMeta` variable. The following meta information fields are available in `#inputMeta`:
 * headers 
