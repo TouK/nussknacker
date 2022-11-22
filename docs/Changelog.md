@@ -18,6 +18,7 @@
 * [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
+* [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
 
 1.6.1 (8 Nov 2022)
 ------------------------

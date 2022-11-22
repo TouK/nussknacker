@@ -43,8 +43,8 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override def sinkValueEncoder(schema: ParsedSchema, validationMode: ValidationMode): Any => AnyRef =
     (value: Any) => BestEffortAvroEncoder(validationMode).encodeOrError(value, schema.cast().rawSchema())
 
-  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
-    new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
+    new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
   override val recordFormatterSupport: RecordFormatterSupport = AvroPayloadRecordFromatterSupport
 }
@@ -68,8 +68,8 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
-  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
-    new JsonSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
+    new JsonSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
   override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 }
@@ -89,8 +89,8 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
   override def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef =
     (value: Any) => BestEffortAvroEncoder(mode).encodeOrError(value, schema.cast().rawSchema())
 
-  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
-    new AvroSchemaOutputValidator(mode).validateTypingResultToSchema(t, schema.cast().rawSchema())
+  override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
+    new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
   override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 }

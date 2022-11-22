@@ -87,11 +87,64 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (oConfig(sampleMapInteger, schemaObjMapInteger, schemaObjMapInteger), oValid(sampleMapInteger)),
       (oConfig(sampleInteger, schemaObjInteger, schemaObjMapInteger, sampleMapSpELInteger), oValid(sampleMapInteger)),
       (sConfig(sampleInteger, schemaInteger, schemaObjString, Map("redundant" -> "red")), invalid(Nil, List("field"), List("redundant"))),
+
+      (sConfig(sampleMapString, schemaMapString, schemaMapInteger), invalid(List("path 'value' actual: 'String' expected: 'Long'"), Nil, Nil)),
+      (sConfig(sampleMapString, schemaObjString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
+      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.value' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
+
+      (sConfig(sampleObPerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(sampleObjFirstLastName)),
+      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema), valid(sampleObPerson)),
+      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaInteger)), valid(sampleObPerson)),
+      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaString)), invalid(List("path 'age' actual: 'Long' expected: 'String'"), Nil, Nil)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
       val results = runWithValueResults(config)
       results shouldBe expected
+    }
+  }
+
+  test("sink with schema with additionalProperties: true/{schema}") {
+    val lax = List(ValidationMode.lax)
+    val strict = List(ValidationMode.strict)
+    val strictAndLax = ValidationMode.values
+    def invalidType(msg: String) = invalid(List(msg), Nil, Nil)
+
+    //@formatter:off
+    val testData = Table(
+      ("sourceSchema",        "sinkSchema",                         "validationModes",  "result"),
+      (schemaMapAny,          schemaMapAny,                         strictAndLax,       valid(obj())),
+      (schemaMapString,       schemaMapAny,                         strictAndLax,       valid(obj())),
+      (schemaMapObjPerson,    schemaMapAny,                         strictAndLax,       valid(obj())),
+      (schemaListIntegers,    schemaMapAny,                         strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, Any]'")),
+      (personSchema,          schemaMapAny,                         strictAndLax,       valid(obj())),
+      (schemaMapAny,          schemaMapString,                      strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String'")),
+      (schemaMapAny,          schemaMapString,                      lax,                valid(obj())),
+      (schemaMapString,       schemaMapString,                      strictAndLax,       valid(obj())),
+      (schemaMapStringOrInt,  schemaMapString,                      strict,             invalidType("path 'value' actual: 'String | Long' expected: 'String'")),
+      (schemaMapStringOrInt,  schemaMapString,                      lax,                valid(obj())),
+      (schemaMapObjPerson,    schemaMapString,                      strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
+      (schemaListIntegers,    schemaMapString,                      strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String]'")),
+      (personSchema,          schemaMapString,                      strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
+      (schemaMapAny,          schemaMapStringOrInt,                 strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String | Long'")),
+      (schemaMapAny,          schemaMapStringOrInt,                 lax,                valid(obj())),
+      (schemaMapString,       schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
+      (schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
+      (schemaMapObjPerson,    schemaMapStringOrInt,                 strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
+      (schemaListIntegers,    schemaMapStringOrInt,                 strictAndLax,       invalidType("path 'Value' actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
+      (personSchema,          schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
+      (personSchema,          nameAndLastNameSchema,                strictAndLax,       valid(obj())),
+      (personSchema,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(obj())),
+      (personSchema,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
+    )
+    //@formatter:on
+
+    forAll(testData) {
+      (sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+        validationModes.foreach { mode =>
+          val results = runWithValueResults(oConfig(InputEmptyObject, sourceSchema, sinkSchema, output = Input, Some(mode)))
+          results shouldBe expected
+        }
     }
   }
 
@@ -104,9 +157,6 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (oConfig(obj("first" -> fromString("")), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: required key [last] not found"),
       (oConfig(obj("t1" -> fromString("1")), schemaObjMapInteger, schemaObjMapAny), "#/field/t1: expected type: Integer, found: String"),
       (sConfig(obj("t1" -> fromString("1"), "field" -> fromString("1")), schemaObjString, schemaMapAny), "#: extraneous key [t1] is not permitted"),
-
-      //Errors at sinks
-      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), s"Not expected type: java.lang.String for field with schema: $schemaInteger"), //TODO: It should be validated by JsonSchemaOutputValidator
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>

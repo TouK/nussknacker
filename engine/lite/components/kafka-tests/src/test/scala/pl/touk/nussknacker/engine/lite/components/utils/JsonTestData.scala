@@ -46,6 +46,22 @@ object JsonTestData {
        |  "maximum": ${Integer.MAX_VALUE}
        |}""".stripMargin)
 
+  val nameAndLastNameSchema: Schema = nameAndLastNameSchema(true)
+
+  def nameAndLastNameSchema(additionalProperties: Any): Schema = JsonSchemaBuilder.parseSchema(
+    s"""{
+       |  "type": "object",
+       |  "properties": {
+       |    "first": {
+       |      "type": "string"
+       |    },
+       |    "last": {
+       |      "type": "string"
+       |    }
+       |  },
+       |  "additionalProperties": ${additionalProperties.toString}
+       |}""".stripMargin)
+
   val schemaObjObjFirstLastNameRequired: Schema = JsonSchemaBuilder.parseSchema(
     """{
       |  "type": "object",
@@ -81,6 +97,26 @@ object JsonTestData {
   val schemaMapInteger: Schema = JsonSchemaBuilder.parseSchema(
     s"""{"type": "object", "additionalProperties": $schemaInteger}""".stripMargin
   )
+
+  val schemaMapString: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $schemaString}""".stripMargin
+  )
+
+  val schemaMapStringOrInt: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": { "type": ["string", "integer" ]}}""".stripMargin
+  )
+
+  val schemaMapObjPerson: Schema = JsonSchemaBuilder.parseSchema(
+    s"""{"type": "object", "additionalProperties": $personSchema}""".stripMargin
+  )
+
+  val schemaListIntegers: Schema = JsonSchemaBuilder.parseSchema(
+    s"""
+      |{
+      |  "type": "array",
+      |  "items": $schemaInteger
+      |}
+      |""".stripMargin)
 
   val schemaObjMapInteger: Schema = JsonSchemaBuilder.parseSchema(
     s"""{
@@ -148,11 +184,15 @@ object JsonTestData {
 
   val sampleObjFirstLastName: Json = obj("first" -> fromString("Nu"), "last" -> fromString("TouK"))
 
+  val sampleObPerson: Json = obj("first" -> fromString("Nu"), "last" -> fromString("TouK"), "age" -> fromInt(10))
+
   val sampleSpELFirstLastName: Map[String, Any] = Map("first" -> "Nu", "last" -> "TouK")
 
   val sampleMapAny: Json = obj("first" -> fromString("Nu"), "year" -> fromInt(Year.now.getValue))
 
   val sampleMapInteger: Json = obj("year" -> fromInt(Year.now.getValue))
+
+  val sampleMapString: Json = obj("foo" -> fromString("bar"))
 
   val sampleMapSpELAny: Map[String, Any] = Map("first" -> "Nu", "year" -> Year.now.getValue)
 
