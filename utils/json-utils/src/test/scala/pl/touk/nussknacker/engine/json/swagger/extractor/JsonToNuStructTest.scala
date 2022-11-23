@@ -77,14 +77,14 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     ex.path shouldBe "mapField.b"
   }
 
-  test("should trim useless fields") {
+  test("should skip addionalFields when schema/SwaggerObject does not allow them") {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
     extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map.empty)
   }
 
-  test("should not trim useless fields when additionalPropertiesOn") {
+  test("should not trim additional fields fields when additionalPropertiesOn") {
     val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
-    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesWithoutType)
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
     extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
       "field1" -> "value",
       "field2"-> 1
@@ -102,17 +102,19 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
 
-    intercept[JsonToObjectError] {
+    val ex = intercept[JsonToObjectError] {
       extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
         "field1" -> "value",
         "field2"-> 1
       ))
     }
+
+    ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
   }
 
   test("should parse union") {
     val definition =
-      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))), AdditionalPropertiesWithoutType)
+      SwaggerObject(elementType = Map("field2" -> SwaggerUnion(List(SwaggerString, SwaggerLong))))
 
     val value = JsonToNuStruct(json, definition)
 
@@ -127,8 +129,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "string" -> SwaggerString,
         "long" -> SwaggerLong,
         "array" -> SwaggerArray(SwaggerBool),
-        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString), AdditionalPropertiesWithoutType)
-      ), AdditionalPropertiesWithoutType
+        "nested" -> SwaggerObject(elementType = Map("string" -> SwaggerString))
+      )
     )
 
     def assertPath(json: Json, path: String) =

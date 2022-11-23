@@ -31,10 +31,10 @@ object JsonToNuStruct {
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
-            case (key, value) => obj.additionalProperties match {
+            case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
               case add: AdditionalPropertiesSwaggerTyped =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
-              case add: AdditionalPropertiesBoolean if add.value =>
+              case _ =>
                 key -> jsonToAny(value)
             }
           }

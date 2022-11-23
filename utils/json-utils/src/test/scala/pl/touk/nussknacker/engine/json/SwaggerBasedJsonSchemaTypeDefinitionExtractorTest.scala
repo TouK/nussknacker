@@ -9,12 +9,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, SwaggerDateTime, SwaggerObject}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
-
-  import pl.touk.nussknacker.engine.json.swagger.AdditionalProperties._
 
   test("should extract object with simple fields") {
     val schema: Schema = SchemaLoader.load(new JSONObject(

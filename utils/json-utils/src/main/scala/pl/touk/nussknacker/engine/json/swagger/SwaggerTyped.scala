@@ -10,13 +10,8 @@ import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
 @JsonCodec sealed trait AdditionalProperties
-
-object AdditionalProperties {
-  lazy val AdditionalPropertiesDisabled: AdditionalProperties = AdditionalPropertiesBoolean(false)
-  lazy val AdditionalPropertiesWithoutType: AdditionalProperties = AdditionalPropertiesBoolean(true)
-}
-
-case class AdditionalPropertiesBoolean(value: Boolean) extends AdditionalProperties
+case object AdditionalPropertiesDisabled extends AdditionalProperties
+case object AdditionalPropertiesWithoutType extends AdditionalProperties
 case class AdditionalPropertiesSwaggerTyped(value: SwaggerTyped) extends AdditionalProperties
 
 @JsonCodec sealed trait SwaggerTyped {
@@ -132,7 +127,9 @@ object SwaggerArray {
 }
 
 object SwaggerObject {
-  import AdditionalProperties._
+  def apply(elementType: Map[PropertyName, SwaggerTyped]): SwaggerObject =
+    SwaggerObject(elementType, AdditionalPropertiesWithoutType)
+
   def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map())
 
