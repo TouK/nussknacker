@@ -1,21 +1,19 @@
 package pl.touk.nussknacker.engine.json.serde
 
-import org.everit.json.schema.loader.SchemaLoader
-import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 
 import scala.collection.JavaConverters._
 
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
   test("json object") {
-    val schema = SchemaLoader.load(new JSONObject(
+    val schema = JsonSchemaBuilder.parseSchema(
       """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
         |  "type": "object",
         |  "properties": {
         |    "firstName": {
@@ -28,7 +26,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |      "type": "integer"
         |    }
         |  }
-        |}""".stripMargin))
+        |}""".stripMargin)
+
     val result = new CirceJsonDeserializer(schema).deserialize(
       """{
         |  "firstName": "John",
@@ -44,14 +43,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("json array") {
-    val schema = SchemaLoader.load(new JSONObject(
-      """{
-        |  "$schema": "https://json-schema.org/draft-07/schema",
-        |  "type": "array",
-        |  "items": {
-        |    "type": "string"
-        |  }
-        |}""".stripMargin))
+    val schema = JsonSchemaBuilder.parseSchema("""{"type": "array","items": {"type": "string"}}""".stripMargin)
     val result = new CirceJsonDeserializer(schema).deserialize("""["John", "Doe"]""")
 
     result shouldEqual List("John", "Doe").asJava
@@ -91,7 +83,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin
     )) { schemaString =>
-      val schema = SchemaLoader.load(new JSONObject(schemaString))
+      val schema = JsonSchemaBuilder.parseSchema(schemaString)
       val deserializer = new CirceJsonDeserializer(schema)
 
       deserializer.deserialize(
@@ -107,7 +99,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("handling nulls and empty json") {
-    val unionSchemaWithNull = SchemaLoader.load(new JSONObject(
+    val unionSchemaWithNull = JsonSchemaBuilder.parseSchema(
       """
         |{
         |  "type": "object",
@@ -117,9 +109,9 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |    }
         |  }
         |}
-        |""".stripMargin))
+        |""".stripMargin)
 
-    val schemaWithNotRequiredField = SchemaLoader.load(new JSONObject(
+    val schemaWithNotRequiredField = JsonSchemaBuilder.parseSchema(
       """
         |{
         |  "type": "object",
@@ -129,7 +121,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |    }
         |  }
         |}
-        |""".stripMargin))
+        |""".stripMargin)
 
     forAll(Table(
       ("json", "schema", "result"),

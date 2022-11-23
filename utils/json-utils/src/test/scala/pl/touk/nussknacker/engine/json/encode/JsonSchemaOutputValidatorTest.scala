@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.engine.json.encode
 
-import org.everit.json.schema.loader.SchemaLoader
-import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.typing.Typed._
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, TypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 
 import scala.collection.immutable.ListMap
 
@@ -15,7 +14,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   val validator = new JsonSchemaOutputValidator(ValidationMode.strict)
 
   test("should validate against 'map string to Any' schema") {
-    val mapStringToAnySchema = schema(
+    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |}""".stripMargin)
@@ -40,7 +39,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to string' schema") {
-    val mapStringToStringSchema = schema(
+    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "additionalProperties": {
@@ -66,7 +65,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to union' schema") {
-    val mapStringToStringOrIntSchema = schema(
+    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "additionalProperties": {
@@ -89,7 +88,5 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
       validator.validateTypingResultAgainstSchema(typing, mapStringToStringOrIntSchema).isValid shouldBe isValid
     }
   }
-
-  private def schema(schemaStrJson: String) = SchemaLoader.load(new JSONObject(schemaStrJson))
 
 }
