@@ -21,6 +21,8 @@ case class PeriodicProcessDeployment(id: PeriodicProcessDeploymentId,
     case (schedule, name) => Left(s"Schedule name: $name mismatch with schedule: $schedule")
   }
 
+  def display: String = s"${periodicProcess.processVersion} with ${scheduleName.map(sn => s"schedule=$sn and ").getOrElse("")}deploymentId=${periodicProcess.id}"
+
 }
 
 case class PeriodicProcessDeploymentState(deployedAt: Option[LocalDateTime],

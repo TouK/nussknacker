@@ -43,11 +43,6 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
     def emptyCallback: RepositoryAction[Callback] = result.map(_ => () => Future.successful(()))
   }
 
-  private implicit class RichPeriodicProcessDeployment(periodicDeployment: PeriodicProcessDeployment) {
-    def display: String = s"${periodicDeployment.periodicProcess.processVersion} with ${periodicDeployment
-        .scheduleName.map(sn => s"schedule=$sn and ").getOrElse("")}deploymentId=${periodicDeployment.periodicProcess.id}"
-  }
-
   private implicit val localDateOrdering: Ordering[LocalDateTime] = Ordering.by(identity[ChronoLocalDateTime[_]])
 
   def schedule(schedule: ScheduleProperty,
