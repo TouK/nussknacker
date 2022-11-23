@@ -7,13 +7,43 @@ import org.everit.json.schema.loader.SchemaLoader
 import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped.typingResult
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerDateTime, SwaggerObject}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
-class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
+class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  with TableDrivenPropertyChecks {
+
+  test("should convert schema additionalProperties to swagger type") {
+    val baseSwaggerTyped: SwaggerObject = SwaggerObject(Map("field" -> SwaggerString))
+    val testData = Table(
+      ("schemaStr", "expected"),
+      (
+        """{"type": "object", "properties": {"field": {"type": "string"}}}""",
+        baseSwaggerTyped
+      ),
+      (
+        """{"type": "object", "properties": {"field": {"type": "string"}}, "additionalProperties": true}""",
+        baseSwaggerTyped
+      ),
+      (
+        """{"type": "object", "properties": {"field": {"type": "string"}}, "additionalProperties": {"type": "integer"}}""",
+        baseSwaggerTyped.copy(additionalProperties = AdditionalPropertiesSwaggerTyped(SwaggerLong))
+      ),
+      (
+        """{"type": "object", "properties": {"field": {"type": "string"}}, "additionalProperties": false}""",
+        baseSwaggerTyped.copy(additionalProperties = AdditionalPropertiesDisabled)
+      ),
+    )
+
+    forAll(testData) { (schemaStr: String, expected: SwaggerObject) =>
+      val schema = JsonSchemaBuilder.parseSchema(schemaStr)
+      val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
+      result shouldBe expected
+    }
+
+  }
 
   test("should extract object with simple fields") {
     val schema: Schema = SchemaLoader.load(new JSONObject(
@@ -253,7 +283,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite {
     val swaggerTypeExtracted = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     val jsonObject = Json.obj("time" -> fromString("2022-07-11T18:12:27+02:00"))
-    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime))
+    val swaggerObject = new SwaggerObject(elementType = Map("time" -> SwaggerDateTime), AdditionalPropertiesDisabled)
     val jsonToObjectExtracted = JsonToNuStruct(jsonObject, swaggerObject)
 
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe

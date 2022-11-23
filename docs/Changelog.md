@@ -19,6 +19,7 @@
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 * [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
+* [#3730](https://github.com/TouK/nussknacker/pull/3730) Fix: Trimming additional fields at JsonToNuStruct when additionalProperties is enabled
 
 1.6.1 (8 Nov 2022)
 ------------------------

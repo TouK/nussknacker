@@ -42,7 +42,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "nullField" -> SwaggerNull,
         "mapField" -> SwaggerMap(None),
         "mapOfStringsField" -> SwaggerMap(Some(SwaggerString))
-      )
+      ), AdditionalPropertiesDisabled
     )
 
     val value = JsonToNuStruct(json, definition)
@@ -67,7 +67,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should reject map with incorrect values types") {
-    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))))
+    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))), AdditionalPropertiesDisabled)
 
     val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
 
@@ -75,9 +75,40 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     ex.path shouldBe "mapField.b"
   }
 
-  test("should trim useless fields") {
+  test("should skip addionalFields when schema/SwaggerObject does not allow them") {
+    val definitionWithoutFields = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
+    extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
+
+    val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
+    extractor.JsonToNuStruct(json, definitionWithOneField) shouldBe TypedMap(Map("field2" -> 1L))
+
+  }
+
+  test("should not trim additional fields fields when additionalPropertiesOn") {
+    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
-    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map.empty)
+    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
+      "field1" -> "value",
+      "field2" -> 1
+    ))
+
+    val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
+    val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+    extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(Map(
+      "field1" -> 2L,
+      "field2" -> 1L
+    ))
+  }
+
+  test("should throw exception on trying convert string to integer") {
+    val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+
+    val ex = intercept[JsonToObjectError] {
+      extractor.JsonToNuStruct(json, definition)
+    }
+
+    ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""
   }
 
   test("should parse union") {
