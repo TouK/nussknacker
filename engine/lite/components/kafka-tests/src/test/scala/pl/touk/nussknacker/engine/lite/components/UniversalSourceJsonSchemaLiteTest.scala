@@ -3,11 +3,10 @@ package pl.touk.nussknacker.engine.lite.components
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
-import org.everit.json.schema.loader.SchemaLoader
-import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -24,9 +23,8 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  val schema = SchemaLoader.load(new JSONObject(
+  private val schema = JsonSchemaBuilder.parseSchema(
     """{
-      |  "$schema": "https://json-schema.org/draft-07/schema",
       |  "type": "object",
       |  "properties": {
       |    "first": {
@@ -42,7 +40,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
       |      "type": "null"
       |    }
       |  }
-      |}""".stripMargin))
+      |}""".stripMargin)
 
   private val inputTopic = "input"
   private val outputTopic = "output"
