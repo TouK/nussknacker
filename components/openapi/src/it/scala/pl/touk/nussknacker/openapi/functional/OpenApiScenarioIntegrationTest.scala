@@ -2,7 +2,6 @@ package pl.touk.nussknacker.openapi.functional
 
 import cats.data.Validated.Valid
 import com.typesafe.config.ConfigFactory
-import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.IOUtils
 import org.scalatest.BeforeAndAfterAll
@@ -13,7 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkSpec
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.util.test.{ClassBasedTestScenarioRunner, RunResult, TestScenarioRunner}
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
@@ -32,19 +30,17 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   import pl.touk.nussknacker.engine.flink.util.test.FlinkTestScenarioRunner._
   import spel.Implicits._
 
-  def rootUrl(port: Int): String = s"http://localhost:$port/customers"
-
   // This tests don't use StubService implementation for handling requests - only for serving openapi definition. Invocation is handled by provided sttp backend.
   def withSwagger(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService().withCustomerService { port =>
     test(prepareScenarioRunner(port, sttpBackend))
   }
 
   def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("POST"))))
+    test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
   }
 
   def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
-    test(prepareScenarioRunner(port, sttpBackend, OpenAPIServicesConfig(allowedMethods = List("POST"))))
+    test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
   }
 
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
@@ -100,16 +96,14 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   }
 
   private def prepareScenarioRunner(port: Int, sttpBackend: SttpBackend[Future, Nothing, Nothing],
-                                    openAPIsConfig: OpenAPIServicesConfig = OpenAPIServicesConfig()) = {
+                                    openAPIsConfigCustomize: OpenAPIServicesConfig => OpenAPIServicesConfig = identity) = {
     val url = new URL(s"http://localhost:$port/swagger")
-    val finalConfig = ConfigFactory.load()
-      .withValue("components.openAPI.url", fromAnyRef(url.toString))
-      .withValue("components.openAPI.rootUrl", fromAnyRef(rootUrl(port)))
-    val resolvedConfig = new DefaultModelConfigLoader().resolveInputConfigDuringExecution(finalConfig, getClass.getClassLoader).config
+    val rootUrl = new URL(s"http://localhost:$port/customers")
+    val openAPIsConfig = openAPIsConfigCustomize(OpenAPIServicesConfig(url, rootUrl = Some(rootUrl)))
     val stubComponent = prepareStubbedComponent(sttpBackend, openAPIsConfig, url)
     // TODO: switch to liteBased after adding ability to override components there (currently there is only option to append not conflicting once) and rename class to *FunctionalTest
     TestScenarioRunner
-      .flinkBased(resolvedConfig, flinkMiniCluster)
+      .flinkBased(ConfigFactory.empty(), flinkMiniCluster)
       .withExtraComponents(List(stubComponent))
       .build()
   }
@@ -119,7 +113,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     val services = SwaggerParser.parse(definition, openAPIsConfig).collect {
       case Valid(service) => service
     }
-    val stubbedGetCustomerOpenApiService = new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend)
+    val stubbedGetCustomerOpenApiService = new SwaggerEnricher(url, services.head, Map.empty, (_: ExecutionContext) => sttpBackend, Nil)
     ComponentDefinition("getCustomer", stubbedGetCustomerOpenApiService)
   }
 

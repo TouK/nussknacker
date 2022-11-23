@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 trait BaseOpenAPITest {
 
-  protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig()
+  protected val baseConfig: OpenAPIServicesConfig = OpenAPIServicesConfig(new URL("http://foo"))
 
   implicit val componentUseCase: ComponentUseCase = ComponentUseCase.EngineRuntime
   implicit val metaData: MetaData = MetaData("testProc", StreamMetaData())
@@ -39,10 +39,9 @@ trait BaseOpenAPITest {
 
   protected def parseToEnrichers(resource: String, backend: SttpBackendStub[Future, Nothing, Nothing], config: OpenAPIServicesConfig = baseConfig): Map[ServiceName, EagerServiceWithStaticParametersAndReturnType] = {
     val services = parseServicesFromResourceUnsafe(resource, config)
-
-    val enrichers = new SwaggerEnrichers(new URL("http://foo"), None,
-      new SwaggerEnricherCreator((_: ExecutionContext) => backend))
-      .enrichers(services, Nil, Map.empty).map(ed => ed.name -> ed.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]).toMap
+    val creator = new SwaggerEnricherCreator((_: ExecutionContext) => backend)
+    val enrichers = SwaggerEnrichers.prepare(config, services, creator)
+      .map(ed => ed.name -> ed.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]).toMap
     enrichers.foreach(_._2.open(context))
     enrichers
   }

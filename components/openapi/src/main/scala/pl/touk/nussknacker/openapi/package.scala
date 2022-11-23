@@ -50,8 +50,7 @@ package openapi {
                                              responseSwaggerType: Option[SwaggerTyped],
                                              method: String,
                                              servers: List[String],
-                                             securities: List[SwaggerSecurity],
-                                             codesToInterpretAsEmpty: List[Int]
+                                             securities: List[SwaggerSecurity]
                                             )
 
   case class ServiceName(value: String)

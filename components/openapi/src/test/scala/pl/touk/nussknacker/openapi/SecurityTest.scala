@@ -54,6 +54,6 @@ class SecurityTest extends AnyFunSuite with BeforeAndAfterAll with Matchers with
   }
 
   private def enrichersForSecurityConfig(backend: SttpBackendStub[Future, Nothing, Nothing], securities: Map[String, ApiKeyConfig]) = {
-    parseToEnrichers("service-security.yml", backend, OpenAPIServicesConfig(security = Some(securities)))
+    parseToEnrichers("service-security.yml", backend, baseConfig.copy(security = Some(securities)))
   }
 }

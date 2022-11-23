@@ -23,7 +23,7 @@ class ServiceRequestTest extends AnyFunSuite with Matchers {
   private def prepareRequest(location: String, inputParams: Map[String, Any], fixedParams: Map[String, () => AnyRef]): SwaggerRequestType = {
     val rawSwagger =
       Source.fromInputStream(getClass.getClassLoader.getResourceAsStream(location)).mkString
-    val swaggerService = SwaggerParser.parse(rawSwagger, OpenAPIServicesConfig(allowedMethods = List("POST", "GET"))).flatMap(_.toOption).head
+    val swaggerService = SwaggerParser.parse(rawSwagger, OpenAPIServicesConfig(baseUrl, allowedMethods = List("POST", "GET"))).flatMap(_.toOption).head
     val parametersExtractor = new ParametersExtractor(swaggerService, fixedParams)
     ServiceRequest(rootUrl = baseUrl, swaggerService, parametersExtractor.prepareParams(inputParams))
   }

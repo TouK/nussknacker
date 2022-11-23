@@ -39,14 +39,14 @@ class OpenAPIServiceSpec extends FixtureAnyFunSuite with BeforeAndAfterAll with 
     try {
       new StubService().withCustomerService { port =>
         val securities = Map("apikey" -> ApiKeyConfig("TODO"))
-        val config = OpenAPIServicesConfig(security = Some(securities),
+        val config = OpenAPIServicesConfig(new URL("http://foo"), security = Some(securities),
           rootUrl = Some(new URL(s"http://localhost:$port")))
         val services = SwaggerParser.parse(definition, config).collect {
           case Valid(service) => service
         }
 
-        val enricher = new SwaggerEnrichers(new URL("http://foo"), Some(new URL(s"http://localhost:$port")), new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client)))
-          .enrichers(services, Nil, Map.empty).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
+        val enricher = SwaggerEnrichers.prepare(config, services,
+          new SwaggerEnricherCreator(new FixedAsyncHttpClientBackendProvider(client))).head.service.asInstanceOf[EagerServiceWithStaticParametersAndReturnType]
         enricher.open(TestEngineRuntimeContext(JobData(metaData, ProcessVersion.empty)))
 
         withFixture(test.toNoArgTest(enricher))

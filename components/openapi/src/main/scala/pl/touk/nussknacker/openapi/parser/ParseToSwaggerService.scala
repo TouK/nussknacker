@@ -112,8 +112,7 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
               responseSwaggerType = serviceResultType,
               method.toString,
               servers.map(_.getUrl),
-              parsedSecurities,
-              openAPIsConfig.codesToInterpretAsEmpty
+              parsedSecurities
             )
         }
     }

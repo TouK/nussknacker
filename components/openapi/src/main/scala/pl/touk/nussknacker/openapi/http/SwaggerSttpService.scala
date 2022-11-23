@@ -11,9 +11,7 @@ import sttp.model.StatusCode
 import java.net.URL
 import scala.language.higherKinds
 
-class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService) {
-
-  private val codesToInterpretAsEmpty = swaggerService.codesToInterpretAsEmpty.map(new StatusCode(_))
+class SwaggerSttpService(baseUrl: URL, swaggerService: SwaggerService, codesToInterpretAsEmpty: List[StatusCode]) {
 
   def invoke[F[_]](parameters: Map[String, Any])(implicit backend: SttpBackend[F, Nothing, Nothing]): F[AnyRef] = {
     implicit val monad: MonadError[F] = backend.responseMonad

@@ -24,14 +24,15 @@ class CodeHandlingTest extends  AnyFunSuite with BeforeAndAfterAll with Matchers
   }
 
   test("should handle configured response codes") {
-    val customEmptyCode = 204
-    val config = OpenAPIServicesConfig(codesToInterpretAsEmpty = List(customEmptyCode))
+    //should be non 2xx
+    val customEmptyCode = 409
+    val config = baseConfig.copy(codesToInterpretAsEmpty = List(customEmptyCode))
     val service = parseToEnrichers("custom-codes.yml", backend, config)(ServiceName("code"))
 
     def invokeWithCode(code: Int) =
       service.invoke(Map(codeParameter -> code)).futureValue.asInstanceOf[AnyRef]
 
-    invokeWithCode(customEmptyCode) shouldBe TypedMap(Map.empty)
+    invokeWithCode(customEmptyCode) shouldBe null
     invokeWithCode(200) shouldBe TypedMap(Map.empty)
 
     intercept[Exception] {

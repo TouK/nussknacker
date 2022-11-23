@@ -12,7 +12,6 @@ import sttp.client.{SttpBackend, basicRequest}
 import sttp.model.Uri
 
 import java.io.File
-import java.net.URL
 import java.nio.charset.StandardCharsets
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, Future}
@@ -38,9 +37,9 @@ class SwaggerOpenApiDefinitionDiscovery(implicit val httpBackend: SttpBackend[Fu
     extends LazyLogging {
 
   def discoverOpenAPIServices(
-    discoveryUrl: URL,
     openAPIsConfig: OpenAPIServicesConfig
   ): List[Validated[ServiceParseError, SwaggerService]] = {
+    val discoveryUrl = openAPIsConfig.url
     val definition = if (discoveryUrl.getProtocol == "file") {
       FileUtils.readFileToString(new File(discoveryUrl.getPath), StandardCharsets.UTF_8)
     } else {
