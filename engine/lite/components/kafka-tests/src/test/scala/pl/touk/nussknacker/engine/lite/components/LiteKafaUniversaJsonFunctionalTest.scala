@@ -92,7 +92,7 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (sConfig(sampleMapString, schemaObjString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
       (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.value' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
 
-      (sConfig(sampleObPerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(sampleObjFirstLastName)),
+      (sConfig(sampleObPerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(sampleObPerson)),
       (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema), valid(sampleObPerson)),
       (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaInteger)), valid(sampleObPerson)),
       (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaString)), invalid(List("path 'age' actual: 'Long' expected: 'String'"), Nil, Nil)),
