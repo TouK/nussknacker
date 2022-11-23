@@ -21,10 +21,10 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement}
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
 class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage
-  with TableDrivenPropertyChecks {
+  with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
   import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink._
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
@@ -101,13 +101,11 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       (spelConfig(schemaObjUnionNullString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
       //Testing additional properties
-      //(config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), invalid(Nil, Nil, List(AdditionalFieldName))), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
-      //(config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
+      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
       (spelConfig(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (spelConfig(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
 
-      //(config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString()), invalid(Nil, Nil, List(AdditionalFieldName))), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
-      //(config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)), //FIXME: on source additional field is trimmed by JsonToNuStruct:34, missing support for additionalProperties on objects with fields..
+      (config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
       (spelConfig(schemaObjString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
       (spelConfig(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
     )
@@ -118,6 +116,24 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     }
   }
 
+  test("should catch runtime errors") {
+    val testData = Table(
+      ("config", "result"),
+      //Errors at sources
+      (config(sampleObjWithAdds, schemaObjUnionNullString(), schemaObjUnionNullString(true)), "#: extraneous key [field2] is not permitted"),
+      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), "#: extraneous key [field2] is not permitted"),
+      (config(sampleObjWithAdds, schemaObjString(true), schemaObjString()), "#: extraneous key [field2] is not permitted"),
+    )
+
+    forAll(testData) { (config: ScenarioConfig, expected: String) =>
+      val scenario: CanonicalProcess = createScenario(config)
+      val result = runner.runWithRequests(scenario) { invoker =>
+        invoker(HttpRequest(HttpMethods.POST, entity = config.input.asJson.spaces2)).leftValue.head.throwable.getMessage
+      }.validValue
+
+      result shouldBe expected
+    }
+  }
   private def runWithResults(config: ScenarioConfig): ValidatedNel[ProcessCompilationError, Json] = {
     val scenario: CanonicalProcess = createScenario(config)
     val result = runner.runWithRequests(scenario) { invoker =>
