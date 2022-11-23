@@ -13,8 +13,6 @@ import java.time.{LocalDate, OffsetTime, ZoneOffset, ZonedDateTime}
 
 class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
-  import pl.touk.nussknacker.engine.json.swagger.AdditionalProperties._
-
   private val json = Json.obj(
     "field1" -> fromString("value"),
     "field2" -> Json.fromInt(1),
@@ -78,8 +76,12 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should skip addionalFields when schema/SwaggerObject does not allow them") {
-    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
-    extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map.empty)
+    val definitionWithoutFields = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
+    extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
+
+    val definitionWithOneField = SwaggerObject(elementType = Map("field2" -> SwaggerLong), AdditionalPropertiesDisabled)
+    extractor.JsonToNuStruct(json, definitionWithOneField) shouldBe TypedMap(Map("field2" -> 1L))
+
   }
 
   test("should not trim additional fields fields when additionalPropertiesOn") {
@@ -87,14 +89,14 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
     extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
       "field1" -> "value",
-      "field2"-> 1
+      "field2" -> 1
     ))
 
     val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
     val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
     extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(Map(
       "field1" -> 2L,
-      "field2"-> 1L
+      "field2" -> 1L
     ))
   }
 
@@ -103,10 +105,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
-      extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
-        "field1" -> "value",
-        "field2"-> 1
-      ))
+      extractor.JsonToNuStruct(json, definition)
     }
 
     ex.getMessage shouldBe """JSON returned by service has invalid type at field1. Expected: SwaggerLong. Returned json: "value""""

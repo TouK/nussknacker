@@ -44,7 +44,7 @@ case class SwaggerEnum(values: List[String]) extends SwaggerTyped
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additionalProperties: AdditionalProperties) extends SwaggerTyped
+case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additionalProperties: AdditionalProperties = AdditionalPropertiesWithoutType) extends SwaggerTyped
 
 case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
@@ -120,16 +120,12 @@ object SwaggerTyped {
       TypedNull
   }
 }
-
 object SwaggerArray {
   def apply(schema: ArraySchema, swaggerRefSchemas: SwaggerRefSchemas): SwaggerArray =
     SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas))
 }
 
 object SwaggerObject {
-  def apply(elementType: Map[PropertyName, SwaggerTyped]): SwaggerObject =
-    SwaggerObject(elementType, AdditionalPropertiesWithoutType)
-
   def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map())
 
@@ -141,7 +137,7 @@ object SwaggerObject {
       }
     } else{
       val additionalProperties = schema.getAdditionalProperties match {
-        case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas))))
+        case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas))
         case any if any == false => AdditionalPropertiesDisabled
         case _ => AdditionalPropertiesWithoutType
       }
