@@ -164,7 +164,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
-          subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
@@ -172,6 +171,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig
         ),
+        new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
         ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),

@@ -3,12 +3,10 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
-import java.util
 import scala.util.Try
 
 // TODO: Validated
@@ -26,13 +24,19 @@ object JsonToNuStruct {
 
     def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(elementType: Map[PropertyName, SwaggerTyped]): AnyRef =
+    def extractObject(obj: SwaggerObject): AnyRef =
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
           jo.toMap.collect {
-            case (key, value) if elementType.contains(key) =>
-              key -> JsonToNuStruct(value, elementType(key), addPath(key))
+            case (key, value) if obj.elementType.contains(key) =>
+              key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+            case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
+              case add: AdditionalPropertiesSwaggerTyped =>
+                key -> JsonToNuStruct(value, add.value, addPath(key))
+              case _ =>
+                key -> jsonToAny(value)
+            }
           }
         )
       )
@@ -69,7 +73,7 @@ object JsonToNuStruct {
         extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
       case SwaggerArray(elementType) =>
         extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
-      case SwaggerObject(elementType) => extractObject(elementType)
+      case obj: SwaggerObject => extractObject(obj)
       case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
         .headOption.getOrElse(throw JsonToObjectError(json, u, path))
