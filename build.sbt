@@ -198,7 +198,8 @@ lazy val commonSettings =
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      coverageMinimum := 60,
+      coverageMinimumStmtTotal := 60,
+      coverageMinimumBranchTotal := 60,
       coverageFailOnMinimum := false,
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
