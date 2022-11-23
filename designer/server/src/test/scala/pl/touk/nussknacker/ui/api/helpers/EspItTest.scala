@@ -116,7 +116,6 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val processesRoute = new ProcessesResources(
     processRepository = fetchingProcessRepository,
-    subprocessRepository = subprocessRepository,
     processService = processService,
     processToolbarService = configProcessToolbarService,
     processResolving = processResolving,

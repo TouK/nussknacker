@@ -33,6 +33,7 @@
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 * [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
 * [#3730](https://github.com/TouK/nussknacker/pull/3730) Fix: Trimming additional fields at JsonToNuStruct when additionalProperties is enabled
+* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties. 
 
 1.6.1 (8 Nov 2022)
 ------------------------

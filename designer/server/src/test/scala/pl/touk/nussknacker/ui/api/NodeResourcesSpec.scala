@@ -28,11 +28,14 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
-  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators))
+  private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
+  private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
     = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)

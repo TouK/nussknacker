@@ -38,7 +38,6 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: Move remained business logic to processService
 class ProcessesResources(
   val processRepository: FetchingProcessRepository[Future],
-  subprocessRepository: SubprocessRepository,
   processService: ProcessService,
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
@@ -55,8 +54,6 @@ class ProcessesResources(
     with ProcessDirectives {
 
   import akka.http.scaladsl.unmarshalling.Unmarshaller._
-
-  private val resources = new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators))
 
   def securedRoute(implicit user: LoggedUser): Route = {
       encodeResponse {
@@ -251,7 +248,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ resources.securedRoute
+        }
 
       }
   }
