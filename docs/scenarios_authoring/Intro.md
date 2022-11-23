@@ -32,7 +32,7 @@ A scenario is a sequence of different nodes:
 - custom, tailor-made components, which extend default functionality
 - and more
 
-The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches.  Multiple data records can be produced by the node; for example the [for-each](./BasicNodes.md#foreach) node. Finally, some nodes may terminate the data record - for exxample the [filter](BasicNodes.md#filter] node.
+The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches.  Multiple data records can be produced by the node; for example the [for-each](./BasicNodes.md#foreach) node. Finally, some nodes may terminate the data record - for example the [filter](BasicNodes.md#filter] node.
 
 &nbsp;
 ## SpEL
