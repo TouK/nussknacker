@@ -24,7 +24,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   private val encoderLax = new BestEffortJsonSchemaEncoder(ValidationMode.lax)
 
   test("should encode object") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema: Schema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "properties": {

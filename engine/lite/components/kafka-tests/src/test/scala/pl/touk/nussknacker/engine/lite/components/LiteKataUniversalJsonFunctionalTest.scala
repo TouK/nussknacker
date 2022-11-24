@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.lite.components
 
 import cats.data.Validated
-import cats.data.Validated.Valid
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -15,37 +14,37 @@ import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.util.test.RunResult
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
-import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
 
-class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
+class LiteKataUniversalJsonFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage with FunctionalTestMixin {
 
   import LiteKafkaComponentProvider._
   import SpecialSpELElement._
+  import pl.touk.nussknacker.engine.lite.components.utils.JsonTestData._
   import pl.touk.nussknacker.engine.spel.Implicits._
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
   test("should test end to end kafka json data at sink and source / handling nulls and empty json" ) {
     val testData = Table(
       ("config", "result"),
-      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull), valid(obj())),
-      (oConfig(InputEmptyObject, schemaObjNull, schemaObjNull, OutputField), oValid(Null)),
-      (oConfig(Null, schemaObjNull, schemaObjNull), oValid(Null)),
-      (oConfig(Null, schemaObjNull, schemaObjNull, OutputField), oValid(Null)),
+      (config(obj(), schemaObjNull, schemaObjNull), valid(obj())),
+      (config(obj(), schemaObjNull, schemaObjNull, objOutputAsInputFieldSpEL), valid(sampleObjNull)),
+      (config(sampleObjNull, schemaObjNull, schemaObjNull), valid(sampleObjNull)),
+      (config(sampleObjNull, schemaObjNull, schemaObjNull, objOutputAsInputFieldSpEL), valid(sampleObjNull)),
 
-      (oConfig(InputEmptyObject, schemaObjString, schemaObjString), valid(obj())),
-      (oConfig(InputEmptyObject, schemaObjString, schemaObjString, OutputField), valid(obj())), //FIXME: it should throw exception at runtime
+      (config(obj(), schemaObjString, schemaObjString), valid(obj())),
+      (config(obj(), schemaObjString, schemaObjString, objOutputAsInputFieldSpEL), valid(obj())), //FIXME: it should throw exception at runtime
 
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString, OutputField), oValid(Null)),
-      (oConfig(InputEmptyObject, schemaObjUnionNullString, schemaObjUnionNullString), valid(obj())),
-      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString), oValid(Null)),
-      (oConfig(Null, schemaObjUnionNullString, schemaObjUnionNullString, OutputField), oValid(Null)),
+      (config(obj(), schemaObjUnionNullString, schemaObjUnionNullString, objOutputAsInputFieldSpEL), valid(sampleObjNull)),
+      (config(obj(), schemaObjUnionNullString, schemaObjUnionNullString), valid(obj())),
+      (config(sampleObjNull, schemaObjUnionNullString, schemaObjUnionNullString), valid(sampleObjNull)),
+      (config(sampleObjNull, schemaObjUnionNullString, schemaObjUnionNullString, objOutputAsInputFieldSpEL), valid(sampleObjNull)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -61,8 +60,8 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       //Primitive integer validations
       // FIXME handle minimum > MIN_VALUE && maximum < MAX_VALUE) as an Integer to make better interoperability between json and avro?
       //      (sConfig(fromLong(Integer.MAX_VALUE.toLong + 1), longSchema, integerRangeSchema), invalidTypes("path 'Value' actual: 'Long' expected: 'Integer'")),
-      (sConfig(sampleInteger, schemaIntegerRange, schemaInteger), valid(fromInt(1))),
-      (sConfig(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
+      (config(sampleJInt, schemaIntegerRange, schemaInteger), valid(sampleJInt)),
+      (config(fromLong(Integer.MAX_VALUE), schemaIntegerRange, schemaIntegerRange), valid(fromInt(Integer.MAX_VALUE))),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -75,27 +74,28 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
   test("should test end to end kafka json data at sink and source / handling objects..") {
     val testData = Table(
       ("config", "result"),
-      (oConfig(sampleObjFirstLastName, schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired), oValid(sampleObjFirstLastName)),
-      (oConfig(sampleInteger, schemaObjInteger, schemaObjObjFirstLastNameRequired, sampleSpELFirstLastName), oValid(sampleObjFirstLastName)),
+      (config(sampleObjStr, schemaObjString, schemaObjString), valid(sampleObjStr)),
+      (spelConfig(schemaObjString, sampleObjStrSpEL), valid(sampleObjStr)),
 
       //Additional fields turn on
-      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapAny), oValid(sampleMapAny)),
-      (oConfig(sampleInteger, schemaObjInteger, schemaObjMapAny, sampleMapSpELAny), oValid(sampleMapAny)),
-      (oConfig(sampleObjFirstLastName, schemaObjObjFirstLastNameRequired, schemaObjMapAny), oValid(sampleObjFirstLastName)),
-      (oConfig(sampleInteger, schemaObjInteger, schemaObjMapAny, sampleSpELFirstLastName), oValid(sampleObjFirstLastName)),
+      (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapAny), valid(sampleObjMapAny)),
+      (spelConfig(schemaObjMapAny, sampleObjMapAnySpEL), valid(sampleObjMapAny)),
+      (config(sampleObjMapPerson, schemaObjMapObjPerson, schemaObjMapAny), valid(sampleObjMapPerson)),
+      (spelConfig(schemaObjMapAny, sampleObjMapPersonSpEL), valid(sampleObjMapPerson)),
+      (config(sampleObjMapInt, schemaObjMapInteger, schemaObjMapAny), valid(sampleObjMapInt)),
 
-      (oConfig(sampleMapInteger, schemaObjMapInteger, schemaObjMapInteger), oValid(sampleMapInteger)),
-      (oConfig(sampleInteger, schemaObjInteger, schemaObjMapInteger, sampleMapSpELInteger), oValid(sampleMapInteger)),
-      (sConfig(sampleInteger, schemaInteger, schemaObjString, Map("redundant" -> "red")), invalid(Nil, List("field"), List("redundant"))),
+      (config(sampleObjMapInt, schemaObjMapInteger, schemaObjMapInteger), valid(sampleObjMapInt)),
+      (spelConfig(schemaObjMapInteger, sampleObjMapIntSpEL), valid(sampleObjMapInt)),
 
-      (sConfig(sampleMapString, schemaMapString, schemaMapInteger), invalid(List("path 'value' actual: 'String' expected: 'Long'"), Nil, Nil)),
-      (sConfig(sampleMapString, schemaObjString, schemaMapInteger), invalid(List("path 'field' actual: 'String' expected: 'Long'"), Nil, Nil)),
-      (oConfig(sampleMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.value' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
+      (config(samplePerson, schemaPerson, schemaObjString), invalid(Nil, List("field"), List("age", "first", "last"))),
+      (spelConfig(schemaObjString, samplePersonSpEL), invalid(Nil, List("field"), List("first", "last", "age"))),
 
-      (sConfig(sampleObPerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(sampleObPerson)),
-      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema), valid(sampleObPerson)),
-      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaInteger)), valid(sampleObPerson)),
-      (sConfig(sampleObPerson, personSchema, nameAndLastNameSchema(schemaString)), invalid(List("path 'age' actual: 'Long' expected: 'String'"), Nil, Nil)),
+      (config(sampleObjMapAny, schemaObjMapAny, schemaObjMapInteger), invalid(List("path 'field.value' actual: 'Unknown' expected: 'Long'"), Nil, Nil)),
+
+      (config(samplePerson, nameAndLastNameSchema, nameAndLastNameSchema), valid(samplePerson)),
+      (config(samplePerson, schemaPerson, nameAndLastNameSchema), valid(samplePerson)),
+      (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaInteger)), valid(samplePerson)),
+      (config(samplePerson, schemaPerson, nameAndLastNameSchema(schemaString)), invalid(List("path 'age' actual: 'Long' expected: 'String'"), Nil, Nil)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, RunResult[_]]) =>
@@ -118,7 +118,7 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (schemaMapString,       schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaMapObjPerson,    schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaListIntegers,    schemaMapAny,                         strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, Any]'")),
-      (personSchema,          schemaMapAny,                         strictAndLax,       valid(obj())),
+      (schemaPerson,          schemaMapAny,                         strictAndLax,       valid(obj())),
       (schemaMapAny,          schemaMapString,                      strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String'")),
       (schemaMapAny,          schemaMapString,                      lax,                valid(obj())),
       (schemaMapString,       schemaMapString,                      strictAndLax,       valid(obj())),
@@ -126,42 +126,42 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
       (schemaMapStringOrInt,  schemaMapString,                      lax,                valid(obj())),
       (schemaMapObjPerson,    schemaMapString,                      strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String'")),
       (schemaListIntegers,    schemaMapString,                      strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, String]'")),
-      (personSchema,          schemaMapString,                      strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
+      (schemaPerson,          schemaMapString,                      strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
       (schemaMapAny,          schemaMapStringOrInt,                 strict,             invalidType("path 'value' actual: 'Unknown' expected: 'String | Long'")),
       (schemaMapAny,          schemaMapStringOrInt,                 lax,                valid(obj())),
       (schemaMapString,       schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
       (schemaMapStringOrInt,  schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
       (schemaMapObjPerson,    schemaMapStringOrInt,                 strictAndLax,       invalidType("path 'value' actual: '{age: Long, first: String, last: String}' expected: 'String | Long'")),
       (schemaListIntegers,    schemaMapStringOrInt,                 strictAndLax,       invalidType("actual: 'List[Long]' expected: 'Map[String, String | Long]'")),
-      (personSchema,          schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
-      (personSchema,          nameAndLastNameSchema,                strictAndLax,       valid(obj())),
-      (personSchema,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(obj())),
-      (personSchema,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
+      (schemaPerson,          schemaMapStringOrInt,                 strictAndLax,       valid(obj())),
+      (schemaPerson,          nameAndLastNameSchema,                strictAndLax,       valid(obj())),
+      (schemaPerson,          nameAndLastNameSchema(schemaInteger), strictAndLax,       valid(obj())),
+      (schemaPerson,          nameAndLastNameSchema(schemaString),  strictAndLax,       invalidType("path 'age' actual: 'Long' expected: 'String'")),
     )
     //@formatter:on
 
     forAll(testData) {
       (sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
         validationModes.foreach { mode =>
-          val results = runWithValueResults(oConfig(InputEmptyObject, sourceSchema, sinkSchema, output = Input, Some(mode)))
+          val results = runWithValueResults(config(obj(), sourceSchema, sinkSchema, output = Input, Some(mode)))
           results shouldBe expected
         }
     }
   }
 
-  test("should catch runtime errors") {
+  test("should catch runtime errors at deserialization") {
     val testData = Table(
-      ("config", "result"),
-      //Errors at sources
-      (oConfig(fromString("invalid"), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: expected type: JSONObject, found: String"),
-      (oConfig(Json.Null, schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: expected type: JSONObject, found: Null"),
-      (oConfig(obj("first" -> fromString("")), schemaObjObjFirstLastNameRequired, schemaObjObjFirstLastNameRequired, Input), "#/field: required key [last] not found"),
-      (oConfig(obj("t1" -> fromString("1")), schemaObjMapInteger, schemaObjMapAny), "#/field/t1: expected type: Integer, found: String"),
-      (sConfig(obj("t1" -> fromString("1"), "field" -> fromString("1")), schemaObjString, schemaMapAny), "#: extraneous key [t1] is not permitted"),
+      ("input", "sourceSchema", "expected"),
+      (sampleObjStr, schemaObjInteger, s"#/$ObjectFieldName: expected type: Integer, found: String"),
+      (JsonObj(Null), schemaObjInteger, s"#/$ObjectFieldName: expected type: Integer, found: Null"),
+      (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapInteger, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
+      (obj("first" -> sampleJStr), createObjSchema(true, true, schemaInteger), s"#: required key [$ObjectFieldName] not found"),
+      (obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")), schemaObjString, "#: extraneous key [t1] is not permitted"),
     )
 
-    forAll(testData) { (config: ScenarioConfig, expected: String) =>
-      val results = runWithValueResults(config)
+    forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
+      val cfg = config(input, sourceSchema, sourceSchema)
+      val results = runWithValueResults(cfg)
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
       message shouldBe expected
@@ -203,28 +203,11 @@ class LiteKafaUniversaJsonFunctionalTest extends AnyFunSuite with Matchers with 
     lazy val sinkTopic = s"$topic-output"
   }
 
-  //ObjectValid -> config with object as a input
-  private def oConfig(inputData: Any, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
-    val sinkDefinition = output match {
-      case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
-      case any => Map(ObjectFieldName -> any)
-    }
+  //Special config for SpEL as output, on input we pass simple null
+  private def spelConfig(outputSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+    config(Null, schemaNull, outputSchema, output, validationMode)
 
-    val input = inputData match {
-      case InputEmptyObject => obj()
-      case in: Json => obj(ObjectFieldName -> in)
-      case in => throw new IllegalArgumentException(s"Not allowed type of data: $in.")
-    }
-
-    ScenarioConfig(randomTopic, input, sourceSchema, sinkSchema, sinkDefinition.toSpELLiteral, validationMode)
-  }
-
-  //ObjectValid -> valid success object with base field
-  private def oValid(data: Json): Valid[RunListResult[Json]] =
-    valid(obj(ObjectFieldName -> data))
-
-  private def sConfig(inputData: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+  private def config(inputData: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
     ScenarioConfig(randomTopic, inputData, sourceSchema, sinkSchema, output.toSpELLiteral, validationMode)
-
 
 }

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.json.encode
 
+import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -14,7 +15,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   val validator = new JsonSchemaOutputValidator(ValidationMode.strict)
 
   test("should validate against 'map string to Any' schema") {
-    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema(
+    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |  "type": "object",
         |}""".stripMargin)
@@ -39,7 +40,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to string' schema") {
-    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema(
+    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |  "type": "object",
         |  "additionalProperties": {
@@ -65,7 +66,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to union' schema") {
-    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema(
+    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |  "type": "object",
         |  "additionalProperties": {

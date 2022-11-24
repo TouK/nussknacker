@@ -36,7 +36,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
     )
 
     forAll(testData) { (schemaStr: String, expected: SwaggerObject) =>
-      val schema = JsonSchemaBuilder.parseSchema(schemaStr)
+      val schema = JsonSchemaBuilder.parseSchema[Schema](schemaStr)
       val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
       result shouldBe expected
     }
@@ -80,7 +80,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support refs") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |	"type" : "object",
         |	"properties" : {
@@ -123,7 +123,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support refs using /schemas") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |  "type": "object",
         |  "title": "test_pfl",
@@ -192,7 +192,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support enums") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |  "type": "object",
         |  "properties": {
@@ -215,7 +215,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support nested schema") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -265,7 +265,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("typed schema should produce same typingResult as typed swagger for SwaggerDateTime") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "properties":{
         |      "time":{
@@ -287,7 +287,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support schema without type") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "properties":{
         |      "id":{
@@ -304,7 +304,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support union - constructed with 'type' array") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -322,7 +322,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support union - constructed with 'oneOf'") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -343,7 +343,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support union - constructed with 'anyOf'") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -364,7 +364,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support support multiple schemas but of the same type") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -385,7 +385,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support support multiple schemas but of the same type - factored version") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -407,14 +407,14 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should support generic map") {
-    val schema = JsonSchemaBuilder.parseSchema("""{"type":"object", "additionalProperties": true}""".stripMargin)
+    val schema = JsonSchemaBuilder.parseSchema[Schema]("""{"type":"object", "additionalProperties": true}""".stripMargin)
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
     result shouldBe Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown))
   }
 
   test("should support map with typed values") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "additionalProperties": {
@@ -428,7 +428,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should ignore additionalProperties when at least one property is defined explicitly") {
-    val schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
       """{
         |   "type":"object",
         |   "properties":{
@@ -449,11 +449,9 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should type empty object when additionalProperties is false and no explicitly defined properties") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
-        |   "type":"object",
-        |   "additionalProperties": false
-        |}""".stripMargin)
+    val schema = JsonSchemaBuilder.parseSchema[Schema](
+      """{"type":"object","additionalProperties": false}""".stripMargin
+    )
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
