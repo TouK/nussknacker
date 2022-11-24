@@ -15,7 +15,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   val validator = new JsonSchemaOutputValidator(ValidationMode.strict)
 
   test("should validate against 'map string to Any' schema") {
-    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema[Schema](
+    val mapStringToAnySchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |}""".stripMargin)
@@ -40,7 +40,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to string' schema") {
-    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema[Schema](
+    val mapStringToStringSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "additionalProperties": {
@@ -66,7 +66,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
   }
 
   test("should validate against 'map string to union' schema") {
-    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema[Schema](
+    val mapStringToStringOrIntSchema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "additionalProperties": {

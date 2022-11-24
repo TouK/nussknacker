@@ -64,13 +64,13 @@ object JsonTestData {
        |  "additionalProperties": $additionalProperties
        |}""".stripMargin)
 
-  val schemaListIntegers: ArraySchema = JsonSchemaBuilder.parseSchema(s"""{"type": "array", "items": $schemaInteger}""".stripMargin)
+  val schemaArrayInt: Schema = createArraySchema(schemaInteger)
 
   val schemaMapAny: ObjectSchema = createMapSchema()
 
-  val schemaMapString: ObjectSchema = createMapSchema(schemaString)
+  val schemaMapStr: ObjectSchema = createMapSchema(schemaString)
 
-  val schemaMapInteger: ObjectSchema = createMapSchema(schemaInteger)
+  val schemaMapInt: ObjectSchema = createMapSchema(schemaInteger)
 
   val schemaMapStringOrInt: ObjectSchema = createMapSchema(schemaString, schemaInteger)
 
@@ -78,15 +78,15 @@ object JsonTestData {
 
   val schemaObjMapAny: ObjectSchema = createObjSchema(schemaMapAny)
 
-  val schemaObjMapInteger: ObjectSchema = createObjSchema(schemaMapInteger)
+  val schemaObjMapInt: ObjectSchema = createObjSchema(schemaMapInt)
 
-  val schemaObjInteger: ObjectSchema = createObjSchema(schemaInteger)
+  val schemaObjInt: ObjectSchema = createObjSchema(schemaInteger)
 
-  val schemaObjString: ObjectSchema = createObjSchema(schemaString)
+  val schemaObjStr: ObjectSchema = createObjSchema(schemaString)
 
   val schemaObjNull: ObjectSchema = createObjSchema(schemaNull)
 
-  val schemaObjUnionNullString: ObjectSchema = createObjSchema(schemaNull, schemaString)
+  val schemaObjUnionNullStr: ObjectSchema = createObjSchema(schemaNull, schemaString)
 
   val schemaObjMapObjPerson: ObjectSchema = createObjSchema(schemaMapObjPerson)
 
@@ -102,23 +102,23 @@ object JsonTestData {
 
   val strTouK: String = "TouK"
 
-  val samplePersonSpEL: Map[String, Any] = Map("first" -> strNu, "last" -> strTouK, "age" -> sampleInt)
+  val samplePersonOutput: Map[String, Any] = Map("first" -> strNu, "last" -> strTouK, "age" -> sampleInt)
 
-  val sampleMapAnySpEL: Map[String, Any] = Map("first" -> strNu, "year" -> year)
+  val sampleMapAnyOutput: Map[String, Any] = Map("first" -> strNu, "year" -> year)
 
-  val sampleMapIntSpEL: Map[String, Integer] = Map("year" -> year)
+  val sampleMapIntOutput: Map[String, Integer] = Map("year" -> year)
 
-  val sampleMapPersonSpEL: Map[String, Map[String, Any]] = Map("first" -> samplePersonSpEL)
+  val sampleMapPersonOutput: Map[String, Map[String, Any]] = Map("first" -> samplePersonOutput)
 
-  val objOutputAsInputFieldSpEL: Map[String, SpecialSpELElement] = Map(ObjectFieldName -> OutputField)
+  val objOutputAsInputField: Map[String, SpecialSpELElement] = Map(ObjectFieldName -> OutputField)
 
-  val sampleObjStrSpEL: Map[String, String] = Map(ObjectFieldName -> sampleStr)
+  val sampleObjStrOutput: Map[String, String] = Map(ObjectFieldName -> sampleStr)
 
-  val sampleObjMapIntSpEL: Map[String, Map[String, Integer]] = Map(ObjectFieldName -> sampleMapIntSpEL)
+  val sampleObjMapIntOutput: Map[String, Map[String, Integer]] = Map(ObjectFieldName -> sampleMapIntOutput)
 
-  val sampleObjMapAnySpEL: Map[String, Map[String, Any]] = Map(ObjectFieldName -> sampleMapAnySpEL)
+  val sampleObjMapAnyOutput: Map[String, Map[String, Any]] = Map(ObjectFieldName -> sampleMapAnyOutput)
 
-  val sampleObjMapPersonSpEL: Map[String, Map[String, Any]] = Map(ObjectFieldName -> sampleMapPersonSpEL)
+  val sampleObjMapPersonOutput: Map[String, Map[String, Any]] = Map(ObjectFieldName -> sampleMapPersonOutput)
 
 
   /* Input / Output json configuration */
@@ -178,6 +178,9 @@ object JsonTestData {
 
     builder.build()
   }
+
+  def createArraySchema(schemas: Schema*): ArraySchema =
+    ArraySchema.builder().allItemSchema(asSchema(schemas:_*)).build()
 
   //We assume list of schema is union with combined mode
   private def asSchema(schemas: Schema*): Schema = schemas.toList match {

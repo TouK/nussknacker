@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.lite.components
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
-import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
@@ -24,7 +23,7 @@ class UniversalSourceJsonSchemaLiteTest extends AnyFunSuite with Matchers with V
   import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
   import pl.touk.nussknacker.engine.spel.Implicits._
 
-  private val schema = JsonSchemaBuilder.parseSchema[Schema](
+  private val schema = JsonSchemaBuilder.parseSchema(
     """{
       |  "type": "object",
       |  "properties": {

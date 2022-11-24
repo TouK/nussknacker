@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.json.serde
 
-import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks.forAll
@@ -13,7 +12,7 @@ import scala.collection.JavaConverters._
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 
   test("json object") {
-    val schema = JsonSchemaBuilder.parseSchema[Schema](
+    val schema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "properties": {
@@ -44,7 +43,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("json array") {
-    val schema = JsonSchemaBuilder.parseSchema[Schema]("""{"type": "array","items": {"type": "string"}}""".stripMargin)
+    val schema = JsonSchemaBuilder.parseSchema("""{"type": "array","items": {"type": "string"}}""".stripMargin)
     val result = new CirceJsonDeserializer(schema).deserialize("""["John", "Doe"]""")
 
     result shouldEqual List("John", "Doe").asJava
@@ -84,7 +83,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |  }
         |}""".stripMargin
     )) { schemaString =>
-      val schema = JsonSchemaBuilder.parseSchema[Schema](schemaString)
+      val schema = JsonSchemaBuilder.parseSchema(schemaString)
       val deserializer = new CirceJsonDeserializer(schema)
 
       deserializer.deserialize("""{ "a": "1"}""".stripMargin) shouldEqual Map("a" -> "1").asJava
@@ -93,7 +92,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
   }
 
   test("handling nulls and empty json") {
-    val unionSchemaWithNull = JsonSchemaBuilder.parseSchema[Schema](
+    val unionSchemaWithNull = JsonSchemaBuilder.parseSchema(
       """
         |{
         |  "type": "object",
@@ -105,7 +104,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}
         |""".stripMargin)
 
-    val schemaWithNotRequiredField = JsonSchemaBuilder.parseSchema[Schema](
+    val schemaWithNotRequiredField = JsonSchemaBuilder.parseSchema(
       """
         |{
         |  "type": "object",
