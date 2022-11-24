@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.json.encode
 
+import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks

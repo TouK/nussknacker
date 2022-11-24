@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.json
 
 import io.circe.Json
 import io.circe.Json.fromString
-import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -11,7 +10,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResu
 import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
-class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  with TableDrivenPropertyChecks {
+class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
 
   test("should convert schema additionalProperties to swagger type") {
     val baseSwaggerTyped: SwaggerObject = SwaggerObject(Map("field" -> SwaggerString))
@@ -44,7 +43,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
   }
 
   test("should extract object with simple fields") {
-    val schema: Schema = JsonSchemaBuilder.parseSchema(
+    val schema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
         |  "properties": {
@@ -450,10 +449,8 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite  wit
 
   test("should type empty object when additionalProperties is false and no explicitly defined properties") {
     val schema = JsonSchemaBuilder.parseSchema(
-      """{
-        |   "type":"object",
-        |   "additionalProperties": false
-        |}""".stripMargin)
+      """{"type":"object","additionalProperties": false}""".stripMargin
+    )
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
