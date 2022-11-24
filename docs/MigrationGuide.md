@@ -25,6 +25,9 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
+* [#3738](https://github.com/TouK/nussknacker/pull/3738) Kafka client libraries upgraded to 3.2.3. If using older Flink version,
+  make sure to use 2.8.x client libraries. For Flink versions 1.15.0-1.15.2 include also [fixed KafkaMetricWrapper](https://github.com/TouK/nussknacker/pull/3738/files#diff-36f2a26ed5f3b58f5a8e758d4368e42d44413b5b74207df4cd65594c676682f9) 
+                     
 
 ### Code API changes
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`

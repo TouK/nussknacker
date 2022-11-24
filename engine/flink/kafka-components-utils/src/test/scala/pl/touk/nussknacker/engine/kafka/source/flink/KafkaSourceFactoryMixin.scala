@@ -140,7 +140,6 @@ object KafkaSourceFactoryMixin {
   def createConsumerRecord[Key, Value](topic: String, partition: Int, offset: Long, timestamp: Long, timestampType: TimestampType, key: Key, value: Value, headers: Headers, leaderEpoch: Optional[Integer]): ConsumerRecord[Key, Value] = {
     new ConsumerRecord(topic, partition, offset,
       timestamp, timestampType,
-      ConsumerRecord.NULL_CHECKSUM.longValue(),
       ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE,
       key, value, headers,
       leaderEpoch
