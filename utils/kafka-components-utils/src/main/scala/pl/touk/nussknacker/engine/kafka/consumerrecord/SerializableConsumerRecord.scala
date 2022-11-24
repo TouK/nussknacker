@@ -24,7 +24,7 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
   /**
     * Converts SerializableConsumerRecord to ConsumerRecord, uses default values in case of missing attributes.
     */
-  @silent("deprecated")
+  @silent("deprecated") //using deprecated constructor for Flink 1.14/15 compatibility
   def toKafkaConsumerRecord(formatterTopic: String, serializeKeyValue: (Option[K], V) => (Array[Byte], Array[Byte])): ConsumerRecord[Array[Byte], Array[Byte]] = {
     // serialize Key and Value to Array[Byte]
     val (keyBytes, valueBytes) = serializeKeyValue(key, value)

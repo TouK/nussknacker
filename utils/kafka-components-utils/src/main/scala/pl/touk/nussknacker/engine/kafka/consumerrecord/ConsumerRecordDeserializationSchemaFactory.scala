@@ -29,7 +29,7 @@ abstract class ConsumerRecordDeserializationSchemaFactory[K, V] extends KafkaDes
       @transient
       private lazy val valueDeserializer = createValueDeserializer(kafkaConfig)
 
-      @silent("deprecated")
+      @silent("deprecated") //using deprecated constructor for Flink 1.14/15 compatibility
       override def deserialize(record: ConsumerRecord[Array[Byte], Array[Byte]]): ConsumerRecord[K, V] = {
         val key = keyDeserializer.deserialize(record.topic(), record.key())
         val value = valueDeserializer.deserialize(record.topic(), record.value())
