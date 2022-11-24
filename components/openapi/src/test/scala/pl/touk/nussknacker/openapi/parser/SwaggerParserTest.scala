@@ -11,9 +11,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads swagger 2.0") {
 
-    val openApi = parseServicesFromResource("swagger-20.json").head
+    val openApi = parseServicesFromResourceUnsafe("swagger-20.json").head
 
-    openApi.name shouldBe "getCollectionDataUsingGET"
+    openApi.name.value shouldBe "getCollectionDataUsingGET"
 
     openApi.parameters shouldBe List(
       UriParameter("accountNo", SwaggerLong),
@@ -29,9 +29,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads body params") {
 
-    val openApi = parseServicesFromResource("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResourceUnsafe("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
-    openApi.name shouldBe "testService"
+    openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
@@ -45,9 +45,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads primitive body") {
 
-    val openApi = parseServicesFromResource("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResourceUnsafe("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
-    openApi.name shouldBe "testService"
+    openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerString)
@@ -65,9 +65,25 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
       (List("GET", "POST"), "post.*", List("postService")),
       (List("GET"), "post.*", List())
     )) { (allowedMethods, namePattern, expectedNames) =>
-      parseServicesFromResource("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
-        namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
+      parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
+        namePattern = namePattern.r)).map(_.name.value) shouldBe expectedNames
     }
+
+  }
+
+  test("detects documentation") {
+    val openApi = parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = List("GET", "POST")))
+
+    openApi.find(_.name.value == "getService").flatMap(_.documentation) shouldBe Some("https://nussknacker.io")
+    openApi.find(_.name.value == "postService").flatMap(_.documentation) shouldBe Some("https://touk.pl")
+
+  }
+
+  test("returns errors for incorrect service") {
+    val openApi = parseServicesFromResource("incorrect-service.yml")
+
+    openApi.find(_.exists(_.name == ServiceName("valid"))) shouldBe 'defined
+    openApi.find(_.swap.exists(_.name == ServiceName("noResponseType"))) shouldBe 'defined
 
   }
 

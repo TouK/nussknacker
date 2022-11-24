@@ -9,9 +9,9 @@ class ParameterExtractorTest extends AnyFunSuite with BaseOpenAPITest with Match
 
   test("check all parameters lazy") {
 
-    val servicesToCheck = parseServicesFromResource("enricher-body-param.yml",
+    val servicesToCheck = parseServicesFromResourceUnsafe("enricher-body-param.yml",
       config = baseConfig.copy(allowedMethods = List(HttpMethod.POST.name()))) ++
-      parseServicesFromResource("enricher-with-query-params.yml")
+      parseServicesFromResourceUnsafe("enricher-with-query-params.yml")
 
     servicesToCheck.foreach { service =>
       new ParametersExtractor(service, Map.empty).parameterDefinition.foreach { parameter =>
