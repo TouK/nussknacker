@@ -4,9 +4,13 @@ info:
   version: 2.0.0
 servers:
   - url: http://petstore.swagger.io/v1
+externalDocs:
+  url: https://touk.pl
 paths:
   /someService:
     get:
+      externalDocs:
+        url: https://nussknacker.io
       responses:
         '200':
           description: "-"

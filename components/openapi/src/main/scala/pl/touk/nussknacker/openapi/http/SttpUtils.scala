@@ -6,11 +6,17 @@ import scala.language.higherKinds
 
 object SttpUtils {
 
-  def handleOptionalResponse[R[_], T](response: Response[Either[ResponseError[io.circe.Error], Option[T]]])(implicit backend: SttpBackend[R, Nothing, Nothing]): R[Option[T]] = {
+  def handleOptionalResponse[R[_], T](
+    response: Response[Either[ResponseError[io.circe.Error], Option[T]]],
+    codesToInterpretAsEmpty: List[StatusCode]
+  )(implicit backend: SttpBackend[R, Nothing, Nothing]): R[Option[T]] = {
     val responseMonad = backend.responseMonad
     response.body match {
-      case Left(_) if response.code == StatusCode.NotFound => responseMonad.unit(None)
-      case Left(error) => responseMonad.error(new RuntimeException(s"Failed to invoke: ${error.toString}, status: ${response.code}", error))
+      case Left(_) if codesToInterpretAsEmpty.contains(response.code) => responseMonad.unit(None)
+      case Left(error) =>
+        responseMonad.error(
+          new RuntimeException(s"Failed to invoke: ${error.toString}, status: ${response.code}", error)
+        )
       case Right(resp) => responseMonad.unit(resp)
     }
   }
