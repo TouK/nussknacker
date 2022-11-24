@@ -12,14 +12,6 @@ This document is intended for those who will use Nussknacker Designer to configu
 **Please try [Quickstart](/quickstart/demo) to quickly understand how to move around Nussknacker Designer, create a simple scenario and see SpEL in action.**
 
 &nbsp;
-## Data records
-Nussknacker nodes process data records; once the node finishes processing of the data record it hands it over to the next node in the processing flow. Filter, Split, Switch nodes behave exactly like this. 
-
-In the Streaming [processing mode](https://docs.nussknacker.io/documentation/documentation/about/ProcessingModes) data records are often referred to as events. They are read from Kafka topics and processed by the [engine](https://nussknacker.io/documentation/about/engines/) of choice: Flink or Lite. 
-
-In the Request-Response processing mode there is no special name for a data record, even though the same term is also used in the Streaming case. 
-
-&nbsp;
 ## Nussknacker scenario diagram
 
 Nussknacker provides a drag and drop visual authoring tool (Nussknacker Designer) allowing to define decision algorithms – we call them scenarios – without the need to write code.
@@ -32,7 +24,9 @@ A scenario is a sequence of different nodes:
 - custom, tailor-made components, which extend default functionality
 - and more
 
-The scenario diagram is a classical [flowchart](https://en.wikipedia.org/wiki/Flowchart) with  parallel processing enabled. The data record processed by the scenario "flows" through the scenario. If there are [splits](./BasicNodes.md#split), the data records start to "flow" in parallel through many branches.  Multiple data records can be produced by the node; for example the [for-each](./BasicNodes.md#foreach) node. Finally, some nodes may terminate the data record - for example the [filter](BasicNodes.md#filter] node.
+In the [processing mode](https://docs.nussknacker.io/documentation/documentation/about/ProcessingModes) the scenario processes events. They are read from Kafka topics and processed by the [engine](https://nussknacker.io/documentation/about/engines/) of choice: Flink or Lite. Events enter the scenario "via" a source node. The nodes process events; once the node finishes processing of the event it hands it over to the next node in the processing flow. If there is a [split](./BasicNodes.md#split) node, the event gets "multiplied" and now two or more events "flow" in parallel through branches of the scenario.  There are also other nodes which can be "produce" events; for example the [for-each](./BasicNodes.md#foreach) node or [time aggregate](AggregatesInTimeWindows.md) nodes. Finally, some nodes may terminate the event - for example the [filter](BasicNodes.md#filter] node. The important take away here is that the a single event which entered the scenario may result in zero, one or many events leaving the scenario (being written to Kafka topic).
+
+In the Request-Response processing mode this the request (data record) which enter the scenario. The best and easiest way to understand how this request will be processed by the Nussknacker's scenario is to think of it as of a Streaming mode with just one event entering the scenario. All the considerations described in the previous paragraph apply. The important take away here is that in the Request-Response mode the scenario can produce not only zero or one response but also many response "candidates". The topic of what will happen in those non obvious cases (zero or many response candidates) is covered more detail in [DDDCCCAAA document whose name and link will soon change AAAACCCDDD](link). 
 
 &nbsp;
 ## SpEL
@@ -56,7 +50,7 @@ SpEL is used in Nussknacker to access data processed by a node and expand node's
 
 
 * create boolean expression (for example in filters) based on logical or relational (equal, greater than, etc) operators
-* access, query and manipulate fields of the incoming data record
+* access, query and manipulate fields of the data record
 * format data records written to sinks
 * provide helper functions like date and time, access to system variables
 * and many more.
