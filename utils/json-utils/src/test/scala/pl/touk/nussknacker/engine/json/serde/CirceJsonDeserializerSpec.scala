@@ -86,15 +86,8 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
       val schema = JsonSchemaBuilder.parseSchema(schemaString)
       val deserializer = new CirceJsonDeserializer(schema)
 
-      deserializer.deserialize(
-        """{
-          |  "a": "1",
-          |}""".stripMargin) shouldEqual Map("a" -> "1").asJava
-
-      deserializer.deserialize(
-        """{
-          |  "a": 1,
-          |}""".stripMargin) shouldEqual Map("a" -> 1L).asJava
+      deserializer.deserialize("""{ "a": "1"}""".stripMargin) shouldEqual Map("a" -> "1").asJava
+      deserializer.deserialize("""{ "a": 1}""".stripMargin) shouldEqual Map("a" -> 1L).asJava
     }
   }
 

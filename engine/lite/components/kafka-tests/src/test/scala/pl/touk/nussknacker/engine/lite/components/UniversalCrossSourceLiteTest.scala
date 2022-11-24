@@ -29,7 +29,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val avroSchema: avro.Schema = AvroTestData.personSchema
-  val jsonSchema: Schema = JsonTestData.personSchema
+  val jsonSchema: Schema = JsonTestData.schemaPerson
 
   private val inputTopic = "input"
   private val outputTopic = "output"

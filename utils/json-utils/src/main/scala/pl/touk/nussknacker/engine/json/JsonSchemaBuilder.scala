@@ -7,10 +7,10 @@ import org.json.JSONObject
 object JsonSchemaBuilder {
 
   def parseSchema(rawJsonSchema: String): Schema =
-    parseSchema(rawJsonSchema, useDefaults = true)
+    parseSchemaAs(rawJsonSchema, useDefaults = true)
 
   //TODO: parsing schema should be consistent with [io.confluent.kafka.schemaregistry.json.JsonSchema.rawSchema]
-  def parseSchema(rawJsonSchema: String, useDefaults: Boolean): Schema = {
+  def parseSchemaAs[T <: Schema](rawJsonSchema: String, useDefaults: Boolean): T = {
     val rawSchema: JSONObject = new JSONObject(rawJsonSchema)
 
     SchemaLoader
@@ -21,7 +21,7 @@ object JsonSchemaBuilder {
       .build()
       .load()
       .build()
-      .asInstanceOf[Schema]
+      .asInstanceOf[T]
   }
 
 }
