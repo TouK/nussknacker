@@ -2,10 +2,9 @@ package pl.touk.nussknacker.engine.json.serde
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.prop.TableDrivenPropertyChecks.forAll
-import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 import org.scalatest.prop.TableDrivenPropertyChecks._
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.collection.JavaConverters._
 
@@ -116,12 +115,27 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
         |}
         |""".stripMargin)
 
+    val schemaUnionWithDefaultField = JsonSchemaBuilder.parseSchema(
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "a": {
+        |      "type": ["null", "string"],
+        |      "default": "lcl"
+        |    }
+        |  }
+        |}
+        |""".stripMargin)
+
     forAll(Table(
       ("json", "schema", "result"),
       ("""{"a": "test"}""", unionSchemaWithNull, Map("a" -> "test")),
       ("""{"a": null}""", unionSchemaWithNull, Map("a" -> null)),
       ("""{}""", unionSchemaWithNull, Map()),
-      ("""{}""", schemaWithNotRequiredField, Map())
+      ("""{}""", schemaWithNotRequiredField, Map()),
+      ("""{}""", schemaUnionWithDefaultField, Map("a" -> "lcl")),
+      ("""{"a": null}""", schemaUnionWithDefaultField, Map("a" -> null)),
     )) { (json, schema, result) =>
       val deserializer = new CirceJsonDeserializer(schema)
       deserializer.deserialize(json) shouldEqual result.asJava

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.requestresponse.api.ResponseEncoder
 
 class SchemaResponseEncoder(schema: Schema) extends ResponseEncoder[Any] {
 
+  //TODO: Pass validation mode from scenario properties (in the same way as response schema)
   private val bestEffortEncoder = new BestEffortJsonSchemaEncoder(ValidationMode.lax)
 
   override def toJsonResponse(input: Any, result: List[Any]): Json = {
