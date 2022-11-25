@@ -3,32 +3,26 @@
 
 1.7.0 (Not released yet)
 ------------------------
-* [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`
-* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
-* [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
-* [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
-* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Remove Flink Scala API
-* [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
-  Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
-  to return scenario JSON omitting validation and dictionary resolving.
-* [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
-* [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
-* [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
-* [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
-* [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types when typing using JsonSchema
-* [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
-* [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor
-* [#3699](https://github.com/TouK/nussknacker/pull/3699) Fix: handling null on json schema
-* [#3709](https://github.com/TouK/nussknacker/pull/3709) Support for typing `Map[String, T]` using JsonSchema.
-  * When `properties` are defined `additionalProperties` is ignored and type is determined by `properties` - as it was before.
-  * When `"additionalProperties": true` type is `Map[String, Unknown]`
-  * When `"additionalProperties": T` type is `Map[String, T]`
-* [#3709](https://github.com/TouK/nussknacker/pull/3709) Fix BestEffortJsonSchemaEncoder - fix encoding only strings when `"type": String`
-* [#3716](https://github.com/TouK/nussknacker/pull/3716) Fix: JsonSchema sinks allow to add additional fields also in `strict validation mode`, if schema permits them.
-* [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
-  * Added param `Value validation mode` at RR response component
-  * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
-* [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
+* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
+* JSON Schema handling improvements:
+  * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types
+  * [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
+  * [#3699](https://github.com/TouK/nussknacker/pull/3699) Handling null on JSON schema
+  * [#3709](https://github.com/TouK/nussknacker/pull/3709) Support for typing `Map[String, T]` using JSON Schema.
+    * When `properties` are defined `additionalProperties` is ignored and type is determined by `properties` - as it was before.
+    * When `"additionalProperties": true` type is `Map[String, Unknown]`
+    * When `"additionalProperties": T` type is `Map[String, T]`
+  * [#3709](https://github.com/TouK/nussknacker/pull/3709) `BestEffortJsonSchemaEncoder` encodes only Strings for `"type": String`
+  * [#3730](https://github.com/TouK/nussknacker/pull/3730) Additional fields are not trimmed during encoding when `additionalProperties` are allowed by schema
+
+* Request-response JSON schema sink improvements:
+  * [#3607](https://github.com/TouK/nussknacker/pull/3607) Encoder based on response schema.
+  * [#3727](https://github.com/TouK/nussknacker/pull/3727) Sink validation changes:
+    * Added param `Value validation mode` 
+    * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]`
+  * [#3716](https://github.com/TouK/nussknacker/pull/3716) Allow to add additional fields also in `strict validation mode`, if schema permits them.
+  * [#3722](https://github.com/TouK/nussknacker/pull/3722) Validation of JSON schema with additionalProperties
+
 * [#3707](https://github.com/TouK/nussknacker/pull/3707), [#3719](https://github.com/TouK/nussknacker/pull/3719), [#3692](https://github.com/TouK/nussknacker/pull/3692), [#3656](https://github.com/TouK/nussknacker/pull/3656) Improvements in OpenAPI:
   * Support for OpenAPI 3.1.0
   * Basic support for type references in JSON schemas
@@ -36,10 +30,23 @@
   * Handling of API Keys in query parameter and cookie
   * It's possible to configure which HTTP codes (404 by default) can be used as successful, empty response
   * Documentation link is taken from global configuration, if operation doesn't provide one
-* [#3730](https://github.com/TouK/nussknacker/pull/3730) Fix: Trimming additional fields at JsonToNuStruct when additionalProperties is enabled
-* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties. 
-* [#3738](https://github.com/TouK/nussknacker/pull/3738) Upgrade to Kafka 3.2.3
+* Upgrades:
+  * [#3738](https://github.com/TouK/nussknacker/pull/3738) Kafka 3.2.3
+  * [#3683](https://github.com/TouK/nussknacker/pull/3683) Flink 1.16
 
+* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+* [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
+* [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
+* [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
+  Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
+  to return scenario JSON omitting validation and dictionary resolving.
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
+* [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
+* [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
+* [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
+* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties. 
+               
+  
 1.6.1 (8 Nov 2022)
 ------------------------
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode

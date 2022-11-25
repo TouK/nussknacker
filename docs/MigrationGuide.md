@@ -4,34 +4,37 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.7.0 (Not released yet)
+
+### Scenario authoring changes
+* [#3701](https://github.com/TouK/nussknacker/pull/3701) Right now access in SpEL to not existing field on TypedMap won't throw exception, just will return `null`
+* [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
+  * Added param `Value validation mode` at RR response component
+  * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
+
+### Code API changes
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) 
    Remove dependency on `flink-scala`. In particular: 
   * Switched from using `scala.DataStream` to `datastream.DataStream`. Some tools exclusive to scala datastreams are available in `engine.flink.api.datastream`
   * Scala based `TypeInformation` derivation is no longer used, for remaining cases `flink-scala-utils` module is provided (probably will be removed in the future)
+* [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
+* [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
   * Lite k8s engine with request-response processing mode
   * `request-response-embedded` Deployment Manager
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
-* [#3576](https://github.com/TouK/nussknacker/pull/3576) `/processes` endpoint without query parameters returns all scenarios - the previous behaviour was to return only unarchived ones.
-  To fetch only unarchived scenarios `isArchived=false` query parameter has to be passed.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`
   * BestEffortJsonSchemaEncoder moved to package `pl.touk.nussknacker.engine.json.encode` in `nussknacker-json-utils`
-* [#3668](https://github.com/TouK/nussknacker/pull/3668) Method `runWithRequests` of `RequestResponseTestScenarioRunner` (returned by `TestScenarioRunner.requestResponseBased()`)
-  now returns `ValidatedNel` with scenario compilation errors instead of throwing exception in that case 
-* [#3701](https://github.com/TouK/nussknacker/pull/3701) Change: SPeL TypedMap Get Accessor:
-  * Right now access to not existing field on TypedMap won't throw exception, just will return `null`
-* [#3727](https://github.com/TouK/nussknacker/pull/3727) Improvements: Change RR Sink validation way:
-  * Added param `Value validation mode` at RR response component
-  * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 * [#3738](https://github.com/TouK/nussknacker/pull/3738) Kafka client libraries upgraded to 3.2.3. If using older Flink version,
   make sure to use 2.8.x client libraries. For Flink versions 1.15.0-1.15.2 include also [fixed KafkaMetricWrapper](https://github.com/TouK/nussknacker/pull/3738/files#diff-36f2a26ed5f3b58f5a8e758d4368e42d44413b5b74207df4cd65594c676682f9) 
-                     
+* [#3668](https://github.com/TouK/nussknacker/pull/3668) Method `runWithRequests` of `RequestResponseTestScenarioRunner` (returned by `TestScenarioRunner.requestResponseBased()`)
+  now returns `ValidatedNel` with scenario compilation errors instead of throwing exception in that case 
 
-### Code API changes
-* [#3680](https://github.com/TouK/nussknacker/pull/3680) `SubprocessRef::outputVariableNames` type is changed from `Option[Map[String,String]]` with default None, to `Map[String,String]` with default `Map.empty`
-* [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
+### REST API changes
+
+* [#3576](https://github.com/TouK/nussknacker/pull/3576) `/processes` endpoint without query parameters returns all scenarios - the previous behaviour was to return only unarchived ones.
+  To fetch only unarchived scenarios `isArchived=false` query parameter has to be passed.
 
 ## In version 1.6.0
 * [#3440](https://github.com/TouK/nussknacker/pull/3440) Feature: allow to define fragment's outputs
