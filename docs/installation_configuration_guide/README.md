@@ -51,8 +51,10 @@ scenarioTypes {
   }
 }
 ```
-
-[This](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) is how it looks in default configuration file in Nu distribution.
+                    
+The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
+additional configuration files. 
+This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 
 
 ## Environment variables
 
@@ -64,7 +66,6 @@ Environment variables are described in [Installation guide](./Installation.md), 
 * `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
   * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/docker-compose.yml#L12)
   * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/nussknacker/nussknacker.conf)
-* [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf) contains defaults for Nussknacker Designer
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker docker image.
 
 It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](ModelConfiguration.md) for the details. 

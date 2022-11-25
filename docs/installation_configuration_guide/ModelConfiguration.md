@@ -3,11 +3,11 @@ sidebar_position: 5
 ---
 # Model configuration
 
-This part of configuration defines how to configure Components and some of the runtime behaviour (e.g. error handling) for a given scenario type (Lite or Flink engine). It is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
+This part of configuration defines how to configure Components and certain runtime behaviour (e.g. error handling) for a given scenario type (Lite or Flink engine). 
+It is processed not only at the Designer but also passed to the execution engine (e.g. Flink), that’s why it’s parsed and processed a bit differently: 
 
-* Defaults can be defined in `defaultModelConfig.conf`. Standard deployment (e.g. with docker sample) has it [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf).
-* defaultModelConfig.conf is currently resolved both on designer (to extract information about types of data or during scenario testing) and on execution engine (e.g. on Flink or in Lite runtime). That’s why all environment variables used there have to be defined also on all Flink/Lite engine runtime hosts (!). This is a technical limitation and may change in the future.
 * Some Components can use a special mechanism which resolves and adds additional configuration during deployment, which is then passed to the execution engine. Such configuration is read and resolved only at the designer. Example: OpenAPI enrichers need to read its definition from external sites - so e.g. Flink cluster does not have to have access to the site with the definition. 
+* There is additional set of defaults, taken from `defaultModelConfig.conf` if it exists on the classpath. The standard Nussknacker installation uses the one from [here](https://github.com/TouK/nussknacker/blob/staging/defaultModel/src/main/resources/defaultModelConfig.conf), installations using certain code customizations may use a different one.       
 
 Look at [configuration areas](./#configuration-areas) to understand where Model configuration should be placed in Nussknacker configuration.
                   

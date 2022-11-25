@@ -2,6 +2,9 @@
 sidebar_position: 4
 ---
 # Designer configuration
+                             
+Please note that all the default values for Designer configuration are defined in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
+
 
 ## Web interface configuration
 
