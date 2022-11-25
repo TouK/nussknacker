@@ -243,6 +243,8 @@ lazy val commonSettings =
         "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+        "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonV,
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonV,
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
@@ -265,6 +267,7 @@ val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.2"
 val jwtCirceV = "9.0.5"
+//TODO: upgrade to 2.13.x
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
