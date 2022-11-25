@@ -6,16 +6,16 @@ import java.nio.charset.StandardCharsets
 
 sealed trait ScenarioTestData {
   def samplesLimit: Int
-  def forNodeId(id: NodeId): TestData
+  def forSourceId(id: NodeId): TestData
 }
 
 case class SingleSourceScenarioTestData(testData: TestData, samplesLimit: Int) extends ScenarioTestData {
-  override def forNodeId(id: NodeId): TestData = testData
+  override def forSourceId(id: NodeId): TestData = testData
 }
 
 // TODO: string key?
 case class MultipleSourcesScenarioTestData(sourceTestDataMap: Map[String, TestData], samplesLimit: Int) extends ScenarioTestData {
-  override def forNodeId(id: NodeId): TestData = sourceTestDataMap(id.id)
+  override def forSourceId(id: NodeId): TestData = sourceTestDataMap.getOrElse(id.id, throw new IllegalArgumentException(s"Missing test data for: $id"))
 }
 
 object ScenarioTestData {

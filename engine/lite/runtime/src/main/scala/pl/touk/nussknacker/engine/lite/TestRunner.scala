@@ -5,9 +5,9 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestData}
-import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
+import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.lite.api.commonTypes.ResultType
@@ -39,7 +39,6 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
 
     //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest[Input](process, scenarioTestData)
 
     //in tests we don't send metrics anywhere
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))
@@ -53,17 +52,19 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       case Invalid(errors) => throw new IllegalArgumentException("Error during interpreter preparation: " + errors.toList.mkString(", "))
     }
 
+    // inputs are sorted by source id.
+    val inputs = ScenarioInputBatch(scenarioInterpreter.sources.toList.flatMap { case (sourceId, source) =>
+      val sourceTestSupport = source match {
+        case e: SourceTestSupport[Input@unchecked] => e
+        case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
+      }
+      val parsedTestData = TestDataPreparer.prepareDataForTest(sourceTestSupport, scenarioTestData, NodeId(sourceId.value))
+      parsedTestData.samples.map(sample => sourceId -> sample)
+    })
+
     try {
       scenarioInterpreter.open(testContext)
-
-      val singleSourceId = scenarioInterpreter.sources.keys.toList match {
-        case one :: Nil => one
-        case other => throw new IllegalArgumentException(s"Cannot test scenario with > 1 source: ${other.mkString(", ")}")
-      }
-      val inputs = ScenarioInputBatch(parsedTestData.samples.map(input => (singleSourceId, input)))
-
       val results = implicitly[EffectUnwrapper[F]].apply(scenarioInterpreter.invoke(inputs))
-
       collectSinkResults(collectingListener.runId, results)
       collectingListener.results
     } finally {

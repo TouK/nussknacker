@@ -4,14 +4,13 @@ import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, SingleSourceScenarioTestData, TestData}
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.api.{MetaData, ProcessListener}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, TestDataPreparer}
 
@@ -32,7 +31,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     overrideObjectWithMethod(sourceFactory, (originalSource, returnType, nodeId) => {
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
-          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, scenarioTestData.forNodeId(nodeId))
+          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, scenarioTestData, nodeId)
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
               new CollectionSource[Object](parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {

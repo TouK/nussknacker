@@ -9,7 +9,6 @@ import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch,
 import pl.touk.nussknacker.engine.lite.sample.{SampleInput, SourceFailure}
 import pl.touk.nussknacker.engine.spel.Implicits._
 
-//TODO: test for test-from-file
 class StateEngineTest extends AnyFunSuite with Matchers with OptionValues {
 
   test("run scenario with sum aggregation") {
