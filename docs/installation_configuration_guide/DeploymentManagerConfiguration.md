@@ -9,20 +9,21 @@ Type of Deployment Manager is defined with `type` parameter, e.g. for running sc
 deploymentConfig {     
   type: "flinkStreaming"
   restUrl: "http://localhost:8081"
+  # additional configuration goes here
 }
 ```
 
 Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
 
-## Lite engine based on Kubernetes
+## Kubernetes native Lite engine configuration
                                                                                 
 Please remember, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
-Both processing modes: `streaming` and `request-response` share the majority of configuration.
+With the exception of the `servicePort` configuration option, all remaining configuration options apply to both `streaming` and `request-response` processing modes.
 
-`lite-k8s` Deployment Manager has the following configuration options:                 
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize the Helm chart to use different values for those [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install Designer outside of the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration. 
 
 | Parameter                 | Type                                                | Default value                       | Description                                                                              |
 |---------------------------|-----------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
@@ -37,7 +38,7 @@ Both processing modes: `streaming` and `request-response` share the majority of 
 | commonConfigMapForLogback | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
 | servicePort               | int                                                 | 80                                  | Port of service exposed in request-response processing mode                              |
                                                  
-### Customizing K8s deployment
+### Customizing K8s deployment resource definition
 
 By default, each scenario creates K8s Deployment. By default, Nussknacker will create following deployment:
 
@@ -139,24 +140,28 @@ spec {
  ] 
 }
 ```
-This config will be merged into final deployment. 
+This config will be merged into the final K8s deployment resource definition. 
 Please note that you cannot override names or labels configured by Nussknacker. 
                               
 ### Overriding configuration passed to runtime. 
-                                 
-By default, configuration of Lite engine runtime consists of
-- `application.conf` from runtime image - see [this](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf) for default.
-- the configuration from `modelConfig` 
 
-In some circumstances you want to change values in `modelConfig` without having to modify base image. E.g. different accounts/credentials should be used in Designer and in Runtime. For those cases you can use `configExecutionOverrides` setting:
+In most cases, the model configuration values passed to the Lite Engine runtime are the ones from 
+the `modelConfig` section of [main configuration file](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/#configuration-areas).
+However, there are two exception to this rule:
+- there is [application.conf](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf) file in the runtime image, which is used as additional source of certain defaults.
+- you can override the configuration coming from the main configuration file. The paragraph below describes how to use this mechanism. 
+
+In some circumstances you want to have different configuration values used by the Designer, and different used by the runtime. 
+E.g. different accounts/credentials should be used in Designer (for schema discovery, tests from file) and in Runtime (for the production use). 
+For those cases you can use `configExecutionOverrides` setting:
 ```hocon
 deploymentConfig {     
   configExecutionOverrides {
-    password: "sfd2323afdf" # this will be used in the Runtime
+    special_password: "sfd2323afdf" # this will be used in the Runtime
   }
 }
 modelConfig {
-  password: "aaqwmpor909232" # this will be used in the Designer
+  special_password: "aaqwmpor909232" # this will be used in the Designer
 }
 ```
 
