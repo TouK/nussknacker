@@ -94,7 +94,6 @@ lazy val publishSettings = Seq(
   ).toSeq
 )
 
-
 def modelMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard //TODO: we don't handle JDK9 modules well
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
