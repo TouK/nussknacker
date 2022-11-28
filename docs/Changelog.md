@@ -45,7 +45,7 @@
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
 * [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties. 
-               
+* [#3742](https://github.com/TouK/nussknacker/pull/3742) Improvements: Json Schema more strict encoding - matching to schema validate 
   
 1.6.1 (8 Nov 2022)
 ------------------------

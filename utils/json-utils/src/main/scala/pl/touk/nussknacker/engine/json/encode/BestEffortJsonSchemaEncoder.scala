@@ -12,7 +12,6 @@ import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
-
 object BestEffortJsonSchemaEncoder {
 
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
@@ -30,17 +29,18 @@ object BestEffortJsonSchemaEncoder {
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
     fields.keys.toList.union(parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
       val schema = Option(parentSchema.getPropertySchemas.get(key))
-      val value = fields.getOrElse(key, null)
-      (key, value, fields.contains(key), schema)
-    }.collect {
-      case (fieldName, null, true, Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
-      case (fieldName, null, false, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
+      val value = fields.get(key)
+      (key, value,schema)
+    } //we do collect here because we want to do own pre-validation with human readably message (consider doing encode and at the end schema.validate instead of this)
+    .collect {
+      case (fieldName, Some(null), Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
+      case (fieldName, None, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
         error(s"Missing property: $fieldName for schema: $parentSchema.")
-      case (fieldName, value, true, Some(schema)) =>
+      case (fieldName, Some(value), Some(schema)) =>
         encode(value, schema, Some(fieldName)).map(fieldName -> _)
-      case (fieldName, _, _, None) if !parentSchema.permitsAdditionalProperties() =>
+      case (fieldName, _, None) if !parentSchema.permitsAdditionalProperties() =>
         error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
-      case (fieldName, value, _, None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
+      case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
         case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
         case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
       }
@@ -73,8 +73,7 @@ object BestEffortJsonSchemaEncoder {
       case (_: NullSchema, null) => Valid(Json.Null)
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_, null) => error("null", schema.toString, fieldName)
-      case (_, _) =>
-        error(value.getClass.getName, schema.toString, fieldName)
+      case (_, _) => error(value.getClass.getName, schema.toString, fieldName)
     }
   }
 
@@ -103,10 +102,10 @@ object BestEffortJsonSchemaEncoder {
       schema
         .validateData(json)
         .leftMap(errorMsg => NonEmptyList.of(errorMsg))
-        .map(_ => result) //we return base json (e.g. without felt defaults - there is no need to put these data as output)
+        .map(_ => result) //we return here base json (e.g. without felt defaults - there is no need to put these data as output, because json still is valid)
     }
 
-  private[encode] def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
+  private def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
     optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, fieldName), encodeBasedOnSchema)
   }
 

@@ -10,7 +10,7 @@ object JsonSchemaUtils {
 
   private val CirceJsonFolder: Json.Folder[Object] = new Json.Folder[Object] {
     def onNull: Object = JSONObject.NULL
-    def onBoolean(value: Boolean): Object = Predef.boolean2Boolean(value)
+    def onBoolean(value: Boolean): java.lang.Boolean = value
     def onString(value: String): Object = value
     def onNumber(value: JsonNumber): Object = new JSONTokener(value.toString).nextValue
     def onArray(value: Vector[Json]): Object = new JSONArray(value.map(_.foldWith(this)).toArray)
