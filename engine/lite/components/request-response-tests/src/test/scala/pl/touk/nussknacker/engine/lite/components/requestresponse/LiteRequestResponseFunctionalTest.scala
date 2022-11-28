@@ -4,8 +4,9 @@ import akka.http.scaladsl.model.{HttpMethods, HttpRequest}
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import io.circe.Json
-import io.circe.Json.{Null, fromString, obj}
+import io.circe.Json.{Null, fromInt, fromString, obj}
 import io.circe.syntax.EncoderOps
+import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -14,6 +15,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner._
@@ -23,6 +25,7 @@ import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.SpecialSpELElement.{EmptyMap, Input}
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, SpecialSpELElement, ValidatedValuesDetailedMessage}
 
+//More tests e2e with json are available at LiteKafkaUniversalJsonFunctionalTest
 class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with EitherValuesDetailedMessage
   with TableDrivenPropertyChecks with ValidatedValuesDetailedMessage {
 
@@ -41,16 +44,25 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
   private val sinkName = "response"
 
-  private val schemaNull = """{"type": "null"}"""
+  private val schemaNull = JsonSchemaBuilder.parseSchema("""{"type": "null"}""")
 
-  private val schemaObjNull =
+  private val schemaStr = StringSchema.builder().build()
+
+  private val schemaInt = NumberSchema.builder().requiresNumber(true).minimum(1).maximum(16).build()
+
+  private val schemaObjNull = JsonSchemaBuilder.parseSchema(
     s"""{"type":"object","properties": {"$ObjectFieldName": $schemaNull}, "additionalProperties": false}"""
+  )
 
-  private def schemaObjString(additionalProperties: Boolean = false) =
+  private val schemaObjStr = schemaObjString()
+
+  private def schemaObjString(additionalProperties: Boolean = false) = JsonSchemaBuilder.parseSchema(
     s"""{"type":"object","properties": {"$ObjectFieldName": {"type": "string"}}, "additionalProperties": $additionalProperties}"""
+  )
 
-  private def schemaObjUnionNullString(additionalProperties: Boolean = false) =
+  private def schemaObjUnionNullString(additionalProperties: Boolean = false) = JsonSchemaBuilder.parseSchema(
     s"""{"type":"object","properties": {"$ObjectFieldName": {"type": ["null", "string"]}}, "additionalProperties": $additionalProperties}"""
+  )
 
   private val sampleStr = "sample"
 
@@ -68,17 +80,32 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     val testData = Table(
       ("config", "result"),
       (config(obj(), schemaObjNull, schemaObjNull), Valid(obj())),
-      (config(obj(), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
-      (config(JsonObject(Null), schemaObjNull, schemaObjNull), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
-      (config(JsonObject(Null), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(obj(), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), validJObj(Null)),
+      (config(JsonObject(Null), schemaObjNull, schemaObjNull), validJObj(Null)),
+      (config(JsonObject(Null), schemaObjNull, schemaObjNull, Map(ObjectFieldName -> InputField)), validJObj(Null)),
 
-      (config(obj(), schemaObjString(), schemaObjString()), Valid(obj())),
-      (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should throw exception at runtime
+      (config(obj(), schemaObjStr, schemaObjStr), Valid(obj())),
 
-      (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), validJObj(Null)),
       (config(obj(), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())),
-      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
-      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
+      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString()), validJObj(Null)),
+      (config(JsonObject(Null), schemaObjUnionNullString(), schemaObjUnionNullString(), Map(ObjectFieldName -> InputField)), validJObj(Null)),
+    )
+
+    forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
+      val results = runWithResults(config)
+      results shouldBe expected
+    }
+  }
+
+  // TODO: add more tests for primitives, logical tests, unions and so on, add random tests - like in LiteKafkaUniversalJsonFunctionalTest
+  test("should test e2e request-response flow at sink and source / handling primitives..") {
+
+    val testData = Table(
+      ("config", "result"),
+      //Primitive integer validations
+      (config(fromInt(1), schemaInt, schemaInt), Valid(fromInt(1))),
+      (conf(schemaInt, 1), Valid(fromInt(1))),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -90,24 +117,24 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   test("should test e2e request-response flow at sink and source / handling objects.." ) {
     val testData = Table(
       ("config", "result"),
-      (config(JsonObject(fromString(sampleStr)), schemaObjString(), schemaObjString()), validJObj(fromString(sampleStr))),
-      (spelConfig(schemaObjString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
+      (config(JsonObject(fromString(sampleStr)), schemaObjStr, schemaObjStr), validJObj(fromString(sampleStr))),
+      (conf(schemaObjStr, SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
       //Union testing
       (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
-      (config(JsonObject(fromString(sampleStr)), schemaObjString(), schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
-      (config(JsonObject(Null), schemaObjNull, schemaObjUnionNullString()), Valid(obj())), //FIXME: it should return {field: null} => DefaultResponseRequestSinkImplFactory.prepareResponse:21 convert Map(field->null) to empty json
-      (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjString()), validJObj(fromString(sampleStr))),
-      (spelConfig(schemaObjUnionNullString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
+      (config(JsonObject(fromString(sampleStr)), schemaObjStr, schemaObjUnionNullString()), validJObj(fromString(sampleStr))),
+      (config(JsonObject(Null), schemaObjNull, schemaObjUnionNullString()), validJObj(Null)),
+      (config(JsonObject(fromString(sampleStr)), schemaObjUnionNullString(), schemaObjStr), validJObj(fromString(sampleStr))),
+      (conf(schemaObjUnionNullString(), SpELObject(sampleStr)), validJObj(fromString(sampleStr))),
 
       //Testing additional properties
       (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
-      (spelConfig(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
-      (spelConfig(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
+      (conf(schemaObjUnionNullString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
+      (conf(schemaObjUnionNullString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
 
       (config(sampleObjWithAdds, schemaObjString(true), schemaObjUnionNullString(true)), Valid(sampleObjWithAdds)),
-      (spelConfig(schemaObjString(), sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
-      (spelConfig(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
+      (conf(schemaObjStr, sampleSpELObjWithAdds), invalid(Nil, Nil, List(AdditionalFieldName))),
+      (conf(schemaObjString(true), sampleSpELObjWithAdds), Valid(sampleObjWithAdds)),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
@@ -119,16 +146,22 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
   test("should catch runtime errors") {
     val testData = Table(
       ("config", "result"),
-      //Errors at sources
+      //Errors at source
       (config(sampleObjWithAdds, schemaObjUnionNullString(), schemaObjUnionNullString(true)), "#: extraneous key [field2] is not permitted"),
-      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), "#: extraneous key [field2] is not permitted"),
-      (config(sampleObjWithAdds, schemaObjString(true), schemaObjString()), "#: extraneous key [field2] is not permitted"),
+
+      //Errors at sink
+      (config(sampleObjWithAdds, schemaObjString(true), schemaObjStr), s"Not expected field with name: field2 for schema: $schemaObjStr."),
+      (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), s"Not expected type: null for field: 'field' with schema: $schemaStr."),
+      (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."),
+      (config(fromInt(Int.MaxValue), schemaInt, schemaInt), s"#: ${Int.MaxValue} is not less or equal to 16"),
+      (conf(schemaInt, Int.MaxValue), s"#: ${Int.MaxValue} is not less or equal to 16"),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: String) =>
       val scenario: CanonicalProcess = createScenario(config)
       val result = runner.runWithRequests(scenario) { invoker =>
-        invoker(HttpRequest(HttpMethods.POST, entity = config.input.asJson.spaces2)).leftValue.head.throwable.getMessage
+        val response = invoker(HttpRequest(HttpMethods.POST, entity = config.input.asJson.spaces2))
+        response.leftValue.head.throwable.getMessage
       }.validValue
 
       result shouldBe expected
@@ -147,8 +180,8 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     ScenarioBuilder
       .requestResponse("test")
       .additionalFields(properties = Map(
-        "inputSchema" -> config.sourceSchema,
-        "outputSchema" -> config.outputSchema
+        "inputSchema" -> config.sourceSchema.toString,
+        "outputSchema" -> config.outputSchema.toString
       ))
       .source("input", "request")
       .emptySink(sinkName, "response",
@@ -157,15 +190,15 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
         SinkRawValueParamName -> config.sinkDefinition
       )
 
-  case class ScenarioConfig(input: Json, sourceSchema: String, outputSchema: String, sinkDefinition: String, validationMode: Option[ValidationMode]) {
+  case class ScenarioConfig(input: Json, sourceSchema: Schema, outputSchema: Schema, sinkDefinition: String, validationMode: Option[ValidationMode]) {
     lazy val validationModeName: String = validationMode.map(_.name).getOrElse(ValidationMode.strict.name)
   }
 
   //Special config for SpEL as output, on input we pass simple null
-  private def spelConfig(outputSchema: String, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
+  private def conf(outputSchema: Schema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig =
     config(Null, schemaNull, outputSchema, output, validationMode)
 
-  private def config(input: Json, inputSchema: String, outputSchema: String, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
+  private def config(input: Json, inputSchema: Schema, outputSchema: Schema, output: Any = Input, validationMode: Option[ValidationMode] = None): ScenarioConfig = {
     val sinkDefinition = output match {
       case element: SpecialSpELElement if List(EmptyMap, Input).contains(element) => element
       case any => any
