@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
@@ -14,8 +13,7 @@ import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
 
 
-//TODO: Do we need validation mode here??
-class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
+object BestEffortJsonSchemaEncoder {
 
   import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
@@ -38,7 +36,7 @@ class BestEffortJsonSchemaEncoder(validationMode: ValidationMode) {
       case (fieldName, null, true, Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
       case (fieldName, null, false, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
         error(s"Missing property: $fieldName for schema: $parentSchema.")
-      case (fieldName, value, true, Some(schema)) if parentSchema.getPropertySchemas.keySet().contains(fieldName) =>
+      case (fieldName, value, true, Some(schema)) =>
         encode(value, schema, Some(fieldName)).map(fieldName -> _)
       case (fieldName, _, _, None) if !parentSchema.permitsAdditionalProperties() =>
         error(s"Not expected field with name: $fieldName for schema: $parentSchema.")

@@ -22,7 +22,7 @@ object JsonSchemaImplicits {
       Validated.fromTry(Try(schema.validate(data))).leftMap{
         case ve: ValidationException => ve.getAllMessages.asScala.mkString("\n\n")
         case je: JSONException => s"Invalid JSON: ${je.getMessage}"
-        case _ => "unknown error message"
+        case exc => s"Unknown error message type: ${exc.getMessage}"
       }.map(_ => data)
 
   }

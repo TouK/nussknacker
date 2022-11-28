@@ -7,7 +7,6 @@ import io.circe.Json.{Null, obj}
 import org.everit.json.schema._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.prop.TableDrivenPropertyChecks._
-import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ProcessUtils.convertToAnyShouldWrapper
 
@@ -19,9 +18,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   import collection.JavaConverters._
 
   private val FieldName = "foo"
-
-  private val encoderStrict = new BestEffortJsonSchemaEncoder(ValidationMode.strict)
-  private val encoderLax = new BestEffortJsonSchemaEncoder(ValidationMode.lax)
+  
+  private val encoder = BestEffortJsonSchemaEncoder
 
   private val schemaNumber: NumberSchema = NumberSchema.builder().build()
   private val schemaString: StringSchema = StringSchema.builder().build()
@@ -48,7 +46,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}""".stripMargin)
 
-    val encoded = encoderStrict.encode(Map(
+    val encoded = encoder.encode(Map(
       "firstName" -> "John",
       "lastName" -> "Smith",
       "age" -> 1L
@@ -60,7 +58,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       "age" -> Json.fromLong(1),
     ))
 
-    encoderStrict.encode(Map(
+    encoder.encode(Map(
       "firstName" -> "John",
       "lastName" -> 1,
       "age" -> 1L
@@ -68,24 +66,24 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   }
 
   test("should encode string") {
-    val encoded = encoderStrict.encode("1", schemaString)
+    val encoded = encoder.encode("1", schemaString)
     encoded shouldEqual Valid(Json.fromString("1"))
   }
 
   test("should encode date time") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "date-time"}""".stripMargin)
     val zdt = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
-    val encodedZdt = encoderStrict.encode(zdt, schema)
+    val encodedZdt = encoder.encode(zdt, schema)
     encodedZdt shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
 
-    val encodedOdt = encoderStrict.encode(zdt.toOffsetDateTime, schema)
+    val encodedOdt = encoder.encode(zdt.toOffsetDateTime, schema)
     encodedOdt shouldEqual Valid(Json.fromString("2020-07-10T12:12:30+02:00"))
   }
 
   test("should encode date") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "date"}""".stripMargin)
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
-    val encoded = encoderStrict.encode(date, schema)
+    val encoded = encoder.encode(date, schema)
 
     encoded shouldEqual Valid(Json.fromString("2020-07-10"))
   }
@@ -93,7 +91,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   test("should encode time") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "time"}""".stripMargin)
     val date = OffsetTime.parse("20:20:39+01:00", DateTimeFormatter.ISO_OFFSET_TIME)
-    val encoded = encoderStrict.encode(date, schema)
+    val encoded = encoder.encode(date, schema)
 
     encoded shouldEqual Valid(Json.fromString("20:20:39+01:00"))
   }
@@ -101,7 +99,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   test("should throw when wrong date-time") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "date-time"}""".stripMargin)
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
-    val encoded = encoderStrict.encode(date, schema)
+    val encoded = encoder.encode(date, schema)
 
     encoded shouldBe 'invalid
   }
@@ -109,7 +107,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   test("should throw when wrong time") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "time"}""".stripMargin)
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
-    val encoded = encoderStrict.encode(date, schema)
+    val encoded = encoder.encode(date, schema)
 
     encoded shouldBe 'invalid
   }
@@ -117,13 +115,13 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   test("should throw when wrong date") {
     val schema: Schema = JsonSchemaBuilder.parseSchema("""{"type": "string","format": "date"}""".stripMargin)
     val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
-    val encoded = encoderStrict.encode(date, schema)
+    val encoded = encoder.encode(date, schema)
 
     encoded shouldBe 'invalid
   }
 
   test("should encode number") {
-    val encoded = encoderStrict.encode(1L, schemaNumber)
+    val encoded = encoder.encode(1L, schemaNumber)
     encoded shouldEqual Valid(Json.fromLong(1L))
   }
 
@@ -138,14 +136,13 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       (Map(FieldName -> 0), objWithIntWithMinMax, invalid(s"#/$FieldName: 0 is not greater or equal to 1")),
       (Map(FieldName -> 17), objWithIntWithMinMax, invalid(s"#/$FieldName: 17 is not less or equal to 16")),
     )) { (data, schema, expected) =>
-      encoderStrict.encodeWithJsonValidation(data, schema) shouldBe expected
-      encoderLax.encodeWithJsonValidation(data, schema) shouldBe expected
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
     }
   }
 
   test("should encode array") {
     val schema: ArraySchema = ArraySchema.builder().allItemSchema(schemaNumber).build()
-    val encoded = encoderStrict.encode(List(1), schema)
+    val encoded = encoder.encode(List(1), schema)
 
     encoded shouldEqual Valid(Json.arr(Json.fromLong(1L)))
   }
@@ -157,8 +154,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       (Map(FieldName -> null), createSchemaObjWithFooField(true, schemaString), invalid(s"Not expected type: null for field: '$FieldName' with schema: $schemaString.")),
       (Map(FieldName -> null), schemaObjString, invalid(s"Not expected type: null for field: 'foo' with schema: $schemaString.")),
     )) { (data, schema, expected) =>
-      encoderStrict.encode(data, schema) shouldBe expected
-      encoderLax.encode(data, schema) shouldBe expected
+      encoder.encode(data, schema) shouldBe expected
     }
   }
 
@@ -174,10 +170,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  "additionalProperties": false
         |}""".stripMargin)
 
-    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schemaObjString) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoderStrict.encode(Map("foo" -> "bar", "redundant" -> 15), schemaObjString) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
-    encoderStrict.encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+    encoder.encode(Map("foo" -> "bar", "redundant" -> 15), schemaObjString) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
+    encoder.encode(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
   }
 
   test("should validate additionalParameters type") {
@@ -194,11 +188,11 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}""".stripMargin)
 
-    encoderLax.encode(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
+    encoder.encode(Map("foo" -> "bar", "redundant" -> "aaa"), schema("number")) shouldBe
       Invalid(NonEmptyList.of("""Not expected type: java.lang.String for field with schema: {"type":"number"}."""))
-    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
+    encoder.encode(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
       Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoderLax.encode(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
+    encoder.encode(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
   }
 
   test("should encode union") {
@@ -236,12 +230,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin
     )) { schemaString =>
       val schema: Schema = JsonSchemaBuilder.parseSchema(schemaString)
-
-      encoderLax.encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
-      encoderStrict.encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
-
-      encoderLax.encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
-      encoderStrict.encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
+      encoder.encode(Map("foo" -> 1), schema) shouldBe Valid(Json.obj(("foo", Json.fromLong(1L))))
+      encoder.encode(Map("foo" -> "1"), schema) shouldBe Valid(Json.obj(("foo", Json.fromString("1"))))
     }
   }
 
@@ -253,8 +243,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       (Map(FieldName-> null), schemaObjUnionNullString, obj("foo" -> Null)),
       (Map(FieldName -> null), schemaObjUnionNullStringRequired, obj("foo" -> Null)),
     )) { (data, schema, result) =>
-      encoderLax.encode(data, schema) shouldBe Valid(result)
-      encoderStrict.encode(data, schema) shouldBe Valid(result)
+      encoder.encode(data, schema) shouldBe Valid(result)
     }
   }
 
@@ -268,8 +257,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       (Map(), schemaObjUnionNullStringRequired),
     )) { (data, schema) =>
       val expected = invalid(s"Missing property: $FieldName for schema: $schema.")
-      encoderStrict.encode(data, schema) shouldBe expected
-      encoderLax.encode(data, schema) shouldBe expected
+      encoder.encode(data, schema) shouldBe expected
     }
   }
 

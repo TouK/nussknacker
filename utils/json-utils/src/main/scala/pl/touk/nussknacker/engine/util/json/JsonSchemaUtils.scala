@@ -12,11 +12,7 @@ object JsonSchemaUtils {
     def onNull: Object = JSONObject.NULL
     def onBoolean(value: Boolean): Object = Predef.boolean2Boolean(value)
     def onString(value: String): Object = value
-    def onNumber(value: JsonNumber): Object =
-      value.toInt match {
-        case Some(int) => Predef.int2Integer(int)
-        case None => new JSONTokener(value.toString).nextValue
-      }
+    def onNumber(value: JsonNumber): Object = new JSONTokener(value.toString).nextValue
     def onArray(value: Vector[Json]): Object = new JSONArray(value.map(_.foldWith(this)).toArray)
     def onObject(value: JsonObject): Object = {
       val map = value.toMap.mapValues(_.foldWith(this)).asJava
