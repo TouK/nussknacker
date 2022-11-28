@@ -129,11 +129,15 @@ object JsonTestData {
 
   val samplePerson: Json = obj("first" -> fromString(strNu), "last" -> fromString(strTouK), "age" -> sampleJInt)
 
+  val sampleArrayInt: Json = arr(sampleJInt)
+
   val sampleMapAny: Json = obj("first" -> fromString(strNu), "year" -> fromInt(year))
 
   val sampleMapInt: Json = obj("year" -> fromInt(year))
 
   val sampleMapStr: Json = obj("foo" -> fromString("bar"))
+
+  val sampleMapPerson: Json = obj("first" -> samplePerson)
 
   val sampleObjNull: Json = JsonObj(Json.Null)
 
@@ -143,7 +147,7 @@ object JsonTestData {
 
   val sampleObjMapInt: Json = JsonObj(sampleMapInt)
 
-  val sampleObjMapPerson: Json = JsonObj(obj("first" -> samplePerson))
+  val sampleObjMapPerson: Json = JsonObj(sampleMapPerson)
 
   object JsonObj {
     def apply(value: Json): Json = obj(ObjectFieldName -> value)

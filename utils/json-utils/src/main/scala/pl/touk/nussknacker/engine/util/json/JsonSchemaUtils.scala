@@ -1,28 +1,23 @@
 package pl.touk.nussknacker.engine.util.json
 
-import io.circe.{Json, JsonNumber, JsonObject}
-import org.json.{JSONArray, JSONObject, JSONTokener}
 import io.circe.Json._
+import io.circe.{Json, JsonObject}
+import org.json.{JSONArray, JSONObject, JSONTokener}
 
 object JsonSchemaUtils {
 
   import collection.JavaConverters._
 
-  private val CirceJsonFolder: Json.Folder[Object] = new Json.Folder[Object] {
-    def onNull: Object = JSONObject.NULL
-    def onBoolean(value: Boolean): java.lang.Boolean = value
-    def onString(value: String): Object = value
-    def onNumber(value: JsonNumber): Object = new JSONTokener(value.toString).nextValue
-    def onArray(value: Vector[Json]): Object = new JSONArray(value.map(_.foldWith(this)).toArray)
-    def onObject(value: JsonObject): Object = {
-      val map = value.toMap.mapValues(_.foldWith(this)).asJava
-      new JSONObject(map)
-    }
-  }
+  def circeToJson(value: Json): AnyRef = value.fold(
+    jsonNull = JSONObject.NULL,
+    jsonBoolean => Predef.boolean2Boolean(jsonBoolean),
+    jsonNumber => new JSONTokener(jsonNumber.toString).nextValue,
+    jsonString = identity[String],
+    jsonArray => new JSONArray(jsonArray.map(circeToJson).toArray),
+    jsonObject => new JSONObject(jsonObject.toMap.mapValues(circeToJson).asJava)
+  )
 
-  def circeToJson(value: Json): Object = value.foldWith(CirceJsonFolder)
-
-  def jsonToCirce(json: Object): Json = json match {
+  def jsonToCirce(json: AnyRef): Json = json match {
     case a: java.lang.Boolean => fromBoolean(a)
     case a: java.math.BigInteger => fromBigInt(a)
     case a: java.math.BigDecimal => fromBigDecimal(a)

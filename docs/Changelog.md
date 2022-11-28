@@ -14,6 +14,7 @@
     * When `"additionalProperties": T` type is `Map[String, T]`
   * [#3709](https://github.com/TouK/nussknacker/pull/3709) `BestEffortJsonSchemaEncoder` encodes only Strings for `"type": String`
   * [#3730](https://github.com/TouK/nussknacker/pull/3730) Additional fields are not trimmed during encoding when `additionalProperties` are allowed by schema
+  * [#3742](https://github.com/TouK/nussknacker/pull/3742) Improvements: Json Schema more strict encoding - matching to schema validate
 
 * Request-response JSON schema sink improvements:
   * [#3607](https://github.com/TouK/nussknacker/pull/3607) Encoder based on response schema.
@@ -44,8 +45,7 @@
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
-* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties. 
-* [#3742](https://github.com/TouK/nussknacker/pull/3742) Improvements: Json Schema more strict encoding - matching to schema validate 
+* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties.
   
 1.6.1 (8 Nov 2022)
 ------------------------

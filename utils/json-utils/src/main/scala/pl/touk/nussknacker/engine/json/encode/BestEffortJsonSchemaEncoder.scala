@@ -51,6 +51,11 @@ object BestEffortJsonSchemaEncoder {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
   }
 
+  /**
+    * TODO: Consider better handling for number e.g.:
+    * - vale: java.math.BigDecimal, schema: NumberSchema with requiresInteger = true
+    * - vale: scala.math.BigDecimal, schema: NumberSchema with requiresInteger = true
+    */
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
