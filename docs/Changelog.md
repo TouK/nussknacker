@@ -20,6 +20,7 @@
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 * [#3722](https://github.com/TouK/nussknacker/pull/3722) Sink validation of JsonSchema with additionalProperties
 * [#3730](https://github.com/TouK/nussknacker/pull/3730) Fix: Trimming additional fields at JsonToNuStruct when additionalProperties is enabled
+* [#3742](https://github.com/TouK/nussknacker/pull/3742) Improvements: Json Schema more strict encoding - matching to schema validate
 
 1.6.1 (8 Nov 2022)
 ------------------------
