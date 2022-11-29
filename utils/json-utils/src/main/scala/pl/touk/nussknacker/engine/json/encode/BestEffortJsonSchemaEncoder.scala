@@ -5,12 +5,14 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
+import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder.error
 import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
 import scala.collection.convert.ImplicitConversions.`map AsScala`
 import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+import scala.util.{Failure, Success, Try}
 
 object BestEffortJsonSchemaEncoder {
 
@@ -51,11 +53,6 @@ object BestEffortJsonSchemaEncoder {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
   }
 
-  /**
-    * TODO: Consider better handling for number e.g.:
-    * - vale: java.math.BigDecimal, schema: NumberSchema with requiresInteger = true
-    * - vale: scala.math.BigDecimal, schema: NumberSchema with requiresInteger = true
-    */
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
@@ -66,6 +63,7 @@ object BestEffortJsonSchemaEncoder {
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(value.getClass.getName, cs.toString, fieldName))
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
+      case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, schema, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Double) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Float) => Valid(jsonEncoder.encode(value))
@@ -92,6 +90,26 @@ object BestEffortJsonSchemaEncoder {
       case ("time", ot: OffsetTime) => Valid(jsonEncoder.encode(ot))
       case ("time", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
       case ("unnamed-format", _: String) => Valid(jsonEncoder.encode(value))
+      case _ => error(value.getClass.getName, schema.toString, fieldName)
+    }
+  }
+
+  private def encodeIntegerSchema(value: Any, schema: Schema, fieldName: Option[String] = None): Validated[NonEmptyList[String], Json] = {
+    def encodeBigDecimalToIntegerSchema(bigDecimalValue: BigDecimal): Validated[NonEmptyList[String], Json] = Try(bigDecimalValue.toLongExact) match {
+      case Failure(_) => error(value.getClass.getName, schema.toString, fieldName)
+      case Success(v) => Valid(jsonEncoder.encode(v))
+    }
+
+    value match {
+      case i: Int => Valid(jsonEncoder.encode(i))
+      case l: Long => Valid(jsonEncoder.encode(l))
+      case d: Double => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(d))
+      case f: Float => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(f.toDouble))
+      case bd: java.math.BigDecimal => encodeBigDecimalToIntegerSchema(bd)
+      case bd: scala.math.BigDecimal => encodeBigDecimalToIntegerSchema(bd)
+      case bi: scala.math.BigInt => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
+      case bi: java.math.BigInteger => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
+      case nm: Number => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(nm.doubleValue()))
       case _ => error(value.getClass.getName, schema.toString, fieldName)
     }
   }

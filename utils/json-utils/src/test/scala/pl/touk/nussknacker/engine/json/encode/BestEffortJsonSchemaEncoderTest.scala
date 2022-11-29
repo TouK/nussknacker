@@ -22,6 +22,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   private val encoder = BestEffortJsonSchemaEncoder
 
   private val schemaNumber: NumberSchema = NumberSchema.builder().build()
+  private val schemaIntegerNumber: NumberSchema = NumberSchema.builder().requiresInteger(true).build()
   private val schemaString: StringSchema = StringSchema.builder().build()
   private val schemaNull: NullSchema = NullSchema.INSTANCE
 
@@ -121,8 +122,40 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   }
 
   test("should encode number") {
-    val encoded = encoder.encodeWithJsonValidation(1L, schemaNumber)
-    encoded shouldEqual Valid(Json.fromLong(1L))
+    forAll(Table(
+      ("data", "schema", "expected"),
+      (1, schemaNumber, Json.fromLong(1L)),
+      (1, schemaIntegerNumber, Json.fromLong(1L)),
+      (1.0d, schemaNumber, Json.fromDoubleOrNull(1.0)),
+      (1.0d, schemaIntegerNumber, Json.fromLong(1L)),
+      (1.0f, schemaNumber, Json.fromFloatOrNull(1.0f)),
+      (1.0f, schemaIntegerNumber, Json.fromLong(1L)),
+      (BigDecimal.valueOf(1.0), schemaNumber, Json.fromBigDecimal(BigDecimal.valueOf(1.0))),
+      (java.math.BigDecimal.valueOf(1.0), schemaNumber, Json.fromBigDecimal(BigDecimal.valueOf(1.0))),
+      (BigDecimal.valueOf(1.0), schemaIntegerNumber, Json.fromLong(1L)),
+      (java.math.BigDecimal.valueOf(1.0), schemaIntegerNumber, Json.fromLong(1L)),
+      (BigInt.long2bigInt(1), schemaNumber, Json.fromBigInt(BigInt.long2bigInt(1))),
+      (java.math.BigInteger.valueOf(1), schemaNumber, Json.fromBigInt(BigInt.long2bigInt(1))),
+      (BigInt.long2bigInt(1), schemaIntegerNumber, Json.fromLong(1L)),
+      (java.math.BigInteger.valueOf(1), schemaIntegerNumber, Json.fromLong(1L)),
+    )) { (data, schema, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe Valid(expected)
+    }
+  }
+
+  test("should throw proper error trying encode integer number") {
+    forAll(Table(
+      ("data", "schema", "expected"),
+      (1.6d, schemaIntegerNumber, invalid(s"Not expected type: java.lang.Double for field with schema: $schemaIntegerNumber.")),
+      (1.6f, schemaIntegerNumber, invalid(s"Not expected type: java.lang.Float for field with schema: $schemaIntegerNumber.")),
+      (BigInt.long2bigInt(1).setBit(63), schemaIntegerNumber, invalid(s"Not expected type: scala.math.BigInt for field with schema: $schemaIntegerNumber.")),
+      (java.math.BigInteger.valueOf(1).setBit(63), schemaIntegerNumber, invalid(s"Not expected type: java.math.BigInteger for field with schema: $schemaIntegerNumber.")),
+      (BigDecimal.valueOf(1.6), schemaIntegerNumber, invalid(s"Not expected type: scala.math.BigDecimal for field with schema: $schemaIntegerNumber.")),
+      (java.math.BigDecimal.valueOf(1.6), schemaIntegerNumber, invalid(s"Not expected type: java.math.BigDecimal for field with schema: $schemaIntegerNumber.")),
+      (null, schemaIntegerNumber, invalid(s"Not expected type: null for field with schema: $schemaIntegerNumber.")),
+    )) { (data, schema, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+    }
   }
 
   test("should throw when wrong number") {
