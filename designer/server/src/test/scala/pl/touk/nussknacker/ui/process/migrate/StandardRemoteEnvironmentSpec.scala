@@ -16,11 +16,12 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import io.circe.parser
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -90,6 +91,8 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
       (uri.toString(), method) match {
         case Validation() =>
+          val requestJson = parseBodyToJson(request)
+          requestJson.hcursor.downField("category").as[String] shouldBe Right(expectedProcessCategory)
           Marshal(ValidationResult.errors(Map(), List(), List())).to[RequestEntity].map { entity =>
             HttpResponse(OK, entity = entity)
           }
@@ -123,6 +126,15 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
           throw new AssertionError(s"Not expected $uri")
       }
     }
+  }
+
+  private def parseBodyToJson(request: MessageEntity) = {
+    val stringBody = request match {
+      case HttpEntity.Strict(_, byteString) => byteString.decodeString(HttpCharsets.`UTF-8`.nioCharset())
+      case _ => throw new IllegalStateException("Unhandled MessageEntity type")
+    }
+    parser.parse(stringBody)
+      .right.getOrElse(throw new IllegalStateException("Validation request should be a json"))
   }
 
   private def environmentForTestMigration(processes: List[ValidatedProcessDetails],
@@ -280,9 +292,9 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
   }
 
   it should "migrate fragment" in {
+    val category = TestCategories.Category1
     var migrated : Option[Future[UpdateProcessCommand]] = None
-    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
-    val category = "Category"
+    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming, category)
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       expectedProcessId = subprocess.id,
       expectedProcessCategory = category,

@@ -503,7 +503,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       .source("start", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
 
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
     val result = mockProcessValidation(process).validate(displayable, Category1)
 
     result.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
@@ -536,7 +536,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]): DisplayableProcess = {
+  private def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String], category: String = Category1): DisplayableProcess = {
     createProcess(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
@@ -545,15 +545,17 @@ private object ProcessValidationSpec {
       ),
       List(Edge("inID", "custom", None), Edge("custom", "out", None)),
       TestProcessingTypes.Streaming,
+      category,
       additionalProperties
     )
   }
 
-  def createProcess(nodes: List[NodeData],
-                    edges: List[Edge],
-                    `type`: ProcessingType = TestProcessingTypes.Streaming,
-                    additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
+  private def createProcess(nodes: List[NodeData],
+                            edges: List[Edge],
+                            `type`: ProcessingType = TestProcessingTypes.Streaming,
+                            category: String = Category1,
+                            additionalFields: Map[String, String] = Map()): DisplayableProcess = {
+    DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, Some(category))
   }
 
   def mockProcessValidation(subprocess: CanonicalProcess): ProcessValidation = {

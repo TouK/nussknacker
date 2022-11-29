@@ -18,7 +18,7 @@ import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
-import pl.touk.nussknacker.ui.api.helpers.{TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.component.DefaultComponentIdProvider
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
@@ -34,7 +34,7 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       canonicalnode.FlatNode(CustomNode("f1", None, otherExistingStreamTransformer2, List.empty)), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))), List.empty
   )
 
-  val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming))
+  val subprocessDetails = displayableToProcess(ProcessConverter.toDisplayable(subprocess, TestProcessingTypes.Streaming, TestCategories.Category1))
 
   private val process1 = displayableToProcess(TestProcessUtil.toDisplayable(
     ScenarioBuilder
