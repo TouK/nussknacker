@@ -3,8 +3,9 @@ sidebar_position: 3
 ---
 # Deployment Manager configuration
 
-Configuration of Deployment Manager, which is component of the Designer that deploys scenario to given Engine (e.g. Lite or Flink). 
-Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
+Deployment Manager deploys scenarios from the Designer to the engine on which scenarios are processed. Check [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+
+Below you can find a snippet of Deployment Manager configuration. 
 ```
 deploymentConfig {     
   type: "flinkStreaming"
@@ -12,12 +13,12 @@ deploymentConfig {
   # additional configuration goes here
 }
 ```
+`type` parameter determines engine to which the scenario is deployed. Currently there are only two values allowed: `flinkStreaming` and `lite-k8s`. The `type` parameter is set in both the minimal working configuration file (Docker image and binary distribution) and Helm chart - you will need to set it on your won. 
 
-Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
 
 ## Kubernetes native Lite engine configuration
                                                                                 
-Please remember, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
