@@ -153,7 +153,8 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None, subprocessVersions = Map.empty),
       nodes = nodes,
       edges = edges,
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
     )
   }
 

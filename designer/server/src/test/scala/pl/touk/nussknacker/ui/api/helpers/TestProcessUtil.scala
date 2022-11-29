@@ -23,8 +23,8 @@ object TestProcessUtil {
 
   private val randomGenerator = new Random()
 
-  def toDisplayable(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): DisplayableProcess =
-    ProcessConverter.toDisplayable(espProcess, processingType)
+  def toDisplayable(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming, category: Category = TestCategories.Category1): DisplayableProcess =
+    ProcessConverter.toDisplayable(espProcess, processingType, category)
 
   def toJson(espProcess: CanonicalProcess, processingType: ProcessingType = TestProcessingTypes.Streaming): Json =
     Encoder[DisplayableProcess].apply(toDisplayable(espProcess, processingType))
@@ -33,7 +33,7 @@ object TestProcessUtil {
     toDetails(name, category, isSubprocess = false, isArchived, processingType, json = json, lastAction = lastAction)
 
   def createSubProcess(name: String, category: Category, isArchived: Boolean = false, processingType: String = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None): BaseProcessDetails[DisplayableProcess] =
-    toDetails(name, category, isSubprocess = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableSubprocess(name, processingType))))
+    toDetails(name, category, isSubprocess = true, isArchived, processingType, lastAction = lastAction, json = Some(json.getOrElse(createDisplayableSubprocess(name, processingType, category))))
 
   def displayableToProcess(displayable: DisplayableProcess, category: Category = TestCategories.Category1, isArchived: Boolean = false) : ProcessDetails =
     toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable))
@@ -44,7 +44,7 @@ object TestProcessUtil {
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
                 processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,
                 description: Option[String] = None, history: Option[List[ProcessVersion]] = None) : ProcessDetails = {
-    val jsonData = json.map(_.copy(id = name, processingType = processingType)).getOrElse(createEmptyJson(name, processingType))
+    val jsonData = json.map(_.copy(id = name, processingType = processingType, category = Some(category))).getOrElse(createEmptyJson(name, processingType, category))
     BaseProcessDetails[DisplayableProcess](
       id = name,
       name = name,
@@ -72,21 +72,21 @@ object TestProcessUtil {
     )
   }
 
-  private def createEmptyJson(id: String, processingType: ProcessingType = Streaming) = {
+  private def createEmptyJson(id: String, processingType: ProcessingType, category: Category) = {
     val typeSpecificProperties = processingType match {
       case RequestResponse => RequestResponseMetaData(None)
       case Streaming | Fraud => StreamMetaData()
       case _ => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
 
-    DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType)
+    DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, Some(category))
   }
 
-  def createDisplayableSubprocess(name: String, processingType: ProcessingType): DisplayableProcess =
-    createDisplayableSubprocess(name, List(SubprocessInputDefinition("input", List(SubprocessParameter("in", SubprocessClazzRef[String])))), processingType)
+  def createDisplayableSubprocess(name: String, processingType: ProcessingType, category: Category): DisplayableProcess =
+    createDisplayableSubprocess(name, List(SubprocessInputDefinition("input", List(SubprocessParameter("in", SubprocessClazzRef[String])))), processingType, category)
 
-  def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType): DisplayableProcess =
-    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType)
+  def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType, category: Category): DisplayableProcess =
+    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, Some(category))
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     processVersionId = VersionId(generateId()),

@@ -10,6 +10,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withAllPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.ui.config.AttachmentsConfig
@@ -29,7 +30,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
   it should "add and remove comment in process activity" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val commentContent = "test message"
-    saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
+    saveProcess(processToSave, TestCat)({ status shouldEqual StatusCodes.OK})
     Post(s"/processes/${processToSave.id}/1/activity/comments", HttpEntity(ContentTypes.`text/plain(UTF-8)`, commentContent)) ~> processActivityRouteWithAllPermissions ~> check {
       status shouldEqual StatusCodes.OK
       getActivity(ProcessName(processToSave.id)) ~> check {
@@ -50,7 +51,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
 
   it should "add attachment to process and then be able to download it" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
+    saveProcess(processToSave, TestCat)({ status shouldEqual StatusCodes.OK})
 
     val fileName = "important_file.txt"
     val fileContent = "very important content"
@@ -71,7 +72,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
 
   it should "handle attachments with the same name" in {
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
+    saveProcess(processToSave, TestCat)({ status shouldEqual StatusCodes.OK})
 
     val fileName = "important_file.txt"
     val fileContent1 = "very important content1"

@@ -284,7 +284,7 @@ class DBProcessService(managerActor: ActorRef,
       val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
         .map{ jsonCanonicalProcess =>
           val canonical = jsonCanonicalProcess.withProcessId(processId.name)
-          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
+          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
           val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
           new ValidatedDisplayableProcess(displayable, validationResult)
         }

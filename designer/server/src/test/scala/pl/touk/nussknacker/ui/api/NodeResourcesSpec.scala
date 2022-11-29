@@ -28,6 +28,7 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -46,125 +47,125 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[AdditionalInfo] should matchPattern {
-          case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a")=>
-        }
-      }
+    saveProcess(testProcess, TestCat)({
+          val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
+          Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[AdditionalInfo] should matchPattern {
+              case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a")=>
+            }
+          }
 
-      val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
-        responseAs[Option[AdditionalInfo]] shouldBe None
-      }
-    }
+          val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
+          Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
+            responseAs[Option[AdditionalInfo]] shouldBe None
+          }
+        })
   }
 
   test("validates filter nodes") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
+    saveProcess(testProcess, TestCat)({
+          val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
+          val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
-          parameters = None,
-          expressionType = Some(typing.Unknown),
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
-          validationPerformed = true)
-      }
-    }
+          Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+              parameters = None,
+              expressionType = Some(typing.Unknown),
+              validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Bad expression type, expected: Boolean, found: String", data.id, Some(DefaultExpressionId), data.expression.expression))),
+              validationPerformed = true)
+          }
+        })
   }
 
   test("validates sink expression") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
-        Parameter("value", Expression("spel", "notvalidspelexpression")),
-        Parameter("topic", Expression("spel", "'test-topic'")))),
-        None, None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
+    saveProcess(testProcess, TestCat)({
+          val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
+            Parameter("value", Expression("spel", "notvalidspelexpression")),
+            Parameter("topic", Expression("spel", "'test-topic'")))),
+            None, None)
+          val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
-          parameters = None,
-          expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
-            data.id, Some("value"), "notvalidspelexpression"))),
-          validationPerformed = true)
-      }
-    }
+          Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+              parameters = None,
+              expressionType = None,
+              validationErrors = List(PrettyValidationErrors.formatErrorMessage(ExpressionParserCompilationError("Non reference 'notvalidspelexpression' occurred. Maybe you missed '#' in front of it?",
+                data.id, Some("value"), "notvalidspelexpression"))),
+              validationPerformed = true)
+          }
+        })
   }
 
   test("validates nodes using dictionaries") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
+    saveProcess(testProcess, TestCat)({
+          val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
+          val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
-          parameters = None,
-          expressionType = Some(Typed[Boolean]),
-          validationErrors = Nil,
-          validationPerformed = true)
-      }
-    }
+          Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+              parameters = None,
+              expressionType = Some(Typed[Boolean]),
+              validationErrors = Nil,
+              validationPerformed = true)
+          }
+        })
   }
 
   test("handles global variables in NodeValidationRequest") {
 
     val testProcess = ProcessTestData.sampleDisplayableProcess
 
-    saveProcess(testProcess) {
-      val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
-        Parameter("additional data value", "#longValue")
-      ), List(
-        BranchParameters("b1", List(Parameter("role", "'Events'"))),
-        BranchParameters("b2", List(Parameter("role", "'Additional data'")))
-      ), None)
-      val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), Some(
-        Map(
-          //It's a bit tricky, because FE does not distinguish between global and local vars...
-          "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
-          "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
-        )
-      ), None)
+    saveProcess(testProcess, TestCat)({
+          val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
+            Parameter("additional data value", "#longValue")
+          ), List(
+            BranchParameters("b1", List(Parameter("role", "'Events'"))),
+            BranchParameters("b2", List(Parameter("role", "'Additional data'")))
+          ), None)
+          val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), Some(
+            Map(
+              //It's a bit tricky, because FE does not distinguish between global and local vars...
+              "b1" -> Map("existButString" -> Typed[String], "meta" -> Typed[MetaData]),
+              "b2" -> Map("longValue" -> Typed[Long], "meta" -> Typed[MetaData])
+            )
+          ), None)
 
-      Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        val res = responseAs[NodeValidationResult]
-        res.validationErrors shouldBe Nil
-      }
-    }
+          Post(s"/nodes/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            val res = responseAs[NodeValidationResult]
+            res.validationErrors shouldBe Nil
+          }
+        })
   }
 
   test("it should return additional info for process properties") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
+    saveProcess(testProcess, TestCat)({
+          import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
 
-      Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[AdditionalInfo] should matchPattern {
-          case MarkdownAdditionalInfo(content) if content.equals("2 threads will be used on environment 'test'") =>
-        }
-      }
-    }
+          Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[AdditionalInfo] should matchPattern {
+              case MarkdownAdditionalInfo(content) if content.equals("2 threads will be used on environment 'test'") =>
+            }
+          }
+        })
   }
 
   test("validate properties") {
     val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess) {
-      val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
+    saveProcess(testProcess, TestCat)({
+          val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
 
-      Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
-        responseAs[NodeValidationResult] shouldBe NodeValidationResult(
-          parameters = None,
-          expressionType = None,
-          validationErrors = List(PrettyValidationErrors.formatErrorMessage(InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), ""))),
-          validationPerformed = true)
-      }
-    }
+          Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
+            responseAs[NodeValidationResult] shouldBe NodeValidationResult(
+              parameters = None,
+              expressionType = None,
+              validationErrors = List(PrettyValidationErrors.formatErrorMessage(InvalidPropertyFixedValue("numberOfThreads", Some("Number of threads"), "a", List("1", "2"), ""))),
+              validationPerformed = true)
+          }
+        })
   }
 }

@@ -19,6 +19,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValue
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 
 import scala.language.higherKinds
 
@@ -57,9 +58,9 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
   private def runImportExportTest(route: Route): Unit = {
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
+    saveProcess(processToSave, TestCat)({
+          status shouldEqual StatusCodes.OK
+        })
 
     Get(s"/processesExport/${processToSave.id}/2") ~> route ~> check {
       val response = responseAs[String]
@@ -83,9 +84,9 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
-    }
+    saveProcess(processToSave, TestCat)({
+          status shouldEqual StatusCodes.OK
+        })
     updateProcess(processWithDescription) {
       status shouldEqual StatusCodes.OK
     }
@@ -110,21 +111,21 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
   test("export pdf") {
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave) {
-      status shouldEqual StatusCodes.OK
+    saveProcess(processToSave, TestCat)({
+          status shouldEqual StatusCodes.OK
 
-      val testSvg = "<svg viewBox=\"0 0 120 70\" xmlns=\"http://www.w3.org/2000/svg\">\n  " +
-        "<path d=\"M20,20h20m5,0h20m5,0h20\" stroke=\"#c00000\" stroke-width=\"10\"/>\n  " +
-        "<path d=\"M20,40h20m5,0h20m5,0h20M30,30v20m25,0v-20m25,0v20\" stroke=\"#008000\" stroke-width=\"6\"/>\n</svg>"
+          val testSvg = "<svg viewBox=\"0 0 120 70\" xmlns=\"http://www.w3.org/2000/svg\">\n  " +
+            "<path d=\"M20,20h20m5,0h20m5,0h20\" stroke=\"#c00000\" stroke-width=\"10\"/>\n  " +
+            "<path d=\"M20,40h20m5,0h20m5,0h20M30,30v20m25,0v-20m25,0v20\" stroke=\"#008000\" stroke-width=\"6\"/>\n</svg>"
 
-      Post(s"/processesExport/pdf/${processToSave.id}/2", HttpEntity(testSvg)) ~> routeWithAllPermissions ~> check {
+          Post(s"/processesExport/pdf/${processToSave.id}/2", HttpEntity(testSvg)) ~> routeWithAllPermissions ~> check {
 
-        status shouldEqual StatusCodes.OK
-        contentType shouldEqual ContentTypes.`application/octet-stream`
-        //just simple sanity check that it's really pdf...
-        responseAs[String] should startWith ("%PDF")
-      }
-    }
+            status shouldEqual StatusCodes.OK
+            contentType shouldEqual ContentTypes.`application/octet-stream`
+            //just simple sanity check that it's really pdf...
+            responseAs[String] should startWith ("%PDF")
+          }
+        })
 
   }
 

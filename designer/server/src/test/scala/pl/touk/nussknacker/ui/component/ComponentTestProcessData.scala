@@ -11,12 +11,12 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.{Fraud, Streaming}
 import pl.touk.nussknacker.ui.component.ComponentModelData._
 
-import java.time.{Instant, ZonedDateTime}
+import java.time.Instant
 
 object ComponentTestProcessData {
 
-  import pl.touk.nussknacker.engine.spel.Implicits._
   import VersionId._
+  import pl.touk.nussknacker.engine.spel.Implicits._
 
   val DefaultSourceName = "source"
   val SecondSourceName = "secondSource"
@@ -108,7 +108,8 @@ object ComponentTestProcessData {
       FilterNodeData(SubprocessFilterName, "#input.id != null"),
       SubprocessOutputDefinition("fraudEnd", "output", List.empty)
     ),
-    processingType = Fraud
+    processingType = Fraud,
+    category = CategoryFraud
   )
 
   val FraudSubprocess: ProcessDetails = createSubProcess(

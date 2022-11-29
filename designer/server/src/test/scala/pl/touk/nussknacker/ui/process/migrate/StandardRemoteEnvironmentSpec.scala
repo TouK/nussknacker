@@ -16,7 +16,7 @@ import pl.touk.nussknacker.ui.api.helpers.ProcessTestData.toValidatedDisplayable
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.mapProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.ProcessService.UpdateProcessCommand
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.UpdateProcessComment
@@ -281,7 +281,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
   it should "migrate fragment" in {
     var migrated : Option[Future[UpdateProcessCommand]] = None
-    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
+    val subprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming, TestCategories.Category1)
     val category = "Category"
     val remoteEnvironment: MockRemoteEnvironment with TriedToAddProcess = statefulEnvironment(
       expectedProcessId = subprocess.id,

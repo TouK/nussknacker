@@ -11,8 +11,9 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil.RichACursor
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
 class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with FailFastCirceSupport
@@ -116,9 +117,9 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
     val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming)
+    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming, TestCategories.Category1)
     saveSubProcess(displayableSubProcess)(succeed)
-    saveProcess(processName, processWithSubProcess.process)(succeed)
+    saveProcess(processName, processWithSubProcess.process, TestCat)(succeed)
 
     getProcessDefinitionData(TestProcessingTypes.Streaming) ~> check {
       status shouldBe StatusCodes.OK

@@ -54,13 +54,13 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   }
 
   def canonicalDisplayable(canonicalProcess: CanonicalProcess): CanonicalProcess = {
-    val displayable = ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(canonicalProcess, TestProcessingTypes.Streaming, TestCategories.Category1)
     ProcessConverter.fromDisplayable(displayable)
   }
 
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
-    val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
     new ValidatedDisplayableProcess(displayable, validation.validate(displayable, TestCategories.TestCat))
   }
 
@@ -75,7 +75,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
-      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming)
+      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
 
     displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -96,6 +96,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
+        Some(TestCategories.Category1),
         ValidationResult.errors(
           Map(unexpectedEnd.id -> List(
             NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
@@ -119,6 +120,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1),
       ValidationResult.errors(
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
@@ -152,7 +154,10 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Edge("s1", "j1", None),
         Edge("s2", "j1", None),
         Edge("j1", "e", None)
-      ), TestProcessingTypes.Streaming)
+      ),
+      TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
+    )
 
     val processViaBuilder =  ScenarioBuilder.streaming("t1").parallelism(metaData.parallelism.get).stateOnDisk(metaData.spillStateToDisk.get).sources(
       GraphBuilder.join("j1", "joinRef", Some("out1"), List("s1" -> List())).processorEnd("e", "ref"),
@@ -186,7 +191,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
           .emptySink("end","outType1")
       )
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, "type1")
+    val displayableProcess = ProcessConverter.toDisplayable(process, "type1", TestCategories.Category1)
 
     displayableProcess.edges.toSet shouldBe Set(
       Edge("sourceId1", "join1", None),
@@ -234,7 +239,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
             )
             .emptySink("end", "outType1")
         )
-      val edges = ProcessConverter.toDisplayable(process, "").edges
+      val edges = ProcessConverter.toDisplayable(process, "", TestCategories.Category1).edges
       edges.toSet shouldBe Set(Edge("source1", nodeId, None), Edge(nodeId, "join1", typ), Edge("join1", "end", None)) ++ additionalEdges
     }
 

@@ -36,11 +36,11 @@ class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingT
   def validateBeforeUiReverseResolving(canonical: CanonicalProcess, processingType: ProcessingType, category: Category): ValidationResult =
     validation.processingTypeValidationWithTypingInfo(canonical, processingType, category)
 
-  def reverseResolveExpressions(canonical: CanonicalProcess, processingType: ProcessingType, validationResult: ValidationResult): ValidatedDisplayableProcess = {
+  def reverseResolveExpressions(canonical: CanonicalProcess, processingType: ProcessingType, category: Category, validationResult: ValidationResult): ValidatedDisplayableProcess = {
     val substituted = substitutorByProcessingType.forType(processingType)
       .map(_.reversed.substitute(canonical, validationResult.typingInfo))
       .getOrElse(canonical)
-    val displayable = ProcessConverter.toDisplayable(substituted, processingType)
+    val displayable = ProcessConverter.toDisplayable(substituted, processingType, category)
     val uiValidations = validation.uiValidation(displayable)
     new ValidatedDisplayableProcess(displayable, uiValidations.add(validationResult))
   }

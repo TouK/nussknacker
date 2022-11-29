@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, posting, withPermissions}
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 
@@ -35,7 +36,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("generates data"){
     val process = ProcessTestData.sampleDisplayableProcess
-    saveProcess(process) {
+    saveProcess(process, TestCat) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = new String(entityAs[Array[Byte]])
@@ -46,7 +47,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("refuses to generate too much data") {
     val process = ProcessTestData.sampleDisplayableProcess
-    saveProcess(process) {
+    saveProcess(process, TestCat) {
       Post("/testInfo/generate/100", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
         status shouldEqual StatusCodes.BadRequest
       }
@@ -58,7 +59,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("get full capabilities when user has deploy role"){
     val process = ProcessTestData.sampleDisplayableProcess
-    saveProcess(process) {
+    saveProcess(process, TestCat) {
       Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
@@ -70,7 +71,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   test("get empty capabilities when user hasn't got deploy role"){
     val process = ProcessTestData.sampleDisplayableProcess
-    saveProcess(process) {
+    saveProcess(process, TestCat) {
       Post("/testInfo/capabilities", posting.toEntity(process)) ~> withPermissions(route(), testPermissionEmpty) ~> check {
         status shouldEqual StatusCodes.OK
         val entity = entityAs[Json]
