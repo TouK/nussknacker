@@ -149,7 +149,7 @@ class RequestResponseHttpJsonSchemaSpec extends RequestResponseHttpTest {
       status shouldBe StatusCodes.OK
       Post(s"/${procId.value}", toEntity(Map[String, String]())) ~> processesRoute ~> check {
         status shouldBe StatusCodes.OK
-        responseAs[String] shouldBe """{"address":{"street":"Sesame"},"name":"John Casey","age":36}"""
+        responseAs[String] shouldBe """{"name":"John Casey","address":{"street":"Sesame"},"age":36}"""
         cancelProcess(procId)
       }
     }

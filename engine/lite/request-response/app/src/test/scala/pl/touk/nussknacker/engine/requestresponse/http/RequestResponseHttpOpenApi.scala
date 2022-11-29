@@ -34,11 +34,9 @@ class RequestResponseHttpOpenApi extends AnyFunSuite with Matchers with RequestR
         |        "application/json" : {
         |          "schema" : {
         |            "type" : "object",
-        |            "nullable" : false,
         |            "properties" : {
         |              "city" : {
         |                "type" : "string",
-        |                "nullable" : false,
         |                "default" : "Warsaw"
         |              }
         |            }
