@@ -50,7 +50,7 @@ case object MandatoryParameterValidator extends ParameterValidator {
 
 case object NotBlankParameterValidator extends ParameterValidator {
 
-  private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("'\\s*'")
+  private final lazy val blankStringLiteralPattern: Pattern = Pattern.compile("['\"]\\s*['\"]")
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
