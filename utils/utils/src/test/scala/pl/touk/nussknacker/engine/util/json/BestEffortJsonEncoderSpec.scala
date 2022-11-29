@@ -20,6 +20,7 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
     encoder.encode(BigDecimal.valueOf(2.34)) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.34))
     encoder.encode(new java.math.BigDecimal("12.34")) shouldEqual fromBigDecimal(new java.math.BigDecimal("12.34"))
     encoder.encode(new java.math.BigInteger("1234")) shouldEqual fromBigInt(new java.math.BigInteger("1234"))
+    encoder.encode(scala.math.BigInt("1234")) shouldEqual fromBigInt(new java.math.BigInteger("1234"))
     encoder.encode(12.34f) shouldEqual fromFloatOrNull(12.34f)
     encoder.encode(java.math.BigDecimal.valueOf(2.0)) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
     encoder.encode(2.0) shouldEqual fromBigDecimal(BigDecimal.valueOf(2.0))
@@ -81,6 +82,30 @@ class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
           obj("customEncode" -> obj("custom2" -> fromString("value"))))
     }
 
+  }
+
+  it("should encode whole big decimal without trailing zeros") {
+    val bigDecimal = BigDecimal("42.0")
+    encoder.encode(bigDecimal.bigDecimal).noSpaces shouldBe "42"
+    encoder.encode(bigDecimal).noSpaces shouldBe "42"
+  }
+
+  it("should encode long and whole big decimal without trailing zeros") {
+    val bigDecimal = BigDecimal("4008578689123.0")
+    encoder.encode(bigDecimal.bigDecimal).noSpaces shouldBe "4008578689123"
+    encoder.encode(bigDecimal).noSpaces shouldBe "4008578689123"
+  }
+
+  it("should not truncate not whole big decimal") {
+    val bigDecimal = BigDecimal("42.3")
+    encoder.encode(bigDecimal.bigDecimal).noSpaces shouldBe "42.3"
+    encoder.encode(bigDecimal).noSpaces shouldBe "42.3"
+  }
+
+  it("should encode long big decimal in decimal notation") {
+    val bigDecimal = BigDecimal("4008578689123.3")
+    encoder.encode(bigDecimal.bigDecimal).noSpaces shouldBe "4008578689123.3"
+    encoder.encode(bigDecimal).noSpaces shouldBe "4008578689123.3"
   }
 
 }

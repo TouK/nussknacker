@@ -15,6 +15,7 @@
   * [#3709](https://github.com/TouK/nussknacker/pull/3709) `BestEffortJsonSchemaEncoder` encodes only Strings for `"type": String`
   * [#3730](https://github.com/TouK/nussknacker/pull/3730) Additional fields are not trimmed during encoding when `additionalProperties` are allowed by schema
   * [#3742](https://github.com/TouK/nussknacker/pull/3742) Improvements: Json Schema more strict encoding - matching to schema validate
+  * [#3748](https://github.com/TouK/nussknacker/pull/3748) Improvements: Json better handling encode for BigDecimals and BigInt
 
 * Request-response JSON schema sink improvements:
   * [#3607](https://github.com/TouK/nussknacker/pull/3607) Encoder based on response schema.

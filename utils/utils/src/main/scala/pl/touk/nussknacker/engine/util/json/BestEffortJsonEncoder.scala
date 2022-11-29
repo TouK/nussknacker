@@ -27,13 +27,19 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
   private val safeInt = safeJson[Int](fromInt)
   private val safeDouble = safeJson[Double](fromDoubleOrNull)
   private val safeFloat = safeJson[Float](fromFloatOrNull)
-  private val safeBigDecimal = safeJson[java.math.BigDecimal](a => fromBigDecimal(a))
   private val safeBigInt = safeJson[java.math.BigInteger](a => fromBigInt(a))
   private val safeNumber = safeJson[Number](a => fromDoubleOrNull(a.doubleValue())) // is it correct?
 
-  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
+  private val safeBigDecimal = safeJson[java.math.BigDecimal] { v =>
+    val withoutTrailingZeros = v.stripTrailingZeros()
+    val isWhole = withoutTrailingZeros.scale() < 0
+    val adjustedValue = if (isWhole) withoutTrailingZeros.setScale(0) else withoutTrailingZeros
+    Json.fromBigDecimal(BigDecimal(adjustedValue))
+  }
 
   private val optionalEncoders = ServiceLoader.load(classOf[ToJsonEncoder], classLoader).asScala.map(_.encoder(this.encode))
+
+  val circeEncoder: Encoder[Any] = Encoder.encodeJson.contramap(encode)
 
   def encode(obj: Any): Json = optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse(obj, (any: Any) =>
     any match {
@@ -47,7 +53,9 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case a: Float => safeFloat(a)
       case a: Int => safeInt(a)
       case a: java.math.BigDecimal => safeBigDecimal(a)
+      case a: scala.math.BigDecimal => safeBigDecimal(a.underlying())
       case a: java.math.BigInteger => safeBigInt(a)
+      case a: scala.math.BigInt => safeBigInt(a.underlying())
       case a: Number => safeNumber(a.doubleValue())
       case a: Boolean => safeJson[Boolean](fromBoolean) (a)
       case a: LocalDate => Encoder[LocalDate].apply(a)
@@ -68,13 +76,12 @@ case class BestEffortJsonEncoder(failOnUnkown: Boolean, classLoader: ClassLoader
       case a => throw new IllegalArgumentException(s"Invalid type: ${a.getClass}")
     })
 
-  private def safeJson[T](fun: T => Json) = (value: T) => Option(value) match {
+  private def safeJson[T](fun: T => Json): T => Json = (value: T) => Option(value) match {
     case Some(realValue) => fun(realValue)
     case None => Null
   }
 
-  private def encodeMap(map: Map[String, _]) = {
+  private def encodeMap(map: Map[String, _]): Json =
     fromFields(map.mapValuesNow(encode))
-  }
 
 }
