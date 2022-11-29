@@ -19,6 +19,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Inside, OptionValue
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 
 import scala.language.higherKinds
 
@@ -42,7 +43,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
       status shouldEqual StatusCodes.OK
       val exported = responseAs[String]
       val processDetails = ProcessMarshaller.fromJson(exported).toOption.get
-      
+
       processDetails shouldBe ProcessConverter.fromDisplayable(processToExport)
     }
   }
@@ -56,7 +57,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
@@ -80,7 +81,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
   test("export process in new version") {
     val description = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
     saveProcess(processToSave) {
@@ -109,7 +110,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
 
@@ -122,7 +123,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
         status shouldEqual StatusCodes.OK
         contentType shouldEqual ContentTypes.`application/octet-stream`
         //just simple sanity check that it's really pdf...
-        responseAs[String] should startWith ("%PDF")
+        responseAs[String] should startWith("%PDF")
       }
     }
 

@@ -12,7 +12,6 @@ import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.util
 import scala.util.Try
 
 class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with ScalaFutures {
@@ -27,7 +26,7 @@ class MockFetchingProcessRepositorySpec extends AnyFlatSpec with Matchers with S
   private val categorySecret = "secret"
 
   private val json = ProcessTestData.sampleDisplayableProcess
-  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, Streaming)
+  private val subJson = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, Streaming, categoryMarketing)
 
   private val someVersion = VersionId(666L)
 

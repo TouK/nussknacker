@@ -29,7 +29,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     val migrator = new ProcessModelMigrator(migrations)
     for {
       MigrationResult(newProcess, migrations) <- migrator.migrateProcess(process.mapProcess(_.toDisplayable), skipEmptyMigrations = false)
-      displayable = ProcessConverter.toDisplayable(newProcess, process.processingType)
+      displayable = ProcessConverter.toDisplayable(newProcess, process.processingType, process.processCategory)
     } yield {
       MigratedProcessDetails(displayable, process.json.validationResult, migrations.exists(_.failOnNewValidationError), process.processCategory)
     }

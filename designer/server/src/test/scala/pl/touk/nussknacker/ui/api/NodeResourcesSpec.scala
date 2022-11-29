@@ -4,9 +4,9 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.Decoder
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, OptionValues}
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, MarkdownAdditionalInfo}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{ExpressionParserCompilationError, InvalidPropertyFixedValue}
 import pl.touk.nussknacker.engine.api.typed.typing
@@ -26,44 +26,44 @@ import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
-import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
 
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCategories.TestCat))
+
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
 
   private implicit val typingResultDecoder: Decoder[TypingResult]
-    = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
+  = NodesResources.prepareTypingResultDecoder(typeToConfig.all.head._2.modelData)
   private implicit val uiParameterDecoder: Decoder[UIParameter] = deriveConfiguredDecoder[UIParameter]
   private implicit val responseDecoder: Decoder[NodeValidationResult] = deriveConfiguredDecoder[NodeValidationResult]
   private val processProperties = ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "2", "environment" -> "test"))))
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
       Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
-          case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a")=>
+          case MarkdownAdditionalInfo(content) if content.contains("http://touk.pl?id=a") =>
         }
       }
 
       val dataEmpty: NodeData = Enricher("1", ServiceRef("otherService", List()), "out", None)
-      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check  {
+      Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(dataEmpty)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[Option[AdditionalInfo]] shouldBe None
       }
     }
   }
 
   test("validates filter nodes") {
-
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
@@ -79,7 +79,6 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validates sink expression") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
         Parameter("value", Expression("spel", "notvalidspelexpression")),
@@ -99,7 +98,6 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validates nodes using dictionaries") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
@@ -115,9 +113,6 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("handles global variables in NodeValidationRequest") {
-
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-
     saveProcess(testProcess) {
       val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
         Parameter("additional data value", "#longValue")
@@ -141,7 +136,6 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("it should return additional info for process properties") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
 
@@ -154,7 +148,6 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validate properties") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
     saveProcess(testProcess) {
       val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
 

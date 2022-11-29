@@ -11,11 +11,11 @@ import pl.touk.nussknacker.restmodel.process.ProcessingType
 
 object ProcessConverter {
 
-  def toDisplayableOrDie(canonicalProcess: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
-    toDisplayable(canonicalProcess, processingType)
+  def toDisplayableOrDie(canonicalProcess: CanonicalProcess, processingType: ProcessingType, category: String): DisplayableProcess = {
+    toDisplayable(canonicalProcess, processingType, category)
   }
 
-  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType): DisplayableProcess = {
+  def toDisplayable(process: CanonicalProcess, processingType: ProcessingType, category: String): DisplayableProcess = {
     val (nodes, edges) = {
       process
         .allStartNodes.map(toGraphInner)
@@ -28,7 +28,7 @@ object ProcessConverter {
       additionalFields = process.metaData.additionalFields,
       subprocessVersions = process.metaData.subprocessVersions
     )
-    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType)
+    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, Some(category))
   }
 
   def findNodes(process: CanonicalProcess) : List[NodeData] = {

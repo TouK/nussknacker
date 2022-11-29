@@ -2,13 +2,14 @@ package pl.touk.nussknacker.ui.process.subprocess
 
 import akka.http.scaladsl.model.StatusCodes
 import akka.http.scaladsl.testkit.ScalatestRouteTest
-import org.scalatest.{BeforeAndAfterEach}
+import org.scalatest.BeforeAndAfterEach
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
+
 import scala.language.higherKinds
 
 class SubprocessRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with Matchers with BeforeAndAfterEach with EspItTest with VeryPatientScalaFutures {
@@ -16,8 +17,8 @@ class SubprocessRepositorySpec extends AnyFlatSpec with ScalatestRouteTest with 
   import pl.touk.nussknacker.ui.api.helpers.TestCategories._
 
   it should "fetches fragment by its version" in {
-    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming)
-    val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, TestProcessingTypes.Streaming)
+    val sampleSubprocess = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess, TestProcessingTypes.Streaming, TestCat)
+    val sampleSubprocess2 = ProcessConverter.toDisplayable(ProcessTestData.sampleSubprocess2, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(sampleSubprocess) { status shouldEqual StatusCodes.OK }
     updateProcess(sampleSubprocess2) { status shouldEqual StatusCodes.OK }
 
