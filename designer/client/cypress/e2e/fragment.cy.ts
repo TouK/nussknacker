@@ -47,6 +47,7 @@ describe("Fragment", () => {
     cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult")
     cy.contains(/^apply/i).should("be.enabled").click()
 
+    cy.wait(750)
     cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
