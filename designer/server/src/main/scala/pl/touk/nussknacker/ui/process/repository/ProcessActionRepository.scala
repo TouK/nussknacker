@@ -56,7 +56,7 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
   //FIXME: Use ProcessVersionId instead of Long at processVersion
   private def action(processId: ProcessId, processVersion: VersionId, comment: Option[Comment], action: ProcessActionType, buildInfo: Option[String])(implicit user: LoggedUser) =
     for {
-      commentId <- withComment(processId, processVersion, comment)
+      commentId <- newCommentAction(processId, processVersion, comment)
       processActionData = ProcessActionEntityData(
         processId = processId,
         processVersionId = processVersion,
@@ -68,9 +68,4 @@ extends BasicRepository with EspTables with CommentActions with ProcessActionRep
       )
       _ <- processActionsTable += processActionData
     } yield processActionData
-
-  private def withComment(processId: ProcessId, processVersion: VersionId, comment: Option[Comment])(implicit ec: ExecutionContext, user: LoggedUser): DB[Option[Long]] = comment match {
-    case None => DBIOAction.successful(None)
-    case Some(comm) => newCommentAction(processId, processVersion, comm)
-  }
 }

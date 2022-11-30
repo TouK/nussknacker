@@ -243,7 +243,7 @@ class DBProcessService(managerActor: ActorRef,
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, action.comment, increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated
