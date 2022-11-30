@@ -214,7 +214,7 @@ class DBFetchingProcessRepositorySpec
     fetching.fetchProcessId(processName).futureValue.nonEmpty
 
   private def updateProcess(processId: ProcessId, canonicalProcess: CanonicalProcess, increaseVersionWhenJsonNotChanged: Boolean): ProcessUpdated = {
-    val action = UpdateProcessAction(processId, canonicalProcess, UpdateProcessComment(""), increaseVersionWhenJsonNotChanged)
+    val action = UpdateProcessAction(processId, canonicalProcess, None, increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
     processUpdated shouldBe 'right

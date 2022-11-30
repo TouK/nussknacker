@@ -30,7 +30,7 @@ case class DbProcessActivityRepository(dbConfig: DbConfig)
 
   override def addComment(processId: ProcessId, processVersionId: VersionId, comment: CommentValue)
                 (implicit ec: ExecutionContext, loggedUser: LoggedUser): Future[Unit] = {
-    run(newCommentAction(processId, processVersionId, comment)).map(_ => ())
+    run(newCommentAction(processId, processVersionId, Option(comment))).map(_ => ())
   }
 
   override def deleteComment(commentId: Long)(implicit ec: ExecutionContext): Future[Unit] = {
