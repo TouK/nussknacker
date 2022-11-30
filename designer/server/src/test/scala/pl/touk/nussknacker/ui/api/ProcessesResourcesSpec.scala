@@ -104,7 +104,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   //FIXME: Implement subprocess valiation
   ignore("not allow to archive still used fragment") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, Category1)
+    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
 
@@ -125,7 +125,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("allow to archive fragment used in archived process") {
     val processWithSubprocess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, Category1)
+    val displayableSubprocess = ProcessConverter.toDisplayable(processWithSubprocess.subprocess, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(displayableSubprocess)(succeed)
     saveProcess(processName, processWithSubprocess.process, TestCat)(succeed)
 
@@ -207,7 +207,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("return list of fragment without archived process") {
     val sampleSubprocess = ProcessTestData.sampleSubprocess
-    saveSubProcess(sampleSubprocess, Category1) {
+    saveSubProcess(sampleSubprocess) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -348,9 +348,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("not return processes not in user categories") {
     val processId = createEmptyProcess(processName)
-    val category = "Category1"
 
-    updateCategory(processId, category)
+    updateCategory(processId, Category1)
 
     tryForScenarioReturned(processName) { (status, _) =>
       status shouldEqual StatusCodes.NotFound
@@ -365,8 +364,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("return all processes for admin user") {
-    val processId = createEmptyProcess(processName)
     val category = "Category1"
+    val processId = createEmptyProcess(processName, category)
 
     updateCategory(processId, category)
 
@@ -744,10 +743,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("allow to delete process") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     val processName = ProcessName(processToSave.id)
 
-    saveProcess(processToSave, TestCat) {
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -759,7 +758,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       }
     }
 
-    saveProcess(processToSave, TestCat) {
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
   }
@@ -791,8 +790,8 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("not allow to save process if already exists") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave, TestCat) {
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
       Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {
         status shouldEqual StatusCodes.BadRequest
@@ -812,7 +811,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val firstProcessName = ProcessName("firstProcessName")
     val secondProcessName = ProcessName("secondProcessName")
 
-    saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value), TestCat)({
+    saveProcess(firstProcessName, ProcessTestData.validProcessWithId(firstProcessName.value), TestCat) {
       saveProcess(secondProcessName, ProcessTestData.validProcessWithId(secondProcessName.value), TestCat) {
         Get("/processesDetails?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
           status shouldEqual StatusCodes.OK
@@ -823,12 +822,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
           Unmarshal(response).to[List[ValidatedProcessDetails]].failed.futureValue shouldBe a[DecodingFailure]
         }
       }
-    })
+    }
   }
 
   test("return subprocesses details") {
     val subprocess = ProcessTestData.sampleSubprocess
-    saveSubProcess(subprocess, Category1) {
+    saveSubProcess(subprocess) {
       status shouldEqual StatusCodes.OK
     }
 

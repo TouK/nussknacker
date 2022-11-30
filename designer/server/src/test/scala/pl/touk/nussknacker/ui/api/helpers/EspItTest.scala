@@ -163,7 +163,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       status shouldEqual StatusCodes.OK
     }
 
-  protected def saveProcess(processName: ProcessName, process: CanonicalProcess, category: ProcessingType)(testCode: => Assertion): Assertion =
+  protected def saveProcess(processName: ProcessName, process: CanonicalProcess, category: String)(testCode: => Assertion): Assertion =
     createProcessRequest(processName, category) { _ =>
       val json = parser.decode[Json](responseAs[String]).right.get
       val resp = CreateProcessResponse(json)
@@ -173,27 +173,31 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
       updateProcess(processName, process)(testCode)
     }
 
-  protected def saveProcess(process: DisplayableProcess, category: ProcessingType)(testCode: => Assertion): Assertion =
+  protected def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    val category = process.category.get
     createProcessRequest(ProcessName(process.id), category) { code =>
       code shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
+  }
 
   protected def createProcessRequest(processName: ProcessName, category: String = TestCat)(callback: StatusCode => Assertion): Assertion =
     Post(s"/processes/${processName.value}/$category?isSubprocess=false") ~> processesRouteWithAllPermissions ~> check {
       callback(status)
     }
 
-  protected def saveSubProcess(process: CanonicalProcess, category: String)(testCode: => Assertion): Assertion = {
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, category)
+  protected def saveSubProcess(process: CanonicalProcess)(testCode: => Assertion): Assertion = {
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCat)
     saveSubProcess(displayable)(testCode)
   }
 
-  protected def saveSubProcess(process: DisplayableProcess, category: String = TestCat)(testCode: => Assertion): Assertion =
+  protected def saveSubProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
+    val category = process.category.get
     Post(s"/processes/${process.id}/$category?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
+  }
 
   protected def updateProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion =
     Put(s"/processes/${process.id}", TestFactory.posting.toEntityAsProcessToSave(process)) ~> processesRouteWithAllPermissions ~> check {

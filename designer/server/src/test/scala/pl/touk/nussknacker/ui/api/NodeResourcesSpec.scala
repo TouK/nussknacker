@@ -25,15 +25,17 @@ import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties
 import pl.touk.nussknacker.restmodel.validation.PrettyValidationErrors
 import pl.touk.nussknacker.test.PatientScalaFutures
-import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
-import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
+import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, TestCategories}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessResolver
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFastCirceSupport
   with Matchers with PatientScalaFutures with OptionValues with BeforeAndAfterEach with BeforeAndAfterAll with EspItTest {
+
+  import pl.touk.nussknacker.engine.api.CirceUtil._
+
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCategories.TestCat))
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
@@ -46,8 +48,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   //see SampleNodeAdditionalInfoProvider
   test("it should return additional info for process") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val data: NodeData = Enricher("1", ServiceRef("paramService", List(Parameter("id", Expression("spel", "'a'")))), "out", None)
       Post(s"/nodes/${testProcess.id}/additionalInfo", toEntity(data)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
         responseAs[AdditionalInfo] should matchPattern {
@@ -63,9 +64,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validates filter nodes") {
-
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#existButString"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map("existButString" -> Typed[String], "longValue" -> Typed[Long]), None, None)
 
@@ -80,8 +79,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validates sink expression") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val data: node.Sink = node.Sink("mysink", SinkRef("kafka-string", List(
         Parameter("value", Expression("spel", "notvalidspelexpression")),
         Parameter("topic", Expression("spel", "'test-topic'")))),
@@ -100,8 +98,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validates nodes using dictionaries") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val data: node.Filter = node.Filter("id", Expression("spel", "#DICT.Bar != #DICT.Foo"))
       val request = NodeValidationRequest(data, ProcessProperties(StreamMetaData()), Map(), None, None)
 
@@ -116,10 +113,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("handles global variables in NodeValidationRequest") {
-
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val data = node.Join("id", Some("output"), "enrichWithAdditionalData", List(
         Parameter("additional data value", "#longValue")
       ), List(
@@ -142,8 +136,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("it should return additional info for process properties") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       import pl.touk.nussknacker.restmodel.displayedgraph.ProcessProperties.encodeProcessProperties
 
       Post(s"/properties/${testProcess.id}/additionalInfo", toEntity(processProperties)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {
@@ -155,8 +148,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
   }
 
   test("validate properties") {
-    val testProcess = ProcessTestData.sampleDisplayableProcess
-    saveProcess(testProcess, TestCat) {
+    saveProcess(testProcess) {
       val request = PropertiesValidationRequest(ProcessProperties(StreamMetaData(), additionalFields = Some(ProcessAdditionalFields(None, Map("numberOfThreads" -> "a", "environment" -> "test")))))
 
       Post(s"/properties/${testProcess.id}/validation", toEntity(request)) ~> withPermissions(nodeRoute, testPermissionRead) ~> check {

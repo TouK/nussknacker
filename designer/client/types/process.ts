@@ -14,7 +14,7 @@ export type Process = {
   properties: PropertiesType,
   validationResult: ValidationResult,
   processingType?: ProcessingType,
-  category?: string, //// optional - see the comment for a field with the same name in DisplayableProcess.scala
+  category?: string, // optional - see the comment for a field with the same name in DisplayableProcess.scala
 }
 
 export type ProcessId = Process["id"]

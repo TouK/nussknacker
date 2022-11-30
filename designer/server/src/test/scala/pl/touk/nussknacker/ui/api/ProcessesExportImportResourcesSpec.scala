@@ -57,8 +57,8 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   private def runImportExportTest(route: Route): Unit = {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave, TestCat) {
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
 
@@ -81,10 +81,10 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
   test("export process in new version") {
     val description = "alamakota"
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     val processWithDescription = processToSave.copy(properties = processToSave.properties.copy(additionalFields = Some(ProcessAdditionalFields(Some(description), Map.empty))))
 
-    saveProcess(processToSave, TestCat) {
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
     }
     updateProcess(processWithDescription) {
@@ -110,8 +110,8 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
   }
 
   test("export pdf") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave, TestCat) {
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
+    saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
 
       val testSvg = "<svg viewBox=\"0 0 120 70\" xmlns=\"http://www.w3.org/2000/svg\">\n  " +

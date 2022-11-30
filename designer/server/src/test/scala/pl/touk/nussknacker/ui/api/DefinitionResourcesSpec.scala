@@ -117,7 +117,7 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   it("should return info about editor based on fragment node configuration") {
     val processName = ProcessName(SampleProcess.process.id)
     val processWithSubProcess = ProcessTestData.validProcessWithSubprocess(processName)
-    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming, TestCategories.Category1)
+    val displayableSubProcess = ProcessConverter.toDisplayable(processWithSubProcess.subprocess, TestProcessingTypes.Streaming, TestCategories.TestCat)
     saveSubProcess(displayableSubProcess)(succeed)
     saveProcess(processName, processWithSubProcess.process, TestCat)(succeed)
 
