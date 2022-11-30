@@ -264,9 +264,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("return list of archived processes") {
     val process = ProcessTestData.validProcess
-    saveProcess(processName, process, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, process, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     archiveProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -531,11 +531,11 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("save correct process json with ok status") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-          checkSampleProcessRootIdEquals(ProcessTestData.validProcess.nodes.head.id)
-          entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
-        })
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+      checkSampleProcessRootIdEquals(ProcessTestData.validProcess.nodes.head.id)
+      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe true
+    }
   }
 
   test("update process with the same json should not create new version") {
@@ -557,12 +557,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val process = ProcessTestData.validProcess
     val comment = "Update the same version"
 
-    saveProcess(processName, process, TestCat)({
-          forScenarioReturned(processName) { process =>
-            process.history.map(_.size) shouldBe Some(2)
-          }
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, process, TestCat) {
+      forScenarioReturned(processName) { process =>
+        process.history.map(_.size) shouldBe Some(2)
+      }
+      status shouldEqual StatusCodes.OK
+    }
 
     updateProcess(processName, process, comment) {
       forScenarioReturned(processName) { process =>
@@ -578,26 +578,26 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("return details of process with empty expression") {
-    saveProcess(processName, ProcessTestData.validProcessWithEmptyExpr, TestCat)({
-          Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
-            status shouldEqual StatusCodes.OK
-            responseAs[String] should include(processName.value)
-          }
-        })
+    saveProcess(processName, ProcessTestData.validProcessWithEmptyExpr, TestCat) {
+      Get(s"/processes/${processName.value}") ~> routeWithAllPermissions ~> check {
+        status shouldEqual StatusCodes.OK
+        responseAs[String] should include(processName.value)
+      }
+    }
   }
 
   test("save invalid process json with ok status but with non empty invalid nodes") {
-    saveProcess(processName, ProcessTestData.invalidProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-          checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.nodes.head.id)
-          entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
-        })
+    saveProcess(processName, ProcessTestData.invalidProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+      checkSampleProcessRootIdEquals(ProcessTestData.invalidProcess.nodes.head.id)
+      entityAs[ValidationResult].errors.invalidNodes.isEmpty shouldBe false
+    }
   }
 
   test("return one latest version for process") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     updateProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
@@ -616,9 +616,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("save process history") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     val meta = ProcessTestData.validProcess.metaData
     val changedMeta = meta.copy(additionalFields = Some(ProcessAdditionalFields(Some("changed descritption..."), Map.empty)))
@@ -635,9 +635,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("access process version and mark latest version") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     updateProcess(processName, ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
@@ -663,9 +663,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("return non-validated process version") {
-    saveProcess(processName, ProcessTestData.validProcess, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processName, ProcessTestData.validProcess, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     Get(s"/processes/${SampleProcess.process.id}/1?skipValidateAndResolve=true") ~> routeWithAllPermissions ~> check {
       val processDetails = responseAs[ProcessDetails]
@@ -747,9 +747,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val processToSave = ProcessTestData.sampleDisplayableProcess
     val processName = ProcessName(processToSave.id)
 
-    saveProcess(processToSave, TestCat)({
-          status shouldEqual StatusCodes.OK
-        })
+    saveProcess(processToSave, TestCat) {
+      status shouldEqual StatusCodes.OK
+    }
 
     deleteProcess(processName) { status =>
       status shouldEqual StatusCodes.OK
@@ -759,9 +759,9 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
       }
     }
 
-    saveProcess(processToSave, TestCat)({
+    saveProcess(processToSave, TestCat) {
       status shouldEqual StatusCodes.OK
-    })
+    }
   }
 
   test("not allow to delete still running process") {
@@ -792,12 +792,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
 
   test("not allow to save process if already exists") {
     val processToSave = ProcessTestData.sampleDisplayableProcess
-    saveProcess(processToSave, TestCat)({
-          status shouldEqual StatusCodes.OK
-          Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {
-            status shouldEqual StatusCodes.BadRequest
-          }
-        })
+    saveProcess(processToSave, TestCat) {
+      status shouldEqual StatusCodes.OK
+      Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {
+        status shouldEqual StatusCodes.BadRequest
+      }
+    }
   }
 
   test("not allow to save process with category not allowed for user") {
