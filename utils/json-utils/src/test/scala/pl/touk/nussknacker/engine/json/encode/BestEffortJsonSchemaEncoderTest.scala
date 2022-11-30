@@ -143,18 +143,18 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     }
   }
 
-  test("should throw proper error trying encode integer number") {
+  test("should throw proper error trying encode value to integer schema") {
     forAll(Table(
-      ("data", "schema", "expected"),
-      (1.6d, schemaIntegerNumber, invalid(s"Not expected type: java.lang.Double for field with schema: $schemaIntegerNumber.")),
-      (1.6f, schemaIntegerNumber, invalid(s"Not expected type: java.lang.Float for field with schema: $schemaIntegerNumber.")),
-      (BigInt.long2bigInt(1).setBit(63), schemaIntegerNumber, invalid(s"Not expected type: scala.math.BigInt for field with schema: $schemaIntegerNumber.")),
-      (java.math.BigInteger.valueOf(1).setBit(63), schemaIntegerNumber, invalid(s"Not expected type: java.math.BigInteger for field with schema: $schemaIntegerNumber.")),
-      (BigDecimal.valueOf(1.6), schemaIntegerNumber, invalid(s"Not expected type: scala.math.BigDecimal for field with schema: $schemaIntegerNumber.")),
-      (java.math.BigDecimal.valueOf(1.6), schemaIntegerNumber, invalid(s"Not expected type: java.math.BigDecimal for field with schema: $schemaIntegerNumber.")),
-      (null, schemaIntegerNumber, invalid(s"Not expected type: null for field with schema: $schemaIntegerNumber.")),
-    )) { (data, schema, expected) =>
-      encoder.encodeWithJsonValidation(data, schema) shouldBe expected
+      ("data", "expected"),
+      (1.6d, invalid("Field value '1.6' is not an integer.")),
+      (1.6f, invalid("Field value '1.6' is not an integer.")),
+      (BigInt.long2bigInt(1).setBit(63), invalid("Field value '9223372036854775809' is not an integer.")),
+      (java.math.BigInteger.valueOf(1).setBit(63), invalid("Field value '9223372036854775809' is not an integer.")),
+      (BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
+      (java.math.BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
+      (null, invalid(s"Not expected type: null for field with schema: $schemaIntegerNumber.")),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schemaIntegerNumber) shouldBe expected
     }
   }
 

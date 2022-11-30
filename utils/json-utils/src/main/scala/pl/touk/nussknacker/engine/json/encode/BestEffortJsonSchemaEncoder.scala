@@ -5,7 +5,6 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
-import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder.error
 import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
@@ -63,7 +62,7 @@ object BestEffortJsonSchemaEncoder {
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(value.getClass.getName, cs.toString, fieldName))
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
-      case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, schema, fieldName)
+      case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, nm, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Double) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Float) => Valid(jsonEncoder.encode(value))
@@ -94,27 +93,36 @@ object BestEffortJsonSchemaEncoder {
     }
   }
 
-  private def encodeIntegerSchema(value: Any, schema: Schema, fieldName: Option[String] = None): Validated[NonEmptyList[String], Json] = {
+  /**
+   * We want to be consistent with json schema specification: https://json-schema.org/understanding-json-schema/reference/numeric.html#integer
+   * and allow to pass e.g. `1.0` for integer schema. Consequently we have to try to convert floating point numbers to integer because
+   * Everit validation throws exception for floating numbers with `.0`.
+   */
+  private def encodeIntegerSchema(value: Any, schema: NumberSchema, fieldName: Option[String] = None): Validated[NonEmptyList[String], Json] = {
+    //TODO: Right now wy try to convert BigDecimal to long but we should addictive conversion from schema.getMinimum and schema.getMaximum
     def encodeBigDecimalToIntegerSchema(bigDecimalValue: BigDecimal): Validated[NonEmptyList[String], Json] = Try(bigDecimalValue.toLongExact) match {
-      case Failure(_) => error(value.getClass.getName, schema.toString, fieldName)
+      case Failure(_) => error(s"value '$value' is not an integer.", fieldName)
       case Success(v) => Valid(jsonEncoder.encode(v))
     }
 
     value match {
       case i: Int => Valid(jsonEncoder.encode(i))
       case l: Long => Valid(jsonEncoder.encode(l))
-      case d: Double => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(d))
-      case f: Float => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(f.toDouble))
+      case d: Double => encodeBigDecimalToIntegerSchema(BigDecimal(d))
+      case f: Float => encodeBigDecimalToIntegerSchema(BigDecimal(f.toDouble))
       case bd: java.math.BigDecimal => encodeBigDecimalToIntegerSchema(bd)
       case bd: scala.math.BigDecimal => encodeBigDecimalToIntegerSchema(bd)
       case bi: scala.math.BigInt => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
       case bi: java.math.BigInteger => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
-      case nm: Number => encodeBigDecimalToIntegerSchema(BigDecimal.valueOf(nm.doubleValue()))
+      case nm: Number => encodeBigDecimalToIntegerSchema(BigDecimal(nm.toString))
       case _ => error(value.getClass.getName, schema.toString, fieldName)
     }
   }
 
   private def error(str: String): Invalid[NonEmptyList[String]] = Invalid(NonEmptyList.of(str))
+
+  private def error(msg: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] =
+    Invalid(NonEmptyList.of(s"Field${fieldName.map(f => s": '$f'").getOrElse("")} $msg"))
 
   private def error(runtimeType: String, schema: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] =
     Invalid(NonEmptyList.of(s"Not expected type: $runtimeType for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."))

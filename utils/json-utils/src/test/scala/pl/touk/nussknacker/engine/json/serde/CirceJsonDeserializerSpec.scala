@@ -1,14 +1,18 @@
 package pl.touk.nussknacker.engine.json.serde
 
+import org.everit.json.schema.NumberSchema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
 import scala.collection.JavaConverters._
 
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
+
+  private val sampleLong: Long = Int.MaxValue.toLong + 1
 
   test("json object") {
     val schema = JsonSchemaBuilder.parseSchema(
@@ -139,6 +143,29 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     )) { (json, schema, result) =>
       val deserializer = new CirceJsonDeserializer(schema)
       deserializer.deserialize(json) shouldEqual result.asJava
+    }
+  }
+
+  test("handle number / integer schema") {
+    val integerSchema = NumberSchema.builder().requiresInteger(true).build()
+    val numberSchema = NumberSchema.builder().build()
+
+    forAll(Table(
+      ("json", "schema", "expected"),
+      (1.toString, integerSchema, 1),
+      (sampleLong.toString, integerSchema, sampleLong),
+      //It's a little bit tricky, big int is rounded to Long.Max by JsonToNuStruct because for integer schema we assign long type from OpenApi schema
+      (BigInt.long2bigInt(sampleLong).setBit(67).toString(), integerSchema, Long.MaxValue),
+      (sampleLong.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
+      (sampleLong.toDouble.toString, numberSchema, java.math.BigDecimal.valueOf(sampleLong)),
+    )) { (json, schema, expected) =>
+      val deserializer = new CirceJsonDeserializer(schema)
+      val result = deserializer.deserialize(json)
+      result shouldEqual expected
+    }
+
+    assertThrows[CustomNodeValidationException] {
+      new CirceJsonDeserializer(integerSchema).deserialize("1.0")
     }
   }
 
