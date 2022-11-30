@@ -13,6 +13,7 @@ export default defineConfig({
       backgroundBlend: "overlay",
       updateSnapshots: false,
     },
+    pluginVisualRegressionForceDeviceScaleFactor: false,
   },
   reporter: "junit",
   reporterOptions: {

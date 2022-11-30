@@ -19,11 +19,11 @@
 const browserify = require("@cypress/browserify-preprocessor")
 
 module.exports = (on, config) => {
-  if (process.env.CYPRESS_SNAPSHOT_UPDATE === 'true') {
-      config.env['cypress-plugin-snapshots'].updateSnapshots = true;
-      config.video = false;
+  if (process.env.CYPRESS_SNAPSHOT_UPDATE === "true") {
+    // config.env["cypress-plugin-snapshots"].updateSnapshots = true
+    config.video = false
   }
-  require("cypress-plugin-snapshots/plugin").initPlugin(on, config)
+  require("@frsource/cypress-plugin-visual-regression-diff/dist/plugins").initPlugin(on, config)
 
   require("@cypress/code-coverage/task")(on, config)
 
