@@ -24,6 +24,13 @@ class ProcessModelMigratorSpec extends AnyFlatSpec with BeforeAndAfterEach with 
 
   private implicit val user = TestFactory.adminUser("test1")
 
+  it should "return migrations that actually changed process in migrationsApplied in MigrationResult" in {
+
+    val migrationResult: MigrationResult = migrateByVersions(None, 1, 2, 3, 4, 6, 7, 8, 9)
+
+    migrationResult.migrationsApplied.map(_.description) should contain theSameElementsAs List("testMigration1", "testMigration2", "testMigration8")
+  }
+
   it should "migrate processes to new versions when not migrated" in {
 
     val migrationResult: MigrationResult = migrateByVersions(None, 1, 2)
