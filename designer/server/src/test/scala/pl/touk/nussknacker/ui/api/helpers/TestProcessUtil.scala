@@ -39,7 +39,11 @@ object TestProcessUtil {
     toDetails(displayable.id, category, isArchived = isArchived, processingType = displayable.processingType, json = Some(displayable))
 
   def validatedToProcess(displayable: ValidatedDisplayableProcess) : ValidatedProcessDetails =
-    toDetails(displayable.id, processingType = displayable.processingType).copy(json = displayable)
+    toDetails(
+      displayable.id,
+      processingType = displayable.processingType,
+      category = displayable.category.getOrElse(throw new IllegalArgumentException("Category must be provided"))
+    ).copy(json = displayable)
 
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
                 processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,

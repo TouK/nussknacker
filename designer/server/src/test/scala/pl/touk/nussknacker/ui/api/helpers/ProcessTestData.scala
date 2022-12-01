@@ -114,7 +114,7 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.Category1): ValidatedDisplayableProcess = {
+  def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.TestCat): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
     new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, category))
   }
@@ -199,7 +199,7 @@ object ProcessTestData {
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
-    Some(TestCategories.Category1)
+    Some(TestCategories.TestCat)
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
@@ -220,7 +220,7 @@ object ProcessTestData {
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      Some(TestCategories.TestCat)
     )
   }
 
