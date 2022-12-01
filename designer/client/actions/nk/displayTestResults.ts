@@ -5,6 +5,7 @@ import {displayProcessCounts} from "./displayProcessCounts"
 import {TestResults} from "../../common/TestResultUtils"
 import {Process, ProcessId} from "../../types"
 import {ThunkAction} from "../reduxTypes"
+import {withoutEmptyEdges} from "../../components/graph/GraphPartialsInTS/EdgeUtils";
 
 export function testProcessFromFile(id: ProcessId, testDataFile: File, process: Process): ThunkAction {
   return (dispatch) => {
@@ -18,7 +19,8 @@ export function testProcessFromFile(id: ProcessId, testDataFile: File, process: 
       name: "from file",
     }))
 
-    HttpService.testProcess(id, testDataFile, process)
+    let processWithCleanEdges = withoutEmptyEdges(process)
+    HttpService.testProcess(id, testDataFile, processWithCleanEdges)
       .then(response => dispatch(displayTestResults(response.data)))
       .catch(() => dispatch({type: "LOADING_FAILED"}))
   }
