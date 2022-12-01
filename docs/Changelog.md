@@ -46,6 +46,9 @@
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
 * [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties.
+* [#3754](https://github.com/TouK/nussknacker/pull/3754) Fix for migrating scenarios not existing on target environment [#3700](https://github.com/TouK/nussknacker/issues/3700)
+  * Will work after upgrading NU installations on both environments to version containing the fixup.
+  * In conversation between versions 1.6 - 1.7 (and reversed) only migration of scenarios that exists on both envs will work. 
   
 1.6.1 (8 Nov 2022)
 ------------------------
