@@ -13,9 +13,11 @@ case class SingleSourceScenarioTestData(testData: TestData, samplesLimit: Int) e
   override def forSourceId(id: NodeId): TestData = testData
 }
 
-// TODO: string key?
 case class MultipleSourcesScenarioTestData(sourceTestDataMap: Map[String, TestData], samplesLimit: Int) extends ScenarioTestData {
-  override def forSourceId(id: NodeId): TestData = sourceTestDataMap.getOrElse(id.id, throw new IllegalArgumentException(s"Missing test data for: $id"))
+  override def forSourceId(id: NodeId): TestData = {
+    val idValue = id.id
+    sourceTestDataMap.getOrElse(idValue, throw new IllegalArgumentException(s"Missing test data for: $idValue"))
+  }
 }
 
 object ScenarioTestData {
