@@ -8,14 +8,17 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
-import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory
+import pl.touk.nussknacker.engine.lite.TestRunner.EffectUnwrapper
+import pl.touk.nussknacker.engine.lite.{InterpreterTestRunner, ScenarioInterpreterFactory}
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.customComponentTypes.CapabilityTransformer
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{EndResult, ScenarioInputBatch}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.capabilities.FixedCapabilityTransformer
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
+import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext
 
 import scala.concurrent.duration._
@@ -31,6 +34,9 @@ object SynchronousLiteInterpreter {
 
   implicit val ec: ExecutionContext = SynchronousExecutionContext.ctx
   implicit val capabilityTransformer: CapabilityTransformer[Id] = new FixedCapabilityTransformer[Id]
+  implicit val effectUnwrapper: EffectUnwrapper[Id] = new EffectUnwrapper[Id] {
+    override def apply[A](fa: A): A = fa
+  }
   implicit val syncIdShape: InterpreterShape[Id] = new InterpreterShape[Id] {
 
     private val waitTime = 10 seconds
@@ -39,7 +45,6 @@ object SynchronousLiteInterpreter {
 
     override def fromFuture[T](implicit ec: ExecutionContext): Future[T] => Id[Either[T, Throwable]] = f => Await.result(transform(f), waitTime)
   }
-  //todo add generate test data support
 
   def run(modelData: ModelData,
           scenario: CanonicalProcess,
@@ -57,6 +62,13 @@ object SynchronousLiteInterpreter {
           interpreter.close()
         }
       }
+  }
+
+  def test(modelData: ModelData,
+           scenario: CanonicalProcess,
+           scenarioTestData: ScenarioTestData): TestResults[Any] = {
+    val testRunner = new InterpreterTestRunner[Id, Any, AnyRef]
+    testRunner.runTest(modelData, scenarioTestData, scenario, identity)
   }
 
 }
