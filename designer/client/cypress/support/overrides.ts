@@ -7,9 +7,7 @@ declare global {
 
     interface Chainable<Subject> {
       // transition from cypress-plugin-snapshots
-      toMatchImageSnapshot(options?: Cypress.MatchImageOptions): Chainable<Cypress.MatchImageReturn>,
-
-      toMatchExactImageSnapshot(options?: Cypress.MatchImageOptions): Chainable<Cypress.MatchImageReturn>,
+      toMatchImageSnapshot(options?: Cypress.MatchImageOptions & {screenshotConfig?: {clip?: never, padding?: never}}): Chainable<Cypress.MatchImageReturn>,
     }
 
     //looks like it should be available
@@ -35,12 +33,6 @@ Cypress.Commands.add("toMatchImageSnapshot", {prevSubject: true}, (subject, opti
     }
     return cy.matchImage(options)
   }))
-
-Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject, options?) => cy
-  .wrap(subject)
-  .toMatchImageSnapshot(defaultsDeep(options, {
-    maxDiffThreshold: 0.00001,
-  })))
 
 const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
   const [first, second, third] = args

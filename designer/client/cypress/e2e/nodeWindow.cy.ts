@@ -26,6 +26,6 @@ describe("Node window", () => {
 
     cy.get("[data-testid=window]").should("be.visible")
     cy.contains(/^hours$/).should("be.visible")
-    cy.get("[data-testid=window]").toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+    cy.get("[data-testid=window]").matchImage({screenshotConfig: {padding: 16}})
   })
 }

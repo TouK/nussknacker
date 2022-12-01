@@ -25,7 +25,7 @@ describe("Components list", () => {
     cy.contains(/^name$/i).should("be.visible")
     cy.contains(/^categories$/i).should("be.visible")
     cy.contains(/^for-each$/).should("be.visible")
-    cy.get("#app-container").toMatchImageSnapshot()
+    cy.get("#app-container").matchImage()
   })
 
   it("should have dynamic page size", () => {
@@ -53,7 +53,7 @@ describe("Components list", () => {
     cy.contains(/^for-each$/i).should("be.visible")
     cy.get("[role=row]").should("have.lengthOf", 2)
     cy.matchQuery("?CATEGORY=Default&NAME=fo+ea")
-    cy.get("[role=grid]").toMatchImageSnapshot()
+    cy.get("[role=grid]").matchImage()
   })
 
   it("should allow filtering by group", () => {
@@ -80,11 +80,11 @@ describe("Components list", () => {
     cy.contains(/^≥ 1$/i).click()
     cy.matchQuery("?CATEGORY=Default&USAGES=1")
     cy.get("[role=row]").should("have.lengthOf", 3)
-    cy.get("#app-container>main").toMatchImageSnapshot()
+    cy.get("#app-container>main").matchImage()
     cy.contains(/^< 1$/i).click()
     cy.matchQuery("?CATEGORY=Default&USAGES=-1")
     cy.get("[role=row]").should("have.length.above", 3)
-    cy.get("#app-container>main").toMatchImageSnapshot()
+    cy.get("#app-container>main").matchImage()
   })
 
   it("should display component usage with working scenario link", () => {
@@ -102,7 +102,7 @@ describe("Components list", () => {
     cy.get("[role=row]").should("have.length", 2)
     cy.contains("[role=row] *", /^Default$/).should("be.visible")
     cy.wait(300)
-    cy.get("#app-container>main").toMatchImageSnapshot()
+    cy.get("#app-container>main").matchImage()
   })
 
   it("should apply category filters by cell click", () => {
@@ -142,7 +142,7 @@ describe("Components list", () => {
 
     // we are clicking "X more" on list of places of usages to test usages list expansion
     cy.contains("4 more").click()
-    cy.get("#app-container>main").toMatchImageSnapshot({
+    cy.get("#app-container>main").matchImage({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
     })
   })
@@ -157,7 +157,7 @@ describe("Components list", () => {
     cy.contains(/^filter 8$/).should("be.visible")
 
     cy.wait(500) //ensure "loading" mask is hidden
-    cy.get("#app-container>main").toMatchImageSnapshot({
+    cy.get("#app-container>main").matchImage({
       screenshotConfig: {clip: {x: 0, y: 0, width: 1400, height: 300}},
     })
   })

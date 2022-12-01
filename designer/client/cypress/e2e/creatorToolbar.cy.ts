@@ -16,8 +16,8 @@ describe("Creator toolbar", () => {
   })
 
   it("should allow filtering", () => {
-    cy.get("@toolbar").should("be.visible").toMatchImageSnapshot()
+    cy.get("@toolbar").should("be.visible").matchImage()
     cy.get("@toolbar").find("input").type("var")
-    cy.get("@toolbar").toMatchImageSnapshot()
+    cy.get("@toolbar").matchImage()
   })
 })

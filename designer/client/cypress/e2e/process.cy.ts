@@ -56,13 +56,13 @@ describe("Process", () => {
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.contains(/^tips.*errors in/i).contains(/^properties/i).should("be.visible").click()
-      cy.get("[data-testid=window]").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").matchImage()
     })
 
     it("should import JSON and save", () => {
       cy.intercept("PUT", "/api/processes/*").as("save")
       cy.contains(/is not deployed/i).should("be.visible")
-      cy.get("#nk-graph-main").toMatchImageSnapshot()
+      cy.get("#nk-graph-main").matchImage()
 
       cy.intercept("POST", "/api/processes/import/*").as("import")
       cy.fixture("testProcess").then(json => {
@@ -81,7 +81,7 @@ describe("Process", () => {
       cy.contains(/^ok$/i).should("be.enabled").click()
       cy.wait("@save").its("response.statusCode").should("eq", 200)
       cy.contains(/^ok$/i).should("not.exist")
-      cy.get("#nk-graph-main").wait(200).toMatchImageSnapshot()
+      cy.get("#nk-graph-main").wait(200).matchImage()
     })
   })
 
@@ -119,10 +119,10 @@ describe("Process", () => {
 
     it("should have counts button and modal", () => {
       cy.contains(/^counts$/i).as("button")
-      cy.get("@button").should("be.visible").toMatchImageSnapshot()
+      cy.get("@button").should("be.visible").matchImage()
       cy.get("@button").click()
       cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
-      cy.get("[data-testid=window]").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").matchImage()
     })
 
     it("should return 400 status code and show info about required comment", () => {
@@ -148,7 +148,7 @@ describe("Process", () => {
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("not.exist")
       cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
-      cy.get("[data-testid=window]").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").matchImage()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.contains(/^cancel$/i).click()
       cy.contains(/^ok$/i).should("be.enabled").click()
@@ -167,7 +167,7 @@ describe("Process", () => {
       })
       cy.contains(/^counts$/i).click()
       cy.contains(/^latest deploy$/i).should("exist")
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").should("be.visible").matchImage()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.contains(/^cancel$/i).click()
       cy.contains(/^ok$/i).should("be.enabled").click()
@@ -176,15 +176,15 @@ describe("Process", () => {
     it("should display some node details in modal", () => {
       cy.get("[model-id=dynamicService]").should("be.visible").trigger("dblclick")
       cy.get("[data-testid=window]").contains("dynamicService").should("be.visible")
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").should("be.visible").matchImage()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=boundedSource]").should("be.visible").trigger("dblclick")
       cy.get("[data-testid=window]").contains("boundedSource").should("be.visible")
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").should("be.visible").matchImage()
       cy.get("[data-testid=window]").contains(/^cancel$/i).click()
       cy.get("[model-id=sendSms]").should("be.visible").trigger("dblclick")
       cy.get("[data-testid=window]").contains("sendSms").should("be.visible")
-      cy.get("[data-testid=window]").should("be.visible").toMatchImageSnapshot()
+      cy.get("[data-testid=window]").should("be.visible").matchImage()
     })
   })
 
@@ -200,7 +200,7 @@ describe("Process", () => {
     cy.getNode("switch")
       .click()
       .parent()
-      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+      .matchImage({screenshotConfig: {padding: 16}})
 
     cy.contains(/^sinks$/)
       .should("be.visible").click()
@@ -222,11 +222,11 @@ describe("Process", () => {
     cy.getNode("switch")
       .click()
       .parent()
-      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+      .matchImage({screenshotConfig: {padding: 16}})
 
     cy.get(`[model-id$="false"] .label`).dblclick()
     cy.get("[data-testid=window]").should("be.visible")
-    cy.contains(/^Conditions:$/).parent().toMatchImageSnapshot({screenshotConfig: {padding: 8}})
+    cy.contains(/^Conditions:$/).parent().matchImage({screenshotConfig: {padding: 8}})
   })
 
   it("should preserve condition on link move (filter)", () => {
@@ -242,7 +242,7 @@ describe("Process", () => {
     cy.getNode("filter")
       .click()
       .parent()
-      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+      .matchImage({screenshotConfig: {padding: 16}})
 
     cy.contains(/^sinks$/)
       .should("be.visible").click()
@@ -264,6 +264,6 @@ describe("Process", () => {
     cy.getNode("filter")
       .click()
       .parent()
-      .toMatchImageSnapshot({screenshotConfig: {padding: 16}})
+      .matchImage({screenshotConfig: {padding: 16}})
   })
 })

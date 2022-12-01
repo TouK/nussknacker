@@ -1,5 +1,6 @@
 describe("Process", () => {
   const NAME = "processSelection"
+  const maxDiffThreshold = 0.00001
   const screenshotConfig = {
     blackout: [
       ".graphPage > :not(#nk-graph-main) > div",
@@ -31,7 +32,7 @@ describe("Process", () => {
         .trigger("mousemove", 200, 100, {force: true})
         .trigger("mouseup", {force: true})
         .wait(200)
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
     })
 
     it("should select only fully covered (to right)", () => {
@@ -39,10 +40,10 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 300, 100, {metaKey: true, force: true})
         .trigger("mousemove", 700, 500, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
     })
 
     it("should select partially covered (to left)", () => {
@@ -50,10 +51,10 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 700, 100, {metaKey: true, force: true})
         .trigger("mousemove", 500, 500, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
     })
 
     it("should switch modes, append and inverse select with shift", () => {
@@ -61,19 +62,19 @@ describe("Process", () => {
         .trigger("keydown", {key: "Meta"})
         .trigger("mousedown", 700, 100, {metaKey: true, force: true})
         .trigger("mousemove", 500, 400, {metaKey: true, force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
         .trigger("keyup", {key: "Meta"})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
       cy.get("@graph")
         .trigger("keydown", {key: "Shift"})
         .trigger("mousedown", 700, 150, {shiftKey: true, force: true})
         .trigger("mousemove", 500, 550, {shiftKey: true, force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
       cy.get("@graph")
         .trigger("mouseup", {force: true})
-        .toMatchExactImageSnapshot({screenshotConfig})
+        .matchImage({maxDiffThreshold, screenshotConfig})
     })
   })
 })

@@ -23,7 +23,7 @@ describe("Fragment", () => {
     cy.get("[data-testid='fieldsRow:3']").find(".fieldName input").type("xxxx")
     cy.get("[data-testid='draggable:3'] [role='button']").dndTo("[data-testid='draggable:0']")
     cy.get("[data-testid='fieldsRow:0']").find(".fieldName input").should("have.value", "xxxx")
-    cy.get("@window").toMatchImageSnapshot()
+    cy.get("@window").matchImage()
     cy.get("@window").contains(/^apply$/i).click()
     cy.contains(/^save$/i).click()
     cy.contains(/^ok$/i).click()
@@ -42,7 +42,7 @@ describe("Fragment", () => {
     cy.get("[model-id$=-fragment-test-process]").should("be.visible").trigger("dblclick")
     cy.get("#nk-graph-subprocess [model-id='input']").should("be.visible")
     cy.wait(750)
-    cy.get("[data-testid=window]").toMatchImageSnapshot()
+    cy.get("[data-testid=window]").matchImage()
 
     cy.get("[data-testid=window]").contains("testOutput").parent().find("input").type("{selectall}fragmentResult")
     cy.contains(/^apply/i).should("be.enabled").click()
@@ -53,14 +53,14 @@ describe("Fragment", () => {
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
     cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")
     cy.wait(750)
-    cy.get("[data-testid=window]").toMatchImageSnapshot()
+    cy.get("[data-testid=window]").matchImage()
   })
 
   it("should open properties", () => {
     cy.visitNewFragment(seed, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
     cy.contains(/^apply/i).should("be.enabled")
-    cy.get("[data-testid=window]").toMatchImageSnapshot()
+    cy.get("[data-testid=window]").matchImage()
   })
 
   it.skip("should add documentation url in fragment properties and show it in modal within scenario", () => {
@@ -100,7 +100,7 @@ describe("Fragment", () => {
     cy.get("[data-testid=window]").as("window")
     cy.get("@window").contains(/^input$/).should("be.visible")
     // FIXME: flaky check: https://github.com/TouK/nussknacker/actions/runs/1559240404
-    cy.get("@window").wait(200).toMatchImageSnapshot()
+    cy.get("@window").wait(200).matchImage()
 
     cy.deleteAllTestProcesses({filter: seed2})
   })
