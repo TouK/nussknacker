@@ -2,17 +2,7 @@ import {defineConfig} from "cypress"
 
 export default defineConfig({
   env: {
-    "cypress-plugin-snapshots": {
-      imageConfig: {
-        resizeDevicePixelRatio: false,
-        threshold: 0.004,
-      },
-      screenshotConfig: {
-        scale: false,
-      },
-      backgroundBlend: "overlay",
-      updateSnapshots: false,
-    },
+    pluginVisualRegressionUpdateImages: false,
     pluginVisualRegressionForceDeviceScaleFactor: false,
   },
   reporter: "junit",
