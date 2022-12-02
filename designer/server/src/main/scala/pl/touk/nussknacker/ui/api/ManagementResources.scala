@@ -19,11 +19,10 @@ import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
-import pl.touk.nussknacker.engine.api.component.ComponentType.Source
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.process.Source
 import pl.touk.nussknacker.engine.api.test.{SingleSourceScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -255,7 +254,7 @@ class ManagementResources(processCounter: ProcessCounter,
       case Right(process) =>
         val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
         val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        if (hasSingleSource(canonical)) {
+        if (!hasSingleSource(canonical)) {
           Future.failed(new IllegalArgumentException("Tests mechanism support scenarios with exact one source"))
         } else {
           (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, SingleSourceScenarioTestData(TestData(testData), testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
