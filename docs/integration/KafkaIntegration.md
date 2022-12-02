@@ -39,7 +39,7 @@ If you prefer using JSON payload with AVRO schema, you can use `avroAsJsonSerial
 
 Nussknacker supports schema evolution.
 
-In the Designer the user can choose, for each source and sink, which schema version should be used for syntax suggestions and validation.
+In the Designer the user can choose, for each source and sink, which schema version should be used for syntax [suggestions and validation](/docs/scenarios_authoring/HandlingSchemas.md).
 
 At runtime Nussknacker determines the schema version of a message value and key in the following way:
 1. it checks `value.schemaId` and `key.schemaId` headers;
