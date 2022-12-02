@@ -23,7 +23,7 @@ class FlinkScenarioNameValidator(config: Config) extends CustomProcessValidator 
     } else {
       Invalid(NonEmptyList.one(
         ScenarioNameValidationError(
-          s"Invalid scenario name $scenarioName. Allowed characters include numbers letters, underscores(_), hyphens(-) and spaces",
+          s"Invalid scenario name $scenarioName. Only numbers, letters, underscore (_), hyphen (-) and space are allowed",
           "Provided scenario name is invalid for this category. Please enter valid name using only specified characters.")
       ))
     }
