@@ -1,11 +1,5 @@
 describe("Fragment", () => {
   const seed = "fragment"
-  const screenshotConfig = {
-    blackout: [
-      ".graphPage > :not(#nk-graph-main) > div",
-    ],
-  }
-
   before(() => {
     cy.viewport(1440, 1000)
     cy.deleteAllTestProcesses({filter: seed, force: true})
@@ -48,7 +42,13 @@ describe("Fragment", () => {
     cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.wait(750)
-    cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+    cy.get(".graphPage").matchImage({
+      screenshotConfig: {
+        blackout: [
+          "> :not(#nk-graph-main) > div",
+        ],
+      },
+    })
 
     cy.get("[model-id$=sendSms]").should("be.visible").trigger("dblclick")
     cy.get(".ace_editor").should("be.visible").type("{selectall}#fragmentResult.")

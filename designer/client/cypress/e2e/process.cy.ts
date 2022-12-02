@@ -1,12 +1,5 @@
-import {jsonToBlob} from "../support/tools"
-
 describe("Process", () => {
   const seed = "process"
-  const screenshotConfig = {
-    blackout: [
-      ".graphPage > :not(#nk-graph-main) > div",
-    ],
-  }
 
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
@@ -65,16 +58,8 @@ describe("Process", () => {
       cy.get("#nk-graph-main").matchImage()
 
       cy.intercept("POST", "/api/processes/import/*").as("import")
-      cy.fixture("testProcess").then(json => {
-        cy.get("@processName").then(name => cy.get("[title=import]")
-          .next("[type=file]")
-          .should("exist")
-          .attachFile({
-            fileName: "process",
-            encoding: "utf-8",
-            fileContent: jsonToBlob({...json, metaData: {...json.metaData, id: name}}),
-          }))
-      })
+      cy.get("[title=import]").next("[type=file]").should("exist")
+        .selectFile("cypress/fixtures/testProcess.json", {force: true})
       cy.wait("@import").its("response.statusCode").should("eq", 200)
 
       cy.contains(/^save/i).should("be.enabled").click()
@@ -86,6 +71,14 @@ describe("Process", () => {
   })
 
   describe("with data", () => {
+    const screenshotOptions: Cypress.MatchImageOptions = {
+      screenshotConfig: {
+        blackout: [
+          "> :not(#nk-graph-main) > div",
+        ],
+      },
+    }
+
     beforeEach(() => {
       cy.visitNewProcess(seed, "testProcess")
     })
@@ -98,7 +91,7 @@ describe("Process", () => {
         .trigger("mousedown")
         .trigger("mousemove", {clientX: 100, clientY: 100})
         .trigger("mouseup", {force: true})
-      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.get(".graphPage").matchImage(screenshotOptions)
     })
 
     it("should allow drag component and drop on edge", () => {
@@ -108,13 +101,13 @@ describe("Process", () => {
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.get(".graphPage").matchImage(screenshotOptions)
       cy.contains(/^save$/i).click()
       cy.get("[data-testid=window]").contains(/^ok$/i).click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.get("#nk-graph-main").should("be.visible")
       cy.wait(100)
-      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.get(".graphPage").matchImage(screenshotOptions)
     })
 
     it("should have counts button and modal", () => {

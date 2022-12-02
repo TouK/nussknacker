@@ -1,11 +1,5 @@
 describe("Process", () => {
   const seed = "process"
-  const screenshotConfig = {
-    blackout: [
-      ".graphPage > :not(#nk-graph-main) > div",
-    ],
-  }
-
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
@@ -35,7 +29,11 @@ describe("Process", () => {
       cy.get("@input").click().type(" || false")
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("not.exist")
-      cy.get("#nk-graph-main").toMatchImageSnapshot({screenshotConfig})
+      cy.get(".graphPage").matchImage({screenshotConfig: {
+          blackout: [
+            "> :not(#nk-graph-main) > div",
+          ],
+        }})
     })
   })
 })

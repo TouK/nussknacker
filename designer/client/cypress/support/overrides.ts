@@ -4,12 +4,6 @@ import UAParser from "ua-parser-js"
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
-
-    interface Chainable<Subject> {
-      // transition from cypress-plugin-snapshots
-      toMatchImageSnapshot(options?: Cypress.MatchImageOptions & {screenshotConfig?: {clip?: never, padding?: never}}): Chainable<Cypress.MatchImageReturn>,
-    }
-
     //looks like it should be available
     //used in with drag from @4tw/cypress-drag-drop to force drop position
     interface ClickOptions {
@@ -18,21 +12,6 @@ declare global {
     }
   }
 }
-
-Cypress.Commands.add("toMatchImageSnapshot", {prevSubject: true}, (subject, options?) => cy
-  .wrap(subject)
-  .then($el => {
-    const el = $el[0]
-    if (el) {
-      const {height, width, x, y} = el.getBoundingClientRect()
-      return cy.matchImage(defaultsDeep(options, {
-        screenshotConfig: {
-          clip: {x, y, width, height},
-        },
-      }))
-    }
-    return cy.matchImage(options)
-  }))
 
 const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
   const [first, second, third] = args
