@@ -955,7 +955,7 @@ lazy val liteBaseComponentsTests = (project in lite("components/base-tests")).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-base-components-tests"
-  ).dependsOn(liteComponentsTestkit % Test)
+  ).dependsOn(liteBaseComponents % Test, liteComponentsTestkit % Test)
 
 lazy val liteKafkaComponents: Project = (project in lite("components/kafka")).
   settings(commonSettings).
