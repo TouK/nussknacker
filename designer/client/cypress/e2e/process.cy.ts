@@ -189,6 +189,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "switch")
     cy.viewport(1500, 800)
+    cy.contains(/^layout$/).click()
 
     cy.getNode("switch")
       .click()
@@ -230,6 +231,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "filter")
     cy.viewport(1500, 800)
+    cy.contains(/^layout$/).click()
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
     cy.wait("@validation")
