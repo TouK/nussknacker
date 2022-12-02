@@ -1,16 +1,21 @@
 package pl.touk.nussknacker.engine.process.compiler
 
+import cats.data.ValidatedNel
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory._
 import org.apache.flink.api.common.typeinfo.TypeInformation
+import org.scalatest.LoneElement._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.ProcessVersion
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
 import pl.touk.nussknacker.engine.api.test.{MultipleSourcesScenarioTestData, ScenarioTestData, SingleSourceScenarioTestData, TestData, TestDataParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.compiledgraph.CompiledProcessParts
 import pl.touk.nussknacker.engine.compiledgraph.part.SourcePart
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
@@ -21,8 +26,9 @@ import pl.touk.nussknacker.engine.resultcollector.PreventInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListenerHolder
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
+class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   private implicit val intTypeInformation: TypeInformation[Int] = TypeInformation.of(classOf[Int])
 
@@ -58,7 +64,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
 
   test("stubbing for test purpose should work for one source") {
     val testData = SingleSourceScenarioTestData(TestData(Array(1, 2, 3)), 3)
-    val compiledProcess = testCompile(scenarioWithSingleSource, testData)
+    val compiledProcess = testCompile(scenarioWithSingleSource, testData).validValue
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
     }
@@ -76,7 +82,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       samplesLimit = 3
     )
 
-    val compiledProcess = testCompile(scenarioWithMultipleSources, testData)
+    val compiledProcess = testCompile(scenarioWithMultipleSources, testData).validValue
 
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.node.id -> source.obj
@@ -89,10 +95,18 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
+  test("should fail on missing test data for a source") {
+    val testData = MultipleSourcesScenarioTestData(Map("left-source" -> TestData(Array(11, 12, 13))), samplesLimit = 3)
+
+    val compilationErrors = testCompile(scenarioWithMultipleSources, testData).invalidValue
+
+    compilationErrors.toList.loneElement shouldBe CannotCreateObjectError("Missing test data for: right-source", "right-source")
+  }
+
+  private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData): ValidatedNel[ProcessCompilationError, CompiledProcessParts] = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
       scenario, scenarioTestData, DefaultNamespacedObjectNaming)
-    testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
+    testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcess()
   }
 
   object SampleConfigCreator extends BaseSampleConfigCreator[Int](List.empty) {
