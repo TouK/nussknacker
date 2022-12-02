@@ -232,6 +232,8 @@ describe("Process", () => {
     cy.viewport(1500, 800)
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
+    cy.wait("@validation")
+
     cy.getNode("filter")
       .click()
       .parent()

@@ -7,7 +7,6 @@
     ],
     "types": [
       "cypress",
-      "cypress-file-upload",
       "@frsource/cypress-plugin-visual-regression-diff",
       "@4tw/cypress-drag-drop"
     ],
