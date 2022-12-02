@@ -6,11 +6,11 @@ import cats.implicits._
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError._
-import pl.touk.nussknacker.engine.graph.node._
-import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{CanonicalNode, FlatNode}
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.SubprocessParameter
+import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 
 
 object SubprocessResolver {
@@ -50,8 +50,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
     }
   }
 
-  def resolveInput(subprocessInput: SubprocessInput): Validated[NonEmptyList[ProcessCompilationError], InputValidationResponse] =
-    initialSubprocessChecks(subprocessInput).run.map { case (_, (l, v, v2)) =>
+  def resolveInput(subprocessInput: SubprocessInput): CompilationValid[InputValidationResponse] =
+    initialSubprocessChecks(subprocessInput).map { case (l, v, v2) =>
       val names = (v :: v2).flatten.flatMap(canonicalnode.collectAllNodes).collect {
         case SubprocessOutputDefinition(_, name, fields, _) => Output(name, fields.nonEmpty)
       }.toSet
@@ -74,7 +74,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
       //here is the only interesting part - not disabled subprocess
       case canonicalnode.Subprocess(subprocessInput: SubprocessInput, nextNodes) =>
 
-        initialSubprocessChecks(subprocessInput).andThen { case (parameters, subprocessNodes, subprocessAdditionalBranches) =>
+        //subprocessNodes contain Input
+        additionalApply(initialSubprocessChecks(subprocessInput)).andThen { case (parameters, subprocessNodes, subprocessAdditionalBranches) =>
           //we resolve what follows after subprocess, and all its branches
           val nextResolvedV = nextNodes.map { case (k, v) =>
             resolveCanonical(idPrefix)(v).map((k, _))
@@ -85,7 +86,7 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
 
           //we replace subprocess outputs with following nodes from parent process
           val nexts = (nextResolvedV, subResolvedV, additionalResolved)
-            .mapN { (nodeResolved, nextResolved, additionalResolved) =>(replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
+            .mapN { (nodeResolved, nextResolved, additionalResolved) => (replaceCanonicalList(nodeResolved, subprocessInput.id, subprocessInput.ref.outputVariableNames), nextResolved, additionalResolved) }
             .andThen { case (replacement, nextResolved, additionalResolved) =>
               additionalResolved.map(replacement).sequence.andThen { resolvedAdditional =>
                 replacement(nextResolved).mapWritten(_ ++ resolvedAdditional)
@@ -98,8 +99,8 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
   }
 
   //we do initial validation of existence of subprocess, its parameters and we extract all branches
-  private def initialSubprocessChecks(subprocessInput: SubprocessInput): ValidatedWithBranches[(List[SubprocessInputDefinition.SubprocessParameter], CanonicalBranch, List[CanonicalBranch])] = {
-    additionalApply(Validated.fromOption(subprocesses.apply(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
+  private def initialSubprocessChecks(subprocessInput: SubprocessInput): CompilationValid[(List[SubprocessInputDefinition.SubprocessParameter], CanonicalBranch, List[CanonicalBranch])] = {
+    Validated.fromOption(subprocesses.apply(subprocessInput.ref.id), NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
       .andThen { subprocess =>
         val additionalBranches = subprocess.allStartNodes.collect {
           case a@FlatNode(_: Join) :: _ => a
@@ -107,16 +108,26 @@ case class SubprocessResolver(subprocesses: String => Option[CanonicalProcess]) 
         Validated.fromOption(subprocess.allStartNodes.collectFirst {
           case FlatNode(SubprocessInputDefinition(_, parameters, _)) :: nodes => (parameters, nodes, additionalBranches)
         }, NonEmptyList.of(UnknownSubprocess(id = subprocessInput.ref.id, nodeId = subprocessInput.id)))
-      }).andThen { case (parameters, nodes, additionalBranches) =>
-      checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id).map { _ =>
-        (parameters, nodes, additionalBranches)
       }
+    .andThen { case a@(parameters, nodes, additionalBranches) =>
+      val parametersResult = checkProcessParameters(subprocessInput.ref, parameters.map(_.name), subprocessInput.id)
+      val duplicatesResult = detectMultipleOutputsWithSameName(subprocessInput.id, nodes, additionalBranches)
+      (parametersResult, duplicatesResult).mapN { case (_, _) => a }
     }
   }
 
-  private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): ValidatedWithBranches[Unit] = {
-    val results = Validations.validateSubProcessParameters(parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
-    WriterT[CompilationValid, List[CanonicalBranch], Unit](results.map((Nil, _)))
+  private def detectMultipleOutputsWithSameName(id: String, nodes: List[CanonicalNode], additionalBranches: List[List[CanonicalNode]]) = {
+    val allNames = (nodes :: additionalBranches).flatten.flatMap(canonicalnode.collectAllNodes).collect {
+      case SubprocessOutputDefinition(id, name, fields, _) => (id, Output(name, fields.nonEmpty))
+    }
+    NonEmptyList.fromList(allNames.groupBy(_._2.name).filter(_._2.size > 1).toList) match {
+      case Some(groups) => Invalid(groups.map(gr => MultipleOutputsForName(gr._1, id)))
+      case None => Valid(())
+    }
+  }
+
+  private def checkProcessParameters(ref: SubprocessRef, parameters: List[String], nodeId: String): ValidatedNel[ProcessCompilationError, Unit] = {
+    Validations.validateSubProcessParameters(parameters.toSet, ref.parameters.map(_.name).toSet)(NodeId(nodeId))
   }
 
   //we replace outputs in subprocess with part of parent process
