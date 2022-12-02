@@ -179,7 +179,7 @@ In the request-response processing mode, the only way to affect parallelism is t
 ​In the  streaming processing mode you can affect scenario parallelism in the following ways:
 - Set scenario parallelism in the scenario properties - this will determine how many parallel tasks are used to process the scenario. The number of replicas in the K8s deployment will be set to the `ceiling(scenarioParallelism / tasksPerReplica)`. In this case, the default value of 4 will be used for `tasksPerReplica`.
 - Modify the default value of `tasksPerReplica` by setting:
-  - `{ tasksPerReplica: t }`
+  - `{ tasksPerReplica y }`
 
 Alternatively, you can set `fixedReplicasCount` to override scenario parallelism set in the scenario properties. You cannot use this setting together with `tasksPerReplica` setting. 
 
