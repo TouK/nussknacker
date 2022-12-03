@@ -3,26 +3,19 @@ sidebar_position: 2
 ---
 # Configuration
 
-
+The Docker image and the binary distribution contain minimal working [configuration file](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf), which is designed as a base for further customizations using 
+additional configuration files. 
+This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/touk/nussknacker), which prepares its own config file. 
 ## Configuration areas
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](/about/GLOSSARY#nussknacker-designer) configuration
+* [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings),
 * Scenario Types configuration, comprising of:
-  * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration
-  * [Model](/about/GLOSSARY#executor) configuration
+  * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
+  * [Model](/about/GLOSSARY#model) configuration.
 
-Designer configuration  contains all settings for Nussknacker Designer - e.g. web application ports, security, various UI settings.
-
-One Nussknacker Designer deployment may be used to create various Scenario Types which:
-
-* can be deployed with various [Deployment Managers](DeploymentManagerConfiguration.md)  to e.g. different Flink clusters
-* use different components and [Model configurations](ModelConfiguration.md)
-
-See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.
-
-Diagram below presents main relationships between configuration areas.
+The Scenario Type is a convenient umbrella term for a particular Deployment Manager configuration and the associated model configuration. Diagram below presents main relationships between configuration areas.
 
 ![Configuration areas](img/configuration_areas.png "configuration areas")
 
@@ -51,8 +44,12 @@ scenarioTypes {
   }
 }
 ```
+It is worth noting that one Nussknacker Designer instance may be used to work with multiple Scenario Types which:
 
-[This](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/application.conf) is how it looks in default configuration file in Nu distribution.
+* can be deployed with various Deployment Managers to e.g. different Flink clusters
+* use different components and Model configurations 
+
+See [development configuration](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/conf/dev-application.conf#L33) (used to test various Nussknacker features) for an example of configuration with more than one Scenario Type.                   
 
 ## Environment variables
 
@@ -62,9 +59,8 @@ Environment variables are described in [Installation guide](./Installation.md), 
 
 * We use HoCon (see [introduction](https://github.com/lightbend/config#using-hocon-the-json-superset) or [full specification](https://github.com/lightbend/config/blob/master/HOCON.md) for details) as our main configuration format. [Lightbend config library](https://github.com/lightbend/config/tree/master) is used for parsing configuration files - you can check [documentation](https://github.com/lightbend/config#standard-behavior) for details on conventions of file names and merging of configuration files.
 * `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
-  * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/docker-compose.yml#L12)
-  * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/nussknacker/nussknacker.conf)
-* [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf) contains defaults for Nussknacker Designer
+  * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/common/docker-compose.yml#L13)
+  * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/nussknacker/nussknacker.conf)
 * If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker docker image.
 
 It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](ModelConfiguration.md) for the details. 

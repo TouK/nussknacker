@@ -61,7 +61,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     fields.get("nullField").asInstanceOf[AnyRef] shouldBe null
     val mapField = fields.get("mapField").asInstanceOf[TypedMap]
     mapField.get("a") shouldBe "1"
-    mapField.get("b") shouldBe 2
+    mapField.get("b") shouldBe java.math.BigDecimal.valueOf(2)
     mapField.get("c") shouldBe a[java.util.List[_]]
     fields.get("mapOfStringsField") shouldBe a[TypedMap]
   }
@@ -89,7 +89,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong))
     extractor.JsonToNuStruct(json, definition) shouldBe TypedMap(Map(
       "field1" -> "value",
-      "field2" -> 1
+      "field2" -> java.math.BigDecimal.valueOf(1)
     ))
 
     val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
