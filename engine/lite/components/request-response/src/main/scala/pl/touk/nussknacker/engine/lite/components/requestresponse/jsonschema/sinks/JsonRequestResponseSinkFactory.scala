@@ -5,8 +5,9 @@ import cats.data.Validated.valid
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
-import pl.touk.nussknacker.engine.api.definition.{BoolParameterEditor, FixedExpressionValue, FixedValuesParameterEditor, MandatoryParameterValidator, NodeDependency, Parameter, ParameterWithExtractor, TypedNodeDependency}
+import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
@@ -85,7 +86,13 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
-      FinalResults(context, Nil, state)
+      val validationErrors = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies).andThen { schema =>
+        new JsonSchemaOutputValidator(ValidationMode.lax)
+          .validateTypingResultAgainstSchema(TypedObjectTypingResult(valueParams.toMap.mapValues(_.returnType).toList), schema)
+          .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
+          .leftMap(NonEmptyList.one)
+      }
+      FinalResults(context, validationErrors.swap.toList.flatMap(_.toList), state)
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalStateOpt: Option[State]): Sink = {

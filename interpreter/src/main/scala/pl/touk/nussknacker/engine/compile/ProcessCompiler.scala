@@ -173,9 +173,10 @@ protected trait ProcessCompilerBase {
                        (implicit nodeId: NodeId, metaData: MetaData): CompilationResult[compiledgraph.part.SourcePart] = {
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) = nodeCompiler.compileSource(sourceData)
 
-    val validatedSource = sub.validate(part.node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
+    val ctxToUse = initialCtx.valueOr(_ => contextWithOnlyGlobalVariables)
+    val validatedSource = sub.validate(part.node, ctxToUse)
     val typesForParts = validatedSource.typing.mapValues(_.inputValidationContext)
-    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
+    val nodeTypingInfo = Map(part.id -> NodeTypingInfo(ctxToUse, typingInfo, parameters))
 
     CompilationResult.map4(
       validatedSource,
