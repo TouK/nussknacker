@@ -198,12 +198,13 @@ Please mind, that apart whether you will provide your own logging configuration 
 ### Configuring Prometheus metrics
 Just like in [Designer installation](./Installation.md#Basic environment variables), you can attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods. Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration file by setting `PROMETHEUS_AGENT_CONFIG_FILE` environment, which has to point to it.   
 
-## Request-Response embedded
+## Embedded Lite engine
 
-Deployment Manager of type `request-response-embedded` has the following configuration options:
+Deployment Manager of type `lite-embedded` has the following configuration options:
 
 | Parameter                                                 | Type   | Default value   | Description                                                                                                                      |
 |-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------|
+| mode                                                      | string |                 | Either streaming or request-response                                                                                             |
 | http.interface                                            | string | 0.0.0.0         | Interface on which REST API of scenarios will be exposed                                                                         |
 | http.port                                                 | int    | 8181            | Port on which REST API of scenarios will be exposed                                                                              | 
 | request-response.definitionMetadata.servers               | string | [{"url": "./"}] | Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 

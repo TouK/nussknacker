@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.api.process.{EmptyProcessConfigCreator, Proces
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
-import pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
+import pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManagerProvider
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink.SinkRawEditorParamName
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -37,8 +37,11 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     implicit val dummyBackend: SttpBackend[Future, Nothing, NothingT] = null
     import as.dispatcher
     val port = AvailablePortFinder.findAvailablePorts(1).head
-    val manager = new RequestResponseEmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
-      ConfigFactory.empty().withValue("http.port", fromAnyRef(port)).withValue("http.interface", fromAnyRef("localhost")))
+    val manager = new EmbeddedDeploymentManagerProvider().createDeploymentManager(modelData,
+      ConfigFactory.empty()
+        .withValue("mode", fromAnyRef("request-response"))
+        .withValue("http.port", fromAnyRef(port))
+        .withValue("http.interface", fromAnyRef("localhost")))
     FixtureParam(manager, modelData, port)
   }
 
