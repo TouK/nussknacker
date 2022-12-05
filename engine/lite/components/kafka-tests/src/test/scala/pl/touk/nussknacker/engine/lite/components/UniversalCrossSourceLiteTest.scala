@@ -84,7 +84,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     val result = runner.runWithRawData(scenario, List(input)).validValue
 
     //Then
-    val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21))
+    val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21L))
     val resultRecord = runner.deserializeAvroData[GenericData.Record](result.success.head.value())
     resultRecord shouldBe expectedRecord
   }

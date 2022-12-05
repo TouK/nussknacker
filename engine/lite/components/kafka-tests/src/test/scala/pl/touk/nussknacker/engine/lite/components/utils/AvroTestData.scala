@@ -264,7 +264,7 @@ object AvroTestData {
        |  "fields": [
        |    { "name": "first", "type": "string" },
        |    { "name": "last", "type": "string" },
-       |    { "name": "age", "type": "int" }
+       |    { "name": "age", "type": "long" }
        |  ]
        |}
     """.stripMargin)
