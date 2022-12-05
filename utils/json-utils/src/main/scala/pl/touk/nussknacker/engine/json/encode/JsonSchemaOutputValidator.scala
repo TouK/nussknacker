@@ -27,7 +27,7 @@ object JsonSchemaOutputValidator {
   }
 }
 
-class JsonSchemaOutputValidator(schema: Schema, validationMode: ValidationMode) extends SinkValueValidator with LazyLogging {
+class JsonSchemaOutputValidator(parentSchema: Schema, validationMode: ValidationMode) extends SinkValueValidator with LazyLogging {
 
   import JsonSchemaOutputValidator._
 
@@ -39,10 +39,10 @@ class JsonSchemaOutputValidator(schema: Schema, validationMode: ValidationMode) 
    * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
    */
   def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, schema, None)
+    validateTypingResult(typingResult, parentSchema, None)
 
   //todo: add support for: unions, enums, nested types, logical types
-  final private def validateTypingResult(typingResult: TypingResult, schema: Schema, parentSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
+  final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
       case (Unknown, _) if validationMode == ValidationMode.lax => valid
       case (Unknown, _) if validationMode == ValidationMode.strict => invalid(typingResult, schema, parentSchema, path)
@@ -60,14 +60,14 @@ class JsonSchemaOutputValidator(schema: Schema, validationMode: ValidationMode) 
       valid
     else
       fields.map {
-        case (fName, fType) => validateTypingResult(fType, mapSchema.getSchemaOfAdditionalProperties, parentSchema, buildPath(fName, path))
+        case (fName, fType) => validateTypingResult(fType, mapSchema.getSchemaOfAdditionalProperties, buildPath(fName, path))
       }.reduceOption(_ combine _).getOrElse(Valid(()))
   }
 
   private def validateUnionInput(union: TypedUnion, schema: Schema, parentSchema: Schema, path: Option[String]) = {
-    if (validationMode == ValidationMode.strict && !union.possibleTypes.forall(validateTypingResult(_, schema, parentSchema, path).isValid))
+    if (validationMode == ValidationMode.strict && !union.possibleTypes.forall(validateTypingResult(_, schema, path).isValid))
       invalid(union, schema, parentSchema, path)
-    else if (validationMode == ValidationMode.lax && !union.possibleTypes.exists(validateTypingResult(_, schema, parentSchema, path).isValid))
+    else if (validationMode == ValidationMode.lax && !union.possibleTypes.exists(validateTypingResult(_, schema, path).isValid))
       invalid(union, schema, parentSchema, path)
     else
       valid
@@ -80,7 +80,7 @@ class JsonSchemaOutputValidator(schema: Schema, validationMode: ValidationMode) 
     def validateFieldsType(schemas: Map[String, Schema], fieldsToValidate: Map[String, TypingResult]) = {
       fieldsToValidate.flatMap { case (key, value) =>
         val fieldPath = buildPath(key, path)
-        schemas.get(key).map(f => validateTypingResult(value, f, parentSchema, fieldPath))
+        schemas.get(key).map(f => validateTypingResult(value, f, fieldPath))
       }.foldLeft[ValidatedNel[OutputValidatorError, Unit]](().validNel)((a, b) => a combine b)
     }
 

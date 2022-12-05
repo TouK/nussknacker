@@ -299,47 +299,6 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     }
   }
 
-  test("should handle nested non-raw mode") {
-    val output =
-      """
-        |{
-        |  "type": "object",
-        |  "properties": {
-        |    "field": {
-        |      "type": "object",
-        |      "additionalProperties": {
-        |        "type": "object",
-        |        "properties": {
-        |          "additionalField": { "type": "number" }
-        |        }
-        |      }
-        |    }
-        |  }
-        |}
-        |""".stripMargin
-    val params: List[(String, Expression)] = List(
-      "field" -> """{trala:'lala'}"""
-    )
-    val scenario = ScenarioBuilder
-      .requestResponse("test")
-      .additionalFields(properties = Map(
-        "inputSchema" -> "{}",
-        "outputSchema" -> output
-      ))
-      .source("input", "request")
-      .emptySink(sinkName, "response",
-        (SinkRawEditorParamName -> ("false": Expression)) :: params: _*
-      )
-
-    val result = runner.runWithRequests(scenario) { invoker =>
-      invoker(HttpRequest(HttpMethods.POST, entity = "{}")).rightValue
-    }
-
-    result should matchPattern {
-      case Invalid(NonEmptyList(CustomNodeError("response", _, Some("field")), Nil)) =>
-    }
-  }
-
   private def runWithResults(config: ScenarioConfig): ValidatedNel[ProcessCompilationError, Json] = {
     val scenario: CanonicalProcess = createScenario(config)
     val result = runner.runWithRequests(scenario) { invoker =>

@@ -12,7 +12,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -273,7 +273,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
     val result = runner.runWithStringData(scenario, List())
     result should matchPattern {
-      case Invalid(NonEmptyList(CustomNodeError(`sinkName`, _, Some(`incorrectFieldName`)), Nil)) =>
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(_, `sinkName`, Some("field"), """{trala:"lala"}"""), Nil)) =>
     }
 
   }

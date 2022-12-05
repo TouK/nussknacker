@@ -325,6 +325,10 @@ jobs:
       - name: Slow tests
         shell: bash
         run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
+      - name: Log
+        if: failure()
+        shell: bash
+        run: kubectl logs deploy/scenario-1234-foo-scenario-x
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
