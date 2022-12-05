@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks
 
-import cats.data.NonEmptyList
 import cats.data.Validated.valid
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -9,7 +8,6 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
-import pl.touk.nussknacker.engine.json.JsonSinkValueParameter.JsonParameterValidator
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
@@ -40,7 +38,6 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
   def rawParamStep()(implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(Nil, _) =>
       NextParameters(parameters = rawModeParam :: Nil, state = None)
-
   }
 
   override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): NodeTransformationDefinition = {
@@ -59,16 +56,11 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
     ) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
         .andThen { schema =>
-          val validationResult = new JsonSchemaOutputValidator(ValidationMode.fromString(mode, SinkValidationModeParameterName))
-            .validateTypingResultAgainstSchema(value.returnType, schema)
-            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
-            .leftMap(NonEmptyList.one)
-            .swap.toList.flatMap(_.toList)
-
-          val validator = new JsonParameterValidator(schema, ValidationMode.lax)
+          val validationMode = ValidationMode.fromString(mode, SinkValidationModeParameterName)
+          val validator = new JsonSchemaOutputValidator(schema, validationMode)
           val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter, validator)
-          //FIXME:
-          //valueParam.validateParams()
+          
+          val validationResult = valueParam.validateParams((SinkRawValueParamName, value) :: Nil, Nil).swap.toList.flatMap(_.toList)
           val state = EditorTransformationState(schema, valueParam)
           valid(FinalResults(context, validationResult, Option(state)))
         }.valueOr(e => FinalResults(context, e.toList))
@@ -89,10 +81,7 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
-      val toValidate = valueParams.map {
-        case (f, v) => (f, v.returnType)
-      }
-      val validationErrors = state.get.sinkValueParameter.validateParams(toValidate, Nil)
+      val validationErrors = state.get.sinkValueParameter.validateParams(valueParams, Nil)
       FinalResults(context, validationErrors.swap.toList.flatMap(_.toList), state)
   }
 

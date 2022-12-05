@@ -11,7 +11,6 @@ import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import scala.collection.immutable.ListMap
 
 class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
-  val validator = new JsonSchemaOutputValidator(ValidationMode.strict)
 
   test("should validate against 'map string to Any' schema") {
     val mapStringToAnySchema = JsonSchemaBuilder.parseSchema(
@@ -34,7 +33,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      validator.validateTypingResultAgainstSchema(typing, mapStringToAnySchema).isValid shouldBe isValid
+      new JsonSchemaOutputValidator(mapStringToAnySchema, ValidationMode.strict).validateTypingResultAgainstSchema(typing).isValid shouldBe isValid
     }
   }
 
@@ -60,7 +59,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      validator.validateTypingResultAgainstSchema(typing, mapStringToStringSchema).isValid shouldBe isValid
+      new JsonSchemaOutputValidator(mapStringToStringSchema, ValidationMode.strict).validateTypingResultAgainstSchema(typing).isValid shouldBe isValid
     }
   }
 
@@ -85,7 +84,7 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     )
 
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
-      validator.validateTypingResultAgainstSchema(typing, mapStringToStringOrIntSchema).isValid shouldBe isValid
+      new JsonSchemaOutputValidator(mapStringToStringOrIntSchema, ValidationMode.strict).validateTypingResultAgainstSchema(typing).isValid shouldBe isValid
     }
   }
 
@@ -96,8 +95,8 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
         |  "additionalProperties": {}
         |}""".stripMargin)
 
-    def validate(typing: TypingResult) = new JsonSchemaOutputValidator(ValidationMode.strict)
-      .validateTypingResultAgainstSchema(typing, emptyMapSchema)
+    def validate(typing: TypingResult) = new JsonSchemaOutputValidator(emptyMapSchema, ValidationMode.strict)
+      .validateTypingResultAgainstSchema(typing)
 
     validate(TypedObjectTypingResult(ListMap[String, TypingResult]())) shouldBe 'valid
     validate(TypedObjectTypingResult(ListMap("stringProp" -> Typed[String]))) shouldBe 'invalid

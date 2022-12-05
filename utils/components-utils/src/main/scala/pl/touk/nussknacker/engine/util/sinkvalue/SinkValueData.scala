@@ -1,11 +1,13 @@
 package pl.touk.nussknacker.engine.util.sinkvalue
 
-import cats.data.ValidatedNel
-import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
+import cats.data.{NonEmptyList, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.transformation.BaseDefinedParameter
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.{LazyParameter, NodeId}
 import pl.touk.nussknacker.engine.util.definition.LazyParameterUtils
+import pl.touk.nussknacker.engine.util.output.{OutputValidatorError, OutputValidatorErrorsConverter}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 
 import scala.collection.immutable.ListMap
@@ -33,27 +35,28 @@ object SinkValueData {
 
   type FieldName = String
 
-  trait ParameterValidator {
-    def validate(fieldName: FieldName, resultType: TypingResult)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
-  }
-
   sealed trait SinkValueParameter {
     def toParameters: List[Parameter] = this match {
       case SinkSingleValueParameter(value, _) => value :: Nil
       case SinkRecordParameter(fields) => fields.values.toList.flatMap(_.toParameters)
     }
-    def validateParams(resultType: List[(String, TypingResult)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
+    def validateParams(resultType: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit]
   }
 
-  case class SinkSingleValueParameter(value: Parameter, validator: ParameterValidator) extends SinkValueParameter {
-    override def validateParams(resultTypes: List[(String, TypingResult)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = resultTypes match {
-      case (a, resultType) :: Nil => validator.validate(a, resultType)
+  case class SinkSingleValueParameter(value: Parameter, validator: SinkValueValidator) extends SinkValueParameter {
+    override def validateParams(resultTypes: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = resultTypes match {
+      case (fieldName, resultType) :: Nil =>
+        val converter = new OutputValidatorErrorsConverter(fieldName)
+        validator
+          .validateTypingResultAgainstSchema(resultType.returnType)
+          .leftMap(converter.convertValidationErrors)
+          .leftMap(NonEmptyList.one)
       case _ => ???
     }
   }
 
   case class SinkRecordParameter(fields: ListMap[FieldName, SinkValueParameter]) extends SinkValueParameter {
-    override def validateParams(resultTypes: List[(String, TypingResult)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+    override def validateParams(resultTypes: List[(String, BaseDefinedParameter)], prefix: List[String])(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
       fields.map { case (fieldName, param) =>
         val newPrefix = prefix :+ fieldName
         val prefixed = resultTypes.filter(k => k._1.startsWith(newPrefix.mkString(".")))
@@ -63,3 +66,6 @@ object SinkValueData {
   }
 }
 
+trait SinkValueValidator {
+  def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit]
+}

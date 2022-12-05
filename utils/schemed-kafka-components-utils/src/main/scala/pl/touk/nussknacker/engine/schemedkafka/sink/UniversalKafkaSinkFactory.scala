@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
+import cats.data.Validated.valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -14,7 +15,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Universa
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
-import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValue
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkSingleValueParameter, SinkValueParameter}
 
@@ -43,8 +43,6 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
 
   override def paramsDeterminedAfterSchema: List[Parameter] = UniversalKafkaSinkFactory.paramsDeterminedAfterSchema
 
-  private val outputValidatorErrorsConverter = new OutputValidatorErrorsConverter(SinkValueParamName)
-
   private val rawValueParam: Parameter = Parameter[AnyRef](SinkValueParamName).copy(isLazyParameter = true)
   private val validationModeParam = Parameter[String](SinkValidationModeParameterName).copy(editor = Some(FixedValuesParameterEditor(ValidationMode.values.map(ep => FixedExpressionValue(s"'${ep.name}'", ep.label)))))
 
@@ -60,16 +58,17 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (SinkValueParamName, value: BaseDefinedParameter) :: Nil, _
     ) =>
-      val determinedSchema = getSchema(topic, version)
-      val validationResult = determinedSchema.map(_.schema)
+      getSchema(topic, version)
         .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
         .andThen { schema =>
-          val validator = UniversalSchemaSupport.forSchemaType(schema.schemaType()).parameterValidator(schema, ValidationMode.lax)
-          validator.validate(SinkValueParamName, value.returnType)
-        }.swap.toList.flatMap(_.toList)
-      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema,
-        SinkSingleValueParameter(rawValueParam, null)))
-      FinalResults(context, validationResult, finalState)
+          val validationMode = ValidationMode.fromString(mode, SinkValidationModeParameterName)
+          val validator = UniversalSchemaSupport.forSchemaType(schema.schema.schemaType()).parameterValidator(schema.schema, validationMode)
+          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam, validator)
+
+          val validationResult = valueParam.validateParams((SinkValueParamName, value) :: Nil, Nil).swap.toList.flatMap(_.toList)
+          val state = TransformationState(schema, valueParam)
+          valid(FinalResults(context, validationResult, Option(state)))
+        }.valueOr(e => FinalResults(context, e.toList))
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, _) ::
       (SinkValidationModeParameterName, _) :: (SinkValueParamName, _) :: Nil, _) => FinalResults(context, Nil)
@@ -85,8 +84,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       ) =>
       val determinedSchema = getSchema(topic, version)
       val validatedSchema = determinedSchema.andThen { s =>
-        schemaBasedMessagesSerdeProvider.validateSchema(s.schema)
-          .map(_ => s)
+        schemaBasedMessagesSerdeProvider.validateSchema(s)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       validatedSchema.andThen { schemaData =>

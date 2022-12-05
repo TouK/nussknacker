@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueValidator
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
 import scala.language.implicitConversions
@@ -26,7 +27,7 @@ object JsonSchemaOutputValidator {
   }
 }
 
-class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
+class JsonSchemaOutputValidator(schema: Schema, validationMode: ValidationMode) extends SinkValueValidator with LazyLogging {
 
   import JsonSchemaOutputValidator._
 
@@ -37,8 +38,8 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
    * To see what's we currently supporting see SwaggerBasedJsonSchemaTypeDefinitionExtractor as well
    */
-  def validateTypingResultAgainstSchema(typingResult: TypingResult, schema: Schema): ValidatedNel[OutputValidatorError, Unit] =
-    validateTypingResult(typingResult, schema, schema, None)
+  def validateTypingResultAgainstSchema(typingResult: TypingResult): ValidatedNel[OutputValidatorError, Unit] =
+    validateTypingResult(typingResult, schema, None)
 
   //todo: add support for: unions, enums, nested types, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, parentSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {

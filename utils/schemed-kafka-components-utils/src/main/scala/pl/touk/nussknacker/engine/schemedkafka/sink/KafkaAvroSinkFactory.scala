@@ -57,13 +57,13 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError)
         .leftMap(NonEmptyList.one)
       val validatedSchema = determinedSchema.andThen { s =>
-        schemaBasedMessagesSerdeProvider.validateSchema(s.schema)
+        schemaBasedMessagesSerdeProvider.validateSchema(s)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       val validationResult = validatedSchema
         .andThen { schema =>
-          new AvroSchemaOutputValidator(extractValidationMode(mode))
-            .validateTypingResultAgainstSchema(value.returnType, schema.rawSchema())
+          new AvroSchemaOutputValidator(schema.schema.rawSchema(), extractValidationMode(mode))
+            .validateTypingResultAgainstSchema(value.returnType)
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
         }.swap.toList.flatMap(_.toList)

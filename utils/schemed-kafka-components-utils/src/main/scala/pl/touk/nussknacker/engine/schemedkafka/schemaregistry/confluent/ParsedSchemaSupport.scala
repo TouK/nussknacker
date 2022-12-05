@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.JsonSinkValueParameter
-import pl.touk.nussknacker.engine.json.JsonSinkValueParameter.JsonParameterValidator
-import pl.touk.nussknacker.engine.json.encode.BestEffortJsonSchemaEncoder
+import pl.touk.nussknacker.engine.json.encode.{BestEffortJsonSchemaEncoder, JsonSchemaOutputValidator}
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode._
@@ -20,10 +19,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient, OpenAPIJsonSchema}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
-import pl.touk.nussknacker.engine.schemedkafka.sink.{AvroParameterValidator, AvroSinkValueParameter}
+import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueValidator
 
 sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupport {
   protected implicit class RichParsedSchema(p: ParsedSchema){
@@ -46,7 +45,7 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
     (value: Any) => encoder.encodeOrError(value, schema.cast().rawSchema())
   }
 
-  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueData.ParameterValidator = new AvroParameterValidator(schema.cast().rawSchema(), mode)
+  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueValidator = new AvroSchemaOutputValidator(schema.cast().rawSchema(), mode)
 
   override val recordFormatterSupport: RecordFormatterSupport = AvroPayloadRecordFromatterSupport
 }
@@ -71,8 +70,8 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
 
   override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 
-  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueData.ParameterValidator = {
-    new JsonParameterValidator(schema.cast().rawSchema(), mode)
+  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueValidator = {
+    new JsonSchemaOutputValidator(schema.cast().rawSchema(), mode)
   }
 }
 
@@ -95,5 +94,5 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
 
   override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
 
-  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueData.ParameterValidator = new AvroParameterValidator(schema.cast().rawSchema(), mode)
+  override def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueValidator = new AvroSchemaOutputValidator(schema.cast().rawSchema(), mode)
 }
