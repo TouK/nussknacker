@@ -46,16 +46,17 @@ When using the Raw editor, you can choose the validation mode:
 * strict - requires providing all fields, including optional fields, requires exact matching;
 * lax - requires providing only required fields, you can skip optional fields, exact matching is not required;
 
-(*) allowing/denying redundant fields is provided explicit by schema property: `additionalProperties`. 
-See more how to use [JSON Schema](/docs/scenarios_authoring/HandlingSchemas.md#json-schema).
+(*) allowing/denying redundant fields is provided explicitly by schema property: `additionalProperties`. 
+See more about how to use [JSON Schema](/docs/scenarios_authoring/HandlingSchemas.md#json-schema).
 
-(*) exact matching describes how output validation works for types Unknown and Union. Sometimes helpers or enrichers can
-return data  with type `Unknown` - it means we can't recognize type, consequently we have situation difficult to handle.
+(*) exact matching describes how output validation works for types Unknown and Union. Sometimes helpers or enrichers can 
+return data with type `Unknown` - it means we can't recognize the type, consequently, we have a situation difficult to handle.
 And it's the place where exact matching comes to help us:
 
-* strict mode doesn't allow to pass Unknown for any schema type. In situation when wy try to pass value with type
+* strict mode doesn't allow to pass Unknown for any schema type. In a situation when we try to pass a value with type
   union as the output with schema union, strict mode requires these two unions should be the same;
 
-* lax mode allow to pass Unknown for any schema type. In case of unions, lax mode requires situation when just only one type
-  from value union matches to schema union. But be aware of it, because when data will not match to the output schema
+* lax mode allows passing Unknown for any schema type. In the case of unions, lax mode requires a situation when just only one type
+  of value union matches to schema union. But be aware of it, because when data will not match the output schema
   exception will be thrown on runtime. We leave the decisions to the user.
+

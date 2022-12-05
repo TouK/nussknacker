@@ -1,5 +1,5 @@
 ---
-sidebar_position: `11
+sidebar_position: 11
 ---`
 
 # Handling Schemas
@@ -10,17 +10,18 @@ Nussknacker supports two types of schema:
 * [JSON Schema](https://json-schema.org/) in version: `Draft 7`
 * [Avro Schema](https://avro.apache.org/) in version: `1.11.0`
 
-Avro Schema nad JSON Schema are available on [Streaming Source/Sik](/docs/scenarios_authoring/DataSourcesAndSinks.md) 
+Avro Schema and JSON Schema are available on [Streaming Source/Sink](/docs/scenarios_authoring/DataSourcesAndSinks.md)
 in contrast to [RequestResponse Source/Sink](/docs/scenarios_authoring/RRDataSourcesAndSinks.md) where available is just only one - JSON Schema.
 
-Nussknacker converts `source schema` to own static `Typing` information to create hinting on the FE Designer,
-whereas `sink schema` is used to validation output data.
+Nussknacker converts `source schema` to its own static `Typing` information to create hinting on the FE Designer,
+whereas `sink schema` is used to validate output data.
 
 ## Source conversion
-Conversion at srouce to specific type means that behind the scene Nussknacker converts `primitive type` to `logical type`,
-consequently end user has access to object's methods, e.g. let's imagine schema contains field `foo` with logical type `Date`. 
-Originally event contains data with field `foo` where is stored `Long`. After conversion, field `foo` will be converted to `Date`,
-and the end user on Designer will have access to `#input.foo` with type `Date` and can do `#input.foo.toInstant`. 
+Conversion at source to specific type means that behind the scene Nussknacker converts `primitive type` to `logical type`
+consequently, the end-user has access to object's methods, e.g. let's imagine the schema contains the field `foo` with logical type `Date`.
+Originally event contains data with the field `foo` where is stored `Long`. After conversion, field `foo` will be converted to `Date`,
+and the end user on Designer will have access to `#input.foo` with type `Date` and can do `#input.foo.toInstant`.
+
 
 ## Avro Schema
 
@@ -43,7 +44,7 @@ and the end user on Designer will have access to `#input.foo` with type `Date` a
 
 ### Sink validation & encoding
 
-In avro we accept on outputs all compatible types with schemas, and also we allow to pass primitives for logical type: 
+In Avro we accept on outputs all compatible types with schemas, and also we allow to pass primitives for logical type: 
 * `java.lang.String` => `UUID`
 * `java.lang.Int`  => `Date`
 * `java.lang.Int` => `Time (millisecond precision)`
@@ -51,15 +52,14 @@ In avro we accept on outputs all compatible types with schemas, and also we allo
 * `java.lang.Long` => `Timestamp (millisecond precision)`
 * `java.lang.Long` => `Timestamp (microsecond precision)`
 
-If any value will be not proper logical type (e.g. "str" => UUID) then exception on runtime will be thrown.
+If any value will be not the proper logical type (e.g. "str" => UUID) then an exception on runtime will be thrown.
 
 ## JSON Schema
 
-To handling JSON Schema Nussknacker uses `everit-json-schema` in version `1.14.1`, and this lib provides some 
-inconsistency against JSON Schema, e.g.
+To handle JSON Schema Nussknacker uses `everit-json-schema` in version `1.14.1`, and this lib provides some inconsistency against JSON Schema, e.g.
 
 * integer schema should [accept value 1.0](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer) but
-  everit validation throws exception. This issue occurs only on deserialization data (source), on serialization (sink) we handled it.
+  everit validation throws an exception. This issue occurs only on deserialization data (source), on serialization (sink) we handled it.
 
 [//]: # (See SwaggerBasedJsonSchemaTypeDefinitionExtractor)
 Nussknacker doesn't support:
@@ -83,12 +83,12 @@ Nussknacker doesn't support:
 * `Object` => `java.util.HashMap`
   * Static properties (fields) typing
   * `additionalProperties` are supported, but additional fields won't be available during the hinting on the Designer. 
-  To get add field you have to do `#inpute.get("additional-field")`, but remember result of this expression will be `Unknown`.
+  To get add field you have to do `#inpute.get("additional-field")`, but remember the result of this expression will be `Unknown`.
   * Object without properties and `additionalProperties` is treated as `Map[String, Type]`, where `Type` is depends on
-  `additionalProperties` configuration: `true` means `Unknown`, `{"type": }` will be converted to specific type.
+  `additionalProperties` configuration: `true` means `Unknown`, `{"type": }` will be converted to a specific type.
 * Array
 * [Schema Composition](https://json-schema.org/understanding-json-schema/reference/combining.html)
-  * Nussknacker supports just `anyOf` and `oneOf` to build static typing information about field. 
+  * Nussknacker supports just `anyOf` and `oneOf` to build static typing information about the field. 
 
 ### Sink validation & encoding
 
