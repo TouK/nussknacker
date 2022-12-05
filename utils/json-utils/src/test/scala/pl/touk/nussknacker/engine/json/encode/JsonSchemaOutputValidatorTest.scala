@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.json.encode
 
-import org.everit.json.schema.Schema
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -88,6 +87,22 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     forAll(testData) { (typing: TypingResult, isValid: Boolean) =>
       validator.validateTypingResultAgainstSchema(typing, mapStringToStringOrIntSchema).isValid shouldBe isValid
     }
+  }
+
+  test("works for empty maps") {
+    val emptyMapSchema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {}
+        |}""".stripMargin)
+
+    def validate(typing: TypingResult) = new JsonSchemaOutputValidator(ValidationMode.strict)
+      .validateTypingResultAgainstSchema(typing, emptyMapSchema)
+
+    validate(TypedObjectTypingResult(ListMap[String, TypingResult]())) shouldBe 'valid
+    validate(TypedObjectTypingResult(ListMap("stringProp" -> Typed[String]))) shouldBe 'invalid
+    validate(TypedObjectTypingResult(ListMap("someMap" -> TypedObjectTypingResult(ListMap("any" -> Typed[String]))))) shouldBe 'valid
+
   }
 
 }

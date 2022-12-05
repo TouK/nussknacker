@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.json.encode
 
-import cats.data.Validated.condNel
+import cats.data.Validated.{Valid, condNel}
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 
-import scala.collection.mutable
 import scala.language.implicitConversions
 
 private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputValidatorExpected {
@@ -63,7 +62,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     else
       fields.map {
         case (fName, fType) => validateTypingResult(fType, mapSchema.getSchemaOfAdditionalProperties, buildPath(fName, path))
-      }.reduce(_ combine _)
+      }.reduceOption(_ combine _).getOrElse(Valid(()))
   }
 
   private def validateUnionInput(union: TypedUnion, schema: Schema, path: Option[String]) = {
