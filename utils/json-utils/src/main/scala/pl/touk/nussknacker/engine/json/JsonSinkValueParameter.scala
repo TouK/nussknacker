@@ -6,7 +6,12 @@ import org.everit.json.schema.{ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
+import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsConverter
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{ParameterValidator, SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
@@ -42,11 +47,24 @@ object JsonSinkValueParameter {
     val typing = swaggerTyped.typingResult
     //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
     val isOptional = !isRequired.getOrElse(false)
-    val parameter = (if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing))
-      .copy(isLazyParameter = true, defaultValue = defaultValue.map(_.expression), editor = swaggerTyped.editorOpt)
+    val parameter = (
+      if (isOptional) Parameter.optional(paramName, typing) else Parameter(paramName, typing)
+      ).copy(
+      isLazyParameter = true,
+      defaultValue = defaultValue.map(_.expression),
+      editor = swaggerTyped.editorOpt
+    )
+    SinkSingleValueParameter(parameter, new JsonParameterValidator(schema, ValidationMode.lax))
+  }
 
-      SinkSingleValueParameter(parameter)
+  class JsonParameterValidator(schema: Schema, validationMode: ValidationMode) extends ParameterValidator {
+    val validator = new JsonSchemaOutputValidator(validationMode)
+
+    override def validate(fieldName: FieldName, resultType: TypingResult)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, Unit] = {
+      val converter = new OutputValidatorErrorsConverter(fieldName)
+      validator.validateTypingResultAgainstSchema(resultType, schema).leftMap(converter.convertValidationErrors).leftMap(NonEmptyList.one)
     }
+  }
 
     private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], isRequired: Option[Boolean]): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
       import cats.implicits.{catsStdInstancesForList, toTraverseOps}

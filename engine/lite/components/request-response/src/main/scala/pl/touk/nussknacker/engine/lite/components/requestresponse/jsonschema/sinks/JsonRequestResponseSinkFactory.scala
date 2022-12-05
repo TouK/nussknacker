@@ -7,9 +7,9 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, NodeDependencyValue, SingleInputGenericNodeTransformation}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.TypedObjectTypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}
+import pl.touk.nussknacker.engine.json.JsonSinkValueParameter.JsonParameterValidator
 import pl.touk.nussknacker.engine.json.encode.JsonSchemaOutputValidator
 import pl.touk.nussknacker.engine.json.{JsonSchemaExtractor, JsonSinkValueParameter}
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings.OutputSchemaProperty
@@ -65,7 +65,10 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
             .leftMap(NonEmptyList.one)
             .swap.toList.flatMap(_.toList)
 
-          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter)
+          val validator = new JsonParameterValidator(schema, ValidationMode.lax)
+          val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter, validator)
+          //FIXME:
+          //valueParam.validateParams()
           val state = EditorTransformationState(schema, valueParam)
           valid(FinalResults(context, validationResult, Option(state)))
         }.valueOr(e => FinalResults(context, e.toList))
@@ -86,12 +89,10 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
-      val validationErrors = jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies).andThen { schema =>
-        new JsonSchemaOutputValidator(ValidationMode.lax)
-          .validateTypingResultAgainstSchema(TypedObjectTypingResult(valueParams.toMap.mapValues(_.returnType).toList), schema)
-          .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
-          .leftMap(NonEmptyList.one)
+      val toValidate = valueParams.map {
+        case (f, v) => (f, v.returnType)
       }
+      val validationErrors = state.get.sinkValueParameter.validateParams(toValidate, Nil)
       FinalResults(context, validationErrors.swap.toList.flatMap(_.toList), state)
   }
 

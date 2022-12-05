@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
-import pl.touk.nussknacker.engine.util.output.OutputValidatorError
+import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 object UniversalSchemaSupport {
@@ -31,7 +31,7 @@ trait UniversalSchemaSupport {
   def typeDefinition(schema: ParsedSchema): TypingResult
   def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
   def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
-  def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit]
+  def parameterValidator(schema: ParsedSchema, mode: ValidationMode): SinkValueData.ParameterValidator
   val recordFormatterSupport: RecordFormatterSupport
 }
 

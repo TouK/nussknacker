@@ -64,12 +64,11 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       val validationResult = determinedSchema.map(_.schema)
         .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
         .andThen { schema =>
-          UniversalSchemaSupport.forSchemaType(schema.schemaType())
-            .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
-            .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
-            .leftMap(NonEmptyList.one)
+          val validator = UniversalSchemaSupport.forSchemaType(schema.schemaType()).parameterValidator(schema, ValidationMode.lax)
+          validator.validate(SinkValueParamName, value.returnType)
         }.swap.toList.flatMap(_.toList)
-      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema, SinkSingleValueParameter(rawValueParam)))
+      val finalState = determinedSchema.toOption.map(schema => TransformationState(schema,
+        SinkSingleValueParameter(rawValueParam, null)))
       FinalResults(context, validationResult, finalState)
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, _) ::
@@ -103,7 +102,8 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           }
         }
       }.valueOr(e => FinalResults(context, e.toList))
-    case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) => FinalResults(context, Nil, state)
+    case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
+      FinalResults(context, Nil, state)
   }
 
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {

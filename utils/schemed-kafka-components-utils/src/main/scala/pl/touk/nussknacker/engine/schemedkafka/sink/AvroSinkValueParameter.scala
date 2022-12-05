@@ -3,14 +3,15 @@ package pl.touk.nussknacker.engine.schemedkafka.sink
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import org.apache.avro.Schema
+import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.definition.Parameter
-import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkValidationModeParameterName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
-import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.graph.expression.Expression
-import pl.touk.nussknacker.engine.api.NodeId
+import pl.touk.nussknacker.engine.schemedkafka.AvroDefaultExpressionDeterminer
+import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
+import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
@@ -79,6 +80,6 @@ object AvroSinkSingleValueParameter {
       isLazyParameter = true,
       defaultValue = defaultValue.map(_.expression)
     )
-    SinkSingleValueParameter(parameter)
+    SinkSingleValueParameter(parameter, new AvroParameterValidator(schema, ValidationMode.lax))
   }
 }
