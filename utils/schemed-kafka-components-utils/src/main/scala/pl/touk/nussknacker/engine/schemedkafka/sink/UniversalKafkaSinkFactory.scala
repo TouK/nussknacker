@@ -4,10 +4,9 @@ import cats.data.NonEmptyList
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
-import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
+import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, DefinedLazyParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
-import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -49,22 +48,19 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
   protected def rawEditorParameterStep(context: ValidationContext)
                                       (implicit nodeId: NodeId): NodeTransformationDefinition = {
     case TransformationStep(
-    (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
-      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
+    (`topicParamName`, DefinedEagerParameter(_: String, _)) ::
+      (SchemaVersionParamName, DefinedEagerParameter(_: String, _)) ::
       (SinkKeyParamName, _) ::
       (SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
-        val resultType = getSchema(topic, version)
-          .map(_.schema)
-          .map(schema => UniversalSchemaSupport.forSchemaType(schema.schemaType()).typeDefinition(schema))
-          .getOrElse(Unknown)
-        NextParameters(validationModeParam :: Parameter(SinkValueParamName, resultType).copy(isLazyParameter = true) :: Nil)
+        //TODO: use resultType here to show type hints on UI (breaks some tests...)
+        NextParameters(validationModeParam :: rawValueParam :: Nil)
     case TransformationStep(
     (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
       (SinkKeyParamName, _) ::
       (SinkRawEditorParamName, DefinedEagerParameter(true, _)) ::
       (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
-      (SinkValueParamName, value: BaseDefinedParameter) :: Nil, _
+      (SinkValueParamName, value: DefinedLazyParameter) :: Nil, _
     ) =>
       getSchema(topic, version)
         .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
