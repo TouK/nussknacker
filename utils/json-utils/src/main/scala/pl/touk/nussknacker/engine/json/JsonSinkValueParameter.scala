@@ -24,7 +24,7 @@ object JsonSinkValueParameter {
   private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultParamName: String, defaultValue: Option[Expression], isRequired: Option[Boolean])
                                   (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     schema match {
-      case objectSchema: ObjectSchema =>
+      case objectSchema: ObjectSchema if !(objectSchema.getPropertySchemas.isEmpty && objectSchema.permitsAdditionalProperties()) =>
         objectSchemaToSinkValueParameter(objectSchema, paramName, defaultParamName = defaultParamName, isRequired = None) //ObjectSchema doesn't use property required
       case _ =>
         Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(defaultParamName), defaultValue, isRequired))

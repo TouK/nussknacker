@@ -11,10 +11,11 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, ExpressionParserCompilationError}
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.components.requestresponse.jsonschema.sinks.JsonRequestResponseSink
 import pl.touk.nussknacker.engine.lite.util.test.RequestResponseTestScenarioRunner
@@ -75,6 +76,61 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     ObjectFieldName -> sampleStr,
     AdditionalFieldName -> "str"
   )
+
+
+  test("should handle nested non-raw mode") {
+    val input =
+      """
+        |{
+        | "type": "object",
+        | "additionalProperties": {
+        |    "type": "object",
+        |    "properties": {
+        |      "additionalField": { "type": "string" }
+        |     }
+        |   }
+        |}
+        |""".stripMargin
+    val output =
+      """
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "field": {
+        |      "type": "object",
+        |      "additionalProperties": {
+        |        "type": "object",
+        |        "properties": {
+        |          "additionalField": { "type": "number" }
+        |        }
+        |      }
+        |    }
+        |  }
+        |}
+        |""".stripMargin
+    val params: List[(String, Expression)] = List(
+      //TODO: currently inline map is not properly typed here :/
+      "field" -> "#input"
+    )
+    val scenario = ScenarioBuilder
+      .requestResponse("test")
+      .additionalFields(properties = Map(
+        "inputSchema" -> input,
+        "outputSchema" -> output
+      ))
+      .source("input", "request")
+      .emptySink(sinkName, "response",
+        (SinkRawEditorParamName -> ("false": Expression)) :: params: _*
+      )
+
+    val result = runner.runWithRequests(scenario) { invoker =>
+      invoker(HttpRequest(HttpMethods.POST, entity = "{}"))
+    }
+
+    result should matchPattern {
+      case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil)) if message.startsWith("Bad expression type") =>
+    }
+  }
 
   test("should test e2e request-response flow at sink and source / handling nulls and empty json" ) {
     val testData = Table(
