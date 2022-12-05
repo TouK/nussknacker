@@ -299,7 +299,6 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     }
   }
 
-
   test("should handle nested non-raw mode") {
     val output =
       """
@@ -335,7 +334,10 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     val result = runner.runWithRequests(scenario) { invoker =>
       invoker(HttpRequest(HttpMethods.POST, entity = "{}")).rightValue
     }
-    println(result)
+
+    result should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError("response", _, Some("field")), Nil)) =>
+    }
   }
 
   private def runWithResults(config: ScenarioConfig): ValidatedNel[ProcessCompilationError, Json] = {

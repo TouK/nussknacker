@@ -98,6 +98,14 @@ trait GenericNodeTransformation[T] {
       )
     }
 
+    def forValidation(context: ValidationContext, validation: ValidatedNel[ProcessCompilationError, _], state: Option[State]): FinalResults = {
+      FinalResults(
+        context,
+        validation.swap.map(_.toList).getOrElse(Nil),
+        state
+      )
+    }
+
   }
 
   case class TransformationStep(parameters: List[(String, DefinedParameter)], state: Option[State])

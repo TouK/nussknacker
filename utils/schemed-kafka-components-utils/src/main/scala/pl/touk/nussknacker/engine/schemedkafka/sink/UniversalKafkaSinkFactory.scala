@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.context.ValidationContext
 import pl.touk.nussknacker.engine.api.context.transformation.{BaseDefinedParameter, DefinedEagerParameter, NodeDependencyValue}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, SinkFactory}
+import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
@@ -48,13 +49,21 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
 
   protected def rawEditorParameterStep(context: ValidationContext)
                                       (implicit nodeId: NodeId): NodeTransformationDefinition = {
-    case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
-      NextParameters(validationModeParam :: rawValueParam :: Nil)
     case TransformationStep(
     (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
       (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
       (SinkKeyParamName, _) ::
-      (SinkRawEditorParamName, _) ::
+      (SinkRawEditorParamName, DefinedEagerParameter(true, _)) :: Nil, _) =>
+        val resultType = getSchema(topic, version)
+          .map(_.schema)
+          .map(schema => UniversalSchemaSupport.forSchemaType(schema.schemaType()).typeDefinition(schema))
+          .getOrElse(Unknown)
+        NextParameters(validationModeParam :: Parameter(SinkValueParamName, resultType).copy(isLazyParameter = true) :: Nil)
+    case TransformationStep(
+    (`topicParamName`, DefinedEagerParameter(topic: String, _)) ::
+      (SchemaVersionParamName, DefinedEagerParameter(version: String, _)) ::
+      (SinkKeyParamName, _) ::
+      (SinkRawEditorParamName, DefinedEagerParameter(true, _)) ::
       (SinkValidationModeParameterName, DefinedEagerParameter(mode: String, _)) ::
       (SinkValueParamName, value: BaseDefinedParameter) :: Nil, _
     ) =>
@@ -101,7 +110,8 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
         }
       }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
-      FinalResults(context, Nil, state)
+      val validationErrors = state.get.sinkValueParameter.validateParams(valueParams, Nil)
+      FinalResults.forValidation(context, validationErrors, state)
   }
 
   private def getSchema(topic: String, version: String)(implicit nodeId: NodeId) = {

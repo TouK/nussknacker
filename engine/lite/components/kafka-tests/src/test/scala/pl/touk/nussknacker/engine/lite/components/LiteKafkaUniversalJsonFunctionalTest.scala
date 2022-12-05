@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated
+import cats.data.Validated.Invalid
+import cats.data.{NonEmptyList, Validated}
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -11,9 +12,11 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -226,6 +229,53 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
       message shouldBe expected
     }
+  }
+
+  test("should handle nested non-raw mode") {
+    val incorrectFieldName = "field"
+
+    val outputSchema = JsonSchemaBuilder.parseSchema(s"""
+        |{
+        |  "type": "object",
+        |  "properties": {
+        |    "$incorrectFieldName": {
+        |      "type": "object",
+        |      "additionalProperties": {
+        |        "type": "object",
+        |        "properties": {
+        |          "additionalField": { "type": "number" }
+        |        }
+        |      }
+        |    }
+        |  }
+        |}
+        |""".stripMargin)
+
+    val sourceTopic = "source"
+    val sinkTopic = "sink"
+
+    val scenario = ScenarioBuilder
+      .streamingLite("test")
+      .source(sourceName, KafkaUniversalName,
+        TopicParamName -> s"'$sourceTopic'",
+        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'"
+      )
+      .emptySink(sinkName, KafkaUniversalName,
+        TopicParamName -> s"'${sinkTopic}'",
+        SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
+        SinkKeyParamName -> "",
+        SinkRawEditorParamName -> "false",
+        incorrectFieldName -> """{trala:"lala"}"""
+      )
+
+    runner.registerJsonSchema(sourceTopic, JsonSchemaBuilder.parseSchema("{}"))
+    runner.registerJsonSchema(sinkTopic, outputSchema)
+
+    val result = runner.runWithStringData(scenario, List())
+    result should matchPattern {
+      case Invalid(NonEmptyList(CustomNodeError(`sinkName`, _, Some(`incorrectFieldName`)), Nil)) =>
+    }
+
   }
 
   private def runWithValueResults(config: ScenarioConfig) =

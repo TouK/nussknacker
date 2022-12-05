@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.engine.util.sinkvalue
 
-import cats.data.{NonEmptyList, ValidatedNel}
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CannotCreateObjectError
 import pl.touk.nussknacker.engine.api.context.transformation.BaseDefinedParameter
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
@@ -51,7 +52,7 @@ object SinkValueData {
           .validateTypingResultAgainstSchema(resultType.returnType)
           .leftMap(converter.convertValidationErrors)
           .leftMap(NonEmptyList.one)
-      case _ => ???
+      case _ => Validated.invalidNel(CannotCreateObjectError("Unexpected parameter list", nodeId.id))
     }
   }
 
