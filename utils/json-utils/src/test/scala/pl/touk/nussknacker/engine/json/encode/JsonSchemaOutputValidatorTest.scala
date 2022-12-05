@@ -103,5 +103,4 @@ class JsonSchemaOutputValidatorTest extends AnyFunSuite with Matchers with Table
     validate(TypedObjectTypingResult(ListMap("someMap" -> TypedObjectTypingResult(ListMap("any" -> Typed[String]))))) shouldBe 'valid
 
   }
-
 }
