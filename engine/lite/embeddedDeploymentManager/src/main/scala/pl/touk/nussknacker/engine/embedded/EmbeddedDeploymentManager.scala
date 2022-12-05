@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.{BaseModelData, ModelData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -43,6 +43,11 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
   override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
     RequestResponseDeploymentStrategy.defaultSlug(scenarioName)
 
+  override def additionalValidators(config: Config): List[CustomProcessValidator] = forMode(config)(
+    Nil,
+    List(EmbeddedRequestResponseScenarioValidator)
+  )
+
   override def name: String = "lite-embedded"
 
 }
@@ -63,11 +68,7 @@ class EmbeddedDeploymentManager(override protected val modelData: ModelData,
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
-
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    // TODO: it should be moved into CustomProcessValidator after refactor of it
-    Future.fromTry(EmbeddedLiteScenarioValidator.validate(canonicalProcess).toEither.toTry)
-  }
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     Future.successful(deployScenarioClosingOldIfNeeded(processVersion, canonicalProcess, throwInterpreterRunExceptionsImmediately = true))

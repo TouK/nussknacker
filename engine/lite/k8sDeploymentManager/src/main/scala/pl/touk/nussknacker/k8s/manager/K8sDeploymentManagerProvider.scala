@@ -32,7 +32,7 @@ class K8sDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override def additionalValidators(config: Config): List[CustomProcessValidator] = forMode(config)(
     Nil,
-    List(new RequestResponseScenarioValidator(K8sDeploymentManagerConfig.parse(config).nussknackerInstanceName))
+    List(RequestResponseScenarioValidator(K8sDeploymentManagerConfig.parse(config)))
   )
 
   override def name: String = "lite-k8s"
