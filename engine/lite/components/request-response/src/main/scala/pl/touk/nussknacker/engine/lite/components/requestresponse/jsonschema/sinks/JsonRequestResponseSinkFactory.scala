@@ -55,14 +55,14 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
       (SinkRawValueParamName, value) :: Nil, _
     ) =>
       jsonSchemaExtractor.getSchemaFromProperty(OutputSchemaProperty, dependencies)
-        .andThen { schema =>
+        .map { schema =>
           val validationMode = ValidationMode.fromString(mode, SinkValidationModeParameterName)
           val validator = new JsonSchemaOutputValidator(schema, validationMode)
           val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam.parameter, validator)
           
-          val validationResult = valueParam.validateParams((SinkRawValueParamName, value) :: Nil, Nil).swap.toList.flatMap(_.toList)
+          val validationResult = valueParam.validateParams((SinkRawValueParamName, value) :: Nil, Nil)
           val state = EditorTransformationState(schema, valueParam)
-          valid(FinalResults(context, validationResult, Option(state)))
+          FinalResults.forValidation(context, validationResult, Option(state))
         }.valueOr(e => FinalResults(context, e.toList))
   }
 

@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.sink
 
 import cats.data.NonEmptyList
-import cats.data.Validated.valid
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNodeError
 import pl.touk.nussknacker.engine.api.context.ValidationContext
@@ -69,14 +68,14 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     ) =>
       getSchema(topic, version)
         .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
-        .andThen { schema =>
+        .map { schema =>
           val validationMode = ValidationMode.fromString(mode, SinkValidationModeParameterName)
           val validator = UniversalSchemaSupport.forSchemaType(schema.schema.schemaType()).parameterValidator(schema.schema, validationMode)
           val valueParam: SinkValueParameter = SinkSingleValueParameter(rawValueParam, validator)
 
-          val validationResult = valueParam.validateParams((SinkValueParamName, value) :: Nil, Nil).swap.toList.flatMap(_.toList)
+          val validationResult = valueParam.validateParams((SinkValueParamName, value) :: Nil, Nil)
           val state = TransformationState(schema, valueParam)
-          valid(FinalResults(context, validationResult, Option(state)))
+          FinalResults.forValidation(context, validationResult, Option(state))
         }.valueOr(e => FinalResults(context, e.toList))
     //edge case - for some reason Topic/Version is not defined
     case TransformationStep((`topicParamName`, _) :: (SchemaVersionParamName, _) :: (SinkKeyParamName, _) :: (SinkRawEditorParamName, _) ::
