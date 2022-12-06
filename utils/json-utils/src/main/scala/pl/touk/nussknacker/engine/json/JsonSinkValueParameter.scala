@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
@@ -24,7 +25,7 @@ object JsonSinkValueParameter {
   private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultParamName: String, defaultValue: Option[Expression], isRequired: Option[Boolean])
                                   (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     schema match {
-      case objectSchema: ObjectSchema if !(objectSchema.getPropertySchemas.isEmpty && objectSchema.permitsAdditionalProperties()) =>
+      case objectSchema: ObjectSchema if !objectSchema.hasOnlyAdditionalProperties =>
         objectSchemaToSinkValueParameter(objectSchema, paramName, defaultParamName = defaultParamName, isRequired = None) //ObjectSchema doesn't use property required
       case _ =>
         Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(defaultParamName), defaultValue, isRequired))

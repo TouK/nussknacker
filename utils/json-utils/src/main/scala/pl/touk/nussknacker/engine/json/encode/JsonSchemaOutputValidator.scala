@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
+import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
 import scala.language.implicitConversions
 
@@ -17,12 +18,9 @@ private[encode] case class JsonSchemaExpected(schema: Schema) extends OutputVali
 }
 
 object JsonSchemaOutputValidator {
-  implicit class RichObjectSchema(s: ObjectSchema) {
-    val representsMap = s.permitsAdditionalProperties() && s.getPropertySchemas.isEmpty
-  }
 
   private implicit class RichTypedClass(t: TypedClass) {
-    val representsMapWithStringKeys = {
+    val representsMapWithStringKeys: Boolean = {
       t.klass == classOf[java.util.Map[_, _]] && t.params.size == 2 && t.params.head == Typed.typedClass[String]
     }
   }
@@ -49,9 +47,9 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       case (Unknown, _) if validationMode == ValidationMode.strict => invalid(typingResult, schema, path)
       case (union: TypedUnion, _) =>
         validateUnionInput(union, schema, path)
-      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if s.representsMap => validateMapSchema(path, s, typingResult.fields.toList: _*)
-      case (tc: TypedClass, s: ObjectSchema) if s.representsMap && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("value", tc.params.tail.head))
-      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if !s.representsMap => validateRecordSchema(typingResult, s, path)
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if s.hasOnlyAdditionalProperties => validateMapSchema(path, s, typingResult.fields.toList: _*)
+      case (tc: TypedClass, s: ObjectSchema) if s.hasOnlyAdditionalProperties && tc.representsMapWithStringKeys => validateMapSchema(path, s, ("value", tc.params.tail.head))
+      case (typingResult: TypedObjectTypingResult, s: ObjectSchema) if !s.hasOnlyAdditionalProperties => validateRecordSchema(typingResult, s, path)
       case (_, _) => canBeSubclassOf(typingResult, schema, path)
     }
   }

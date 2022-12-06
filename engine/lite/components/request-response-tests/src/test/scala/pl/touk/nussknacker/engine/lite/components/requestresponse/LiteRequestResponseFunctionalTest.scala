@@ -123,9 +123,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
         (SinkRawEditorParamName -> ("false": Expression)) :: params: _*
       )
 
-    val result = runner.runWithRequests(scenario) { invoker =>
-      invoker(HttpRequest(HttpMethods.POST, entity = "{}"))
-    }
+    val result = runner.runWithRequests(scenario) { _ => }
 
     result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil)) if message.startsWith("Bad expression type") =>
