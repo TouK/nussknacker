@@ -205,6 +205,20 @@ There are a few notable exceptions:
 | `#nullVar?:'Unknown'`                        | "Unknown" | String   |
 | `'john'?:'Unknown'`                          | "john"    | String   |
 
+## Relational operators
+
+| Operator | Equivalent symbolic operator | Example expression | Result |
+|----------|------------------------------|--------------------|--------|
+| `lt`     | `<`                          | `3 lt 5`           | true   |
+| `gt`     | `>`                          | `4 gt 4`           | false  |
+| `le`     | `<=`                         | `3 le 5`           | true   |
+| `ge`     | `>=`                         | `4 ge 4`           | true   |
+| `eq`     | `==`                         | `3 eq 3`           | true   |
+| `ne`     | `!=`                         | `4 ne 2`           | true   |
+| `div`    | `/`                          | `6 div 2`          | 3      |
+| `mod`    | `%`                          | `23 mod 7`         | 2      |
+| `not`    | `!`                          | `not true`         | false  |
+
 ## Method invocations
 
 As Nussknacker uses Java types, some objects are more than data containers - there are additional methods 
