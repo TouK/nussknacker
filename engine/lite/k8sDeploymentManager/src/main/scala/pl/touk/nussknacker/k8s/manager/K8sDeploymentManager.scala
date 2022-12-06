@@ -6,21 +6,18 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.BaseModelData
-import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName}
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter
-import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager._
 import pl.touk.nussknacker.k8s.manager.K8sUtils.{sanitizeLabel, sanitizeObjectName, shortHash}
 import pl.touk.nussknacker.k8s.manager.deployment.K8sScalingConfig.DividingParallelismConfig
 import pl.touk.nussknacker.k8s.manager.deployment._
 import pl.touk.nussknacker.k8s.manager.ingress.IngressPreparer
 import pl.touk.nussknacker.k8s.manager.service.ServicePreparer
+import pl.touk.nussknacker.lite.manager.LiteDeploymentManager
 import skuber.LabelSelector.Requirement
 import skuber.LabelSelector.dsl._
 import skuber.apps.v1.Deployment
@@ -34,8 +31,10 @@ import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
 
-class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManagerConfig)
-                          (implicit ec: ExecutionContext, actorSystem: ActorSystem) extends BaseDeploymentManager with LazyLogging {
+class K8sDeploymentManager(override protected val modelData: BaseModelData,
+                           config: K8sDeploymentManagerConfig)
+                          (implicit ec: ExecutionContext, actorSystem: ActorSystem)
+  extends LiteDeploymentManager with LazyLogging {
 
   //TODO: how to use dev-application.conf with not k8s config?
   private lazy val k8s = k8sInit
@@ -175,14 +174,6 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
     }
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
-    Future {
-      modelData.asInvokableModelData.withThisAsContextClassLoader {
-        KafkaTransactionalScenarioInterpreter.testRunner.runTest(modelData.asInvokableModelData, testData, canonicalProcess, variableEncoder)
-      }
-    }
-  }
-
   override def findJobStatus(name: ProcessName): Future[Option[ProcessState]] = {
     val mapper = new K8sDeploymentStatusMapper(processStateDefinitionManager)
     for {
@@ -227,6 +218,8 @@ class K8sDeploymentManager(modelData: BaseModelData, config: K8sDeploymentManage
   private def wrapInModelConfig(config: Config): Config = {
     ConfigFactory.parseMap(Collections.singletonMap("modelConfig", config.root()))
   }
+
+  override protected def executionContext: ExecutionContext = ec
 
 }
 

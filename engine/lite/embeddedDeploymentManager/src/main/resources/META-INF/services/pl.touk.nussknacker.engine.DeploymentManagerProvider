@@ -1,2 +1,1 @@
-pl.touk.nussknacker.engine.embedded.StreamingEmbeddedDeploymentManagerProvider
-pl.touk.nussknacker.engine.embedded.RequestResponseEmbeddedDeploymentManagerProvider
+pl.touk.nussknacker.engine.embedded.EmbeddedDeploymentManagerProvider

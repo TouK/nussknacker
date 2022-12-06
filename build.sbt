@@ -1094,7 +1094,7 @@ lazy val liteEmbeddedDeploymentManager = (project in lite("embeddedDeploymentMan
   settings(
     name := "nussknacker-lite-embedded-deploymentManager",
   ).dependsOn(
-  liteEngineKafkaRuntime, requestResponseRuntime, deploymentManagerApi % "provided",
+  liteDeploymentManager, deploymentManagerApi % "provided", liteEngineKafkaRuntime, requestResponseRuntime,
   liteKafkaComponents % "test", liteRequestResponseComponents % "test", componentsUtils % "test",
   testUtils % "test", kafkaTestUtils % "test", schemedKafkaComponentsUtils % "test->test")
 
@@ -1140,9 +1140,17 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
       buildAndImportRuntimeImageToK3d
     ).value
   ).dependsOn(
-  liteEngineKafkaRuntime, // for tests mechanism purpose
-  requestResponseComponentsApi, deploymentManagerApi % "provided", testUtils % "test")
+  liteDeploymentManager, deploymentManagerApi % "provided", testUtils % "test")
 
+lazy val liteDeploymentManager = (project in lite("deploymentManager")).
+  enablePlugins().
+  settings(commonSettings).
+  settings(
+    name := "nussknacker-lite-deploymentManager"
+  ).dependsOn(
+  liteEngineKafkaRuntime, // for tests mechanism purpose
+  requestResponseComponentsApi, // for rr additional properties
+  deploymentManagerApi % "provided")
 
 lazy val componentsApi = (project in file("components-api")).
   settings(commonSettings).
@@ -1518,7 +1526,8 @@ lazy val modules = List[ProjectReference](
   flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
-  liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
+  liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest,
+  liteDeploymentManager, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,
   liteRequestResponseComponents, liteRequestResponseComponentsTests, scenarioApi, commonApi, jsonUtils, liteComponentsTestkit, flinkComponentsTestkit, mathUtils
 )
 lazy val modulesWithBom: List[ProjectReference] = bom :: modules
