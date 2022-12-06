@@ -1,0 +1,37 @@
+openapi: "3.0.0"
+info:
+  title: Recursive scheme
+  version: 1.0.0
+servers:
+  - url: http://localhost/v1
+paths:
+  /testRecursive:
+    get:
+      operationId: testRecursive
+      responses:
+        '200':
+          description:
+            Returns ComponentsByAccount.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecursiveListPair'
+components:
+  schemas:
+    #we have a pair here to check if we don't collect usage references breadth-first...
+    RecursiveListPair:
+      type: object
+      properties:
+        left:
+          "$ref": "#/components/schemas/RecursiveList"
+        right:
+          "$ref": "#/components/schemas/RecursiveList"
+    RecursiveList:
+      type: object
+      properties:
+        value:
+          type: string
+        next:
+          "$ref": "#/components/schemas/RecursiveList"
+      required:
+        - value
