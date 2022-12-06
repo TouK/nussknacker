@@ -1,11 +1,14 @@
 package pl.touk.nussknacker.openapi.parser
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.swagger
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerBool, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.openapi._
+
+import scala.collection.immutable.ListMap
 
 class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
@@ -84,6 +87,30 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
     openApi.find(_.exists(_.name == ServiceName("valid"))) shouldBe 'defined
     openApi.find(_.swap.exists(_.name == ServiceName("noResponseType"))) shouldBe 'defined
+
+  }
+
+  test("handles recursive scheme") {
+    val openApi = parseServicesFromResourceUnsafe("recursive.yml")
+
+    val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
+    val recursiveListType = SwaggerObject(Map(
+      "value" -> SwaggerString,
+      "next" -> SwaggerRecursiveSchemaFallback,
+      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchemaFallback)),
+      "list" -> SwaggerArray(SwaggerRecursiveSchemaFallback)
+    ))
+    responseType shouldBe Some(SwaggerObject(Map(
+      "left" -> recursiveListType,
+      "right" -> recursiveListType
+    )))
+    recursiveListType.typingResult shouldBe TypedObjectTypingResult(ListMap(
+      "value" -> Typed[String],
+      "next" -> Unknown,
+      //union String + Unknown
+      "union" -> Unknown,
+      "list" -> Typed.genericTypeClass[java.util.List[_]](List(Unknown))
+    ))
 
   }
 

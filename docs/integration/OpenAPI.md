@@ -34,9 +34,11 @@ Table below describes data types that OpenAPI integration handles:
 | array         |                | array               |
 | map/object    |                | record              |
 
-OpenAPI integration can handle schema references. 
+OpenAPI integration can handle schema references. However, we don't support recursive schemas at the moment. 
+Recursive schema occurrences will be replaced with `Unknown` type. 
+
 For objects and maps we use `properties` to define structure.
-For arrays we use `items` to define type of elements.                    
+For arrays, we use `items` to define type of elements.                    
                                                                                                            
 
 ## Configuration

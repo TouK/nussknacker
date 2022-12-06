@@ -48,23 +48,31 @@ case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additiona
 
 case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
+//mapped to Unknown in type system
+case object SwaggerRecursiveSchemaFallback extends SwaggerTyped
+
 object SwaggerTyped {
 
+  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
+
   @tailrec
-  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = schema match {
-    case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas)
-    case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas)
-    case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas)
+  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]): SwaggerTyped = schema match {
+    case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas, usedSchemas)
+    case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
+    case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas, usedSchemas)
     case _ => Option(schema.get$ref()) match {
+      //handle recursive schemas better
+      case Some(ref) if usedSchemas.contains(ref) =>
+        SwaggerRecursiveSchemaFallback
       case Some(ref) =>
-        SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas)
+        SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas)
+        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
-        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas)
-        case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
-        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas)
+        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
+        case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate
@@ -83,7 +91,7 @@ object SwaggerTyped {
     }
   }
 
-  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas)).toList)
+  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas, usedSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)
@@ -116,28 +124,30 @@ object SwaggerTyped {
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
     case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
+    case SwaggerRecursiveSchemaFallback =>
+      Unknown
     case SwaggerNull =>
       TypedNull
   }
 }
 object SwaggerArray {
-  def apply(schema: ArraySchema, swaggerRefSchemas: SwaggerRefSchemas): SwaggerArray =
-    SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas))
+  private[swagger] def apply(schema: ArraySchema, swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
+    SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas, usedRefs))
 }
 
 object SwaggerObject {
-  def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = {
-    val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas)).toMap).getOrElse(Map())
+  private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
+    val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
     if(properties.isEmpty) {
       schema.getAdditionalProperties match {
-        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas)))
+        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
         case b if b == false => new SwaggerObject(Map.empty, AdditionalPropertiesDisabled)
         case _ => SwaggerMap(None)
       }
     } else{
       val additionalProperties = schema.getAdditionalProperties match {
-        case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas))
+        case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas, usedRefs))
         case any if any == false => AdditionalPropertiesDisabled
         case _ => AdditionalPropertiesWithoutType
       }
