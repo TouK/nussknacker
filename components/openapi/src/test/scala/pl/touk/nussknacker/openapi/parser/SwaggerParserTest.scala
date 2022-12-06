@@ -96,7 +96,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
     val recursiveListType = SwaggerObject(Map(
       "value" -> SwaggerString,
-      "next" -> SwaggerRecursiveSchemaFallback
+      "next" -> SwaggerRecursiveSchemaFallback,
+      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchemaFallback)),
+      "list" -> SwaggerArray(SwaggerRecursiveSchemaFallback)
     ))
     responseType shouldBe Some(SwaggerObject(Map(
       "left" -> recursiveListType,
@@ -104,7 +106,10 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     )))
     recursiveListType.typingResult shouldBe TypedObjectTypingResult(ListMap(
       "value" -> Typed[String],
-      "next" -> Unknown
+      "next" -> Unknown,
+      //union String + Unknown
+      "union" -> Unknown,
+      "list" -> Typed.genericTypeClass[java.util.List[_]](List(Unknown))
     ))
 
   }

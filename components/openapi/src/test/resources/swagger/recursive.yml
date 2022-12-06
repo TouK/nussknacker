@@ -15,11 +15,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/RecursiveListPair'
+                $ref: '#/components/schemas/UsingRecursion'
 components:
   schemas:
     #we have a pair here to check if we don't collect usage references breadth-first...
-    RecursiveListPair:
+    UsingRecursion:
       type: object
       properties:
         left:
@@ -33,5 +33,14 @@ components:
           type: string
         next:
           "$ref": "#/components/schemas/RecursiveList"
+        #we add union & array to test recursion behaviour with them
+        union:
+          anyOf:
+            - type: string
+            - "$ref": "#/components/schemas/RecursiveList"
+        list:
+          type: array
+          items:
+            "$ref": "#/components/schemas/RecursiveList"
       required:
         - value

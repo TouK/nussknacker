@@ -53,8 +53,10 @@ case object SwaggerRecursiveSchemaFallback extends SwaggerTyped
 
 object SwaggerTyped {
 
+  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
+
   @tailrec
-  def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String] = Set.empty): SwaggerTyped = schema match {
+  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]): SwaggerTyped = schema match {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas, usedSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
     case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas, usedSchemas)
@@ -65,10 +67,10 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas)
+        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
-        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas)
+        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
         case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
         case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
         case (Some("boolean"), _) => SwaggerBool
@@ -89,7 +91,7 @@ object SwaggerTyped {
     }
   }
 
-  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas, Set.empty)).toList)
+  private def swaggerUnion(schemas: java.util.List[Schema[_]], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]) = SwaggerUnion(schemas.asScala.map(SwaggerTyped(_, swaggerRefSchemas, usedSchemas)).toList)
 
   private def extractType(schema: Schema[_]): Option[String] =
     Option(schema.getType)
