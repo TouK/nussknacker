@@ -62,7 +62,7 @@ The main difference is that in case of `record` Nussknacker "knows" which fields
 are available and suggests and validates fields and their types.
 For example, `#input.name` is valid, while `#input.noname` or `#input.name > 0` as field name or type do not match.
 
-On the other hand, `map` describes "generic" structure - Nussknacker tacitly assumes it can contain **any** field, but only of certain type (if it's `Unknown` it might be any type).
+On the other hand, `map` describes "generic" structure - Nussknacker tacitly assumes it can contain **any** field, but only of certain type (e.g. we can have a "map of Strings", "map of Integers" etc. If this type is `Unknown` the values might be of any type).
                                                              
 Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
 
