@@ -16,7 +16,7 @@ case class MigrationResult(process: CanonicalProcess, migrationsApplied: List[Pr
   def toUpdateAction(processId: ProcessId): UpdateProcessAction = UpdateProcessAction(
     id = processId,
     canonicalProcess = process,
-    comment = MigrationComment(migrationsApplied),
+    comment = Option(migrationsApplied).filter(_.nonEmpty).map(MigrationComment),
     increaseVersionWhenJsonNotChanged = true
   )
 
@@ -39,10 +39,13 @@ class ProcessModelMigrator(migrations: ProcessingTypeDataProvider[ProcessMigrati
   }
 
   private def migrateWithMigrations(process: CanonicalProcess, migrationsToApply: List[ProcessMigration]): MigrationResult = {
-    val resultProcess = migrationsToApply.foldLeft(process) {
-      case (processToConvert, migration) => migration.migrateProcess(processToConvert)
+    val (resultProcess, migrationsApplied) = migrationsToApply.foldLeft((process, Nil: List[ProcessMigration])) {
+      case ((processToConvert, migrationsAppliedAcc), migration) =>
+        val migrated = migration.migrateProcess(processToConvert)
+        val migrationsApplied = if (migrated != processToConvert) migration :: migrationsAppliedAcc else migrationsAppliedAcc
+        (migrated, migrationsApplied)
     }
-    MigrationResult(resultProcess, migrationsToApply)
+    MigrationResult(resultProcess, migrationsApplied.reverse)
   }
 
 }

@@ -31,7 +31,7 @@ object ProcessRepository {
   def create(dbConfig: DbConfig, modelData: ProcessingTypeDataProvider[ModelData]): DBProcessRepository =
     new DBProcessRepository(dbConfig, modelData.mapValues(_.migrations.version))
 
-  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Comment, increaseVersionWhenJsonNotChanged: Boolean)
+  case class UpdateProcessAction(id: ProcessId, canonicalProcess: CanonicalProcess, comment: Option[Comment], increaseVersionWhenJsonNotChanged: Boolean)
 
   case class CreateProcessAction(processName: ProcessName, category: String, canonicalProcess: CanonicalProcess, processingType: ProcessingType, isSubprocess: Boolean)
 
@@ -191,7 +191,7 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
       .filter(_.processId === process.id)
       .sortBy(_.id.desc)
       .result.headOption.flatMap {
-      case Some(version) => newCommentAction(process.id, version.id, UpdateProcessComment(s"Rename: [${process.name.value}] -> [$newName]"))
+      case Some(version) => newCommentAction(process.id, version.id, Some(UpdateProcessComment(s"Rename: [${process.name.value}] -> [$newName]")))
       case None =>  DBIO.successful(())
     }
 

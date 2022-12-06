@@ -164,7 +164,7 @@ abstract class DBFetchingProcessRepository[F[_]: Monad](val dbConfig: DbConfig) 
       case (Some(canonical), ProcessShapeFetchStrategy.FetchCanonical) =>
         canonical.asInstanceOf[PS]
       case (Some(canonical), ProcessShapeFetchStrategy.FetchDisplayable) =>
-        val displayableProcess = ProcessConverter.toDisplayableOrDie(canonical, process.processingType)
+        val displayableProcess = ProcessConverter.toDisplayableOrDie(canonical, process.processingType, process.processCategory)
         displayableProcess.asInstanceOf[PS]
       case (_, ProcessShapeFetchStrategy.NotFetch) => ().asInstanceOf[PS]
       case (None, strategy) => throw new IllegalArgumentException(s"Missing scenario json data, it's required to convert for strategy: $strategy.")

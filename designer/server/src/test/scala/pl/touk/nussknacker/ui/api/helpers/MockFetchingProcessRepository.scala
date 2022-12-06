@@ -67,7 +67,7 @@ class MockFetchingProcessRepository(processes: List[BaseProcessDetails[_]])(impl
     shapeStrategy match {
       case NotFetch => process.copy(json = ().asInstanceOf[PS])
       case FetchDisplayable => process.json match {
-        case j: CanonicalProcess => process.copy(json = ProcessConverter.toDisplayable(j, process.processingType))
+        case j: CanonicalProcess => process.copy(json = ProcessConverter.toDisplayable(j, process.processingType, process.processCategory))
         case _ => process.asInstanceOf[BaseProcessDetails[PS]]
       }
       case FetchCanonical => process.json match {

@@ -55,22 +55,21 @@ trait CommentActions {
     Sequence[Long]("process_comments_id_sequence").next.result
   }
 
-  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: Comment)
+  def newCommentAction(processId: ProcessId, processVersionId: VersionId, comment: Option[Comment])
                       (implicit ec: ExecutionContext, loggedUser: LoggedUser): DB[Option[Long]] = {
-    if (comment.value.nonEmpty) {
-      for {
+    comment match {
+      case Some(c) if c.value.nonEmpty => for {
         newId <- nextIdAction
         _ <- commentsTable += CommentEntityData(
           id = newId,
           processId = processId,
           processVersionId = processVersionId,
-          content = comment.value,
+          content = c.value,
           user = loggedUser.username,
           createDate = Timestamp.from(Instant.now())
         )
       } yield Some(newId)
-    } else {
-      DBIO.successful(None)
+      case _ => DBIO.successful(None)
     }
   }
 
