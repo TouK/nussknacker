@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse.api
 
 import pl.touk.nussknacker.engine.api.process.{BasicContextInitializingFunction, SourceFactory}
+import pl.touk.nussknacker.engine.api.runtimecontext.StaticContextId
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.lite.api.utils.sources.BaseLiteSource
 import pl.touk.nussknacker.engine.requestresponse.api.openapi.OpenApiSourceDefinition
@@ -31,6 +32,11 @@ trait RequestResponseSource[T] extends BaseLiteSource[Any] {
   def openApiDefinition: Option[OpenApiSourceDefinition] = None
 
   override def transform(record: Any): Context = {
-    new BasicContextInitializingFunction[Any](contextIdGenerator, VariableConstants.InputVariableName)(record)
+    record match {
+      case InputWithCustomContextId(input, contextId) =>
+        new BasicContextInitializingFunction[Any](new StaticContextId(contextId), VariableConstants.InputVariableName)(input)
+      case _ =>
+        new BasicContextInitializingFunction[Any](contextIdGenerator, VariableConstants.InputVariableName)(record)
+    }
   }
 }

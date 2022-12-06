@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.lite.api.commonTypes.ErrorType
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.DropwizardMetricsProviderFactory
 import pl.touk.nussknacker.engine.requestresponse.FutureBasedRequestResponseScenarioInterpreter.InterpreterType
+import pl.touk.nussknacker.engine.requestresponse.api.InputWithCustomContextId
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
@@ -51,6 +52,20 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     result shouldBe Valid(List(Response(s"alamakota-$contextId")))
     creator.processorService.invocationsCount.get() shouldBe 1
+  }
+
+  test("run process in request response mode with custom contextId") {
+    val customContextId = "custom-context-id"
+    val process = ScenarioBuilder
+      .requestResponse("proc1")
+      .source("start", "request1-post-source")
+      .enricher("enricher", "var1", "enricherService")
+      .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
+
+    val creator = new RequestResponseConfigCreator
+    val result = runProcess(process, InputWithCustomContextId(Request1("a", "b"), customContextId), creator)
+
+    result shouldBe Valid(List(Response(s"alamakota-$customContextId")))
   }
 
   test("collect results after split") {

@@ -17,6 +17,13 @@ trait ContextIdGenerator {
 
 }
 
+
+class StaticContextId(value: String) extends ContextIdGenerator {
+
+  override def nextContextId(): String = value
+
+}
+
 class IncContextIdGenerator(prefix: String, counter: AtomicLong = new AtomicLong(0)) extends ContextIdGenerator {
 
   override def nextContextId(): String = prefix + "-" + counter.getAndIncrement()
