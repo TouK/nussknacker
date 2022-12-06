@@ -51,8 +51,10 @@ object typing {
     def apply(fields: List[(String, TypingResult)], objType: TypedClass): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields: _*), objType)
 
-    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
+    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult = {
+      val valueTypes = if (fields.isEmpty) Unknown else Typed(fields.values.toList:_*)
+      TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields.toList))
+    }
   }
 
   // Warning, fields are kept in list-like map: 1) order is important 2) lookup has O(n) complexity
@@ -278,7 +280,7 @@ object typing {
           TypedNull
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+          TypedObjectTypingResult(fieldTypes, stringMapWithValues(fieldTypes))
         case javaMap: java.util.Map[String@unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
@@ -333,6 +335,12 @@ object typing {
       }
     }
 
+  }
+
+  private def stringMapWithValues[T: ClassTag](fields: List[(String, TypingResult)]): TypedClass = {
+    //empty map can represent any value
+    val valueType = if (fields.isEmpty) Unknown else Typed(fields.map(_._2): _*)
+    Typed.genericTypeClass[T](List(Typed[String], valueType))
   }
 
   object AdditionalDataValue {

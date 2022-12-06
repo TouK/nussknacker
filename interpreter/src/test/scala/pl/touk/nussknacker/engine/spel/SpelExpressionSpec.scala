@@ -22,10 +22,10 @@ import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjec
 import pl.touk.nussknacker.engine.api.{Context, NodeId, SpelExpressionExcludeList}
 import pl.touk.nussknacker.engine.definition.TypeInfos.ClazzDefinition
 import pl.touk.nussknacker.engine.dict.SimpleDictRegistry
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{InvalidMethodReference, TypeReferenceError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{UnknownClassError, UnknownMethodError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, OperatorMismatchTypeError, OperatorNonNumericError, ModuloZeroError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{DivisionByZeroError, ModuloZeroError, OperatorMismatchTypeError, OperatorNonNumericError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.{ArgumentTypeError, ExpressionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser.{Flavour, Standard}
 import pl.touk.nussknacker.engine.spel.internal.DefaultSpelConversionsProvider
 import pl.touk.nussknacker.engine.types.{GeneratedAvroClass, JavaClassWithVarargs}
@@ -93,11 +93,20 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
                                  staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
                                  methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
                                  dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed): ValidatedNel[ExpressionParseError, TypedExpression] = {
+    expressionParser(dictionaries, flavour, strictMethodsChecking, staticMethodInvocationsChecking, methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed).parse(expr, validationCtx, Typed.fromDetailedType[T])
+  }
+
+  private def expressionParser(dictionaries: Map[String, DictDefinition] = Map.empty,
+                               flavour: Flavour = Standard,
+                               strictMethodsChecking: Boolean = defaultStrictMethodsChecking,
+                               staticMethodInvocationsChecking: Boolean = defaultStaticMethodInvocationsChecking,
+                               methodExecutionForUnknownAllowed: Boolean = defaultMethodExecutionForUnknownAllowed,
+                               dynamicPropertyAccessAllowed: Boolean = defaultDynamicPropertyAccessAllowed) = {
     val imports = List(SampleValue.getClass.getPackage.getName)
     SpelExpressionParser.default(getClass.getClassLoader, new SimpleDictRegistry(dictionaries), enableSpelForceCompile = true, strictTypeChecking = true,
       imports, flavour, strictMethodsChecking = strictMethodsChecking, staticMethodInvocationsChecking = staticMethodInvocationsChecking, typeDefinitionSetWithCustomClasses,
       methodExecutionForUnknownAllowed = methodExecutionForUnknownAllowed, dynamicPropertyAccessAllowed = dynamicPropertyAccessAllowed,
-      spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default).parse(expr, validationCtx, Typed.fromDetailedType[T])
+      spelExpressionExcludeListWithCustomPatterns, DefaultSpelConversionsProvider.getConversionService)(ClassExtractionSettings.Default)
   }
 
   private def spelExpressionExcludeListWithCustomPatterns: SpelExpressionExcludeList = {
@@ -888,7 +897,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     ScalaCheckDrivenPropertyChecks.forAll(oneOperandOp, positiveNumberGen)(checkOneOperand)
     ScalaCheckDrivenPropertyChecks.forAll(twoOperandOp, anyNumberGen, anyNumberGen)(checkTwoOperands)
     ScalaCheckDrivenPropertyChecks.forAll(twoOperandNonZeroOp, anyNumberGen, nonZeroNumberGen)(checkTwoOperands)
-}
+  }
 
   test("should calculate values of operators on strings") {
     checkExpressionWithKnownResult("'a' + 1")
@@ -900,6 +909,17 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     parse[Any]("1 / 0").invalidValue shouldBe NonEmptyList.one(DivisionByZeroError("(1 / 0)"))
     parse[Any]("1 % 0").invalidValue shouldBe NonEmptyList.one(ModuloZeroError("(1 % 0)"))
   }
+
+  test("should check map values") {
+    val parser = expressionParser()
+    val expected = Typed.genericTypeClass[java.util.Map[_, _]](List(Typed[String], TypedObjectTypingResult(List(("additional" -> Typed[String])))))
+    inside(parser.parse("""{"aField": {"additional": 1}}""", ValidationContext.empty, expected)) {
+      case Invalid(NonEmptyList(e: ExpressionTypeError, Nil)) =>
+        e.expected shouldBe expected
+    }
+    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe 'valid
+  }
+
 }
 
 case class SampleObject(list: java.util.List[SampleValue])
