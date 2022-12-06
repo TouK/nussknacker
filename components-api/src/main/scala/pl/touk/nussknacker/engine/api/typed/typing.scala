@@ -329,6 +329,11 @@ object typing {
 
   }
 
+  private def stringMapWithValues[T: ClassTag](fields: List[(String, TypingResult)]): TypedClass = {
+    val valueType = superTypeOfTypes(fields.map(_._2))
+    Typed.genericTypeClass[T](List(Typed[String], valueType))
+  }
+
   private def supertypeOfElementTypes(list: List[_]): TypingResult = {
     superTypeOfTypes(list.map(fromInstance))
   }
@@ -336,11 +341,6 @@ object typing {
   private def superTypeOfTypes(list: List[TypingResult]) = {
     val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
     list.reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).getOrElse(Unknown)
-  }
-
-  private def stringMapWithValues[T: ClassTag](fields: List[(String, TypingResult)]): TypedClass = {
-    val valueType =  superTypeOfTypes(fields.map(_._2))
-    Typed.genericTypeClass[T](List(Typed[String], valueType))
   }
 
   object AdditionalDataValue {
