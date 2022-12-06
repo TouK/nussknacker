@@ -171,7 +171,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should catch runtime errors at encoding - sink") {
     val testData = Table(
       ("config", "expected"),
-      (config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField), s"Not expected type: null for field: 'field' with schema: $schemaString."),
+      (config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField), s"Not expected type: Null for field: 'field' with schema: $schemaString."),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>

@@ -205,7 +205,7 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
       //Errors at sink
       (config(sampleObjWithAdds, schemaObjString(true), schemaObjStr), s"Not expected field with name: field2 for schema: $schemaObjStr."),
-      (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), s"Not expected type: null for field: 'field' with schema: $schemaStr."),
+      (config(obj(), schemaObjString(), schemaObjString(), Map(ObjectFieldName -> InputField)), s"Not expected type: Null for field: 'field' with schema: $schemaStr."),
       (config(sampleObjWithAdds, schemaObjUnionNullString(true), schemaObjUnionNullString()), s"Not expected field with name: field2 for schema: ${schemaObjUnionNullString()}."),
       (config(fromInt(Int.MaxValue), schemaInt, schemaInt), s"#: ${Int.MaxValue} is not less or equal to 16"),
       (conf(schemaInt, Int.MaxValue), s"#: ${Int.MaxValue} is not less or equal to 16"),
