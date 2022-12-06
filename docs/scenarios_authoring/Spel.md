@@ -232,10 +232,10 @@ To obtain the first element matching the predicate, the syntax is `.^`.
 To obtain the last matching element, the syntax is `.$`.
 
 | Expression                                | Result       | Type          |
-| ------------                              | --------     | --------      |
+| ------------                              |--------------| --------      |
 | `{1,2,3,4}.?[#this ge 3]`                 | {3, 4}       | List[Integer] |
 | `#usersList.?[#this.firstName == 'john']` | {'john doe'} | List[String]  |
-| `{1,2,3,4}.^[#this ge 3]`                 | {1}          | Integer       |
+| `{1,2,3,4}.^[#this ge 3]`                 | {3}          | Integer       |
 | `{1,2,3,4}.$[#this ge 3]`                 | {4}          | Integer       |
 
 ## Mapping lists
