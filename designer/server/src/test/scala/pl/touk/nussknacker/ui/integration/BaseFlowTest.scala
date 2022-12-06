@@ -29,7 +29,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, MultipartUtils, SecurityHeadersSupport}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -200,7 +200,8 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -380,7 +381,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
       status shouldEqual StatusCodes.OK

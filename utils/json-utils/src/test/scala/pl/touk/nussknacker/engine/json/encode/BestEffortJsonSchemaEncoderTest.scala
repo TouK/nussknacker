@@ -22,6 +22,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   private val encoder = BestEffortJsonSchemaEncoder
 
   private val schemaNumber: NumberSchema = NumberSchema.builder().build()
+  private val schemaIntegerNumber: NumberSchema = NumberSchema.builder().requiresInteger(true).build()
   private val schemaString: StringSchema = StringSchema.builder().build()
   private val schemaNull: NullSchema = NullSchema.INSTANCE
 
@@ -121,8 +122,40 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
   }
 
   test("should encode number") {
-    val encoded = encoder.encodeWithJsonValidation(1L, schemaNumber)
-    encoded shouldEqual Valid(Json.fromLong(1L))
+    forAll(Table(
+      ("data", "schema", "expected"),
+      (1, schemaNumber, Json.fromLong(1L)),
+      (1, schemaIntegerNumber, Json.fromLong(1L)),
+      (1.0d, schemaNumber, Json.fromDoubleOrNull(1.0)),
+      (1.0d, schemaIntegerNumber, Json.fromLong(1L)),
+      (1.0f, schemaNumber, Json.fromFloatOrNull(1.0f)),
+      (1.0f, schemaIntegerNumber, Json.fromLong(1L)),
+      (BigDecimal.valueOf(1.0), schemaNumber, Json.fromBigDecimal(BigDecimal.valueOf(1.0))),
+      (java.math.BigDecimal.valueOf(1.0), schemaNumber, Json.fromBigDecimal(BigDecimal.valueOf(1.0))),
+      (BigDecimal.valueOf(1.0), schemaIntegerNumber, Json.fromLong(1L)),
+      (java.math.BigDecimal.valueOf(1.0), schemaIntegerNumber, Json.fromLong(1L)),
+      (BigInt.long2bigInt(1), schemaNumber, Json.fromBigInt(BigInt.long2bigInt(1))),
+      (java.math.BigInteger.valueOf(1), schemaNumber, Json.fromBigInt(BigInt.long2bigInt(1))),
+      (BigInt.long2bigInt(1), schemaIntegerNumber, Json.fromLong(1L)),
+      (java.math.BigInteger.valueOf(1), schemaIntegerNumber, Json.fromLong(1L)),
+    )) { (data, schema, expected) =>
+      encoder.encodeWithJsonValidation(data, schema) shouldBe Valid(expected)
+    }
+  }
+
+  test("should throw proper error trying encode value to integer schema") {
+    forAll(Table(
+      ("data", "expected"),
+      (1.6d, invalid("Field value '1.6' is not an integer.")),
+      (1.6f, invalid("Field value '1.6' is not an integer.")),
+      (BigInt.long2bigInt(1).setBit(63), invalid("Field value '9223372036854775809' is not an integer.")),
+      (java.math.BigInteger.valueOf(1).setBit(63), invalid("Field value '9223372036854775809' is not an integer.")),
+      (BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
+      (java.math.BigDecimal.valueOf(1.6), invalid("Field value '1.6' is not an integer.")),
+      (null, invalid(s"Not expected type: null for field with schema: $schemaIntegerNumber.")),
+    )) { (data, expected) =>
+      encoder.encodeWithJsonValidation(data, schemaIntegerNumber) shouldBe expected
+    }
   }
 
   test("should throw when wrong number") {

@@ -47,7 +47,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(ProcessTestData.invalidProcess) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include ("MissingSourceFactory")
+      entity should include("MissingSourceFactory")
     }
   }
 
@@ -55,7 +55,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(ProcessTestData.invalidProcessWithEmptyMandatoryParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include ("This field is mandatory and can not be empty")
+      entity should include("This field is mandatory and can not be empty")
     }
   }
 
@@ -63,7 +63,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(ProcessTestData.invalidProcessWithBlankParameter) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include ("This field value is required and can not be blank")
+      entity should include("This field value is required and can not be blank")
     }
   }
 
@@ -71,10 +71,10 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(ProcessTestData.processWithInvalidAdditionalProperties) {
       status shouldEqual StatusCodes.OK
       val entity = entityAs[String]
-      entity should include ("Configured property requiredStringProperty (label) is missing")
-      entity should include ("Property numberOfThreads has invalid value")
-      entity should include ("Unknown property unknown")
-      entity should include ("This field value has to be an integer number")
+      entity should include("Configured property requiredStringProperty (label) is missing")
+      entity should include("Property numberOfThreads has invalid value")
+      entity should include("Unknown property unknown")
+      entity should include("This field value has to be an integer number")
     }
   }
 
@@ -95,7 +95,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include ("Node id contains invalid characters")
+      entity should include("Node id contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess("p1",
@@ -106,7 +106,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(duplicateIds) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include ("Duplicate node ids: s1")
+      entity should include("Duplicate node ids: s1")
     }
   }
 
@@ -126,6 +126,20 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
   it should "find no errors in a good scenario" in {
     createAndValidateScenario(ProcessTestData.validProcess) {
       status shouldEqual StatusCodes.OK
+    }
+  }
+
+  it should "find no errors in valid but not existing scenario" in {
+    validateScenario(TestProcessUtil.toDisplayable(ProcessTestData.validProcess)) {
+      status shouldEqual StatusCodes.OK
+    }
+  }
+
+  it should "find errors in a bad but not existing scenario" in {
+    validateScenario(TestProcessUtil.toDisplayable(ProcessTestData.invalidProcess)) {
+      status shouldEqual StatusCodes.OK
+      val entity = entityAs[String]
+      entity should include("MissingSourceFactory")
     }
   }
 
@@ -153,7 +167,8 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
       properties = ProcessProperties(StreamMetaData(Some(2), Some(false)), None, subprocessVersions = Map.empty),
       nodes = nodes,
       edges = edges,
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
     )
   }
 
@@ -162,10 +177,12 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
 
   private def createAndValidateScenario(displayable: DisplayableProcess)(testCode: => Assertion): Assertion = {
     createEmptyProcess(displayable.processName)
+    validateScenario(displayable)(testCode)
+  }
 
+  private def validateScenario(displayable: DisplayableProcess)(testCode: => Assertion) = {
     Post("/processValidation", posting.toEntity(displayable)) ~> route ~> check {
       testCode
     }
   }
-
 }

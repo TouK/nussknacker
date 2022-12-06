@@ -200,6 +200,8 @@ object ProcessCompilationError {
 
   case class InvalidSubprocess(id: String, nodeId: String) extends ProcessCompilationError with InASingleNode
 
+  case class MultipleOutputsForName(name: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
   case class CustomNodeError(nodeId: String, message: String, paramName: Option[String]) extends ProcessCompilationError with InASingleNode
 
   object CustomNodeError {

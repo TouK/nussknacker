@@ -114,9 +114,9 @@ object ProcessTestData {
     .customNode("custom", "out1", otherExistingServiceId2, param)
     .emptySink("sink", existingSinkFactory)
 
-  def toValidatedDisplayable(espProcess: CanonicalProcess): ValidatedDisplayableProcess = {
-    val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming)
-    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, TestCategories.Category1))
+  def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.TestCat): ValidatedDisplayableProcess = {
+    val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
+    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, category))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(ScenarioBuilder.streaming("fooProcess").sources(
@@ -198,7 +198,8 @@ object ProcessTestData {
       subprocessVersions = Map.empty),
     nodes = List.empty,
     edges = List.empty,
-    processingType = TestProcessingTypes.Streaming
+    processingType = TestProcessingTypes.Streaming,
+    Some(TestCategories.TestCat)
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
@@ -218,7 +219,8 @@ object ProcessTestData {
         )
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.TestCat)
     )
   }
 
@@ -264,7 +266,8 @@ object ProcessTestData {
       ),
       nodes = List.empty,
       edges = List.empty,
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
     )
 
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")))

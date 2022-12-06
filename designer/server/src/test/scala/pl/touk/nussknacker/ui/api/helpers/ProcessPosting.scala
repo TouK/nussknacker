@@ -18,11 +18,11 @@ class ProcessPosting {
   def toRequest[T:Encoder](value: T): RequestEntity = HttpEntity(ContentTypes.`application/json`, value.asJson.spaces2)
 
   def toEntity(process: CanonicalProcess): RequestEntity = {
-    toRequest(ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming))
+    toRequest(ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1))
   }
 
   def toEntityAsProcessToSave(process: CanonicalProcess, comment: String = ""): RequestEntity = {
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
     toRequest(UpdateProcessCommand(displayable, UpdateProcessComment(comment)))
   }
 

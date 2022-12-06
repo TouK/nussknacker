@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.graph.node.{Filter, UserDefinedAdditionalNodeFields}
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.processdetails.ProcessVersion
-import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{SampleProcess, TestCategories, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.repository.DbProcessActivityRepository.{Comment, ProcessActivity}
 
@@ -22,7 +22,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
   private val history = List(ProcessVersion(VersionId.initialVersionId, Instant.now(), "Zenon Wojciech", Option.empty, List.empty))
 
   it should "export process to " in {
-    val process: DisplayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming)
+    val process: DisplayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, TestCategories.Category1)
     val displayable: DisplayableProcess = process.copy(nodes = process.nodes.map {
         case a:Filter => a.copy(additionalFields = Some(UserDefinedAdditionalNodeFields(Some("mój wnikliwy komętaż"), None)))
         case a => a
@@ -44,7 +44,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "export empty process to " in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
+      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
 
     val details = createDetails(displayable)
 
@@ -57,7 +57,7 @@ class PdfExporterSpec extends AnyFlatSpec with Matchers {
 
   it should "not allow entities in provided SVG" in {
     val displayable: DisplayableProcess = DisplayableProcess(
-      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming)
+      "Proc11", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty), List(), List(), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
 
     val details = createDetails(displayable)
 

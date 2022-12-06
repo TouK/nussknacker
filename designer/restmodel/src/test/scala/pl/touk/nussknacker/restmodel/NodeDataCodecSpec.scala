@@ -23,7 +23,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers {
         Some(UserDefinedAdditionalNodeFields(Some("desc"), None)))
     ), List(
       Edge("from1", "to1", None)
-    ), "")
+    ), "", Some("category1"))
 
     val encoded = Encoder[DisplayableProcess].apply(process)
 

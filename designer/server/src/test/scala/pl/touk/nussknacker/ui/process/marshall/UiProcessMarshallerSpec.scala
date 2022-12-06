@@ -5,7 +5,7 @@ import io.circe.Json
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes
+import pl.touk.nussknacker.ui.api.helpers.{TestCategories, TestProcessingTypes}
 import io.circe.syntax._
 import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 
@@ -58,7 +58,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
       """.stripMargin).fold(throw _, identity)
 
   it should "unmarshall to displayable scenario properly" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithPartialAdditionalFields), TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithPartialAdditionalFields), TestProcessingTypes.Streaming, TestCategories.Category1)
 
     val processDescription = displayableProcess.properties.additionalFields.flatMap(_.description)
     val nodeDescription = displayableProcess.nodes.head.additionalFields.flatMap(_.description)
@@ -68,7 +68,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
   it should "marshall and unmarshall scenario" in {
     val baseProcess = processWithFullAdditionalFields
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(baseProcess), TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(baseProcess), TestProcessingTypes.Streaming, TestCategories.Category1)
     val canonical = ProcessConverter.fromDisplayable(displayableProcess)
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
@@ -77,7 +77,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "unmarshall json without additional fields" in {
-    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalFields), TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayableOrDie(ProcessMarshaller.fromJsonUnsafe(processWithoutAdditionalFields), TestProcessingTypes.Streaming, TestCategories.Category1)
 
     displayableProcess.id shouldBe "custom"
     displayableProcess.nodes.head.additionalFields shouldBe None

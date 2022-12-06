@@ -5,10 +5,11 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import org.scalatest.{Assertion, BeforeAndAfterEach}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, BeforeAndAfterEach}
 import pl.touk.nussknacker.engine.api.process.ProcessName
+import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withAllPermissions
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
@@ -26,8 +27,10 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
   private val attachmentsRoute = new AttachmentResources(attachmentService, fetchingProcessRepository, processAuthorizer)
   private val attachmentsRouteWithAllPermissions: Route = withAllPermissions(attachmentsRoute)
 
+  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess
+
   it should "add and remove comment in process activity" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = process
     val commentContent = "test message"
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
     Post(s"/processes/${processToSave.id}/1/activity/comments", HttpEntity(ContentTypes.`text/plain(UTF-8)`, commentContent)) ~> processActivityRouteWithAllPermissions ~> check {
@@ -49,7 +52,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
   }
 
   it should "add attachment to process and then be able to download it" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = process
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
 
     val fileName = "important_file.txt"
@@ -70,7 +73,7 @@ class ProcessActivityResourceSpec extends AnyFlatSpec with ScalatestRouteTest wi
   }
 
   it should "handle attachments with the same name" in {
-    val processToSave = ProcessTestData.sampleDisplayableProcess
+    val processToSave = process
     saveProcess(processToSave) { status shouldEqual StatusCodes.OK}
 
     val fileName = "important_file.txt"

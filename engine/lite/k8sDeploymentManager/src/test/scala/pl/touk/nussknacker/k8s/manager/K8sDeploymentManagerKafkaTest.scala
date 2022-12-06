@@ -188,8 +188,8 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
               ).asJava),
               "resources" -> fromMap(
                 Map(
-                  "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava),
-                  "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "20m").asJava)
+                  "requests" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava),
+                  "limits" -> fromMap(Map("memory" -> "256Mi", "cpu" -> "800m").asJava)
                 ).asJava
               )
             ).asJava)
@@ -203,8 +203,8 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
         forAll(pods.head.spec.get.containers) { container =>
           container.resources shouldBe Some(
             skuber.Resource.Requirements(
-              limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
-              requests = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi"))
+              limits = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi")),
+              requests = Map("cpu" -> Quantity("800m"), "memory" -> Quantity("256Mi"))
             ))
           container.env should contain(EnvVar("ENV_VARIABLE", EnvVar.StringValue("VALUE")))
         }
