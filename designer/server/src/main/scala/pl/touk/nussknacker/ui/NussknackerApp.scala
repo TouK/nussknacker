@@ -212,7 +212,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
 
     val usageStatisticsReportsConfig = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-    val usageStatisticsSnippetOpt = UsageStatisticsHtmlSnippet.prepareWhenEnabledReporting(usageStatisticsReportsConfig)
+    val usageStatisticsSnippetOpt = UsageStatisticsHtmlSnippet.prepareWhenEnabledReporting(usageStatisticsReportsConfig, typeToConfig.mapValues(_.usageStatistics))
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
     val webResources = new WebResources(config.getString("http.publicPath"), usageStatisticsSnippetOpt)

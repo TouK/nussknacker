@@ -29,6 +29,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.MapBasedProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessService, ProcessCategoryService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 import sttp.client.{NothingT, SttpBackend}
 
 import java.time.Duration
@@ -369,7 +370,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       Map.empty,
       Nil,
       None,
-      supportsSignals = false)
+      supportsSignals = false,
+      ProcessingTypeUsageStatistics("stubManager", None))
   })
 
   it should "return components for each user" in {
@@ -445,7 +447,8 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         Map.empty,
         Nil,
         None,
-        supportsSignals = false)
+        supportsSignals = false,
+        ProcessingTypeUsageStatistics("stubManager", None))
     })
 
     val processService = createDbProcessService(categoryService, List(MarketingProcess))

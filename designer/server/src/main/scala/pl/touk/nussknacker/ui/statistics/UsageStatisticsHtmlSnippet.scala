@@ -1,7 +1,9 @@
 package pl.touk.nussknacker.ui.statistics
 
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
+import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
@@ -12,9 +14,10 @@ case class UsageStatisticsHtmlSnippet(value: String)
 
 object UsageStatisticsHtmlSnippet {
 
-  def prepareWhenEnabledReporting(config: UsageStatisticsReportsConfig): Option[UsageStatisticsHtmlSnippet] = {
+  def prepareWhenEnabledReporting(config: UsageStatisticsReportsConfig,
+                                  processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics]): Option[UsageStatisticsHtmlSnippet] = {
     if (config.enabled) {
-      val queryParams = prepareQueryParams(config)
+      val queryParams = prepareQueryParams(config, processingTypeStatistics.all)
       val url = prepareUrl(queryParams)
       Some(UsageStatisticsHtmlSnippet(s"""<img src="$url" alt="anonymous usage reporting" referrerpolicy="origin" hidden />"""))
     } else {
@@ -22,10 +25,14 @@ object UsageStatisticsHtmlSnippet {
     }
   }
 
-  private def prepareQueryParams(config: UsageStatisticsReportsConfig) = {
+  private def prepareQueryParams(config: UsageStatisticsReportsConfig,
+                                 processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[ProcessingType, ProcessingType] = {
     ListMap(
       "fingerprint" -> config.fingerprint.getOrElse(randomFingerprint),
-      "version" -> BuildInfo.version)
+      "version" -> BuildInfo.version,
+      "deploymentManagerTypes" -> "TODO",
+      "processingModes" -> "TODO"
+    )
   }
 
   private[statistics] def prepareUrl(queryParams: ListMap[String, String]) = {
