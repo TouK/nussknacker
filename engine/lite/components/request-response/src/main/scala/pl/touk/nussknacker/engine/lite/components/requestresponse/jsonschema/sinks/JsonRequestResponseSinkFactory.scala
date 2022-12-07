@@ -76,7 +76,12 @@ class JsonRequestResponseSinkFactory(implProvider: ResponseRequestSinkImplFactor
         .andThen { schema =>
           JsonSinkValueParameter(schema, SinkRawValueParamName).map { valueParam =>
             val state = EditorTransformationState(schema, valueParam)
-            NextParameters(valueParam.toParameters, state = Option(state))
+            //shouldn't happen except for empty schema, but it can lead to infinite loop...
+            if (valueParam.toParameters.isEmpty) {
+              FinalResults(context, Nil, Some(state))
+            } else {
+              NextParameters(valueParam.toParameters, state = Option(state))
+            }
           }
         }.valueOr(e => FinalResults(context, e.toList))
     case TransformationStep((SinkRawEditorParamName, DefinedEagerParameter(false, _)) :: valueParams, state) =>
