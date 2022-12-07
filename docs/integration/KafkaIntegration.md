@@ -7,9 +7,9 @@ sidebar_position: 1
 ## Prerequisites
 
 To fully understand how Nussknacker works with Kafka topics, it's best to read the following first:
+* [Kafka introduction](https://kafka.apache.org/intro)
 * [Role of Schema Registry](/about/TypicalImplementation)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
-* [Kafka topic key](https://kafka.apache.org/intro)
 
 If you want to use Flink engine, this is also recommended:
 * [Flink keyed state](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
@@ -47,12 +47,12 @@ At runtime Nussknacker determines the schema version of a message value and key 
 3. if the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
 
   
-# Configuration
+## Configuration
 
-## Common part
+### Common part
 The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](/docs/installation_configuration_guide/#configuration-areas)
 
-Both streaming Engines (Lite and Flink) share some of the common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
+Both streaming Engines (Lite and Flink) share some common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
 
 ### Kafka connection configuration
 
