@@ -110,7 +110,7 @@ to see where they should be set):
 | additionalParams       | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                                                                                                                                                 |
 
 
-## Configuration for Flink engine
+### Configuration for Flink engine
 
 With Flink engine, the Kafka sources and sinks are configured as any other component. In particular,
 you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
@@ -165,7 +165,7 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 | avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
             
 
-## Configuration for Lite engine
+### Configuration for Lite engine
 
 The Lite engine in Streaming processing mode uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
 Kafka based sources and sinks (you don't need to configure them separately). See [common config](#kafka-connection-configuration) for the details.
