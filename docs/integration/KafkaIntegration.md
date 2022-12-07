@@ -139,7 +139,7 @@ components.kafkaA {
     }
   }
 }
-components.kafkaA {
+components.kafkaB {
   providerType: "kafka"
   componentPrefix: "clusterB-"
   config: {
