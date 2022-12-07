@@ -1,13 +1,13 @@
 package pl.touk.nussknacker.engine.compile
 
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, Validated}
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Inside, OptionValues}
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParserCompilationError}
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{EmptyMandatoryParameter, ExpressionParserCompilationError, WrongParameters}
 import pl.touk.nussknacker.engine.api.definition.{DualParameterEditor, Parameter, StringParameterEditor}
 import pl.touk.nussknacker.engine.api.editor.DualEditorMode
 import pl.touk.nussknacker.engine.api.process._
@@ -30,7 +30,8 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     override def customStreamTransformers(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[CustomStreamTransformer]] = Map(
       "genericParameters" -> WithCategories(GenericParametersTransformer),
       "genericJoin" -> WithCategories(DynamicParameterJoinTransformer),
-      "twoStepsInOne" -> WithCategories(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep)
+      "twoStepsInOne" -> WithCategories(GenericParametersTransformerWithTwoStepsThatCanBeDoneInOneStep),
+      "paramsLoop" -> WithCategories(ParamsLoopNode)
     )
 
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = Map(
@@ -313,6 +314,15 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
     result.result shouldBe 'valid
     val parameterNames = result.parametersInNodes("generic").map(_.name)
     parameterNames shouldEqual List("moreParams", "extraParam")
+  }
+
+  test("should not fall in endless loop for buggy node implementation") {
+    val result = validator.validate(
+      processBase
+        .customNodeNoOutput("generic", "paramsLoop")
+        .emptySink("end", "dummySink"))
+
+    result.result shouldBe Validated.invalidNel(WrongParameters(Set.empty, Set.empty)(NodeId("generic")))
   }
 
 }

@@ -130,6 +130,26 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     }
   }
 
+  test("should handle empty object in non-raw mode") {
+    val input = "{}"
+    val output = """{"type":"object", "additionalProperties": false}"""
+    val scenario = ScenarioBuilder
+      .requestResponse("test")
+      .additionalFields(properties = Map(
+        "inputSchema" -> input,
+        "outputSchema" -> output
+      ))
+      .source("input", "request")
+      .emptySink(sinkName, "response",
+        SinkRawEditorParamName -> "false"
+      )
+
+    val result = runner.runWithRequests(scenario) { invoker =>
+      invoker(HttpRequest(HttpMethods.POST, entity = "{}}")).rightValue
+    }
+    result shouldBe Valid(Json.obj())
+  }
+
   test("should test e2e request-response flow at sink and source / handling nulls and empty json" ) {
     val testData = Table(
       ("config", "result"),
