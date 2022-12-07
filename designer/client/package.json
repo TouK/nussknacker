@@ -203,7 +203,7 @@
     "eslint-plugin-react": "7.31.10",
     "eslint-plugin-react-hooks": "4.6.0",
     "expect": "27.4.6",
-    "express": "4.17.2",
+    "express": "4.17.3",
     "file-loader": "6.2.0",
     "fork-ts-checker-webpack-plugin": "7.2.3",
     "html-loader": "2.1.2",
