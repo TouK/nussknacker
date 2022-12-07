@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
+import java.util.Collections
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -59,7 +60,7 @@ object SwaggerTyped {
   private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]): SwaggerTyped = schema match {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas, usedSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
-    case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas, usedSchemas)
+    case IsArraySchema(array) => SwaggerArray(array, swaggerRefSchemas, usedSchemas)
     case _ => Option(schema.get$ref()) match {
       //handle recursive schemas better
       case Some(ref) if usedSchemas.contains(ref) =>
@@ -78,16 +79,28 @@ object SwaggerTyped {
         case (Some("string"), Some("date")) => SwaggerDate
         case (Some("string"), Some("time")) => SwaggerTime
         case (Some("string"), _) => Option(schema.getEnum) match {
-          case Some(values) => SwaggerEnum(values.asScala.map(_.toString).toList)
+          case Some(values) => SwaggerEnum(Option(values).map(_.asScala).getOrElse(Nil).flatMap(Option(_).toList).map(_.toString).toList)
           case None => SwaggerString
         }
         case (Some("integer"), _) => SwaggerLong
+        //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
         case (Some("number"), None) => SwaggerBigDecimal
         case (Some("number"), Some("double")) => SwaggerDouble
         case (Some("number"), Some("float")) => SwaggerDouble
         case (Some("null"), None) => SwaggerNull
-        case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
+        case (typeName, format) =>
+          val formatError = format.map(f => s" in format '$f'").getOrElse("")
+          throw new Exception(s"Type '${typeName.getOrElse("empty")}'$formatError is not supported")
       }
+    }
+  }
+
+  private object IsArraySchema {
+    def unapply(schema: Schema[_]): Option[Schema[_]] = schema match {
+      case a: ArraySchema => Some(a)
+      //this is how OpenAPI is parsed when `type: array` is used
+      case oth if Option(oth.getTypes).exists(_.equals(Collections.singleton("array"))) && oth.getItems != null => Some(oth)
+      case _ => None
     }
   }
 
@@ -131,7 +144,7 @@ object SwaggerTyped {
   }
 }
 object SwaggerArray {
-  private[swagger] def apply(schema: ArraySchema, swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
+  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
     SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas, usedRefs))
 }
 
@@ -139,7 +152,7 @@ object SwaggerObject {
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
-    if(properties.isEmpty) {
+    if (properties.isEmpty) {
       schema.getAdditionalProperties match {
         case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
         case b if b == false => new SwaggerObject(Map.empty, AdditionalPropertiesDisabled)
