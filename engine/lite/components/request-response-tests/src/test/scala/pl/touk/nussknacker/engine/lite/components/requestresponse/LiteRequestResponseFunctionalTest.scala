@@ -49,8 +49,8 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
 
   private val schemaStr = StringSchema.builder().build()
 
-  private val schemaInt = NumberSchema.builder().requiresNumber(true).minimum(1).maximum(16).build()
-
+  private val schemaInt = NumberSchema.builder().requiresInteger(true).minimum(1).maximum(16).build()
+  
   private val schemaObjNull = JsonSchemaBuilder.parseSchema(
     s"""{"type":"object","properties": {"$ObjectFieldName": $schemaNull}, "additionalProperties": false}"""
   )
@@ -180,6 +180,8 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
       //Primitive integer validations
       (config(fromInt(1), schemaInt, schemaInt), Valid(fromInt(1))),
       (conf(schemaInt, 1), Valid(fromInt(1))),
+      //Everit cannot handle Bigdecimal as integer, even it represents one...
+      //(config(Json.fromJsonNumber(JsonNumber.fromString("1.0").get), schemaInt, schemaInt), Valid(fromInt(1))),
     )
 
     forAll(testData) { (config: ScenarioConfig, expected: Validated[_, Json]) =>
