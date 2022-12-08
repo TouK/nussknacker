@@ -1,0 +1,27 @@
+openapi: 3.1.0
+info:
+  title: Array data
+  version: "2"
+paths:
+  /operation:
+    get:
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithArray"
+components:
+  schemas:
+    Item:
+      properties:
+        field:
+          type: string
+    WithArray:
+      properties:
+        itemsWithType:
+          items:
+            type: string
+          #without type, in 3.0 it's parsed to array, in 3.1 - to empty map
+          type: array

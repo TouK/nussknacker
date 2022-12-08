@@ -25,7 +25,7 @@
   * [#3716](https://github.com/TouK/nussknacker/pull/3716) Allow to add additional fields also in `strict validation mode`, if schema permits them.
   * [#3722](https://github.com/TouK/nussknacker/pull/3722) Validation of JSON schema with additionalProperties
 
-* [#3707](https://github.com/TouK/nussknacker/pull/3707), [#3719](https://github.com/TouK/nussknacker/pull/3719), [#3692](https://github.com/TouK/nussknacker/pull/3692), [#3656](https://github.com/TouK/nussknacker/pull/3656), [#3776](https://github.com/TouK/nussknacker/pull/3776) Improvements in OpenAPI:
+* [#3707](https://github.com/TouK/nussknacker/pull/3707), [#3719](https://github.com/TouK/nussknacker/pull/3719), [#3692](https://github.com/TouK/nussknacker/pull/3692), [#3656](https://github.com/TouK/nussknacker/pull/3656), [#3776](https://github.com/TouK/nussknacker/pull/3776),  [#3786](https://github.com/TouK/nussknacker/pull/3786) Improvements in OpenAPI:
   * Support for OpenAPI 3.1.0
   * Basic support for type references in JSON schemas
   * Better logging from OpenAPI enrichers

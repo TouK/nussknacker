@@ -1,11 +1,11 @@
 package pl.touk.nussknacker.openapi.parser
 
 import cats.data.Validated.Valid
-import cats.data.ValidatedNel
+import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import com.typesafe.scalalogging.LazyLogging
 import io.swagger.v3.oas.models.PathItem.HttpMethod
-import io.swagger.v3.oas.models.media.{Content, MediaType}
-import io.swagger.v3.oas.models.parameters.RequestBody
+import io.swagger.v3.oas.models.media.{Content, MediaType, Schema}
+import io.swagger.v3.oas.models.parameters.{Parameter, RequestBody}
 import io.swagger.v3.oas.models.responses.ApiResponse
 import io.swagger.v3.oas.models.{OpenAPI, Operation}
 import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.json.swagger.parser.ParseSwaggerRefSchemas
 import pl.touk.nussknacker.openapi._
 
 import scala.collection.JavaConverters._
+import scala.util.Try
 
 private[parser] object ParseToSwaggerService {
 
@@ -34,7 +35,7 @@ private[parser] object ParseToSwaggerService {
       case validResponse :: Nil =>
         validResponse.validNel
       case _ =>
-        "Response definition is invalid".invalidNel
+        s"The definition should contain exactly one response with one of the codes: ${ValidResponseStatuses.mkString(", ")}".invalidNel
     }
 
   private def categories(operation: Operation): ValidationResult[List[String]] =
@@ -43,25 +44,6 @@ private[parser] object ParseToSwaggerService {
       .getOrElse(Nil)
       .validNel
 
-  private def queryParameters(operation: Operation): List[QueryParameter] =
-    parameters(operation, "query", QueryParameter.apply)
-
-  private def uriParameters(operation: Operation): List[UriParameter] =
-    parameters(operation, "path", UriParameter.apply)
-
-  private def headerParameters(operation: Operation): List[HeaderParameter] =
-    parameters(operation, "header", HeaderParameter.apply)
-
-  private def parameters[T](operation: Operation, pType: String, toParameter: (String, SwaggerTyped) => T): List[T] = {
-    Option(operation.getParameters)
-      .map(
-        _.asScala
-          .filter(pd => pd.getIn == pType)
-          .map(pd => toParameter(pd.getName, SwaggerTyped(pd.getSchema, Map.empty)))
-          .toList
-      )
-      .getOrElse(List.empty)
-  }
 }
 
 private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: OpenAPIServicesConfig)
@@ -79,6 +61,7 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
     method: HttpMethod,
     endpointDefinition: Operation
   ): ValidatedNel[String, SwaggerService] = {
+    logger.debug(s"Generating $serviceName")
     response(endpointDefinition).andThen { response =>
       service(serviceName, uriWithParameters, endpointDefinition, response, method)
     }
@@ -91,31 +74,36 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
     response: ApiResponse,
     method: HttpMethod
   ): ValidationResult[SwaggerService] =
-    (categories(operation), documentation(operation), resultType(response)).tupled.andThen {
-      case (serviceCategories, docs, serviceResultType) =>
-        val parameters = uriParameters(operation) ++ headerParameters(operation) ++
-          queryParameters(operation) ++ requestParameter(operation.getRequestBody).toList
-        // security requirements from operation shadows global ones:
-        val securityRequirements =
-          Option(operation.getSecurity).orElse(Option(openapi.getSecurity)).map(_.asScala.toList).getOrElse(Nil)
-        val securitySchemes =
-          Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes)).map(_.asScala.toMap)
-        val securities = openAPIsConfig.security.getOrElse(Map.empty)
-        SecuritiesParser.parseSwaggerSecurities(securityRequirements, securitySchemes, securities) map {
-          parsedSecurities =>
-            SwaggerService(
-              serviceName,
-              serviceCategories,
-              docs,
-              pathParts = parseUriWithParams(relativeUriWithParameters),
-              parameters = parameters,
-              responseSwaggerType = serviceResultType,
-              method.toString,
-              servers.map(_.getUrl),
-              parsedSecurities
-            )
-        }
+    (categories(operation), documentation(operation), resultType(response), prepareParameters(operation), parseSecurities(operation)).mapN {
+      case (serviceCategories, docs, serviceResultType, parameters, parsedSecurities) =>
+          SwaggerService(
+            serviceName,
+            serviceCategories,
+            docs,
+            pathParts = parseUriWithParams(relativeUriWithParameters),
+            parameters = parameters,
+            responseSwaggerType = serviceResultType,
+            method.toString,
+            servers.map(_.getUrl),
+            parsedSecurities
+          )
     }
+  private def parseSecurities(operation: Operation): ValidationResult[List[SwaggerSecurity]] = {
+    // security requirements from operation shadows global ones:
+    val securityRequirements =
+      Option(operation.getSecurity).orElse(Option(openapi.getSecurity)).map(_.asScala.toList).getOrElse(Nil)
+    val securitySchemes =
+      Option(openapi.getComponents).flatMap(c => Option(c.getSecuritySchemes)).map(_.asScala.toMap)
+    val securities = openAPIsConfig.security.getOrElse(Map.empty)
+    SecuritiesParser.parseSwaggerSecurities(securityRequirements, securitySchemes, securities)
+  }
+
+  private def prepareParameters(operation: Operation): ValidationResult[List[SwaggerParameter]] = {
+    List(
+      parameters(operation),
+      requestParameter(operation.getRequestBody).map(_.toList)
+    ).sequence.map(_.flatten)
+  }
 
   private def documentation(operation: Operation): ValidationResult[Option[String]] = Valid(
     Option(operation.getExternalDocs).orElse(Option(openapi.getExternalDocs)).map(_.getUrl)
@@ -134,11 +122,9 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
       case None =>
         None.validNel
       case Some(content) =>
-        findMediaType(content)
-          .map(_.getSchema)
-          .map(SwaggerTyped(_, swaggerRefSchemas)) match {
-          case None        => "Response type is missing".invalidNel
-          case swaggerType => swaggerType.validNel
+        findMediaType(content).flatMap[Schema[_]](o => Option(o.getSchema)) match {
+          case None     => "No response with application/json or */* media types found".invalidNel
+          case Some(sw) => toSwaggerTyped(sw).map(Option(_))
         }
     }
   }
@@ -152,10 +138,33 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
       .map(_._2)
   }
 
-  private def requestParameter(request: RequestBody): Option[SwaggerParameter] =
+  private def requestParameter(request: RequestBody): ValidationResult[Option[SwaggerParameter]] = {
     Option(request)
       .flatMap(requestBody => Option(requestBody.getContent))
-      .flatMap(content => Option(content.get("application/json")))
+      .flatMap(findMediaType)
       .map(_.getSchema)
-      .map(schema => SingleBodyParameter(SwaggerTyped(schema, swaggerRefSchemas)))
+      .map(schema => toSwaggerTyped(schema).map(SingleBodyParameter(_))).sequence
+  }
+
+  private def parameters(operation: Operation): ValidationResult[List[SwaggerParameter]] = {
+    val rawParams = Option(operation.getParameters).map(_.asScala).getOrElse(Nil).toList
+    rawParams.map(parseParameter).sequence
+  }
+
+  private def parseParameter(pd: Parameter) = {
+    val name = pd.getName
+    toSwaggerTyped(pd.getSchema).andThen { typ =>
+      pd.getIn match {
+        case "query" => Valid(QueryParameter(name, typ))
+        case "header" => Valid(HeaderParameter(name, typ))
+        case "path" => Valid(UriParameter(name, typ))
+        //TODO: handle cookie param
+        case other => Validated.invalidNel(s"Unsupported parameter type: $other")
+      }
+    }
+  }
+
+  private def toSwaggerTyped(schema: Schema[_]): ValidationResult[SwaggerTyped] = {
+    Validated.fromTry(Try(SwaggerTyped(schema, swaggerRefSchemas))).leftMap(m => NonEmptyList.one(String.valueOf(m.getMessage)))
+  }
 }
