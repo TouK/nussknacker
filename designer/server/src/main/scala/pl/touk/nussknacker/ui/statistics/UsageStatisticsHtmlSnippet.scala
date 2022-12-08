@@ -25,19 +25,36 @@ object UsageStatisticsHtmlSnippet {
     }
   }
 
-  private def prepareQueryParams(config: UsageStatisticsReportsConfig,
-                                 processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[ProcessingType, ProcessingType] = {
+  private[statistics] def prepareQueryParams(config: UsageStatisticsReportsConfig,
+                                             processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[String, String] = {
+    val deploymentManagerTypes = processingTypeStatisticsMap.values.map(_.deploymentManagerType)
+    val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
+    val processingModes = processingTypeStatisticsMap.values.collect {
+      case ProcessingTypeUsageStatistics(_, Some(mode)) => mode
+      case ProcessingTypeUsageStatistics(deploymentManagerType, _) if deploymentManagerType.toLowerCase.contains("streaming") => "streaming"
+    }
+    val mParams = prepareValuesParams(processingModes, "m")
     ListMap(
       "fingerprint" -> config.fingerprint.getOrElse(randomFingerprint),
-      "version" -> BuildInfo.version,
-      "deploymentManagerTypes" -> "TODO",
-      "processingModes" -> "TODO"
-    )
+      "version" -> BuildInfo.version
+    ) ++ dmParams ++ mParams
+  }
+
+  private def prepareValuesParams(values: Iterable[ProcessingType], metricCategoryKeyPart: String) = {
+    val countsParams = values.groupBy(identity).mapValues(_.size).map {
+      case (value, count) =>
+        s"${metricCategoryKeyPart}_$value" -> count.toString
+    }.toList.sortBy(_._1)
+    val singleParamOpt = Option(values.toSet.toList).collect {
+      case single :: Nil => s"single_$metricCategoryKeyPart" -> single
+    }
+    ListMap(countsParams ++ singleParamOpt: _*)
   }
 
   private[statistics] def prepareUrl(queryParams: ListMap[String, String]) = {
-    val queryParamsPart = queryParams.toList.map { case (k, v) => s"$k=${URLEncoder.encode(v, StandardCharsets.UTF_8)}" }.mkString("&")
-    s"https://stats.nussknacker.io/?$queryParamsPart"
+    queryParams.toList.map {
+      case (k, v) => s"${URLEncoder.encode(k, StandardCharsets.UTF_8)}=${URLEncoder.encode(v, StandardCharsets.UTF_8)}"
+    }.mkString("https://stats.nussknacker.io/?", "&", "")
   }
 
   private lazy val randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
