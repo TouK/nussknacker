@@ -35,7 +35,9 @@ object UsageStatisticsHtmlSnippet {
     }
     val mParams = prepareValuesParams(processingModes, "m")
     ListMap(
-      "fingerprint" -> config.fingerprint.getOrElse(randomFingerprint),
+      // We filter out blank fingerprints because when smb uses docker-compose, and forwards env variables USAGE_REPORTS_FINGERPRINT
+      // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
+      "fingerprint" -> config.fingerprint.filterNot(_.isBlank).getOrElse(randomFingerprint),
       "version" -> BuildInfo.version
     ) ++ dmParams ++ mParams
   }

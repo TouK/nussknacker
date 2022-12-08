@@ -23,6 +23,13 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
     params should contain ("version" -> BuildInfo.version)
   }
 
+  test("should generated random fingerprint if configured is blank") {
+    val params = UsageStatisticsHtmlSnippet.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, Some("")),
+      Map.empty)
+    params("fingerprint") should startWith ("gen-")
+  }
+
   test("should generated query params for each deployment manager and with single deployment manager field") {
     val givenFooDm = "fooDm"
     val paramsForSingleDm = UsageStatisticsHtmlSnippet.prepareQueryParams(
