@@ -1,10 +1,11 @@
 import HttpService from "../../http/HttpService"
 import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData, ValidationResult} from "../../types"
-import {Action, ThunkAction} from "../reduxTypes"
+import {Action, ThunkAction, ThunkDispatch} from "../reduxTypes"
 import {RootState} from "../../reducers"
 import {layoutChanged, Position} from "./ui/layout"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
+import {debounce} from "lodash"
 
 //TODO: identify
 type Edges = $TodoType[]
@@ -53,13 +54,18 @@ type NodeAddedAction = {
   position: Position,
 }
 
+const debouncedValidate = debounce(
+  (dispatch: ThunkDispatch<RootState>, getState: () => RootState) => HttpService
+    .validateProcess(getState().graphReducer.processToDisplay)
+    .then(({data}) => dispatch({type: "VALIDATION_RESULT", validationResult: data})),
+  250
+)
+
 //this WON'T work for async actions - have to handle promises separately
 function runSyncActionsThenValidate<S extends RootState>(syncActions: (state: S) => Action[]): ThunkAction<void, S> {
   return (dispatch, getState) => {
     syncActions(getState()).forEach(action => dispatch(action))
-    return HttpService.validateProcess(getState().graphReducer.processToDisplay).then(
-      (response) => dispatch({type: "VALIDATION_RESULT", validationResult: response.data}),
-    )
+    debouncedValidate(dispatch, getState)
   }
 }
 

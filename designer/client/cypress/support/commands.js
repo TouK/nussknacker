@@ -25,8 +25,8 @@
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... })
 
 import "@4tw/cypress-drag-drop"
-import "cypress-file-upload"
-import "cypress-plugin-snapshots/commands"
+import "@frsource/cypress-plugin-visual-regression-diff/dist/support"
+import "./tools"
 import "./process"
 import "./settings"
 import "./overrides"
