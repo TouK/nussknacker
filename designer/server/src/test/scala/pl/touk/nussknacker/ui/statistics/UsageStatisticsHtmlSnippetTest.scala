@@ -32,23 +32,23 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
   }
 
   test("should generated query params for each deployment manager and with single deployment manager field") {
-    val givenFooDm = "fooDm"
+    val givenDm1 = "flinkStreaming"
     val paramsForSingleDm = UsageStatisticsHtmlSnippet.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
-      Map("streaming" -> ProcessingTypeUsageStatistics(givenFooDm, None)))
-    paramsForSingleDm should contain ("single_dm" -> givenFooDm)
-    paramsForSingleDm should contain ("dm_" + givenFooDm -> "1")
+      Map("streaming" -> ProcessingTypeUsageStatistics(givenDm1, None)))
+    paramsForSingleDm should contain ("single_dm" -> givenDm1)
+    paramsForSingleDm should contain ("dm_" + givenDm1 -> "1")
 
-    val givenBarDm = "barDm"
+    val givenDm2 = "lite-k8s"
     val paramsForMultipleDms = UsageStatisticsHtmlSnippet.prepareQueryParams(
       UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map(
-        "streaming" -> ProcessingTypeUsageStatistics(givenFooDm, None),
-        "streaming2" -> ProcessingTypeUsageStatistics(givenBarDm, None),
-        "streaming3" -> ProcessingTypeUsageStatistics(givenFooDm, None)))
+        "streaming" -> ProcessingTypeUsageStatistics(givenDm1, None),
+        "streaming2" -> ProcessingTypeUsageStatistics(givenDm2, None),
+        "streaming3" -> ProcessingTypeUsageStatistics(givenDm1, None)))
     paramsForMultipleDms should contain ("single_dm" -> "multiple")
-    paramsForMultipleDms should contain ("dm_" + givenFooDm -> "2")
-    paramsForMultipleDms should contain ("dm_" + givenBarDm -> "1")
+    paramsForMultipleDms should contain ("dm_" + givenDm1 -> "2")
+    paramsForMultipleDms should contain ("dm_" + givenDm2 -> "1")
   }
 
   test("should generated query params for each processing mode and with single processing mode field") {
@@ -69,6 +69,22 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
     paramsForMultipleModes should contain ("single_m" -> "multiple")
     paramsForMultipleModes should contain ("m_" + streamingMode -> "2")
     paramsForMultipleModes should contain ("m_" + requestResponseMode -> "1")
+  }
+
+  test("should aggregate unknown deployment manager and processing mode as a custom") {
+    val givenCustomDm = "customDm"
+    val paramsForSingleDm = UsageStatisticsHtmlSnippet.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      Map("streaming" -> ProcessingTypeUsageStatistics(givenCustomDm, None)))
+    paramsForSingleDm should contain("single_dm" -> "custom")
+    paramsForSingleDm should contain("dm_custom" -> "1")
+
+    val customMode = "customMode"
+    val paramsForSingleMode = UsageStatisticsHtmlSnippet.prepareQueryParams(
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
+      Map("streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(customMode))))
+    paramsForSingleMode should contain ("single_m" -> "custom")
+    paramsForSingleMode should contain ("m_custom" -> "1")
   }
 
 }

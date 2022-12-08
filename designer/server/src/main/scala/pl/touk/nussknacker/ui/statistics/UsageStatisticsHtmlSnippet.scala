@@ -14,6 +14,15 @@ case class UsageStatisticsHtmlSnippet(value: String)
 
 object UsageStatisticsHtmlSnippet {
 
+  private val knownDeploymentManagerTypes = Set("flinkStreaming", "lite-k8s", "lite-embedded")
+
+  private val streamingProcessingMode = "streaming"
+
+  private val knownProcessingModes = Set(streamingProcessingMode, "request-response")
+
+  // We aggregate custom deployment managers and processing modes as a "custom" to avoid leaking of internal, confidential data
+  private val aggregateForCustomValues = "custom"
+
   def prepareWhenEnabledReporting(config: UsageStatisticsReportsConfig,
                                   processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics]): Option[UsageStatisticsHtmlSnippet] = {
     if (config.enabled) {
@@ -27,13 +36,19 @@ object UsageStatisticsHtmlSnippet {
 
   private[statistics] def prepareQueryParams(config: UsageStatisticsReportsConfig,
                                              processingTypeStatisticsMap: Map[ProcessingType, ProcessingTypeUsageStatistics]): ListMap[String, String] = {
-    val deploymentManagerTypes = processingTypeStatisticsMap.values.map(_.deploymentManagerType)
+    val deploymentManagerTypes = processingTypeStatisticsMap.values.map(_.deploymentManagerType).map {
+      case dm if knownDeploymentManagerTypes.contains(dm) => dm
+      case _ => aggregateForCustomValues
+    }
     val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
+
     val processingModes = processingTypeStatisticsMap.values.collect {
-      case ProcessingTypeUsageStatistics(_, Some(mode)) => mode
-      case ProcessingTypeUsageStatistics(deploymentManagerType, _) if deploymentManagerType.toLowerCase.contains("streaming") => "streaming"
+      case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
+      case ProcessingTypeUsageStatistics(_, Some(_)) => aggregateForCustomValues
+      case ProcessingTypeUsageStatistics(deploymentManagerType, None) if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) => streamingProcessingMode
     }
     val mParams = prepareValuesParams(processingModes, "m")
+
     ListMap(
       // We filter out blank fingerprint and source because when smb uses docker-compose, and forwards env variables eg. USAGE_REPORTS_FINGERPRINT
       // from system and the variable doesn't exist, there is no way to skip variable - it can be only set to empty
