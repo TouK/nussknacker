@@ -1,27 +1,9 @@
 import {defaultsDeep} from "lodash"
 import UAParser from "ua-parser-js"
 
-type ImageSnapshotOptions = Partial<{
-  name: string,
-  imageConfig: Partial<{
-    createDiffImage: boolean,
-    threshold: number,
-    thresholdType: "percent" | "pixel",
-  }>,
-  screenshotConfig: Partial<Cypress.ScreenshotDefaultsOptions>,
-}>
-
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Cypress {
-
-    interface Chainable<Subject = any> {
-      // fixed wrong original
-      toMatchImageSnapshot(options?: ImageSnapshotOptions): Chainable<null>,
-
-      toMatchExactImageSnapshot(options?: ImageSnapshotOptions): Chainable<null>,
-    }
-
     //looks like it should be available
     //used in with drag from @4tw/cypress-drag-drop to force drop position
     interface ClickOptions {
@@ -30,16 +12,6 @@ declare global {
     }
   }
 }
-
-Cypress.Commands.add("toMatchExactImageSnapshot", {prevSubject: true}, (subject, options?) => cy
-  .wrap(subject)
-  .toMatchImageSnapshot({
-    ...options,
-    imageConfig: {
-      ...options?.imageConfig,
-      threshold: 0.00001,
-    },
-  }))
 
 const getRequestOptions = (...args): Partial<Cypress.RequestOptions> => {
   const [first, second, third] = args
@@ -65,10 +37,9 @@ Cypress.Commands.overwrite("visit", (original: Cypress.Chainable["visit"], first
 
   const {name: os} = new UAParser().getOS()
   const pixelRatio = window.devicePixelRatio
+  const osDir = pixelRatio !== 1 ? `${os}/x${pixelRatio}` : os
   Cypress.env(defaultsDeep({
-    "cypress-plugin-snapshots": {
-      separator: pixelRatio !== 1 ? ` [${os} x${pixelRatio}] #` : ` [${os}] #`,
-    },
+    pluginVisualRegressionImagesPath: `{spec_path}/__image_snapshots__/${Cypress.browser.name}/${osDir}`,
   }, Cypress.env()))
   return original(typeof first === "string" ? {auth, ...second, url: first} : {auth, ...first})
 })

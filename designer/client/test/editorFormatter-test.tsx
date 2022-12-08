@@ -1,5 +1,6 @@
 import React from "react"
 import {Formatter, FormatterType, spelFormatters} from "../components/graph/node-modal/editors/expression/Formatter"
+import {describe, expect} from '@jest/globals';
 
 const text = `
 Lorem ipsum #{dolor}# sit amet #\\{enim\\}#. Etiam #{

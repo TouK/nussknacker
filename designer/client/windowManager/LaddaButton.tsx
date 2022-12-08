@@ -5,6 +5,7 @@ import React, {useCallback, useState} from "react"
 import Button, {SLIDE_UP} from "react-ladda"
 import {alpha, tint, useNkTheme} from "../containers/theme"
 
+//TODO: replace. does not cleanly unmount. brings problems to tests.
 export const LaddaButton = (props: FooterButtonProps): JSX.Element => {
   const {classname, action, title, disabled} = props
   const {theme, withFocus} = useNkTheme()
