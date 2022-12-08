@@ -172,18 +172,21 @@ modelConfig {
 &nbsp;
 ### Configuring replicas count
 
-In the request-response processing mode, the only way to affect parallelism is to set the count of scenario pods (replicas). This is achieved with the `fixedReplicasCount` configuration key; its default setting is 2:
+​In the **Request-Response** processing mode you can affect the count of scenario pods (replicas) by setting fixedReplicasCount configuration key; its default value is 2:
 
 `{ fixedReplicasCount: x }`.
 
-​In the  streaming processing mode you can affect scenario parallelism in the following ways:
-- Set scenario parallelism in the scenario properties - this will determine how many parallel tasks are used to process the scenario. The number of replicas in the K8s deployment will be set to the `ceiling(scenarioParallelism / tasksPerReplica)`. In this case, the default value of 4 will be used for `tasksPerReplica`.
-- Modify the default value of `tasksPerReplica` by setting:
-  - `{ tasksPerReplica y }`
+​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the minimal number of tasks used to process events.  The count of replicas, scenario parallelism and number of tasks per replica are connected with a simple formula:
 
-Alternatively, you can set `fixedReplicasCount` to override scenario parallelism set in the scenario properties. You cannot use this setting together with `tasksPerReplica` setting. 
+*scenarioParallelism = replicasCount * tasksPerReplica*
 
-Finally, due to rounding, the number of tasks may be different from scenario parallelism (e.g. for `fixedReplicasCount = 3`, scenario parallelism = 5, there will be 2 tasks per replica, total tasks = 6)
+If you do not change any settings, the number of replicas in the K8s deployment will be set to the ceiling (scenarioParallelism / tasksPerReplica); the default value of 4 will be used for tasksPerReplica.
+Alternatively, you can affect the number of replicas  in the following ways:
+- modify the default value of tasksPerReplica by setting { tasksPerReplica: y }; the number of replicas will be computed as before as ceiling (scenarioParallelism / tasksPerReplica)
+- set fixedReplicasCount directly. The number of tasksPerReplica will be set to the ceiling (scenarioParallelism / fixedReplicaCounts. You cannot use this setting together with tasksPerReplica setting. 
+
+
+Due to rounding, the number of tasks may be different from scenario parallelism (e.g. for `fixedReplicasCount = 3`, scenario parallelism = 5, there will be 2 tasks per replica, total tasks = 6)
 
 &nbsp;
 ### Nussknacker instance name
