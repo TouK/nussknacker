@@ -35,6 +35,10 @@ else
   JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
 fi
 
+if [ "$USAGE_REPORTS_SOURCE" == "" ]; then
+  export USAGE_REPORTS_SOURCE="docker"
+fi
+
 mkdir -p ${STORAGE_DIR}/db
 
 echo "Starting Nussknacker:"

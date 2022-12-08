@@ -17,15 +17,16 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
 
   test("should generated statically defined query paramsForSingleMode") {
     val params = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint)),
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map.empty)
     params should contain ("fingerprint" -> sampleFingerprint)
+    params should contain ("source" -> "sources")
     params should contain ("version" -> BuildInfo.version)
   }
 
   test("should generated random fingerprint if configured is blank") {
     val params = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some("")),
+      UsageStatisticsReportsConfig(enabled = true, Some(""), None),
       Map.empty)
     params("fingerprint") should startWith ("gen-")
   }
@@ -33,14 +34,14 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
   test("should generated query params for each deployment manager and with single deployment manager field") {
     val givenFooDm = "fooDm"
     val paramsForSingleDm = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint)),
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map("streaming" -> ProcessingTypeUsageStatistics(givenFooDm, None)))
     paramsForSingleDm should contain ("single_dm" -> givenFooDm)
     paramsForSingleDm should contain ("dm_" + givenFooDm -> "1")
 
     val givenBarDm = "barDm"
     val paramsForMultipleDms = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint)),
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map(
         "streaming" -> ProcessingTypeUsageStatistics(givenFooDm, None),
         "streaming2" -> ProcessingTypeUsageStatistics(givenBarDm, None),
@@ -53,14 +54,14 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
   test("should generated query params for each processing mode and with single processing mode field") {
     val streamingMode = "streaming"
     val paramsForSingleMode = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint)),
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map("streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(streamingMode))))
     paramsForSingleMode should contain ("single_m" -> streamingMode)
     paramsForSingleMode should contain ("m_" + streamingMode -> "1")
 
     val requestResponseMode = "request-response"
     val paramsForMultipleModes = UsageStatisticsHtmlSnippet.prepareQueryParams(
-      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint)),
+      UsageStatisticsReportsConfig(enabled = true, Some(sampleFingerprint), None),
       Map(
         "streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(streamingMode)),
         "streaming2" -> ProcessingTypeUsageStatistics("barDm", Some(requestResponseMode)),
