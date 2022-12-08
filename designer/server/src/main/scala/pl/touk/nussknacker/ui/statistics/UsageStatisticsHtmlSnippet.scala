@@ -47,10 +47,12 @@ object UsageStatisticsHtmlSnippet {
       case (value, count) =>
         s"${metricCategoryKeyPart}_$value" -> count.toString
     }.toList.sortBy(_._1)
-    val singleParamOpt = Option(values.toSet.toList).collect {
-      case single :: Nil => s"single_$metricCategoryKeyPart" -> single
+    val singleParamValue = values.toSet.toList match {
+      case Nil => "zero"
+      case single :: Nil => single
+      case _ => "multiple"
     }
-    ListMap(countsParams ++ singleParamOpt: _*)
+    ListMap(countsParams: _*) + (s"single_$metricCategoryKeyPart" -> singleParamValue)
   }
 
   private[statistics] def prepareUrl(queryParams: ListMap[String, String]) = {

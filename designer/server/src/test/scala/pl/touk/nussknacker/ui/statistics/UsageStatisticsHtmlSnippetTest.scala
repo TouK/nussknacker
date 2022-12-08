@@ -45,7 +45,7 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
         "streaming" -> ProcessingTypeUsageStatistics(givenFooDm, None),
         "streaming2" -> ProcessingTypeUsageStatistics(givenBarDm, None),
         "streaming3" -> ProcessingTypeUsageStatistics(givenFooDm, None)))
-    paramsForMultipleDms.keys should not contain "single_dm"
+    paramsForMultipleDms should contain ("single_dm" -> "multiple")
     paramsForMultipleDms should contain ("dm_" + givenFooDm -> "2")
     paramsForMultipleDms should contain ("dm_" + givenBarDm -> "1")
   }
@@ -65,7 +65,7 @@ class UsageStatisticsHtmlSnippetTest extends AnyFunSuite with Matchers {
         "streaming" -> ProcessingTypeUsageStatistics("fooDm", Some(streamingMode)),
         "streaming2" -> ProcessingTypeUsageStatistics("barDm", Some(requestResponseMode)),
         "streaming3" -> ProcessingTypeUsageStatistics("bazDm", Some(streamingMode))))
-    paramsForMultipleModes.keys should not contain "single_m"
+    paramsForMultipleModes should contain ("single_m" -> "multiple")
     paramsForMultipleModes should contain ("m_" + streamingMode -> "2")
     paramsForMultipleModes should contain ("m_" + requestResponseMode -> "1")
   }
