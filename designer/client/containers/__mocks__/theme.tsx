@@ -1,5 +1,6 @@
 /* eslint-disable i18next/no-literal-string */
 import React from "react"
+import {jest} from "@jest/globals"
 
 export const tintPrimary = jest.fn()
 

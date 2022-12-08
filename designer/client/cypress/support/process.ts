@@ -1,4 +1,3 @@
-import {jsonToBlob} from "./tools"
 import Chainable = Cypress.Chainable
 
 declare global {
@@ -89,9 +88,9 @@ function postFormData(url: string, auth: {username: string, password: string}, b
 }
 
 function importTestProcess(name: string, fixture = "testProcess") {
-  return cy.fixture(fixture).then(json => {
+  return cy.fixture(fixture, null).then(json => {
     const formData = new FormData()
-    formData.set("process", jsonToBlob(json), "data.json")
+    formData.set("process", Cypress.Blob.arrayBufferToBlob(json, "application/json"), "data.json")
     const auth = {
       username: Cypress.env("testUserUsername"),
       password: Cypress.env("testUserPassword"),
@@ -133,3 +132,5 @@ Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
 Cypress.Commands.add("visitProcess", visitProcess)
 Cypress.Commands.add("getNode", getNode)
+
+export default {}
