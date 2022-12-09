@@ -11,6 +11,8 @@ import sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
+// If you are adding a new DeploymentManagerProvider available in the public distribution, please remember
+// to add it's type to UsageStatisticsHtmlSnippet.knownDeploymentManagerTypes
 trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(modelData: BaseModelData, config: Config)

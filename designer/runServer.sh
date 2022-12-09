@@ -17,6 +17,7 @@ export CONSOLE_THRESHOLD_LEVEL=DEBUG
 export OPENAPI_SERVICE_URL="http://localhost:5000"
 export SQL_ENRICHER_URL="localhost:5432"
 export USAGE_REPORTS_FINGERPRINT="development"
+export USAGE_REPORTS_SOURCE="sources"
 
 USE_DOCKER_ENV=${USE_DOCKER_ENV:-true}
 
