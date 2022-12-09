@@ -42,10 +42,10 @@ object UsageStatisticsHtmlSnippet {
     }
     val dmParams = prepareValuesParams(deploymentManagerTypes, "dm")
 
-    val processingModes = processingTypeStatisticsMap.values.collect {
+    val processingModes = processingTypeStatisticsMap.values.map {
       case ProcessingTypeUsageStatistics(_, Some(mode)) if knownProcessingModes.contains(mode) => mode
-      case ProcessingTypeUsageStatistics(_, Some(_)) => aggregateForCustomValues
       case ProcessingTypeUsageStatistics(deploymentManagerType, None) if deploymentManagerType.toLowerCase.contains(streamingProcessingMode) => streamingProcessingMode
+      case _ => aggregateForCustomValues
     }
     val mParams = prepareValuesParams(processingModes, "m")
 
