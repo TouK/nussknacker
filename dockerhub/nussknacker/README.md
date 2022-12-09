@@ -8,6 +8,9 @@ latest - always points to the latest, stable version
 
 latest-staging - developer build with latest, not released yet features
 
+# Prerequisites
+Docker in version 20.10.14+
+
 # How to use
 
 Follow steps described in [Quickstart](https://nussknacker.io/documentation/quickstart/docker)

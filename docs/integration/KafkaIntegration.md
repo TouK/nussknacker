@@ -7,9 +7,9 @@ sidebar_position: 1
 ## Prerequisites
 
 To fully understand how Nussknacker works with Kafka topics, it's best to read the following first:
+* [Kafka introduction](https://kafka.apache.org/intro)
 * [Role of Schema Registry](/about/TypicalImplementation)
 * [Confluent Schema Registry](https://docs.confluent.io/platform/current/schema-registry/index.html)
-* [Kafka topic key](https://kafka.apache.org/intro)
 
 If you want to use Flink engine, this is also recommended:
 * [Flink keyed state](https://ci.apache.org/projects/flink/flink-docs-master/docs/concepts/stateful-stream-processing/#keyed-state)
@@ -47,12 +47,12 @@ At runtime Nussknacker determines the schema version of a message value and key 
 3. if the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
 
   
-# Configuration
+## Configuration
 
-## Common part
+### Common part
 The Kafka configuration is part of the Model configuration. All the settings below should be placed relative to `scenarioTypes.ScenarioTypeName.modelConfig` key. You can find the high level structure of the configuration file [here](/docs/installation_configuration_guide/#configuration-areas)
 
-Both streaming Engines (Lite and Flink) share some of the common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
+Both streaming Engines (Lite and Flink) share some common Kafka settings this section describes them, see respective sections below for details on configuring Kafka for particular Engine (e.g. the keys where the common settings should be placed at).
 
 ### Kafka connection configuration
 
@@ -110,7 +110,7 @@ to see where they should be set):
 | additionalParams       | {}            | Map of fixed parameters that can be added to Kafka message                                                                                                                                                                                                                                                                 |
 
 
-## Configuration for Flink engine
+### Configuration for Flink engine
 
 With Flink engine, the Kafka sources and sinks are configured as any other component. In particular,
 you can configure multiple Kafka component providers - e.g. when you want to connect to multiple clusters.
@@ -139,7 +139,7 @@ components.kafkaA {
     }
   }
 }
-components.kafkaA {
+components.kafkaB {
   providerType: "kafka"
   componentPrefix: "clusterB-"
   config: {
@@ -165,7 +165,7 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 | avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
             
 
-## Configuration for Lite engine
+### Configuration for Lite engine
 
 The Lite engine in Streaming processing mode uses Kafka as it's core part (e.g. delivery guarantees are based on Kafka transactions), so it's configured separately from other components. Therefore, it's only possible to use one Kafka cluster for one model configuration. This configuration is used for all
 Kafka based sources and sinks (you don't need to configure them separately). See [common config](#kafka-connection-configuration) for the details.
