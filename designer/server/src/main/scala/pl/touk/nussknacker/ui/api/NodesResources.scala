@@ -9,22 +9,20 @@ import io.circe.Decoder
 import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredDecoder
 import org.springframework.util.ClassUtils
+import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.additionalInfo.{AdditionalInfo, AdditionalInfoProvider}
-import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.MissingParameters
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.typed.TypingResultDecoder
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeDataValidator.OutgoingEdge
 import pl.touk.nussknacker.engine.compile.nodecompilation.{NodeDataValidator, ValidationNotPerformed, ValidationPerformed}
 import pl.touk.nussknacker.engine.graph.NodeDataCodec._
 import pl.touk.nussknacker.engine.graph.node.NodeData
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
-import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
@@ -37,7 +35,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvi
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.validation.AdditionalPropertiesValidator
+import pl.touk.nussknacker.ui.validation.ProcessValidation
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -47,14 +45,12 @@ import scala.concurrent.{ExecutionContext, Future}
 class NodesResources(val processRepository: FetchingProcessRepository[Future],
                      subprocessRepository: SubprocessRepository,
                      typeToConfig: ProcessingTypeDataProvider[ModelData],
-                     additionalPropertyConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]],
-                     additionalProcessValidators: ProcessingTypeDataProvider[List[CustomProcessValidator]]
+                     processValidation: ProcessValidation,
                     )(implicit val ec: ExecutionContext)
   extends ProcessDirectives with FailFastCirceSupport with RouteWithUser {
 
   private val additionalInfoProviders = new AdditionalInfoProviders(typeToConfig)
-  private val additionalPropertiesValidator = new AdditionalPropertiesValidator(additionalPropertyConfig)
-  private val nodeValidator = new NodeValidator()
+  private val nodeValidator = new NodeValidator
 
   def securedRoute(implicit loggedUser: LoggedUser): Route = {
     import akka.http.scaladsl.server.Directives._
@@ -90,17 +86,12 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { properties =>
             complete {
-              val additionalPropertiesErrors = additionalProcessValidators.forType(process.processingType).toList.flatten
-                .map(_.validate(CanonicalProcess(properties.processProperties.toMetaData(processName), List())))
-                .sequence
-                .fold(_.map(PrettyValidationErrors.formatErrorMessage).toList, _ => List.empty)
-
-              val result = additionalPropertiesValidator.validate(DisplayableProcess(process.id, properties.processProperties, List(), List(), process.processingType))
-
+              val scenario = DisplayableProcess(processName, properties.processProperties, Nil, Nil, process.processingType, Some(process.processCategory))
+              val result = processValidation.validate(scenario, process.processCategory)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,
-                validationErrors = result.errors.processPropertiesErrors ++ additionalPropertiesErrors,
+                validationErrors = result.errors.processPropertiesErrors,
                 validationPerformed = true)
             }
           }

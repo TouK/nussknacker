@@ -3,6 +3,7 @@ package pl.touk.nussknacker.ui.validation
 import cats.data.{Validated, ValidatedNel}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.matchers.{BeMatcher, MatchResult}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{MissingSourceFactory, ScenarioNameValidationError, UnknownSubprocess}
@@ -23,8 +24,8 @@ import pl.touk.nussknacker.engine.graph.source.SourceRef
 import pl.touk.nussknacker.engine.graph.subprocess.SubprocessRef
 import pl.touk.nussknacker.engine.graph.variable.Field
 import pl.touk.nussknacker.engine.graph.{EdgeType, evaluatedparam}
-import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder
+import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -38,6 +39,7 @@ import pl.touk.nussknacker.ui.process.subprocess.{SubprocessDetails, SubprocessR
 import scala.collection.immutable.ListMap
 
 class ProcessValidationSpec extends AnyFunSuite with Matchers {
+
   import ProcessTestData._
   import ProcessValidationSpec._
   import TestCategories._
@@ -87,25 +89,25 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("check for notunique edges") {
-      val process = createProcess(
-        List(
-          Source("in", SourceRef(existingSourceFactory, List())),
-          SubprocessInput("subIn", SubprocessRef("sub1", List())),
-          Sink("out2", SinkRef(existingSinkFactory, List())),
-        ),
-        List(
-          Edge("in", "subIn", None),
-          Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out1"))),
-          Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out2"))),
-        )
+    val process = createProcess(
+      List(
+        Source("in", SourceRef(existingSourceFactory, List())),
+        SubprocessInput("subIn", SubprocessRef("sub1", List())),
+        Sink("out2", SinkRef(existingSinkFactory, List())),
+      ),
+      List(
+        Edge("in", "subIn", None),
+        Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out1"))),
+        Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("out2"))),
       )
+    )
 
-      val result = validator.validate(process, Category1)
+    val result = validator.validate(process, Category1)
 
-      result.errors.invalidNodes shouldBe Map(
-        "subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError, "out2"))
-      )
-    }
+    result.errors.invalidNodes shouldBe Map(
+      "subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError, "out2"))
+    )
+  }
 
   test("check for loose nodes") {
     val process = createProcess(
@@ -123,17 +125,17 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   }
 
   test("check for empty ids") {
-      val process = createProcess(
-        List(
-          Source("", SourceRef(existingSourceFactory, List())),
-          Sink("out", SinkRef(existingSinkFactory, List()))
-        ),
-        List(Edge("", "out", None))
-      )
-      val result = validator.validate(process, Category1)
+    val process = createProcess(
+      List(
+        Source("", SourceRef(existingSourceFactory, List())),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("", "out", None))
+    )
+    val result = validator.validate(process, Category1)
 
-      result.errors.globalErrors shouldBe List(PrettyValidationErrors.emptyNodeId(validator.uiValidationError))
-    }
+    result.errors.globalErrors shouldBe List(PrettyValidationErrors.emptyNodeId(validator.uiValidationError))
+  }
 
 
   test("check for duplicated ids") {
@@ -197,9 +199,9 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       ))
     )
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b")), Category1) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "a", "field2" -> "b")), Category1) shouldBe withoutErrorsAndWarnings
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "a")), Category1) shouldBe 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "a")), Category1) shouldBe withoutErrorsAndWarnings
 
     processValidation.validate(validProcessWithFields(Map("field1" -> "", "field2" -> "b")), Category1)
       .errors.processPropertiesErrors should matchPattern {
@@ -222,7 +224,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val process = validProcessWithFields(Map())
     val subprocess = process.copy(properties = process.properties.copy(typeSpecificProperties = FragmentSpecificData()))
 
-    processValidation.validate(subprocess, Category1) shouldBe 'ok
+    processValidation.validate(subprocess, Category1) shouldBe withoutErrorsAndWarnings
 
   }
 
@@ -235,13 +237,13 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       ))
     )
 
-    processValidation.validate(validProcessWithFields(Map("field1" -> "true")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "false")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field1" -> "1")), Category1) should not be 'ok
+    processValidation.validate(validProcessWithFields(Map("field1" -> "true")), Category1) shouldBe withoutErrorsAndWarnings
+    processValidation.validate(validProcessWithFields(Map("field1" -> "false")), Category1) shouldBe withoutErrorsAndWarnings
+    processValidation.validate(validProcessWithFields(Map("field1" -> "1")), Category1) should not be withoutErrorsAndWarnings
 
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1")), Category1) shouldBe 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "1.1")), Category1) should not be 'ok
-    processValidation.validate(validProcessWithFields(Map("field2" -> "true")), Category1) should not be 'ok
+    processValidation.validate(validProcessWithFields(Map("field2" -> "1")), Category1) shouldBe withoutErrorsAndWarnings
+    processValidation.validate(validProcessWithFields(Map("field2" -> "1.1")), Category1) should not be withoutErrorsAndWarnings
+    processValidation.validate(validProcessWithFields(Map("field2" -> "true")), Category1) should not be withoutErrorsAndWarnings
   }
 
   test("handle unknown properties validation") {
@@ -501,7 +503,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
       .source("start", existingSourceFactory)
       .emptySink("sink", existingSinkFactory)
 
-    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayable = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
     val result = mockProcessValidation(process).validate(displayable, Category1)
 
     result.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
@@ -534,7 +536,7 @@ private object ProcessValidationSpec {
     )
   }
 
-  def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String]): DisplayableProcess = {
+  private def createProcessWithParams(nodeParams: List[evaluatedparam.Parameter], additionalProperties: Map[String, String], category: String = Category1): DisplayableProcess = {
     createProcess(
       List(
         Source("inID", SourceRef(existingSourceFactory, List())),
@@ -543,15 +545,17 @@ private object ProcessValidationSpec {
       ),
       List(Edge("inID", "custom", None), Edge("custom", "out", None)),
       TestProcessingTypes.Streaming,
+      category,
       additionalProperties
     )
   }
 
-  def createProcess(nodes: List[NodeData],
-                    edges: List[Edge],
-                    `type`: ProcessingType = TestProcessingTypes.Streaming,
-                    additionalFields: Map[String, String] = Map()): DisplayableProcess = {
-    DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`)
+  private def createProcess(nodes: List[NodeData],
+                            edges: List[Edge],
+                            `type`: ProcessingType = TestProcessingTypes.Streaming,
+                            category: String = Category1,
+                            additionalFields: Map[String, String] = Map()): DisplayableProcess = {
+    DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, Some(category))
   }
 
   def mockProcessValidation(subprocess: CanonicalProcess): ProcessValidation = {
@@ -574,7 +578,7 @@ private object ProcessValidationSpec {
     mockedProcessValidation
   }
 
-  object SampleCustomProcessValidator extends CustomProcessValidator{
+  object SampleCustomProcessValidator extends CustomProcessValidator {
     val badName = "badName"
 
     val badNameError: ScenarioNameValidationError = ScenarioNameValidationError("BadName", "BadName")
@@ -583,4 +587,17 @@ private object ProcessValidationSpec {
       Validated.condNel(process.id != badName, (), badNameError)
     }
   }
+
+  class WithoutErrorsAndWarnings extends BeMatcher[ValidationResult] {
+    override def apply(left: ValidationResult): MatchResult = {
+      MatchResult(
+        !left.hasErrors && !left.hasWarnings,
+        "ValidationResult should has neither errors nor warnings",
+        "ValidationResult should has either errors or warnings"
+      )
+    }
+  }
+
+  val withoutErrorsAndWarnings: WithoutErrorsAndWarnings = new WithoutErrorsAndWarnings()
+
 }

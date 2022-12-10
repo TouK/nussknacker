@@ -29,7 +29,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, Process
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{ValidationErrors, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.NodeValidationRequest
-import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestFactory, TestProcessUtil, TestProcessingTypes}
+import pl.touk.nussknacker.ui.api.helpers.{ProcessTestData, TestCategories, TestFactory, TestProcessUtil, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.util.{ConfigWithScalaVersion, CorsSupport, MultipartUtils, SecurityHeadersSupport}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
@@ -200,7 +200,8 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       nodes = List(SubprocessInputDefinition("input1", List(SubprocessParameter("badParam", SubprocessClazzRef("i.do.not.exist")))),
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
-      processingType = TestProcessingTypes.Streaming
+      processingType = TestProcessingTypes.Streaming,
+      Some(TestCategories.Category1)
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
@@ -261,9 +262,9 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         .processorEnd(nodeUsingDynamicServiceId, "dynamicService", params: _*)
     }
 
-    def firstMockedResult(result: Json): Option[String] = result.hcursor
+    def firstInvocationResult(result: Json): Option[String] = result.hcursor
       .downField("results")
-      .downField("mockedResults")
+      .downField("externalInvocationResults")
       .downField("end")
       .downArray
       .downField("value")
@@ -288,7 +289,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    firstMockedResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+    firstInvocationResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
 
 
     //we generate random parameter
@@ -311,7 +312,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
     resultAfterReload.errors shouldBe ValidationErrors.success
     resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(parameterUUID)
-    firstMockedResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
+    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
 
   }
 
@@ -380,7 +381,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   }
 
   private def testProcess(process: CanonicalProcess, data: String): Json = {
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, TestCategories.Category1)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> data, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart)  ~> addCredentials(credentials) ~> mainRoute ~>  checkWithClue {
       status shouldEqual StatusCodes.OK

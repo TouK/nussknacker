@@ -1,19 +1,22 @@
 package pl.touk.nussknacker.openapi.parser
 
-import org.scalatest.prop.TableDrivenPropertyChecks._
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks._
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.json.swagger
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerBool, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.openapi._
+
+import scala.collection.immutable.ListMap
 
 class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads swagger 2.0") {
 
-    val openApi = parseServicesFromResource("swagger-20.json").head
+    val openApi = parseServicesFromResourceUnsafe("swagger-20.json").head
 
-    openApi.name shouldBe "getCollectionDataUsingGET"
+    openApi.name.value shouldBe "getCollectionDataUsingGET"
 
     openApi.parameters shouldBe List(
       UriParameter("accountNo", SwaggerLong),
@@ -29,15 +32,15 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads body params") {
 
-    val openApi = parseServicesFromResource("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResourceUnsafe("enricher-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
-    openApi.name shouldBe "testService"
+    openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerObject(Map(
-        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong), Set[String]())),
+        "offers" -> SwaggerArray(swagger.SwaggerObject(Map("accountId" -> SwaggerLong))),
         "otherField" -> SwaggerString
-      ), Set[String]()))
+      )))
     )
 
     openApi.pathParts shouldBe List(PlainPart("someService"), PathParameterPart("param1"))
@@ -45,9 +48,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   test("reads primitive body") {
 
-    val openApi = parseServicesFromResource("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
+    val openApi = parseServicesFromResourceUnsafe("enricher-primitive-body-param.yml", baseConfig.copy(allowedMethods = List("POST"))).head
 
-    openApi.name shouldBe "testService"
+    openApi.name.value shouldBe "testService"
     openApi.parameters shouldBe List(
       UriParameter("param1", SwaggerLong),
       SingleBodyParameter(SwaggerString)
@@ -65,9 +68,49 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
       (List("GET", "POST"), "post.*", List("postService")),
       (List("GET"), "post.*", List())
     )) { (allowedMethods, namePattern, expectedNames) =>
-      parseServicesFromResource("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
-        namePattern = namePattern.r)).map(_.name) shouldBe expectedNames
+      parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = allowedMethods,
+        namePattern = namePattern.r)).map(_.name.value) shouldBe expectedNames
     }
+
+  }
+
+  test("detects documentation") {
+    val openApi = parseServicesFromResourceUnsafe("multiple-operations.yml", baseConfig.copy(allowedMethods = List("GET", "POST")))
+
+    openApi.find(_.name.value == "getService").flatMap(_.documentation) shouldBe Some("https://nussknacker.io")
+    openApi.find(_.name.value == "postService").flatMap(_.documentation) shouldBe Some("https://touk.pl")
+
+  }
+
+  test("returns errors for incorrect service") {
+    val openApi = parseServicesFromResource("incorrect-service.yml")
+
+    openApi.find(_.exists(_.name == ServiceName("valid"))) shouldBe 'defined
+    openApi.find(_.swap.exists(_.name == ServiceName("noResponseType"))) shouldBe 'defined
+
+  }
+
+  test("handles recursive scheme") {
+    val openApi = parseServicesFromResourceUnsafe("recursive.yml")
+
+    val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
+    val recursiveListType = SwaggerObject(Map(
+      "value" -> SwaggerString,
+      "next" -> SwaggerRecursiveSchemaFallback,
+      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchemaFallback)),
+      "list" -> SwaggerArray(SwaggerRecursiveSchemaFallback)
+    ))
+    responseType shouldBe Some(SwaggerObject(Map(
+      "left" -> recursiveListType,
+      "right" -> recursiveListType
+    )))
+    recursiveListType.typingResult shouldBe TypedObjectTypingResult(ListMap(
+      "value" -> Typed[String],
+      "next" -> Unknown,
+      //union String + Unknown
+      "union" -> Unknown,
+      "list" -> Typed.genericTypeClass[java.util.List[_]](List(Unknown))
+    ))
 
   }
 

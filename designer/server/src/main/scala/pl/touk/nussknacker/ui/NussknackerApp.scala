@@ -38,6 +38,7 @@ import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, Subpro
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsHtmlSnippet
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -164,7 +165,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       val routes = List(
         new ProcessesResources(
           processRepository = processRepository,
-          subprocessRepository = subprocessRepository,
           processService = processService,
           processToolbarService = configProcessToolbarService,
           processResolving = processResolving,
@@ -172,6 +172,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           processChangeListener = processChangeListener,
           typeToConfig = typeToConfig
         ),
+        new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
         ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
@@ -210,10 +211,11 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       authenticationResources.routeWithPathPrefix
     )
 
-    val usageStatisticsReports = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+    val usageStatisticsReportsConfig = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+    val usageStatisticsSnippetOpt = UsageStatisticsHtmlSnippet.prepareWhenEnabledReporting(usageStatisticsReportsConfig)
 
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(config.getString("http.publicPath"), usageStatisticsReports)
+    val webResources = new WebResources(config.getString("http.publicPath"), usageStatisticsSnippetOpt)
     val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), SecurityHeadersSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route

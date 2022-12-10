@@ -33,7 +33,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
 
     val suprocessParameters = List(SubprocessParameter("ala", SubprocessClazzRef[String]))
 
-    val subprocess =  CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
+    val subprocess = CanonicalProcess(MetaData("subProcess1", FragmentSpecificData()),
       List(
         FlatNode(SubprocessInputDefinition("start", suprocessParameters)),
         canonicalnode.FilterNode(Filter("f1", "false"), List()), FlatNode(SubprocessOutputDefinition("out1", "output", List.empty))) , List.empty
@@ -290,9 +290,7 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     )
 
     val resolvedValidated = SubprocessResolver(Set(subprocess)).resolve(process).toOption.get.allStartNodes
-    resolvedValidated.toList.foreach { branch =>
-      println(branch)
-    }
+    resolvedValidated should have length 2
   }
 
   test("handle subprocess with empty outputs") {
@@ -312,6 +310,24 @@ class SubprocessResolverSpec extends AnyFunSuite with Matchers with Inside{
     
     val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
     resolvedValidated shouldBe 'valid
+
+  }
+
+  test("detect multiple ends with same name") {
+    val fragment = ScenarioBuilder
+      .fragment("fragment1")
+      .split("split",
+        GraphBuilder.fragmentOutput("end1", "output1"),
+        GraphBuilder.fragmentOutput("end2", "output1"),
+      )
+    val scenario = ScenarioBuilder
+      .streaming("scenario1")
+      .source("source", "source1")
+      .subprocessOneOut("fragment", "fragment1", "output1", "outVar1")
+      .emptySink("id1", "sink")
+
+    val resolvedValidated = SubprocessResolver(Set(fragment)).resolve(scenario)
+    resolvedValidated shouldBe Invalid(NonEmptyList.of(MultipleOutputsForName("output1", "fragment")))
 
   }
 

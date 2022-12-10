@@ -133,7 +133,7 @@ class DBProcessService(managerActor: ActorRef,
       .map(_.map(pd => processResolving.validateBeforeUiResolving(pd.json, pd.processCategory))) // validating the same way, as UI does
       .flatMap {
         case l@Left(_) => Future(l.map(_ => ()))
-        case Right(value) if !value.isOk => Future(Left(DeployingInvalidScenarioError))
+        case Right(value) if value.hasErrors => Future(Left(DeployingInvalidScenarioError))
         case _ => callback
       }
 
@@ -243,7 +243,7 @@ class DBProcessService(managerActor: ActorRef,
         }
         processUpdated <- EitherT(repositoryManager
           .runInTransaction(processRepository
-            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, action.comment, increaseVersionWhenJsonNotChanged = false))
+            .updateProcess(UpdateProcessAction(processIdWithName.id, substituted, Option(action.comment), increaseVersionWhenJsonNotChanged = false))
           ))
       } yield UpdateProcessResponse(
         processUpdated
@@ -284,7 +284,7 @@ class DBProcessService(managerActor: ActorRef,
       val result = ProcessMarshaller.fromJson(jsonString).leftMap(UnmarshallError).toEither
         .map{ jsonCanonicalProcess =>
           val canonical = jsonCanonicalProcess.withProcessId(processId.name)
-          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType)
+          val displayable = ProcessConverter.toDisplayable(canonical, process.processingType, process.processCategory)
           val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, displayable.processingType, process.processCategory)
           new ValidatedDisplayableProcess(displayable, validationResult)
         }

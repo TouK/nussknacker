@@ -1,25 +1,27 @@
 package pl.touk.nussknacker.openapi.enrichers
 
 import pl.touk.nussknacker.engine.api.EagerService
-import pl.touk.nussknacker.openapi.SwaggerService
+import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, ServiceName, SwaggerService}
+import sttp.model.StatusCode
 
-import java.net.URL
+object SwaggerEnrichers {
 
-class SwaggerEnrichers(definitionUrl: URL, rootUrl: Option[URL], creator: SwaggerEnricherCreator) {
-
-  def enrichers(swaggerServices: List[SwaggerService],
-                additionalCategories: List[String],
-                fixedParameters: Map[String, () => AnyRef]): Seq[SwaggerEnricherDefinition] = {
+  def prepare(config: OpenAPIServicesConfig,
+              swaggerServices: List[SwaggerService],
+              creator: SwaggerEnricherCreator): Seq[SwaggerEnricherDefinition] = {
+    val additionalCategories = Nil
+    //TODO: add configuration
+    val fixedParameters = Map[String, () => AnyRef]()
     swaggerServices.map { swaggerService =>
       SwaggerEnricherDefinition(
         swaggerService.name,
         swaggerService.documentation,
         swaggerService.categories ++ additionalCategories,
-        creator.create(definitionUrl, rootUrl, swaggerService, fixedParameters)
+        creator.create(config.url, config.rootUrl, swaggerService, fixedParameters, config.codesToInterpretAsEmpty.map(StatusCode(_)))
       )
     }
   }
 }
 
-final case class SwaggerEnricherDefinition(name: String, documentation: Option[String], categories: List[String], service: EagerService)
+final case class SwaggerEnricherDefinition(name: ServiceName, documentation: Option[String], categories: List[String], service: EagerService)
 

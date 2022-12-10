@@ -3,26 +3,29 @@ sidebar_position: 3
 ---
 # Deployment Manager configuration
 
-Configuration of Deployment Manager, which is component of the Designer that deploys scenario to given Engine (e.g. Lite or Flink). 
-Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
+Deployment Manager deploys scenarios from the Designer to the engine on which scenarios are processed. Check [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+
+Below you can find a snippet of Deployment Manager configuration. 
 ```
 deploymentConfig {     
   type: "flinkStreaming"
   restUrl: "http://localhost:8081"
+  
+  # additional configuration goes here
 }
 ```
+`type` parameter determines engine to which the scenario is deployed.The `type` parameter is set in both the minimal working configuration file (Docker image and binary distribution) and Helm chart - you will not need to set it on your won. 
 
-Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
-
-## Lite engine based on Kubernetes
+&nbsp;
+## Kubernetes native Lite engine configuration
                                                                                 
-Please remember, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
-Both processing modes: `streaming` and `request-response` share the majority of configuration.
+With the exception of the `servicePort` configuration option, all remaining configuration options apply to both `streaming` and `request-response` processing modes.
 
-`lite-k8s` Deployment Manager has the following configuration options:                 
+The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize the Helm chart to use different values for those [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install Designer outside of the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration. 
 
 | Parameter                 | Type                                                | Default value                       | Description                                                                              |
 |---------------------------|-----------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
@@ -36,8 +39,9 @@ Both processing modes: `streaming` and `request-response` share the majority of 
 | logbackConfigPath         | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
 | commonConfigMapForLogback | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
 | servicePort               | int                                                 | 80                                  | Port of service exposed in request-response processing mode                              |
-                                                 
-### Customizing K8s deployment
+
+&nbsp;                                                 
+### Customizing K8s deployment resource definition
 
 By default, each scenario creates K8s Deployment. By default, Nussknacker will create following deployment:
 
@@ -139,44 +143,49 @@ spec {
  ] 
 }
 ```
-This config will be merged into final deployment. 
+This config will be merged into the final K8s deployment resource definition. 
 Please note that you cannot override names or labels configured by Nussknacker. 
-                              
-### Overriding configuration passed to runtime. 
-                                 
-By default, configuration of Lite engine runtime consists of
-- `application.conf` from runtime image - see [this](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf) for default.
-- the configuration from `modelConfig` 
 
-In some circumstances you want to change values in `modelConfig` without having to modify base image. E.g. different accounts/credentials should be used in Designer and in Runtime. For those cases you can use `configExecutionOverrides` setting:
+&nbsp;                              
+### Overriding configuration passed to runtime. 
+
+In most cases, the model configuration values passed to the Lite Engine runtime are the ones from 
+the `modelConfig` section of [main configuration file](https://docs.nussknacker.io/documentation/docs/installation_configuration_guide/#configuration-areas).
+However, there are two exception to this rule:
+- there is [application.conf](https://github.com/TouK/nussknacker/blob/staging/engine/lite/kafka/runtime/src/universal/conf/application.conf) file in the runtime image, which is used as additional source of certain defaults.
+- you can override the configuration coming from the main configuration file. The paragraph below describes how to use this mechanism. 
+
+In some circumstances you want to have different configuration values used by the Designer, and different used by the runtime. 
+E.g. different accounts/credentials should be used in Designer (for schema discovery, tests from file) and in Runtime (for the production use). 
+For those cases you can use `configExecutionOverrides` setting:
 ```hocon
 deploymentConfig {     
   configExecutionOverrides {
-    password: "sfd2323afdf" # this will be used in the Runtime
+    special_password: "sfd2323afdf" # this will be used in the Runtime
   }
 }
 modelConfig {
-  password: "aaqwmpor909232" # this will be used in the Designer
+  special_password: "aaqwmpor909232" # this will be used in the Designer
 }
 ```
 
+&nbsp;
 ### Configuring replicas count
 
-Each scenario has its own, configured parallelism. It describes how many worker threads,
-across all replicas, should be used to process events. With `scalingConfig` one can affect replicas count 
-(each replica receives the same number of worker threads).
-Following options are possible:
-- ```{ fixedReplicasCount: x }```  
-- ```{ tasksPerReplica: y }```
-- by default `tasksPerReplica: 4`
+In the request-response processing mode, the only way to affect parallelism is to set the count of scenario pods (replicas). This is achieved with the `fixedReplicasCount` configuration key; its default setting is 2:
 
-Please note that:
-- it's not possible to set both config options at the same time
-- for `request-response` processing mode only `fixedReplicasCount` is available
-- due to rounding, exact workers count may be different from parallelism 
-  (e.g. for fixedReplicasCount = 3, parallelism = 5, there will be 2 tasks per replica, total workers = 6)  
+`{ fixedReplicasCount: x }`.
 
+​In the  streaming processing mode you can affect scenario parallelism in the following ways:
+- Set scenario parallelism in the scenario properties - this will determine how many parallel tasks are used to process the scenario. The number of replicas in the K8s deployment will be set to the `ceiling(scenarioParallelism / tasksPerReplica)`. In this case, the default value of 4 will be used for `tasksPerReplica`.
+- Modify the default value of `tasksPerReplica` by setting:
+  - `{ tasksPerReplica y }`
 
+Alternatively, you can set `fixedReplicasCount` to override scenario parallelism set in the scenario properties. You cannot use this setting together with `tasksPerReplica` setting. 
+
+Finally, due to rounding, the number of tasks may be different from scenario parallelism (e.g. for `fixedReplicasCount = 3`, scenario parallelism = 5, there will be 2 tasks per replica, total tasks = 6)
+
+&nbsp;
 ### Nussknacker instance name
 Value of `nussknackerInstanceName` will be passed to scenario runtime pods as a `nussknacker.io/nussknackerInstanceName` Kubernetes label.
 In a standard scenario, its value is taken from Nussknacker's pod `app.kubernetes.io/instance` label which, when installed
@@ -184,15 +193,18 @@ using helm should be set to [helm release name](https://helm.sh/docs/chart_best_
 
 It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
 
+&nbsp;
 ### Configuring runtime logging
 With `logbackConfigPath` you can provide path to your own logback config file, which will be used by runtime containers. This configuration is optional, if skipped default logging configuration will be used. 
 Please mind, that apart whether you will provide your own logging configuration or use default, you can still modify it in runtime (for each scenario deployment separately*) as described [here](../operations_guide/Lite#logging-level)
 
 *By default, every scenario runtime has its own separate configMap with logback configuration. By setting `commonConfigMapForLogback` you can enforce usage of single configMap (with such name as configured) with logback.xml for all your runtime containers. Take into account, that DeploymentManager relinquishes control over lifecycle of this ConfigMap (with one exception - it will create it, if not exist).
 
+&nbsp;
 ### Configuring Prometheus metrics
 Just like in [Designer installation](./Installation.md#Basic environment variables), you can attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods. Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration file by setting `PROMETHEUS_AGENT_CONFIG_FILE` environment, which has to point to it.   
 
+&nbsp;
 ## Request-Response embedded
 
 Deployment Manager of type `request-response-embedded` has the following configuration options:

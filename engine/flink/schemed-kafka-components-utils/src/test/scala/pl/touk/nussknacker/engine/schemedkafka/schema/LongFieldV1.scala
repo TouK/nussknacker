@@ -8,6 +8,8 @@ object LongFieldV1 extends TestSchemaWithRecord {
 
   override def stringSchema: String = """{ "type": "record", "name": "longField", "fields": [{"name":"field", "type":"long"}] }"""
 
+  def jsonSchema: String = """{"type": "object", "properties": {"field": {"type": "integer"}}}"""
+
   def exampleData(timestamp: Long) = Map("field" -> timestamp)
 
   def encodeData(timestamp: Long): GenericData.Record = encode(exampleData(timestamp))

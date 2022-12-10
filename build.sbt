@@ -94,14 +94,12 @@ lazy val publishSettings = Seq(
   ).toSeq
 )
 
-
 def modelMergeStrategy: String => MergeStrategy = {
   case PathList(ps@_*) if ps.last == "module-info.class" => MergeStrategy.discard //TODO: we don't handle JDK9 modules well
   case PathList(ps@_*) if ps.last == "NumberUtils.class" => MergeStrategy.first //TODO: shade Spring EL?
   case PathList("org", "apache", "commons", "logging", _@_*) => MergeStrategy.first //TODO: shade Spring EL?
   case PathList(ps@_*) if ps.last == "io.netty.versions.properties" => MergeStrategy.first //Netty has buildTime here, which is different for different modules :/
   case PathList(ps@_*) if ps.head == "draftv4" && ps.last == "schema" => MergeStrategy.first //Due to swagger-parser dependencies having different schema definitions
-  case PathList(ps@_*) if ps.last == "KafkaMetricWrapper.class" => MergeStrategy.first // delete after update Flink to 1.15.3 and when we do not have to overwrite this class
   case x => MergeStrategy.defaultMergeStrategy(x)
 }
 
@@ -199,7 +197,8 @@ lazy val commonSettings =
         //we use it e.g. to provide consistent behaviour wrt extracting parameter names from scala and java
         "-parameters"
       ),
-      coverageMinimum := 60,
+      coverageMinimumStmtTotal := 60,
+      coverageMinimumBranchTotal := 60,
       coverageFailOnMinimum := false,
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
@@ -227,7 +226,6 @@ lazy val commonSettings =
         "com.typesafe.akka" %% "akka-stream" % akkaV,
         "com.typesafe.akka" %% "akka-testkit" % akkaV,
 
-        // akka-actor depends on old, 0.8 version
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
 
         //security features
@@ -245,6 +243,8 @@ lazy val commonSettings =
         "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-core" % jacksonV,
         "com.fasterxml.jackson.core" % "jackson-databind" % jacksonV,
+        "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % jacksonV,
+        "com.fasterxml.jackson.datatype" % "jackson-datatype-jsr310" % jacksonV,
 
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-json" % dropWizardV,
@@ -253,11 +253,10 @@ lazy val commonSettings =
       )
     )
 
-val flinkV = "1.15.2"
+val flinkV = "1.16.0"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-//TODO: upgrade to 3.x after flink upgrade: flink up to version 1.15 doesn't accept kafka 3.x because org.apache.kafka.common.Metric.value was renamed to metricValue - it should be changed in flink 1.16
-val kafkaV = "2.8.1"
+val kafkaV = "3.2.3"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.2.10"
@@ -268,13 +267,14 @@ val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.2"
 val jwtCirceV = "9.0.5"
+//TODO: upgrade to 2.13.x
 val jacksonV = "2.11.3"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.30"
 val scalaLoggingV = "3.9.2"
-val scalaCompatV = "0.9.1"
+val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
 val configV = "1.4.1"
 val commonsLangV = "3.3.2"
@@ -1516,7 +1516,7 @@ lazy val bom = (project in file("bom"))
 lazy val modules = List[ProjectReference](
   requestResponseRuntime, liteEngineRuntimeApp, flinkDeploymentManager, flinkPeriodicDeploymentManager, flinkDevModel, flinkDevModelJava, defaultModel,
   openapiComponents, interpreter, benchmarks, kafkaUtils, kafkaComponentsUtils, kafkaTestUtils, componentsUtils, componentsTestkit, defaultHelpers, commonUtils, utilsInternal, testUtils,
-  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi,
+  flinkExecutor, flinkSchemedKafkaComponentsUtils, flinkKafkaComponentsUtils, flinkComponentsUtils, flinkTests, flinkTestUtils, flinkComponentsApi, flinkExtensionsApi, flinkScalaUtils,
   requestResponseComponentsUtils, requestResponseComponentsApi, componentsApi, extensionsApi, security, processReports, httpUtils,
   restmodel, listenerApi, deploymentManagerApi, designer, sqlComponents, schemedKafkaComponentsUtils, flinkBaseComponents, flinkKafkaComponents,
   liteComponentsApi, liteEngineKafkaComponentsApi, liteEngineRuntime, liteBaseComponents, liteKafkaComponents, liteKafkaComponentsTests, liteEngineKafkaRuntime, liteEngineKafkaIntegrationTest, liteEmbeddedDeploymentManager, liteK8sDeploymentManager,

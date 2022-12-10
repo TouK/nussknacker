@@ -34,9 +34,11 @@ Table below describes data types that OpenAPI integration handles:
 | array         |                | array               |
 | map/object    |                | record              |
 
-OpenAPI integration can handle schema references. 
+OpenAPI integration can handle schema references. However, we don't support recursive schemas at the moment. 
+Recursive schema occurrences will be replaced with `Unknown` type. 
+
 For objects and maps we use `properties` to define structure.
-For arrays we use `items` to define type of elements.                    
+For arrays, we use `items` to define type of elements.                    
                                                                                                            
 
 ## Configuration
@@ -67,3 +69,9 @@ components {
 | allowedMethods | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                          |
 | namePattern    | false    | .*      | Regexp for filtering operations by operationId (i.e. enricher name)                                                           |
 | security       | false    |         | Configuration for [authentication](https://swagger.io/docs/specification/authentication/). Currently only apiKey is supported |
+
+## Operations 
+
+You can enable logging invocations in the runtime by setting logger
+`pl.touk.nussknacker.openapi.enrichers.[enricher name]` to `DEBUG`. In particular, setting `pl.touk.nussknacker.openapi.enrichers` 
+level to `DEBUG` will turn on logging on all enrichers. Please remember to configure logging on appropriate component (e.g. Lite runtime or Flink TaskManager).

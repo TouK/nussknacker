@@ -22,7 +22,6 @@ import pl.touk.nussknacker.restmodel.processdetails._
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
-import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes.Streaming
 import pl.touk.nussknacker.ui.api.helpers._
 import pl.touk.nussknacker.ui.process.exception.ProcessIllegalAction
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
@@ -214,6 +213,20 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     }
   }
 
+  test("should allow deployment of scenario with warning") {
+    val processWithDisabledFilter = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "#input != null", Some(true))
+      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "#input")
+
+    saveProcessAndAssertSuccess(SampleProcess.process.id, processWithDisabledFilter)
+    deployProcess(processName.value) ~> check {
+      status shouldBe StatusCodes.OK
+    }
+  }
+
   test("should return failure for not validating scenario") {
     val invalidScenario = ScenarioBuilder
       .streaming("sampleProcess")
@@ -270,7 +283,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
   test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
-    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, Category1)
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
 
@@ -313,7 +326,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
 
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
@@ -335,7 +348,7 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     saveProcessAndAssertSuccess(process.id, process)
 
-    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming)
+    val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
 
     List((1 to 50).mkString("\n"), (1 to 50000).mkString("-")).foreach { tooLargeData =>
       val multiPart = MultipartUtils.prepareMultiParts("testData" -> tooLargeData, "processJson" -> displayableProcess.asJson.noSpaces)()

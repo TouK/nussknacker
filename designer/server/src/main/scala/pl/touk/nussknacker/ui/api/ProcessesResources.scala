@@ -38,7 +38,6 @@ import scala.concurrent.{ExecutionContext, Future}
 //TODO: Move remained business logic to processService
 class ProcessesResources(
   val processRepository: FetchingProcessRepository[Future],
-  subprocessRepository: SubprocessRepository,
   processService: ProcessService,
   processToolbarService: ProcessToolbarService,
   processResolving: UIProcessResolving,
@@ -249,7 +248,7 @@ class ProcessesResources(
               }
             }
           }
-        } ~ new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators)).securedRoute
+        }
 
       }
   }
@@ -303,13 +302,13 @@ class ProcessesResources(
     val validatedDetails = processDetails.mapProcess { canonical: CanonicalProcess =>
       val processingType = processDetails.processingType
       val validationResult = processResolving.validateBeforeUiReverseResolving(canonical, processingType, processDetails.processCategory)
-      processResolving.reverseResolveExpressions(canonical, processingType, validationResult)
+      processResolving.reverseResolveExpressions(canonical, processingType, processDetails.processCategory, validationResult)
     }
     Future.successful(validatedDetails)
   }
 
   private def toProcessDetails(canonicalProcessDetails: BaseProcessDetails[CanonicalProcess]): Future[ProcessDetails] = {
-    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType))
+    val processDetails = canonicalProcessDetails.mapProcess(canonical => ProcessConverter.toDisplayable(canonical, canonicalProcessDetails.processingType, canonicalProcessDetails.processCategory))
     Future.successful(processDetails)
   }
 

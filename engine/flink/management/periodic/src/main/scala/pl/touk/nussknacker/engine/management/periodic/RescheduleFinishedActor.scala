@@ -35,7 +35,7 @@ class RescheduleFinishedActor(handleFinished: => Future[Unit], interval: FiniteD
 
   override def receive: Receive = {
     case CheckStates =>
-      logger.debug("Checking scenarios to be rescheduled or marked as failed")
+      logger.trace("Checking scenarios to be rescheduled or marked as failed")
       handleFinished onComplete {
         case Success(_) =>
           self ! CheckStatesCompleted

@@ -7,7 +7,7 @@ object OutputValidatorErrorsMessageFormatter {
   private val ValidationErrorMessageBase = "Provided value does not match scenario output"
   private val ValidationRedundantFieldsErrorMessage = "Redundant fields"
   private val ValidationMissingFieldsErrorMessage = "Missing fields"
-  private val ValidationTypeErrorMessage = "Type validation"
+  private val ValidationTypeErrorMessage = "Incorrect type"
 
   private def makeErrors(messages: List[String], baseMessage: String): List[String] =
     if (messages.nonEmpty) messages.mkString(s"$baseMessage: ", ", ", ".") :: Nil else Nil

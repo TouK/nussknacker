@@ -10,7 +10,9 @@ package object openapi {
 
   implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toExternalForm)
   implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
+}
 
+package openapi {
   @JsonCodec sealed trait SwaggerParameter {
 
     def name: String
@@ -40,7 +42,7 @@ package object openapi {
   case class PathParameterPart(parameterName: String) extends PathPart
 
   //TODO: content type?
-  @JsonCodec final case class SwaggerService(name: String,
+  @JsonCodec final case class SwaggerService(name: ServiceName,
                                              categories: List[String],
                                              documentation: Option[String],
                                              pathParts: List[PathPart],
@@ -48,6 +50,14 @@ package object openapi {
                                              responseSwaggerType: Option[SwaggerTyped],
                                              method: String,
                                              servers: List[String],
-                                             securities: List[SwaggerSecurity])
+                                             securities: List[SwaggerSecurity]
+                                            )
+
+  case class ServiceName(value: String)
+
+  object ServiceName {
+    implicit val encoder: Encoder[ServiceName] = Encoder.encodeString.contramap(_.value)
+    implicit val decoder: Decoder[ServiceName] = Decoder.decodeString.map(ServiceName(_))
+  }
 
 }

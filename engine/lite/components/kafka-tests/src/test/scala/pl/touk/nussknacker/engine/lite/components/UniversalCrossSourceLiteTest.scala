@@ -7,8 +7,6 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.internals.{RecordHeader, RecordHeaders}
 import org.apache.kafka.common.record.TimestampType
 import org.everit.json.schema.Schema
-import org.everit.json.schema.loader.SchemaLoader
-import org.json.JSONObject
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
@@ -21,6 +19,8 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.util.Optional
+
 class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with ValidatedValuesDetailedMessage {
 
   import LiteKafkaComponentProvider._
@@ -29,7 +29,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
   import pl.touk.nussknacker.engine.spel.Implicits._
 
   val avroSchema: avro.Schema = AvroTestData.personSchema
-  val jsonSchema: Schema = JsonTestData.personSchema
+  val jsonSchema: Schema = JsonTestData.schemaPerson
 
   private val inputTopic = "input"
   private val outputTopic = "output"
@@ -78,7 +78,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
         |}""".stripMargin.getBytes()
 
     val headers = new RecordHeaders().add(new RecordHeader("value.schemaId", s"$schemaId".getBytes()))
-    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_CHECKSUM, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], inputJsonBytes, headers)
+    val input = new ConsumerRecord(inputTopic, 1, 1, ConsumerRecord.NO_TIMESTAMP, TimestampType.NO_TIMESTAMP_TYPE, ConsumerRecord.NULL_SIZE, ConsumerRecord.NULL_SIZE, null.asInstanceOf[Array[Byte]], inputJsonBytes, headers, Optional.empty[Integer]())
 
     //When
     val result = runner.runWithRawData(scenario, List(input)).validValue

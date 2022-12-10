@@ -8,7 +8,6 @@ import org.apache.avro.Schema.Type
 import org.apache.avro.SchemaCompatibility.SchemaCompatibilityType
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.{LogicalTypes, Schema, SchemaCompatibility}
-import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
@@ -26,14 +25,9 @@ private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputVali
   override def expected: String = AvroSchemaOutputValidatorPrinter.print(schema)
 }
 
-object AvroSchemaOutputValidator {
-  private[encode] val SimpleAvroPath = "Value"
-}
-
 class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogging {
 
   import cats.implicits.{catsStdInstancesForList, toTraverseOps}
-  import AvroSchemaOutputValidator._
   import scala.collection.JavaConverters._
 
   private val valid = Validated.Valid(())
@@ -51,7 +45,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   /**
     * see {@link pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder} for underlying avro types
     */
-  def validateTypingResultToSchema(typingResult: TypingResult, parentSchema: Schema)(implicit nodeId: NodeId): ValidatedNel[OutputValidatorError, Unit] =
+  def validateTypingResultAgainstSchema(typingResult: TypingResult, parentSchema: Schema): ValidatedNel[OutputValidatorError, Unit] =
     validateTypingResult(typingResult, parentSchema, None)
 
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
@@ -181,7 +175,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     //check is there only one typing error with exactly same field as path - it means there was checking whole object (without going deeper e.g. List/Map/Record)
     def singleObjectTypingError(errors: NonEmptyList[OutputValidatorError]): Boolean =
       errors.collect{case err: OutputValidatorTypeError => err} match {
-        case head :: Nil => path.contains(head.field)
+        case head :: Nil => path == head.field
         case _ => false
       }
 
@@ -289,7 +283,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     Validated.invalidNel(typeError(typingResult, schema, path))
 
   private def typeError(typingResult: TypingResult, schema: Schema, path: Option[String]) =
-    OutputValidatorTypeError(path.getOrElse(SimpleAvroPath), typingResult, AvroSchemaExpected(schema))
+    OutputValidatorTypeError(path, typingResult, AvroSchemaExpected(schema))
 
   private def buildPath(key: String, path: Option[String], useIndexer: Boolean = false) = Some(
     path.map(p => if(useIndexer) s"$p[$key]" else s"$p.$key").getOrElse(key)

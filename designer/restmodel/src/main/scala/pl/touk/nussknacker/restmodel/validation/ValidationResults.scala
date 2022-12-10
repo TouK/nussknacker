@@ -16,7 +16,8 @@ object ValidationResults {
 
   //TODO: consider extracting additional DTO class
   @JsonCodec case class ValidationResult(errors: ValidationErrors, warnings: ValidationWarnings, nodeResults: Map[String, NodeTypingData]) {
-    val isOk: Boolean = errors == ValidationErrors.success && warnings == ValidationWarnings.success
+    val hasErrors: Boolean = errors != ValidationErrors.success
+    val hasWarnings: Boolean = warnings != ValidationWarnings.success
     val saveAllowed: Boolean = allErrors.forall(_.errorType == NodeValidationErrorType.SaveAllowed)
 
     def add(other: ValidationResult): ValidationResult = ValidationResult(

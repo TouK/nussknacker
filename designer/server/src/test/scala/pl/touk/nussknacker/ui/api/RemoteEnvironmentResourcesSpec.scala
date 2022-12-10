@@ -20,6 +20,7 @@ import pl.touk.nussknacker.restmodel.validation.ValidationResults
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationErrorType, ValidationResult}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.EspError
+import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory._
 import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
@@ -58,25 +59,25 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
   }
 
   it should "invoke migration for found scenario" in {
+    val category = TestCat
     val difference = Map("node1" -> NodeNotPresentInCurrent("node1", Filter("node1", Expression("spel", "#input == 4"))))
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer), readWritePermissions)
+    val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = Some(category))
 
-    saveProcess(processName, ProcessTestData.validProcess) {
+    saveProcess(processName, ProcessTestData.validProcess, category) {
       Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {
         status shouldEqual StatusCodes.OK
 
         responseAs[Map[String, Difference]] shouldBe difference
       }
-      remoteEnvironment.compareInvocations shouldBe List(ProcessTestData.validDisplayableProcess.toDisplayable)
-
+      remoteEnvironment.compareInvocations shouldBe List(expectedDisplayable)
 
       Post(s"/remoteEnvironment/$processId/2/migrate") ~> route ~> check {
         status shouldEqual StatusCodes.OK
       }
-      remoteEnvironment.migrateInvocations shouldBe List(ProcessTestData.validDisplayableProcess.toDisplayable)
-
+      remoteEnvironment.migrateInvocations shouldBe List(expectedDisplayable)
     }
   }
 
@@ -131,8 +132,8 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     )),
       fetchingProcessRepository, processAuthorizer), testPermissionRead)
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(
@@ -156,8 +157,8 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     )),
       fetchingProcessRepository, processAuthorizer), readWritePermissions)
 
-    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value)) {
-      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value)) {
+    saveProcess(processId1, ProcessTestData.validProcessWithId(processId1.value), TestCat) {
+      saveProcess(processId2, ProcessTestData.validProcessWithId(processId2.value), TestCat) {
         Get(s"/remoteEnvironment/compare") ~> route ~> check {
           status shouldEqual StatusCodes.OK
           responseAs[EnvironmentComparisonResult] shouldBe EnvironmentComparisonResult(

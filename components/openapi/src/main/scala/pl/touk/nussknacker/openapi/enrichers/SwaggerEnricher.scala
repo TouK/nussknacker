@@ -13,8 +13,9 @@ import pl.touk.nussknacker.openapi.SwaggerService
 import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricherCreator.determineInvocationBaseUrl
 import pl.touk.nussknacker.openapi.extractor.ParametersExtractor
 import pl.touk.nussknacker.openapi.http.SwaggerSttpService
-import pl.touk.nussknacker.openapi.http.backend.{FixedAsyncHttpClientBackendProvider, HttpBackendProvider, HttpClientConfig, SharedHttpClientBackendProvider}
+import pl.touk.nussknacker.openapi.http.backend._
 import sttp.client.SttpBackend
+import sttp.model.StatusCode
 
 import java.net.{MalformedURLException, URL}
 import scala.concurrent.{ExecutionContext, Future}
@@ -22,15 +23,20 @@ import scala.util.Try
 
 class SwaggerEnricher(baseUrl: URL, swaggerService: SwaggerService,
                       fixedParams: Map[String, () => AnyRef],
-                      httpBackendProvider: HttpBackendProvider) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
+                      httpBackendProvider: HttpBackendProvider,
+                      codesToInterpretAsEmpty: List[StatusCode]
+                     ) extends EagerServiceWithStaticParametersAndReturnType with TimeMeasuringService {
 
-  override protected def serviceName: String = swaggerService.name
+  override protected def serviceName: String = swaggerService.name.value
 
-  private val swaggerHttpService = new SwaggerSttpService(baseUrl, swaggerService)
+  private val swaggerHttpService = new SwaggerSttpService(baseUrl, swaggerService, codesToInterpretAsEmpty)
 
   private val parameterExtractor = new ParametersExtractor(swaggerService, fixedParams)
 
-  implicit protected def httpBackendForEc(implicit ec: ExecutionContext): SttpBackend[Future, Nothing, Nothing] = httpBackendProvider.httpBackendForEc
+  implicit protected def httpBackendForEc(implicit ec: ExecutionContext, collector: ServiceInvocationCollector): SttpBackend[Future, Nothing, Nothing] = {
+    val originalBackend: SttpBackend[Future, Nothing, Nothing] = httpBackendProvider.httpBackendForEc
+    new LoggingAndCollectingSttpBackend(originalBackend, s"${getClass.getPackage.getName}.$serviceName")
+  }
 
   override def parameters: List[Parameter] = parameterExtractor.parameterDefinition
 
@@ -60,9 +66,10 @@ class SwaggerEnricherCreator(httpBackendProvider: HttpBackendProvider) {
   def create(definitionUrl: URL,
              rootUrl: Option[URL],
              swaggerService: SwaggerService,
-             fixedParams: Map[String, () => AnyRef]): SwaggerEnricher = {
+             fixedParams: Map[String, () => AnyRef],
+             codesToInterpretAsEmpty: List[StatusCode]): SwaggerEnricher = {
     val baseUrl = determineInvocationBaseUrl(definitionUrl, rootUrl, swaggerService.servers)
-    new SwaggerEnricher(baseUrl, swaggerService, fixedParams, httpBackendProvider)
+    new SwaggerEnricher(baseUrl, swaggerService, fixedParams, httpBackendProvider, codesToInterpretAsEmpty)
   }
 
 }

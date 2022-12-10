@@ -3,24 +3,64 @@
 
 1.7.0 (Not released yet)
 ------------------------
-* [#3560](https://github.com/TouK/nussknacker/pull/3560) Switched from using `scala.DataStream` to `datastream.DataStream`
+* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
+* JSON Schema handling improvements:
+  * [#3687](https://github.com/TouK/nussknacker/pull/3687) Support for union types
+  * [#3695](https://github.com/TouK/nussknacker/pull/3695) Fixed delaying JSON records by field in universal source
+  * [#3699](https://github.com/TouK/nussknacker/pull/3699) Handling null on JSON schema
+  * [#3709](https://github.com/TouK/nussknacker/pull/3709) Support for typing `Map[String, T]` using JSON Schema.
+    * When `properties` are defined `additionalProperties` is ignored and type is determined by `properties` - as it was before.
+    * When `"additionalProperties": true` type is `Map[String, Unknown]`
+    * When `"additionalProperties": T` type is `Map[String, T]`
+  * [#3709](https://github.com/TouK/nussknacker/pull/3709) `BestEffortJsonSchemaEncoder` encodes only Strings for `"type": String`
+  * [#3730](https://github.com/TouK/nussknacker/pull/3730) Additional fields are not trimmed during encoding when `additionalProperties` are allowed by schema
+  * [#3742](https://github.com/TouK/nussknacker/pull/3742) More strict encoding - always validate against schema
+  * [#3749](https://github.com/TouK/nussknacker/pull/3749) More precise encoding against integer schema
+
+* Request-response JSON schema sink improvements:
+  * [#3607](https://github.com/TouK/nussknacker/pull/3607) Encoder based on response schema.
+  * [#3727](https://github.com/TouK/nussknacker/pull/3727) Sink validation changes:
+    * Added param `Value validation mode` 
+    * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]`
+  * [#3716](https://github.com/TouK/nussknacker/pull/3716) Allow to add additional fields also in `strict validation mode`, if schema permits them.
+  * [#3722](https://github.com/TouK/nussknacker/pull/3722) Validation of JSON schema with additionalProperties
+
+* [#3707](https://github.com/TouK/nussknacker/pull/3707), [#3719](https://github.com/TouK/nussknacker/pull/3719), [#3692](https://github.com/TouK/nussknacker/pull/3692), [#3656](https://github.com/TouK/nussknacker/pull/3656), [#3776](https://github.com/TouK/nussknacker/pull/3776) Improvements in OpenAPI:
+  * Support for OpenAPI 3.1.0
+  * Basic support for type references in JSON schemas
+  * Better logging from OpenAPI enrichers
+  * Handling of API Keys in query parameter and cookie
+  * It's possible to configure which HTTP codes (404 by default) can be used as successful, empty response
+  * Documentation link is taken from global configuration, if operation doesn't provide one
+  * Handle recursive schemas gracefully (we fall back to Unknown type on recursion detected)
+* Upgrades:
+  * [#3738](https://github.com/TouK/nussknacker/pull/3738) Kafka 3.2.3
+  * [#3683](https://github.com/TouK/nussknacker/pull/3683) Flink 1.16
+
 * [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
-* [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Remove Flink Scala API
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
   Added option `skipValidateAndResolve` in `/processesDetails`, `/processes/{name}` and `/processes/{name}/{versionId}`
   to return scenario JSON omitting validation and dictionary resolving.
-* [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder.
-* [#3656](https://github.com/TouK/nussknacker/pull/3656) OpenAPI 3.1.0 support + basic support for type references in json schemas
 * [#3680](https://github.com/TouK/nussknacker/pull/3680) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
 * [#3668](https://github.com/TouK/nussknacker/pull/3668) `TestScenarioRunner.requestResponseBased()` api enhancements: returning scenario compilation errors as a `ValidatedNel`
 * [#3682](https://github.com/TouK/nussknacker/pull/3682) Extract generic `BaseSharedKafkaProducer`, rename `SharedKafkaProducerHolder` to `DefaultSharedKafkaProducerHolder`. 
-
-
-1.6.1 (Not released yet)
+* [#3701](https://github.com/TouK/nussknacker/pull/3701) `TypedMap` allows access to non-existing keys in SpEL (returning `null`)
+* [#3733](https://github.com/TouK/nussknacker/pull/3733) Fix for: some validation (e.g. Flink scenario name validation) were causing error message blinking in scenario properties.
+* [#3752](https://github.com/TouK/nussknacker/pull/3752) Do not specify migrations which did not change process in process migration comment. If no migrations, do not add comment.
+* [#3754](https://github.com/TouK/nussknacker/pull/3754) Fix for migrating scenarios not existing on target environment [#3700](https://github.com/TouK/nussknacker/issues/3700)
+  * Will work after upgrading NU installations on both environments to version containing the fixup.
+  * In conversation between versions 1.6 - 1.7 (and reversed) only migration of scenarios that exists on both envs will work. 
+  
+1.6.1 (8 Nov 2022)
+------------------------
 * [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
+* [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (flink)
+* [#3671](https://github.com/TouK/nussknacker/pull/3671) Fix: do not show extra scrollbar on scenario screen when panel too large
+* [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
+* [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
 
 1.6.0 (18 Oct 2022)
 ------------------------
