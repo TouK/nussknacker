@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.{FlatNode, SplitN
 import pl.touk.nussknacker.engine.graph.EdgeType.{NextSwitch, SwitchDefault}
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
-import pl.touk.nussknacker.engine.graph.node._
+import pl.touk.nussknacker.engine.graph.node.{Sink, _}
 import pl.touk.nussknacker.engine.graph.service.ServiceRef
 import pl.touk.nussknacker.engine.graph.sink.SinkRef
 import pl.touk.nussknacker.engine.graph.source.SourceRef
@@ -309,6 +309,38 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     }
   }
 
+  test("handles validation when fragment is not correct") {
+
+    val varValue = "stringValue"
+
+    val process = createProcess(
+      nodes = List(
+        Source("in", SourceRef(sourceTypeName, List())),
+        Variable("var", "varName", s"'$varValue'"),
+        //missing fragment!
+        SubprocessInput("subIn", SubprocessRef(
+          "notPresent",
+          List(), Map("output1" -> "var1")),
+        ),
+        Sink("out1", SinkRef(sinkTypeName, List())),
+        Sink("out2", SinkRef(sinkTypeName, List()))
+      ),
+      edges = List(
+        Edge("in", "var", None),
+        Edge("var", "subIn", None),
+        Edge("subIn", "out1", Some(EdgeType.SubprocessOutput("output1"))),
+        Edge("subIn", "out2", Some(EdgeType.SubprocessOutput("output2")))
+      )
+    )
+
+    val validationResult = mockProcessValidation().validate(process, Category1)
+    validationResult.errors.invalidNodes shouldBe Map("subIn" -> List(PrettyValidationErrors.formatErrorMessage(
+      UnknownSubprocess("notPresent", "subIn"))))
+
+    validationResult.nodeResults("out1").variableTypes.get("varName") shouldBe Some(Typed.fromInstance(varValue))
+    validationResult.nodeResults("out2").variableTypes.get("varName") shouldBe Some(Typed.fromInstance(varValue))
+  }
+
   test("validates disabled fragment with parameters") {
     val invalidSubprocess = CanonicalProcess(
       MetaData("sub1", FragmentSpecificData()),
@@ -558,7 +590,7 @@ private object ProcessValidationSpec {
     DisplayableProcess("test", ProcessProperties(StreamMetaData(), subprocessVersions = Map.empty, additionalFields = Some(ProcessAdditionalFields(None, additionalFields))), nodes, edges, `type`, Some(category))
   }
 
-  def mockProcessValidation(subprocess: CanonicalProcess): ProcessValidation = {
+  def mockProcessValidation(subprocesses: CanonicalProcess*): ProcessValidation = {
     import ProcessDefinitionBuilder._
 
     val processDefinition = ProcessDefinitionBuilder.empty
@@ -569,10 +601,9 @@ private object ProcessValidationSpec {
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> new StubModelDataWithProcessDefinition(processDefinition)),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> Map()),
       mapProcessingTypeDataProvider(TestProcessingTypes.Streaming -> List(SampleCustomProcessValidator)),
-      new SubprocessResolver(new StubSubprocessRepository(Set(
-        SubprocessDetails(sampleSubprocessOneOut, Category1),
-        SubprocessDetails(subprocess, Category1),
-      )))
+      new SubprocessResolver(new StubSubprocessRepository(
+        subprocesses.map(SubprocessDetails(_, Category1)).toSet + SubprocessDetails(sampleSubprocessOneOut, Category1)
+      ))
     )
 
     mockedProcessValidation

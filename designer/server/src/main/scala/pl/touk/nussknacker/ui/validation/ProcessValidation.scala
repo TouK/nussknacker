@@ -6,9 +6,12 @@ import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioPropertiesError
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
-import pl.touk.nussknacker.engine.graph.node.{Disableable, NodeData, Source, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.graph.EdgeType.SubprocessOutput
+import pl.touk.nussknacker.engine.graph.expression.Expression
+import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache}
 import pl.touk.nussknacker.engine.util.validated.ValidatedSyntax._
 import pl.touk.nussknacker.engine.{CustomProcessValidator, ModelData}
@@ -110,21 +113,23 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       .map(_.validate(canonical))
       .sequence.fold(formatErrors, _ => ValidationResult.success)
 
-    val resolveResult = subprocessResolver.resolveSubprocesses(canonical, category) match {
-      case Invalid(e) => formatErrors(e)
-      case _ =>
-        /* 1. We remove disabled nodes from canonical to not validate disabled nodes
-           2. TODO: handle types when subprocess resolution fails... */
-        subprocessResolver.resolveSubprocesses(canonical.withoutDisabledNodes, category) match {
-          case Valid(process) =>
-            val validated = processValidator.validate(process)
-            //FIXME: Validation errors for subprocess nodes are not properly handled by FE
-            validated.result.fold(formatErrors, _ => ValidationResult.success)
-              .withNodeResults(validated.typing.mapValues(nodeInfoToResult))
-          case Invalid(e) => formatErrors(e)
-        }
+    val withoutDisabled = canonical.withoutDisabledNodes
+    val resolveResult = subprocessResolver.resolveSubprocesses(withoutDisabled, category) match {
+      case Invalid(e) =>
+        fallbackFragmentResolution(withoutDisabled, e.toList.flatMap(_.nodeIds).toSet)
+          .map(validateResolved(processValidator))
+          .getOrElse(ValidationResult.success)
+          .add(formatErrors(e))
+      case Valid(process) => validateResolved(processValidator)(process)
     }
     resolveResult.add(additionalValidatorErrors)
+  }
+
+  private def validateResolved(processValidator: ProcessValidator)(process: CanonicalProcess) = {
+    val validated = processValidator.validate(process)
+    //FIXME: Validation errors for subprocess nodes are not properly handled by FE
+    validated.result.fold(formatErrors, _ => ValidationResult.success)
+      .withNodeResults(validated.typing.mapValues(nodeInfoToResult))
   }
 
   private def nodeInfoToResult(typingInfo: NodeTypingInfo) = NodeTypingData(
@@ -220,4 +225,23 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   }
 
   private case class ValidatorKey(modelData: ModelData, category: Category)
+
+  //We want to be able to validate Scenario even if resolution fails
+  private def fallbackFragmentResolution(canonicalProcess: CanonicalProcess, invalidNodeIds: Set[String]) = {
+    import pl.touk.nussknacker.engine.compile.SubprocessResolver
+
+    val edges = ProcessConverter.toDisplayable(canonicalProcess, "", "").edges
+    val stubs = canonicalProcess.collectAllNodes.collect {
+      case SubprocessInput(id, ref, _, _, _) if invalidNodeIds.contains(id) =>
+        val outputs = edges.collect { case Edge(`id`, _, Some(SubprocessOutput(name))) =>
+          val stubVar = if (ref.outputVariableNames.contains(name)) List("stub" -> Expression("spel", "null")) else Nil
+          GraphBuilder.fragmentOutput(s"stub-$id-$name", name, stubVar: _*)
+        }
+        ScenarioBuilder
+          .fragment(ref.id, ref.parameters.map(p => (p.name, classOf[Any])): _*)
+          .split(s"stub-$id", outputs: _*)
+    }
+    SubprocessResolver(stubs).resolve(canonicalProcess)
+  }
+
 }
