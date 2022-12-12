@@ -8,6 +8,7 @@ services:
       DEFAULT_SCENARIO_TYPE: streaming-lite-embedded
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
       CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "false"
       CONFIG_FORCE_usageStatisticsReports_enabled: "false"
