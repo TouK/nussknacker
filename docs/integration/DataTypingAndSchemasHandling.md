@@ -2,18 +2,20 @@
 sidebar_position: 6
 ---
 
-# Overview
+# Data Typing and Schemas Handling
 
-![Typing architecture](./img/typing.png)
+## Overview
 
-Nussknacker as a platform integrates many of the data sources, e.g. Kafka or Databases, and also allows to enrich data
-using e.g. [OpenAPI](https://swagger.io/specification/) or Databases as well. These integrations can return several
+Nussknacker as a platform integrates many of the data sources, e.g. kafka topic or http request, and also allows to
+enrich data using e.g. [OpenAPI](https://swagger.io/specification/) or Databases. These integrations can return several
 types of data like JSON, Binary, and DB data. Each format of these data is described in another way:
 
-* Kafka with JSON data is described by JSON Schema, stored in the schema registry
-* Kafka with binary data is described by Avro Schema, stored in the schema registry
+* Source request http with JSON data is described by JSON Schema, stored in Nussknacker scenario's properties
+* Source [kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
+* Source [kafka](https://kafka.apache.org/) with binary data is described by Avro Schema, stored in the schema registry
 * [OpenAPI](https://swagger.io/specification/) returns JSON data described by OpenAPI Schema
-* Database data are described by schema column information
+
+![Typing architecture](./img/typing.png)
 
 To provide consistent and proper support for those formats Nussknacker converts meta-information about data to its
 own `Typing Information`, which is used on the Designer's part to hint and verification the correctness of the data.
@@ -23,7 +25,7 @@ On the other hand, we also have to ensure that provided data to the sink (e.g. k
 against the schema and can be safely saved at the runtime. And this is the place where
 the [validation and encoding](#validation-and-encoding) mechanisms come in.
 
-# Validation and encoding
+## Validation and encoding
 
 As we can see above finally saving data (e.g. kafka sink) is divided into two parts:
 
@@ -35,7 +37,7 @@ and `Union` types. And this is the place where validation modes come in and help
 
 ##### type `Unknown`
 
-A situation when Nussknacker can not detect type of data, it's similar to `java.lan.Object`.
+A situation when Nussknacker can not detect type of data, it's similar to `java.lang.Object` and means Any of the type.
 
 ##### type `Union`
 
