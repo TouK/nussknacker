@@ -362,6 +362,27 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should support anyOf/oneOf for object schemas") {
+    //TODO: handle case when we have fields common for both versions on "main" level
+    def schema(compositionType: String) = JsonSchemaBuilder.parseSchema(
+      s"""{
+        |   "type":"object",
+        |   "$compositionType": [
+        |       { "type": "object", "properties": {"passport": {"type": "string" }} },
+        |       { "type": "object", "properties": {"identityCard": {"type": "string" }} },
+        |   ]
+        |}""".stripMargin)
+
+    Table("type", "anyOf", "oneOf").forEvery { compositionType =>
+      val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema(compositionType)).typingResult
+
+      result shouldBe Typed(
+        TypedObjectTypingResult(List(("passport", Typed[String]))),
+        TypedObjectTypingResult(List(("identityCard", Typed[String]))),
+      )
+    }
+  }
+
   test("should support support multiple schemas but of the same type") {
     val schema = JsonSchemaBuilder.parseSchema(
       """{
