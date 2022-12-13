@@ -118,8 +118,8 @@ object SwaggerTyped {
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
       Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
-    case SwaggerEnum(_) =>
-      Typed.typedClass[String]
+    case SwaggerEnum(values) =>
+      Typed(values.map(Typed.fromInstance).toSet)
     case SwaggerBool =>
       Typed.typedClass[java.lang.Boolean]
     case SwaggerString =>

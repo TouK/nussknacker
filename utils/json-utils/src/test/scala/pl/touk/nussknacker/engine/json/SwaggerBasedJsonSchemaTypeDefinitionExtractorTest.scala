@@ -207,8 +207,9 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
+    val enumType = Typed(Set(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three")))
     val results = List(
-      "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(Typed[String])),
+      "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(enumType)),
     )
     result shouldBe TypedObjectTypingResult.apply(results)
   }
