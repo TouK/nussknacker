@@ -15,6 +15,8 @@ import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
 import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
+import {omit} from "lodash";
+import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -358,8 +360,8 @@ class HttpService {
   }
 
   //to prevent closing edit node modal and corrupting graph display
-  validateProcess({id, nodes, edges, properties, processingType}: Omit<Process, "validationResult">) {
-    return api.post("/processValidation", {id, nodes, properties, processingType, edges: edges.filter(e => e.to)})
+  validateProcess(process: Process) {
+    return api.post("/processValidation", this.#sanitizeProcess(process))
       .catch(error => {
         this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
         return Promise.reject(error)
@@ -433,8 +435,8 @@ class HttpService {
   }
 
   //to prevent closing edit node modal and corrupting graph display
-  saveProcess(processId, processJson, comment) {
-    const data = {process: processJson, comment: comment}
+  saveProcess(processId, processJson: Process, comment) {
+    const data = {process: this.#sanitizeProcess(processJson), comment: comment}
     return api.put(`/processes/${encodeURIComponent(processId)}`, data)
       .catch(error => {
         this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
@@ -472,9 +474,11 @@ class HttpService {
   }
 
   testProcess(processId: ProcessId, file: File, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
+    const sanitized = this.#sanitizeProcess(processJson)
+    
     const data = new FormData()
     data.append("testData", file)
-    data.append("processJson", new Blob([JSON.stringify(processJson)], {type: "application/json"}))
+    data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
 
     const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
     promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
@@ -543,6 +547,14 @@ class HttpService {
       typeof errorResponseData === "string" ? errorResponseData : JSON.stringify(errorResponseData)
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
+  }
+  
+  #sanitizeProcess(process: Process) {
+    //don't send validationResult, it's not needed and can be v. large,
+    const {id, nodes, edges, properties, processingType, category}: Omit<Process, "validationResult">
+      //don't send empty edges
+      = withoutHackOfEmptyEdges(process)
+    return {id, nodes, edges, properties, processingType, category}
   }
   
 }
