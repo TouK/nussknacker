@@ -382,7 +382,7 @@ jobs:
 
   dockerTest:
     name: Docker based tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     needs: [ build, build-fe, setup ]
     env:
       # We skip docker build for fe-only changes. Would be more clean to split this step into two steps: build image and run tests
