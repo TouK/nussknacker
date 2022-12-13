@@ -8,6 +8,11 @@ export type MetricsType = {
   scenarioTypeToDashboard: UnknownRecord,
 }
 
+export type UsageStatisticsReports = {
+  enabled: boolean,
+  url: string,
+}
+
 export type FeaturesSettings = {
   counts: boolean,
   search: { url: string },
@@ -20,6 +25,7 @@ export type FeaturesSettings = {
   tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings,
   redirectAfterArchive: boolean,
+  usageStatisticsReports: UsageStatisticsReports,
 };
 
 export type TestDataSettings = {
