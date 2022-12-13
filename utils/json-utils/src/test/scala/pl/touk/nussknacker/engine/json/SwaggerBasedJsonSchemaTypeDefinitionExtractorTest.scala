@@ -213,6 +213,15 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
+  test("should not support enum of any type") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{"enum": ["one", "two", "three", 4]}""".stripMargin)
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    (result == Typed.typedClass[java.math.BigDecimal]) shouldBe false
+  }
+
   test("should support nested schema") {
     val schema = JsonSchemaBuilder.parseSchema(
       """{
