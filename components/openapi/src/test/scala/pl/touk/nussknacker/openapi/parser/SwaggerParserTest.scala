@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.openapi.parser
 
 import cats.data.Validated.Valid
-import org.apache.commons.io.FileUtils
 import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -11,12 +10,7 @@ import pl.touk.nussknacker.engine.json.swagger
 import pl.touk.nussknacker.engine.json.swagger._
 import pl.touk.nussknacker.openapi._
 
-import java.io.File
-import java.net.URL
-import java.nio.file.Files
-import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
-import scala.util.control.NonFatal
 
 class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
@@ -110,9 +104,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
     val recursiveListType = SwaggerObject(Map(
       "value" -> SwaggerString,
-      "next" -> SwaggerRecursiveSchemaFallback,
-      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchemaFallback)),
-      "list" -> SwaggerArray(SwaggerRecursiveSchemaFallback)
+      "next" -> SwaggerRecursiveSchema,
+      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchema)),
+      "list" -> SwaggerArray(SwaggerRecursiveSchema)
     ))
     responseType shouldBe Some(SwaggerObject(Map(
       "left" -> recursiveListType,

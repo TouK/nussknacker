@@ -41,7 +41,7 @@ case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 
-case class SwaggerEnum(values: List[String]) extends SwaggerTyped
+case class SwaggerEnum(values: List[String]) extends SwaggerTyped //todo: rename to SwaggerStringEnum?
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
@@ -50,7 +50,11 @@ case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additiona
 case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
 //mapped to Unknown in type system
-case object SwaggerRecursiveSchemaFallback extends SwaggerTyped
+sealed trait SwaggerUnknownFallback extends SwaggerTyped
+
+case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
+
+case object SwaggerEnumOfVariousTypes extends SwaggerUnknownFallback
 
 object SwaggerTyped {
 
@@ -64,7 +68,7 @@ object SwaggerTyped {
     case _ => Option(schema.get$ref()) match {
       //handle recursive schemas better
       case Some(ref) if usedSchemas.contains(ref) =>
-        SwaggerRecursiveSchemaFallback
+        SwaggerRecursiveSchema
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
@@ -74,14 +78,17 @@ object SwaggerTyped {
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
         case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
         case (Some("object") | None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (typ, _) if schema.getEnum != null =>
+          val values = schema.getEnum.asScala
+          if (values.forall(v => v.isInstanceOf[String]) && !typ.exists(_ != "string"))
+            SwaggerEnum(values.flatMap(Option(_).toList).map(_.toString).toList)
+          else
+            SwaggerEnumOfVariousTypes //todo: add support for enums of various types
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate
         case (Some("string"), Some("time")) => SwaggerTime
-        case (Some("string"), _) => Option(schema.getEnum) match {
-          case Some(values) => SwaggerEnum(Option(values).map(_.asScala).getOrElse(Nil).flatMap(Option(_).toList).map(_.toString).toList)
-          case None => SwaggerString
-        }
+        case (Some("string"), _) => SwaggerString
         case (Some("integer"), _) => SwaggerLong
         //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
         case (Some("number"), None) => SwaggerBigDecimal
@@ -137,7 +144,7 @@ object SwaggerTyped {
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
     case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
-    case SwaggerRecursiveSchemaFallback =>
+    case _: SwaggerUnknownFallback =>
       Unknown
     case SwaggerNull =>
       TypedNull
