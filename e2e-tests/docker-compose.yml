@@ -8,6 +8,7 @@ services:
       DEFAULT_SCENARIO_TYPE: streaming-lite-embedded
       JDK_JAVA_OPTIONS: -Xmx512M
       KAFKA_ADDRESS: kafka:9092
+      KAFKA_AUTO_OFFSET_RESET: "earliest"
       SCHEMA_REGISTRY_URL: http://schemaregistry:8081
       CONFIG_FORCE_kafka_lowLevelComponentsEnabled: "false"
       CONFIG_FORCE_usageStatisticsReports_enabled: "false"
@@ -36,13 +37,13 @@ services:
     - PLAINTEXT://0.0.0.0:9092,OUTSIDE://0.0.0.0:3032
     - --advertise-kafka-addr
     - PLAINTEXT://kafka:9092,OUTSIDE://localhost:3032
-    image: vectorized/redpanda:v22.1.4
+    image: vectorized/redpanda:v22.3.5
     ports:
       - "3032:3032"
 
   schemaregistry:
     container_name: e2e_schemaregistry
-    image: confluentinc/cp-schema-registry:5.5.0
+    image: confluentinc/cp-schema-registry:7.3.0
     environment:
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
       SCHEMA_REGISTRY_HOST_NAME: schemaregistry
