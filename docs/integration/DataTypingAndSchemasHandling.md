@@ -8,7 +8,7 @@ sidebar_position: 6
 
 Nussknacker as a platform integrates diverse data sources, e.g. kafka topic or http request, and also allows to
 enrich data using e.g. [OpenAPI](https://swagger.io/specification/) or databases. These integrations can return several
-types of data like JSON, Binary, and DB data. Each format of these data is described in another way:
+types of data like JSON, Binary, and DB data. In each case format of these data is described in a different way:
 
 * Source request http with JSON data is described by JSON Schema, stored in Nussknacker scenario's properties
 * Source [kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
@@ -23,14 +23,15 @@ own `Typing Information`, which is used on the Designer's part to hint and valid
 is statically validated and typed on an ongoing basis.
 
 Additionally, we have to ensure that data provided to the sink (e.g. kafka topic with json or avro / http request with
-json) are valid against the schema and can be safely used at runtime.
+json) are valid against the sink schema and can be safely used at runtime.
 
 ## Validation and encoding
 
 As we can see above finally preparing data (e.g. kafka sink / response sink) is divided into two parts:
 
-* during validation on the Designer, the Typing Information is compared against schema
-* encoding data at runtime
+* during validation on the Designer, the `Typing Information` is compared against the sink schema
+* encoding data at runtime based on the data type, the data is converted to the internal representation expected by the
+  sink
 
 Sometimes situations can happen that are not so obvious to handle, e.g. how we should pass and validate `Unknown`
 and `Union` types.
@@ -43,19 +44,24 @@ A situation when Nussknacker can not detect type of data, it's similar to `java.
 
 A situation when the data can be any of [several representation](https://en.wikipedia.org/wiki/Union_type).
 
-This is the place where validation modes come in and help solve that issue.
+In the case of `Union` and `Unknown` types, the actual data type is known only at runtime - only then the decision how
+to encode can be taken. Sometimes, it may happen that encoding will not be possible, due to the mismatch of the actual
+data type and data type expected in the sink and the runtime error will be reported. The number of runtime encoding
+errors can be reduced by applying strict schema validation rules during scenario authoring. This is the place where
+validation mode comes in.
 
 ## Validation modes
 
-Validation modes describe how Nussknacker handles validation Typing Information against the schema during the scenario
-authoring.
+Validation modes determines how Nussknacker handles validation `Typing Information` against the sink schema during the
+scenario authoring. You can set validation mode by setting `Value validation mode` param on sinks where `raw editor` is
+enabled.
 
-|                                   | Strict mode                                                    | Lax mode                                                     | Comment                                                                                                                                                |
-|-----------------------------------|----------------------------------------------------------------|--------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| allow passing additional fields   | no                                                             | yes                                                          | This option works only at Avro Schema. JSON Schema manages additional fields itself explicitly by schema property: [`additionalProperties`](#objects). |
-| require providing optional fields | yes                                                            | no                                                           |                                                                                                                                                        |
-| allow passing `Unknown`           | no                                                             | yes                                                          | When data at runtime will not match against the schema, then error be reported during encoding.                                                        |
-| passing `Union`                   | Typed Information union has to<br/>be the same as schema union | Any of element from Typed Information<br/>union should match | When data at runtime will not match against the schema, then error be reported during encoding.                                                        |
+|                                   | Strict mode                                                                   | Lax mode                                                        | Comment                                                                                                                                                |
+|-----------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allow passing additional fields   | no                                                                            | yes                                                             | This option works only at Avro Schema. JSON Schema manages additional fields itself explicitly by schema property: [`additionalProperties`](#objects). |
+| require providing optional fields | yes                                                                           | no                                                              |                                                                                                                                                        |
+| allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
+| passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 
 We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
 how we validate data during scenario authoring, and some errors can still occur during encoding at runtime.
@@ -237,4 +243,4 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 | [composition](https://json-schema.org/understanding-json-schema/reference/combining.html) | [allOf](https://json-schema.org/understanding-json-schema/reference/combining.html#allof), [not](https://json-schema.org/understanding-json-schema/reference/combining.html#not)                                                                                                                                                                                                                                                                                                                                                                                                                                           | Read more about [validation modes](#validation-and-encoding). |
 
 These properties will be not validated by the Designer, because on during scenario authoring time we work only on
-Typing Information not on real value. Validation will be still done at runtime.
+`Typing Information` not on real value. Validation will be still done at runtime.
