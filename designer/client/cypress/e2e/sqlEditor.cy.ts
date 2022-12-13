@@ -1,6 +1,6 @@
 describe("Sql editor", () => {
   const seed = "sql"
-  const maxDiffThreshold = 0.00001
+  const maxDiffThreshold = 0.0001
 
   before(() => {
     cy.deleteAllTestProcesses({filter: seed, force: true})

@@ -1,7 +1,7 @@
 describe("Process", () => {
   const NAME = "processSelection"
   const snapshotParams: Cypress.MatchImageOptions = {
-    maxDiffThreshold: 0.00001,
+    maxDiffThreshold: 0.0001,
     screenshotConfig: {
       blackout: [
         "> :not(#nk-graph-main) > div",

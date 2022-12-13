@@ -2,7 +2,7 @@ import {defineConfig} from "cypress"
 
 export default defineConfig({
   env: {
-    pluginVisualRegressionMaxDiffThreshold: 0.007,
+    pluginVisualRegressionMaxDiffThreshold: 0.008,
     pluginVisualRegressionUpdateImages: false,
     pluginVisualRegressionForceDeviceScaleFactor: false,
   },
