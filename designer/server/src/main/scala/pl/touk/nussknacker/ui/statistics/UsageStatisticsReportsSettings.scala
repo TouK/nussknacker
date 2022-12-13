@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.statistics
 
+import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.config.UsageStatisticsReportsConfig
@@ -10,9 +11,7 @@ import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 import scala.util.Random
 
-case class UsageStatisticsHtmlSnippet(value: String)
-
-object UsageStatisticsHtmlSnippet {
+object UsageStatisticsReportsSettings {
 
   private val knownDeploymentManagerTypes = Set("flinkStreaming", "lite-k8s", "lite-embedded")
 
@@ -23,15 +22,10 @@ object UsageStatisticsHtmlSnippet {
   // We aggregate custom deployment managers and processing modes as a "custom" to avoid leaking of internal, confidential data
   private val aggregateForCustomValues = "custom"
 
-  def prepareWhenEnabledReporting(config: UsageStatisticsReportsConfig,
-                                  processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics]): Option[UsageStatisticsHtmlSnippet] = {
-    if (config.enabled) {
-      val queryParams = prepareQueryParams(config, processingTypeStatistics.all)
-      val url = prepareUrl(queryParams)
-      Some(UsageStatisticsHtmlSnippet(s"""<img src="$url" alt="anonymous usage reporting" referrerpolicy="origin" hidden />"""))
-    } else {
-      None
-    }
+  def prepare(config: UsageStatisticsReportsConfig, processingTypeStatistics: ProcessingTypeDataProvider[ProcessingTypeUsageStatistics]): UsageStatisticsReportsSettings = {
+    val queryParams = prepareQueryParams(config, processingTypeStatistics.all)
+    val url = prepareUrl(queryParams)
+    UsageStatisticsReportsSettings(config.enabled, url)
   }
 
   private[statistics] def prepareQueryParams(config: UsageStatisticsReportsConfig,
@@ -81,3 +75,5 @@ object UsageStatisticsHtmlSnippet {
   private lazy val randomFingerprint = s"gen-${Random.alphanumeric.take(10).mkString}"
 
 }
+
+@JsonCodec case class UsageStatisticsReportsSettings(enabled: Boolean, url: String)
