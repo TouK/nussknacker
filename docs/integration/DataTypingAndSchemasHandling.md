@@ -10,61 +10,17 @@ Nussknacker as a platform integrates diverse data sources, e.g. kafka topic or h
 enrich data using e.g. [OpenAPI](https://swagger.io/specification/) or databases. These integrations can return several
 types of data like JSON, Binary, and DB data. In each case format of these data is described in a different way:
 
-* Source request http with JSON data is described by JSON Schema, stored in Nussknacker scenario's properties
+* Request-response inputs and outputs are described by JSON Schema, stored in Nussknacker scenario's properties
 * Source [kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
 * Source [kafka](https://kafka.apache.org/) with binary data is described by Avro Schema, stored in the schema registry
-* [OpenAPI](https://swagger.io/specification/) returns JSON data described by OpenAPI Schema
-* Database data are described by db schema column information
+* [OpenAPI](https://swagger.io/specification/) enricher uses JSON data described by OpenAPI Schema
+* Database data are described by JDBC metadata, that contain column information
 
 ![Typing architecture](./img/typing.png)
 
 To provide consistent and proper support for these formats Nussknacker converts meta-information about data to its
 own `Typing Information`, which is used on the Designer's part to hint and validate the data. Each part of the diagram
 is statically validated and typed on an ongoing basis.
-
-Additionally, we have to ensure that data provided to the sink (e.g. kafka topic with json or avro / http request with
-json) are valid against the sink schema and can be safely used at runtime.
-
-## Validation and encoding
-
-As we can see above finally preparing data (e.g. kafka sink / response sink) is divided into two parts:
-
-* during validation on the Designer, the `Typing Information` is compared against the sink schema
-* encoding data at runtime based on the data type, the data is converted to the internal representation expected by the
-  sink
-
-Sometimes situations can happen that are not so obvious to handle, e.g. how we should pass and validate `Unknown`
-and `Union` types.
-
-##### type `Unknown`
-
-A situation when Nussknacker can not detect type of data, it's similar to `java.lang.Object` and means Any of the type.
-
-##### type `Union`
-
-A situation when the data can be any of [several representation](https://en.wikipedia.org/wiki/Union_type).
-
-In the case of `Union` and `Unknown` types, the actual data type is known only at runtime - only then the decision how
-to encode can be taken. Sometimes, it may happen that encoding will not be possible, due to the mismatch of the actual
-data type and data type expected in the sink and the runtime error will be reported. The number of runtime encoding
-errors can be reduced by applying strict schema validation rules during scenario authoring. This is the place where
-validation mode comes in.
-
-## Validation modes
-
-Validation modes determines how Nussknacker handles validation `Typing Information` against the sink schema during the
-scenario authoring. You can set validation mode by setting `Value validation mode` param on sinks where `raw editor` is
-enabled.
-
-|                                   | Strict mode                                                                   | Lax mode                                                        | Comment                                                                                                                                                |
-|-----------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| allow passing additional fields   | no                                                                            | yes                                                             | This option works only at Avro Schema. JSON Schema manages additional fields itself explicitly by schema property: [`additionalProperties`](#objects). |
-| require providing optional fields | yes                                                                           | no                                                              |                                                                                                                                                        |
-| allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
-| passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
-
-We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
-how we validate data during scenario authoring, and some errors can still occur during encoding at runtime.
 
 ## Avro Schema
 
@@ -108,54 +64,54 @@ end-user has access to methods of these objects.
 
 #### [Complex types](https://avro.apache.org/docs/1.11.0/spec.html#schema_complex)
 
-| Avro Schema | Java type                                      | Comment                                                     |
-|-------------|------------------------------------------------|-------------------------------------------------------------|
-| array       | List[_]                                        |                                                             |
-| map         | Map[String, _]                                 | Key - value map, where key is always represented by String. |
-| record      | org.apache.avro.generic.GenericRecord          |                                                             |
-| enums       | org.apache.avro.generic.GenericData.EnumSymbol |                                                             |
-| fixed       | org.apache.avro.generic.GenericData.Fixed      |                                                             |
-| union       | Any of the above types                         | It can be any of the defined type in union.                 |
+| Avro Schema | Java type                                                  | Comment                                                     |
+|-------------|------------------------------------------------------------|-------------------------------------------------------------|
+| array       | [list](/docs/scenarios_authoring/Spel.md#arrayslists)      |                                                             |
+| map         | [map](/docs/scenarios_authoring/Spel.md#recordsobjects)    | Key - value map, where key is always represented by String. |
+| record      | [record](/docs/scenarios_authoring/Spel.md#recordsobjects) |                                                             |
+| enums       | org.apache.avro.generic.GenericData.EnumSymbol             |                                                             |
+| fixed       | org.apache.avro.generic.GenericData.Fixed                  |                                                             |
+| union       | Any of the above types                                     | It can be any of the defined type in union.                 |
 
 ### Sink validation & encoding
 
-| Java type                                                    | Avro Schema                              | Comment                                                                                                           |
-|--------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| null                                                         | null                                     |                                                                                                                   |
-| String                                                       | string                                   |                                                                                                                   |
-| Boolean                                                      | boolean                                  |                                                                                                                   |
-| Integer                                                      | int                                      |                                                                                                                   |
-| Long                                                         | long                                     |                                                                                                                   |
-| Float                                                        | float                                    |                                                                                                                   |
-| Double                                                       | double                                   |                                                                                                                   |
-| ByteBuffer                                                   | bytes                                    |                                                                                                                   |
-| List[_]                                                      | array                                    |                                                                                                                   |
-| Map[String, _]                                               | map                                      |                                                                                                                   |
-| Map[String, _]                                               | record                                   |                                                                                                                   |
-| org.apache.avro.generic.GenericRecord                        | record                                   |                                                                                                                   |
-| org.apache.avro.generic.GenericData.EnumSymbol               | enums                                    |                                                                                                                   |
-| String                                                       | enums                                    | On the Designer we allow to pass `Typed[String]`, but we can't verify whether value is a valid Enum's symbol.     |
-| org.apache.avro.generic.GenericData.Fixed                    | fixed                                    |                                                                                                                   |
-| ByteBuffer                                                   | fixed                                    | On the Designer we allow to pass `Typed[ByteBuffer]`, but we can't verify whether value is a valid Fixed element. |
-| String                                                       | fixed                                    | On the Designer we allow to pass `Typed[String]`, but we can't verify whether value is a valid Fixed element.     |
-| BigDecimal                                                   | decimal (bytes or fixed)                 |                                                                                                                   |                                                                                                |
-| ByteBuffer                                                   | decimal (bytes or fixed)                 |                                                                                                                   |
-| UUID                                                         | uuid (string)                            |                                                                                                                   |
-| String                                                       | uuid (string)                            | On the Designer we allow to pass `Typed[String]`, but we can't verify whether value is a valid UUID.              |
-| LocalDate                                                    | date (int)                               |                                                                                                                   |
-| Integer                                                      | date (int)                               |                                                                                                                   |
-| LocalTime                                                    | time - millisecond precision (int)       |                                                                                                                   |
-| Integer                                                      | time - millisecond precision (int)       |                                                                                                                   |
-| LocalTime                                                    | time - microsecond precision (long)      |                                                                                                                   |
-| Long                                                         | time - microsecond precision (long)      |                                                                                                                   |
-| Instant                                                      | timestamp - millisecond precision (long) |                                                                                                                   |
-| Long                                                         | timestamp - millisecond precision (long) |                                                                                                                   |
-| Instant                                                      | timestamp - microsecond precision (long) |                                                                                                                   |
-| Long                                                         | timestamp - microsecond precision (long) |                                                                                                                   |
-| Any matching type from the list of types in the union schema | union                                    | Read more about [validation modes](#validation-and-encoding).                                                     |
+| Java type                                                    | Avro Schema                              | Comment                                                                                                                       |
+|--------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
+| null                                                         | null                                     |                                                                                                                               |
+| String                                                       | string                                   |                                                                                                                               |
+| Boolean                                                      | boolean                                  |                                                                                                                               |
+| Integer                                                      | int                                      |                                                                                                                               |
+| Long                                                         | long                                     |                                                                                                                               |
+| Float                                                        | float                                    |                                                                                                                               |
+| Double                                                       | double                                   |                                                                                                                               |
+| ByteBuffer                                                   | bytes                                    |                                                                                                                               |
+| [list](/docs/scenarios_authoring/Spel.md#arrayslists)        | array                                    |                                                                                                                               |
+| [map](/docs/scenarios_authoring/Spel.md#recordsobjects)      | map                                      |                                                                                                                               |
+| [map](/docs/scenarios_authoring/Spel.md#recordsobjects)      | record                                   |                                                                                                                               |
+| org.apache.avro.generic.GenericRecord                        | record                                   |                                                                                                                               |
+| org.apache.avro.generic.GenericData.EnumSymbol               | enums                                    |                                                                                                                               |
+| String                                                       | enums                                    | On the Designer we allow to pass `Typing Information String`, but we can't verify whether value is a valid Enum's symbol.     |
+| org.apache.avro.generic.GenericData.Fixed                    | fixed                                    |                                                                                                                               |
+| ByteBuffer                                                   | fixed                                    | On the Designer we allow to pass `Typing Information ByteBuffer`, but we can't verify whether value is a valid Fixed element. |
+| String                                                       | fixed                                    | On the Designer we allow to pass `Typing Information String`, but we can't verify whether value is a valid Fixed element.     |
+| BigDecimal                                                   | decimal (bytes or fixed)                 |                                                                                                                               |                                                                                                |
+| ByteBuffer                                                   | decimal (bytes or fixed)                 |                                                                                                                               |
+| UUID                                                         | uuid (string)                            |                                                                                                                               |
+| String                                                       | uuid (string)                            | On the Designer we allow to pass `Typing Information String`, but we can't verify whether value is a valid UUID.              |
+| LocalDate                                                    | date (int)                               |                                                                                                                               |
+| Integer                                                      | date (int)                               |                                                                                                                               |
+| LocalTime                                                    | time - millisecond precision (int)       |                                                                                                                               |
+| Integer                                                      | time - millisecond precision (int)       |                                                                                                                               |
+| LocalTime                                                    | time - microsecond precision (long)      |                                                                                                                               |
+| Long                                                         | time - microsecond precision (long)      |                                                                                                                               |
+| Instant                                                      | timestamp - millisecond precision (long) |                                                                                                                               |
+| Long                                                         | timestamp - millisecond precision (long) |                                                                                                                               |
+| Instant                                                      | timestamp - microsecond precision (long) |                                                                                                                               |
+| Long                                                         | timestamp - microsecond precision (long) |                                                                                                                               |
+| Any matching type from the list of types in the union schema | union                                    | Read more about [validation modes](#validation-and-encoding).                                                                 |
 
-If at runtime value cannot be converted to an appropriate logic schema (e.g. "notAUUID" cannot be converted to
-proper UUID), then an error will be reported.
+If at runtime value cannot be converted to an appropriate logic schema (e.g. "notAUUID" cannot be converted to proper
+UUID), then an error will be reported.
 
 ## JSON Schema
 
@@ -165,27 +121,27 @@ We support [JSON Schema](https://json-schema.org/) in version: `Draft 7` without
 
 * Numbers with a zero fractional part (e.g. `1.0`) as a proper value on decoding (deserialization)
   for [integer schema](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer)
-* Nested relative schemas
-* Recursive schemas
-* Anchors
+* [Recursion schemas](http://json-schema.org/understanding-json-schema/structuring.html#recursion)
+* [Anchors](http://json-schema.org/understanding-json-schema/structuring.html#anchor)
 
 JSON Schema is available on [Streaming](/docs/scenarios_authoring/DataSourcesAndSinks.md)
-and [Request - Response](/docs/scenarios_authoring/RRDataSourcesAndSinks.md). To integrate with JSON on
+and [Request-Response](/docs/scenarios_authoring/RRDataSourcesAndSinks.md). To integrate with JSON on
 streaming we use [Schema Registry](/docs/integration/KafkaIntegration.md#schema-registry-integration). On the
-other hand, we have Request - Response where [schemas](/docs/scenarios_authoring/RRDataSourcesAndSinks.md) are stored in
-scenario properties.
+other hand, we have Request-Response
+where [schemas](/docs/scenarios_authoring/RRDataSourcesAndSinks.md#request-response-schema) are stored in scenario
+properties.
 
 ### Source conversion mapping
 
-| JSON Schema                                                                                        | Java type  | Comment                                                                                                                                                            |
-|----------------------------------------------------------------------------------------------------|------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| [null](https://json-schema.org/understanding-json-schema/reference/null.html)                      | null       |                                                                                                                                                                    |
-| [string](https://json-schema.org/understanding-json-schema/reference/string.html)                  | String     | UTF-8                                                                                                                                                              |
-| [boolean](https://json-schema.org/understanding-json-schema/reference/boolean.html)                | Boolean    |                                                                                                                                                                    |
-| [integer](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer)        | Long       | 64bit, TODO: Support for [range](https://json-schema.org/understanding-json-schema/reference/numeric.html#range) and do proper conversion to: Int/Long/BigInteger. |
-| [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)          | BigDecimal | TODO: Support for [range](https://json-schema.org/understanding-json-schema/reference/numeric.html#range) and do proper conversion to: Float/Double/BigDecimal.    |
-| [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values) | String     |                                                                                                                                                                    |
-| [array](https://json-schema.org/understanding-json-schema/reference/array.html)                    | List[_]    |                                                                                                                                                                    |
+| JSON Schema                                                                                        | Java type                                             | Comment |
+|----------------------------------------------------------------------------------------------------|-------------------------------------------------------|---------|
+| [null](https://json-schema.org/understanding-json-schema/reference/null.html)                      | null                                                  |         |
+| [string](https://json-schema.org/understanding-json-schema/reference/string.html)                  | String                                                | UTF-8   |
+| [boolean](https://json-schema.org/understanding-json-schema/reference/boolean.html)                | Boolean                                               |         |
+| [integer](https://json-schema.org/understanding-json-schema/reference/numeric.html#integer)        | Long                                                  | 64bit   |
+| [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)          | BigDecimal                                            |         |
+| [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values) | String                                                |         |
+| [array](https://json-schema.org/understanding-json-schema/reference/array.html)                    | [list](/docs/scenarios_authoring/Spel.md#arrayslists) |         |
 
 #### [String Format](https://json-schema.org/understanding-json-schema/reference/string.html#format)
 
@@ -197,12 +153,12 @@ scenario properties.
 
 #### [Objects](https://json-schema.org/understanding-json-schema/reference/object.html)
 
-| object configuration                                                      | Java type            | Comment                                          |
-|---------------------------------------------------------------------------|----------------------|--------------------------------------------------|
-| object with properties                                                    | Map[String, _]       |                                                  |
-| object with properties and enabled `additionalProperties`                 | Map[String, _]       | Additional properties are available at  runtime. |
-| object without properties and `additionalProperties: true`                | Map[String, Unknown] | It's similar to avro map.                        |
-| object without properties and `additionalProperties: {"type": "integer"}` | Map[String, Integer] | It's similar to avro map.                        |
+| object configuration                                                      | Java type                                               | Comment                                                                      |
+|---------------------------------------------------------------------------|---------------------------------------------------------|------------------------------------------------------------------------------|
+| object with properties                                                    | [map](/docs/scenarios_authoring/Spel.md#recordsobjects) | `Map[String, _]`                                                             |
+| object with properties and enabled `additionalProperties`                 | [map](/docs/scenarios_authoring/Spel.md#recordsobjects) | Additional properties are available at runtime. Similar to `Map[String, _]`. |
+| object without properties and `additionalProperties: true`                | [map](/docs/scenarios_authoring/Spel.md#recordsobjects) | `Map[String, Unknown]`                                                       |
+| object without properties and `additionalProperties: {"type": "integer"}` | [map](/docs/scenarios_authoring/Spel.md#recordsobjects) | `Map[String, Integer]`                                                       |
 
 We support `additionalProperties`, but additional fields won't be available in the hints on the Designer. To get
 an additional field you have to do `#inpute.get("additional-field")`, but remember that result of this expression is
@@ -210,10 +166,10 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 
 #### [Schema Composition](https://json-schema.org/understanding-json-schema/reference/combining.html)
 
-| type  | Java type                                  | Comment                       |
-|-------|--------------------------------------------|-------------------------------|
-| oneOf | Any from the available list of the schemas | We treat it just like a union |
-| anyOf | Any from the available list of the schemas | We treat it just like a union |
+| type  | Java type                                  | Comment                        |
+|-------|--------------------------------------------|--------------------------------|
+| oneOf | Any from the available list of the schemas | We treat it just like a union. |
+| anyOf | Any from the available list of the schemas | We treat it just like a union. |
 
 ### Sink validation & encoding
 
@@ -227,8 +183,8 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 | Float                                                        | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                               |
 | Double                                                       | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                               |
 | BigDecimal                                                   | [number](https://json-schema.org/understanding-json-schema/reference/numeric.html#number)                      |                                                                                                               |
-| List[_]                                                      | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                                |                                                                                                               |
-| Map[String, _]                                               | [object](https://json-schema.org/understanding-json-schema/reference/object.html)                              |                                                                                                               |
+| [list](/docs/scenarios_authoring/Spel.md#arrayslists)        | [array](https://json-schema.org/understanding-json-schema/reference/array.html)                                |                                                                                                               |
+| [map](/docs/scenarios_authoring/Spel.md#recordsobjects)      | [object](https://json-schema.org/understanding-json-schema/reference/object.html)                              |                                                                                                               |
 | String                                                       | [enum](https://json-schema.org/understanding-json-schema/reference/generic.html#enumerated-values)             | On the Designer we allow to pass `Typed[String]`, but we can't verify whether value is a valid Enum's symbol. |
 | Any matching type from the list of types in the union schema | [schema composition](https://json-schema.org/understanding-json-schema/reference/combining.html): oneOf, anyOf | Read more about [validation modes](#validation-and-encoding).                                                 |
 
@@ -244,3 +200,44 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 
 These properties will be not validated by the Designer, because on during scenario authoring time we work only on
 `Typing Information` not on real value. Validation will be still done at runtime.
+
+## Validation and encoding
+
+As we can see above on the diagram, finally preparing data (e.g. kafka sink / response sink) is divided into two parts:
+
+* during validation on the Designer, the `Typing Information` is compared against the sink schema
+* encoding data at runtime based on the data type, the data is converted to the internal representation expected by the
+  sink
+
+Sometimes situations can happen that are not so obvious to handle, e.g. how we should pass and validate `Unknown`
+and `Union` types.
+
+##### type `Unknown`
+
+A situation when Nussknacker can not detect type of data, it's similar to Any of the type.
+
+##### type `Union`
+
+A situation when the data can be any of [several representation](https://en.wikipedia.org/wiki/Union_type).
+
+In the case of `Union` and `Unknown` types, the actual data type is known only at runtime - only then the decision how
+to encode can be taken. Sometimes, it may happen that encoding will not be possible, due to the mismatch of the actual
+data type and data type expected in the sink and the runtime error will be reported. The number of runtime encoding
+errors can be reduced by applying strict schema validation rules during scenario authoring. This is the place where
+validation mode comes in.
+
+## Validation modes
+
+Validation modes determines how Nussknacker handles validation `Typing Information` against the sink schema during the
+scenario authoring. You can set validation mode by setting `Value validation mode` param on sinks where `raw editor` is
+enabled.
+
+|                                   | Strict mode                                                                   | Lax mode                                                        | Comment                                                                                                                                                |
+|-----------------------------------|-------------------------------------------------------------------------------|-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
+| allow passing additional fields   | no                                                                            | yes                                                             | This option works only at Avro Schema. JSON Schema manages additional fields itself explicitly by schema property: [`additionalProperties`](#objects). |
+| require providing optional fields | yes                                                                           | no                                                              |                                                                                                                                                        |
+| allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
+| passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
+
+We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
+how we validate data during scenario authoring, and some errors can still occur during encoding at runtime.
