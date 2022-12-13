@@ -68,12 +68,12 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
+        //TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
+        case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
-        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
-        case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
-        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
+        case (Some("object") | None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate
