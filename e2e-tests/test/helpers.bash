@@ -6,7 +6,7 @@ DESIGNER_URL="http://designer:8080"
 NETWORK=nussknacker_e2e_network
 
 define_schema() {
-  curl --fail -s -H "Content-Type: application/vnd.schemaregistry.v1+json"  --data @test/data/transactions.json $SCHEMA_REGISTRY_ADDRESS/subjects/$1-value/versions -v
+  curl --fail -H "Content-Type: application/vnd.schemaregistry.v1+json"  --data @test/data/transactions.json $SCHEMA_REGISTRY_ADDRESS/subjects/$1-value/versions -v
 }
 
 create_topic() {
