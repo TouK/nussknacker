@@ -24,23 +24,22 @@ The data types used in the execution engine, SpEL expressions and data structure
 These are also the data type names that appear in code completion hints. 
 In most cases Nussknacker can automatically convert between Java data types and JSON and AVRO formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
 
-Below is the list of the most common data types, with their JSON and Avro counterparts. 
-In Java types column package names are omitted for brevity, 
+Below is the list of the most common data types. In Java types column package names are omitted for brevity, 
 they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.time`
 
 ### Basic (primitive data types)
 
-| Java type  | JSON    | Avro                     | Comment                                    |
-| ---------- | ------- | -------                  | -----------                                |
-| null       | null    | null                     |                                            |
-| String     | string  | string                   | UTF-8                                      |
-| Boolean    | boolean | boolean                  |                                            |
-| Integer    | number  | int                      | 32bit                                      |
-| Long       | number  | long                     | 64bit                                      |
-| Float      | number  | float                    | single precision                           |
-| Double     | number  | double                   | double precision                           |
-| BigDecimal | number  | bytes or fixed + decimal | enable computation without rounding errors |
-| UUID       | string  | string + uuid            | uuid                                       |
+| Java type  | Comment                                    |
+|------------|--------------------------------------------|
+| null       |                                            |
+| String     | UTF-8                                      |
+| Boolean    |                                            |
+| Integer    | 32bit                                      |
+| Long       | 64bit                                      |
+| Float      | single precision                           |
+| Double     | double precision                           |
+| BigDecimal | enable computation without rounding errors |
+| UUID       | uuid                                       |
 
 More information about how to declare each type in Avro you can find in [Avro ducumentation](http://avro.apache.org/docs/current/spec.html#schemas), 
 especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
@@ -66,12 +65,10 @@ On the other hand, `map` describes "generic" structure - Nussknacker tacitly ass
                                                              
 Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
 
-
 ### Arrays/lists
 
 In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
 also in some context `Collection` can be met (it's Java API for handling lists, sets etc.).
-
 
 ### Handling date/time.
 
@@ -87,19 +84,6 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 - as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. 
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
   Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
-
-The following table mapping of types, possible JSON representation (no standard here though) and 
-mapping of AVRO types (`int + date` means `int` type with `date` logical type):
-
-| Java type      | JSON    | Avro                                                                  | Sample                                   | Comment                                                      |
-| -------------- | ------- | ---------------------------                                           | --------------------------               | ----------------------                                       |
-| LocalDate      | string  | int + date                                                            | 2021-05-17                               | Timezone is not stored                                       |
-| LocalTime      | string  | int + time-millis or long + time-micros                               | 07:34:00.12345                           | Timezone is not stored                                       |
-| LocalDateTime  | string  | not supported yet                                                     | 2021-05-17T07:34:00                      | Timezone is not stored                                       |
-| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00                |                                                              |
-| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00\[Europe/Paris] |                                                              |
-| Instant        | number  | long + timestamp-millis or timestamp-micros                           | 2021-05-17T05:34:00Z                     | Timestamp (millis since 1970-01-01) in human readable format |
-| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros         | 123456789                                | Raw timestamp (millis since 1970-01-01)                      |
 
 #### Conversions between date/time types
 
