@@ -4,6 +4,8 @@ import com.dimafeng.testcontainers.{ForAllTestContainer, ForEachTestContainer, K
 import org.apache.kafka.clients.admin.NewTopic
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.testcontainers.utility.DockerImageName
+import pl.touk.nussknacker.engine.kafka.validator.TopicsExistenceValidationConfigForTest.kafkaContainer
 import pl.touk.nussknacker.engine.kafka.{CachedTopicsExistenceValidatorConfig, KafkaConfig, KafkaUtils, TopicsExistenceValidationConfig}
 
 import java.util.Collections
@@ -14,10 +16,11 @@ object TopicsExistenceValidationConfigForTest {
     //longer timeout, as container might need some time to make initial assignements etc.
     TopicsExistenceValidationConfig(enabled = true, validatorConfig = CachedTopicsExistenceValidatorConfig.DefaultConfig.copy(adminClientTimeout = 5 seconds))
   }
+  def kafkaContainer = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0"))
 }
 
 class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends AnyFunSuite with ForAllTestContainer with Matchers {
-  override val container: KafkaContainer = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
+  override val container: KafkaContainer = kafkaContainer.configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "FALSE"))
 
   private def kafkaConfig = KafkaConfig(Some(Map("bootstrap.servers" -> container.bootstrapServers)), None, None, None, TopicsExistenceValidationConfigForTest.config)
 
@@ -53,7 +56,7 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends AnyFunSui
 }
 
 class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest extends AnyFunSuite with ForEachTestContainer with Matchers {
-  override val container: KafkaContainer = KafkaContainer().configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "TRUE"))
+  override val container: KafkaContainer = kafkaContainer.configure(_.withEnv("KAFKA_AUTO_CREATE_TOPICS_ENABLE", "TRUE"))
 
   private def kafkaConfig = KafkaConfig(Some(Map("bootstrap.servers" -> container.bootstrapServers)),  None, None, None, TopicsExistenceValidationConfigForTest.config)
 
