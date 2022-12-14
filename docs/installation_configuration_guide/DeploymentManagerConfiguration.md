@@ -27,18 +27,18 @@ With the exception of the `servicePort` configuration option, all remaining conf
 
 The table below contains configuration options for the Lite engine. If you install Designer with Helm, you can customize the Helm chart to use different values for those [options](https://artifacthub.io/packages/helm/touk/nussknacker#configuration-in-values-yaml). If you install Designer outside of the K8s cluster then the required changes should be applied under the `deploymentConfig` key as any other Nussknacker non K8s configuration. 
 
-| Parameter                 | Type                                                | Default value                       | Description                                                                              |
-|---------------------------|-----------------------------------------------------|-------------------------------------|------------------------------------------------------------------------------------------|
-| mode                      | string                                              |                                     | Either streaming or request-response                                                     |
-| dockerImageName           | string                                              | touk/nussknacker-lite-runtime -app| Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
-| dockerImageTag            | string                                              | current nussknacker version         |                                                                                          |
-| scalingConfig             | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }              | see [below](#configuring-replicas-count)                                                 |
-| configExecutionOverrides  | config                                              | {}                                  | see [below](#overriding-configuration-passed-to-runtime)                                 |
-| k8sDeploymentConfig       | config                                              | {}                                  | see [below](#customizing-k8s-deployment)                                                 |
-| nussknackerInstanceName   | string                                              | {?NUSSKNACKER_INSTANCE_NAME}        | see [below](#nussknacker-instance-name)                                                  |
-| logbackConfigPath         | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
-| commonConfigMapForLogback | string                                              | {}                                  | see [below](#configuring-runtime-logging)                                                |
-| servicePort               | int                                                 | 80                                  | Port of service exposed in request-response processing mode                              |
+| Parameter                 | Type                                                | Default value                      | Description                                                                              |
+|---------------------------|-----------------------------------------------------|------------------------------------|------------------------------------------------------------------------------------------|
+| mode                      | string                                              |                                    | Either streaming or request-response                                                     |
+| dockerImageName           | string                                              | touk/nussknacker-lite-runtime-app  | Runtime image (please note that it's **not** touk/nussknacker - which is designer image) |
+| dockerImageTag            | string                                              | current nussknacker version        |                                                                                          |
+| scalingConfig             | {fixedReplicasCount: int} or {tasksPerReplica: int} | { tasksPerReplica: 4 }             | see [below](#configuring-replicas-count)                                                 |
+| configExecutionOverrides  | config                                              | {}                                 | see [below](#overriding-configuration-passed-to-runtime)                                 |
+| k8sDeploymentConfig       | config                                              | {}                                 | see [below](#customizing-k8s-deployment)                                                 |
+| nussknackerInstanceName   | string                                              | {?NUSSKNACKER_INSTANCE_NAME}       | see [below](#nussknacker-instance-name)                                                  |
+| logbackConfigPath         | string                                              | {}                                 | see [below](#configuring-runtime-logging)                                                |
+| commonConfigMapForLogback | string                                              | {}                                 | see [below](#configuring-runtime-logging)                                                |
+| servicePort               | int                                                 | 80                                 | (Request-Response only) Port of service exposed                                          |
 
 &nbsp;                                                 
 ### Customizing K8s deployment resource definition
@@ -208,19 +208,20 @@ Please mind, that apart whether you will provide your own logging configuration 
 Just like in [Designer installation](./Installation.md#Basic environment variables), you can attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods. Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration file by setting `PROMETHEUS_AGENT_CONFIG_FILE` environment, which has to point to it.   
 
 &nbsp;
-## Request-Response embedded
+## Embedded Lite engine
 
-Deployment Manager of type `request-response-embedded` has the following configuration options:
+Deployment Manager of type `lite-embedded` has the following configuration options:
 
-| Parameter                                                 | Type   | Default value   | Description                                                                                                                      |
-|-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------|
-| http.interface                                            | string | 0.0.0.0         | Interface on which REST API of scenarios will be exposed                                                                         |
-| http.port                                                 | int    | 8181            | Port on which REST API of scenarios will be exposed                                                                              | 
-| request-response.definitionMetadata.servers               | string | [{"url": "./"}] | Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 
-| request-response.definitionMetadata.servers[].url         | string |                 | Url of server in scenario's OpenApi definition                                                                                   | 
-| request-response.definitionMetadata.servers[].description | string |                 | (Optional) description of server in scenario's OpenApi definition                                                                | 
-| request-response.security.basicAuth.user                  | string |                 | (Optional) Basic auth user                                                                                                       | 
-| request-response.security.basicAuth.password              | string |                 | (Optional) Basic auth password                                                                                                   | 
+| Parameter                                                 | Type   | Default value   | Description                                                                                                                                              |
+|-----------------------------------------------------------|--------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| mode                                                      | string |                 | Either streaming or request-response                                                                                                                     |
+| http.interface                                            | string | 0.0.0.0         | (Request-Response only) Interface on which REST API of scenarios will be exposed                                                                         |
+| http.port                                                 | int    | 8181            | (Request-Response only) Port on which REST API of scenarios will be exposed                                                                              | 
+| request-response.definitionMetadata.servers               | string | [{"url": "./"}] | (Request-Response only) Configuration of exposed servers in scenario's OpenApi definition. When not configured, will be used server with ./ relative url | 
+| request-response.definitionMetadata.servers[].url         | string |                 | (Request-Response only) Url of server in scenario's OpenApi definition                                                                                   | 
+| request-response.definitionMetadata.servers[].description | string |                 | (Request-Response only) (Optional) description of server in scenario's OpenApi definition                                                                | 
+| request-response.security.basicAuth.user                  | string |                 | (Request-Response only) (Optional) Basic auth user                                                                                                       | 
+| request-response.security.basicAuth.password              | string |                 | (Request-Response only) (Optional) Basic auth password                                                                                                   | 
 
 ## Flink engine 
 

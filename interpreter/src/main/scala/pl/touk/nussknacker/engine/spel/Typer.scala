@@ -23,9 +23,9 @@ import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, Nu
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.dict.SpelDictTyper
 import pl.touk.nussknacker.engine.expression.NullExpression
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError.{DynamicPropertyAccessError, IllegalIndexingOperation, IllegalProjectionSelectionError, IllegalPropertyAccessError, InvalidMethodReference}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.IllegalOperationError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.MissingObjectError.{ConstructionOfUnknown, NoPropertyError, NonReferenceError, UnresolvedReferenceError}
-import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError.{BadOperatorConstructionError, DivisionByZeroError, EmptyOperatorError, OperatorMismatchTypeError, OperatorNonNumericError, OperatorNotComparableError, ModuloZeroError}
+import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.OperatorError._
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.PartTypeError
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.SelectionProjectionError.{IllegalProjectionError, IllegalSelectionError, IllegalSelectionTypeError}
 import pl.touk.nussknacker.engine.spel.SpelExpressionParseError.TernaryOperatorError.{InvalidTernaryOperator, TernaryOperatorMismatchTypesError, TernaryOperatorNotBooleanError}

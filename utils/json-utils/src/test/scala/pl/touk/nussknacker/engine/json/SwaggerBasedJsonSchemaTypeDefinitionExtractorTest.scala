@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerEnumOfVariousTypes, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
@@ -190,7 +190,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     result shouldBe TypedObjectTypingResult.apply(results)
   }
 
-  test("should support enums") {
+  test("should support enums of strings") {
     val schema = JsonSchemaBuilder.parseSchema(
       """{
         |  "type": "object",
@@ -207,10 +207,40 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
 
+    val enumType = Typed(Set(Typed.fromInstance("one"), Typed.fromInstance("two"), Typed.fromInstance("three")))
     val results = List(
-      "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(Typed[String])),
+      "profession" -> Typed.genericTypeClass(classOf[java.util.List[String]], List(enumType)),
     )
     result shouldBe TypedObjectTypingResult.apply(results)
+
+    val onlyEnumSchema = JsonSchemaBuilder.parseSchema("""{ "enum": ["one", "two", "three"] }""".stripMargin)
+    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(onlyEnumSchema).typingResult shouldBe enumType
+  }
+
+  test("should type enum of types other than *only string* to Unknown") {
+    Table(
+      """{"enum": ["one", "two", "three", 4, "5"]}""".stripMargin,
+      """{"enum": ["one", null]}""".stripMargin,
+      """{"enum": [1,2,3]}""".stripMargin,
+      """{"enum": [ {"a": 1}, "b" ]}""".stripMargin,
+      """
+        |{
+        |  "type": "string",
+        |  "enum": ["red", "amber", "green", {"a": 1}, 42]
+        |}
+        |""".stripMargin,
+      """
+        |{
+        |  "type": "integer",
+        |  "enum": ["red", "amber", "green"]
+        |}
+        |""".stripMargin,
+    ).forEvery { schemaString =>
+      val schema = JsonSchemaBuilder.parseSchema(schemaString)
+      val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
+      swaggerTyped shouldBe SwaggerEnumOfVariousTypes
+      swaggerTyped.typingResult shouldBe Unknown
+    }
   }
 
   test("should support nested schema") {
@@ -360,6 +390,27 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     val results = List("id" -> Typed(Set(Typed.apply[String], Typed.apply[Long])))
 
     result shouldBe TypedObjectTypingResult.apply(results)
+  }
+
+  test("should support anyOf/oneOf for object schemas") {
+    //TODO: handle case when we have fields common for both versions on "main" level
+    def schema(compositionType: String) = JsonSchemaBuilder.parseSchema(
+      s"""{
+        |   "type":"object",
+        |   "$compositionType": [
+        |       { "type": "object", "properties": {"passport": {"type": "string" }} },
+        |       { "type": "object", "properties": {"identityCard": {"type": "string" }} },
+        |   ]
+        |}""".stripMargin)
+
+    Table("type", "anyOf", "oneOf").forEvery { compositionType =>
+      val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema(compositionType)).typingResult
+
+      result shouldBe Typed(
+        TypedObjectTypingResult(List(("passport", Typed[String]))),
+        TypedObjectTypingResult(List(("identityCard", Typed[String]))),
+      )
+    }
   }
 
   test("should support support multiple schemas but of the same type") {

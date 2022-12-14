@@ -18,7 +18,7 @@ private[parser] object ParseToSwaggerServices {
       openapi, openAPIsConfig
     )
     for {
-      (uriWithParameters, endpoint) <- openapi.getPaths.asScala.toList
+      (uriWithParameters, endpoint) <- Option(openapi.getPaths).map(_.asScala.toList).getOrElse(Nil)
       (method, endpointDefinition) <- endpoint.readOperationsMap.asScala.toList
       serviceName = prepareServiceName(uriWithParameters, endpointDefinition, method)
       if openAPIsConfig.allowedMethods.contains(method.name()) && serviceName.value.matches(openAPIsConfig.namePattern.regex)

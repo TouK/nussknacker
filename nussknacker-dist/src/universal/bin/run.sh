@@ -43,6 +43,8 @@ else
   JAVA_PROMETHEUS_OPTS="-javaagent:$agentPath=$PROMETHEUS_METRICS_PORT:$PROMETHEUS_AGENT_CONFIG_FILE"
 fi
 
+export USAGE_REPORTS_SOURCE="binaries"
+
 mkdir -p $LOGS_DIR
 cd $WORKING_DIR
 

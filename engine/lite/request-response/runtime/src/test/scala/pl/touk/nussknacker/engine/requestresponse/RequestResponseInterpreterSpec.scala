@@ -199,6 +199,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     result shouldBe Valid(List("abcd withRandomString"))
   }
 
+
   test("recognizes output types") {
 
     val process = ScenarioBuilder
@@ -217,7 +218,8 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
 
     val interpreter2 = prepareInterpreter(process = process2)
-    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15))))
+    interpreter2.sinkTypes shouldBe Map(NodeId("endNodeIID") -> TypedObjectTypingResult(
+      ListMap("str" -> Typed[String], "int" -> Typed.fromInstance(15))))
 
   }
 

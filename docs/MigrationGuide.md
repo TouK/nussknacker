@@ -11,6 +11,11 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * Added param `Value validation mode` at RR response component
   * We no longer support `nullable` param from Everit schema. Nullable schema are supported by union with null e.g. `["null", "string"]
 
+### Configuration changes
+* [#3768](https://github.com/TouK/nussknacker/pull/3768) `request-response-embedded` and `streaming-lite-embedded` 
+  DeploymentManager types where replaced by one `lite-embedded` DeploymentManager type with two modes: `streaming` and `request-response`
+  like it is done in `lite-k8s` case
+
 ### Code API changes
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) 
    Remove dependency on `flink-scala`. In particular: 
@@ -21,7 +26,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
   * Lite k8s engine with request-response processing mode
-  * `request-response-embedded` Deployment Manager
+  * `lite-embedded` Deployment Manager with request-response processing mode
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
   * ValidationMode moved to package `pl.touk.nussknacker.engine.api.validation` in `nussknacker-components-api`

@@ -77,6 +77,7 @@ object JsonToNuStruct {
       case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
       case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
         .headOption.getOrElse(throw JsonToObjectError(json, u, path))
+      case SwaggerEnumOfVariousTypes => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
     }
   }
 

@@ -938,9 +938,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
         .enricher("service-2", "output2", "withCustomValidation",
           "age" -> "30",
           "fields" -> "{invalid: 'yes'}")
-        .enricher("service-3", "output3", "withCustomValidation",
-          "age" -> "30",
-          "fields" -> "{name: 12}")
        .buildSimpleVariable("result-id2", "result", "''").emptySink("end-id2", "sink")
 
     val result = validateWithDef(process, withServiceRef)
@@ -948,7 +945,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     result.result shouldBe Invalid(NonEmptyList.of(
       CustomNodeError("service-1", "Too young", Some("age")),
       CustomNodeError("service-2", "Service is invalid", None),
-      CustomNodeError("service-3", "All values should be strings", Some("fields"))
     ))
   }
 
@@ -1310,8 +1306,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
           fields.returnType match {
             case TypedObjectTypingResult(fields, _, _) if fields.contains("invalid") =>
               Validated.invalidNel(CustomNodeError("Service is invalid", None))
-            case TypedObjectTypingResult(fields, _, _) if fields.values.exists(_ != Typed.typedClass[String]) =>
-              Validated.invalidNel(CustomNodeError("All values should be strings", Some("fields")))
             case _ => Valid(Typed.typedClass[String])
           }
         }

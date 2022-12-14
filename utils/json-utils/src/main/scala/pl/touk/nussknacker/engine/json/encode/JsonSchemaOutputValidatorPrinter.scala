@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.json.encode
 
 import org.everit.json.schema.{ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
+import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
@@ -10,7 +11,6 @@ import scala.collection.JavaConverters
 object JsonSchemaOutputValidatorPrinter {
 
   import OutputValidatorErrorsMessageFormatter._
-  import JsonSchemaOutputValidator._
 
   import JavaConverters._
 
@@ -19,7 +19,7 @@ object JsonSchemaOutputValidatorPrinter {
   }
 
   def print(schema: Schema): String = schema match {
-    case s: ObjectSchema if s.representsMap =>
+    case s: ObjectSchema if s.hasOnlyAdditionalProperties =>
       val valuesType = Option(s.getSchemaOfAdditionalProperties).map(print).getOrElse("Any")
       s"Map[String, ${valuesType}]"
     case s: ObjectSchema => s.getPropertySchemas.asScala.map {

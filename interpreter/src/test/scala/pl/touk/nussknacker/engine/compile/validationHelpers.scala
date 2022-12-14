@@ -414,5 +414,19 @@ object validationHelpers {
     override def nodeDependencies: List[NodeDependency] = List(OutputVariableNameDependency)
   }
 
+  //this is to simulate wrong implementation of GenericNodeTransformation
+  object ParamsLoopNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[String] {
+    override type State = Nothing
+
+    override def contextTransformation(context: ValidationContext, dependencies: List[NodeDependencyValue])
+                                      (implicit nodeId: NodeId): NodeTransformationDefinition = {
+      case TransformationStep(Nil, _) => NextParameters(Nil)
+    }
+
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): String = ""
+
+    override def nodeDependencies: List[NodeDependency] = List.empty
+  }
+
 
 }

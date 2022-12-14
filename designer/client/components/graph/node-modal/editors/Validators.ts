@@ -91,7 +91,7 @@ export const fixedValueValidator = (possibleValues: Array<PossibleValue>): Valid
 const literalRegExpPattern = (pattern: string) => new RegExp(pattern)
 
 export const notBlankValueValidator: Validator = {
-  isValid: value => !literalRegExpPattern("'\\s*'").test(value.trim()),
+  isValid: value => !literalRegExpPattern("^['\"]\\s*['\"]$").test(value.trim()),
   message: () => i18next.t("notBlankValueValidator.message", "This field value is required and can not be blank"),
   description: () => i18next.t("validator.notBlank.description", "Please fill field value for this parameter"),
   handledErrorType: HandledErrorType.BlankParameter,

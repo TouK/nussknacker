@@ -30,6 +30,10 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   import pl.touk.nussknacker.engine.spel.Implicits._
   import pl.touk.nussknacker.test.LiteralSpELImplicits._
 
+  private val lax = List(ValidationMode.lax)
+  private val strict = List(ValidationMode.strict)
+  private val strictAndLax = ValidationMode.values
+
   test("should test end to end kafka json data at sink and source / handling nulls and empty json" ) {
     val testData = Table(
       ("config", "result"),
@@ -104,11 +108,6 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   }
 
   test("sink with schema with additionalProperties: true/{schema}") {
-    //This tests runs scenario which passes #input directly to Sink using raw editor. Scenario is triggered with `{}` message.
-    val lax = List(ValidationMode.lax)
-    val strict = List(ValidationMode.strict)
-    val strictAndLax = ValidationMode.values
-
     //@formatter:off
     val testData = Table(
       ("input",             "sourceSchema",        "sinkSchema",                         "validationModes",  "result"),
@@ -149,6 +148,42 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     }
   }
 
+  test("sink with enum schema") {
+    val A = Json.fromString("A")
+    val one = Json.fromInt(1)
+    val two = Json.fromInt(2)
+    val obj = Json.obj(("x", A), ("y", Json.arr(one, two)))
+    //@formatter:off
+    val testData = Table(
+      ("input",   "sourceSchema",           "sinkSchema",          "validationModes",  "result"),
+      (A,         schemaEnumABC,            schemaEnumABC,         strictAndLax,       valid(A)),
+      (A,         schemaEnumABC,            schemaEnumABC,         strictAndLax,       valid(A)),
+      (A,         schemaEnumAB,             schemaEnumABC,         strictAndLax,       valid(A)),
+      (A,         schemaEnumABC,            schemaEnumAB,          lax,                valid(A)),
+      (A,         schemaEnumABC,            schemaEnumAB,          strict,             invalidTypes("actual: 'String{A} | String{B} | String{C}' expected: 'String{A} | String{B}'")),
+      (A,         schemaString,             schemaEnumABC,         strictAndLax,       valid(A)),
+      (A,         schemaEnumABC,            schemaString,          strictAndLax,       valid(A)),
+      (A,         schemaEnumABC,            schemaEnumAB1,         strictAndLax,       valid(A)),
+      (A,         schemaEnumAB1,            schemaEnumAB,          lax,                valid(A)),
+      (A,         schemaEnumAB1,            schemaEnumAB,          strict,             invalidTypes("actual: 'Unknown' expected: 'String{A} | String{B}'")),
+      (A,         schemaEnumAB1,            schemaEnumAB1,         lax,                valid(A)),
+      (one,       schemaEnumAB1,            schemaEnumAB1,         lax,                valid(one)),
+      (obj,       schemaEnumStrOrObj,       schemaEnumStrOrObj,    lax,                valid(obj)),
+      (A,         schemaEnumStrOrObj,       schemaEnumStrOrObj,    lax,                valid(A)),
+      (A,         schemaEnumAB1,            schemaEnumAB1,         strict,             invalidTypes("actual: 'Unknown' expected: 'Unknown'")), //todo: it's weird..
+    )
+    //@formatter:on
+
+    forAll(testData) {
+      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+        validationModes.foreach { mode =>
+          val cfg = config(input, sourceSchema, sinkSchema, output = Input, Some(mode))
+          val results = runWithValueResults(cfg)
+          results shouldBe expected
+        }
+    }
+  }
+
   test("should catch runtime errors at deserialization - source") {
     val testData = Table(
       ("input", "sourceSchema", "expected"),
@@ -157,6 +192,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapInt, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
       (obj("first" -> sampleJStr), createObjSchema(true, true, schemaInteger), s"#: required key [$ObjectFieldName] not found"),
       (obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")), schemaObjStr, "#: extraneous key [t1] is not permitted"),
+      (Json.fromString("X"), schemaEnumAB, "#: X is not a valid enum value")
     )
 
     forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
@@ -171,7 +207,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should catch runtime errors at encoding - sink") {
     val testData = Table(
       ("config", "expected"),
-      (config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField), s"Not expected type: null for field: 'field' with schema: $schemaString."),
+      (config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField), s"Not expected type: Null for field: 'field' with schema: $schemaString."),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>

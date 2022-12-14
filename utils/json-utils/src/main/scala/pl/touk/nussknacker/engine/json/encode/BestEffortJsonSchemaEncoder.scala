@@ -5,6 +5,7 @@ import cats.data.{NonEmptyList, Validated}
 import cats.implicits.toTraverseOps
 import io.circe.Json
 import org.everit.json.schema._
+import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
@@ -60,7 +61,7 @@ object BestEffortJsonSchemaEncoder {
       case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema)
       case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema)
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
-        .getOrElse(error(value.getClass.getName, cs.toString, fieldName))
+        .getOrElse(error(value, cs.toString, fieldName))
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
       case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, nm, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
@@ -71,11 +72,11 @@ object BestEffortJsonSchemaEncoder {
       case (_: NumberSchema, value: java.math.BigInteger) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Number) => Valid(jsonEncoder.encode(value.doubleValue()))
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
-      case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
+      case (_: EnumSchema, value: Any) => Valid(jsonEncoder.encode(value))
       case (_: NullSchema, null) => Valid(Json.Null)
       case (_: NullSchema, None) => Valid(Json.Null)
-      case (_, null) => error("null", schema.toString, fieldName)
-      case (_, _) => error(value.getClass.getName, schema.toString, fieldName)
+      case (_, null) => error(null, schema.toString, fieldName)
+      case (_, _) => error(value, schema.toString, fieldName)
     }
   }
 
@@ -83,13 +84,13 @@ object BestEffortJsonSchemaEncoder {
     (schema.getFormatValidator.formatName(), value) match {
       case ("date-time", zdt: ZonedDateTime) => Valid(jsonEncoder.encode(zdt))
       case ("date-time", odt: OffsetDateTime) => Valid(jsonEncoder.encode(odt))
-      case ("date-time", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
+      case ("date-time", _: Any) => error(value, schema.toString, fieldName)
       case ("date", ldt: LocalDate) => Valid(jsonEncoder.encode(ldt))
-      case ("date", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
+      case ("date", _: Any) => error(value, schema.toString, fieldName)
       case ("time", ot: OffsetTime) => Valid(jsonEncoder.encode(ot))
-      case ("time", _: Any) => error(value.getClass.getName, schema.toString, fieldName)
+      case ("time", _: Any) => error(value, schema.toString, fieldName)
       case ("unnamed-format", _: String) => Valid(jsonEncoder.encode(value))
-      case _ => error(value.getClass.getName, schema.toString, fieldName)
+      case _ => error(value, schema.toString, fieldName)
     }
   }
 
@@ -115,7 +116,7 @@ object BestEffortJsonSchemaEncoder {
       case bi: scala.math.BigInt => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
       case bi: java.math.BigInteger => encodeBigDecimalToIntegerSchema(BigDecimal(bi))
       case nm: Number => encodeBigDecimalToIntegerSchema(BigDecimal(nm.toString))
-      case _ => error(value.getClass.getName, schema.toString, fieldName)
+      case _ => error(value, schema.toString, fieldName)
     }
   }
 
@@ -124,8 +125,10 @@ object BestEffortJsonSchemaEncoder {
   private def error(msg: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] =
     Invalid(NonEmptyList.of(s"Field${fieldName.map(f => s": '$f'").getOrElse("")} $msg"))
 
-  private def error(runtimeType: String, schema: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] =
-    Invalid(NonEmptyList.of(s"Not expected type: $runtimeType for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."))
+  private def error(runtimeObject: Any, schema: String, fieldName: Option[String]): Invalid[NonEmptyList[String]] = {
+    val runtimeType = Typed.fromInstance(runtimeObject)
+    Invalid(NonEmptyList.of(s"Not expected type: ${runtimeType.withoutValue.display} for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."))
+  }
 
   private[encode] def encodeWithJsonValidation(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput =
     encode(value, schema, fieldName).andThen { result =>

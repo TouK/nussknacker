@@ -18,9 +18,8 @@ import pl.touk.nussknacker.engine.api.{JobData, MetaData, RequestResponseMetaDat
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy.slugForScenario
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
-import pl.touk.nussknacker.engine.lite.TestRunner
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
-import pl.touk.nussknacker.engine.requestresponse.{FutureBasedRequestResponseScenarioInterpreter, RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
+import pl.touk.nussknacker.engine.requestresponse.{RequestResponseConfig, RequestResponseRunnableScenarioInterpreter}
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.duration.DurationInt
@@ -91,8 +90,6 @@ class RequestResponseDeploymentStrategy(httpConfig: HttpBindingConfig, config: R
       new RequestResponseDeployment(slug, interpreter)
     }
   }
-
-  override def testRunner(implicit ec: ExecutionContext): TestRunner = FutureBasedRequestResponseScenarioInterpreter.testRunner
 
   class RequestResponseDeployment(path: String, interpreter: RequestResponseRunnableScenarioInterpreter) extends Deployment {
 
