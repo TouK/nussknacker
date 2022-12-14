@@ -507,4 +507,31 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
 
     result shouldBe TypedObjectTypingResult.apply(List.empty)
   }
+
+  test("should handle Recursive schema parsing") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "items": {
+        |      "$ref": "#/defs/RecursiveList"
+        |    }  
+        |  },
+        |  "defs": {
+        |    "RecursiveList": {
+        |      "type": "object",
+        |      "properties": {
+        |        "value": { "type": "string" }, 
+        |        "next": { "$ref": "#/defs/RecursiveList" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+    )
+
+    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
+
+    result shouldBe TypedObjectTypingResult(List("items" -> TypedObjectTypingResult(List("next" -> Unknown, "value" -> Typed[String]))))
+
+  }
 }
