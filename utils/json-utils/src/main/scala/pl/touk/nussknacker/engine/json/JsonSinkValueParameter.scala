@@ -21,20 +21,24 @@ object JsonSinkValueParameter {
 
   //Extract editor form from JSON schema
   def apply(schema: Schema, defaultParamName: String)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] =
-    toSinkValueParameter(schema, paramName = None, defaultParamName = defaultParamName, defaultValue = None, isRequired = None)
+    toSinkValueParameter(schema, parentSchema = schema, paramName = None, defaultParamName = defaultParamName, defaultValue = None, isRequired = None)
 
-  private def toSinkValueParameter(schema: Schema, paramName: Option[String], defaultParamName: String, defaultValue: Option[Expression], isRequired: Option[Boolean])
+  private def toSinkValueParameter(schema: Schema, parentSchema: Schema, paramName: Option[String], defaultParamName: String, defaultValue: Option[Expression], isRequired: Option[Boolean])
                                   (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     schema match {
       case objectSchema: ObjectSchema if !objectSchema.hasOnlyAdditionalProperties =>
-        objectSchemaToSinkValueParameter(objectSchema, paramName, defaultParamName = defaultParamName, isRequired = None) //ObjectSchema doesn't use property required
+        objectSchemaToSinkValueParameter(objectSchema, parentSchema, paramName, defaultParamName = defaultParamName, isRequired = None) //ObjectSchema doesn't use property required
       case _ =>
-        Valid(createJsonSinkSingleValueParameter(schema, paramName.getOrElse(defaultParamName), defaultValue, isRequired))
+        Valid(createJsonSinkSingleValueParameter(schema, parentSchema, paramName.getOrElse(defaultParamName), defaultValue, isRequired))
     }
   }
 
-  private def createJsonSinkSingleValueParameter(schema: Schema, paramName: String, defaultValue: Option[Expression], isRequired: Option[Boolean]): SinkSingleValueParameter = {
-    val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
+  private def createJsonSinkSingleValueParameter(schema: Schema,
+                                                 parentSchema: Schema,
+                                                 paramName: String,
+                                                 defaultValue: Option[Expression],
+                                                 isRequired: Option[Boolean]): SinkSingleValueParameter = {
+    val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema, Some(parentSchema))
     val typing = swaggerTyped.typingResult
     //By default properties are not required: http://json-schema.org/understanding-json-schema/reference/object.html#required-properties
     val isOptional = !isRequired.getOrElse(false)
@@ -44,7 +48,7 @@ object JsonSinkValueParameter {
     SinkSingleValueParameter(parameter)
   }
 
-  private def objectSchemaToSinkValueParameter(schema: ObjectSchema, paramName: Option[String], defaultParamName: String, isRequired: Option[Boolean])
+  private def objectSchemaToSinkValueParameter(schema: ObjectSchema, parentSchema: Schema, paramName: Option[String], defaultParamName: String, isRequired: Option[Boolean])
                                               (implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter] = {
     import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 
@@ -54,7 +58,7 @@ object JsonSinkValueParameter {
         val concatName = paramName.fold(fieldName)(pn => s"$pn.$fieldName")
         val isRequired = Option(schema.getRequiredProperties.contains(fieldName))
         val sinkValueValidated = getDefaultValue(fieldSchema, paramName).andThen { defaultValue =>
-          toSinkValueParameter(schema = fieldSchema, paramName = Option(concatName), defaultParamName = defaultParamName, defaultValue = defaultValue, isRequired = isRequired)
+          toSinkValueParameter(schema = fieldSchema, parentSchema = parentSchema, paramName = Option(concatName), defaultParamName = defaultParamName, defaultValue = defaultValue, isRequired = isRequired)
         }
         sinkValueValidated.map(sinkValueParam => fieldName -> sinkValueParam)
     }.toList

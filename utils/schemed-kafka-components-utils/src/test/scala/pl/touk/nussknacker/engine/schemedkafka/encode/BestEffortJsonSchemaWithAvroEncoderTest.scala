@@ -16,7 +16,7 @@ class BestEffortJsonSchemaWithAvroEncoderTest extends AnyFunSuite with Matchers 
 
   test("should encode avro generic record") {
     type WithError[T] = ValidatedNel[String, T]
-    val avroToJsonEncoder: PartialFunction[(Any, Schema, Option[String]), WithError[Json]] = new AvroToJsonBasedOnSchemaEncoder().encoder(BestEffortJsonSchemaEncoder.encodeBasedOnSchema)
+    val avroToJsonEncoder: PartialFunction[(Any, Schema, Schema, Option[String]), WithError[Json]] = new AvroToJsonBasedOnSchemaEncoder().encoder(BestEffortJsonSchemaEncoder.encodeBasedOnSchema)
 
     val avroSchema =
       SchemaBuilder.builder().record("test").fields()
@@ -38,6 +38,6 @@ class BestEffortJsonSchemaWithAvroEncoderTest extends AnyFunSuite with Matchers 
 
     val genRec = new GenericRecordBuilder(avroSchema).set("field1", "a").set("field2", 11).build()
 
-    avroToJsonEncoder(genRec, jsonSchema, None) shouldEqual valid(obj("field1" -> fromString("a"), "field2" -> fromLong(11)))
+    avroToJsonEncoder(genRec, jsonSchema, jsonSchema, None) shouldEqual valid(obj("field1" -> fromString("a"), "field2" -> fromLong(11)))
   }
 }
