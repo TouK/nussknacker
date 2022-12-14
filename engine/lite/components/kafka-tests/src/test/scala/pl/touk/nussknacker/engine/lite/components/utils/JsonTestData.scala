@@ -90,6 +90,10 @@ object JsonTestData {
 
   val schemaObjMapObjPerson: ObjectSchema = createObjSchema(schemaMapObjPerson)
 
+  val schemaEnumAB: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", ] }""".stripMargin)
+  val schemaEnumABC: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", "C"] }""".stripMargin)
+  val schemaEnumAB1: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", "B", 1] }""".stripMargin)
+  val schemaEnumStrOrObj: Schema = JsonSchemaBuilder.parseSchema("""{ "enum": ["A", {"x":"A", "y": [1,2]}] }""".stripMargin)
 
   /* SpEL sink output configuration */
   val sampleInt = 13

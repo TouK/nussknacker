@@ -72,7 +72,7 @@ object BestEffortJsonSchemaEncoder {
       case (_: NumberSchema, value: java.math.BigInteger) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Number) => Valid(jsonEncoder.encode(value.doubleValue()))
       case (_: BooleanSchema, value: Boolean) => Valid(Json.fromBoolean(value))
-      case (_: EnumSchema, value: Enum[_]) => Valid(Json.fromString(value.toString))
+      case (_: EnumSchema, value: Any) => Valid(jsonEncoder.encode(value))
       case (_: NullSchema, null) => Valid(Json.Null)
       case (_: NullSchema, None) => Valid(Json.Null)
       case (_, null) => error(null, schema.toString, fieldName)
