@@ -9,6 +9,14 @@ import ErrorBoundary from "../common/ErrorBoundary"
 import styles from "./CollapsibleToolbar.styl"
 import {useDragHandler} from "./DragHandle"
 
+const wrapper = styles.wrapper
+const panel = styles.panel
+const collapsed = styles.collapsed
+const expanding = styles.expanding
+const collapsing = styles.collapsing
+const collapseTitle = styles.collapseTitle
+const collapseIcon = styles.collapseIcon
+
 export type CollapsibleToolbarProps = PropsWithChildren<{
   id?: string,
   title?: string,
@@ -51,24 +59,24 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={wrapper}>
       <Panel
         expanded={!isCollapsed(id)}
         onToggle={onToggle}
-        bsClass={styles.panel}
+        bsClass={panel}
         className={classNames(
-          isShort && styles.collapsed,
-          isExpanding && styles.expanding,
-          isCollapsing && styles.collapsing,
+          isShort && collapsed,
+          isExpanding && expanding,
+          isCollapsing && collapsing,
         )}
       >
         {title ?
           (
             <Panel.Heading {...handlerProps}>
               <Panel.Title toggle>
-                <div className={styles.collapseTitle}>{title}</div>
+                <div className={collapseTitle}>{title}</div>
                 {isCollapsible && (
-                  <CollapseIcon className={styles.collapseIcon}/>
+                  <CollapseIcon className={collapseIcon}/>
                 )}
               </Panel.Title>
             </Panel.Heading>
