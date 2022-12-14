@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.{JobData, LiteStreamMetaData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.embedded.{Deployment, DeploymentStrategy}
+import pl.touk.nussknacker.engine.lite.TaskStatus
 import pl.touk.nussknacker.engine.lite.kafka.{KafkaTransactionalScenarioInterpreter, LiteKafkaJobData}
-import pl.touk.nussknacker.engine.lite.{TaskStatus, TestRunner}
 
 import scala.concurrent.ExecutionContext
 import scala.util.{Failure, Success, Try}
@@ -22,8 +22,6 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
 
   override def onScenarioAdded(jobData: JobData,
                                parsedResolvedScenario: CanonicalProcess)(implicit ec: ExecutionContext): Try[StreamingDeployment] = {
-
-
     // TODO think about some better strategy for determining tasksCount instead of picking just parallelism for that
     val liteKafkaJobData = LiteKafkaJobData(tasksCount = parsedResolvedScenario.metaData.typeSpecificData.asInstanceOf[LiteStreamMetaData].parallelism.getOrElse(1))
     val interpreterTry = Try(KafkaTransactionalScenarioInterpreter(parsedResolvedScenario, jobData, liteKafkaJobData, modelData, contextPreparer))
@@ -42,10 +40,7 @@ class StreamingDeploymentStrategy extends DeploymentStrategy with LazyLogging {
           Failure(ex)
         })
     }
-
   }
-
-  override def testRunner(implicit ec: ExecutionContext): TestRunner = KafkaTransactionalScenarioInterpreter.testRunner
 
   class StreamingDeployment(interpreter: KafkaTransactionalScenarioInterpreter) extends Deployment {
 

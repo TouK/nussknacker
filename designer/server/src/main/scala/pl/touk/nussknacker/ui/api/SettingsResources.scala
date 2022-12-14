@@ -6,12 +6,14 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
                         authenticationMethod: String,
-                        analyticsConfig: Option[AnalyticsConfig])(implicit ec: ExecutionContext)
+                        analyticsConfig: Option[AnalyticsConfig],
+                        usageStatisticsReportsSettings: UsageStatisticsReportsSettings)(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with RouteWithoutUser {
 
   def publicRoute(): Route =
@@ -28,7 +30,8 @@ class SettingsResources(config: FeatureTogglesConfig,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
-            redirectAfterArchive = config.redirectAfterArchive
+            redirectAfterArchive = config.redirectAfterArchive,
+            usageStatisticsReports = usageStatisticsReportsSettings
           )
 
           val authenticationSettings = AuthenticationSettings(
@@ -95,7 +98,8 @@ object TopTabType extends Enumeration {
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings,
-                                            redirectAfterArchive: Boolean
+                                            redirectAfterArchive: Boolean,
+                                            usageStatisticsReports: UsageStatisticsReportsSettings,
                                            )
 
 @JsonCodec case class AnalyticsSettings(engine: String, url: String, siteId: String)

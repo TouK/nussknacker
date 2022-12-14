@@ -38,7 +38,7 @@ import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, Subpro
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsHtmlSnippet
+import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.util.{CorsSupport, OptionsMethodSupport, SecurityHeadersSupport, WithDirectives}
 import pl.touk.nussknacker.ui.validation.ProcessValidation
@@ -204,18 +204,18 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       routes ++ optionalRoutes
     }
 
+    val usageStatisticsReportsConfig = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
+    val usageStatisticsReportsSettings = UsageStatisticsReportsSettings.prepare(usageStatisticsReportsConfig, typeToConfig.mapValues(_.usageStatistics))
+
     //TODO: WARNING now all settings are available for not sign in user. In future we should show only basic settings
     val apiResourcesWithoutAuthentication: List[Route] = List(
-      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig).publicRoute(),
+      new SettingsResources(featureTogglesConfig, authenticationResources.name, analyticsConfig, usageStatisticsReportsSettings).publicRoute(),
       appResources.publicRoute(),
-      authenticationResources.routeWithPathPrefix
+      authenticationResources.routeWithPathPrefix,
     )
 
-    val usageStatisticsReportsConfig = config.as[UsageStatisticsReportsConfig]("usageStatisticsReports")
-    val usageStatisticsSnippetOpt = UsageStatisticsHtmlSnippet.prepareWhenEnabledReporting(usageStatisticsReportsConfig)
-
     //TODO: In the future will be nice to have possibility to pass authenticator.directive to resource and there us it at concrete path resource
-    val webResources = new WebResources(config.getString("http.publicPath"), usageStatisticsSnippetOpt)
+    val webResources = new WebResources(config.getString("http.publicPath"))
     val route = WithDirectives(CorsSupport.cors(featureTogglesConfig.development), SecurityHeadersSupport(), OptionsMethodSupport()) {
       pathPrefixTest(!"api") {
         webResources.route

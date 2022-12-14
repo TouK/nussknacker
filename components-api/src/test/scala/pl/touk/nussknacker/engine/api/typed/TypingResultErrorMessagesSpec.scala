@@ -25,7 +25,7 @@ class TypingResultErrorMessagesSpec extends AnyFunSuite with Matchers with Optio
     canBeSubclassOf(
       typeMap("field1" -> list(typeMap("field2a" -> Typed[String], "field3" -> Typed[Int]))),
       typeMap("field1" -> list(typeMap("field2" -> Typed[String])))
-    ) shouldBe NonEmptyList.of("Field 'field1' is of the wrong type. Expected: List[{field2a: String, field3: Integer}], actual: List[{field2: String}]").invalid
+    ) shouldBe NonEmptyList.of("Map[String,List[{field2a: String, field3: Integer}]] cannot be converted to Map[String,List[{field2: String}]]").invalid
   }
 
 

@@ -4,11 +4,10 @@ import akka.http.scaladsl.model.headers.{CacheDirectives, `Cache-Control`}
 import akka.http.scaladsl.server.{Directives, Route}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.commons.io.{FileUtils, IOUtils}
-import pl.touk.nussknacker.ui.statistics.UsageStatisticsHtmlSnippet
 
 import java.nio.file.Files
 
-class WebResources(publicPath: String, usageStatisticsSnippetOpt: Option[UsageStatisticsHtmlSnippet]) extends Directives with LazyLogging {
+class WebResources(publicPath: String) extends Directives with LazyLogging {
 
   //see config.js comment
   private lazy val mainContentFile = {
@@ -20,10 +19,8 @@ class WebResources(publicPath: String, usageStatisticsSnippetOpt: Option[UsageSt
       ""
     }
     val withPublicPathSubstituted = content.replace("__publicPath__", publicPath)
-    val contentAfterSubstitutions = usageStatisticsSnippetOpt
-      .map(snippet => withPublicPathSubstituted.replace("</body>", snippet.value + "</body>"))
-      .getOrElse(withPublicPathSubstituted)
-    FileUtils.writeStringToFile(tempMainContentFile, contentAfterSubstitutions)
+
+    FileUtils.writeStringToFile(tempMainContentFile, withPublicPathSubstituted)
     tempMainContentFile
   }
 

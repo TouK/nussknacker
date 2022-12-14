@@ -24,28 +24,27 @@ The data types used in the execution engine, SpEL expressions and data structure
 These are also the data type names that appear in code completion hints. 
 In most cases Nussknacker can automatically convert between Java data types and JSON and AVRO formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
 
-Below is the list of the most common data types, with their JSON and Avro counterparts. 
-In Java types column package names are omitted for brevity, 
+Below is the list of the most common data types. In Java types column package names are omitted for brevity, 
 they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.time`
 
 ### Basic (primitive data types)
 
-| Java type  | JSON    | Avro                     | Comment                                    |
-| ---------- | ------- | -------                  | -----------                                |
-| null       | null    | null                     |                                            |
-| String     | string  | string                   | UTF-8                                      |
-| Boolean    | boolean | boolean                  |                                            |
-| Integer    | number  | int                      | 32bit                                      |
-| Long       | number  | long                     | 64bit                                      |
-| Float      | number  | float                    | single precision                           |
-| Double     | number  | double                   | double precision                           |
-| BigDecimal | number  | bytes or fixed + decimal | enable computation without rounding errors |
-| UUID       | string  | string + uuid            | uuid                                       |
+| Java type  | Comment                                    |
+|------------|--------------------------------------------|
+| null       |                                            |
+| String     | UTF-8                                      |
+| Boolean    |                                            |
+| Integer    | 32bit                                      |
+| Long       | 64bit                                      |
+| Float      | single precision                           |
+| Double     | double precision                           |
+| BigDecimal | enable computation without rounding errors |
+| UUID       | uuid                                       |
 
 More information about how to declare each type in Avro you can find in [Avro ducumentation](http://avro.apache.org/docs/current/spec.html#schemas), 
 especially about [Avro logical types](http://avro.apache.org/docs/current/spec.html#Logical+Types).
 
-### Records/objects
+### Records/objects/maps
          
 In Nussknacker, the following data types share common processing characteristics:
 - `object` in JSON
@@ -62,16 +61,14 @@ The main difference is that in case of `record` Nussknacker "knows" which fields
 are available and suggests and validates fields and their types.
 For example, `#input.name` is valid, while `#input.noname` or `#input.name > 0` as field name or type do not match.
 
-On the other hand, `map` describes "generic" structure - Nussknacker tacitly assumes it can contain any field of any type.
+On the other hand, `map` describes "generic" structure - Nussknacker tacitly assumes it can contain **any** field, but only of certain type (e.g. we can have a "map of Strings", "map of Integers" etc. If this type is `Unknown` the values might be of any type).
                                                              
 Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
-
 
 ### Arrays/lists
 
 In Nussknacker (e.g. in code completion) JSON / Avro arrays are refered to as `Lists`; 
 also in some context `Collection` can be met (it's Java API for handling lists, sets etc.).
-
 
 ### Handling date/time.
 
@@ -87,19 +84,6 @@ Formats of date/time are pretty complex - especially in Java. There are basicall
 - as date/time with stored timezone. In Nussknacker usually seen as `ZonedDateTime`. Suitable for date computations like adding a month or extracting date. 
 - as date/time with stored time offset. In Nussknacker usually seen as `OffsetDateTime`. Contrary to `ZonedDateTime` doesn't handle daylight saving time. 
   Quite often used to hold timestamp with additional information showing what was the local date/time from "user perspective"
-
-The following table mapping of types, possible JSON representation (no standard here though) and 
-mapping of AVRO types (`int + date` means `int` type with `date` logical type):
-
-| Java type      | JSON    | Avro                                                                  | Sample                                   | Comment                                                      |
-| -------------- | ------- | ---------------------------                                           | --------------------------               | ----------------------                                       |
-| LocalDate      | string  | int + date                                                            | 2021-05-17                               | Timezone is not stored                                       |
-| LocalTime      | string  | int + time-millis or long + time-micros                               | 07:34:00.12345                           | Timezone is not stored                                       |
-| LocalDateTime  | string  | not supported yet                                                     | 2021-05-17T07:34:00                      | Timezone is not stored                                       |
-| ZonedDateTime  | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00                |                                                              |
-| OffsetDateTime | string  | long + timestamp-millis or timestamp-micros (supported only in sinks) | 2021-05-17T07:34:00+01:00\[Europe/Paris] |                                                              |
-| Instant        | number  | long + timestamp-millis or timestamp-micros                           | 2021-05-17T05:34:00Z                     | Timestamp (millis since 1970-01-01) in human readable format |
-| Long           | number  | long, long + local-timestamp-millis or local-timestamp-micros         | 123456789                                | Raw timestamp (millis since 1970-01-01)                      |
 
 #### Conversions between date/time types
 
@@ -205,6 +189,20 @@ There are a few notable exceptions:
 | `#nullVar?:'Unknown'`                        | "Unknown" | String   |
 | `'john'?:'Unknown'`                          | "john"    | String   |
 
+## Relational operators
+
+| Operator | Equivalent symbolic operator | Example expression | Result |
+|----------|------------------------------|--------------------|--------|
+| `lt`     | `<`                          | `3 lt 5`           | true   |
+| `gt`     | `>`                          | `4 gt 4`           | false  |
+| `le`     | `<=`                         | `3 le 5`           | true   |
+| `ge`     | `>=`                         | `4 ge 4`           | true   |
+| `eq`     | `==`                         | `3 eq 3`           | true   |
+| `ne`     | `!=`                         | `4 ne 2`           | true   |
+| `div`    | `/`                          | `6 div 2`          | 3      |
+| `mod`    | `%`                          | `23 mod 7`         | 2      |
+| `not`    | `!`                          | `not true`         | false  |
+
 ## Method invocations
 
 As Nussknacker uses Java types, some objects are more than data containers - there are additional methods 
@@ -232,10 +230,10 @@ To obtain the first element matching the predicate, the syntax is `.^`.
 To obtain the last matching element, the syntax is `.$`.
 
 | Expression                                | Result       | Type          |
-| ------------                              | --------     | --------      |
+| ------------                              |--------------| --------      |
 | `{1,2,3,4}.?[#this ge 3]`                 | {3, 4}       | List[Integer] |
 | `#usersList.?[#this.firstName == 'john']` | {'john doe'} | List[String]  |
-| `{1,2,3,4}.^[#this ge 3]`                 | {1}          | Integer       |
+| `{1,2,3,4}.^[#this ge 3]`                 | {3}          | Integer       |
 | `{1,2,3,4}.$[#this ge 3]`                 | {4}          | Integer       |
 
 ## Mapping lists

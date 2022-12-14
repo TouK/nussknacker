@@ -2,10 +2,11 @@ package pl.touk.nussknacker.engine.json.swagger
 
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, TypingResult, Unknown}
+import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
+import java.util.Collections
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
 
@@ -40,7 +41,7 @@ case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 
-case class SwaggerEnum(values: List[String]) extends SwaggerTyped
+case class SwaggerEnum(values: List[String]) extends SwaggerTyped //todo: rename to SwaggerStringEnum?
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
@@ -49,7 +50,11 @@ case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additiona
 case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
 //mapped to Unknown in type system
-case object SwaggerRecursiveSchemaFallback extends SwaggerTyped
+sealed trait SwaggerUnknownFallback extends SwaggerTyped
+
+case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
+
+case object SwaggerEnumOfVariousTypes extends SwaggerUnknownFallback
 
 object SwaggerTyped {
 
@@ -59,35 +64,50 @@ object SwaggerTyped {
   private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedSchemas: Set[String]): SwaggerTyped = schema match {
     case objectSchema: ObjectSchema => SwaggerObject(objectSchema, swaggerRefSchemas, usedSchemas)
     case mapSchema: MapSchema => SwaggerObject(mapSchema, swaggerRefSchemas, usedSchemas)
-    case arraySchema: ArraySchema => SwaggerArray(arraySchema, swaggerRefSchemas, usedSchemas)
+    case IsArraySchema(array) => SwaggerArray(array, swaggerRefSchemas, usedSchemas)
     case _ => Option(schema.get$ref()) match {
       //handle recursive schemas better
       case Some(ref) if usedSchemas.contains(ref) =>
-        SwaggerRecursiveSchemaFallback
+        SwaggerRecursiveSchema
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
+        //TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
+        case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
-        case (None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
-        case (None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
-        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
+        case (Some("object") | None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (typ, _) if schema.getEnum != null =>
+          val values = schema.getEnum.asScala
+          if (values.forall(v => v.isInstanceOf[String]) && !typ.exists(_ != "string"))
+            SwaggerEnum(values.flatMap(Option(_).toList).map(_.toString).toList)
+          else
+            SwaggerEnumOfVariousTypes //todo: add support for enums of various types
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate
         case (Some("string"), Some("time")) => SwaggerTime
-        case (Some("string"), _) => Option(schema.getEnum) match {
-          case Some(values) => SwaggerEnum(values.asScala.map(_.toString).toList)
-          case None => SwaggerString
-        }
+        case (Some("string"), _) => SwaggerString
         case (Some("integer"), _) => SwaggerLong
+        //we refuse to accept invalid formats (e.g. integer, int32, decimal etc.)
         case (Some("number"), None) => SwaggerBigDecimal
         case (Some("number"), Some("double")) => SwaggerDouble
         case (Some("number"), Some("float")) => SwaggerDouble
         case (Some("null"), None) => SwaggerNull
-        case (typeName, format) => throw new Exception(s"Type $typeName in format: $format, is not supported")
+        case (typeName, format) =>
+          val formatError = format.map(f => s" in format '$f'").getOrElse("")
+          throw new Exception(s"Type '${typeName.getOrElse("empty")}'$formatError is not supported")
       }
+    }
+  }
+
+  private object IsArraySchema {
+    def unapply(schema: Schema[_]): Option[Schema[_]] = schema match {
+      case a: ArraySchema => Some(a)
+      //this is how OpenAPI is parsed when `type: array` is used
+      case oth if Option(oth.getTypes).exists(_.equals(Collections.singleton("array"))) && oth.getItems != null => Some(oth)
+      case _ => None
     }
   }
 
@@ -105,8 +125,8 @@ object SwaggerTyped {
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
       Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
-    case SwaggerEnum(_) =>
-      Typed.typedClass[String]
+    case SwaggerEnum(values) =>
+      Typed(values.map(Typed.fromInstance).toSet)
     case SwaggerBool =>
       Typed.typedClass[java.lang.Boolean]
     case SwaggerString =>
@@ -124,14 +144,14 @@ object SwaggerTyped {
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
     case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
-    case SwaggerRecursiveSchemaFallback =>
+    case _: SwaggerUnknownFallback =>
       Unknown
     case SwaggerNull =>
       TypedNull
   }
 }
 object SwaggerArray {
-  private[swagger] def apply(schema: ArraySchema, swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
+  private[swagger] def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerArray =
     SwaggerArray(elementType = SwaggerTyped(schema.getItems, swaggerRefSchemas, usedRefs))
 }
 
@@ -139,7 +159,7 @@ object SwaggerObject {
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
-    if(properties.isEmpty) {
+    if (properties.isEmpty) {
       schema.getAdditionalProperties match {
         case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
         case b if b == false => new SwaggerObject(Map.empty, AdditionalPropertiesDisabled)

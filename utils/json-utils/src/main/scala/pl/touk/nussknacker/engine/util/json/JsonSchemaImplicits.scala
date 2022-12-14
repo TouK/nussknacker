@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.util.json
 
 import cats.data.Validated
-import org.everit.json.schema.{CombinedSchema, NullSchema, Schema, ValidationException}
+import org.everit.json.schema.{CombinedSchema, NullSchema, ObjectSchema, Schema, ValidationException}
 import org.json.JSONException
 
 import scala.util.Try
@@ -11,6 +11,11 @@ object JsonSchemaImplicits {
   import collection.JavaConverters._
 
   implicit class ExtendedSchema(schema: Schema) {
+
+    def hasOnlyAdditionalProperties: Boolean = schema match {
+      case os: ObjectSchema => os.permitsAdditionalProperties() && os.getPropertySchemas.isEmpty
+      case _ => false
+    }
 
     def isNullableSchema: Boolean = schema match {
       case combined: CombinedSchema => combined.getSubschemas.asScala.exists(isNullSchema)

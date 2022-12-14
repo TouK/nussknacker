@@ -5,13 +5,14 @@ import cats.implicits.toTraverseOps
 import io.circe.Encoder
 import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
+import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
 import scala.collection.JavaConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 object typing {
 
@@ -51,8 +52,9 @@ object typing {
     def apply(fields: List[(String, TypingResult)], objType: TypedClass): TypedObjectTypingResult =
       TypedObjectTypingResult(ListMap(fields: _*), objType)
 
-    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult =
-      TypedObjectTypingResult(fields, TypedClass(classOf[java.util.Map[_, _]], List(Typed[String], Unknown)))
+    def apply(fields: ListMap[String, TypingResult]): TypedObjectTypingResult = {
+      TypedObjectTypingResult(fields, stringMapWithValues[java.util.Map[_, _]](fields.toList))
+    }
   }
 
   // Warning, fields are kept in list-like map: 1) order is important 2) lookup has O(n) complexity
@@ -278,7 +280,7 @@ object typing {
           TypedNull
         case map: Map[String@unchecked, _]  =>
           val fieldTypes = typeMapFields(map)
-          TypedObjectTypingResult(fieldTypes, genericTypeClass(classOf[Map[_, _]], List(Typed[String], Unknown)))
+          TypedObjectTypingResult(fieldTypes, stringMapWithValues[Map[_, _]](fieldTypes))
         case javaMap: java.util.Map[String@unchecked, _] =>
           val fieldTypes = typeMapFields(javaMap.asScala.toMap)
           TypedObjectTypingResult(fieldTypes)
@@ -301,14 +303,6 @@ object typing {
     private def typeMapFields(map: Map[String, _]) = map.map {
         case (k, v) => k -> fromInstance(v)
       }.toList
-
-    private def supertypeOfElementTypes(list: List[_]): TypingResult = {
-      implicit val numberTypesPromotionStrategy: NumberTypesPromotionStrategy = NumberTypesPromotionStrategy.ToSupertype
-      val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
-      list.map(fromInstance)
-        .reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype))
-        .getOrElse(Unknown)
-    }
 
     def apply(possibleTypes: TypingResult*): TypingResult = {
       apply(possibleTypes.toSet)
@@ -333,6 +327,20 @@ object typing {
       }
     }
 
+  }
+
+  private def stringMapWithValues[T: ClassTag](fields: List[(String, TypingResult)]): TypedClass = {
+    val valueType = superTypeOfTypes(fields.map(_._2))
+    Typed.genericTypeClass[T](List(Typed[String], valueType))
+  }
+
+  private def supertypeOfElementTypes(list: List[_]): TypingResult = {
+    superTypeOfTypes(list.map(fromInstance))
+  }
+
+  private def superTypeOfTypes(list: List[TypingResult]) = {
+    val superTypeFinder = new CommonSupertypeFinder(SupertypeClassResolutionStrategy.AnySuperclass, true)
+    list.reduceOption(superTypeFinder.commonSupertype(_, _)(NumberTypesPromotionStrategy.ToSupertype)).getOrElse(Unknown)
   }
 
   object AdditionalDataValue {

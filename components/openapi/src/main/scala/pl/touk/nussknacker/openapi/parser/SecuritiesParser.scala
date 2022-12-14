@@ -27,7 +27,9 @@ private[parser] object SecuritiesParser extends LazyLogging {
             matchSecuritiesForRequiredSchemes(securityRequirement.asScala.keys.toList,
               securitySchemes,
               securitiesConfigs)
-          }.foldLeft("No security requirement can be met, because:".invalidNel[List[SwaggerSecurity]])(_.findValid(_))
+          }.foldLeft("No security requirement can be met because:".invalidNel[List[SwaggerSecurity]])(_.findValid(_))
+            //in fact we have only one error
+            .leftMap(errors => NonEmptyList.one(errors.toList.mkString(" ")))
         }
       }
     }
@@ -37,9 +39,9 @@ private[parser] object SecuritiesParser extends LazyLogging {
                                         securitiesConfigs: Map[String, OpenAPISecurityConfig]): ValidationResult[List[SwaggerSecurity]] =
     requiredSchemesNames.map { implicit schemeName: String => {
       val securityScheme: ValidationResult[SecurityScheme] = Validated.fromOption(securitySchemes.get(schemeName),
-        NonEmptyList.of(s"""There is no security scheme definition for scheme name "$schemeName""""))
+        NonEmptyList.of(s"""there is no security scheme definition for scheme name "$schemeName""""))
       val securityConfig: ValidationResult[OpenAPISecurityConfig] = Validated.fromOption(securitiesConfigs.get(schemeName),
-        NonEmptyList.of(s"""There is no security config for scheme name "$schemeName""""))
+        NonEmptyList.of(s"""there is no security config for scheme name "$schemeName""""))
 
       (securityScheme, securityConfig).tupled.andThen(t => getSecurityFromSchemeAndConfig(t._1, t._2))
     }

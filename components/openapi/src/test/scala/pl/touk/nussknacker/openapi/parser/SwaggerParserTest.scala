@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.openapi.parser
 
+import cats.data.Validated.Valid
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks._
@@ -20,10 +22,10 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
     openApi.parameters shouldBe List(
       UriParameter("accountNo", SwaggerLong),
+      QueryParameter("pretty", SwaggerBool),
       HeaderParameter("System-Name", SwaggerString),
       HeaderParameter("System-User-Name", SwaggerString),
       HeaderParameter("X-Correlation-ID", SwaggerString),
-      QueryParameter("pretty", SwaggerBool)
     )
 
     openApi.pathParts shouldBe List(PlainPart("line"), PlainPart("getCollectionData"), PathParameterPart("accountNo"))
@@ -85,8 +87,14 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
   test("returns errors for incorrect service") {
     val openApi = parseServicesFromResource("incorrect-service.yml")
 
-    openApi.find(_.exists(_.name == ServiceName("valid"))) shouldBe 'defined
-    openApi.find(_.swap.exists(_.name == ServiceName("noResponseType"))) shouldBe 'defined
+    openApi.find(_.exists(_.name == ServiceName("GET-valid"))) shouldBe 'defined
+
+    def errorsFor(name: String) =
+      openApi.flatMap(_.swap.toOption).filter(_.name == ServiceName("GET-"+name)).flatMap(_.errors.toList)
+
+    errorsFor("noResponseType") shouldBe List("No response with application/json or */* media types found")
+    errorsFor("unhandledSecurity") shouldBe List("No security requirement can be met because: there is no security config for scheme name \"headerConfig\"")
+    errorsFor("unhandledFormat") shouldBe List("Type 'number' in format 'decimal' is not supported")
 
   }
 
@@ -96,9 +104,9 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
     val responseType = openApi.find(_.name == ServiceName("testRecursive")).flatMap(_.responseSwaggerType)
     val recursiveListType = SwaggerObject(Map(
       "value" -> SwaggerString,
-      "next" -> SwaggerRecursiveSchemaFallback,
-      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchemaFallback)),
-      "list" -> SwaggerArray(SwaggerRecursiveSchemaFallback)
+      "next" -> SwaggerRecursiveSchema,
+      "union" -> SwaggerUnion(List(SwaggerString, SwaggerRecursiveSchema)),
+      "list" -> SwaggerArray(SwaggerRecursiveSchema)
     ))
     responseType shouldBe Some(SwaggerObject(Map(
       "left" -> recursiveListType,
@@ -114,4 +122,14 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
 
   }
 
+  test("should handle array return type with 3.1") {
+    val openApi = parseServicesFromResource("swagger-3.1-array.yml")
+    inside(openApi) {
+      case Valid(service) :: Nil => service.responseSwaggerType shouldBe Some(
+        SwaggerObject(Map(
+          "itemsWithType" -> SwaggerArray(SwaggerString),
+        ))
+      )
+    }
+  }
 }

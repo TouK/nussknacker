@@ -3,22 +3,18 @@ package pl.touk.nussknacker.engine.embedded
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
-import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData.BaseModelDataExt
 import pl.touk.nussknacker.engine.api._
-import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.embedded.requestresponse.RequestResponseDeploymentStrategy
 import pl.touk.nussknacker.engine.embedded.streaming.StreamingDeploymentStrategy
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
-import pl.touk.nussknacker.engine.requestresponse.api.openapi.RequestResponseOpenApiSettings
-import pl.touk.nussknacker.engine.testmode.TestProcess
-import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, ModelData, TypeSpecificInitialData}
+import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelData}
+import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
@@ -26,40 +22,16 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
-class RequestResponseEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
-
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = new TypeSpecificInitialData {
-    override def forScenario(scenarioName: ProcessName, scenarioType: String): ScenarioSpecificData =
-      RequestResponseMetaData(Some(RequestResponseDeploymentStrategy.defaultSlug(scenarioName)))
-  }
-
-  override def name: String = "request-response-embedded"
-
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
-    = RequestResponseDeploymentStrategy(config)
-
-  override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = RequestResponseOpenApiSettings.additionalPropertiesConfig
-}
-
-class StreamingEmbeddedDeploymentManagerProvider extends EmbeddedDeploymentManagerProvider {
-
-  override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(LiteStreamMetaData(None))
-
-  override def name: String = "streaming-lite-embedded"
-
-  override protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
-  = new StreamingDeploymentStrategy
-
-}
-
-
-trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
+class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: BaseModelData, engineConfig: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
                                        sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
-    val strategy = prepareStrategy(engineConfig)
+    val strategy = forMode(engineConfig)(
+      new StreamingDeploymentStrategy,
+      RequestResponseDeploymentStrategy(engineConfig)
+    )
 
     val metricRegistry = LiteMetricRegistryFactory.usingHostnameAsDefaultInstanceId.prepareRegistry(engineConfig)
     val contextPreparer = new LiteEngineRuntimeContextPreparer(new DropwizardMetricsProviderFactory(metricRegistry))
@@ -68,7 +40,15 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
     new EmbeddedDeploymentManager(modelData.asInvokableModelData, deploymentService, strategy)
   }
 
-  protected def prepareStrategy(config: Config)(implicit as: ActorSystem, ec: ExecutionContext): DeploymentStrategy
+  override protected def defaultRequestResponseSlug(scenarioName: ProcessName, config: Config): String =
+    RequestResponseDeploymentStrategy.defaultSlug(scenarioName)
+
+  override def additionalValidators(config: Config): List[CustomProcessValidator] = forMode(config)(
+    Nil,
+    List(EmbeddedRequestResponseScenarioValidator)
+  )
+
+  override def name: String = "lite-embedded"
 
 }
 
@@ -78,9 +58,9 @@ trait EmbeddedDeploymentManagerProvider extends DeploymentManagerProvider {
   ManagementActor, which provides synchronization. Hence, we ignore all synchronization issues, except for
   checking status, but for this @volatile on interpreters should suffice.
  */
-class EmbeddedDeploymentManager(modelData: ModelData,
+class EmbeddedDeploymentManager(override protected val modelData: ModelData,
                                 processingTypeDeploymentService: ProcessingTypeDeploymentService,
-                                deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends BaseDeploymentManager with LazyLogging {
+                                deploymentStrategy: DeploymentStrategy)(implicit ec: ExecutionContext) extends LiteDeploymentManager with LazyLogging {
 
   private val retrieveDeployedScenariosTimeout = 10.seconds
   @volatile private var deployments: Map[ProcessName, ScenarioDeploymentData] = {
@@ -88,11 +68,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     deployedScenarios.map(data => deployScenario(data.processVersion, data.resolvedScenario, throwInterpreterRunExceptionsImmediately = false)._2).toMap
   }
 
-
-  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = {
-    // TODO: it should be moved into CustomProcessValidator after refactor of it
-    Future.fromTry(EmbeddedLiteScenarioValidator.validate(canonicalProcess).toEither.toTry)
-  }
+  override def validate(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess): Future[Unit] = Future.successful(())
 
   override def deploy(processVersion: ProcessVersion, deploymentData: DeploymentData, canonicalProcess: CanonicalProcess, savepointPath: Option[String]): Future[Option[ExternalDeploymentId]] = {
     Future.successful(deployScenarioClosingOldIfNeeded(processVersion, canonicalProcess, throwInterpreterRunExceptionsImmediately = true))
@@ -163,13 +139,7 @@ class EmbeddedDeploymentManager(modelData: ModelData,
     logger.info("All embedded scenarios successfully closed")
   }
 
-  override def test[T](name: ProcessName, canonicalProcess: CanonicalProcess, testData: TestData, variableEncoder: Any => T): Future[TestProcess.TestResults[T]] = {
-    Future {
-      modelData.withThisAsContextClassLoader {
-        deploymentStrategy.testRunner.runTest(modelData, testData, canonicalProcess, variableEncoder)
-      }
-    }
-  }
+  override protected def executionContext: ExecutionContext = ec
 
   private case class ScenarioDeploymentData(deploymentId: String,
                                             processVersion: ProcessVersion,
