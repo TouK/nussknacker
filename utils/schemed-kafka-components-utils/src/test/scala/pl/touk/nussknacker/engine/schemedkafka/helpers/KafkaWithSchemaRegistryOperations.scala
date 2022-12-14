@@ -166,5 +166,5 @@ object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
 
 object SimpleKafkaJsonSerializer extends Serializer[Any] {
 
-  override def serialize(topic: String, data: Any): Array[Byte] = BestEffortJsonEncoder.defaultForTests.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
+  override def serialize(topic: String, data: Any): Array[Byte] = BestEffortJsonEncoder.default.encode(data).spaces2.getBytes(StandardCharsets.UTF_8)
 }

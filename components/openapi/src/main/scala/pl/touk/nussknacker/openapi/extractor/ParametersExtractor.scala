@@ -45,8 +45,8 @@ object ParametersExtractor {
 
   private def createEditorIfNeeded(swaggerTyped: SwaggerTyped): Option[ParameterEditor] =
     swaggerTyped match {
-      case SwaggerEnum(values) => Some(
-        FixedValuesParameterEditor(values.map(value => FixedExpressionValue(s"'$value'", value)))
+      case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) => Some(
+        FixedValuesParameterEditor(values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String])))
       )
       case _ => None
     }

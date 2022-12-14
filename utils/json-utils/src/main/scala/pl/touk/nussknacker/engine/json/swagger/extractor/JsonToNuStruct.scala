@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.json.swagger.extractor
 import io.circe.{Json, JsonNumber, JsonObject}
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.json.swagger._
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
@@ -58,7 +58,7 @@ object JsonToNuStruct {
         case SwaggerString =>
           extract(_.asString)
         case SwaggerEnum(_) =>
-          extract(_.asString)
+          extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         case SwaggerBool =>
           extract(_.asBoolean, boolean2Boolean)
         case SwaggerLong =>
@@ -80,7 +80,7 @@ object JsonToNuStruct {
         case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
         case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
           .headOption.getOrElse(throw JsonToObjectError(json, u, path))
-        case SwaggerEnumOfVariousTypes | SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        case SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         //should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }
@@ -108,13 +108,4 @@ object JsonToNuStruct {
       OffsetTime.parse(time, DateTimeFormatter.ISO_OFFSET_TIME)
     }.orNull
   }
-
-  private def jsonToAny(json: Json): Any = json.fold(
-    jsonNull = null,
-    jsonBoolean = identity[Boolean],
-    jsonNumber = _.toBigDecimal.map(_.bigDecimal).orNull, //we need here java BigDecimal type
-    jsonString = identity[String],
-    jsonArray = _.map(jsonToAny).asJava,
-    jsonObject = _.toMap.mapValuesNow(jsonToAny).asJava
-  )
 }

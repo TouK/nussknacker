@@ -163,14 +163,14 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (A,         schemaEnumABC,            schemaEnumAB,          strict,             invalidTypes("actual: 'String{A} | String{B} | String{C}' expected: 'String{A} | String{B}'")),
       (A,         schemaString,             schemaEnumABC,         strictAndLax,       valid(A)),
       (A,         schemaEnumABC,            schemaString,          strictAndLax,       valid(A)),
-      (A,         schemaEnumABC,            schemaEnumAB1,         strictAndLax,       valid(A)),
+      (A,         schemaEnumABC,            schemaEnumAB1,         lax,                valid(A)),
+      (A,         schemaEnumABC,            schemaEnumAB1,         strict,             invalidTypes("actual: 'String{A} | String{B} | String{C}' expected: 'String{A} | Integer{1} | String{B}'")),
       (A,         schemaEnumAB1,            schemaEnumAB,          lax,                valid(A)),
-      (A,         schemaEnumAB1,            schemaEnumAB,          strict,             invalidTypes("actual: 'Unknown' expected: 'String{A} | String{B}'")),
-      (A,         schemaEnumAB1,            schemaEnumAB1,         lax,                valid(A)),
-      (one,       schemaEnumAB1,            schemaEnumAB1,         lax,                valid(one)),
+      (A,         schemaEnumAB1,            schemaEnumAB,          strict,             invalidTypes("actual: 'String{A} | Integer{1} | String{B}' expected: 'String{A} | String{B}'")),
+      (A,         schemaEnumAB1,            schemaEnumAB1,         strictAndLax,       valid(A)),
+      (one,       schemaEnumAB1,            schemaEnumAB1,         strictAndLax,       valid(one)),
       (obj,       schemaEnumStrOrObj,       schemaEnumStrOrObj,    lax,                valid(obj)),
       (A,         schemaEnumStrOrObj,       schemaEnumStrOrObj,    lax,                valid(A)),
-      (A,         schemaEnumAB1,            schemaEnumAB1,         strict,             invalidTypes("actual: 'Unknown' expected: 'Unknown'")), //todo: it's weird..
     )
     //@formatter:on
 

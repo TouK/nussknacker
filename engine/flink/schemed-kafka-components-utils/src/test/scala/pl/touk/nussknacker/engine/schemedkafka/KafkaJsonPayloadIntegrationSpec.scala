@@ -46,7 +46,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
     val sinkParam = UniversalSinkParam(topicConfig, ExistingSchemaVersion(1), "#input")
     val process = createAvroProcess(sourceParam, sinkParam)
 
-    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, BestEffortJsonEncoder.defaultForTests.encode(PaymentV1.exampleData))
+    runAndVerifyResult(process, topicConfig, PaymentV1.exampleData, BestEffortJsonEncoder.default.encode(PaymentV1.exampleData))
   }
 
   test("should read and write json of specific record via avro schema") {
@@ -56,7 +56,7 @@ class KafkaJsonPayloadIntegrationSpec extends AnyFunSuite with KafkaAvroSpecMixi
     val process = createAvroProcess(sourceParam, sinkParam)
 
     val givenObj = GeneratedAvroClassSampleSchema.specificRecord
-    val expectedJson = BestEffortJsonEncoder.defaultForTests.encode(givenObj)
+    val expectedJson = BestEffortJsonEncoder.default.encode(givenObj)
 
     runAndVerifyResult(process, topicConfig, givenObj, expectedJson, useSpecificAvroReader = true)
   }

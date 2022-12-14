@@ -9,5 +9,5 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 object ComplexObject {
 
-  private implicit val mapEncoder: Encoder[java.util.Map[String, Any]] = Encoder.instance[java.util.Map[String, Any]](BestEffortJsonEncoder.defaultForTests.encode)
+  private implicit val mapEncoder: Encoder[java.util.Map[String, Any]] = Encoder.instance[java.util.Map[String, Any]](BestEffortJsonEncoder.default.encode)
 }

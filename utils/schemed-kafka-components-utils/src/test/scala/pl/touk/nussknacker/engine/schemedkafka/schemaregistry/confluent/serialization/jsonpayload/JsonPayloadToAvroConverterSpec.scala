@@ -19,7 +19,7 @@ import scala.util.{Failure, Try}
 class JsonPayloadToAvroConverterSpec extends AnyFunSuite with Matchers with OptionValues with Inside {
 
   private val jsonToAvroConverter = new JsonPayloadToAvroConverter(None)
-  val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
+  val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.default.encode)
 
   test("date logical type") {
     val schema = prepareSchema("""{ "type": "int", "logicalType": "date" }""", defaultOpt = Some("124"))
