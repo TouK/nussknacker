@@ -14,7 +14,7 @@ import scala.collection.JavaConverters._
 
 class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 
-  private val encoder = BestEffortJsonEncoder.default
+  private val encoder = BestEffortJsonEncoder.defaultForTests
 
   test("should encode for various keys") {
 

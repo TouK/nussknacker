@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 class AvroToJsonEncoderSpec extends AnyFunSpec with Matchers {
 
-  val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.default.encode)
+  val avroToJsonEncoder: PartialFunction[Any, Json] = new AvroToJsonEncoder().encoder(BestEffortJsonEncoder.defaultForTests.encode)
 
   it("should encode generic record") {
     val schema =

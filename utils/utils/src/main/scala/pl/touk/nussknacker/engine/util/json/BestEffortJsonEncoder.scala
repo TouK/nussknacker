@@ -16,7 +16,7 @@ import scala.collection.JavaConverters._
 
 object BestEffortJsonEncoder {
 
-  val default: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  val defaultForTests: BestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
 
 }
 

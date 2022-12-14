@@ -9,6 +9,7 @@ import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Sch
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder.getClass
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import java.util
@@ -62,8 +63,9 @@ sealed trait SwaggerUnknownFallback extends SwaggerTyped
 case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
 
 object SwaggerTyped {
+  private val bestEffortJsonEncoder =  BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
   private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
-  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](BestEffortJsonEncoder.default.encode)
+  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
   private lazy val om = new ObjectMapper()
 
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)

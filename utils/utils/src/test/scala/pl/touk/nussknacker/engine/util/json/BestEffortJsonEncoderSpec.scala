@@ -13,7 +13,7 @@ import scala.collection.immutable.{ListMap, ListSet}
 
 class BestEffortJsonEncoderSpec extends AnyFunSpec with Matchers {
 
-  private val encoder = BestEffortJsonEncoder.default
+  private val encoder = BestEffortJsonEncoder.defaultForTests
 
   it("should encode simple elements as a json") {
     encoder.encode(1) shouldEqual fromLong(1)

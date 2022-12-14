@@ -54,7 +54,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .emptySink("end", "sinkForInputMeta", "value" -> "#inputMeta")
 
     val consumerRecord = new InputMetaToJson()
-      .encoder(BestEffortJsonEncoder.default.encode).apply(inputMeta)
+      .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
 
