@@ -17,6 +17,7 @@ object JsonToNuStruct {
   case class JsonToObjectError(json: Json, definition: SwaggerTyped, path: String)
     extends Exception(s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json")
 
+  //TODO: remove flow control using exceptions
   def apply(json: Json, definition: SwaggerTyped, path: String = ""): AnyRef = {
 
     def extract[A](fun: Json => Option[A], trans: A => AnyRef = identity[AnyRef] _): AnyRef =
@@ -49,36 +50,42 @@ object JsonToNuStruct {
       })
     )
 
-    definition match {
-      case _ if json.isNull =>
-        null
-      case SwaggerString =>
-        extract(_.asString)
-      case SwaggerEnum(_) =>
-        extract(_.asString)
-      case SwaggerBool =>
-        extract(_.asBoolean, boolean2Boolean)
-      case SwaggerLong =>
-        //FIXME: to ok?
-        extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
-      case SwaggerDateTime =>
-        extract(_.asString, parseDateTime)
-      case SwaggerTime =>
-        extract(_.asString, parseTime)
-      case SwaggerDate =>
-        extract(_.asString, parseDate)
-      case SwaggerDouble =>
-        extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
-      case SwaggerBigDecimal =>
-        extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
-      case SwaggerArray(elementType) =>
-        extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
-      case obj: SwaggerObject => extractObject(obj)
-      case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
-      case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
-        .headOption.getOrElse(throw JsonToObjectError(json, u, path))
-      case SwaggerEnumOfVariousTypes => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+    //we handle null here to enable pattern matching exhaustive check
+    if (json.isNull) {
+      null
+    } else {
+      definition match {
+        case SwaggerString =>
+          extract(_.asString)
+        case SwaggerEnum(_) =>
+          extract(_.asString)
+        case SwaggerBool =>
+          extract(_.asBoolean, boolean2Boolean)
+        case SwaggerLong =>
+          //FIXME: to ok?
+          extract[JsonNumber](_.asNumber, n => long2Long(n.toDouble.toLong))
+        case SwaggerDateTime =>
+          extract(_.asString, parseDateTime)
+        case SwaggerTime =>
+          extract(_.asString, parseTime)
+        case SwaggerDate =>
+          extract(_.asString, parseDate)
+        case SwaggerDouble =>
+          extract[JsonNumber](_.asNumber, n => double2Double(n.toDouble))
+        case SwaggerBigDecimal =>
+          extract[JsonNumber](_.asNumber, _.toBigDecimal.map(_.bigDecimal).orNull)
+        case SwaggerArray(elementType) =>
+          extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
+        case obj: SwaggerObject => extractObject(obj)
+        case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
+        case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
+          .headOption.getOrElse(throw JsonToObjectError(json, u, path))
+        case SwaggerEnumOfVariousTypes | SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        //should not happen as we handle null above
+        case SwaggerNull => throw JsonToObjectError(json, definition, path)
+      }
     }
+
   }
 
   //we want to accept empty string - just in case...
