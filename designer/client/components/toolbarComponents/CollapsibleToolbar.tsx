@@ -7,6 +7,7 @@ import {getIsCollapsed, getToolbarsConfigId} from "../../reducers/selectors/tool
 import ErrorBoundary from "../common/ErrorBoundary"
 import styleVariables from "../../stylesheets/_variables.styl"
 import {useDragHandler} from "./DragHandle"
+import styled from "@emotion/styled"
 import {css} from "@emotion/css"
 
 const {
@@ -25,10 +26,71 @@ export type CollapsibleToolbarProps = PropsWithChildren<{
   isHidden?: boolean,
 }>
 
+const ResetPointerEvents = styled.div({pointerEvents: "auto"})
+
+const Title = styled.div({
+  padding: "0 .75em",
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  flex: 1,
+})
+
+const Icon = styled(CollapseIcon)(({collapsed}: { collapsed: boolean }) => ({
+  padding: ".5em .8em",
+  height: "2em",
+  flexShrink: 0,
+  transition: "all .3s",
+  transform: `rotate(${collapsed ? 180 : 90}deg)`,
+}))
+
+const StyledPanel = styled(Panel)(({expanded}) => ({
+  opacity: expanded ? 1 : .86,
+  transition: `all ${expanded ? .3 : .2}s ease-in-out`,
+}))
+
+const bsClass = css({
+  background: panelBackground,
+  border: `0 solid ${panelBorder}`,
+  minWidth: sidebarWidth,
+  maxWidth: sidebarWidth,
+
+  "&-heading": {
+    background: panelHeaderBackground,
+    color: panelHeaderText,
+    textTransform: "uppercase",
+  },
+
+  "&-title": {
+    fontSize: panelHeaderTextSize,
+    fontFamily: "Open Sans",
+    fontWeight: 600,
+    color: panelHeaderText,
+
+    "& > a": {
+      height: "2em",
+      display: "flex",
+      justifyContent: "space-between",
+      lineHeight: "2em",
+      flexGrow: 0,
+    },
+
+    "& > a, & > a:focus, & > a:hover": {
+      textDecoration: "none",
+      color: panelHeaderText,
+    },
+  },
+
+  "&-body": {
+    color: panelText,
+    userSelect: "text",
+    display: "flow-root",
+  },
+})
+
 export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleToolbarProps): JSX.Element | null {
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed)
-  const [isShort, setIsShort] = useState(isCollapsed(id))
+  const [collapsed, setCollapsed] = useState(isCollapsed(id))
   const configId = useSelector(getToolbarsConfigId)
 
   const onToggle = useCallback(
@@ -40,89 +102,32 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
   const {tabIndex, ...handlerProps} = useDragHandler()
 
   const collapseCallbacks = useMemo(() => ({
-    onEnter: () => setIsShort(false),
-    onExit: () => setIsShort(true),
+    onEnter: () => setCollapsed(false),
+    onExit: () => setCollapsed(true),
   }), [])
 
   if (isHidden || !Children.count(children)) {
     return null
   }
 
+  const hasTitle = !!title
+  const additionalProps = hasTitle ? {} : handlerProps
   return (
-    <div className={css({
-      pointerEvents: "auto",
-    })}
-    >
-      <Panel
+    <ResetPointerEvents>
+      <StyledPanel
         expanded={!isCollapsed(id)}
         onToggle={onToggle}
-        bsClass={css({
-          background: panelBackground,
-          border: `0 solid ${panelBorder}`,
-          minWidth: sidebarWidth,
-          maxWidth: sidebarWidth,
-
-          "&-heading": {
-            background: panelHeaderBackground,
-            color: panelHeaderText,
-            textTransform: "uppercase",
-          },
-
-          "&-title": {
-            fontSize: panelHeaderTextSize,
-            fontFamily: "Open Sans",
-            fontWeight: 600,
-            color: panelHeaderText,
-
-            "& > a": {
-              height: "2em",
-              display: "flex",
-              justifyContent: "space-between",
-              lineHeight: "2em",
-              flexGrow: 0,
-            },
-
-            "& > a, & > a:focus, & > a:hover": {
-              textDecoration: "none",
-              color: panelHeaderText,
-            },
-          },
-
-          "&-body": {
-            color: panelText,
-            userSelect: "text",
-          },
-        })}
-        className={css({
-          opacity: isShort ? .86 : 1,
-          transition: `all ${isShort ? .2 : .3}s ease-in-out`,
-        })}
+        bsClass={bsClass}
+        {...additionalProps}
       >
-        {title ?
-          (
-            <Panel.Heading {...handlerProps}>
-              <Panel.Title toggle>
-                <div className={css({
-                  padding: "0 .75em",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  flex: 1,
-                })}
-                >{title}</div>
-                {isCollapsible && (
-                  <CollapseIcon className={css({
-                    padding: ".5em .8em",
-                    height: "2em",
-                    flexShrink: 0,
-                    transition: "all .3s",
-                    transform: `rotate(${isShort ? 180 : 90}deg)`,
-                  })}
-                  />
-                )}
-              </Panel.Title>
-            </Panel.Heading>
-          ) :
-          null}
+        {hasTitle && (
+          <Panel.Heading {...handlerProps}>
+            <Panel.Title toggle>
+              <Title>{title}</Title>
+              {isCollapsible && <Icon collapsed={collapsed}/>}
+            </Panel.Title>
+          </Panel.Heading>
+        )}
         <Panel.Collapse {...collapseCallbacks}>
           <Panel.Body>
             <ErrorBoundary>
@@ -130,7 +135,8 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
             </ErrorBoundary>
           </Panel.Body>
         </Panel.Collapse>
-      </Panel>
-    </div>
+      </StyledPanel>
+    </ResetPointerEvents>
   )
 }
+
