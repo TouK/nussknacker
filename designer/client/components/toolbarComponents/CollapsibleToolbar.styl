@@ -1,67 +1,96 @@
 @require "../../stylesheets/_variables.styl"
 
-:local(.wrapper)
-    pointer-events auto
+headerTextSize = panelHeaderTextSize
+headerBackground = panelHeaderBackground
+background = panelBackground
+border = panelBorder
+headerText = panelHeaderText
+width = sidebarWidth
+text = panelText
 
-:local(.panel)
-    background rgba(panelBackground, 1)
-    border 0px solid panelBorder
+:export {
+  headerText: headerText
+  border: border
+  background: background
+  headerBackground: headerBackground
+  headerTextSize: headerTextSize
+  width: width
+  text: text
+}
 
-    &-heading
-        background panelHeaderBackground
-        color panelHeaderText
-        text-transform uppercase
+:local(.wrapper) {
+  pointer-events: auto;
+}
 
-    &-title
-        font-size panelHeaderTextSize
-        font-family 'Open Sans'
-        font-weight 600
-        color panelHeaderText
+:local(.panel) {
+  background: rgba(background, 1);
+  border: 0 solid border;
+  min-width: width;
+  max-width: width;
 
-        & > a
-            display flex
-            justify-content space-between
-            height panelHeaderTextSize * 2
-            line-height @height
-            flex-grow 0
+  &-heading {
+    background: headerBackground;
+    color: headerText;
+    text-transform: uppercase;
+  }
 
-        & > a
-        & > a:focus
-        & > a:hover
-            text-decoration none
-            color panelHeaderText
+  &-title {
+    font-size: headerTextSize * 1px;
+    font-family: 'Open Sans';
+    font-weight: 600;
+    color: headerText;
 
-    &-body
-        min-width (sidebarWidth - 2)
-        color panelText
-        user-select text
+    & > a {
+      display: flex;
+      justify-content: space-between;
+      height: headerTextSize * 2px;
+      line-height: headerTextSize * 2px;
+      flex-grow: 0;
+    }
 
-    min-width sidebarWidth
-    max-width sidebarWidth
+    & > a,
+    & > a:focus,
+    & > a:hover {
+      text-decoration: none;
+      color: headerText;
+    }
+  }
 
-    &:local(.collapsing)
-        transition all .2s ease-in-out
+  &-body {
+    min-width: (width - 2);
+    color: text;
+    user-select: text;
+  }
+}
 
-    &:local(.expanding)
-        transition all .3s ease-in-out
+:local(.collapsing) {
+  transition: all .2s ease-in-out;
+}
 
-    &:local(.collapsed)
-        max-width @min-width
-        opacity .86
+:local(.expanding) {
+  transition: all .3s ease-in-out;
+}
 
-:local
-    .collapse-title
-        padding 0 (panelHeaderTextSize * 3 / 4)
-        overflow hidden
-        text-overflow ellipsis
-        flex 1
+:local(.collapsed) {
+  max-width: width;
+  opacity: .86;
+}
 
-    .collapse-icon
-        padding (panelHeaderTextSize / 2) 8px
-        height panelHeaderTextSize * 2
-        flex-shrink 0
-        transition all .3s
-        transform rotate(90deg)
+:local(.collapse-title) {
+  padding: 0 (headerTextSize * 3px / 4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
 
-        .collapsed &
-            transform rotate(180deg)
+:local(.collapse-icon) {
+  padding: (headerTextSize * 1px / 2) 8px;
+  height: headerTextSize * 2px;
+  flex-shrink: 0;
+  transition: all .3s;
+  transform: rotate(90deg);
+
+  :local(.collapsed) & {
+    transform: rotate(180deg);
+  }
+}
