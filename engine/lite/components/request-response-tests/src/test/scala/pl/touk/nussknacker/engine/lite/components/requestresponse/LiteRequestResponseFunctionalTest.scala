@@ -150,6 +150,32 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     result shouldBe Valid(Json.obj())
   }
 
+  test("handles recursive schema encode/decode") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "items": {
+        |      "$ref": "#/defs/RecursiveList"
+        |    }
+        |  },
+        |  "defs": {
+        |    "RecursiveList": {
+        |      "type": "object",
+        |      "properties": {
+        |        "value": { "type": "string" },
+        |        "next": { "$ref": "#/defs/RecursiveList" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+    )
+    //TODO: handle ref schemas on output...
+    val scenarioConfig = config(obj("items" -> obj("value" -> fromString("1"), "next" -> obj("value" -> fromString("2")))),
+      schema, schemaStr, output = SpecialSpELElement("#input.items.value"))
+    runWithResults(scenarioConfig) shouldBe Valid(fromString("1"))
+  }
+
   test("should test e2e request-response flow at sink and source / handling nulls and empty json" ) {
     val testData = Table(
       ("config", "result"),
