@@ -53,9 +53,9 @@ As described in the [Concepts section](#concepts), there are cases when during s
 - as the result of the execution of the [for-each](./BasicNodes.md#) node,
 - if [split](./BasicNodes.md#split) node is used
 
-In such cases, the `collect` node provides a convenient way of collecting all these records into a list. If data records are in parallel branches, a [union](./BasicNodes.md/#union) node should be used  to merge the branches first.
+In such cases, the `collect` node provides a convenient way of collecting all these records into a list. If data records are in parallel branches, a [union](./BasicNodes.md/#union) node should be used to merge the branches first.
 
-Collect node takes two arguments:
+Collect node takes two parameters:
 - Input expression - this expression will be evaluated for all data "records' which "flow" through the scenario and will be collected into a list. 
 - Output variable name - name of the variable which will store the above mentioned list.
 
