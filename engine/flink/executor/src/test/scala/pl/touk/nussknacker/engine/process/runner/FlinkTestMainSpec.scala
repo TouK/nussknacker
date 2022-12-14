@@ -1,12 +1,13 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.{Config, ConfigFactory}
+import io.circe.{Json, parser}
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import pl.touk.nussknacker.engine.api.process.ComponentUseCase
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.{FlinkTestConfiguration, RecordingExceptionConsumer, RecordingExceptionConsumerProvider}
@@ -222,31 +223,19 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     intercept[JobExecutionException](Await.result(run, 10 seconds))
   }
 
-  test("handle custom multiline source input") {
+  test("handle json input") {
     val process =
       ScenarioBuilder
         .streaming("proc1")
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "value" -> "#input")
-    val testJsonData = TestData(
-      """{
-        | "id": "1",
-        | "field": "11"
-        |}
-        |
-        |
-        |{
-        | "id": "2",
-        | "field": "22"
-        |}
-        |
-        |{
-        | "id": "3",
-        | "field": "33"
-        |}
-        |""".stripMargin.getBytes(StandardCharsets.UTF_8), 3)
+    val testData = TestData(List(
+      TestRecord(parser.parse("""{"id": "1", "field": "11"}""").right.get),
+      TestRecord(parser.parse("""{"id": "2", "field": "22"}""").right.get),
+      TestRecord(parser.parse("""{"id": "3", "field": "33"}""").right.get),
+    ))
 
-    val results = runFlinkTest(process, testJsonData)
+    val results = runFlinkTest(process, testData)
 
     results.nodeResults("id") should have size 3
     results.externalInvocationResults("out") shouldBe

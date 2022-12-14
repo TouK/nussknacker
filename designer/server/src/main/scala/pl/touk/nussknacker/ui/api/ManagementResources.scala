@@ -20,7 +20,6 @@ import io.circe.{Decoder, Encoder, Json}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
@@ -34,6 +33,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.test.{RawTestData, ScenarioTestDataSerDe}
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -211,7 +211,7 @@ class ManagementResources(processCounter: ProcessCounter,
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    performTest(idWithCategory, testData, displayableProcessJson).flatMap { results =>
+                    performTest(idWithCategory, RawTestData(testData), displayableProcessJson).flatMap { results =>
                       Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                     }.recover(EspErrorToHttp.errorToHttp)
                   }
@@ -248,29 +248,28 @@ class ManagementResources(processCounter: ProcessCounter,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
-    parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
-      case Right(process) =>
-        val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
-        val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
-          assertTestResultsAreNotTooBig(results)
-        }.map { results =>
-          ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))
-        }
-      case Left(error) =>
-        Future.failed(UnmarshallError(error.toString))
-    }
+  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, rawTestData: RawTestData, displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
+    for {
+      process <- parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson)
+        .fold(error => Future.failed(UnmarshallError(error.toString)), Future.successful)
+      testData <- ScenarioTestDataSerDe.prepareTestData(rawTestData, testDataSettings.maxSamplesCount)
+        .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
+      validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
+      canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
+      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, testData, user, ManagementResources.testResultsVariableEncoder))
+        .mapTo[TestResults[Json]]
+      _ <- assertTestResultsAreNotTooBig(testResults)
+    } yield ResultsWithCounts(ManagementResources.testResultsEncoder(testResults), computeCounts(canonical, testResults))
   }
 
-  private def assertTestResultsAreNotTooBig(testResults: TestResults[Json]): Future[TestResults[Json]] = {
+  private def assertTestResultsAreNotTooBig(testResults: TestResults[Json]): Future[Unit] = {
     val resultsMaxBytes = testDataSettings.resultsMaxBytes
     val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
     if (testDataResultApproxByteSize > resultsMaxBytes) {
       logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: $resultsMaxBytes")
       Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
     } else {
-      Future.successful(testResults)
+      Future.successful(())
     }
   }
 

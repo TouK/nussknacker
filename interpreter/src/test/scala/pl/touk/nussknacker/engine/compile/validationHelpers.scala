@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.compile
 
 import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
+import io.circe.Json
 import pl.touk.nussknacker.engine.api
 import pl.touk.nussknacker.engine.api._
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, FatalUnknownError}
@@ -9,7 +10,7 @@ import pl.touk.nussknacker.engine.api.context.transformation._
 import pl.touk.nussknacker.engine.api.context.{ContextTransformation, JoinContextTransformation, ValidationContext}
 import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 
 import scala.concurrent.Future
@@ -243,11 +244,9 @@ object validationHelpers {
 
       new Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-          override def parseElement(testElement: String): String = testElement
-        }
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
 
-        override def generateTestData(size: Int): Array[Byte] = Array(0)
+        override def generateTestData(size: Int): TestData = TestData(TestRecord(Json.fromString("")) :: Nil)
       }
     }
   }
@@ -263,9 +262,7 @@ object validationHelpers {
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
       new Source with SourceTestSupport[String] {
-        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-          override def parseElement(testElement: String): String = testElement
-        }
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
       }
     }
   }

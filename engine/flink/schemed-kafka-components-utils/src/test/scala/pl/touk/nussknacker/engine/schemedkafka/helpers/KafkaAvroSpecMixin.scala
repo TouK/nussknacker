@@ -14,7 +14,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.CustomNode
 import pl.touk.nussknacker.engine.api.context.transformation.{DefinedEagerParameter, OutputVariableNameValue, TypedNodeDependencyValue}
 import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, ValidationContext}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -229,9 +228,9 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
     }
     createValidatedSource(sourceFactory, parameterValues)
       .map(source => {
-        val bytes = source.generateTestData(1)
-        info("test object: " + new String(bytes, StandardCharsets.UTF_8))
-        val deserializedObj = source.testDataParser.parseTestData(TestData(bytes, 1)).head.asInstanceOf[ConsumerRecord[Any, Any]]
+        val testData = source.generateTestData(1)
+        info("test object: " + testData)
+        val deserializedObj = source.testRecordParser.parse(testData.testRecords.head).asInstanceOf[ConsumerRecord[Any, Any]]
 
         deserializedObj.key() shouldEqual givenKey
         deserializedObj.value() shouldEqual givenValue

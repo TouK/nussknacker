@@ -1,22 +1,23 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpEntity, HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
 import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.engine.ModelData
-import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import pl.touk.nussknacker.ui.process.test.ScenarioTestDataSerDe
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
-import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
+import scala.concurrent.{ExecutionContext, Future}
 
 object TestInfoResources {
 
@@ -61,20 +62,20 @@ class TestInfoResources(providers: ProcessingTypeDataProvider[TestInfoProvider],
               path("capabilities") {
                 complete {
                   val resp: TestingCapabilities = source.map(provider.getTestingCapabilities(metadata, _))
-                    .getOrElse(TestingCapabilities(false, false))
+                    .getOrElse(TestingCapabilities.Disabled)
                   resp
                 }
               } ~
-              path("generate" / IntNumber) { testSampleSize =>
-                complete {
-                  generateData(testSampleSize, source, provider, metadata) match {
-                    case Left(error) => HttpResponse(StatusCodes.BadRequest, entity = error)
-                    case Right(data) => HttpResponse(entity = data)
+                path("generate" / IntNumber) { testSampleSize =>
+                  complete {
+                    generateData(testSampleSize, source, provider, metadata) match {
+                      case Left(error) => HttpResponse(StatusCodes.BadRequest, entity = error)
+                      case Right(data) => HttpResponse(entity = data)
+                    }
                   }
                 }
-              }
             } ~ path("capabilities") {
-              complete(TestingCapabilities(false, false))
+              complete(TestingCapabilities.Disabled)
             }
           }
         }
@@ -82,19 +83,13 @@ class TestInfoResources(providers: ProcessingTypeDataProvider[TestInfoProvider],
     }
   }
 
-  def generateData(testSampleSize: Int, sourceOpt: Option[Source], provider: TestInfoProvider, metaData: MetaData): Either[String, Array[Byte]] = {
-    if (testSampleSize > testDataSettings.maxSamplesCount) {
-      return Left(s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
-    }
-    val generatedData = sourceOpt match {
-      case Some(source) => provider.generateTestData(metaData, source, testSampleSize).getOrElse(Array())
-      case None => return Left("Scenario does not have source capable of generating test data")
-    }
-    if (generatedData.length > testDataSettings.testDataMaxBytes) {
-      Left(s"Too much data generated, limit is ${testDataSettings.testDataMaxBytes}")
-    } else {
-      Right(generatedData)
-    }
+  private def generateData(testSampleSize: Int, sourceOpt: Option[Source], provider: TestInfoProvider, metaData: MetaData): Either[String, Array[Byte]] = {
+    for {
+      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
+      source <- sourceOpt.toRight("Scenario does not have source capable of generating test data")
+      generatedData <- provider.generateTestData(metaData, source, testSampleSize).toRight("Test data could not be generated for scenario")
+      rawTestData <- ScenarioTestDataSerDe.serializeTestData(generatedData, testDataSettings.testDataMaxBytes)
+    } yield rawTestData.content
   }
 
 }

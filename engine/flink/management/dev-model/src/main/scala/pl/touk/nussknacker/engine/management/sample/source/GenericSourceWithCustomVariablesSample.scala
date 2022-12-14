@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.management.sample.source
 
 import cats.data.ValidatedNel
+import io.circe.Json
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.Context
 import pl.touk.nussknacker.engine.api.context.transformation.{NodeDependencyValue, SingleInputGenericNodeTransformation}
@@ -8,7 +9,7 @@ import pl.touk.nussknacker.engine.api.context.{ProcessCompilationError, Validati
 import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.flink.api.process._
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
@@ -74,11 +75,9 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
 
       override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
-      override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
+      override def generateTestData(size: Int): TestData = TestData(elements.map(el => TestRecord(Json.fromString(el))))
 
-      override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-        override def parseElement(testElement: String): String = testElement
-      }
+      override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
     }

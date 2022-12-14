@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.requestresponse.utils
 
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
-import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.test.TestRecordParser
 import pl.touk.nussknacker.engine.api.typed._
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, NodeId, ParamName}
 import pl.touk.nussknacker.engine.requestresponse.api.{RequestResponseGetSource, RequestResponseSourceFactory}
@@ -19,7 +19,7 @@ class TypedMapRequestResponseSourceFactory extends RequestResponseSourceFactory 
 
     override def returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)
 
-    override def testDataParser: TestDataParser[TypedMap] = new QueryStringTestDataParser
+    override def testRecordParser: TestRecordParser[TypedMap] = new QueryStringTestDataParser
   }
 
 }

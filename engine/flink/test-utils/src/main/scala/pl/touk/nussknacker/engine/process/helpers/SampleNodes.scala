@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.helpers
 
 import cats.data.Validated.Valid
 import cats.data.ValidatedNel
+import io.circe.Json
 import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.eventtime.WatermarkStrategy
 import org.apache.flink.api.common.functions.{FilterFunction, FlatMapFunction}
@@ -22,7 +23,7 @@ import pl.touk.nussknacker.engine.api.definition._
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
 import pl.touk.nussknacker.engine.api.test.InvocationCollectors.ServiceInvocationCollector
-import pl.touk.nussknacker.engine.api.test.{EmptyLineSplittedTestDataParser, NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, TypedMap, typing}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
@@ -694,11 +695,9 @@ object SampleNodes {
 
         override val contextInitializer: ContextInitializer[String] = customContextInitializer
 
-        override def generateTestData(size: Int): Array[Byte] = elements.mkString("\n").getBytes
+        override def generateTestData(size: Int): TestData = TestData(elements.map(e => TestRecord(Json.fromString(e))))
 
-        override def testDataParser: TestDataParser[String] = new NewLineSplittedTestDataParser[String] {
-          override def parseElement(testElement: String): String = testElement
-        }
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
       }
@@ -768,16 +767,16 @@ object SampleNodes {
   private val ascendingTimestampExtractor = new StandardTimestampWatermarkHandler[SimpleRecord](WatermarkStrategy
     .forMonotonousTimestamps[SimpleRecord]().withTimestampAssigner(StandardTimestampWatermarkHandler.toAssigner[SimpleRecord](_.date.getTime)))
 
-  private val newLineSplittedTestDataParser = new NewLineSplittedTestDataParser[SimpleRecord] {
-    override def parseElement(csv: String): SimpleRecord = {
-      val parts = csv.split("\\|")
+  private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
+    override def parse(testRecord: TestRecord): SimpleRecord = {
+      val parts = testRecord.asJsonString.split("\\|")
       SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
     }
   }
 
   def simpleRecordSource(data: List[SimpleRecord]): SourceFactory = SourceFactory.noParam[SimpleRecord](
     new CollectionSource[SimpleRecord](data, Some(ascendingTimestampExtractor), Typed[SimpleRecord]) with FlinkSourceTestSupport[SimpleRecord] {
-      override def testDataParser: TestDataParser[SimpleRecord] = newLineSplittedTestDataParser
+      override def testRecordParser: TestRecordParser[SimpleRecord] = simpleRecordParser
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleRecord]] = timestampAssigner
     })
@@ -785,12 +784,8 @@ object SampleNodes {
 
   val jsonSource: SourceFactory = SourceFactory.noParam[SimpleJsonRecord](
     new CollectionSource[SimpleJsonRecord](List(), None, Typed[SimpleJsonRecord]) with FlinkSourceTestSupport[SimpleJsonRecord] {
-      override def testDataParser: TestDataParser[SimpleJsonRecord] = new EmptyLineSplittedTestDataParser[SimpleJsonRecord] {
-
-        override def parseElement(json: String): SimpleJsonRecord = {
-          CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](json, "invalid request")
-        }
-
+      override def testRecordParser: TestRecordParser[SimpleJsonRecord] = (testRecord: TestRecord) => {
+        CirceUtil.decodeJsonUnsafe[SimpleJsonRecord](testRecord.json, "invalid request")
       }
 
       override def timestampAssignerForTest: Option[TimestampWatermarkHandler[SimpleJsonRecord]] = timestampAssigner
@@ -803,10 +798,8 @@ object SampleNodes {
     def create(processMetaData: MetaData, componentUseCase: ComponentUseCase, @ParamName("type") definition: java.util.Map[String, _]): Source = {
       new CollectionSource[TypedMap](List(), None, Typed[TypedMap]) with FlinkSourceTestSupport[TypedMap] with ReturningType {
 
-        override def testDataParser: TestDataParser[TypedMap] = new EmptyLineSplittedTestDataParser[TypedMap] {
-          override def parseElement(json: String): TypedMap = {
-            TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](json, "invalid request"))
-          }
+        override def testRecordParser: TestRecordParser[TypedMap] = (testRecord: TestRecord) => {
+          TypedMap(CirceUtil.decodeJsonUnsafe[Map[String, String]](testRecord.json, "invalid request"))
         }
 
         override val returnType: typing.TypingResult = TypingUtils.typeMapDefinition(definition)

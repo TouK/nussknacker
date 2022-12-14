@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.api.process
 
 import pl.touk.nussknacker.engine.api.component.Component
 import pl.touk.nussknacker.engine.api.context.ContextTransformation
-import pl.touk.nussknacker.engine.api.test.TestDataParser
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypingResult}
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
@@ -17,23 +17,24 @@ import scala.reflect.runtime.universe._
 trait Source
 
 /**
-  * Support for test source functionality. Uses [[pl.touk.nussknacker.engine.api.test.TestDataParser]] to define
-  * how test data are provided to the source.
+  * Support for test source functionality. Uses [[pl.touk.nussknacker.engine.api.test.TestRecordParser]] to define
+  * how test record is parsed and provided to the source.
+ *
   * @tparam T - type of object that is passed to Source in tests. Please note that depending on engine it may
   *         be different from actual event type produced by source. See e.g. difference between FlinkKafkaSource
   *         and LiteKafkaSourceImpl which is due to the difference between implementation of test sources
   *
   */
 trait SourceTestSupport[+T] { self: Source =>
-  def testDataParser: TestDataParser[T]
+  def testRecordParser: TestRecordParser[T]
 }
 
 /**
   * Optional support for test source functionality. Defines how test data should be prepared,
-  * in a way that is recognized further by [[pl.touk.nussknacker.engine.api.test.TestDataParser]].
+  * in a way that is recognized further by [[pl.touk.nussknacker.engine.api.test.TestRecordParser]].
   */
 trait TestDataGenerator { self: Source with SourceTestSupport[_] =>
-  def generateTestData(size: Int) : Array[Byte]
+  def generateTestData(size: Int): TestData
 }
 
 /**
