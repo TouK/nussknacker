@@ -7,7 +7,7 @@ import ProcessUtils from "../../common/ProcessUtils"
 import {getProcessToDisplay, getTestResults} from "../../reducers/selectors/graph"
 import {getUi} from "../../reducers/selectors/ui"
 import {useWindows} from "../../windowManager"
-import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../toolbarComponents/ToolbarWrapper"
 import {DragHandle} from "../toolbarComponents/DragHandle"
 import Errors from "./Errors"
 import ValidTips from "./ValidTips"
@@ -28,7 +28,7 @@ export default function Tips(): JSX.Element {
   const {errors, warnings} = ProcessUtils.getValidationResult(currentProcess) || {}
 
   return (
-    <CollapsibleToolbar title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
+    <ToolbarWrapper title={i18next.t("panels.tips.title", "Tips")} id="TIPS-PANEL">
       <DragHandle>
         <div id="tipsPanel" className={isHighlighted ? "tipsPanelHighlighted" : "tipsPanel"}>
           <Scrollbars
@@ -56,6 +56,6 @@ export default function Tips(): JSX.Element {
           </Scrollbars>
         </div>
       </DragHandle>
-    </CollapsibleToolbar>
+    </ToolbarWrapper>
   )
 }
