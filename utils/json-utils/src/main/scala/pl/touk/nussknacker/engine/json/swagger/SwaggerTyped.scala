@@ -49,7 +49,23 @@ case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 
-case class SwaggerEnum(values: List[Any]) extends SwaggerTyped
+@JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
+
+object SwaggerEnum {
+  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
+  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
+  private lazy val om = new ObjectMapper()
+  def apply(schema: Schema[_]): SwaggerEnum = {
+    val list = schema.getEnum.asScala.toList.map {
+      case j: ObjectNode => om.convertValue(j, new TypeReference[java.util.Map[String, Any]]() {})
+      case j: ArrayNode => om.convertValue(j, new TypeReference[java.util.List[Any]]() {})
+      case any => any
+    }
+    SwaggerEnum(list)
+  }
+}
+
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
@@ -63,11 +79,6 @@ sealed trait SwaggerUnknownFallback extends SwaggerTyped
 case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
 
 object SwaggerTyped {
-  private val bestEffortJsonEncoder =  BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
-  private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
-  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
-  private lazy val om = new ObjectMapper()
-
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
 
   @tailrec
@@ -82,13 +93,7 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
-        case (_, _) if schema.getEnum != null =>
-          val list = schema.getEnum.asScala.toList.map {
-            case j: ObjectNode => om.convertValue(j, new TypeReference[java.util.Map[String, Any]] () {})
-            case j: ArrayNode => om.convertValue(j, new TypeReference[java.util.List[Any]] () {})
-            case any => any
-          }
-          SwaggerEnum(list)
+        case (_, _) if schema.getEnum != null => SwaggerEnum(schema)
         //TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
         case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing

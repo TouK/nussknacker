@@ -1,8 +1,9 @@
 package pl.touk.nussknacker.openapi.extractor
 
-import pl.touk.nussknacker.engine.api.definition.{FixedExpressionValue, FixedValuesParameterEditor, Parameter, ParameterEditor}
+import pl.touk.nussknacker.engine.api.definition.Parameter
+import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
-import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerEnum, SwaggerObject, SwaggerTyped}
+import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
 import pl.touk.nussknacker.openapi._
 
 object ParametersExtractor {
@@ -38,18 +39,10 @@ object ParametersExtractor {
 
   private def prepareParameter(propertyName: PropertyName, swaggerType: SwaggerTyped, isBodyPart: Boolean) = {
     ParameterWithBodyFlag(Parameter(propertyName, swaggerType.typingResult,
-      editor = createEditorIfNeeded(swaggerType), validators = List.empty, defaultValue = None,
+      editor = swaggerType.editorOpt, validators = List.empty, defaultValue = None,
       additionalVariables = Map.empty, variablesToHide = Set.empty,
       branchParam = false, isLazyParameter = true, scalaOptionParameter = false, javaOptionalParameter = false), isBodyPart = isBodyPart)
   }
-
-  private def createEditorIfNeeded(swaggerTyped: SwaggerTyped): Option[ParameterEditor] =
-    swaggerTyped match {
-      case SwaggerEnum(values) if values.forall(v => v.isInstanceOf[String]) => Some(
-        FixedValuesParameterEditor(values.map(value => FixedExpressionValue(s"'$value'", value.asInstanceOf[String])))
-      )
-      case _ => None
-    }
 
   case class ParameterWithBodyFlag(parameter: Parameter, isBodyPart: Boolean)
 
