@@ -23,7 +23,6 @@ const {
 export type CollapsibleToolbarProps = PropsWithChildren<{
   id?: string,
   title?: string,
-  isHidden?: boolean,
 }>
 
 const ResetPointerEvents = styled.div({pointerEvents: "auto"})
@@ -35,7 +34,9 @@ const Title = styled.div({
   flex: 1,
 })
 
-const Icon = styled(CollapseIcon)(({collapsed}: { collapsed: boolean }) => ({
+const Icon = styled(CollapseIcon, {
+  shouldForwardProp: (name) => name !== "collapsed",
+})(({collapsed}: { collapsed: boolean }) => ({
   padding: ".5em .8em",
   height: "2em",
   flexShrink: 0,
@@ -72,6 +73,7 @@ const bsClass = css({
       justifyContent: "space-between",
       lineHeight: "2em",
       flexGrow: 0,
+      overflow: "hidden",
     },
 
     "& > a, & > a:focus, & > a:hover": {
@@ -87,7 +89,7 @@ const bsClass = css({
   },
 })
 
-export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleToolbarProps): JSX.Element | null {
+export function CollapsibleToolbar({title, children, id}: CollapsibleToolbarProps): JSX.Element | null {
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed)
   const [collapsed, setCollapsed] = useState(isCollapsed(id))
@@ -97,31 +99,30 @@ export function CollapsibleToolbar({title, children, isHidden, id}: CollapsibleT
     () => id && dispatch(toggleToolbar(id, configId, !isCollapsed(id))),
     [configId, dispatch, id, isCollapsed],
   )
-  const isCollapsible = !!id
-
-  const {tabIndex, ...handlerProps} = useDragHandler()
 
   const collapseCallbacks = useMemo(() => ({
     onEnter: () => setCollapsed(false),
     onExit: () => setCollapsed(true),
   }), [])
 
-  if (isHidden || !Children.count(children)) {
+  const hasTitle = !!title
+  const isCollapsible = !!id && hasTitle
+
+  const handlerProps = useDragHandler()
+
+  if (!Children.count(children)) {
     return null
   }
 
-  const hasTitle = !!title
-  const additionalProps = hasTitle ? {} : handlerProps
   return (
     <ResetPointerEvents>
       <StyledPanel
         expanded={!isCollapsed(id)}
         onToggle={onToggle}
         bsClass={bsClass}
-        {...additionalProps}
       >
         {hasTitle && (
-          <Panel.Heading {...handlerProps}>
+          <Panel.Heading {...handlerProps} tabIndex={-1}>
             <Panel.Title toggle>
               <Title>{title}</Title>
               {isCollapsible && <Icon collapsed={collapsed}/>}
