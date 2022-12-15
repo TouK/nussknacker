@@ -6,7 +6,6 @@ import * as UndoRedoActions from "../../undoRedoActions"
 import {displayProcessActivity} from "../displayProcessActivity"
 import {displayCurrentProcessVersion} from "../process"
 import {loadProcessToolbarsConfiguration} from "../loadProcessToolbarsConfiguration"
-import {withoutHackOfEmptyEdges} from "../../../components/graph/GraphPartialsInTS/EdgeUtils"
 
 async function doRenameProcess(processName: string, newProcessName: string) {
   const isSuccess = await HttpService.changeProcessName(processName, newProcessName)
@@ -22,8 +21,8 @@ async function doRenameProcess(processName: string, newProcessName: string) {
 export function saveProcess(comment: string): ThunkAction {
   return async (dispatch, getState) => {
     const state = getState()
-    const processJson = withoutHackOfEmptyEdges(getProcessToDisplay(state))
-
+    const processJson = getProcessToDisplay(state)
+    
     // save changes before rename and force same processId everywhere
     await HttpService.saveProcess(processJson.id, processJson, comment)
 
