@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.api.test
 import io.circe.Json
 import io.circe.generic.JsonCodec
 
-// TODO multiple-sources-test: introduce ScenarioTestData
 // TODO multiple-sources-test: rename TestData to SourceTestData?
 case class TestData(testRecords: List[TestRecord])
 

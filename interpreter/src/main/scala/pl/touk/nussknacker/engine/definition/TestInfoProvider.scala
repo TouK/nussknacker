@@ -18,6 +18,7 @@ trait TestInfoProvider {
 
   def getTestingCapabilities(metaData: MetaData, source: Source) : TestingCapabilities
 
+  // TODO multiple-sources-test: return ScenarioTestData; replace source with scenario.
   def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[TestData]
 
 }
