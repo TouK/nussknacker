@@ -33,7 +33,7 @@ import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
-import pl.touk.nussknacker.ui.process.test.{RawTestData, ScenarioTestDataSerDe}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ScenarioTestDataSerDe}
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
@@ -53,7 +53,9 @@ object ManagementResources {
             featuresOptions: FeatureTogglesConfig,
             processResolving: UIProcessResolving,
             processService: ProcessService,
-            metricRegistry: MetricRegistry)
+            metricRegistry: MetricRegistry,
+            scenarioTestDataSerDe: ScenarioTestDataSerDe,
+           )
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
@@ -65,7 +67,8 @@ object ManagementResources {
       featuresOptions.deploymentCommentSettings,
       processResolving,
       processService,
-      metricRegistry
+      metricRegistry,
+      scenarioTestDataSerDe,
     )
   }
 
@@ -113,7 +116,9 @@ class ManagementResources(processCounter: ProcessCounter,
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
                           processResolving: UIProcessResolving,
                           processService: ProcessService,
-                          metricRegistry: MetricRegistry)
+                          metricRegistry: MetricRegistry,
+                          scenarioTestDataSerDe: ScenarioTestDataSerDe,
+                         )
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -211,7 +216,7 @@ class ManagementResources(processCounter: ProcessCounter,
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    performTest(idWithCategory, RawTestData(testData), displayableProcessJson).flatMap { results =>
+                    performTest(idWithCategory, RawScenarioTestData(testData), displayableProcessJson).flatMap { results =>
                       Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                     }.recover(EspErrorToHttp.errorToHttp)
                   }
@@ -248,11 +253,11 @@ class ManagementResources(processCounter: ProcessCounter,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, rawTestData: RawTestData, displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
+  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, rawTestData: RawScenarioTestData, displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
     for {
       process <- parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson)
         .fold(error => Future.failed(UnmarshallError(error.toString)), Future.successful)
-      testData <- ScenarioTestDataSerDe.prepareTestData(rawTestData, testDataSettings.maxSamplesCount)
+      testData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
       canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)

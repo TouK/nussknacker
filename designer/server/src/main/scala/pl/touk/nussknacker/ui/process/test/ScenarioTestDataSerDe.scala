@@ -6,19 +6,22 @@ import java.nio.charset.StandardCharsets
 import scala.io.Source
 import scala.util.Using
 import io.circe.parser
+import pl.touk.nussknacker.ui.api.TestDataSettings
 
-// TODO multiple-sources-test: tests; combine with TestInfoProvider?; switch TestData to ScenarioTestData
-object ScenarioTestDataSerDe {
+// TODO multiple-sources-test: switch TestData to ScenarioTestData
+class ScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
 
-  def serializeTestData(testData: TestData, testDataMaxBytes: Int): Either[String, RawTestData] = {
+  def serializeTestData(testData: TestData): Either[String, RawScenarioTestData] = {
     val content = testData.testRecords
       .map(_.json.noSpaces)
       .mkString("\n")
       .getBytes(StandardCharsets.UTF_8)
-    Either.cond(content.size <= testDataMaxBytes, RawTestData(content), s"Too much data generated, limit is: $testDataMaxBytes")
+    Either.cond(content.size <= testDataSettings.testDataMaxBytes,
+      RawScenarioTestData(content),
+      s"Too much data generated, limit is: ${testDataSettings.testDataMaxBytes}")
   }
 
-  def prepareTestData(rawTestData: RawTestData, maxSamplesCount: Int): Either[String, TestData] = {
+  def prepareTestData(rawTestData: RawScenarioTestData): Either[String, TestData] = {
     import cats.syntax.either._
     import cats.syntax.traverse._
     import cats.implicits.catsStdInstancesForEither
@@ -27,9 +30,9 @@ object ScenarioTestDataSerDe {
       val rawTestRecords = source
         .getLines()
         .toList
-      val limitedRawTestRecords = Either.cond(rawTestRecords.size <= maxSamplesCount,
+      val limitedRawTestRecords = Either.cond(rawTestRecords.size <= testDataSettings.maxSamplesCount,
         rawTestRecords,
-        s"Too many samples: ${rawTestRecords.size}, limit is: $maxSamplesCount")
+        s"Too many samples: ${rawTestRecords.size}, limit is: ${testDataSettings.maxSamplesCount}")
       val testRecords: Either[String, List[TestRecord]] = limitedRawTestRecords.flatMap { rawTestRecords =>
         rawTestRecords.map { rawTestRecord =>
           val jsonTestRecord = parser.parse(rawTestRecord)

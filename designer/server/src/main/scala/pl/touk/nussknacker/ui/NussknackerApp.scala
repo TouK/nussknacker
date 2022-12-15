@@ -35,6 +35,7 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
+import pl.touk.nussknacker.ui.process.test.ScenarioTestDataSerDe
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
@@ -146,6 +147,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
+    val scenarioTestDataSerDe = new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -174,14 +176,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
+        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry, scenarioTestDataSerDe),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,
-        TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
+        TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig, scenarioTestDataSerDe),
         new ServiceRoutes(modelData),
         new ComponentResource(componentService),
         new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(config), processActivityRepository), processRepository, processAuthorizer)

@@ -25,16 +25,25 @@ object TestInfoResources {
             processAuthorizer:AuthorizeProcess,
             processRepository: FetchingProcessRepository[Future],
             featuresOptions: FeatureTogglesConfig,
+            scenarioTestDataSerDe: ScenarioTestDataSerDe,
             )
            (implicit ec: ExecutionContext): TestInfoResources =
-    new TestInfoResources(providers.mapValues(new ModelDataTestInfoProvider(_)), processAuthorizer, processRepository, featuresOptions.testDataSettings)
+    new TestInfoResources(
+      providers.mapValues(new ModelDataTestInfoProvider(_)),
+      processAuthorizer,
+      processRepository,
+      featuresOptions.testDataSettings,
+      scenarioTestDataSerDe,
+    )
 
 }
 
 class TestInfoResources(providers: ProcessingTypeDataProvider[TestInfoProvider],
                         val processAuthorizer:AuthorizeProcess,
                         val processRepository: FetchingProcessRepository[Future],
-                        testDataSettings: TestDataSettings)
+                        testDataSettings: TestDataSettings,
+                        scenarioTestDataSerDe: ScenarioTestDataSerDe,
+                       )
                        (implicit val ec: ExecutionContext)
   extends Directives
     with FailFastCirceSupport
@@ -88,7 +97,7 @@ class TestInfoResources(providers: ProcessingTypeDataProvider[TestInfoProvider],
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
       source <- sourceOpt.toRight("Scenario does not have source capable of generating test data")
       generatedData <- provider.generateTestData(metaData, source, testSampleSize).toRight("Test data could not be generated for scenario")
-      rawTestData <- ScenarioTestDataSerDe.serializeTestData(generatedData, testDataSettings.testDataMaxBytes)
+      rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
     } yield rawTestData.content
   }
 
