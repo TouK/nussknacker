@@ -17,6 +17,7 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import java.nio.charset.StandardCharsets
 import java.util.{Date, UUID}
@@ -24,7 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach {
+class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach with EitherValuesDetailedMessage {
 
   import spel.Implicits._
 
@@ -309,7 +310,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
         .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
 
-    val results = runFlinkTest(process, TestData.newLineSeparated("""{"field1": "abc", "field2": "def"}"""))
+    val results = runFlinkTest(process, TestData(TestRecord(parser.parse("""{"field1": "abc", "field2": "def"}""").rightValue) :: Nil))
 
     results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }

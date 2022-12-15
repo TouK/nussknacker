@@ -27,7 +27,7 @@ object ScenarioTestDataSerDe {
       val rawTestRecords = source
         .getLines()
         .toList
-      val limitedRawTestRecords = Either.cond(rawTestRecords.size > maxSamplesCount,
+      val limitedRawTestRecords = Either.cond(rawTestRecords.size <= maxSamplesCount,
         rawTestRecords,
         s"Too many samples: ${rawTestRecords.size}, limit is: $maxSamplesCount")
       val testRecords: Either[String, List[TestRecord]] = limitedRawTestRecords.flatMap { rawTestRecords =>

@@ -284,7 +284,10 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
   test("return test results") {
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, Category1)
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
+    val testDataContent =
+      """"ala"
+        |"bela"""".stripMargin
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
 
       status shouldEqual StatusCodes.OK

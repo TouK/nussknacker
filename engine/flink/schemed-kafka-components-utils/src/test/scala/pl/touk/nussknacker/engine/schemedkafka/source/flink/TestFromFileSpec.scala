@@ -4,10 +4,11 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
+import io.circe.parser
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -25,11 +26,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.test.KafkaConfigProperties
+import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
 
 import java.util.Collections
 
-class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
+class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging with EitherValuesDetailedMessage {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
@@ -57,8 +58,9 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
+    val testRecordJson = parser.parse(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }""").rightValue
 
-    val results = run(process, TestData.newLineSeparated(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }"""))
+    val results = run(process, TestData(TestRecord(testRecordJson) :: Nil))
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
