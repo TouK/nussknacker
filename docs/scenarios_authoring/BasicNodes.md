@@ -2,14 +2,15 @@
 sidebar_position: 2
 ---
 
-# Basic Nodes
+# Basic Components
 
-Nodes work with a data stream. They can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  
+Nodes work with a data records. They can produce, fetch, send, collect data or organize data flow. Each node has at least two parameters: `Name` and `Description`. Name has to be unique in a scenario. Description is a narrative of your choice.  
 
-Most of the nodes, with source and sink nodes being notable exceptions, have input and at least one output flow.
+Most of the nodes, with source and sink nodes being notable exceptions, have both input and at least one output flow.
 
 Sinks and filters can be disabled by selecting `Disable` checkbox. 
 
+&nbsp;
 ## Variable 
 
 A Variable component is used to declare a new variable; in the simplest form a variable declaration looks like in the example  below. As the event was read from the Kafka topic, the `#input` variable stores its content and  its value is assigned to a newly declared `myFirstVariable` variable. 
@@ -34,7 +35,7 @@ Note that internally Nussknacker converts JSON’s object into SpEL’s map.
 
 ![alt_text](img/simpleExpression.png "image_tooltip")
 
-
+&nbsp;
 ## MapVariable 
 
 The specialized `mapVariable` component can be used to declare a map variable (object in JSON)
@@ -48,6 +49,7 @@ The same can be achieved using a plain `Variable` component, just make sure to w
 
 ![alt_text](img/mapVariableBasicForm.png "mapVariable declaration using a plan Variable component")
 
+&nbsp;
 ## Filter
 
 Filter passes records which satisfy the filtering condition to `true sink`.
@@ -62,6 +64,7 @@ The Expression field should contain the SpEL expression for the filtering condit
 
 ![filter window](img/filter_window.png)
 
+&nbsp;
 ## Choice
 
 Choice is more advanced variant of filter component - instead of one filtering condition, you can define multiple conditions in some defined order.
@@ -76,7 +79,7 @@ Order is also visible on graph in edges description as a number. Be aware that l
 
 ![choice window](img/choice_window.png)
 
-
+&nbsp;
 ## Split 
  
 Split node logically splits processing into two or more parallel branches. Each branch receives all records and processes them independently. 
@@ -85,6 +88,7 @@ Split node logically splits processing into two or more parallel branches. Each 
 
 Every record from the `source` goes to `sink 1` and `sink 2`. Split node doesn't have additional parameters.
 
+&nbsp;
 ## ForEach
 
 ![for_each](img/for_each.png)
@@ -100,6 +104,7 @@ For example, when
 
 then nodes that follow `for-each` will be executed twice and the value of current element can be referenced as `#outputVar`. 
 
+&nbsp;
 ## Union
 
 ![union_window](img/union_window.png)
@@ -119,98 +124,3 @@ Entry fields:
 
 Please note, that the #input variable used in the Output expression field refers to the content of the respective incoming branch.
 
-## UnionMemo
-
-**(Flink engine only)**
-
-![union_memo_window](img/union_memo_window.png)
-
-Similarly to Union, UnionMemo node merges branches into one branch, events are emitted on every incoming event and event time is inherited from the incoming event.
-
-There are however important differences in the way UnionMemo works:
-- events from the incoming branches are matched together based on some key value
-- data that arrived from any of the incoming branches will be memoized by the UnionMemo node for time duration defined in stateTimeout. If new event arrives before stateTimeout, the stateTimeout timer is reset
-
-Example:
-![union_memo_example](img/union_memo_example.png)
-
-UnionMemo merges multiple branches into one stream. For each incoming branch two parameters are configured:
-- key - it's value should be of type `String`, defines how elements from branches will be matched together
-- value - the value of this expression will be put in the output variable with the name the same as branch id
-
-#input variable is no longer available downstream the UnionMemo, a new variable whose name is defined by "Output variable name' parameter will be present instead:
-```$json
-{
-  "key": `value of key expression for given event`,
-  "branch1": `value of output expression if memoized, otherwise null`,
-  "branch2": `value of output expression if memoized, otherwise null`,
-  "branch3": `value of output expression if memoized, otherwise null`,
-  ...
-}
-```
-
-## PreviousValue
-
-**(Flink engine only)**
-
-![previous_value_window](img/previous_value_window.png)
-
-`previousValue` stores arbitrary value for the given key. This element has two parameters:
-- groupBy - expression defining key for which we compute aggregate, e.g. `#input.userId`
-- value - stored value
-
-For example, given stream of events which contain users with their current location, when we set 
-- groupBy is `#input.userId`
-- value is `#input.location`
-
-then the value of the output variable is the previous location for the current user. If this is the first appearance of this user, the **current** location will be returned.
-
-
-## Delay
-
-**(Flink engine only)**
-
-Holds event in the node until 
-  *event time* + `delay` >= max (*event time* ever seen by the delay node). 
-
-The `key` parameter will be removed in the future release of Nussknacker, for the time being configure it to `#inputMeta.key`.
-
-## DeadEnd
-
-![dead_end_window](img/dead_end.png)
-
-`dead-end` is a special type of a sink that sends your data into the void. 
-It is handy when you want to end your scenario without specifying exact data sink at the moment. 
-
-## Periodic
-
-**(Flink engine only)**
-
-![periodic_window](img/periodic.png)
-
-This source provides functionality of sending a number of given events in a periodic way. It's mainly used for testing.
-
-This source has the following parameters:
-- period - specifies how often events will be sent
-- count - specifies number of event that will be sent at every `period`
-- value - specifies data that event will hold
-
-## Collect
-
-![collect](img/collect.png)
-
-**(Request-Response processing mode only)**
-
-`collect` collects values from nodes which executed multiple times (e.g. for-each subsequent nodes) and stores them in a list.
-
-**Collect** takes one argument:
-- Input expression - expression which will be collected from all invocations of this for a given request.
-
-For example:
-- We use `for-each` component on list `{"one", "two", "three"}`
-- Connect bellow `for-each` some node which do `#element.size` on each element and returns `#elementSize`
-- Use `collect` with `Input expression: #elementSize`
-
-Then output from `collect` will be list: `{3, 3, 5}`.
-
-_Collect is designed to be used in simple collect cases, it might not work as expected in nested structures (like for-each inside for-each)_
