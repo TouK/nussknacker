@@ -1,16 +1,16 @@
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {
-  Droppable,
   Draggable,
   DraggableChildrenFn,
-  DraggableStateSnapshot,
-  DroppableProvided,
-  DroppableStateSnapshot,
+  DraggableLocation,
   DraggableProvided,
   DraggableRubric,
-  DraggableLocation,
+  DraggableStateSnapshot,
+  Droppable,
+  DroppableProvided,
+  DroppableStateSnapshot,
 } from "react-beautiful-dnd"
-import React, {useCallback, CSSProperties, useMemo} from "react"
+import React, {CSSProperties, useCallback, useMemo} from "react"
 import {useSelector} from "react-redux"
 import {ToolbarDraggableType} from "./ToolbarsLayer"
 import styles from "./ToolbarsLayer.styl"
@@ -86,11 +86,16 @@ export function ToolbarsContainer(props: Props): JSX.Element {
       >
         <div {...p.droppableProps} className={cn(styles.draggableList)}>
           <div className={styles.background}>
-            {ordered.map(({id, component, isDragDisabled}, index) => (
-              <Draggable key={id} draggableId={id} index={index} isDragDisabled={isDragDisabled}>
-                {renderDraggable}
-              </Draggable>
-            ))}
+            {ordered.map(({id, isHidden}, index) => {
+              if (isHidden) {
+                return null
+              }
+              return (
+                <Draggable key={id} draggableId={id} index={index}>
+                  {renderDraggable}
+                </Draggable>
+              )
+            })}
             {p.placeholder}
           </div>
         </div>
@@ -100,6 +105,10 @@ export function ToolbarsContainer(props: Props): JSX.Element {
   )
 
   return (
-    <Droppable droppableId={side} type={ToolbarDraggableType} renderClone={renderDraggable}>{renderDroppable}</Droppable>
+    <Droppable
+      droppableId={side}
+      type={ToolbarDraggableType}
+      renderClone={renderDraggable}
+    >{renderDroppable}</Droppable>
   )
 }

@@ -1,7 +1,7 @@
 import React, {useMemo, useEffect, EffectCallback, useState, useCallback} from "react"
 import {DragDropContext, DropResult} from "react-beautiful-dnd"
 import {ToolbarsSide} from "../../reducers/toolbars"
-import {useDispatch} from "react-redux"
+import {useDispatch, useSelector} from "react-redux"
 import {moveToolbar, registerToolbars} from "../../actions/nk/toolbars"
 import {ToolbarsContainer} from "./ToolbarsContainer"
 import cn from "classnames"
@@ -9,6 +9,9 @@ import cn from "classnames"
 import styles from "./ToolbarsLayer.styl"
 import {SidePanel, PanelSide} from "../sidePanels/SidePanel"
 import {Toolbar} from "./toolbar"
+import {getCapabilities} from "../../reducers/selectors/other"
+import {useUserSettings} from "../../common/userSettings"
+import {SETTINGS_KEY} from "../toolbars/SurveyPanel"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])
@@ -21,7 +24,24 @@ function useIdsEffect<T extends { id: string }>(effect: EffectCallback, array) {
 
 export const ToolbarDraggableType = "TOOLBAR"
 
-function ToolbarsLayer(props: {toolbars: Toolbar[], configId: string}): JSX.Element {
+export function useToolbarsVisibility(toolbars: Toolbar[]) {
+  const {editFrontend} = useSelector(getCapabilities)
+  const [userSettings, toggleSettings] = useUserSettings()
+  const hiddenToolbars = useMemo(
+    () => ({
+      "survey-panel": userSettings[SETTINGS_KEY],
+      "creator-panel": !editFrontend,
+    }),
+    [editFrontend, userSettings]
+  )
+
+  return useMemo(
+    () => toolbars.map((t) => ({...t, isHidden: hiddenToolbars[t.id]})),
+    [hiddenToolbars, toolbars]
+  )
+}
+
+function ToolbarsLayer(props: { toolbars: Toolbar[], configId: string }): JSX.Element {
   const dispatch = useDispatch()
   const {toolbars, configId} = props
 
@@ -43,19 +63,23 @@ function ToolbarsLayer(props: {toolbars: Toolbar[], configId: string}): JSX.Elem
     }
   }, [configId, dispatch])
 
-  const onDragStart = useCallback(() => {setIsDragging(true)}, [])
+  const onDragStart = useCallback(() => {
+    setIsDragging(true)
+  }, [])
+
+  const availableToolbars = useToolbarsVisibility(toolbars)
 
   return (
     <DragDropContext onDragEnd={onDragEnd} onDragStart={onDragStart}>
 
       <SidePanel side={PanelSide.Left} className={cn(styles.left, isDragging && styles.isDraggingStarted)}>
         <ToolbarsContainer
-          availableToolbars={toolbars}
+          availableToolbars={availableToolbars}
           side={ToolbarsSide.TopLeft}
           className={cn(styles.top)}
         />
         <ToolbarsContainer
-          availableToolbars={toolbars}
+          availableToolbars={availableToolbars}
           side={ToolbarsSide.BottomLeft}
           className={cn(styles.bottom)}
         />
@@ -63,12 +87,12 @@ function ToolbarsLayer(props: {toolbars: Toolbar[], configId: string}): JSX.Elem
 
       <SidePanel side={PanelSide.Right} className={cn(styles.right, isDragging && styles.isDraggingStarted)}>
         <ToolbarsContainer
-          availableToolbars={toolbars}
+          availableToolbars={availableToolbars}
           side={ToolbarsSide.TopRight}
           className={cn(styles.top)}
         />
         <ToolbarsContainer
-          availableToolbars={toolbars}
+          availableToolbars={availableToolbars}
           side={ToolbarsSide.BottomRight}
           className={cn(styles.bottom)}
         />
