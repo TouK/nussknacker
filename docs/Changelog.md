@@ -1,5 +1,7 @@
 
 # Changelog
+1.8.0 (Not released yet)
+* [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled). 
 
 1.7.0 (19 Dec 2022)
 ------------------------
