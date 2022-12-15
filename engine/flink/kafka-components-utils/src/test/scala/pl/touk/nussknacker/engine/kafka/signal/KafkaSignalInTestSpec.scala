@@ -24,7 +24,7 @@ class KafkaSignalInTestSpec extends AnyFunSuite with Matchers with Inside with B
         .processorEnd("out", "logService", "all" -> "#input")
 
     val modelData = LocalModelData(config, new KafkaSignalsCreator(Nil))
-    val testData = TestData.newLineSeparated("0|1|2|3|4|5|6")
+    val testData = TestData.asJsonStrings("0|1|2|3|4|5|6")
 
     val results = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, testData, FlinkTestConfiguration.configuration(), identity)
