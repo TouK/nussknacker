@@ -4,7 +4,7 @@ import {useTranslation} from "react-i18next"
 import Creatable from "react-select/creatable"
 import {useUserSettings} from "../../common/userSettings"
 import {useNkTheme} from "../../containers/theme"
-import {CollapsibleToolbar} from "../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../toolbarComponents/ToolbarWrapper"
 
 export function UserSettingsPanel(): JSX.Element {
   const {t} = useTranslation()
@@ -12,7 +12,7 @@ export function UserSettingsPanel(): JSX.Element {
   const [settings, , reset] = useUserSettings()
   const value = Object.entries(settings).map(([label, value]) => ({label, value}))
   return (
-    <CollapsibleToolbar id="user-settings-panel" title={t("panels.userSettings.title", "🧪 User settings")}>
+    <ToolbarWrapper id="user-settings-panel" title={t("panels.userSettings.title", "🧪 User settings")}>
       <Creatable
         isMulti
         value={value}
@@ -33,7 +33,7 @@ export function UserSettingsPanel(): JSX.Element {
           MultiValueLabel,
         }}
       />
-    </CollapsibleToolbar>
+    </ToolbarWrapper>
   )
 }
 

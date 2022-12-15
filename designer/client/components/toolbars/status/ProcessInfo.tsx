@@ -16,7 +16,7 @@ import {getCustomActions} from "../../../reducers/selectors/settings"
 import {UnknownRecord} from "../../../types/common"
 import {CssFade} from "../../CssFade"
 import ProcessStateIcon from "../../Process/ProcessStateIcon"
-import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../../toolbarComponents/ToolbarWrapper"
 import {DefaultToolbarPanel, ToolbarPanelProps} from "../../toolbarComponents/DefaultToolbarPanel"
 import {DragHandle} from "../../toolbarComponents/DragHandle"
 import {ToolbarButtons} from "../../toolbarComponents/ToolbarButtons"
@@ -36,7 +36,7 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
     const transitionKey = ProcessStateUtils.getTransitionKey(process, processState)
     // TODO: better styling of process info toolbar in case of many custom actions
     return (
-      <CollapsibleToolbar title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
+      <ToolbarWrapper title={i18next.t("panels.status.title", "Status")} id={this.props.id}>
         <DragHandle>
           <SwitchTransition>
             <CssFade key={transitionKey}>
@@ -73,7 +73,7 @@ class ProcessInfo extends React.Component<ToolbarPanelProps & StateProps, State>
             }
           </ToolbarButtons>
         </DragHandle>
-      </CollapsibleToolbar>
+      </ToolbarWrapper>
     )
   }
 }

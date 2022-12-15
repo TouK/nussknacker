@@ -3,6 +3,7 @@ import Panel from "react-bootstrap/lib/Panel"
 import {useDispatch, useSelector} from "react-redux"
 import {toggleToolbar} from "../../actions/nk/toolbars"
 import {ReactComponent as CollapseIcon} from "../../assets/img/arrows/panel-hide-arrow.svg"
+import {ReactComponent as CloseIcon} from "../../assets/img/close.svg"
 import {getIsCollapsed, getToolbarsConfigId} from "../../reducers/selectors/toolbars"
 import ErrorBoundary from "../common/ErrorBoundary"
 import styleVariables from "../../stylesheets/_variables.styl"
@@ -20,29 +21,42 @@ const {
   sidebarWidth,
 } = styleVariables
 
-export type CollapsibleToolbarProps = PropsWithChildren<{
+export type ToolbarWrapperProps = PropsWithChildren<{
   id?: string,
   title?: string,
+  noTitle?: boolean,
+  onClose?: () => void,
 }>
 
-const ResetPointerEvents = styled.div({pointerEvents: "auto"})
-
 const Title = styled.div({
-  padding: "0 .75em",
+  padding: "0 .25em",
   overflow: "hidden",
   textOverflow: "ellipsis",
   flex: 1,
 })
 
-const Icon = styled(CollapseIcon, {
-  shouldForwardProp: (name) => name !== "collapsed",
-})(({collapsed}: { collapsed: boolean }) => ({
-  padding: ".5em .8em",
-  height: "2em",
+const IconWrapper = styled.div({
+  padding: 0,
   flexShrink: 0,
+  border: 0,
+  background: "none",
+  display: "flex",
+  alignItems: "center",
+})
+
+const StyledCollapseIcon = styled(CollapseIcon, {
+  shouldForwardProp: (name) => name !== "collapsed",
+})(({collapsed}: { collapsed?: boolean }) => ({
+  padding: "0 .25em",
+  height: "1em",
   transition: "all .3s",
   transform: `rotate(${collapsed ? 180 : 90}deg)`,
 }))
+
+const StyledCloseIcon = styled(CloseIcon)({
+  height: "1em",
+  width: "1em",
+})
 
 const StyledPanel = styled(Panel)(({expanded}) => ({
   opacity: expanded ? 1 : .86,
@@ -50,6 +64,7 @@ const StyledPanel = styled(Panel)(({expanded}) => ({
 }))
 
 const bsClass = css({
+  pointerEvents: "auto",
   background: panelBackground,
   border: `0 solid ${panelBorder}`,
   minWidth: sidebarWidth,
@@ -68,11 +83,7 @@ const bsClass = css({
     color: panelHeaderText,
 
     "& > a": {
-      height: "2em",
-      display: "flex",
-      justifyContent: "space-between",
-      lineHeight: "2em",
-      flexGrow: 0,
+      display: "flow-root",
       overflow: "hidden",
     },
 
@@ -89,7 +100,17 @@ const bsClass = css({
   },
 })
 
-export function CollapsibleToolbar({title, children, id}: CollapsibleToolbarProps): JSX.Element | null {
+const Line = styled.div({
+  display: "flex",
+  height: "2em",
+  justifyContent: "space-between",
+  lineHeight: "2em",
+  padding: "0 .5em",
+  flexGrow: 0,
+})
+
+export function ToolbarWrapper(props: ToolbarWrapperProps): JSX.Element | null {
+  const {title, noTitle, children, id, onClose} = props
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed)
   const [collapsed, setCollapsed] = useState(isCollapsed(id))
@@ -105,39 +126,47 @@ export function CollapsibleToolbar({title, children, id}: CollapsibleToolbarProp
     onExit: () => setCollapsed(true),
   }), [])
 
-  const hasTitle = !!title
-  const isCollapsible = !!id && hasTitle
-
   const handlerProps = useDragHandler()
 
   if (!Children.count(children)) {
     return null
   }
 
+  const isCollapsible = !!id && !!title
+
   return (
-    <ResetPointerEvents>
-      <StyledPanel
-        expanded={!isCollapsed(id)}
-        onToggle={onToggle}
-        bsClass={bsClass}
-      >
-        {hasTitle && (
-          <Panel.Heading {...handlerProps} tabIndex={-1}>
-            <Panel.Title toggle>
+    <StyledPanel
+      expanded={!isCollapsed(id)}
+      onToggle={onToggle}
+      bsClass={bsClass}
+    >
+      {!noTitle && (
+        <Panel.Heading {...handlerProps} tabIndex={-1}>
+          <Panel.Title toggle={isCollapsible}>
+            <Line>
               <Title>{title}</Title>
-              {isCollapsible && <Icon collapsed={collapsed}/>}
-            </Panel.Title>
-          </Panel.Heading>
-        )}
-        <Panel.Collapse {...collapseCallbacks}>
-          <Panel.Body>
-            <ErrorBoundary>
-              {children}
-            </ErrorBoundary>
-          </Panel.Body>
-        </Panel.Collapse>
-      </StyledPanel>
-    </ResetPointerEvents>
+              {isCollapsible && (
+                <IconWrapper>
+                  <StyledCollapseIcon collapsed={collapsed}/>
+                </IconWrapper>
+              )}
+              {onClose && (
+                <IconWrapper as="button" onClick={onClose}>
+                  <StyledCloseIcon/>
+                </IconWrapper>
+              )}
+            </Line>
+          </Panel.Title>
+        </Panel.Heading>
+      )}
+      <Panel.Collapse {...collapseCallbacks}>
+        <Panel.Body>
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
+        </Panel.Body>
+      </Panel.Collapse>
+    </StyledPanel>
   )
 }
 

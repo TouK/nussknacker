@@ -4,7 +4,7 @@ import React, {useCallback, useState} from "react"
 import {useTranslation} from "react-i18next"
 import {SearchIcon} from "../../table/SearchFilter"
 import {InputWithIcon} from "../../themed/InputWithIcon"
-import {CollapsibleToolbar} from "../../toolbarComponents/CollapsibleToolbar"
+import {ToolbarWrapper} from "../../toolbarComponents/ToolbarWrapper"
 import ToolBox from "./ToolBox"
 
 export function CreatorPanel(): JSX.Element {
@@ -22,7 +22,7 @@ export function CreatorPanel(): JSX.Element {
   const clearFilter = useCallback(() => setFilter(""), [])
 
   return (
-    <CollapsibleToolbar id="creator-panel" title={t("panels.creator.title", "Creator panel")}>
+    <ToolbarWrapper id="creator-panel" title={t("panels.creator.title", "Creator panel")}>
       <InputWithIcon
         className={styles}
         onChange={setFilter}
@@ -33,6 +33,6 @@ export function CreatorPanel(): JSX.Element {
         <SearchIcon isEmpty={isEmpty(filter)}/>
       </InputWithIcon>
       <ToolBox filter={filter}/>
-    </CollapsibleToolbar>
+    </ToolbarWrapper>
   )
 }
