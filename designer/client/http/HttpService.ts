@@ -347,8 +347,8 @@ class HttpService {
       })
   }
 
-  exportProcess(process, versionId) {
-    return api.post("/processesExport", process, {responseType: "blob"})
+  exportProcess(process: Process, versionId) {
+    return api.post("/processesExport", this.#sanitizeProcess(process), {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
   }
@@ -410,8 +410,8 @@ class HttpService {
 
   //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
 
-  getTestCapabilities(process) {
-    return api.post("/testInfo/capabilities", process)
+  getTestCapabilities(process: Process) {
+    return api.post("/testInfo/capabilities", this.#sanitizeProcess(process))
       .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
   }
 
