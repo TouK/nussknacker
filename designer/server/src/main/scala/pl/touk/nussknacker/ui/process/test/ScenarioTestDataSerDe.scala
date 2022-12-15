@@ -31,12 +31,12 @@ object ScenarioTestDataSerDe {
         rawTestRecords,
         s"Too many samples: ${rawTestRecords.size}, limit is: $maxSamplesCount")
       val testRecords: Either[String, List[TestRecord]] = limitedRawTestRecords.flatMap { rawTestRecords =>
-        rawTestRecords
-          .map(parser.parse)
-          .map(_.map(TestRecord))
-          .map(_.leftMap(_ => Vector("Could not parse sample")))
-          .sequence
-          .leftMap(_.head)
+        rawTestRecords.map { rawTestRecord =>
+          val jsonTestRecord = parser.parse(rawTestRecord)
+          jsonTestRecord
+            .map(TestRecord)
+            .leftMap(_ => Vector(s"Could not parse record: '$rawTestRecord'"))
+        }.sequence.leftMap(_.head)
       }
       testRecords.map(TestData(_))
     }.fold(_ => Left("Could not read test data"), identity)

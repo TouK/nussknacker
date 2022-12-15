@@ -318,20 +318,21 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
 
     import pl.touk.nussknacker.engine.spel.Implicits._
 
-    val process = {
-        ScenarioBuilder
-          .streaming("sampleProcess")
-          .parallelism(1)
-          .source("startProcess", "csv-source")
-          .filter("input", "new java.math.BigDecimal(null) == 0")
-          .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
-    }
+    val process = ScenarioBuilder
+      .streaming("sampleProcess")
+      .parallelism(1)
+      .source("startProcess", "csv-source")
+      .filter("input", "new java.math.BigDecimal(null) == 0")
+      .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
+    val testDataContent =
+      """"ala"
+        |"bela"""".stripMargin
 
     saveProcessAndAssertSuccess(process.id, process)
 
     val displayableProcess = ProcessConverter.toDisplayable(process, TestProcessingTypes.Streaming, Category1)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "ala\nbela", "processJson" -> displayableProcess.asJson.noSpaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
       status shouldEqual StatusCodes.OK
     }
