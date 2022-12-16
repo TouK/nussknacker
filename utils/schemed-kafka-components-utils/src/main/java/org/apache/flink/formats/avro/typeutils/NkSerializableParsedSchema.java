@@ -63,13 +63,13 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             oos.writeBoolean(true);
             if (schema instanceof AvroSchema) {
                 oos.writeByte(avroSchemaType);
-                oos.writeUTF(((AvroSchema) schema).rawSchema().toString(false));
+                oos.writeObject(((AvroSchema) schema).rawSchema().toString(false));
             } else if (schema instanceof OpenAPIJsonSchema) {
                 oos.writeByte(jsonSchemaType);
-                oos.writeUTF(((OpenAPIJsonSchema) schema).rawSchema().toString());
+                oos.writeObject(((OpenAPIJsonSchema) schema).rawSchema().toString());
             } else if (schema instanceof AvroSchemaWithJsonPayload) {
                 oos.writeByte(avroSchemaWithJsonPayloadType);
-                oos.writeUTF(((AvroSchemaWithJsonPayload) schema).rawSchema().toString());
+                oos.writeObject(((AvroSchemaWithJsonPayload) schema).rawSchema().toString());
             }
             else {
                 throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schema.schemaType());
@@ -83,15 +83,15 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             byte schemaType = ois.readByte();
             switch (schemaType) {
                 case avroSchemaType:
-                    String avroSchemaStr = ois.readUTF();
+                    String avroSchemaStr = (String) ois.readObject();
                     this.schema = (T) new AvroSchema(new Parser().parse(avroSchemaStr));
                     break;
                 case jsonSchemaType:
-                    String jsonSchemaStr = ois.readUTF();
+                    String jsonSchemaStr = (String) ois.readObject();
                     this.schema = (T) new OpenAPIJsonSchema(jsonSchemaStr);
                     break;
                 case avroSchemaWithJsonPayloadType:
-                    String avroSchema = ois.readUTF();
+                    String avroSchema = (String) ois.readObject();
                     this.schema = (T) new AvroSchemaWithJsonPayload(new AvroSchema(avroSchema));
                     break;
                 default:
