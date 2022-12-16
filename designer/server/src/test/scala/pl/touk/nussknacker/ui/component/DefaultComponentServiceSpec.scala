@@ -32,7 +32,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
 import sttp.client.{NothingT, SttpBackend}
 
-import java.time.Duration
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFutures {
@@ -523,7 +523,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
       managerActor = TestFactory.newDummyManagerActor(),
-      requestTimeLimit = Duration.ofMinutes(1),
+      requestTimeLimit = 1 minute,
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,

@@ -35,7 +35,7 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.process.test.ScenarioTestDataSerDe
+import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
@@ -48,6 +48,7 @@ import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
 import scala.collection.JavaConverters.getClass
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -63,7 +64,6 @@ object NusskanckerDefaultAppRouter extends NusskanckerDefaultAppRouter
 trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   import net.ceedubs.ficus.Ficus._
-  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
@@ -141,13 +141,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
-    val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
+    val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout").toMillis millis
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, scenarioResolver, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
-    val scenarioTestDataSerDe = new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings)
+    val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings, processResolving, counter, managementActor, systemRequestTimeout)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -176,14 +176,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry, scenarioTestDataSerDe),
+        ManagementResources(managementActor, processAuthorizer, processRepository, featureTogglesConfig, processService, metricsRegistry, scenarioTestService),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
         new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,
-        TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig, scenarioTestDataSerDe),
+        new TestInfoResources(processAuthorizer, processRepository, scenarioTestService),
         new ServiceRoutes(modelData),
         new ComponentResource(componentService),
         new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(config), processActivityRepository), processRepository, processAuthorizer)

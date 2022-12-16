@@ -24,7 +24,6 @@ import pl.touk.nussknacker.ui.process.{ConfigProcessCategoryService, DBProcessSe
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
 
-import java.time
 import scala.concurrent.duration.DurationInt
 import scala.concurrent.{ExecutionContextExecutor, Future}
 
@@ -66,7 +65,7 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
     "management"
   )
 
-  private val processService = new DBProcessService(managementActor, time.Duration.ofMinutes(1), newProcessPreparer,
+  private val processService = new DBProcessService(managementActor, 1 minute, newProcessPreparer,
     processCategoryService, processResolving, repositoryManager, fetchingProcessRepository, actionRepository,
     writeProcessRepository, processValidation
   )
