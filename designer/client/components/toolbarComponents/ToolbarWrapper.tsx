@@ -10,14 +10,11 @@ import styleVariables from "../../stylesheets/_variables.styl"
 import {useDragHandler} from "./DragHandle"
 import styled from "@emotion/styled"
 import {css} from "@emotion/css"
+import {getContrastColor, getDarkenContrastColor} from "../../containers/theme"
 
 const {
-  panelHeaderBackground,
   panelBackground,
-  panelHeaderText,
   panelHeaderTextSize,
-  panelBorder,
-  panelText,
   sidebarWidth,
 } = styleVariables
 
@@ -26,6 +23,7 @@ export type ToolbarWrapperProps = PropsWithChildren<{
   title?: string,
   noTitle?: boolean,
   onClose?: () => void,
+  color?: string,
 }>
 
 const Title = styled.div({
@@ -65,22 +63,14 @@ const StyledPanel = styled(Panel)(({expanded}) => ({
 
 const bsClass = css({
   pointerEvents: "auto",
-  background: panelBackground,
-  border: `0 solid ${panelBorder}`,
   minWidth: sidebarWidth,
   maxWidth: sidebarWidth,
 
-  "&-heading": {
-    background: panelHeaderBackground,
-    color: panelHeaderText,
-    textTransform: "uppercase",
-  },
-
   "&-title": {
+    textTransform: "uppercase",
     fontSize: panelHeaderTextSize,
     fontFamily: "Open Sans",
     fontWeight: 600,
-    color: panelHeaderText,
 
     "& > a": {
       display: "flow-root",
@@ -89,12 +79,11 @@ const bsClass = css({
 
     "& > a, & > a:focus, & > a:hover": {
       textDecoration: "none",
-      color: panelHeaderText,
+      color: "inherit",
     },
   },
 
   "&-body": {
-    color: panelText,
     userSelect: "text",
     display: "flow-root",
   },
@@ -110,7 +99,7 @@ const Line = styled.div({
 })
 
 export function ToolbarWrapper(props: ToolbarWrapperProps): JSX.Element | null {
-  const {title, noTitle, children, id, onClose} = props
+  const {title, noTitle, children, id, onClose, color = panelBackground} = props
   const dispatch = useDispatch()
   const isCollapsed = useSelector(getIsCollapsed)
   const [collapsed, setCollapsed] = useState(isCollapsed(id))
@@ -128,6 +117,29 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): JSX.Element | null {
 
   const handlerProps = useDragHandler()
 
+  const themeClassName = useMemo(
+    () => {
+      const panelHeaderBackground = getDarkenContrastColor(color, 1.25)
+      const panelText = getContrastColor(color)
+      const panelHeaderText = getContrastColor(panelHeaderBackground)
+
+      return css({
+        borderColor: panelHeaderBackground,
+        background: color,
+
+        [`.${bsClass}-title`]: {
+          background: panelHeaderBackground,
+          color: panelHeaderText,
+        },
+
+        [`.${bsClass}-body`]: {
+          color: panelText,
+        },
+      })
+    },
+    [color]
+  )
+
   if (!Children.count(children)) {
     return null
   }
@@ -139,6 +151,7 @@ export function ToolbarWrapper(props: ToolbarWrapperProps): JSX.Element | null {
       expanded={!isCollapsed(id)}
       onToggle={onToggle}
       bsClass={bsClass}
+      className={themeClassName}
     >
       {!noTitle && (
         <Panel.Heading {...handlerProps} tabIndex={-1}>
