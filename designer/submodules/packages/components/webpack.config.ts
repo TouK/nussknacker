@@ -9,11 +9,28 @@ const configuration = withDefaultConfig(
         },
         shared: {
             ...dependencies,
-            "@emotion/react": { singleton: true },
-            "@mui/private-theming/ThemeProvider": { singleton: true },
-            "@mui/private-theming/useTheme": { singleton: true },
-            react: { eager: true, singleton: true },
-            "react-dom": { eager: true, singleton: true },
+            "@emotion/react": {
+                singleton: true,
+                requiredVersion: dependencies["@emotion/react"],
+            },
+            "@mui/private-theming/ThemeProvider": {
+                singleton: true,
+                requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
+            },
+            "@mui/private-theming/useTheme": {
+                singleton: true,
+                requiredVersion: dependencies["@mui/private-theming/useTheme"],
+            },
+            react: {
+                eager: true,
+                singleton: true,
+                requiredVersion: dependencies["react"],
+            },
+            "react-dom": {
+                eager: true,
+                singleton: true,
+                requiredVersion: dependencies["react-dom"],
+            },
         },
     }),
 );
