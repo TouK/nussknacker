@@ -208,6 +208,7 @@ module.exports = {
     }),
     new HtmlWebpackHarddiskPlugin(),
     new WebpackShellPluginNext({
+      swallowError: !isProd,
       onAfterDone: {
         scripts: [
           `rm -rf .federated-types/*`,
