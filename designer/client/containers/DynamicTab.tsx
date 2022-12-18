@@ -7,6 +7,7 @@ import {ModuleString, ModuleUrl} from "./ExternalLib/types"
 import {MuiThemeProvider} from "./muiThemeProvider"
 import {NotFound} from "./errors/NotFound"
 import SystemUtils from "../common/SystemUtils"
+import ScopedCssBaseline from "@mui/material/ScopedCssBaseline"
 
 export type DynamicTabData = {
   title: string,
@@ -40,9 +41,11 @@ export const RemoteModuleTab = <CP extends { basepath?: string }>({
   return (
     <ErrorBoundary FallbackComponent={() => <NotFound/>}>
       <MuiThemeProvider>
-        <ExternalModule url={urlValue}>
-          <RemoteTabComponent scope={scope} componentProps={props}/>
-        </ExternalModule>
+        <ScopedCssBaseline style={{flex: 1, overflow: "hidden"}}>
+          <ExternalModule url={urlValue}>
+            <RemoteTabComponent scope={scope} componentProps={props}/>
+          </ExternalModule>
+        </ScopedCssBaseline>
       </MuiThemeProvider>
     </ErrorBoundary>
   )
