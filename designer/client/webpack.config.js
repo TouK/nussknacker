@@ -44,6 +44,7 @@ const fileLoader = {
   },
 }
 const outputPath = path.join(process.cwd(), "dist")
+const {dependencies} = require("./package.json")
 
 module.exports = {
   mode: NODE_ENV,
@@ -168,18 +169,32 @@ module.exports = {
       // it's also good method to connect all places where `name` is needed.
       ...federationConfig,
       shared: {
-        ...require("./package.json").dependencies,
-        "@touk/window-manager": {singleton: true},
-        "@emotion/react": {singleton: true},
-        "@mui/private-theming/ThemeProvider": {singleton: true},
-        "@mui/private-theming/useTheme": {singleton: true},
+        ...dependencies,
+        "@touk/window-manager": {
+          singleton: true,
+          requiredVersion: dependencies["@touk/window-manager"],
+        },
+        "@emotion/react": {
+          singleton: true,
+          requiredVersion: dependencies["@emotion/react"],
+        },
+        "@mui/private-theming/ThemeProvider": {
+          singleton: true,
+          requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
+        },
+        "@mui/private-theming/useTheme": {
+          singleton: true,
+          requiredVersion: dependencies["@mui/private-theming/useTheme"],
+        },
         react: {
           eager: true,
           singleton: true,
+          requiredVersion: dependencies["react"],
         },
         "react-dom": {
           eager: true,
           singleton: true,
+          requiredVersion: dependencies["react-dom"],
         },
       },
     }),
