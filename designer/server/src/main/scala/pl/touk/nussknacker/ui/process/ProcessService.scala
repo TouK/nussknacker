@@ -15,7 +15,6 @@ import pl.touk.nussknacker.engine.marshall.ProcessMarshaller
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.process._
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
-import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationError
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.EspError.XError
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
@@ -33,8 +32,6 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 import pl.touk.nussknacker.ui.validation.{FatalValidationError, ProcessValidation}
 
-import java.time
-import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
 
@@ -85,7 +82,7 @@ trait ProcessService {
   * Each action includes verification based on actual process state and checking process is subprocess / archived.
   */
 class DBProcessService(managerActor: ActorRef,
-                       requestTimeLimit: FiniteDuration,
+                       systemRequestTimeout: Timeout,
                        newProcessPreparer: NewProcessPreparer,
                        processCategoryService: ProcessCategoryService,
                        processResolving: UIProcessResolving,
@@ -100,7 +97,7 @@ class DBProcessService(managerActor: ActorRef,
 
   import scala.concurrent.duration._
 
-  private implicit val timeout: Timeout = Timeout(requestTimeLimit)
+  private implicit val timeout: Timeout = systemRequestTimeout
 
   /**
     * Handling error at retrieving status from manager is created at ManagementActor

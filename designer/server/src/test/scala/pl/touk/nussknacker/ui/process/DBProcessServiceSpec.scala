@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.ui.process
 
+import akka.util.Timeout
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.Deploy
@@ -147,7 +148,7 @@ class DBProcessServiceSpec extends AnyFlatSpec with Matchers with PatientScalaFu
   private def createDbProcessService[T: ProcessShapeFetchStrategy](processes: List[BaseProcessDetails[T]] = Nil): DBProcessService =
     new DBProcessService(
       managerActor = TestFactory.newDummyManagerActor(),
-      requestTimeLimit = 1 minute,
+      systemRequestTimeout = Timeout(1 minute),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,

@@ -19,7 +19,6 @@ import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
-import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object ScenarioTestService {
@@ -29,7 +28,7 @@ object ScenarioTestService {
             processResolving: UIProcessResolving,
             processCounter: ProcessCounter,
             managementActor: ActorRef,
-            requestTimeLimit: FiniteDuration,
+            systemRequestTimeout: Timeout,
            ): ScenarioTestService = {
     new ScenarioTestService(
       providers.mapValues(new ModelDataTestInfoProvider(_)),
@@ -38,7 +37,7 @@ object ScenarioTestService {
       processResolving,
       processCounter,
       managementActor,
-      requestTimeLimit,
+      systemRequestTimeout,
     )
   }
 
@@ -50,10 +49,10 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                           processResolving: UIProcessResolving,
                           processCounter: ProcessCounter,
                           managementActor: ActorRef,
-                          requestTimeLimit: FiniteDuration,
+                          systemRequestTimeout: Timeout,
                          ) extends LazyLogging {
 
-  private implicit val timeout: Timeout = Timeout(requestTimeLimit)
+  private implicit val timeout: Timeout = systemRequestTimeout
 
   def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)

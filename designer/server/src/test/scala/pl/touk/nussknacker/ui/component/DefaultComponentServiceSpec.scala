@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.ui.component
 
 import akka.actor.ActorSystem
+import akka.util.Timeout
 import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -523,7 +524,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private def createDbProcessService(processCategoryService: ProcessCategoryService, processes: List[ProcessWithJson] = Nil): DBProcessService =
     new DBProcessService(
       managerActor = TestFactory.newDummyManagerActor(),
-      requestTimeLimit = 1 minute,
+      systemRequestTimeout = Timeout(1 minute),
       newProcessPreparer = TestFactory.createNewProcessPreparer(),
       processCategoryService = processCategoryService,
       processResolving = TestFactory.processResolving,
