@@ -1,14 +1,22 @@
 package pl.touk.nussknacker.engine.json.swagger
 
+import com.fasterxml.jackson.core.`type`.TypeReference
+import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
+import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import io.circe.{Decoder, Encoder, Json, JsonObject}
 import io.circe.generic.JsonCodec
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder.getClass
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
+import java.util
 import java.util.Collections
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
+import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 @JsonCodec sealed trait AdditionalProperties
 case object AdditionalPropertiesDisabled extends AdditionalProperties
@@ -41,7 +49,23 @@ case object SwaggerTime extends SwaggerTyped
 
 case class SwaggerUnion(types: List[SwaggerTyped]) extends SwaggerTyped
 
-case class SwaggerEnum(values: List[String]) extends SwaggerTyped //todo: rename to SwaggerStringEnum?
+@JsonCodec case class SwaggerEnum private (values: List[Any]) extends SwaggerTyped
+
+object SwaggerEnum {
+  private val bestEffortJsonEncoder = BestEffortJsonEncoder(failOnUnkown = true, getClass.getClassLoader)
+  private implicit val decoder: Decoder[List[Any]] = Decoder[Json].map(_.asArray.map(_.toList.map(jsonToAny)).getOrElse(List.empty))
+  private implicit val encoder: Encoder[List[Any]] = Encoder.instance[List[Any]](bestEffortJsonEncoder.encode)
+  private lazy val om = new ObjectMapper()
+  def apply(schema: Schema[_]): SwaggerEnum = {
+    val list = schema.getEnum.asScala.toList.map {
+      case j: ObjectNode => om.convertValue(j, new TypeReference[java.util.Map[String, Any]]() {})
+      case j: ArrayNode => om.convertValue(j, new TypeReference[java.util.List[Any]]() {})
+      case any => any
+    }
+    SwaggerEnum(list)
+  }
+}
+
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
@@ -54,10 +78,7 @@ sealed trait SwaggerUnknownFallback extends SwaggerTyped
 
 case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
 
-case object SwaggerEnumOfVariousTypes extends SwaggerUnknownFallback
-
 object SwaggerTyped {
-
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
 
   @tailrec
@@ -72,18 +93,13 @@ object SwaggerTyped {
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
+        case (_, _) if schema.getEnum != null => SwaggerEnum(schema)
         //TODO: we don't handle cases when anyOf/oneOf is *extension* of a schema (i.e. `schema` has properties)
         case (Some("object") | None, _) if Option(schema.getAnyOf).exists(!_.isEmpty) => swaggerUnion(schema.getAnyOf, swaggerRefSchemas, usedSchemas)
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
         case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
         case (Some("object") | None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
-        case (typ, _) if schema.getEnum != null =>
-          val values = schema.getEnum.asScala
-          if (values.forall(v => v.isInstanceOf[String]) && !typ.exists(_ != "string"))
-            SwaggerEnum(values.flatMap(Option(_).toList).map(_.toString).toList)
-          else
-            SwaggerEnumOfVariousTypes //todo: add support for enums of various types
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate

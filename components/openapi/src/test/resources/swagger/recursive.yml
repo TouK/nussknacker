@@ -10,6 +10,8 @@ paths:
       operationId: testRecursive
       responses:
         '200':
+          description:
+            Returns ComponentsByAccount.
           content:
             application/json:
               schema:

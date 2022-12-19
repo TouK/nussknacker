@@ -13,6 +13,7 @@ import org.testcontainers.containers.output.Slf4jLogConsumer
 import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy
 import org.testcontainers.images.builder.ImageFromDockerfile
 import org.testcontainers.containers.Network
+import org.testcontainers.utility.DockerImageName
 import pl.touk.nussknacker.engine.ProcessingTypeConfig
 import pl.touk.nussknacker.engine.deployment.User
 import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
@@ -42,7 +43,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   protected val userToAct: User = User("testUser", "Test User")
 
-  private val kafka = KafkaContainer().configure { self =>
+  private val kafka = KafkaContainer(DockerImageName.parse(s"${KafkaContainer.defaultImage}:7.3.0")).configure { self =>
     self.setNetwork(network)
     self.setNetworkAliases(asList(kafkaNetworkAlias))
   }

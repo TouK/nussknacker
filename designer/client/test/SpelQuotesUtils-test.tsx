@@ -1,5 +1,6 @@
 import * as SpelQuotesUtils from "../components/graph/node-modal/editors/expression/SpelQuotesUtils"
 import {QuotationMark} from "../components/graph/node-modal/editors/expression/SpelQuotesUtils"
+import {describe, expect, jest} from '@jest/globals';
 
 const text = `a'b'c"d"e'f'g`
 
@@ -15,10 +16,9 @@ describe("SpelQuotesUtils", () => {
     })
 
     it("should use replaceAll when available", () => {
-      String.prototype.replaceAll = jest.fn()
+      const spy = jest.spyOn(String.prototype, "replaceAll")
       SpelQuotesUtils.escapeQuotes(QuotationMark.single, text)
-      expect(String.prototype.replaceAll).toBeCalledWith(`'`, `''`)
-      String.prototype.replaceAll = undefined
+      expect(spy).toBeCalledWith(`'`, `''`)
     })
   })
 
@@ -33,10 +33,9 @@ describe("SpelQuotesUtils", () => {
     })
 
     it("should use replaceAll when available", () => {
-      String.prototype.replaceAll = jest.fn()
+      const spy = jest.spyOn(String.prototype, "replaceAll")
       SpelQuotesUtils.unescapeQuotes(QuotationMark.single, text)
-      expect(String.prototype.replaceAll).toBeCalledWith(`''`, `'`)
-      String.prototype.replaceAll = undefined
+      expect(spy).toBeCalledWith(`''`, `'`)
     })
   })
 
