@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.process.{ContextInitializer, Source}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.TimestampWatermarkHandler
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, ConsumerRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, PreparedKafkaTopic, RecordFormatter}
 
 class FlinkKafkaSourceImplFactory[K, V](protected val timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]]) extends KafkaSourceImplFactory[K, V] {
 
@@ -16,7 +16,7 @@ class FlinkKafkaSourceImplFactory[K, V](protected val timestampAssigner: Option[
                             preparedTopics: List[PreparedKafkaTopic],
                             kafkaConfig: KafkaConfig,
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                            formatter: ConsumerRecordFormatter,
+                            formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source =
     new FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter, contextInitializer)
 

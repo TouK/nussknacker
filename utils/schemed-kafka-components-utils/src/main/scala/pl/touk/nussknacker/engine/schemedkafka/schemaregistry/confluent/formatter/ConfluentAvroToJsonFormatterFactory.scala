@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordFormatter, KafkaConfig, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.kafka.{RecordFormatter, KafkaConfig, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
   */
 class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
-  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): ConsumerRecordFormatter = {
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
 
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     val messageFormatter = new ConfluentAvroMessageFormatter(schemaRegistryClient.client)
@@ -45,7 +45,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
                                                              messageFormatter: ConfluentAvroMessageFormatter,
                                                              messageReader: ConfluentAvroMessageReader,
                                                              deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
-                                                            ) extends ConsumerRecordFormatter {
+                                                            ) extends RecordFormatter {
 
   /**
     * Step 1: Deserialize raw kafka event to GenericRecord/SpecificRecord domain.

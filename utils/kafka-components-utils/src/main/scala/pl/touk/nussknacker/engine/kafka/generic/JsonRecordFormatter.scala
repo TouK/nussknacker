@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.kafka.generic
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, ConsumerRecordFormatter}
+import pl.touk.nussknacker.engine.kafka.{BasicRecordFormatter, RecordFormatter}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.toJson
 
 import java.nio.charset.StandardCharsets
 
-object JsonRecordFormatter extends ConsumerRecordFormatter {
+object JsonRecordFormatter extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
     TestRecord(toJson(record.value()))

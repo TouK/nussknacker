@@ -6,7 +6,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, ConsumerRecordFormatter, RecordFormatterFactory}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -18,13 +18,13 @@ import scala.reflect.ClassTag
   */
 class ConsumerRecordToJsonFormatterFactory[K:Encoder:Decoder, V:Encoder:Decoder] extends RecordFormatterFactory {
 
-  override def create[KK: ClassTag, VV: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): ConsumerRecordFormatter = {
+  override def create[KK: ClassTag, VV: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[KK, VV]]): RecordFormatter = {
     new ConsumerRecordToJsonFormatter[K, V](kafkaSourceDeserializationSchema.asInstanceOf[KafkaDeserializationSchema[ConsumerRecord[K, V]]])
   }
 
 }
 
-class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]) extends ConsumerRecordFormatter {
+class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaSourceDeserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]]) extends RecordFormatter {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 

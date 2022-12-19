@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
  */
 class UniversalToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory) extends RecordFormatterFactory {
 
-  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): ConsumerRecordFormatter = {
+  override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
     new UniversalToJsonFormatter(kafkaConfig, schemaRegistryClient, kafkaSourceDeserializationSchema)
   }
@@ -38,7 +38,7 @@ class UniversalToJsonFormatterFactory(schemaRegistryClientFactory: ConfluentSche
 class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                          override val schemaRegistryClient: ConfluentSchemaRegistryClient,
                                                          deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
-                                                        ) extends ConsumerRecordFormatter with UniversalSchemaIdFromMessageExtractor {
+                                                        ) extends RecordFormatter with UniversalSchemaIdFromMessageExtractor {
 
   private lazy val jsonPayloadToJsonDeserializer  = new KafkaJsonKeyValueDeserializationSchemaFactory().create[K, V](kafkaConfig, None, None)
 

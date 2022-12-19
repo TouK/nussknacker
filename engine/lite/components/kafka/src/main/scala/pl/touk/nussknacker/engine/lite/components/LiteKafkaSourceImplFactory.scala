@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceImplFactory
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatterBaseTestDataGenerator}
+import pl.touk.nussknacker.engine.kafka.{RecordFormatter, KafkaConfig, PreparedKafkaTopic, RecordFormatterBaseTestDataGenerator}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 
 class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
@@ -21,7 +21,7 @@ class LiteKafkaSourceImplFactory[K, V] extends KafkaSourceImplFactory[K, V] {
                             preparedTopics: List[PreparedKafkaTopic],
                             kafkaConfig: KafkaConfig,
                             deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                            formatter: ConsumerRecordFormatter,
+                            formatter: RecordFormatter,
                             contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source = {
     new LiteKafkaSourceImpl(contextInitializer, deserializationSchema, TypedNodeDependency[NodeId].extract(dependencies), preparedTopics, kafkaConfig, formatter)
   }
@@ -33,7 +33,7 @@ class LiteKafkaSourceImpl[K, V](contextInitializer: ContextInitializer[ConsumerR
                                 val nodeId: NodeId,
                                 preparedTopics: List[PreparedKafkaTopic],
                                 val kafkaConfig: KafkaConfig,
-                                val formatter: ConsumerRecordFormatter) extends LiteKafkaSource with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with RecordFormatterBaseTestDataGenerator {
+                                val formatter: RecordFormatter) extends LiteKafkaSource with SourceTestSupport[ConsumerRecord[Array[Byte], Array[Byte]]] with RecordFormatterBaseTestDataGenerator {
 
   private var initializerFun: ContextInitializingFunction[ConsumerRecord[K, V]] = _
 

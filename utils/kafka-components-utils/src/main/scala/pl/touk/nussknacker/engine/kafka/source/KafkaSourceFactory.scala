@@ -167,7 +167,7 @@ object KafkaSourceFactory {
                      preparedTopics: List[PreparedKafkaTopic],
                      kafkaConfig: KafkaConfig,
                      deserializationSchema: KafkaDeserializationSchema[ConsumerRecord[K, V]],
-                     formatter: ConsumerRecordFormatter,
+                     formatter: RecordFormatter,
                      contextInitializer: ContextInitializer[ConsumerRecord[K, V]]): Source
 
   }

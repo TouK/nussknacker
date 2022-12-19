@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets
   * stored on topic aren't in human readable format and you need to add extra step in generation of test data
   * and in reading of these data.
   */
-trait ConsumerRecordFormatter extends Serializable {
+trait RecordFormatter extends Serializable {
 
   protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord
 
@@ -30,7 +30,7 @@ trait ConsumerRecordFormatter extends Serializable {
 
 }
 
-object BasicRecordFormatter extends ConsumerRecordFormatter {
+object BasicRecordFormatter extends RecordFormatter {
 
   override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
     TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
@@ -48,7 +48,7 @@ trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Sou
 
   protected def topics: List[String]
 
-  protected def formatter: ConsumerRecordFormatter
+  protected def formatter: RecordFormatter
 
   override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
 

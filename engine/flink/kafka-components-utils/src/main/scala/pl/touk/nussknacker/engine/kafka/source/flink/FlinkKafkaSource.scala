@@ -31,7 +31,7 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
                           val kafkaConfig: KafkaConfig,
                           deserializationSchema: serialization.KafkaDeserializationSchema[T],
                           passedAssigner: Option[TimestampWatermarkHandler[T]],
-                          val formatter: ConsumerRecordFormatter,
+                          val formatter: RecordFormatter,
                           overriddenConsumerGroup: Option[String] = None)
   extends FlinkSource
     with FlinkIntermediateRawSource[T]
@@ -120,7 +120,7 @@ class FlinkConsumerRecordBasedKafkaSource[K, V](preparedTopics: List[PreparedKaf
                                                 kafkaConfig: KafkaConfig,
                                                 deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]],
                                                 timestampAssigner: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]],
-                                                formatter: ConsumerRecordFormatter,
+                                                formatter: RecordFormatter,
                                                 override val contextInitializer: ContextInitializer[ConsumerRecord[K, V]]) extends FlinkKafkaSource[ConsumerRecord[K, V]](preparedTopics, kafkaConfig, deserializationSchema, timestampAssigner, formatter) {
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[ConsumerRecord[K, V]]] = timestampAssigner.orElse(Some(
