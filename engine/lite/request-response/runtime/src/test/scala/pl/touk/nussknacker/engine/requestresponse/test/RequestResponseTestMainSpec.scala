@@ -33,10 +33,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .processor("eagerProcessor", "collectingEager", "static" -> "'s'", "dynamic" -> "#input.field1()")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val testData = TestData(List(
-      TestRecord(parser.parse("""{ "field1": "a", "field2": "b" }""").right.get),
-      TestRecord(parser.parse("""{ "field1": "c", "field2": "d" }""").right.get),
-    ))
+    val testData = TestData(List(createTestRecord("a", "b"), createTestRecord("c", "d")))
 
     val results = FutureBasedRequestResponseScenarioInterpreter.testRunner.runTest(
       process = process,
@@ -77,10 +74,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .processor("processor", "processorService")
       .emptySink("endNodeIID", "response-sink", "value" -> "#var1")
 
-    val testData = TestData(List(
-      TestRecord(parser.parse("""{ "field1": "a", "field2": "b" }""").right.get),
-      TestRecord(parser.parse("""{ "field1": "c", "field2": "d" }""").right.get),
-    ))
+    val testData = TestData(List(createTestRecord("a", "b"), createTestRecord("c", "d'")))
 
     val contextIds = firstIdForFirstSource(process)
     val firstId = contextIds.nextContextId()
@@ -106,7 +100,7 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       .source("start", "request1-post-source")
       .emptySink("endNodeIID", "parameterResponse-sink", "computed" -> "#input.field1()")
 
-    val testData = TestData(List(TestRecord(parser.parse("""{ "field1": "a", "field2": "b" }""").right.get)))
+    val testData = TestData(List(createTestRecord("a", "b")))
 
     val contextIds = firstIdForFirstSource(process)
     val firstId = contextIds.nextContextId()
@@ -125,6 +119,10 @@ class RequestResponseTestMainSpec extends AnyFunSuite with Matchers with BeforeA
       ExternalInvocationResult(firstId, "endNodeIID", "a withRandomString")
     )
 
+  }
+
+  private def createTestRecord(field1: String, field2: String) = {
+    TestRecord(Json.obj("field1" -> Json.fromString(field1), "field2" -> Json.fromString(field2)))
   }
 
   private def firstIdForFirstSource(scenario: CanonicalProcess): IncContextIdGenerator =

@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.kafka.consumerrecord
 
-import io.circe.{Json, parser}
+import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.BeforeAndAfterAll
@@ -60,7 +60,10 @@ class ConsumerRecordToJsonFormatterSpec extends AnyFunSuite with Matchers with K
   }
 
   test("decode and format partially defined ConsumerRecord using default values") {
-    val testRecord = TestRecord(parser.parse("""{"key":{"partOne":"abc", "partTwo":2}, "value":{"id":"def", "field":"ghi"}}""").right.get)
+    val testRecord = TestRecord(Json.obj(
+      "key" -> Json.obj("partOne" -> Json.fromString("abc"), "partTwo" -> Json.fromLong(2)),
+      "value" -> Json.obj("id" -> Json.fromString("def"), "field" -> Json.fromString("ghi"))
+    ))
     val resultObj = sampleKeyValueFormatter.parseRecord("topic", testRecord)
     val expectedObj = new ConsumerRecord[Array[Byte], Array[Byte]]("topic", 0, 0L, """{"partOne":"abc","partTwo":2}""".getBytes, """{"id":"def","field":"ghi"}""".getBytes)
     checkResult(resultObj, expectedObj)

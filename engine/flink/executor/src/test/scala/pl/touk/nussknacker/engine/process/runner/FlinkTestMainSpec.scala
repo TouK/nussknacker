@@ -1,7 +1,7 @@
 package pl.touk.nussknacker.engine.process.runner
 
 import com.typesafe.config.{Config, ConfigFactory}
-import io.circe.{Json, parser}
+import io.circe.Json
 import org.apache.flink.runtime.client.JobExecutionException
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -17,15 +17,13 @@ import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.loader.ModelClassLoader
 import pl.touk.nussknacker.engine.{ModelData, spel}
-import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-import java.nio.charset.StandardCharsets
 import java.util.{Date, UUID}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach with EitherValuesDetailedMessage {
+class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with BeforeAndAfterEach {
 
   import spel.Implicits._
 
@@ -231,9 +229,9 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .source("id", "jsonInput")
         .emptySink("out", "valueMonitor", "value" -> "#input")
     val testData = TestData(List(
-      TestRecord(parser.parse("""{"id": "1", "field": "11"}""").right.get),
-      TestRecord(parser.parse("""{"id": "2", "field": "22"}""").right.get),
-      TestRecord(parser.parse("""{"id": "3", "field": "33"}""").right.get),
+      TestRecord(Json.obj("id" -> Json.fromString("1"), "field" -> Json.fromString("11"))),
+      TestRecord(Json.obj("id" -> Json.fromString("2"), "field" -> Json.fromString("22"))),
+      TestRecord(Json.obj("id" -> Json.fromString("3"), "field" -> Json.fromString("33"))),
     ))
 
     val results = runFlinkTest(process, testData)
@@ -310,7 +308,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
         .source("id", "typedJsonInput", "type" -> """{"field1": "String", "field2": "java.lang.String"}""")
         .emptySink("out", "valueMonitor", "value" -> "#input.field1 + #input.field2")
 
-    val results = runFlinkTest(process, TestData(TestRecord(parser.parse("""{"field1": "abc", "field2": "def"}""").rightValue) :: Nil))
+    val results = runFlinkTest(process, TestData(TestRecord(Json.obj("field1" -> Json.fromString("abc"), "field2" -> Json.fromString("def"))) :: Nil))
 
     results.invocationResults("out").map(_.value) shouldBe List("abcdef")
   }

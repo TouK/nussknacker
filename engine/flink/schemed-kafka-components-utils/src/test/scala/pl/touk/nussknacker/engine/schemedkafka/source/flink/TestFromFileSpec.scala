@@ -4,7 +4,6 @@ import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json._
-import io.circe.parser
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -26,11 +25,11 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, KafkaConfigProperties}
+import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.util.Collections
 
-class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging with EitherValuesDetailedMessage {
+class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
@@ -58,7 +57,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging with E
       .encoder(BestEffortJsonEncoder.defaultForTests.encode).apply(inputMeta)
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
-    val testRecordJson = parser.parse(s"""{"keySchemaId":null,"valueSchemaId":$id,"consumerRecord":${consumerRecord.noSpaces} }""").rightValue
+    val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
 
     val results = run(process, TestData(TestRecord(testRecordJson) :: Nil))
 
