@@ -697,7 +697,7 @@ object SampleNodes {
 
         override def generateTestData(size: Int): TestData = TestData(elements.map(e => TestRecord(Json.fromString(e))))
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
         override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
       }
@@ -769,7 +769,7 @@ object SampleNodes {
 
   private val simpleRecordParser = new TestRecordParser[SimpleRecord] {
     override def parse(testRecord: TestRecord): SimpleRecord = {
-      val parts = testRecord.asJsonString.split("\\|")
+      val parts = CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|")
       SimpleRecord(parts(0), parts(1).toLong, parts(2), new Date(parts(3).toLong), Some(BigDecimal(parts(4))), BigDecimal(parts(5)), parts(6))
     }
   }

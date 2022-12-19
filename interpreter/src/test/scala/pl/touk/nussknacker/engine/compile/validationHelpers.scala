@@ -244,7 +244,7 @@ object validationHelpers {
 
       new Source with SourceTestSupport[String] with TestDataGenerator {
 
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
         override def generateTestData(size: Int): TestData = TestData(TestRecord(Json.fromString("")) :: Nil)
       }
@@ -262,7 +262,7 @@ object validationHelpers {
   class GenericParametersSourceNoGenerate extends GenericParametersSource {
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): Source = {
       new Source with SourceTestSupport[String] {
-        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
       }
     }
   }

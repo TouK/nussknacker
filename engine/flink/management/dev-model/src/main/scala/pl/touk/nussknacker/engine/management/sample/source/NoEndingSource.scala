@@ -5,6 +5,7 @@ import java.util.concurrent.atomic.{AtomicBoolean, AtomicLong}
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -18,7 +19,7 @@ class NoEndingSource extends BasicFlinkSource[String] with FlinkSourceTestSuppor
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[String]] = timestampAssigner
 
-  override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => testRecord.asJsonString
+  override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
   override def flinkSourceFunction: SourceFunction[String] = new SourceFunction[String] {
     var running = true

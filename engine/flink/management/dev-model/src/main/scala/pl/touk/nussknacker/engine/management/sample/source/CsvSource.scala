@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.TestDataGenerator
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
@@ -27,7 +28,7 @@ class CsvSource extends BasicFlinkSource[CsvRecord] with FlinkSourceTestSupport[
   ))
 
   override def testRecordParser: TestRecordParser[CsvRecord] =
-    (testRecord: TestRecord) => CsvRecord(testRecord.asJsonString.split("\\|").toList)
+    (testRecord: TestRecord) => CsvRecord(CirceUtil.decodeJsonUnsafe[String](testRecord.json).split("\\|").toList)
 
   override def timestampAssigner: Option[Nothing] = None
 

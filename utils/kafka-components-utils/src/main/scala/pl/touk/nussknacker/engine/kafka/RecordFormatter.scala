@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.kafka
 
 import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 
@@ -36,7 +37,7 @@ object BasicRecordFormatter extends RecordFormatter {
     TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
 
   override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val stringRecord = testRecord.asJsonString
+    val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
     new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), stringRecord.getBytes(StandardCharsets.UTF_8))
   }
 
