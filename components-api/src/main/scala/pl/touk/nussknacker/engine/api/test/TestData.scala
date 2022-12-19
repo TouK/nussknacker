@@ -13,6 +13,3 @@ case class TestRecord(json: Json) {
   }
 }
 
-object TestData {
-  def asJsonStrings(strs: String*): TestData = TestData(strs.toList.map(s => TestRecord(Json.fromString(s))))
-}
