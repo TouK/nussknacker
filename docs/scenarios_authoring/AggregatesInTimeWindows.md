@@ -15,13 +15,6 @@ Regardless of the window type used, events are grouped into windows based on the
 Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bear in mind the differences. This [blog post](https://dev.to/frosnerd/window-functions-in-stream-analytics-1m6c) has a nice explanation and visualization of time windows; the sliding window described in this blog post is close to our implementation of the sliding window. While explaining how to use Nussknacker components performing computations in time windows, we will focus on Nussknacker features rather than explanation of differences between windows types.
 
 
-Nodes which compute aggregates may emit events with aggregates in two different situations:
-* when event arrives to the node and the window is configured to emit the aggregate for every incoming event, 
-* when the window is closed because of window timer expiration. This for example may happen if Session-window is closed after session time-out or 'at the end' of the Tumbling-window. It is important to note that in such a case a new event is generated. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw.  
-
-Except of Sliding-Window when parameter `emitWhenEventLeft` is set to `false` all the variables defined upstream, in particular  `#input` and `#inputMeta` will NOT be available downstream. 
-
-
 ## Data used in the following examples
 
 Our imaginary banking application emits several events per each transaction. The data stream contains the following events:
@@ -77,15 +70,15 @@ The result of the `groupBy` expression must be of type String.
 
 *result is held in the variable configured in the `output` field.
 
-## Common behaviour
-Components which produce aggregates in time windows process multiple events; a question may arise about the contents of the variables when the window is closed.
-Presence of variables defined before aggregation (e.g. `#input`, `#inputMeta`) depends on configuration of the `emitWhenEventLeft` parameter. `#key` parameter is added for every aggregation type and holds a key which is used in `groupBy` 
+## Common behavior
 
-| aggregationType   | emitWhenEventLeft | variables                |
-|-------------------|-------------------|--------------------------|
-| sliding           | false             | #input, #inputMeta, #key |
-| sliding           | true              | #key                     |
-| tumbling, session | not configurable  | #key                     |
+The sliding, tumbling and session window components differ among themselves not only in the way the time window is defined. A second key aspect which differentiates these components is how they `transform' input events into aggregate. This transformation can be either creation of a new (aggregate) event or an enrichment of incoming events with the value of the aggregate.  
+
+When the time window is closed, tumbling and session window nodes generate a new event containing an aggregate. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw. These nodes 'terminate' the events which entered them; consequently the #input and #inputMeta variables will not be available downstream. The sliding-window behaves in the same way in its **non-default** configuration when parameter `emitWhenEventLeft` is set to `true`. 
+
+A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. Because the original events are still available downstream, the #input and #inputMeta variables will be available 'downstream'.
+
+A new #key variable will be available 'downstream' in all cases.
 
 
 ## Tumbling-window
@@ -114,22 +107,22 @@ In the example below, a sum of field `#input.transfer` will be computed  in the 
 
 ## Sliding-window
 
-In our implementation of the sliding window the aggregation computation is triggered when an event enters the window. This means that whenever an event arrives to the Sliding-window for evaluation, Nussknacker computes the aggregate taking into account all the *preceding* events which qualify into the sliding window. 
+In the default configuration (`emitWhenEventLeft` is set to `false`) of the sliding-window, the aggregation computation is triggered when an event enters the window. This means that whenever an event arrives to the sliding-window for evaluation, Nussknacker computes the aggregate taking into account all the *preceding* events which qualify into the window. Each incoming event will be **enriched** with the value of the aggregate. The computed aggregate is an equivalent of a function in a moving window which we commonly apply to time series events - like moving average or moving sum. 
 
 Parameters specific to the Sliding window:
 
 **windowLength** - length of the sliding window
 
-**emitWhenEventLeft** - the aggregate computation can be also triggered when an event leaves the window. This means that the aggregate is computed taking into account all the *subsequent* events which qualify into the sliding window. 
+**emitWhenEventLeft** - the aggregate computation can be also triggered when an event leaves the window. This means that the aggregate takes into account all the *subsequent* events which qualify into the sliding-window. In this case the sliding-window node terminates all the incoming events and emits an aggregate when the window closes. 
 
 
 ## Session-window
 
-Parameters specific to the session window:
+Parameters specific to the session-window:
 
-**endSessionCondition** - the session window can close not only on timeout; it will also close when the expression entered in this field will evaluate to true. Set it to `false` if the only way to close the window is through session timeout.
+**endSessionCondition** - the session-window can close not only on timeout; it will also close when the expression entered in this field will evaluate to true. Set it to `false` if the only way to close the window is through session timeout.
 
-**sessionTimeout**- session window will close after this time since the last event.
+**sessionTimeout**- session-window will close after this time since the last event.
 
 **emitWhen** - determines when the event with the result of the aggregation will be emitted. 
 
