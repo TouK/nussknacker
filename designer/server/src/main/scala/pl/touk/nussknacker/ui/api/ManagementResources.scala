@@ -13,7 +13,7 @@ import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
 import io.circe.syntax._
-import io.circe.{Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
@@ -23,6 +23,7 @@ import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
+import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
 import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop}
@@ -200,15 +201,20 @@ class ManagementResources(val managementActor: ActorRef,
       path("processManagement" / "test" / Segment) { processName =>
         (post & processIdWithCategory(processName)) { idWithCategory =>
           canDeploy(idWithCategory.id) {
-            formFields('testData.as[Array[Byte]], 'processJson.as[DisplayableProcess]) { (testData, displayableProcess) =>
+            formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
               complete {
                 if (testData.length > testDataSettings.testDataMaxBytes) {
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
-                      Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                    }.recover(EspErrorToHttp.errorToHttp)
+                    parser.parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                      case Right(displayableProcess) =>
+                        scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
+                          Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                        }.recover(EspErrorToHttp.errorToHttp)
+                      case Left(error) =>
+                        Future.failed(UnmarshallError(error.toString))
+                    }
                   }
                 }
               }
