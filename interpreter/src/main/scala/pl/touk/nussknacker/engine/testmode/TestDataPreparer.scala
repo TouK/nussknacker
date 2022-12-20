@@ -16,11 +16,8 @@ case class ParsedTestData[T](samples: List[T])
 object TestDataPreparer {
 
   def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], testData: TestData): ParsedTestData[T] = {
-    val testParserForSource = sourceTestSupport.testDataParser
-    val testSamples = testParserForSource.parseTestData(testData)
-    if (testSamples.size > testData.rowLimit) {
-      throw new IllegalArgumentException(s"Too many samples: ${testSamples.size}, limit is: ${testData.rowLimit}")
-    }
+    val testParserForSource = sourceTestSupport.testRecordParser
+    val testSamples = testData.testRecords.map(testParserForSource.parse)
     ParsedTestData(testSamples)
   }
 

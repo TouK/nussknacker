@@ -1,9 +1,11 @@
 package pl.touk.nussknacker.engine.api.test
 
-import java.nio.charset.StandardCharsets
+import io.circe.Json
+import io.circe.generic.JsonCodec
 
-case class TestData(testData: Array[Byte], rowLimit: Int)
+// TODO multiple-sources-test: rename TestData to SourceTestData?
+case class TestData(testRecords: List[TestRecord])
 
-object TestData {
-  def newLineSeparated(s: String*): TestData = new TestData(s.mkString("\n").getBytes(StandardCharsets.UTF_8), s.length)
-}
+// TODO multiple-sources-test: add optional timestamp
+case class TestRecord(json: Json)
+

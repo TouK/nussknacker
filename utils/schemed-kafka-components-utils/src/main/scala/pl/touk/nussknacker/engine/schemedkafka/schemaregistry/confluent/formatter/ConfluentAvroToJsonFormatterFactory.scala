@@ -6,11 +6,11 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.Schema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil._
-import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.kafka.{RecordFormatter, KafkaConfig, RecordFormatterFactory, serialization}
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -52,7 +52,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     * Step 2: Create Encoders that use ConfluentAvroMessageFormatter to convert avro object to json
     * Step 3: Encode event's data with schema id's with derived encoder.
     */
-  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = {
     val deserializedRecord = deserializationSchema.deserialize(record)
 
     val serializableRecord = AvroSerializableConsumerRecord(
@@ -61,7 +61,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
       SerializableConsumerRecord(deserializedRecord)
     )
 
-    consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
+    TestRecord(consumerRecordEncoder(serializableRecord))
   }
 
   /**
@@ -69,8 +69,8 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     * Step 2: Create key and value json-to-avro interpreter based on schema id's provided in json.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
-  override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
-    val record = decodeJsonUnsafe(bytes)(consumerRecordDecoder)
+  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+    val record = decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
 
     def serializeKeyValue(keyOpt: Option[Json], value: Json): (Array[Byte], Array[Byte]) = {
       val keyBytes = if (kafkaConfig.useStringForKey) {
@@ -121,7 +121,6 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     ConfluentUtils.extractSchema(parsedSchema)
   }
 
-  override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
 }
 
 case class AvroSerializableConsumerRecord[K, V](keySchemaId: Option[Int],

@@ -18,16 +18,24 @@ object CirceUtil {
 
 
   def decodeJson[T: Decoder](json: String): Either[circe.Error, T]
-  = io.circe.parser.parse(json).right.flatMap(Decoder[T].decodeJson)
+  = io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
   def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] = decodeJson(new String(json, StandardCharsets.UTF_8))
 
+  def decodeJsonUnsafe[T: Decoder](json: String): T = unsafe(decodeJson(json))
+
   def decodeJsonUnsafe[T: Decoder](json: String, message: String): T = unsafe(decodeJson(json), message)
 
-  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json), "")
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte]): T = unsafe(decodeJson(json))
 
-  private def unsafe[T](result: Either[circe.Error, T], message: String) = result match {
-    case Left(error) => throw DecodingError(s"Failed to decode - $message, error: ${error.getMessage}", error)
+  def decodeJsonUnsafe[T: Decoder](json: Array[Byte], message: String): T = unsafe(decodeJson(json), message)
+
+  def decodeJsonUnsafe[T: Decoder](json: Json): T = unsafe(Decoder[T].decodeJson(json))
+
+  def decodeJsonUnsafe[T: Decoder](json: Json, message: String): T = unsafe(Decoder[T].decodeJson(json), message)
+
+  private def unsafe[T](result: Either[circe.Error, T], message: String = "") = result match {
+    case Left(error) => throw DecodingError(s"Failed to decode${if (message.isBlank) s"- $message" else ""}, error: ${error.getMessage}", error)
     case Right(data) => data
   }
 

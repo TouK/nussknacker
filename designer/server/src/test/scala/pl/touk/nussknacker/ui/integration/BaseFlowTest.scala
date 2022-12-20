@@ -234,7 +234,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     saveProcess(process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "record1|field2", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "\"record1|field2\"", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
@@ -289,8 +289,9 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    firstInvocationResult(testProcess(processWithService(), "field1|field2")) shouldBe Some("")
+    val testDataContent = "\"field1|field2\""
 
+    firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 
     //we generate random parameter
     val parameterUUID = UUID.randomUUID().toString
@@ -312,7 +313,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     val resultAfterReload = updateProcess(processWithService(parameterUUID -> "'emptyString'"))
     resultAfterReload.errors shouldBe ValidationErrors.success
     resultAfterReload.nodeResults.get(nodeUsingDynamicServiceId).value.parameters.value.map(_.name).toSet shouldBe Set(parameterUUID)
-    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), "field1|field2")) shouldBe Some("field1")
+    firstInvocationResult(testProcess(processWithService(parameterUUID -> "#input.firstField"), testDataContent)) shouldBe Some("field1")
 
   }
 

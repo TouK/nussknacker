@@ -9,35 +9,28 @@ import akka.pattern.ask
 import akka.stream.Materializer
 import akka.util.Timeout
 import cats.data.Validated.{Invalid, Valid}
-import com.carrotsearch.sizeof.RamUsageEstimator
 import com.typesafe.scalalogging.LazyLogging
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
-import io.circe.generic.JsonCodec
 import io.circe.generic.extras.semiauto.deriveConfiguredEncoder
-import io.circe.parser.parse
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, parser}
 import io.dropwizard.metrics5.MetricRegistry
 import pl.touk.nussknacker.engine.api.DisplayJson
 import pl.touk.nussknacker.engine.api.deployment._
-import pl.touk.nussknacker.engine.api.test.TestData
-import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.testmode.TestProcess._
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithNameAndCategory
 import pl.touk.nussknacker.restmodel.{CustomActionRequest, CustomActionResponse}
 import pl.touk.nussknacker.ui.BadRequestError
 import pl.touk.nussknacker.ui.api.EspErrorToHttp.toResponse
 import pl.touk.nussknacker.ui.api.ProcessesResources.UnmarshallError
 import pl.touk.nussknacker.ui.config.FeatureTogglesConfig
 import pl.touk.nussknacker.ui.metrics.TimeMeasuring.measureTime
-import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop, Test}
+import pl.touk.nussknacker.ui.process.deployment.{Snapshot, Stop}
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
+import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCounts, ScenarioTestService}
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
-import pl.touk.nussknacker.ui.processreport.{NodeCount, ProcessCounter, RawCount}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
-import pl.touk.nussknacker.ui.uiresolving.UIProcessResolving
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -46,28 +39,29 @@ object ManagementResources {
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  def apply(processCounter: ProcessCounter,
-            managementActor: ActorRef,
+  def apply(managementActor: ActorRef,
             processAuthorizator: AuthorizeProcess,
             processRepository: FetchingProcessRepository[Future],
             featuresOptions: FeatureTogglesConfig,
-            processResolving: UIProcessResolving,
             processService: ProcessService,
-            metricRegistry: MetricRegistry)
+            metricRegistry: MetricRegistry,
+            scenarioTestService: ScenarioTestService,
+           )
            (implicit ec: ExecutionContext,
             mat: Materializer, system: ActorSystem): ManagementResources = {
     new ManagementResources(
-      processCounter,
       managementActor,
       featuresOptions.testDataSettings,
       processAuthorizator,
       processRepository,
       featuresOptions.deploymentCommentSettings,
-      processResolving,
       processService,
-      metricRegistry
+      metricRegistry,
+      scenarioTestService,
     )
   }
+
+  implicit val resultsWithCountsEncoder: Encoder[ResultsWithCounts[Json]] = deriveConfiguredEncoder
 
   implicit val testResultsEncoder: Encoder[TestResults[Json]] = new Encoder[TestResults[Json]]() {
 
@@ -105,15 +99,15 @@ object ManagementResources {
 
 }
 
-class ManagementResources(processCounter: ProcessCounter,
-                          val managementActor: ActorRef,
+class ManagementResources(val managementActor: ActorRef,
                           testDataSettings: TestDataSettings,
                           val processAuthorizer: AuthorizeProcess,
                           val processRepository: FetchingProcessRepository[Future],
                           deploymentCommentSettings: Option[DeploymentCommentSettings],
-                          processResolving: UIProcessResolving,
                           processService: ProcessService,
-                          metricRegistry: MetricRegistry)
+                          metricRegistry: MetricRegistry,
+                          scenarioTestService: ScenarioTestService,
+                         )
                          (implicit val ec: ExecutionContext, mat: Materializer, system: ActorSystem)
   extends Directives
     with LazyLogging
@@ -121,6 +115,8 @@ class ManagementResources(processCounter: ProcessCounter,
     with FailFastCirceSupport
     with AuthorizeProcessDirectives
     with ProcessDirectives {
+
+  import ManagementResources._
 
   //TODO: in the future we could use https://github.com/akka/akka-http/pull/1828 when we can bump version to 10.1.x
   private val durationFromConfig = system.settings.config.getDuration("akka.http.server.request-timeout")
@@ -211,9 +207,14 @@ class ManagementResources(processCounter: ProcessCounter,
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    performTest(idWithCategory, testData, displayableProcessJson).flatMap { results =>
-                      Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                    }.recover(EspErrorToHttp.errorToHttp)
+                    parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                      case Right(displayableProcess) =>
+                        scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
+                          Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                        }.recover(EspErrorToHttp.errorToHttp)
+                      case Left(error) =>
+                        Future.failed(UnmarshallError(error.toString))
+                    }
                   }
                 }
               }
@@ -248,39 +249,6 @@ class ManagementResources(processCounter: ProcessCounter,
   private def toHttpResponse[A: Encoder](a: A)(code: StatusCode): Future[HttpResponse] =
     Marshal(a).to[MessageEntity].map(en => HttpResponse(entity = en, status = code))
 
-  private def performTest(idWithCategory: ProcessIdWithNameAndCategory, testData: Array[Byte], displayableProcessJson: String)(implicit user: LoggedUser): Future[ResultsWithCounts] = {
-    parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
-      case Right(process) =>
-        val validationResult = processResolving.validateBeforeUiResolving(process, idWithCategory.category)
-        val canonical = processResolving.resolveExpressions(process, validationResult.typingInfo)
-        (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, TestData(testData, testDataSettings.maxSamplesCount), user, ManagementResources.testResultsVariableEncoder)).mapTo[TestResults[Json]].flatMap { results =>
-          assertTestResultsAreNotTooBig(results)
-        }.map { results =>
-          ResultsWithCounts(ManagementResources.testResultsEncoder(results), computeCounts(canonical, results))
-        }
-      case Left(error) =>
-        Future.failed(UnmarshallError(error.toString))
-    }
-  }
-
-  private def assertTestResultsAreNotTooBig(testResults: TestResults[Json]): Future[TestResults[Json]] = {
-    val resultsMaxBytes = testDataSettings.resultsMaxBytes
-    val testDataResultApproxByteSize = RamUsageEstimator.sizeOf(testResults)
-    if (testDataResultApproxByteSize > resultsMaxBytes) {
-      logger.info(s"Test data limit exceeded. Approximate test data size: $testDataResultApproxByteSize, but limit is: $resultsMaxBytes")
-      Future.failed(new RuntimeException("Too much test data. Please decrease test input data size."))
-    } else {
-      Future.successful(testResults)
-    }
-  }
-
-  private def computeCounts(canonical: CanonicalProcess, results: TestResults[_]): Map[String, NodeCount] = {
-    val counts = results.nodeResults.map { case (key, nresults) =>
-      key -> RawCount(nresults.size.toLong, results.exceptions.find(_.nodeId.contains(key)).size.toLong)
-    }
-    processCounter.computeCounts(canonical, counts.get)
-  }
-
   private def convertSavepointResultToResponse(future: Future[Any]) = {
     future
       .mapTo[SavepointResult]
@@ -288,5 +256,3 @@ class ManagementResources(processCounter: ProcessCounter,
       .recover(EspErrorToHttp.errorToHttp)
   }
 }
-
-@JsonCodec case class ResultsWithCounts(results: Json, counts: Map[String, NodeCount])

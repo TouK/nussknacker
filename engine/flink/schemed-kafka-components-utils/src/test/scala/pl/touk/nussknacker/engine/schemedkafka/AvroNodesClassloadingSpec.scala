@@ -46,7 +46,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
         scenario.nodes.head.data.asInstanceOf[Source]) shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
 
       intercept[IllegalArgumentException] {
-        new TestDataPreparer(modelData).prepareDataForTest(scenario, TestData.newLineSeparated())
+        new TestDataPreparer(modelData).prepareDataForTest(scenario, TestData(Nil))
       }.getMessage.contains("InvalidPropertyFixedValue") shouldBe true
     }
   }

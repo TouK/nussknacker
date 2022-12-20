@@ -1,13 +1,12 @@
 package pl.touk.nussknacker.streaming.embedded
 
 import io.circe.Json.{fromInt, fromString, obj}
+import org.scalatest.OptionValues
 import pl.touk.nussknacker.engine.api.ProcessVersion
-import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.runtimecontext.IncContextIdGenerator
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.definition.ModelDataTestInfoProvider
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, User}
@@ -15,10 +14,13 @@ import pl.touk.nussknacker.engine.embedded.EmbeddedStateStatus.DetailedFailedSta
 import pl.touk.nussknacker.engine.graph.node.Source
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.spel.Implicits._
+import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
+import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
 import scala.jdk.CollectionConverters.mapAsJavaMapConverter
 
-class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest {
+class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest
+  with OptionValues with EitherValuesDetailedMessage {
 
   test("Deploys scenario and cancels") {
     val fixture@FixtureParam(manager, _, inputTopic, outputTopic) = prepareFixture()
@@ -181,6 +183,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
         |""".stripMargin
 
     val FixtureParam(manager, modelData, inputTopic, outputTopic) = prepareFixture(jsonSchema = schema)
+    val testInfoProvider = new ModelDataTestInfoProvider(modelData)
 
     def message(input: String) = obj("message" -> fromString(input)).noSpaces
 
@@ -195,8 +198,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
 
-    val testData = TestData(new ModelDataTestInfoProvider(modelData).generateTestData(scenario.metaData,
-        scenario.nodes.head.data.asInstanceOf[Source], 2).get, 2)
+    val testData = testInfoProvider.generateTestData(scenario.metaData, scenario.nodes.head.data.asInstanceOf[Source], 2).value
 
     val results = wrapInFailingLoader {
       manager.test(name, scenario, testData, identity[Any]).futureValue

@@ -1,9 +1,10 @@
 package pl.touk.nussknacker.engine.kafka.signal
 
+import io.circe.Json
 import org.scalatest.{BeforeAndAfterEach, Inside}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
 import pl.touk.nussknacker.engine.kafka.KafkaSpec
@@ -24,7 +25,7 @@ class KafkaSignalInTestSpec extends AnyFunSuite with Matchers with Inside with B
         .processorEnd("out", "logService", "all" -> "#input")
 
     val modelData = LocalModelData(config, new KafkaSignalsCreator(Nil))
-    val testData = TestData.newLineSeparated("0|1|2|3|4|5|6")
+    val testData = TestData(List(TestRecord(Json.fromString("0|1|2|3|4|5|6"))))
 
     val results = ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
       FlinkTestMain.run(modelData, process, testData, FlinkTestConfiguration.configuration(), identity)

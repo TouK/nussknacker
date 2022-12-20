@@ -4,6 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
+import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -12,15 +13,21 @@ import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCol
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import shapeless.syntax.typeable._
 
+
 trait TestInfoProvider {
 
   def getTestingCapabilities(metaData: MetaData, source: Source) : TestingCapabilities
 
-  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[Array[Byte]]
+  // TODO multiple-sources-test: return ScenarioTestData; replace source with scenario.
+  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[TestData]
 
 }
 
 @JsonCodec case class TestingCapabilities(canBeTested: Boolean, canGenerateTestData: Boolean)
+
+object TestingCapabilities {
+  val Disabled: TestingCapabilities = TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+}
 
 class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider with LazyLogging {
 
@@ -37,12 +44,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[Array[Byte]] =
+  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[TestData] =
     prepareSourceObj(source)(metaData).flatMap(_.cast[TestDataGenerator]).map(_.generateTestData(size))
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)
-    implicit val runNode: ComponentUseCase = ComponentUseCase.TestDataGeneration
     nodeCompiler.compileSource(source).compiledObject.toOption
   }
 

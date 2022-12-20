@@ -12,7 +12,7 @@ import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.process.ContextInitializer
 import pl.touk.nussknacker.engine.api.runtimecontext.{ContextIdGenerator, EngineRuntimeContext}
-import pl.touk.nussknacker.engine.api.test.{TestData, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{Context, NodeId}
 import pl.touk.nussknacker.engine.flink.api.compat.ExplicitUidInOperatorsSupport
 import pl.touk.nussknacker.engine.flink.api.exception.ExceptionHandler
@@ -65,8 +65,11 @@ class FlinkKafkaSource[T](preparedTopics: List[PreparedKafkaTopic],
   }
 
   //Flink implementation of testing uses direct output from testDataParser, so we perform deserialization here, in contrast to Lite implementation
-  override def testDataParser: TestDataParser[T] = (merged: TestData) =>
-    formatter.parseDataForTest(topics, merged.testData).map(deserializationSchema.deserialize)
+  override def testRecordParser: TestRecordParser[T] = (testRecord: TestRecord) => {
+    //TODO: we assume parsing for all topics is the same
+    val topic = topics.head
+    deserializationSchema.deserialize(formatter.parseRecord(topic, testRecord))
+  }
 
   override def timestampAssignerForTest: Option[TimestampWatermarkHandler[T]] = timestampAssigner
 

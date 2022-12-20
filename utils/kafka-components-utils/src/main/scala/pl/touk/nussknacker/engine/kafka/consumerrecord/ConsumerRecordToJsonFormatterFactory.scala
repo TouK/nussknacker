@@ -4,7 +4,7 @@ import io.circe.generic.extras.semiauto.{deriveConfiguredDecoder, deriveConfigur
 import io.circe.{Decoder, Encoder}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 
@@ -32,11 +32,11 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     * Step 1: Deserialize raw kafka event to [K, V] domain.
     * Step 2: Use provided K,V Encoders to convert event's data to json with derived encoder.
     */
-  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = {
+  override protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord = {
     val deserializedRecord = kafkaSourceDeserializationSchema.deserialize(record)
     val serializableRecord = SerializableConsumerRecord(deserializedRecord)
     val consumerRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
-    consumerRecordEncoder(serializableRecord).noSpaces.getBytes(StandardCharsets.UTF_8)
+    TestRecord(consumerRecordEncoder(serializableRecord))
   }
 
   /**
@@ -44,16 +44,14 @@ class ConsumerRecordToJsonFormatter[K:Encoder:Decoder, V:Encoder:Decoder](kafkaS
     * Step 2: Use provided K,V Encoders to create key-value-to-bytes interpreter.
     * Step 3: Use interpreter to create raw kafka ConsumerRecord
     */
-  override protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] = {
+  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
     val consumerRecordDecoder: Decoder[SerializableConsumerRecord[K, V]] = deriveConfiguredDecoder[SerializableConsumerRecord[K, V]]
-    val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(bytes)(consumerRecordDecoder)
+    val serializableConsumerRecord = CirceUtil.decodeJsonUnsafe(testRecord.json)(consumerRecordDecoder)
     def serializeKeyValue(keyOpt: Option[K], value: V): (Array[Byte], Array[Byte]) = {
       (keyOpt.map(serialize[K]).orNull, serialize[V](value))
     }
     serializableConsumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
-
-  override protected def testDataSplit: TestDataSplit = TestParsingUtils.newLineSplit
 
   private def serialize[T: Encoder](data: T): Array[Byte] = {
     val json = Encoder[T].apply(data)

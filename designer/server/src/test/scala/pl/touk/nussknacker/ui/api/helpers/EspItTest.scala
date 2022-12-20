@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil.humanReadablePrinter
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider}
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.{BaseModelData, ModelData, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -39,6 +40,7 @@ import pl.touk.nussknacker.ui.process.processingtypedata.{DefaultProcessingTypeD
 import pl.touk.nussknacker.ui.process.repository.ProcessRepository.CreateProcessAction
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.DbSubprocessRepository
+import pl.touk.nussknacker.ui.process.test.{ScenarioTestDataSerDe, ScenarioTestService}
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.util.ConfigWithScalaVersion
@@ -46,14 +48,14 @@ import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
 import java.net.URI
-import java.time
+import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions { self: ScalatestRouteTest with Suite with BeforeAndAfterEach with Matchers with ScalaFutures =>
 
+  import ProcessesQueryEnrichments.RichProcessesQuery
   import TestCategories._
   import TestProcessingTypes._
-  import ProcessesQueryEnrichments.RichProcessesQuery
 
   protected implicit val processCategoryService: ProcessCategoryService = new ConfigProcessCategoryService(testConfig)
 
@@ -112,6 +114,8 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected val processService: DBProcessService = createDBProcessService(managementActor)
 
+  protected val scenarioTestService: ScenarioTestService = createScenarioTestService(testModelDataProvider.mapValues(new ModelDataTestInfoProvider(_)))
+
   protected val configProcessToolbarService = new ConfigProcessToolbarService(testConfig, processCategoryService.getAllCategories)
 
   protected val processesRoute = new ProcessesResources(
@@ -139,21 +143,24 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     deploymentService), "management")
 
   protected def createDBProcessService(managerActor: ActorRef): DBProcessService =
-    new DBProcessService(managerActor, time.Duration.ofMinutes(1), newProcessPreparer,
+    new DBProcessService(managerActor, 1 minute, newProcessPreparer,
       processCategoryService, processResolving, repositoryManager, fetchingProcessRepository,
       actionRepository, writeProcessRepository, processValidation
     )
 
+  protected def createScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfoProvider]): ScenarioTestService =
+    new ScenarioTestService(testInfoProviders, featureTogglesConfig.testDataSettings, new ScenarioTestDataSerDe(featureTogglesConfig.testDataSettings),
+      processResolving, new ProcessCounter(TestFactory.prepareSampleSubprocessRepository), managementActor, 1 minute)
+
   protected def deployRoute(deploymentCommentSettings: Option[DeploymentCommentSettings] = None) = new ManagementResources(
-    processCounter = new ProcessCounter(TestFactory.prepareSampleSubprocessRepository),
     managementActor = managementActor,
     processAuthorizer = processAuthorizer,
     processRepository = fetchingProcessRepository,
     deploymentCommentSettings = deploymentCommentSettings,
-    processResolving = processResolving,
     processService = processService,
     testDataSettings = TestDataSettings(5, 1000, 100000),
-    metricRegistry = new MetricRegistry
+    metricRegistry = new MetricRegistry,
+    scenarioTestService = scenarioTestService,
   )
 
   protected def createDeploymentManager(): MockDeploymentManager = new MockDeploymentManager

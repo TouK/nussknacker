@@ -1,35 +1,29 @@
 package pl.touk.nussknacker.engine.kafka
 
+import io.circe.Json
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.{TestDataSplit, TestParsingUtils}
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+
+import java.nio.charset.StandardCharsets
 
 /**
-  * It is interface for bi-directional conversion between Kafka record and bytes. It is used when data
+  * It is interface for bi-directional conversion between Kafka record and [[TestRecord]]. It is used when data
   * stored on topic aren't in human readable format and you need to add extra step in generation of test data
   * and in reading of these data.
   */
 trait RecordFormatter extends Serializable {
 
-  protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte]
+  protected def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord
 
-  protected def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]]
+  def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
-  protected def testDataSplit: TestDataSplit
-
-  def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): Array[Byte] = {
-    testDataSplit.joinData(records.map(formatRecord))
+  def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
+    TestData(records.map(formatRecord))
   }
 
-  def parseDataForTest(topics: List[String], mergedData: Array[Byte]): List[ConsumerRecord[Array[Byte], Array[Byte]]] = {
-    //TODO: we assume parsing for all topics is the same
-    val topic = topics.head
-    testDataSplit.splitData(mergedData).map { formatted =>
-      parseRecord(topic, formatted)
-    }
-  }
-
-  def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): Array[Byte] = {
+  def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
@@ -37,18 +31,16 @@ trait RecordFormatter extends Serializable {
 
 }
 
-case class BasicRecordFormatter(override val testDataSplit: TestDataSplit) extends RecordFormatter {
+object BasicRecordFormatter extends RecordFormatter {
 
-  override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): Array[Byte] = record.value()
+  override def formatRecord(record: ConsumerRecord[Array[Byte], Array[Byte]]): TestRecord =
+    TestRecord(Json.fromString(new String(record.value(), StandardCharsets.UTF_8)))
 
-  override def parseRecord(topic: String, bytes: Array[Byte]): ConsumerRecord[Array[Byte], Array[Byte]] =
-    new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), bytes)
+  override def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]] = {
+    val stringRecord = CirceUtil.decodeJsonUnsafe[String](testRecord.json)
+    new ConsumerRecord[Array[Byte], Array[Byte]](topic, 0, 0L, Array[Byte](), stringRecord.getBytes(StandardCharsets.UTF_8))
+  }
 
-}
-
-object BasicRecordFormatter {
-  def apply(): BasicRecordFormatter =
-    BasicRecordFormatter(TestParsingUtils.newLineSplit)
 }
 
 trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Source with SourceTestSupport[_] =>
@@ -59,6 +51,6 @@ trait RecordFormatterBaseTestDataGenerator extends TestDataGenerator { self: Sou
 
   protected def formatter: RecordFormatter
 
-  override def generateTestData(size: Int): Array[Byte] = formatter.generateTestData(topics, size, kafkaConfig)
+  override def generateTestData(size: Int): TestData = formatter.generateTestData(topics, size, kafkaConfig)
 
 }

@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.Json
 import org.everit.json.schema.Schema
 import pl.touk.nussknacker.engine.api.process.SourceTestSupport
-import pl.touk.nussknacker.engine.api.test.{NewLineSplittedTestDataParser, TestDataParser}
+import pl.touk.nussknacker.engine.api.test.{TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.{ReturningType, typing}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, NodeId}
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
@@ -41,12 +41,8 @@ class JsonSchemaRequestResponseSource(val definition: String, metaData: MetaData
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(inputSchema).typingResult
   }
 
-  override def testDataParser: TestDataParser[Any] = {
-    new NewLineSplittedTestDataParser[Any] {
-      override def parseElement(testElement: String): Any = {
-        validateAndReturnTypedMap(testElement)
-      }
-    }
+  override def testRecordParser: TestRecordParser[Any] = (testRecord: TestRecord) => {
+    validateAndReturnTypedMap(testRecord.json.noSpaces)
   }
 
   override def responseEncoder: Option[ResponseEncoder[Any]] = Option(new SchemaResponseEncoder(outputSchema))

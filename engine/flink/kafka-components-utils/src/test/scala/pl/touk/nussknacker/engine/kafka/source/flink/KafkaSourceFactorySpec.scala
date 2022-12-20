@@ -12,7 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.api.{MetaData, StreamMetaData, VariableConstants}
 import pl.touk.nussknacker.engine.flink.api.process.FlinkSourceTestSupport
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.api.test.TestData
 import pl.touk.nussknacker.engine.kafka.KafkaFactory.TopicParamName
 import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactory, GenericTypedJsonSourceFactory}
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerializationSchema, SimpleSerializationSchema}
@@ -33,8 +32,8 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
 
   private def readLastMessage(sourceFactory: KafkaSourceFactory[Any, Any], topic: String, numberOfMessages: Int = 1): List[AnyRef] = {
     val source = createSource(sourceFactory, topic)
-    val bytes = source.generateTestData(numberOfMessages)
-    source.testDataParser.parseTestData(TestData(bytes, numberOfMessages))
+    val testData = source.generateTestData(numberOfMessages)
+    testData.testRecords.map(source.testRecordParser.parse)
   }
 
   private def createSource[K, V](sourceFactory: KafkaSourceFactory[K, V], topic: String): Source with TestDataGenerator with FlinkSourceTestSupport[ConsumerRecord[K, V]] with ReturningType = {
@@ -162,10 +161,9 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
     def generatedForSource[K, V](sourceFactory: KafkaSourceFactory[K, V]): List[V] = {
       val source = createSource(sourceFactory, topic)
 
-      val data = source.generateTestData(2)
+      val testData = source.generateTestData(2)
 
-      val parsed = source.testDataParser.parseTestData(TestData(data, 2))
-      parsed.map(_.value())
+      testData.testRecords.map(source.testRecordParser.parse).map(_.value())
     }
 
     generatedForSource(new GenericJsonSourceFactory(processObjectDependencies)) shouldBe
