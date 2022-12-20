@@ -46,7 +46,6 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
-import java.lang.Thread.UncaughtExceptionHandler
 import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
@@ -273,6 +272,8 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
     JavaClassVersionChecker.check()
     SLF4JBridgeHandlerRegistrar.register()
+    //we prepare temporary ExceptionHandler to shutdown actorSystem in case of exception during creation
+    prepareUncaughtExceptionHandler(Nil)
 
     val db = initDb(config)
     val metricsRegistry = new MetricRegistry
@@ -282,10 +283,8 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
 
-
     //JmxReporter does not allocate resources, safe to close
     JmxReporter.forRegistry(metricsRegistry).build().start()
-
 
     SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
@@ -339,11 +338,9 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
   private def prepareUncaughtExceptionHandler(objectsToClose: Iterable[AutoCloseable]): Unit = {
     //TODO: should we set it only on main thread?
-    Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
-      override def uncaughtException(t: Thread, e: Throwable): Unit = {
-        logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
-        closeAndShutdownAll(objectsToClose)
-      }
+    Thread.currentThread().setUncaughtExceptionHandler((t: Thread, e: Throwable) => {
+      logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+      closeAndShutdownAll(objectsToClose)
     })
   }
 
