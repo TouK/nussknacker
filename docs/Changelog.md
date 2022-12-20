@@ -2,6 +2,7 @@
 # Changelog
 1.8.0 (Not released yet)
 * [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled). 
+* [#3819](https://github.com/TouK/nussknacker/pull/3819) - Handle JSON Schema refs in sinks
 
 1.7.0 (Not released yet)
 ------------------------
