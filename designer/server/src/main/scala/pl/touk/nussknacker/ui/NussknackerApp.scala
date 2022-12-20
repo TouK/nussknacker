@@ -48,6 +48,7 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
+import java.util.concurrent.TimeUnit
 import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
