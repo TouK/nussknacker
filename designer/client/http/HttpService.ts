@@ -415,7 +415,7 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
   }
 
-  generateTestData(processId: string, testSampleSize: number, process: Process): Promise<AxiosResponse<any>> {
+  generateTestData(processId: string, testSampleSize: string, process: Process): Promise<AxiosResponse<any>> {
     const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeProcess(process), {responseType: "blob"})
     promise
       .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
