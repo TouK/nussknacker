@@ -3,21 +3,23 @@ sidebar_position: 3
 ---
 # Deployment Manager configuration
 
-Configuration of Deployment Manager, which is component of the Designer that deploys scenario to given Engine (e.g. Lite or Flink). 
-Type of Deployment Manager is defined with `type` parameter, e.g. for running scenarios with Flink streaming job we would configure: 
+Deployment Manager deploys scenarios from the Designer to the engine on which scenarios are processed. Check [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
+
+Below you can find a snippet of Deployment Manager configuration. 
 ```
 deploymentConfig {     
   type: "flinkStreaming"
   restUrl: "http://localhost:8081"
+  
   # additional configuration goes here
 }
 ```
+`type` parameter determines engine to which the scenario is deployed.The `type` parameter is set in both the minimal working configuration file (Docker image and binary distribution) and Helm chart - you will not need to set it on your won. 
 
-Look at [configuration areas](./#configuration-areas) to understand where Deployment Manager configuration should be placed in Nussknacker configuration.
-
+&nbsp;
 ## Kubernetes native Lite engine configuration
                                                                                 
-Please remember, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
+Please note, that K8s Deployment Manager has to be run with properly configured K8s access. If you install the Designer
 in K8s cluster (e.g. via Helm chart) this comes out of the box. If you want to run the Designer outside the cluster, you 
 have to configure `.kube/config` properly.
 
@@ -37,7 +39,8 @@ The table below contains configuration options for the Lite engine. If you insta
 | logbackConfigPath         | string                                              | {}                                 | see [below](#configuring-runtime-logging)                                                |
 | commonConfigMapForLogback | string                                              | {}                                 | see [below](#configuring-runtime-logging)                                                |
 | servicePort               | int                                                 | 80                                 | (Request-Response only) Port of service exposed                                          |
-                                                 
+
+&nbsp;                                                 
 ### Customizing K8s deployment resource definition
 
 By default, each scenario creates K8s Deployment. By default, Nussknacker will create following deployment:
@@ -142,7 +145,8 @@ spec {
 ```
 This config will be merged into the final K8s deployment resource definition. 
 Please note that you cannot override names or labels configured by Nussknacker. 
-                              
+
+&nbsp;                              
 ### Overriding configuration passed to runtime. 
 
 In most cases, the model configuration values passed to the Lite Engine runtime are the ones from 
@@ -165,23 +169,26 @@ modelConfig {
 }
 ```
 
+&nbsp;
 ### Configuring replicas count
 
-Each scenario has its own, configured parallelism. It describes how many worker threads,
-across all replicas, should be used to process events. With `scalingConfig` one can affect replicas count 
-(each replica receives the same number of worker threads).
-Following options are possible:
-- ```{ fixedReplicasCount: x }```  
-- ```{ tasksPerReplica: y }```
-- by default `tasksPerReplica: 4`
+​In the **Request-Response** processing mode you can affect the count of scenario pods (replicas) by setting fixedReplicasCount configuration key; its default value is 2:
 
-Please note that:
-- it's not possible to set both config options at the same time
-- for `request-response` processing mode only `fixedReplicasCount` is available
-- due to rounding, exact workers count may be different from parallelism 
-  (e.g. for fixedReplicasCount = 3, parallelism = 5, there will be 2 tasks per replica, total workers = 6)  
+`{ fixedReplicasCount: x }`.
+
+​In the  **Streaming** processing mode the scenario parallelism is set in the scenario properties; it determines the minimal number of tasks used to process events.  The count of replicas, scenario parallelism and number of tasks per replica are connected with a simple formula:
+
+*scenarioParallelism = replicasCount * tasksPerReplica*
+
+If you do not change any settings, the number of replicas in the K8s deployment will be set to the ceiling (scenarioParallelism / tasksPerReplica); the default value of 4 will be used for tasksPerReplica.
+Alternatively, you can affect the number of replicas  in the following ways:
+- modify the default value of tasksPerReplica by setting { tasksPerReplica: y }; the number of replicas will be computed as before as ceiling (scenarioParallelism / tasksPerReplica)
+- set fixedReplicasCount directly. The number of tasksPerReplica will be set to the ceiling (scenarioParallelism / fixedReplicaCounts. You cannot use this setting together with tasksPerReplica setting. 
 
 
+Due to rounding, the number of tasks may be different from scenario parallelism (e.g. for `fixedReplicasCount = 3`, scenario parallelism = 5, there will be 2 tasks per replica, total tasks = 6)
+
+&nbsp;
 ### Nussknacker instance name
 Value of `nussknackerInstanceName` will be passed to scenario runtime pods as a `nussknacker.io/nussknackerInstanceName` Kubernetes label.
 In a standard scenario, its value is taken from Nussknacker's pod `app.kubernetes.io/instance` label which, when installed
@@ -189,15 +196,18 @@ using helm should be set to [helm release name](https://helm.sh/docs/chart_best_
 
 It can be used to identify scenario deployments and its resources bound to a specific Nussknacker helm release.
 
+&nbsp;
 ### Configuring runtime logging
 With `logbackConfigPath` you can provide path to your own logback config file, which will be used by runtime containers. This configuration is optional, if skipped default logging configuration will be used. 
 Please mind, that apart whether you will provide your own logging configuration or use default, you can still modify it in runtime (for each scenario deployment separately*) as described [here](../operations_guide/Lite#logging-level)
 
 *By default, every scenario runtime has its own separate configMap with logback configuration. By setting `commonConfigMapForLogback` you can enforce usage of single configMap (with such name as configured) with logback.xml for all your runtime containers. Take into account, that DeploymentManager relinquishes control over lifecycle of this ConfigMap (with one exception - it will create it, if not exist).
 
+&nbsp;
 ### Configuring Prometheus metrics
 Just like in [Designer installation](./Installation.md#Basic environment variables), you can attach [JMX Exporter for Prometheus](https://github.com/prometheus/jmx_exporter) to your runtime pods. Pass `PROMETHEUS_METRICS_PORT` environment variable to enable agent, and simultaneously define port on which metrics will be exposed. By default, agent is configured to expose basic jvm metrics, but you can provide your own configuration file by setting `PROMETHEUS_AGENT_CONFIG_FILE` environment, which has to point to it.   
 
+&nbsp;
 ## Embedded Lite engine
 
 Deployment Manager of type `lite-embedded` has the following configuration options:

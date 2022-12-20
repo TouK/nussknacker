@@ -6,8 +6,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
-import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerEnumOfVariousTypes, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, Unknown}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
@@ -217,30 +217,23 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(onlyEnumSchema).typingResult shouldBe enumType
   }
 
-  test("should type enum of types other than *only string* to Unknown") {
-    Table(
-      """{"enum": ["one", "two", "three", 4, "5"]}""".stripMargin,
-      """{"enum": ["one", null]}""".stripMargin,
-      """{"enum": [1,2,3]}""".stripMargin,
-      """{"enum": [ {"a": 1}, "b" ]}""".stripMargin,
-      """
-        |{
-        |  "type": "string",
-        |  "enum": ["red", "amber", "green", {"a": 1}, 42]
-        |}
-        |""".stripMargin,
-      """
-        |{
-        |  "type": "integer",
-        |  "enum": ["red", "amber", "green"]
-        |}
-        |""".stripMargin,
-    ).forEvery { schemaString =>
-      val schema = JsonSchemaBuilder.parseSchema(schemaString)
-      val swaggerTyped = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema)
-      swaggerTyped shouldBe SwaggerEnumOfVariousTypes
-      swaggerTyped.typingResult shouldBe Unknown
-    }
+  test("should support enums of various types") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{"enum": ["one", 2, 3.3, {"four": {"four": 4}, "arr": [4]}, ["five", 5, {"five" : 5}], true, null]}"""
+    )
+    import collection.JavaConverters._
+
+    val expected = Typed(Set(
+      Typed.fromInstance("one"),
+      Typed.fromInstance(2),
+      Typed.fromInstance(3.3),
+      Typed.fromInstance(Map("four" -> Map("four" -> 4).asJava, "arr" -> List(4).asJava).asJava),
+      Typed.fromInstance(List("five", 5, Map("five" -> 5).asJava).asJava),
+      Typed.fromInstance(true),
+      TypedNull
+    ))
+
+    SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult shouldBe expected
   }
 
   test("should support nested schema") {
