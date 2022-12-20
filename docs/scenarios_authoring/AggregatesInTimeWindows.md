@@ -76,7 +76,7 @@ The sliding, tumbling and session window components differ among themselves not 
 
 When the time window is closed, tumbling and session window nodes generate a new event containing an aggregate. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw. These nodes 'terminate' the events which entered them; consequently all the variables defined before the node (including `#input` and #inputMeta`) will not be available downstream. The sliding-window behaves in the same way in its **non-default** configuration when parameter `emitWhenEventLeft` is set to `true`. 
 
-A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. Because the original events are still available downstream, the #input and #inputMeta variables will be available 'downstream'.
+A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. Because the original events are still available downstream, the `#input` and `#inputMeta` variables will be available 'downstream'.
 
 A new #key variable will be available 'downstream' in all cases.
 
