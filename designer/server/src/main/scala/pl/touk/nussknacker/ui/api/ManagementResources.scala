@@ -207,7 +207,7 @@ class ManagementResources(val managementActor: ActorRef,
                   HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
                 } else {
                   measureTime("test", metricRegistry) {
-                    parser.parse(displayableProcessJson).right.flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                    parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                       case Right(displayableProcess) =>
                         scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
                           Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))

@@ -18,7 +18,7 @@ object CirceUtil {
 
 
   def decodeJson[T: Decoder](json: String): Either[circe.Error, T]
-  = io.circe.parser.parse(json).right.flatMap(Decoder[T].decodeJson)
+  = io.circe.parser.parse(json).flatMap(Decoder[T].decodeJson)
 
   def decodeJson[T: Decoder](json: Array[Byte]): Either[circe.Error, T] = decodeJson(new String(json, StandardCharsets.UTF_8))
 
