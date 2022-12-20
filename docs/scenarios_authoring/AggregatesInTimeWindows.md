@@ -15,6 +15,18 @@ Regardless of the window type used, events are grouped into windows based on the
 Nussknacker implements 3 types of time windows - tumbling, sliding and session windows. Our implementation of the sliding window is different from the way the sliding window is defined in Flink - so bear in mind the differences. This [blog post](https://dev.to/frosnerd/window-functions-in-stream-analytics-1m6c) has a nice explanation and visualization of time windows; the sliding window described in this blog post is close to our implementation of the sliding window. While explaining how to use Nussknacker components performing computations in time windows, we will focus on Nussknacker features rather than explanation of differences between windows types.
 
 
+## Common behavior
+
+The sliding, tumbling and session window components differ among themselves not only in the way the time window is defined. A second key aspect which differentiates these components is how they `transform' input events into aggregate. This transformation can be either creation of a new (aggregate) event or an enrichment of incoming events with the value of the aggregate.  
+
+A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. If there were no aggregates "upstream" which terminated the events which entered scenario, the  events which entered the scenario will still be available downstream. As the variables are "attached" to the events, the `#input` and `#inputMeta` variables will be also available 'downstream'. 
+
+Tumbling and session window nodes behave differently - they generate a new event containing an aggregate when the time window is closed. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw. These nodes 'terminate' the events which entered them; consequently all the variables defined before the node (including `#input` and `#inputMeta`) will not be available downstream. The sliding-window behaves in the same way in its **non-default** configuration when parameter `emitWhenEventLeft` is set to `true` - it terminates events entering the aggregation node, emits the aggregate event when window is closed. 
+
+Two additional new variables will always be available 'downstream' of the aggregate node see [common parameters](#common-parameters) for details:
+- a variable containing result of the aggregation
+- `#key` variable 
+
 ## Data used in the following examples
 
 Our imaginary banking application emits several events per each transaction. The data stream contains the following events:
@@ -69,17 +81,6 @@ The result of the `groupBy` expression must be of type String.
 | `#input.subscriberId +'-'+ #input.operation` | `#input.value` | Max | <p> 500  </p> <p> 5000  </p> <p> 200  </p> | <p> '1-RECHARGE' </p> <p>  '1-TRANSFER' </p> <p> '2-RECHARGE' </p> 
 
 *result is held in the variable configured in the `output` field.
-
-## Common behavior
-
-The sliding, tumbling and session window components differ among themselves not only in the way the time window is defined. A second key aspect which differentiates these components is how they `transform' input events into aggregate. This transformation can be either creation of a new (aggregate) event or an enrichment of incoming events with the value of the aggregate.  
-
-When the time window is closed, tumbling and session window nodes generate a new event containing an aggregate. Its timestamp is equal to the time of the timer that generated it, not system time of the moment when it happened. In other words the timestamp of the newly generated event which contains the aggregate will continue to use the notion of time used by events which the aggregate window saw. These nodes 'terminate' the events which entered them; consequently all the variables defined before the node (including `#input` and #inputMeta`) will not be available downstream. The sliding-window behaves in the same way in its **non-default** configuration when parameter `emitWhenEventLeft` is set to `true`. 
-
-A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. Because the original events are still available downstream, the `#input` and `#inputMeta` variables will be available 'downstream'.
-
-A new `#key` variable will be available 'downstream' in all cases.
-
 
 ## Tumbling-window
 
