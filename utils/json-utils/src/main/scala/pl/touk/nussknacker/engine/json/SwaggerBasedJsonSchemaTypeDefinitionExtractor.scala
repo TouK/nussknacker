@@ -22,7 +22,7 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
   // Extensions are all redundant elements in schema. This mechanism will work onl for limited usages,
   // some constructions described here: http://json-schema.org/understanding-json-schema/structuring.html
   // like anchors, recursive schemas, nested relative schemas won't work.
-  def collectSchemaDefs(everitSchema: Schema) = {
+  private def collectSchemaDefs(everitSchema: Schema) = {
     val schema = OpenAPISchemaParser.parseSchema(everitSchema.toString)
     Option(schema.getExtensions).map(_.asScala.collect {
       case (extKey, extNode: util.Map[String@unchecked, _]) =>

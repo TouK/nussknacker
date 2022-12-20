@@ -310,10 +310,10 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}
         |""".stripMargin)
-    encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, schema, None) shouldBe 'valid
-    encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, schema, None) shouldBe 'valid
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe 'valid
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe 'valid
     encoder.encodeWithJsonValidation(Collections.singletonMap("field",
-      Collections.emptyMap()), schema, schema, None) shouldBe invalid("Not expected type: {} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
+      Collections.emptyMap()), schema, None) shouldBe invalid("Not expected type: {} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
 
   }
 

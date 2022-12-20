@@ -25,7 +25,7 @@ object BestEffortJsonSchemaEncoder {
   private val highPriority: PartialFunction[EncodeInput, EncodeOutput] = Map()
 
   final def encodeOrError(value: Any, schema: Schema): Json = {
-    encodeWithJsonValidation(value, schema, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
+    encodeWithJsonValidation(value, schema).valueOr(errors => throw new RuntimeException(errors.toList.mkString(",")))
   }
 
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
@@ -39,31 +39,31 @@ object BestEffortJsonSchemaEncoder {
       case (fieldName, None, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
         error(s"Missing property: $fieldName for schema: $parentSchema.")
       case (fieldName, Some(value), Some(schema)) =>
-        encode(value, schema, parentSchema, Some(fieldName)).map(fieldName -> _)
+        encode(value, schema, Some(fieldName)).map(fieldName -> _)
       case (fieldName, _, None) if !parentSchema.permitsAdditionalProperties() =>
         error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
       case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
-        case Some(additionalPropertySchema) => encode(value, additionalPropertySchema, parentSchema).map(fieldName -> _)
+        case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
         case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
       }
     }.sequence.map { values => Json.fromFields(values) }
   }
 
-  private def encodeCollection(collection: Traversable[_], schema: ArraySchema, parentSchema: Schema): EncodeOutput = {
-    collection.map(el => encode(el, schema.getAllItemSchema, parentSchema)).toList.sequence.map(l => Json.fromValues(l))
+  private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
+    collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
   }
 
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
-    val (value, schema, parentSchema, fieldName) = input
+    val (value, schema, fieldName) = input
     (schema, value) match {
       case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
       case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
-      case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema, parentSchema)
-      case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema, parentSchema)
-      case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, parentSchema, fieldName)).find(_.isValid)
+      case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema)
+      case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema)
+      case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(value, cs.toString, fieldName))
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
-      case (ref: ReferenceSchema, value: Any) => encodeBasedOnSchema(value, ref.getReferredSchema, parentSchema, fieldName)
+      case (ref: ReferenceSchema, value: Any) => encodeBasedOnSchema(value, ref.getReferredSchema, fieldName)
       case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, nm, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Double) => Valid(jsonEncoder.encode(value))
@@ -131,8 +131,8 @@ object BestEffortJsonSchemaEncoder {
     Invalid(NonEmptyList.of(s"Not expected type: ${runtimeType.withoutValue.display} for field${fieldName.map(f => s": '$f'").getOrElse("")} with schema: $schema."))
   }
 
-  private[encode] def encodeWithJsonValidation(value: Any, schema: Schema, parentSchema: Schema = null, fieldName: Option[String] = None): EncodeOutput =
-    encode(value, schema, parentSchema, fieldName).andThen { result =>
+  private[encode] def encodeWithJsonValidation(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput =
+    encode(value, schema, fieldName).andThen { result =>
       val json = JsonSchemaUtils.circeToJson(result)
       schema
         .validateData(json)
@@ -140,8 +140,8 @@ object BestEffortJsonSchemaEncoder {
         .map(_ => result) //we return here base json (e.g. without felt defaults - there is no need to put these data as output, because json still is valid)
     }
 
-  private def encode(value: Any, schema: Schema, parentSchema: Schema, fieldName: Option[String] = None): EncodeOutput = {
-    optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, parentSchema, fieldName), encodeBasedOnSchema)
+  private def encode(value: Any, schema: Schema, fieldName: Option[String] = None): EncodeOutput = {
+    optionalEncoders.foldLeft(highPriority)(_.orElse(_)).applyOrElse[EncodeInput, EncodeOutput]((value, schema, fieldName), encodeBasedOnSchema)
   }
 
 }
