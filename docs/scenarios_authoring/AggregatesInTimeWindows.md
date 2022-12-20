@@ -78,7 +78,7 @@ When the time window is closed, tumbling and session window nodes generate a new
 
 A sliding-window in its default configuration (`emitWhenEventLeft` is set to `false`) enriches the incoming event with the value of the aggregate. Because the original events are still available downstream, the `#input` and `#inputMeta` variables will be available 'downstream'.
 
-A new #key variable will be available 'downstream' in all cases.
+A new `#key` variable will be available 'downstream' in all cases.
 
 
 ## Tumbling-window
