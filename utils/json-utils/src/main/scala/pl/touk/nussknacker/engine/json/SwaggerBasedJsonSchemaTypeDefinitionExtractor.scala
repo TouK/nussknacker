@@ -15,7 +15,9 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
 
   def swaggerType(schema: Schema, parentSchema: Option[Schema] = None): SwaggerTyped = {
     val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(schema.toString)
-    SwaggerTyped(deserializedSchema, collectSchemaDefs(parentSchema.getOrElse(schema)))
+    val refsFromParent = parentSchema.map(collectSchemaDefs).getOrElse(Map.empty)
+    val refsFromSchema = collectSchemaDefs(schema)
+    SwaggerTyped(deserializedSchema, refsFromParent ++ refsFromSchema)
   }
 
   // We extract schema definitions that can be used in refs using lowlevel schema extension mechanism.
