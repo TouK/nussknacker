@@ -7,6 +7,7 @@ import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromString, obj}
 import io.circe.syntax.EncoderOps
 import org.everit.json.schema.{NumberSchema, Schema, StringSchema}
+import org.scalatest.Inside.inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -128,6 +129,36 @@ class LiteRequestResponseFunctionalTest extends AnyFunSuite with Matchers with E
     result should matchPattern {
       case Invalid(NonEmptyList(ExpressionParserCompilationError(message, `sinkName`, Some("field"), _), Nil)) if message.startsWith("Bad expression type") =>
     }
+  }
+
+  test("should handle refs in sink") {
+    val refSchema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "item": {
+        |      "$ref": "#/defs/RefSchema"
+        |    }
+        |  },
+        |  "defs": {
+        |    "RefSchema": {
+        |      "type": "object",
+        |      "properties": {
+        |        "value": { "type": "string" }
+        |      }
+        |    }
+        |  }
+        |}""".stripMargin
+    )
+    val input = fromString("")
+    val scConfig = config(input, schemaStr, refSchema, SpecialSpELElement("{item: {value: #input}}"))
+    runWithResults(scConfig) shouldBe Valid(obj("item" -> obj("value" -> input)))
+
+    val invalidConfig = config(Null, schemaStr, refSchema, SpecialSpELElement("{item: {value: 11}}"))
+    inside(runWithResults(invalidConfig)) {
+      case Invalid(NonEmptyList(CustomNodeError(_, message, Some(SinkRawValueParamName)), Nil)) => message should include ("Provided value does not match")
+    }
+
   }
 
   test("should handle empty object in non-raw mode") {

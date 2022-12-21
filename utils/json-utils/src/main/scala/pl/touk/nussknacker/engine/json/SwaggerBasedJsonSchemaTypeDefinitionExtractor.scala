@@ -13,21 +13,19 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
 
   private val mapper: ObjectMapper = ObjectMapperFactory.createJson()
 
-  def swaggerType(schema: Schema): SwaggerTyped = {
+  def swaggerType(schema: Schema, parentSchema: Option[Schema] = None): SwaggerTyped = {
     val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(schema.toString)
-    swaggerType(deserializedSchema)
-  }
-
-  def swaggerType(schema: media.Schema[_]): SwaggerTyped = {
-    val refSchemas = collectSchemaDefs(schema)
-    SwaggerTyped(schema, refSchemas)
+    val refsFromParent = parentSchema.map(collectSchemaDefs).getOrElse(Map.empty)
+    val refsFromSchema = collectSchemaDefs(schema)
+    SwaggerTyped(deserializedSchema, refsFromParent ++ refsFromSchema)
   }
 
   // We extract schema definitions that can be used in refs using lowlevel schema extension mechanism.
   // Extensions are all redundant elements in schema. This mechanism will work onl for limited usages,
   // some constructions described here: http://json-schema.org/understanding-json-schema/structuring.html
   // like anchors, recursive schemas, nested relative schemas won't work.
-  private def collectSchemaDefs(schema: media.Schema[_]) = {
+  private def collectSchemaDefs(everitSchema: Schema) = {
+    val schema = OpenAPISchemaParser.parseSchema(everitSchema.toString)
     Option(schema.getExtensions).map(_.asScala.collect {
       case (extKey, extNode: util.Map[String@unchecked, _]) =>
         extNode.asScala.flatMap {
