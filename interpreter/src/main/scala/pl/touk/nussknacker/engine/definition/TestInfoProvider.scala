@@ -6,9 +6,11 @@ import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.{node, source}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
 import shapeless.syntax.typeable._
@@ -16,10 +18,9 @@ import shapeless.syntax.typeable._
 
 trait TestInfoProvider {
 
-  def getTestingCapabilities(metaData: MetaData, source: Source) : TestingCapabilities
+  def getTestingCapabilities(metaData: MetaData, scenario: CanonicalProcess) : TestingCapabilities
 
-  // TODO multiple-sources-test: return ScenarioTestData; replace source with scenario.
-  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[ScenarioTestData]
+  def generateTestData(metaData: MetaData, scenario: CanonicalProcess, size: Int) : Option[ScenarioTestData]
 
 }
 
@@ -37,20 +38,28 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
-  override def getTestingCapabilities(metaData: MetaData, source: Source): TestingCapabilities = modelData.withThisAsContextClassLoader {
-    val sourceObj = prepareSourceObj(source)(metaData)
-    val canTest = sourceObj.exists(_.isInstanceOf[SourceTestSupport[_]])
-    val canGenerateData = sourceObj.exists(_.isInstanceOf[TestDataGenerator])
-    TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
+  override def getTestingCapabilities(metaData: MetaData, scenario: CanonicalProcess): TestingCapabilities = modelData.withThisAsContextClassLoader {
+    val testingCapabilities = for {
+      source <- findFirstSource(scenario)
+      sourceObj <- prepareSourceObj(source)(metaData)
+      canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
+      canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
+    } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
+    testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
 
-  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[ScenarioTestData] = {
+  override def generateTestData(metaData: MetaData, scenario: CanonicalProcess, size: Int): Option[ScenarioTestData] = {
     for {
+      source <- findFirstSource(scenario)
       sourceObj <- prepareSourceObj(source)(metaData)
       testDataGenerator <- sourceObj.cast[TestDataGenerator]
       testData = testDataGenerator.generateTestData(size)
       scenarioTestRecords = testData.testRecords.map(record => ScenarioTestRecord(source.id, record.json, record.timestamp))
     } yield ScenarioTestData(scenarioTestRecords)
+  }
+
+  private def findFirstSource(scenario: CanonicalProcess): Option[Source] = {
+    scenario.allStartNodes.map(_.head.data).toList.flatMap(node.asSource).headOption
   }
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {

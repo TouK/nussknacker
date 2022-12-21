@@ -10,8 +10,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -25,10 +25,10 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
-    override def getTestingCapabilities(metaData: MetaData, source: node.Source): TestingCapabilities
+    override def getTestingCapabilities(metaData: MetaData, scenario: CanonicalProcess): TestingCapabilities
     = TestingCapabilities(canBeTested = true, canGenerateTestData = true)
 
-    override def generateTestData(metaData: MetaData, source: node.Source, size: Int): Option[ScenarioTestData]
+    override def generateTestData(metaData: MetaData, scenario: CanonicalProcess, size: Int): Option[ScenarioTestData]
     = Some(ScenarioTestData(ScenarioTestRecord("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
   }
 
