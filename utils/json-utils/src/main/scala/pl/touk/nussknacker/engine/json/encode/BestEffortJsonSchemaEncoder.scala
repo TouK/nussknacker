@@ -63,6 +63,7 @@ object BestEffortJsonSchemaEncoder {
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(value, cs.toString, fieldName))
       case (schema: StringSchema, value: Any) => encodeStringSchema(schema, value, fieldName)
+      case (ref: ReferenceSchema, value: Any) => encodeBasedOnSchema(value, ref.getReferredSchema, fieldName)
       case (nm: NumberSchema, value: Any) if nm.requiresInteger() => encodeIntegerSchema(value, nm, fieldName)
       case (_: NumberSchema, value: Long) => Valid(jsonEncoder.encode(value))
       case (_: NumberSchema, value: Double) => Valid(jsonEncoder.encode(value))

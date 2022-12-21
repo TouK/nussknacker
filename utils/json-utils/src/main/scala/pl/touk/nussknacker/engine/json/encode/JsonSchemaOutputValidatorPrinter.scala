@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormat
 import java.time.{LocalDate, LocalDateTime, LocalTime}
 import scala.collection.JavaConverters
 
-object JsonSchemaOutputValidatorPrinter {
+class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
 
   import OutputValidatorErrorsMessageFormatter._
 
@@ -35,7 +35,7 @@ object JsonSchemaOutputValidatorPrinter {
   }
 
   private def baseDisplayType(schema: Schema) = SwaggerBasedJsonSchemaTypeDefinitionExtractor
-    .swaggerType(schema).typingResult.display
+    .swaggerType(schema, parentSchema = Some(parentSchema)).typingResult.display
 
   //todo: remove duplication - JsonSchemaTypeDefinitionExtractor
   private def printLogicalType(schema: Schema): Option[String] = Option(schema match {
