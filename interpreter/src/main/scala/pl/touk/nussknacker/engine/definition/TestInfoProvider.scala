@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.LazyLogging
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, SourceTestSupport, TestDataGenerator}
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
@@ -19,7 +19,7 @@ trait TestInfoProvider {
   def getTestingCapabilities(metaData: MetaData, source: Source) : TestingCapabilities
 
   // TODO multiple-sources-test: return ScenarioTestData; replace source with scenario.
-  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[TestData]
+  def generateTestData(metaData: MetaData, source: Source, size: Int) : Option[ScenarioTestData]
 
 }
 
@@ -44,8 +44,14 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
   }
 
-  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[TestData] =
-    prepareSourceObj(source)(metaData).flatMap(_.cast[TestDataGenerator]).map(_.generateTestData(size))
+  override def generateTestData(metaData: MetaData, source: Source, size: Int): Option[ScenarioTestData] = {
+    for {
+      sourceObj <- prepareSourceObj(source)(metaData)
+      testDataGenerator <- sourceObj.cast[TestDataGenerator]
+      testData = testDataGenerator.generateTestData(size)
+      scenarioTestRecords = testData.testRecords.map(record => ScenarioTestRecord(source.id, record.json, record.timestamp))
+    } yield ScenarioTestData(scenarioTestRecords)
+  }
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)

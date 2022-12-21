@@ -82,11 +82,11 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                      testResultsVariableEncoder: Any => T)
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     for {
-      testData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
+      scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
       validationResult = processResolving.validateBeforeUiResolving(displayableProcess, idWithCategory.category)
       canonical = processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
-      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, testData, user, testResultsVariableEncoder))
+      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, scenarioTestData, user, testResultsVariableEncoder))
         .mapTo[TestResults[T]]
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))

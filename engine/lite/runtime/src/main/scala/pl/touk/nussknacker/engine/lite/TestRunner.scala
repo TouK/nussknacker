@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, TestData}
 import pl.touk.nussknacker.engine.api.{JobData, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -24,7 +24,7 @@ import scala.language.higherKinds
 
 trait TestRunner {
   def runTest[T](modelData: ModelData,
-                 testData: TestData,
+                 scenarioTestData: ScenarioTestData,
                  process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T]
 }
@@ -33,13 +33,13 @@ trait TestRunner {
 class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : EffectUnwrapper, Input, Res <: AnyRef] extends TestRunner {
 
   def runTest[T](modelData: ModelData,
-                 testData: TestData,
+                 scenarioTestData: ScenarioTestData,
                  process: CanonicalProcess,
                  variableEncoder: Any => T): TestResults[T] = {
 
     //TODO: probably we don't need statics here, we don't serialize stuff like in Flink
     val collectingListener = ResultsCollectingListenerHolder.registerRun(variableEncoder)
-    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest[Input](process, testData)
+    val parsedTestData = new TestDataPreparer(modelData).prepareDataForTest[Input](process, scenarioTestData)
 
     //in tests we don't send metrics anywhere
     val testContext = LiteEngineRuntimeContextPreparer.noOp.prepare(testJobData(process))

@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
@@ -28,8 +28,8 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
     override def getTestingCapabilities(metaData: MetaData, source: node.Source): TestingCapabilities
     = TestingCapabilities(canBeTested = true, canGenerateTestData = true)
 
-    override def generateTestData(metaData: MetaData, source: node.Source, size: Int): Option[TestData]
-    = Some(TestData(TestRecord(Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
+    override def generateTestData(metaData: MetaData, source: node.Source, size: Int): Option[ScenarioTestData]
+    = Some(ScenarioTestData(ScenarioTestRecord("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
   }
 
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
@@ -43,7 +43,7 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
         status shouldEqual StatusCodes.OK
         val content = new String(entityAs[Array[Byte]])
-        content shouldBe "\"terefereKuku-5\""
+        content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""
       }
     }
   }
