@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{MetaData, NodeId, process}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.ExpressionCompiler
 import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
-import pl.touk.nussknacker.engine.graph.node.Source
+import pl.touk.nussknacker.engine.graph.node.{Source, asSource}
 import pl.touk.nussknacker.engine.graph.{node, source}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
@@ -59,7 +59,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   }
 
   private def findFirstSource(scenario: CanonicalProcess): Option[Source] = {
-    scenario.allStartNodes.map(_.head.data).toList.flatMap(node.asSource).headOption
+    scenario.collectAllNodes.flatMap(asSource).headOption
   }
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {

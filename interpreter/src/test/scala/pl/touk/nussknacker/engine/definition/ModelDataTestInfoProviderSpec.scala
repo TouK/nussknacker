@@ -49,6 +49,14 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
   private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
 
+  test("should detect capabilities for empty scenario") {
+    val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
+
+    val capabilities = testInfoProvider.getTestingCapabilities(metaData, emptyScenario)
+
+    capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+  }
+
   test("should detect capabilities for generic transformation source: with support and generate test data") {
 
     val capabilities = testInfoProvider.getTestingCapabilities(metaData, createScenarioWithSingleSource())
