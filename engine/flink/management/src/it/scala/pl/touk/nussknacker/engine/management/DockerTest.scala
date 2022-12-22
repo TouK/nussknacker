@@ -108,12 +108,6 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)
 
-  //FIXME: is it needed after removing signals??
-  //used for signals, etc.
-  def configWithHostKafka: Config = config
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
-
-
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
 
   protected def classPath: List[String]
