@@ -56,7 +56,7 @@ class ConfigurationTest extends AnyFunSuite with Matchers {
   // See SampleModelConfigLoader.
   test("should load config using custom loader") {
     modelDataConfig.getLong("configLoadedMs") shouldBe < (System.currentTimeMillis)
-    modelDataConfig.getString("duplicatedSignalsTopic") shouldBe "nk.signals"
+    modelDataConfig.getString("configValueToLoad") shouldBe "someDummyValue"
   }
 
   // The same mechanism is used with config.override_with_env_var

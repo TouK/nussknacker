@@ -2,37 +2,17 @@ package pl.touk.nussknacker.ui.process
 
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.engine.api.component.ComponentId
-import pl.touk.nussknacker.engine.component.ComponentsUiConfigExtractor.ComponentsUiConfig
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectDefinition
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.{ProcessDefinition, QueryableStateName}
+import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
 import pl.touk.nussknacker.engine.graph
 import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.processdetails.ProcessDetails
-import pl.touk.nussknacker.ui.api.SignalDefinition
 import pl.touk.nussknacker.ui.component.ComponentIdProvider
 
 object ProcessObjectsFinder {
 
   import pl.touk.nussknacker.engine.util.Implicits._
-
-  def findSignals(processes: List[ProcessDetails],
-                  definitions: Iterable[ProcessDefinition[ObjectDefinition]]): Map[String, SignalDefinition] = definitions.flatMap { definition =>
-    definition.signalsWithTransformers.map { case (name, (objDefinition, transformers)) =>
-      val processesWithTransformers = findProcessesWithTransformers(processes, transformers)
-      name -> SignalDefinition(name, objDefinition.parameters.map(_.name), processesWithTransformers)
-    }
-  }.toMap
-
-  def findQueries(processes: List[ProcessDetails],
-                  definitions: Iterable[ProcessDefinition[ObjectDefinition]]): Map[QueryableStateName, List[String]] = {
-
-    definitions.flatMap { definition =>
-      definition.customStreamTransformers.mapValuesNow(_._2.queryableStateNames)
-        .sequenceMap
-        .mapValuesNow(transformers => findProcessesWithTransformers(processes, transformers.toSet))
-    }.toMap
-  }
 
   def computeComponentsUsageCount(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, Long] =
     extractProcesses(processes.map(_.json))

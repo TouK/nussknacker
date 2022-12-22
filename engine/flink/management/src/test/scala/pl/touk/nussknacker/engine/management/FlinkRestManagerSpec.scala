@@ -30,7 +30,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
   import scala.concurrent.ExecutionContext.Implicits._
 
   //We don't test scenario's json here
-  private val config = FlinkConfig("http://test.pl", None, shouldVerifyBeforeDeploy = false)
+  private val config = FlinkConfig("http://test.pl", shouldVerifyBeforeDeploy = false)
 
   private var statuses: List[JobOverview] = List()
 

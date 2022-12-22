@@ -37,7 +37,6 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       sourceFactories = Map("sourceRef" -> ObjectDefinition.noParam),
       sinkFactories = Map(),
       customStreamTransformers = Map(),
-      signalsWithTransformers = Map(),
       expressionConfig = ExpressionDefinition(Map.empty, List.empty, List.empty, LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true,
         Map.empty, hideMetaVariable = false, strictMethodsChecking = true, staticMethodInvocationsChecking = false,
         methodExecutionForUnknownAllowed = false, dynamicPropertyAccessAllowed = false, spelExpressionExcludeList = SpelExpressionExcludeList.default,

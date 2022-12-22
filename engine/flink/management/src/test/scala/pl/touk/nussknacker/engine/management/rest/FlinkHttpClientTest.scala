@@ -2,24 +2,22 @@ package pl.touk.nussknacker.engine.management.rest
 
 import io.circe.syntax.EncoderOps
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.time.Span.convertSpanToDuration
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
 import pl.touk.nussknacker.test.PatientScalaFutures
 import sttp.client.monad.FutureMonad
-import sttp.client.{HttpClientError, HttpError, Response}
 import sttp.client.testing.SttpBackendStub
+import sttp.client.{HttpClientError, HttpError, Response}
 import sttp.model.{Method, StatusCode}
 
 import java.io.File
 import java.util.UUID
-import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
 import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.FiniteDuration
 import scala.util.Failure
 
 class FlinkHttpClientTest extends AnyFunSuite
@@ -33,7 +31,7 @@ class FlinkHttpClientTest extends AnyFunSuite
   private val flinkJarFile = JarFile(jarId, jarFileName)
   private val deploymentId = ExternalDeploymentId("someDeploymentId")
 
-  val config: FlinkConfig = FlinkConfig("http://localhost:12345/flink", None)
+  val config: FlinkConfig = FlinkConfig("http://localhost:12345/flink")
 
   test("uploadJarFileIfNotExists - should upload jar") {
     implicit val backend = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {

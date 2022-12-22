@@ -126,17 +126,6 @@ class HttpService {
         return []
       })
   }
-
-  availableQueryableStates() {
-    return api.get("/queryableState/list")
-  }
-
-  queryState(processId, queryName, key) {
-    const data = {processId, queryName, key}
-    return api.get("/queryableState/fetch", {params: data})
-      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchState", "Cannot fetch state"), error))
-  }
-
   fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
     return api.get("/app/healthCheck/process/deployment")
       .then(() => ({state: HealthState.ok}))
@@ -507,18 +496,6 @@ class HttpService {
       .then(() => this.#addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
       .catch(error => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
   }
-
-  fetchSignals() {
-    return api.get("/signal")
-      .catch(error => this.#addError(i18next.t("notification.error.failedToFetchSignals", "Failed to fetch signals"), error))
-  }
-
-  sendSignal(signalType, processId, params) {
-    return api.post(`/signal/${signalType}/${encodeURIComponent(processId)}`, params)
-      .then(() => this.#addInfo(i18next.t("notification.info.signalSent", "Signal sent")))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToSendSignal", "Failed to send signal"), error))
-  }
-
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
     return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}${redirectUri ? `&redirect_uri=${redirectUri}` : ""}`)
   }

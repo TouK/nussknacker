@@ -16,7 +16,6 @@ import {UnknownRecord} from "../types/common"
 import Services from "./Services"
 import {ErrorHandler} from "./ErrorHandler"
 import Metrics from "./Metrics"
-import Signals from "./Signals"
 import {TransitionRouteSwitch} from "./TransitionRouteSwitch"
 import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
@@ -116,7 +115,6 @@ export class NussknackerApp extends React.Component<Props, State> {
                 <Route path={Paths.ProcessesLegacyPaths} component={ProcessTabs} exact/>
                 <Route path={Paths.VisualizationPath} component={VisualizationWrapped} exact/>
                 <Route path={Paths.MetricsPath} component={Metrics} exact/>
-                <Route path={Paths.SignalsPath} component={Signals} exact/>
                 <Route path={Paths.ServicesPath} component={Services} exact/>
                 <Route path={`${Paths.CustomTabBasePath}/:id/:rest(.*)?`} component={CustomTab}/>
                 <Route path={Paths.RootPath} render={() => <Redirect to={fallbackPath}/>} exact/>

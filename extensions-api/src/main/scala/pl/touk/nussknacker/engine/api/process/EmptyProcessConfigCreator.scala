@@ -1,6 +1,5 @@
 package pl.touk.nussknacker.engine.api.process
 
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 
 class EmptyProcessConfigCreator
@@ -27,6 +26,4 @@ class EmptyProcessConfigCreator
   override def buildInfo(): Map[String, String] =
     Map.empty
 
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] =
-    Map.empty
 }

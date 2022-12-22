@@ -517,9 +517,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
         "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
-        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test",
-        //dependencies below are just for QueryableStateTest
-        "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
+        "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test"
       )
     }
   ).dependsOn(deploymentManagerApi % "provided",
@@ -562,7 +560,6 @@ lazy val flinkDevModel = (project in flink("management/dev-model")).
         "com.cronutils" % "cron-utils" % cronParserV,
         "javax.validation" % "validation-api" % javaxValidationApiV,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
-        "org.apache.flink" % "flink-queryable-state-runtime" % flinkV % "test",
         "org.apache.flink" % "flink-runtime" % flinkV % "compile" classifier "tests"
       )
     }

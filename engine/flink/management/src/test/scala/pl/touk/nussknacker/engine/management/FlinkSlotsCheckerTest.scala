@@ -22,7 +22,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
 
   private implicit val ec: ExecutionContext = ExecutionContext.Implicits.global
 
-  private val config = FlinkConfig("http://test.pl", None)
+  private val config = FlinkConfig("http://test.pl")
 
   private val availableSlotsCount = 1000
 

@@ -5,10 +5,9 @@ import io.circe.generic.JsonCodec
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.apache.flink.streaming.api.functions.source.SourceFunction
 import org.apache.flink.streaming.api.functions.source.SourceFunction.SourceContext
-import pl.touk.nussknacker.engine.api.process._
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api._
+import pl.touk.nussknacker.engine.api.process._
+import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.flink.api.process.{BasicFlinkSource, FlinkSourceTestSupport}
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.StandardTimestampWatermarkHandler.SimpleSerializableTimestampAssigner
 import pl.touk.nussknacker.engine.flink.api.timestampwatermark.{StandardTimestampWatermarkHandler, TimestampWatermarkHandler}
@@ -17,7 +16,6 @@ import pl.touk.nussknacker.engine.management.sample.UnitTestsProcessConfigCreato
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.util.service.TimeMeasuringService
 
-import java.nio.charset.StandardCharsets
 import java.time.{Duration, LocalDateTime, ZoneOffset}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
@@ -90,8 +88,6 @@ class UnitTestsProcessConfigCreator extends ProcessConfigCreator {
     )
     ExpressionConfig(globalProcessVariables, List.empty)
   }
-
-  override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = Map.empty
 
   override def buildInfo() = Map(
     "process-version" -> "0.1",

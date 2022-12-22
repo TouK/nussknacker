@@ -5,9 +5,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.ui.statistics.ProcessingTypeUsageStatistics
-import pl.touk.nussknacker.ui.validation.AdditionalPropertiesValidator
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,14 +14,11 @@ case class ProcessingTypeData(deploymentManager: DeploymentManager,
                               typeSpecificInitialData: TypeSpecificInitialData,
                               additionalPropertiesConfig: Map[String, AdditionalPropertyConfig],
                               additionalValidators: List[CustomProcessValidator],
-                              queryableClient: Option[QueryableClient],
-                              supportsSignals: Boolean,
                               usageStatistics: ProcessingTypeUsageStatistics) extends AutoCloseable {
 
   def close(): Unit = {
     modelData.close()
     deploymentManager.close()
-    queryableClient.foreach(_.close())
   }
 
 }
@@ -35,7 +30,6 @@ object ProcessingTypeData {
                                sttpBackend: SttpBackend[Future, Nothing, NothingT],
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
-    val queryableClient = deploymentManagerProvider.createQueryableClient(managerConfig)
     import net.ceedubs.ficus.Ficus._
     import pl.touk.nussknacker.engine.util.config.FicusReaders._
     val additionalProperties =
@@ -47,8 +41,6 @@ object ProcessingTypeData {
       deploymentManagerProvider.typeSpecificInitialData(managerConfig),
       additionalProperties,
       deploymentManagerProvider.additionalValidators(managerConfig) ,
-      queryableClient,
-      deploymentManagerProvider.supportsSignals,
       ProcessingTypeUsageStatistics(managerConfig))
   }
 

@@ -12,10 +12,6 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.{ObjectWithMethodDef, OverriddenObjectWithMethodDef}
 import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor
-import pl.touk.nussknacker.engine.definition.ProcessDefinitionExtractor.ProcessDefinition
-import pl.touk.nussknacker.engine.flink.api.process.SignalSenderKey
-import pl.touk.nussknacker.engine.flink.api.signal.FlinkProcessSignalSender
-import pl.touk.nussknacker.engine.flink.util.source.EmptySourceFunction
 import pl.touk.nussknacker.engine.graph.node.Source
 import shapeless.syntax.typeable._
 
@@ -28,9 +24,6 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
   extends FlinkProcessCompiler(creator, processConfig, diskStateBackendSupport, objectNaming, componentUseCase) {
 
   import pl.touk.nussknacker.engine.util.Implicits._
-
-  override protected def signalSenders(processDefinition: ProcessDefinition[ObjectWithMethodDef]): Map[SignalSenderKey, FlinkProcessSignalSender] =
-    super.signalSenders(processDefinition).mapValuesNow(_ => DummyFlinkSignalSender)
 
   override protected def definitions(processObjectDependencies: ProcessObjectDependencies): ProcessDefinitionExtractor.ProcessDefinition[ObjectWithMethodDef] = {
     val createdDefinitions = super.definitions(processObjectDependencies)
@@ -78,11 +71,3 @@ abstract class StubbedFlinkProcessCompiler(process: CanonicalProcess,
     }
 
 }
-
-
-private object DummyFlinkSignalSender extends FlinkProcessSignalSender {
-  override def connectWithSignals[InputType, SignalType: TypeInformation](start: DataStream[InputType], processId: String, nodeId: String, schema: DeserializationSchema[SignalType]): ConnectedStreams[InputType, SignalType] = {
-    start.connect(start.getExecutionEnvironment.addSource(new EmptySourceFunction[SignalType], implicitly[TypeInformation[SignalType]]))
-  }
-}
-

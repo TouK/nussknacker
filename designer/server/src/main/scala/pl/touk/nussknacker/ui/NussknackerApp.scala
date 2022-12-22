@@ -180,7 +180,6 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         ManagementResources(managementActor, processAuthorizer, processRepository, featureTogglesConfig, processService, metricsRegistry, scenarioTestService),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
-        new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,
@@ -195,13 +194,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         countsReporter
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
-        Some(new QueryableStateResources(
-          typeToConfig = typeToConfig,
-          processRepository = processRepository,
-          processService = processService,
-          processAuthorizer = processAuthorizer
-        ))
+          .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
       ).flatten
       routes ++ optionalRoutes
     }

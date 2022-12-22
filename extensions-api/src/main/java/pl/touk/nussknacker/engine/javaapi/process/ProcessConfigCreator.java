@@ -4,7 +4,6 @@ import pl.touk.nussknacker.engine.api.CustomStreamTransformer;
 import pl.touk.nussknacker.engine.api.ProcessListener;
 import pl.touk.nussknacker.engine.api.Service;
 import pl.touk.nussknacker.engine.api.process.*;
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -17,7 +16,6 @@ public interface ProcessConfigCreator extends Serializable {
     Map<String, WithCategories<SourceFactory>> sourceFactories(ProcessObjectDependencies processObjectDependencies);
     Map<String, WithCategories<SinkFactory>> sinkFactories(ProcessObjectDependencies processObjectDependencies);
     Map<String, WithCategories<CustomStreamTransformer>> customStreamTransformers(ProcessObjectDependencies processObjectDependencies);
-    Map<String, WithCategories<ProcessSignalSender>> signals(ProcessObjectDependencies processObjectDependencies);
     Collection<ProcessListener> listeners(ProcessObjectDependencies processObjectDependencies);
     ExpressionConfig expressionConfig(ProcessObjectDependencies processObjectDependencies);
     Map<String, String> buildInfo();

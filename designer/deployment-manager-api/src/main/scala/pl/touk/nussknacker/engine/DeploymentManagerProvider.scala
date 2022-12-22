@@ -5,7 +5,6 @@ import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
 import sttp.client.{NothingT, SttpBackend}
 
@@ -25,10 +24,6 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
   def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = Map.empty
 
   def additionalValidators(config: Config): List[CustomProcessValidator] = Nil
-
-  def supportsSignals: Boolean = false
-
-  def createQueryableClient(config: Config): Option[QueryableClient] = None
 
 }
 
