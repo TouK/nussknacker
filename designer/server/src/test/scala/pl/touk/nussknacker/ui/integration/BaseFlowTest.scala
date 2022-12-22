@@ -234,7 +234,8 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     saveProcess(process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "\"record1|field2\"", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
@@ -289,7 +290,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    val testDataContent = "\"field1|field2\""
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
 
     firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 
