@@ -288,7 +288,7 @@ val testcontainersScalaV = "0.40.10"
 val nettyV = "4.1.48.Final"
 
 val akkaV = "2.6.19"
-val akkaHttpV = "10.2.9"
+val akkaHttpV = "10.2.10"
 val akkaManagementV = "1.1.3"
 val akkaHttpCirceV = "1.39.2"
 val slickV = "3.3.3"

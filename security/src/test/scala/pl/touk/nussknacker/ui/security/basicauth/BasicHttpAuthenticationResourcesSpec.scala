@@ -50,5 +50,6 @@ class BasicHttpAuthenticationResourcesSpec extends AnyFunSpec with Matchers {
 
   class SampleProvidedCredentials(identifier: String, receivedSecret: String) extends Credentials.Provided(identifier) {
     def verify(secret: String, hasher: String ⇒ String): Boolean = secret == hasher(receivedSecret)
+    override def provideVerify(verifier: String => Boolean): Boolean = false
   }
 }
