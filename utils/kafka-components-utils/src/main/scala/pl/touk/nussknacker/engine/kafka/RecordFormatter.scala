@@ -20,13 +20,38 @@ trait RecordFormatter extends Serializable {
   def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
   def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
-    TestData(records.map(formatRecord))
+    import RecordFormatter.RichTestRecord
+
+    val testRecords = records.map { consumerRecord =>
+      val testRecord = formatRecord(consumerRecord)
+      testRecord.fillEmptyTimestampFromConsumerRecord(consumerRecord)
+    }
+    TestData(testRecords)
   }
 
   def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
     val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
+  }
+
+}
+
+object RecordFormatter {
+
+  private implicit class RichTestRecord(testRecord: TestRecord) {
+
+    def fillEmptyTimestampFromConsumerRecord(consumerRecord: ConsumerRecord[_, _]): TestRecord = {
+      testRecord.timestamp match {
+        case Some(_) => testRecord
+        case None => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
+      }
+    }
+
+    private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
+      Option(consumerRecord.timestamp()).filterNot(_ == ConsumerRecord.NO_TIMESTAMP)
+    }
+
   }
 
 }
