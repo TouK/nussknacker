@@ -58,7 +58,7 @@
     "immutability-helper": "3.1.1",
     "jest-junit": "13.0.0",
     "jointjs": "3.4.4",
-    "jsonwebtoken": "8.5.1",
+    "jsonwebtoken": "9.0.0",
     "kefir": "3.8.8",
     "ladda": "2.0.3",
     "lodash": "4.17.21",
