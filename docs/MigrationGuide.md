@@ -5,7 +5,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.8.0
            
-* [#3835](https://github.com/TouK/nussknacker/pull/3835) Remove Signals and QueryableState. This change affects:
+* [#3835](https://github.com/TouK/nussknacker/pull/3835) Removed Signals and QueryableState. This change affects:
   * Configuration
   * Components and DeploymentManager API
   * REST API

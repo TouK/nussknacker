@@ -139,7 +139,6 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
       val (relevant, other) = settings.partition { case (k, _) => underTest.keySet contains k }
       relevant shouldBe underTest
-      println(other.values.filter(_.docsUrl.isDefined))
       other.values.forall(_.docsUrl.isEmpty) shouldBe true
     }
   }
