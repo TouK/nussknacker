@@ -41,8 +41,9 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   test("generates data") {
     saveProcess(process) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
+        implicit val contentUnmarshaller = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
-        val content = new String(entityAs[Array[Byte]])
+        val content = responseAs[String]
         content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""
       }
     }

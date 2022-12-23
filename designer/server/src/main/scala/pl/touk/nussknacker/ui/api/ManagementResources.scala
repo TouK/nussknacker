@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCoun
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -201,20 +202,16 @@ class ManagementResources(val managementActor: ActorRef,
       path("processManagement" / "test" / Segment) { processName =>
         (post & processIdWithCategory(processName)) { idWithCategory =>
           canDeploy(idWithCategory.id) {
-            formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
+            formFields('testData, 'processJson) { (testDataContent, displayableProcessJson) =>
               complete {
-                if (testData.length > testDataSettings.testDataMaxBytes) {
-                  HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
-                } else {
-                  measureTime("test", metricRegistry) {
-                    parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
-                      case Right(displayableProcess) =>
-                        scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
-                          Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                        }.recover(EspErrorToHttp.errorToHttp)
-                      case Left(error) =>
-                        Future.failed(UnmarshallError(error.toString))
-                    }
+                measureTime("test", metricRegistry) {
+                  parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                    case Right(displayableProcess) =>
+                      scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                        Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                      }.recover(EspErrorToHttp.errorToHttp)
+                    case Left(error) =>
+                      Future.failed(UnmarshallError(error.toString))
                   }
                 }
               }
