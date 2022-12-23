@@ -20,11 +20,9 @@ trait RecordFormatter extends Serializable {
   def parseRecord(topic: String, testRecord: TestRecord): ConsumerRecord[Array[Byte], Array[Byte]]
 
   def prepareGeneratedTestData(records: List[ConsumerRecord[Array[Byte], Array[Byte]]]): TestData = {
-    import RecordFormatter.RichTestRecord
-
     val testRecords = records.map { consumerRecord =>
       val testRecord = formatRecord(consumerRecord)
-      testRecord.fillEmptyTimestampFromConsumerRecord(consumerRecord)
+      fillEmptyTimestampFromConsumerRecord(testRecord, consumerRecord)
     }
     TestData(testRecords)
   }
@@ -35,23 +33,15 @@ trait RecordFormatter extends Serializable {
     prepareGeneratedTestData(merged)
   }
 
-}
-
-object RecordFormatter {
-
-  private implicit class RichTestRecord(testRecord: TestRecord) {
-
-    def fillEmptyTimestampFromConsumerRecord(consumerRecord: ConsumerRecord[_, _]): TestRecord = {
-      testRecord.timestamp match {
-        case Some(_) => testRecord
-        case None => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
-      }
+  private def fillEmptyTimestampFromConsumerRecord(testRecord: TestRecord, consumerRecord: ConsumerRecord[_, _]): TestRecord = {
+    testRecord.timestamp match {
+      case Some(_) => testRecord
+      case None => testRecord.copy(timestamp = getConsumerRecordTimestamp(consumerRecord))
     }
+  }
 
-    private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
-      Option(consumerRecord.timestamp()).filterNot(_ == ConsumerRecord.NO_TIMESTAMP)
-    }
-
+  private def getConsumerRecordTimestamp(consumerRecord: ConsumerRecord[_, _]): Option[Long] = {
+    Option(consumerRecord.timestamp()).filterNot(_ == ConsumerRecord.NO_TIMESTAMP)
   }
 
 }
