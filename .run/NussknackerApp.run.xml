@@ -4,7 +4,6 @@
     <envs>
       <env name="AUTHENTICATION_USERS_FILE" value="../../../nussknacker-dist/src/universal/conf/users.conf" />
       <env name="CONSOLE_THRESHOLD_LEVEL" value="DEBUG" />
-      <env name="FLINK_QUERYABLE_STATE_PROXY_URL" value="localhost:3063" />
       <env name="FLINK_REST_URL" value="http://localhost:3031" />
       <env name="FLINK_SHOULD_VERIFY_BEFORE_DEPLOY" value="false" />
       <env name="GRAFANA_URL" value="http://localhost:8081/grafana" />

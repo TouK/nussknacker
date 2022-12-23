@@ -1,7 +1,6 @@
 package pl.touk.nussknacker.engine.api.conversion
 
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, _}
-import pl.touk.nussknacker.engine.api.signal.ProcessSignalSender
 import pl.touk.nussknacker.engine.api.{CustomStreamTransformer, ProcessListener, Service}
 import pl.touk.nussknacker.engine.javaapi.process
 
@@ -46,9 +45,6 @@ object ProcessConfigCreatorMapping {
       }
       override def buildInfo(): Map[String, String] = {
         jcreator.buildInfo().asScala.toMap
-      }
-      override def signals(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[ProcessSignalSender]] = {
-        jcreator.signals(processObjectDependencies).asScala.toMap
       }
       override def asyncExecutionContextPreparer(processObjectDependencies: ProcessObjectDependencies): Option[AsyncExecutionContextPreparer] = {
         Option(jcreator.asyncExecutionContextPreparer(processObjectDependencies).orElse(null))

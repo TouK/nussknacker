@@ -25,7 +25,6 @@ if [[ "${USE_DOCKER_ENV}" == "true" ]]; then
   echo "Using environment from docker"
   # See https://github.com/TouK/nussknacker-quickstart/blob/main/docker-compose-env.yml - mapped port from docker
   export FLINK_REST_URL="http://localhost:3031"
-  export FLINK_QUERYABLE_STATE_PROXY_URL="localhost:3063"
   export FLINK_SHOULD_VERIFY_BEFORE_DEPLOY=${FLINK_SHOULD_VERIFY_BEFORE_DEPLOY:-false}
   # Addresses that should be visible from Flink
   export KAFKA_ADDRESS="localhost:3032"

@@ -1,8 +1,8 @@
 package pl.touk.nussknacker.ui.process
 
-import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.component.ComponentType.{ComponentType, Filter, FragmentInput, FragmentOutput, Fragments, Sink, Source, Switch, CustomNode => CustomNodeType}
 import pl.touk.nussknacker.engine.api.component.{ComponentId, SingleComponentConfig}
 import pl.touk.nussknacker.engine.api.deployment.ProcessActionType
@@ -13,7 +13,6 @@ import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode.FlatNode
 import pl.touk.nussknacker.engine.canonicalgraph.{CanonicalProcess, canonicalnode}
 import pl.touk.nussknacker.engine.graph.node.SubprocessInputDefinition.{SubprocessClazzRef, SubprocessParameter}
 import pl.touk.nussknacker.engine.graph.node.{Case, CustomNode, SubprocessInputDefinition, SubprocessOutputDefinition}
-import pl.touk.nussknacker.engine.testing.ProcessDefinitionBuilder.ObjectProcessDefinition
 import pl.touk.nussknacker.restmodel.processdetails.ProcessAction
 import pl.touk.nussknacker.ui.api.helpers.ProcessTestData._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
@@ -107,35 +106,6 @@ class ProcessObjectsFinderTest extends AnyFunSuite with Matchers with TableDrive
       otherExistingStreamTransformer -> SingleComponentConfig.zero.copy(componentId = Some(ComponentId(overriddenOtherExistingStreamTransformer)))
     )
   ))
-
-  test("should find processes for queries") {
-    val queriesForProcesses = ProcessObjectsFinder.findQueries(List(process1, process2, process3, process4, subprocessDetails), List(processDefinition))
-
-    queriesForProcesses shouldBe Map(
-      "query1" -> List(process1.id),
-      "query2" -> List(process1.id),
-      "query3" -> List(process1.id, process2.id),
-      "query4" -> List(process4.id),
-      "query5" -> List.empty
-    )
-  }
-
-  test("should find processes for transformers") {
-    val table = Table(
-      ("transformers", "expectedProcesses"),
-      (Set(existingStreamTransformer), List(process1.id)),
-      (Set(otherExistingStreamTransformer), List(process1.id, process2.id)),
-      (Set(otherExistingStreamTransformer2), List(process4.id)),
-      (Set(existingStreamTransformer, otherExistingStreamTransformer, otherExistingStreamTransformer2), List(process1.id, process2.id, process4.id)),
-      (Set("garbage"), List())
-    )
-    forAll(table) { (transformers, expectedProcesses) =>
-      val definition = processDefinition.withSignalsWithTransformers("signal1", classOf[String], transformers)
-      val signalDefinition = ProcessObjectsFinder.findSignals(List(process1, process2, process3, process4, subprocessDetails), List(definition))
-      signalDefinition should have size 1
-      signalDefinition("signal1").availableProcesses shouldBe expectedProcesses
-    }
-  }
 
   test("should compute components usage count") {
     val table = Table(

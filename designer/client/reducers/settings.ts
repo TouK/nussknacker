@@ -19,7 +19,6 @@ export type SettingsState = {
   authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
-  availableQueryableStates: $TodoType,
   processToolbarsConfiguration: WithId<ToolbarsConfig>,
 }
 
@@ -54,7 +53,6 @@ const initialState: SettingsState = {
   authenticationSettings: {},
   analyticsSettings: {},
   processDefinitionData: {},
-  availableQueryableStates: {},
   processToolbarsConfiguration: null,
 }
 
@@ -80,12 +78,6 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
       return {
         ...state,
         processDefinitionData: action.processDefinitionData,
-      }
-    }
-    case "AVAILABLE_QUERY_STATES": {
-      return {
-        ...state,
-        availableQueryableStates: action.availableQueryableStates,
       }
     }
     case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {

@@ -14,7 +14,6 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
       |    deploymentConfig {
       |      jobManagerTimeout: 1m
       |      restUrl: "http://localhost:8081"
-      |      queryableStateProxyUrlMissing: "localhost:9123"
       |      type: "flinkStreaming"
       |    }
       |

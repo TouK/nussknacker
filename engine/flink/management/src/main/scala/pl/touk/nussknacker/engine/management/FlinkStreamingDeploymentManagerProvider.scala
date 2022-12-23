@@ -1,12 +1,11 @@
 package pl.touk.nussknacker.engine.management
 
+import _root_.sttp.client.{NothingT, SttpBackend}
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
+import pl.touk.nussknacker.engine._
 import pl.touk.nussknacker.engine.api.StreamMetaData
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
-import pl.touk.nussknacker.engine._
-import _root_.sttp.client.{NothingT, SttpBackend}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,16 +23,10 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
     new FlinkStreamingRestManager(flinkConfig, modelData)
   }
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = {
-    val flinkConfig = config.rootAs[FlinkConfig]
-    flinkConfig.queryableStateProxyUrl.map(FlinkQueryableClient(_))
-  }
-
   override def name: String = "flinkStreaming"
 
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = TypeSpecificInitialData(StreamMetaData(Some(1)))
 
-  override def supportsSignals: Boolean = true
 }
 
 object FlinkStreamingDeploymentManagerProvider {

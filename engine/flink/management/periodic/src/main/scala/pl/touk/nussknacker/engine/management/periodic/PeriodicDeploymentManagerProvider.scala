@@ -5,7 +5,6 @@ import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
-import pl.touk.nussknacker.engine.api.queryablestate.QueryableClient
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.periodic.service._
 import pl.touk.nussknacker.engine.util.config.ConfigEnrichments.RichConfig
@@ -49,11 +48,7 @@ class PeriodicDeploymentManagerProvider(delegate: DeploymentManagerProvider,
     )
   }
 
-  override def createQueryableClient(config: Config): Option[QueryableClient] = delegate.createQueryableClient(config)
-
   override def typeSpecificInitialData(config: Config): TypeSpecificInitialData = delegate.typeSpecificInitialData(config)
-
-  override def supportsSignals: Boolean = delegate.supportsSignals
 
   override def additionalPropertiesConfig(config: Config): Map[String, AdditionalPropertyConfig] = delegate.additionalPropertiesConfig(config)
 }

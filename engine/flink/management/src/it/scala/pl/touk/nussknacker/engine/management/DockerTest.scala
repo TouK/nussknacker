@@ -35,8 +35,6 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   private val FlinkJobManagerRestPort = 8081
 
-  private val FlinkTaskManagerQueryPort = 9069
-
   private val kafkaNetworkAlias = "kafka"
 
   protected lazy val logger: Logger = Logger(sfl4jLogger)
@@ -86,7 +84,6 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   private lazy val taskManagerContainer: GenericContainer = {
     new GenericContainer(dockerImage = prepareFlinkImage(),
-      exposedPorts = FlinkTaskManagerQueryPort :: Nil,
       command = "taskmanager" :: Nil,
       env = Map("TASK_MANAGER_NUMBER_OF_TASK_SLOTS" -> taskManagerSlotCount.toString),
       waitStrategy = Some(new LogMessageWaitStrategy().withRegEx(".*Successful registration at resource manager.*"))
@@ -106,16 +103,10 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
 
   def config: Config = ConfigFactory.load()
     .withValue("deploymentConfig.restUrl", fromAnyRef(s"http://${jobManagerContainer.container.getHost}:${jobManagerContainer.container.getMappedPort(FlinkJobManagerRestPort)}"))
-    .withValue("deploymentConfig.queryableStateProxyUrl", fromAnyRef(s"${taskManagerContainer.container.getHost}:${taskManagerContainer.container.getMappedPort(FlinkTaskManagerQueryPort)}"))
     .withValue("modelConfig.classPath", ConfigValueFactory.fromIterable(classPath.asJava))
     .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(dockerKafkaAddress))
     .withValue(KafkaConfigProperties.property("modelConfig.kafka", "auto.offset.reset"), fromAnyRef("earliest"))
     .withFallback(additionalConfig)
-
-  //used for signals, etc.
-  def configWithHostKafka: Config = config
-    .withValue(KafkaConfigProperties.bootstrapServersProperty("modelConfig.kafka"), fromAnyRef(hostKafkaAddress))
-
 
   def processingTypeConfig: ProcessingTypeConfig = ProcessingTypeConfig.read(config)
 

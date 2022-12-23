@@ -33,7 +33,6 @@ import pl.touk.nussknacker.engine.management.sample.dto.{ConstantState, CsvRecor
 import pl.touk.nussknacker.engine.management.sample.global.{ConfigTypedGlobalVariable, GenericHelperFunction}
 import pl.touk.nussknacker.engine.management.sample.helper.DateProcessHelper
 import pl.touk.nussknacker.engine.management.sample.service._
-import pl.touk.nussknacker.engine.management.sample.signal.{RemoveLockProcessSignalFactory, SampleSignalHandlingTransformer}
 import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -166,7 +165,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "constantStateTransformer" -> categories(ConstantStateTransformer[String](Encoder[ConstantState].apply(ConstantState("stateId", 1234, List("elem1", "elem2", "elem3"))).noSpaces)(TypeInformation.of(classOf[String]))),
     "constantStateTransformerLongValue" -> categories(ConstantStateTransformer[Long](12333)(TypeInformation.of(classOf[Long]))),
     "additionalVariable" -> categories(AdditionalVariableTransformer),
-    "lockStreamTransformer" -> categories(new SampleSignalHandlingTransformer.LockStreamTransformer()),
     "unionWithEditors" -> all(JoinTransformerWithEditors),
     // types
     "simpleTypesCustomNode" -> categories(new SimpleTypesCustomStreamTransformer).withComponentConfig(SingleComponentConfig.zero.copy(componentGroup = Some(ComponentGroupName("types")))),
@@ -174,11 +172,6 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "enrichWithAdditionalData" -> all(EnrichWithAdditionalDataTransformer),
     "sendCommunication" -> all(DynamicParametersTransformer),
     "hideVariables" -> all(HidingVariablesTransformer)
-  )
-
-  override def signals(processObjectDependencies: ProcessObjectDependencies) = Map(
-    "removeLockSignal" -> all(new RemoveLockProcessSignalFactory(kafkaConfig(processObjectDependencies.config),
-      processObjectDependencies.config.getString("signals.topic")))
   )
 
   override def expressionConfig(processObjectDependencies: ProcessObjectDependencies): ExpressionConfig = {

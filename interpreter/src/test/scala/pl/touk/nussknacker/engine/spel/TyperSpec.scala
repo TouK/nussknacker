@@ -21,7 +21,6 @@ import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 class TyperSpec extends AnyFunSuite with Matchers {
 
   test("simple expression") {
-    println(typeExpression("#x + 2", "x" -> 2).toOption.get.finalResult)
     typeExpression("#x + 2", "x" -> 2) shouldBe Valid(CollectedTypingResult(Map(
       PositionRange(0, 2) -> TypingResultWithContext(Typed.fromInstance(2)),
       PositionRange(3, 4) -> TypingResultWithContext(Typed.fromInstance(4)),

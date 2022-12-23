@@ -7,7 +7,6 @@ export const VisualizationBasePath = `/visualization`
 export const VisualizationPath = `${VisualizationBasePath}/:processId`
 export const MetricsBasePath = `/metrics`
 export const MetricsPath = `${MetricsBasePath}/:processId?`
-export const SignalsPath = `/signals`
 export const ServicesPath = `/services`
 export const CustomTabBasePath = `/customtabs`
 export const ScenariosBasePath = `/scenarios`

@@ -24,7 +24,6 @@ export AUTHENTICATION_USERS_FILE=${AUTHENTICATION_USERS_FILE:-$CONF_DIR/users.co
 export STORAGE_DIR=${STORAGE_DIR:-$WORKING_DIR/storage}
 
 export FLINK_REST_URL=${FLINK_REST_URL:-http://localhost:8081}
-export FLINK_QUERYABLE_STATE_PROXY_URL=${FLINK_QUERYABLE_STATE_PROXY_URL:-localhost:9069}
 export KAFKA_ADDRESS=${KAFKA_ADDRESS:-localhost:9092}
 # Port is other then default (8081) to avoid collision with Flink REST API
 export SCHEMA_REGISTRY_URL=${SCHEMA_REGISTRY_URL:-http://localhost:8082}

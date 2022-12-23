@@ -348,18 +348,18 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     }
 
     val configLoadedMsBeforeReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyBeforeReload = invokeModelConfigReader("duplicatedSignalsTopic")
-    val propertyFromResourcesBeforeReload = invokeModelConfigReader("signalsTopic")
+    val addedConstantPropertyBeforeReload = invokeModelConfigReader("configValueToLoad")
+    val propertyFromResourcesBeforeReload = invokeModelConfigReader("configValueToLoadFrom")
 
     configLoadedMsBeforeReload shouldBe < (System.currentTimeMillis())
-    addedConstantPropertyBeforeReload shouldBe "nk.signals"
-    propertyFromResourcesBeforeReload shouldBe "nk.signals"
+    addedConstantPropertyBeforeReload shouldBe "someDummyValue"
+    propertyFromResourcesBeforeReload shouldBe "someDummyValue"
 
     reloadModel()
 
     val configLoadedMsAfterReload = invokeModelConfigReader("configLoadedMs").toLong
-    val addedConstantPropertyAfterReload = invokeModelConfigReader("duplicatedSignalsTopic")
-    val propertyFromResourcesAfterReload = invokeModelConfigReader("signalsTopic")
+    val addedConstantPropertyAfterReload = invokeModelConfigReader("configValueToLoad")
+    val propertyFromResourcesAfterReload = invokeModelConfigReader("configValueToLoadFrom")
 
     configLoadedMsAfterReload should (be < System.currentTimeMillis() and be > configLoadedMsBeforeReload)
     addedConstantPropertyAfterReload shouldBe addedConstantPropertyBeforeReload

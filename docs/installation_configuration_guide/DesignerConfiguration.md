@@ -633,7 +633,7 @@ By default, only `Scenarios` tab is configured.
 
 The types of tabs can be as follows (see `dev-application.conf` for some examples):
 - IFrame - contents of the url parameter will be embedded as IFrame
-- Local - redirect to Designer page (`/admin`, `/signals`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/designer/client/containers/NussknackerApp.tsx#L118)
+- Local - redirect to Designer page (`/admin`, `/processes` etc., see [code](https://github.com/TouK/nussknacker/blob/staging/designer/client/containers/NussknackerApp.tsx#L118)
   for other options)
 - Remote - [module federation](https://webpack.js.org/concepts/module-federation/) can be used to embed external tabs, url should be in form: `{module}/{path}@{host}/{remoteEntry}.js`  
 - Url - redirect to external page/url

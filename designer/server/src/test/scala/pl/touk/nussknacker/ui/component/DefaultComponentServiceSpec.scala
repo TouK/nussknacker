@@ -370,8 +370,6 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
       MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
       Map.empty,
       Nil,
-      None,
-      supportsSignals = false,
       ProcessingTypeUsageStatistics("stubManager", None))
   })
 
@@ -447,8 +445,6 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
         MockManagerProvider.typeSpecificInitialData(ConfigFactory.empty()),
         Map.empty,
         Nil,
-        None,
-        supportsSignals = false,
         ProcessingTypeUsageStatistics("stubManager", None))
     })
 

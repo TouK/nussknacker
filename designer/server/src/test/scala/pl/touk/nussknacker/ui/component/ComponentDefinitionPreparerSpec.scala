@@ -120,7 +120,7 @@ class ComponentDefinitionPreparerSpec extends AnyFunSuite with Matchers with Tes
     val defaultValue = "'fooDefault'"
     val parameter = Parameter[String]("fooParameter").copy(defaultValue = Some(defaultValue))
     val definition = ProcessDefinitionBuilder.empty.withCustomStreamTransformer("fooTransformer", classOf[Object],
-      CustomTransformerAdditionalData(Set.empty, manyInputs = false, canBeEnding = true), parameter)
+      CustomTransformerAdditionalData(manyInputs = false, canBeEnding = true), parameter)
 
     val groups = prepareGroups(Map.empty, Map.empty, definition)
     val transformerGroup = groups.find(_.name == ComponentGroupName("optionalEndingCustom")).value

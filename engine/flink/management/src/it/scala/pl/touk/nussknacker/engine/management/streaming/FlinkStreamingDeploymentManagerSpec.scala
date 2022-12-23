@@ -1,21 +1,17 @@
 package pl.touk.nussknacker.engine.management.streaming
 
-import com.typesafe.config.ConfigValueFactory
-import io.circe.Json
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import pl.touk.nussknacker.engine.ModelData
+import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
-import pl.touk.nussknacker.engine.definition.SignalDispatcher
 import pl.touk.nussknacker.engine.deployment.DeploymentData
 import pl.touk.nussknacker.engine.management.FlinkStateStatus
-import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeConfig}
 
 import java.net.URI
 import java.nio.charset.StandardCharsets
 import java.nio.file.{Files, Paths}
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 import scala.concurrent.ExecutionContext.Implicits._
 
@@ -206,23 +202,6 @@ class FlinkStreamingDeploymentManagerSpec extends AnyFunSuite with Matchers with
     val modelData = ModelData(processingTypeConfig)
     val definition = modelData.processDefinition
     definition.services should contain key "accountService"
-  }
-
-  test("dispatch scenario signal to kafka") {
-    val signalsTopic = s"esp.signal-${UUID.randomUUID()}"
-    val configWithSignals = configWithHostKafka
-      .withValue("modelConfig.signals.topic", ConfigValueFactory.fromAnyRef(signalsTopic))
-    val processingTypeConfig = ProcessingTypeConfig.read(configWithSignals)
-    val flinkModelData = ModelData(processingTypeConfig)
-
-    val consumer = kafkaClient.createConsumer()
-    SignalDispatcher.dispatchSignal(flinkModelData)("removeLockSignal", "test-process", Map("lockId" -> "test-lockId"))
-
-    val readSignals = consumer.consume(signalsTopic).take(1).map(m => new String(m.message(), StandardCharsets.UTF_8)).toList
-    val signalJson = CirceUtil.decodeJsonUnsafe[Json](readSignals.head, "invalid signals").hcursor
-    signalJson.downField("processId").focus shouldBe Some(Json.fromString("test-process"))
-    signalJson.downField("action").downField("type").focus shouldBe Some(Json.fromString("RemoveLock"))
-    signalJson.downField("action").downField("lockId").focus shouldBe Some(Json.fromString("test-lockId"))
   }
 
   private def messagesFromTopic(outTopic: String, count: Int): List[String] = {

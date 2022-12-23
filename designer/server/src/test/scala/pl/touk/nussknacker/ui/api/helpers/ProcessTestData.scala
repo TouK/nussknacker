@@ -76,13 +76,13 @@ object ProcessTestData {
       editor = Some(FixedValuesParameterEditor(List(FixedExpressionValue("a", "a")))),
       validators = List(FixedValuesValidator(List(FixedExpressionValue("a", "a")))))
     )
-    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query1", "query2"),
+    .withCustomStreamTransformer(existingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query3"),
+    .withCustomStreamTransformer(otherExistingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(Set("query4"),
+    .withCustomStreamTransformer(otherExistingStreamTransformer2, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = false))
-    .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(Set("query5"),
+    .withCustomStreamTransformer(optionalEndingStreamTransformer, classOf[String], CustomTransformerAdditionalData(
       manyInputs = false, canBeEnding = true))
 
   def processValidation: ProcessValidation = ProcessValidation(

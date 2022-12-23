@@ -12686,30 +12686,6 @@
     "staticMethods": {}
   },
   {
-    "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.management.sample.signal.SampleSignalHandlingTransformer$LockOutput"},
-    "methods": {
-      "lockEnabled": [
-        {
-          "name": "lockEnabled",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.Boolean"}
-          }
-        }
-      ],
-      "toString": [
-        {
-          "name": "toString",
-          "signature": {
-            "noVarArgs": [],
-            "result": {"refClazzName": "java.lang.String"}
-          }
-        }
-      ]
-    },
-    "staticMethods": {}
-  },
-  {
     "clazzName": {"refClazzName": "pl.touk.nussknacker.engine.variables.MetaVariables"},
     "methods": {
       "processName": [

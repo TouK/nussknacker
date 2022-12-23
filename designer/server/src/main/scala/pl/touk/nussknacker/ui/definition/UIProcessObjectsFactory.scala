@@ -188,7 +188,6 @@ object UIProcessObjectsFactory {
       sinkFactories = processDefinition.sinkFactories.mapValues(createUIObjectDef),
       subprocessInputs = subprocessInputs.mapValues(createUIFragmentObjectDef),
       customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => createUIObjectDef(e._1)),
-      signalsWithTransformers = processDefinition.signalsWithTransformers.mapValues(e => createUIObjectDef(e._1)),
       globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(createUIObjectDef),
       typesInformation = types
     )

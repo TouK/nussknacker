@@ -41,7 +41,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
 
-  private val emptyQueryNamesData = CustomTransformerAdditionalData(Set(), false, false)
+  private val emptyQueryNamesData = CustomTransformerAdditionalData(false, false)
 
   private val baseDefinition = ProcessDefinition[ObjectDefinition](
     Map("sampleEnricher" -> ObjectDefinition(List.empty, Typed[SimpleRecord]), "withParamsService" -> ObjectDefinition(List(Parameter[String]("par1")),
@@ -87,7 +87,6 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
         Parameter[String]("param").copy(variablesToHide = Set("input"), isLazyParameter = true)
       )), emptyQueryNamesData)
     ),
-    Map.empty,
     ExpressionDefinition(
       Map("processHelper" -> ObjectDefinition(List(), Typed(ProcessHelper.getClass))), List.empty, List.empty,
       LanguageConfiguration.default, optimizeCompilation = false, strictTypeChecking = true, dictionaries = Map.empty, hideMetaVariable = false,
