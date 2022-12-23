@@ -58,8 +58,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   test("stubbing for test purpose should work for one source") {
-    val testData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestRecord("left-source", Json.fromLong(v))))
-    val compiledProcess = testCompile(scenarioWithSingleSource, testData)
+    val scenarioTestData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestRecord("left-source", Json.fromLong(v))))
+    val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
     }
@@ -68,10 +68,26 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("stubbing for test purpose should fail on multiple sources") {
-    val testData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestRecord("left-source", Json.fromLong(v))))
-    an[Exception] shouldBe thrownBy {
-      testCompile(scenarioWithMultipleSources, testData)
+  test("stubbing for test purpose should work for multiple sources") {
+    val scenarioTestData = ScenarioTestData(List(
+      ScenarioTestRecord("left-source", Json.fromLong(11)),
+      ScenarioTestRecord("right-source", Json.fromLong(21)),
+      ScenarioTestRecord("right-source", Json.fromLong(22)),
+      ScenarioTestRecord("left-source", Json.fromLong(12)),
+      ScenarioTestRecord("left-source", Json.fromLong(13)),
+      ScenarioTestRecord("right-source", Json.fromLong(23)),
+    ))
+
+    val compiledProcess = testCompile(scenarioWithMultipleSources, scenarioTestData)
+
+    val sources = compiledProcess.sources.collect {
+      case source: SourcePart => source.node.id -> source.obj
+    }.toMap
+    sources("left-source") should matchPattern {
+      case CollectionSource(List(11, 12, 13), _, _) =>
+    }
+    sources("right-source") should matchPattern {
+      case CollectionSource(List(21, 22, 23), _, _) =>
     }
   }
 

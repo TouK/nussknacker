@@ -28,19 +28,11 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
     collectingListener :: defaults
   }
 
-  override protected def checkSources(sources: List[node.Source]): List[node.Source] = {
-    if (sources.size != 1) {
-      // TODO: add support for multiple sources
-      throw new IllegalArgumentException("Tests mechanism support scenarios with exact one source")
-    }
-    sources
-  }
-
   override protected def prepareSourceFactory(sourceFactory: ObjectWithMethodDef): ObjectWithMethodDef = {
-    overrideObjectWithMethod(sourceFactory, (originalSource, returnType) => {
+    overrideObjectWithMethod(sourceFactory, (originalSource, returnType, nodeId) => {
       originalSource match {
         case sourceWithTestSupport: FlinkSourceTestSupport[Object@unchecked] =>
-          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, scenarioTestData)
+          val parsedTestData = TestDataPreparer.prepareDataForTest(sourceWithTestSupport, scenarioTestData, nodeId)
           sourceWithTestSupport match {
             case providerWithTransformation: FlinkIntermediateRawSource[Object@unchecked] =>
               new CollectionSource[Object](parsedTestData.samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(providerWithTransformation.typeInformation) {

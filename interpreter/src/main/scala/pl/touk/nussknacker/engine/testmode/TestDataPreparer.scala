@@ -21,6 +21,14 @@ object TestDataPreparer {
     ParsedTestData(testSamples)
   }
 
+  def prepareDataForTest[T](sourceTestSupport: SourceTestSupport[T], scenarioTestData: ScenarioTestData, sourceId: NodeId): ParsedTestData[T] = {
+    val testParserForSource = sourceTestSupport.testRecordParser
+    val testSamples = scenarioTestData.testRecords
+      .filter(_.sourceId == sourceId)
+      .map(scenarioTestRecord => testParserForSource.parse(scenarioTestRecord.record))
+    ParsedTestData(testSamples)
+  }
+
 }
 
 class TestDataPreparer(modelData: ModelData) {

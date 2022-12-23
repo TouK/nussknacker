@@ -290,7 +290,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val testDataContent = """{"sourceId":"start","record":"field1|field2"}"""
 
     firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 
