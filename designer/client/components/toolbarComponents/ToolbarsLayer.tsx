@@ -11,7 +11,7 @@ import {SidePanel, PanelSide} from "../sidePanels/SidePanel"
 import {Toolbar} from "./toolbar"
 import {getCapabilities} from "../../reducers/selectors/other"
 import {useUserSettings} from "../../common/userSettings"
-import {SETTINGS_KEY} from "../toolbars/SurveyPanel"
+import {SURVEY_CLOSED_SETTINGS_KEY} from "../toolbars/SurveyPanel"
 
 function useMemoizedIds<T extends { id: string }>(array: T[]): string {
   return useMemo(() => array.map(v => v.id).join(), [array])
@@ -26,10 +26,10 @@ export const ToolbarDraggableType = "TOOLBAR"
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
   const {editFrontend} = useSelector(getCapabilities)
-  const [userSettings, toggleSettings] = useUserSettings()
+  const [userSettings] = useUserSettings()
   const hiddenToolbars = useMemo(
     () => ({
-      "survey-panel": userSettings[SETTINGS_KEY],
+      "survey-panel": userSettings[SURVEY_CLOSED_SETTINGS_KEY],
       "creator-panel": !editFrontend,
     }),
     [editFrontend, userSettings]

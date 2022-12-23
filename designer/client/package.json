@@ -41,7 +41,7 @@
     "@juggle/resize-observer": "3.3.1",
     "@loadable/component": "5.15.2",
     "@mui/material": "5.3.1",
-    "@touk/window-manager": "1.5.0",
+    "@touk/window-manager": "1.6.0-beta.13",
     "ajv": "8.9.0",
     "axios": "0.25.0",
     "bootstrap": "npm:bootstrap-styl@5.0.9",

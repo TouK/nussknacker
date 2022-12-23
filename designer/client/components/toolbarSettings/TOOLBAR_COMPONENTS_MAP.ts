@@ -8,6 +8,7 @@ import {DefaultToolbarPanel, ToolbarPanelProps} from "../toolbarComponents/Defau
 import ProcessInfo from "../toolbars/status/ProcessInfo"
 import {UserSettingsPanel} from "../toolbars/UserSettingsPanel"
 import {VersionsPanel} from "../toolbars/VersionsPanel"
+import {SurveyPanel} from "../toolbars/SurveyPanel"
 
 export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelProps>> = {
   DefaultPanel: DefaultToolbarPanel,
@@ -22,5 +23,6 @@ export const TOOLBAR_COMPONENTS_MAP: Record<string, ComponentType<ToolbarPanelPr
   "comments-panel": CommentsPanel,
   "attachments-panel": AttachmentsPanel,
   "user-settings-panel": UserSettingsPanel,
+  "survey-panel": SurveyPanel,
 }
 
