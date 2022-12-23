@@ -42,7 +42,7 @@ class AvroNodesClassloadingSpec extends AnyFunSuite with Matchers with SchemaReg
 
     //we're interested only in Kafka classes loading, not in data parsing, we don't use mocks as they do not load serializers...
     withFailingLoader {
-      new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario.metaData, scenario) shouldBe TestingCapabilities.Disabled
+      new ModelDataTestInfoProvider(modelData).getTestingCapabilities(scenario) shouldBe TestingCapabilities.Disabled
     }
   }
 

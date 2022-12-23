@@ -45,41 +45,39 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
   }
 
-  private val metaData: MetaData = MetaData("id", StreamMetaData())
-
   private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
 
   test("should detect capabilities for empty scenario") {
     val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
 
-    val capabilities = testInfoProvider.getTestingCapabilities(metaData, emptyScenario)
+    val capabilities = testInfoProvider.getTestingCapabilities(emptyScenario)
 
     capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
   }
 
   test("should detect capabilities for generic transformation source: with support and generate test data") {
 
-    val capabilities = testInfoProvider.getTestingCapabilities(metaData, createScenarioWithSingleSource())
+    val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource())
 
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true)
   }
 
   test("should detect capabilities for generic transformation source: with support, no generate test data") {
 
-    val capabilities = testInfoProvider.getTestingCapabilities(metaData, createScenarioWithSingleSource("genericSourceNoGenerate"))
+    val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoGenerate"))
 
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false)
   }
 
   test("should detect capabilities for generic transformation source: no support, no generate test data") {
 
-    val capabilities = testInfoProvider.getTestingCapabilities(metaData, createScenarioWithSingleSource("genericSourceNoSupport"))
+    val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoSupport"))
 
     capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
   }
 
   test("should generate data for a scenario with single source") {
-    val scenarioTestData = testInfoProvider.generateTestData(metaData, createScenarioWithSingleSource(), 3).value
+    val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource(), 3).value
 
     scenarioTestData.testRecords shouldBe List(
       ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
@@ -89,7 +87,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
   }
 
   test("should generate data for a scenario with single source not providing record timestamps") {
-    val scenarioTestData = testInfoProvider.generateTestData(metaData, createScenarioWithSingleSource("sourceEmptyTimestamp"), 3).value
+    val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource("sourceEmptyTimestamp"), 3).value
 
     scenarioTestData.testRecords shouldBe List(
       ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = None),

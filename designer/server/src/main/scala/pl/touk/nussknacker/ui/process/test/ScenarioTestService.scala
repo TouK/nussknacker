@@ -55,19 +55,17 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
 
   def getTestingCapabilities(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val metaData = displayableProcess.metaData
     val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
-    testInfoProvider.getTestingCapabilities(metaData, canonical)
+    testInfoProvider.getTestingCapabilities(canonical)
   }
 
   def generateData(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val metaData = displayableProcess.metaData
     val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
 
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
-      generatedData <- testInfoProvider.generateTestData(metaData, canonical, testSampleSize).toRight("Test data could not be generated for scenario")
+      generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
       rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
     } yield rawTestData
   }
