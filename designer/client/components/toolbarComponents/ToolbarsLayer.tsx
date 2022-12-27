@@ -9,7 +9,7 @@ import styles from "./ToolbarsLayer.styl"
 import {SidePanel, PanelSide} from "../sidePanels/SidePanel"
 import {Toolbar} from "./toolbar"
 import {getCapabilities} from "../../reducers/selectors/other"
-import {useSurvey} from "./useSurvey"
+import {useSurvey} from "../toolbars/useSurvey"
 
 export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR"
 
