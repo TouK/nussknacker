@@ -12,7 +12,7 @@ import {
 } from "react-beautiful-dnd"
 import React, {CSSProperties, useCallback, useMemo} from "react"
 import {useSelector} from "react-redux"
-import {ToolbarDraggableType} from "./ToolbarsLayer"
+import {TOOLBAR_DRAGGABLE_TYPE} from "./ToolbarsLayer"
 import styles from "./ToolbarsLayer.styl"
 import cn from "classnames"
 import {DragHandlerContext} from "./DragHandle"
@@ -107,7 +107,7 @@ export function ToolbarsContainer(props: Props): JSX.Element {
   return (
     <Droppable
       droppableId={side}
-      type={ToolbarDraggableType}
+      type={TOOLBAR_DRAGGABLE_TYPE}
       renderClone={renderDraggable}
     >{renderDroppable}</Droppable>
   )
