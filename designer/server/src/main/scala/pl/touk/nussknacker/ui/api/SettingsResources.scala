@@ -7,7 +7,9 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.JsonCodec
 import pl.touk.nussknacker.ui.config.{AnalyticsConfig, FeatureTogglesConfig}
 import pl.touk.nussknacker.ui.statistics.UsageStatisticsReportsSettings
+import pl.touk.nussknacker.engine.api.CirceUtil.codecs._
 
+import java.net.URL
 import scala.concurrent.ExecutionContext
 
 class SettingsResources(config: FeatureTogglesConfig,
@@ -57,7 +59,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
 
-@JsonCodec case class SurveySettings(text: String, kubj: String)
+@JsonCodec case class SurveySettings(key: String, text: String, link: URL)
 
 object DeploymentCommentSettings {
   def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
