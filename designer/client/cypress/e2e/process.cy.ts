@@ -112,6 +112,7 @@ describe("Process", () => {
 
     it("should have counts button and modal", () => {
       cy.contains(/^counts$/i).as("button")
+      cy.wait(100)
       cy.get("@button").should("be.visible").matchImage()
       cy.get("@button").click()
       cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
