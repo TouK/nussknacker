@@ -27,6 +27,7 @@ class SettingsResources(config: FeatureTogglesConfig,
             environmentAlert = config.environmentAlert,
             commentSettings = config.commentSettings,
             deploymentCommentSettings = config.deploymentCommentSettings,
+            surveySettings = config.surveySettings,
             tabs = config.tabs,
             intervalTimeSettings = config.intervalTimeSettings,
             testDataSettings = config.testDataSettings,
@@ -55,6 +56,8 @@ class SettingsResources(config: FeatureTogglesConfig,
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
 @JsonCodec case class DeploymentCommentSettings(validationPattern: String, exampleComment: Option[String])
+
+@JsonCodec case class SurveySettings(text: String, kubj: String)
 
 object DeploymentCommentSettings {
   def create(validationPattern: String, exampleComment: Option[String]): Validated[EmptyDeploymentCommentSettingsError, DeploymentCommentSettings] = {
@@ -95,6 +98,7 @@ object TopTabType extends Enumeration {
                                             environmentAlert: Option[EnvironmentAlert],
                                             commentSettings: Option[CommentSettings],
                                             deploymentCommentSettings: Option[DeploymentCommentSettings],
+                                            surveySettings: Option[SurveySettings],
                                             tabs: Option[List[TopTab]],
                                             intervalTimeSettings: IntervalTimeSettings,
                                             testDataSettings: TestDataSettings,
