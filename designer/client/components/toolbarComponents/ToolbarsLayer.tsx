@@ -1,38 +1,28 @@
-import React, {useMemo, useEffect, EffectCallback, useState, useCallback} from "react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {DragDropContext, DropResult} from "react-beautiful-dnd"
 import {ToolbarsSide} from "../../reducers/toolbars"
 import {useDispatch, useSelector} from "react-redux"
 import {moveToolbar, registerToolbars} from "../../actions/nk/toolbars"
 import {ToolbarsContainer} from "./ToolbarsContainer"
 import cn from "classnames"
-
 import styles from "./ToolbarsLayer.styl"
 import {SidePanel, PanelSide} from "../sidePanels/SidePanel"
 import {Toolbar} from "./toolbar"
 import {getCapabilities} from "../../reducers/selectors/other"
-import {useUserSettings} from "../../common/userSettings"
-import {SURVEY_CLOSED_SETTINGS_KEY} from "../toolbars/SurveyPanel"
+import {useSurvey} from "./useSurvey"
 
-function useMemoizedIds<T extends { id: string }>(array: T[]): string {
-  return useMemo(() => array.map(v => v.id).join(), [array])
-}
-
-function useIdsEffect<T extends { id: string }>(effect: EffectCallback, array) {
-  const [hash] = useMemoizedIds(array)
-  return useEffect(effect, [hash])
-}
-
-export const ToolbarDraggableType = "TOOLBAR"
+export const TOOLBAR_DRAGGABLE_TYPE = "TOOLBAR"
 
 export function useToolbarsVisibility(toolbars: Toolbar[]) {
   const {editFrontend} = useSelector(getCapabilities)
-  const [userSettings] = useUserSettings()
+  const [showSurvey] = useSurvey()
+
   const hiddenToolbars = useMemo(
     () => ({
-      "survey-panel": userSettings[SURVEY_CLOSED_SETTINGS_KEY],
+      "survey-panel": !showSurvey,
       "creator-panel": !editFrontend,
     }),
-    [editFrontend, userSettings]
+    [editFrontend, showSurvey]
   )
 
   return useMemo(
@@ -54,7 +44,7 @@ function ToolbarsLayer(props: { toolbars: Toolbar[], configId: string }): JSX.El
   const onDragEnd = useCallback((result: DropResult) => {
     setIsDragging(false)
     const {destination, type, reason, source} = result
-    if (reason === "DROP" && type === ToolbarDraggableType && destination) {
+    if (reason === "DROP" && type === TOOLBAR_DRAGGABLE_TYPE && destination) {
       dispatch(moveToolbar(
         [source.droppableId, source.index],
         [destination.droppableId, destination.index],
