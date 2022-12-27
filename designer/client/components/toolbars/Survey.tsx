@@ -5,7 +5,7 @@ import {ToolbarWrapper} from "../toolbarComponents/ToolbarWrapper"
 import {DragHandle} from "../toolbarComponents/DragHandle"
 import {Button, Stack, Typography} from "@mui/material"
 import {useWindows, WindowKind} from "../../windowManager"
-import {useSurvey} from "../toolbarComponents/useSurvey"
+import {useSurvey} from "./useSurvey"
 
 function Survey(): JSX.Element {
   const {t} = useTranslation()
