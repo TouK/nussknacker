@@ -15,6 +15,7 @@ case class FeatureTogglesConfig(development: Boolean,
                                 environmentAlert:Option[EnvironmentAlert],
                                 commentSettings: Option[CommentSettings],
                                 deploymentCommentSettings: Option[DeploymentCommentSettings],
+                                surveySettings: Option[SurveySettings],
                                 tabs: Option[List[TopTab]],
                                 intervalTimeSettings: IntervalTimeSettings,
                                 testDataSettings: TestDataSettings,
@@ -38,6 +39,7 @@ object FeatureTogglesConfig extends LazyLogging{
     val remoteEnvironment = parseOptionalConfig[HttpRemoteEnvironmentConfig](config, "secondaryEnvironment")
     val commentSettings = parseOptionalConfig[CommentSettings](config, "commentSettings")
     val deploymentCommentSettings = parseOptionalConfig[DeploymentCommentSettings](config, "deploymentCommentSettings")
+    val surveySettings = parseOptionalConfig[SurveySettings](config, "surveySettings")
 
     implicit val tabDecoder: ValueReader[TopTab] = FicusReaders.forDecoder
     val tabs = parseOptionalConfig[List[TopTab]](config, "tabs")
@@ -52,6 +54,7 @@ object FeatureTogglesConfig extends LazyLogging{
       counts = counts,
       commentSettings = commentSettings,
       deploymentCommentSettings = deploymentCommentSettings,
+      surveySettings = surveySettings,
       tabs = tabs,
       intervalTimeSettings = intervalTimeSettings,
       environmentAlert = environmentAlert,
