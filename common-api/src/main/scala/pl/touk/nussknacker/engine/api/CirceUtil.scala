@@ -4,7 +4,7 @@ import io.circe
 import io.circe.generic.extras.Configuration
 import io.circe._
 
-import java.net.URI
+import java.net.{URI, URL}
 import java.nio.charset.StandardCharsets
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
@@ -48,6 +48,8 @@ object CirceUtil {
     implicit lazy val uriDecoder: Decoder[URI] = Decoder.decodeString.map(URI.create)
     implicit lazy val uriEncoder: Encoder[URI] = Encoder.encodeString.contramap(_.toString)
 
+    implicit val urlEncoder: Encoder[URL] = Encoder.encodeString.contramap(_.toExternalForm)
+    implicit val urlDecoder: Decoder[URL] = Decoder.decodeString.map(new URL(_))
   }
 
   implicit class RichACursor(cursor: ACursor) {
