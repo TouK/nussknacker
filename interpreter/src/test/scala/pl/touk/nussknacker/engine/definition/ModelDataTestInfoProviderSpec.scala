@@ -5,17 +5,18 @@ import io.circe.Json
 import org.scalatest.OptionValues
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.context.transformation.NodeDependencyValue
 import pl.touk.nussknacker.engine.api.process._
 import pl.touk.nussknacker.engine.api.test.{ScenarioTestRecord, TestData, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.{CirceUtil, MetaData, StreamMetaData, process}
-import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
-class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with OptionValues {
+class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with OptionValues with TableDrivenPropertyChecks {
 
   private val modelData = LocalModelData(ConfigFactory.empty(), new EmptyProcessConfigCreator {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
@@ -55,25 +56,56 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
   }
 
-  test("should detect capabilities for generic transformation source: with support and generate test data") {
-
+  test("should detect capabilities: can parse and generate test data") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource())
 
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true)
   }
 
-  test("should detect capabilities for generic transformation source: with support, no generate test data") {
-
+  test("should detect capabilities: can only parse test data") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoGenerate"))
 
     capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false)
   }
 
-  test("should detect capabilities for generic transformation source: no support, no generate test data") {
-
+  test("should detect capabilities: does not support testing") {
     val capabilities = testInfoProvider.getTestingCapabilities(createScenarioWithSingleSource("genericSourceNoSupport"))
 
     capabilities shouldBe TestingCapabilities(canBeTested = false, canGenerateTestData = false)
+  }
+
+  test("should detect capabilities for scenario with multiple sources: at least one supports generating and testing") {
+    val scenario = ScenarioBuilder
+      .streaming("single source scenario")
+      .sources(
+        GraphBuilder
+          .source("source1", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source2", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+      )
+
+    val capabilities = testInfoProvider.getTestingCapabilities(scenario)
+
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = true)
+  }
+
+  test("should detect capabilities for scenario with multiple sources: one can only parse test data") {
+    val scenario = ScenarioBuilder
+      .streaming("single source scenario")
+      .sources(
+        GraphBuilder
+          .source("source1", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source2", "genericSourceNoGenerate", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+      )
+
+    val capabilities = testInfoProvider.getTestingCapabilities(scenario)
+
+    capabilities shouldBe TestingCapabilities(canBeTested = true, canGenerateTestData = false)
   }
 
   test("should generate data for a scenario with single source") {
@@ -96,13 +128,77 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
     )
   }
 
-  // TODO multiple-sources-test: add multiple sources test
-  // TODO multiple-sources-test: test sorting by timestamp
+  test("should generate empty data for a source not supporting generating") {
+    val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource("genericSourceNoGenerate"), 3)
+
+    scenarioTestData shouldBe 'empty
+  }
+
+  test("should generate empty data for empty scenario") {
+    val emptyScenario = CanonicalProcess(MetaData("empty", StreamMetaData()), List.empty)
+
+    val scenarioTestData = testInfoProvider.generateTestData(emptyScenario, 3)
+
+    scenarioTestData shouldBe 'empty
+  }
+
+  test("should generate data for a scenario with multiple source") {
+    val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithMultipleSources(), 8).value
+
+    scenarioTestData.testRecords shouldBe List(
+      ScenarioTestRecord("source1", Json.fromString("record 1"), timestamp = Some(1)),
+      ScenarioTestRecord("source3", Json.fromString("record 1"), timestamp = Some(1)),
+      ScenarioTestRecord("source1", Json.fromString("record 2"), timestamp = Some(2)),
+      ScenarioTestRecord("source3", Json.fromString("record 2"), timestamp = Some(2)),
+      ScenarioTestRecord("source1", Json.fromString("record 3"), timestamp = Some(3)),
+      ScenarioTestRecord("source2", Json.fromString("record 1"), timestamp = None),
+      ScenarioTestRecord("source2", Json.fromString("record 2"), timestamp = None),
+      ScenarioTestRecord("source2", Json.fromString("record 3"), timestamp = None),
+    )
+  }
+
+  test("should generate requested number of records") {
+    val testingData = Table(
+      ("scenario", "size", "expected size"),
+      (createScenarioWithSingleSource(), 0, None),
+      (createScenarioWithMultipleSources(), 0, None),
+      (createScenarioWithSingleSource(), 1, Some(1)),
+      (createScenarioWithMultipleSources(), 1, Some(1)),
+      (createScenarioWithMultipleSources(), 2, Some(2)),
+      (createScenarioWithMultipleSources(), 3, Some(3)),
+      (createScenarioWithMultipleSources(), 4, Some(4)),
+    )
+
+    forEvery(testingData) { (scenario, size, expectedSize) =>
+      val testData = testInfoProvider.generateTestData(scenario, size)
+
+      testData.map(_.testRecords.size) shouldBe expectedSize
+    }
+  }
 
   private def createScenarioWithSingleSource(sourceComponentId: String = "genericSource"): CanonicalProcess = {
     ScenarioBuilder
       .streaming("single source scenario")
       .source("source1", sourceComponentId, "par1" -> "'a'", "a" -> "42")
       .emptySink("end", "dead-end")
+  }
+
+  private def createScenarioWithMultipleSources(): CanonicalProcess = {
+    ScenarioBuilder
+      .streaming("single source scenario")
+      .sources(
+        GraphBuilder
+          .source("source1", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source2", "sourceEmptyTimestamp", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source3", "genericSource", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source4", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+      )
   }
 }

@@ -37,35 +37,62 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
-  // TODO multiple-sources-test: handle multiple sources
-  override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = modelData.withThisAsContextClassLoader {
+  override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
+    collectAllSources(scenario)
+      .map(getTestingCapabilities(_, scenario.metaData))
+      .foldLeft(TestingCapabilities.Disabled)((tc1, tc2) => TestingCapabilities(
+        canBeTested = tc1.canBeTested || tc2.canBeTested,
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData
+      ))
+  }
+
+  private def getTestingCapabilities(source: Source, metaData: MetaData): TestingCapabilities = modelData.withThisAsContextClassLoader {
     val testingCapabilities = for {
-      source <- findFirstSource(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData)
+      sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
 
-  // TODO multiple-sources-test: handle multiple sources
   override def generateTestData(scenario: CanonicalProcess, size: Int): Option[ScenarioTestData] = {
     for {
-      source <- findFirstSource(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData)
-      testDataGenerator <- sourceObj.cast[TestDataGenerator]
-      testData = testDataGenerator.generateTestData(size)
-      scenarioTestRecords = testData.testRecords.map(record => ScenarioTestRecord(source.id, record.json, record.timestamp))
-    } yield ScenarioTestData(scenarioTestRecords)
+      _ <- Some(size) if size > 0
+      sourceTestDataGenerators = prepareTestDataGenerators(scenario) if sourceTestDataGenerators.nonEmpty
+      sourceTestDataSizes = divideEvenlyIntoParts(size, partsCount = sourceTestDataGenerators.size)
+      scenarioTestRecords = sourceTestDataGenerators.zip(sourceTestDataSizes).flatMap { case ((sourceId, testDataGenerator), testDataSize) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(testDataSize).testRecords
+        sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
+      } if scenarioTestRecords.nonEmpty
+      // Records without timestamp are at the end of the list.
+      sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    } yield ScenarioTestData(sortedRecords)
   }
 
-  private def findFirstSource(scenario: CanonicalProcess): Option[Source] = {
-    scenario.collectAllNodes.flatMap(asSource).headOption
+  private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
+    for {
+      source <- collectAllSources(scenario)
+      sourceObj <- prepareSourceObj(source)(scenario.metaData)
+      testDataGenerator <- sourceObj.cast[TestDataGenerator]
+    } yield (NodeId(source.id), testDataGenerator)
+  }
+
+  private def collectAllSources(scenario: CanonicalProcess): List[Source] = {
+    scenario.collectAllNodes.flatMap(asSource)
   }
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)
     nodeCompiler.compileSource(source).compiledObject.toOption
+  }
+
+  private def divideEvenlyIntoParts(n: Int, partsCount: Int): List[Int] = {
+    require(n > 0)
+    require(partsCount > 0)
+
+    val partSizes = List.fill(partsCount)(n / partsCount)
+    val partSizeRemainders = List.fill(n % partsCount)(1)
+    partSizes.zipAll(partSizeRemainders, 0, 0).map { case (partSize, partRemainder) => partSize + partRemainder }
   }
 
 }
