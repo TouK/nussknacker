@@ -3,7 +3,7 @@
 
 To see the biggest differences please consult the [changelog](Changelog.md).
 
-## In version 1.7.0 (Not released yet)
+## In version 1.7.0
 
 ### Scenario authoring changes
 * [#3701](https://github.com/TouK/nussknacker/pull/3701) Right now access in SpEL to not existing field on TypedMap won't throw exception, just will return `null`
