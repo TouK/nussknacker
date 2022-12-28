@@ -26,6 +26,7 @@ trait KafkaSpec extends BeforeAndAfterAll with WithConfig { self: Suite =>
           controllerPort = controllerPort,
           kafkaBrokerConfig = kafkaBrokerConfig
         )
+      case _ => throw new MatchError(())
     }
     kafkaClient = new KafkaClient(kafkaAddress = kafkaServer.kafkaAddress, self.suiteName)
   }

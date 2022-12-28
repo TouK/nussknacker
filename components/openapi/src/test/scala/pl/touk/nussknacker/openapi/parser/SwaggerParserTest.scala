@@ -87,7 +87,7 @@ class SwaggerParserTest extends AnyFunSuite with BaseOpenAPITest with Matchers {
   test("returns errors for incorrect service") {
     val openApi = parseServicesFromResource("incorrect-service.yml")
 
-    openApi.find(_.exists(_.name == ServiceName("GET-valid"))) shouldBe 'defined
+    openApi.find(_.exists(_.name == ServiceName("GET-valid"))) shouldBe Symbol("defined")
 
     def errorsFor(name: String) =
       openApi.flatMap(_.swap.toOption).filter(_.name == ServiceName("GET-"+name)).flatMap(_.errors.toList)

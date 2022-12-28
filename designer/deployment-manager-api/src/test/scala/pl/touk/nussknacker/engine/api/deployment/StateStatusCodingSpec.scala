@@ -30,7 +30,7 @@ class StateStatusCodingSpec extends AnyFunSuite with Matchers with EitherValuesD
     statusJson.hcursor.get[String]("type").rightValue shouldEqual "CustomStateStatus"
     statusJson.hcursor.get[String]("name").rightValue shouldEqual "CUSTOM"
     // we don't encode custom state statuses fields be design
-    statusJson.hcursor.get[String]("someField").right.toOption shouldBe empty
+    statusJson.hcursor.get[String]("someField").toOption shouldBe empty
 
     val decodedStatus = Json.obj(
       "type" -> Json.fromString("CustomStateStatus"),

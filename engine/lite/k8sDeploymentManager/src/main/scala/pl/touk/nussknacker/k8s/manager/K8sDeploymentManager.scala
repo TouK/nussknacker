@@ -30,6 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.io.Source
 import scala.language.reflectiveCalls
 import scala.util.Using
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class K8sDeploymentManager(override protected val modelData: BaseModelData,
                            config: K8sDeploymentManagerConfig)
@@ -209,7 +210,7 @@ class K8sDeploymentManager(override protected val modelData: BaseModelData,
       metadata = ObjectMeta(
         name = objectName,
         labels = labelsForScenario(processVersion, nussknackerInstanceName) + (secretIdLabel -> objectName) ++ additionalLabels
-      ), data = data.mapValues(_.getBytes)
+      ), data = data.mapValuesNow(_.getBytes)
     )
   }
 

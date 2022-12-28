@@ -14,7 +14,7 @@ import sttp.client.{NothingT, SttpBackend}
 
 import java.io.File
 import java.nio.file.Files
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 //This is helper, which allows for starting UI with given model without having to build jar etc.

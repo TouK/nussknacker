@@ -45,7 +45,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "serialize inner case class 2" in {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     // runtime type is scala.collection.convert.Wrappers$MutableBufferWrapper
     val obj = scala.collection.mutable.Buffer(1,2,3).asJava
@@ -56,7 +56,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "serialize inner case class 3" in {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     // runtime type is scala.collection.convert.Wrappers$MutableMapWrapper
     val obj = scala.collection.mutable.Map().asJava

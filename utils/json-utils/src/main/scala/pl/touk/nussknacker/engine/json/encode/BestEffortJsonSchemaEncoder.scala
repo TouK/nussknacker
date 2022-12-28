@@ -34,19 +34,19 @@ object BestEffortJsonSchemaEncoder {
       val value = fields.get(key)
       (key, value,schema)
     } //we do collect here because we want to do own pre-validation with human readably message (consider doing encode and at the end schema.validate instead of this)
-    .collect {
-      case (fieldName, Some(null), Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
-      case (fieldName, None, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
-        error(s"Missing property: $fieldName for schema: $parentSchema.")
-      case (fieldName, Some(value), Some(schema)) =>
-        encode(value, schema, Some(fieldName)).map(fieldName -> _)
-      case (fieldName, _, None) if !parentSchema.permitsAdditionalProperties() =>
-        error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
-      case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
-        case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
-        case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
-      }
-    }.sequence.map { values => Json.fromFields(values) }
+      .collect {
+        case (fieldName, Some(null), Some(schema)) if schema.isNullableSchema => Valid((fieldName, Json.Null))
+        case (fieldName, None, Some(_)) if parentSchema.getRequiredProperties.contains(fieldName) =>
+          error(s"Missing property: $fieldName for schema: $parentSchema.")
+        case (fieldName, Some(value), Some(schema)) =>
+          encode(value, schema, Some(fieldName)).map(fieldName -> _)
+        case (fieldName, _, None) if !parentSchema.permitsAdditionalProperties() =>
+          error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
+        case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
+          case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
+          case None => Valid(jsonEncoder.encode(value)).map(fieldName -> _)
+        }
+      }.sequence.map { values => Json.fromFields(values) }
   }
 
   private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
@@ -96,10 +96,10 @@ object BestEffortJsonSchemaEncoder {
   }
 
   /**
-   * We want to be consistent with json schema specification: https://json-schema.org/understanding-json-schema/reference/numeric.html#integer
-   * and allow to pass e.g. `1.0` for integer schema. Consequently we have to try to convert floating point numbers to integer because
-   * Everit validation throws exception for floating numbers with `.0`.
-   */
+    * We want to be consistent with json schema specification: https://json-schema.org/understanding-json-schema/reference/numeric.html#integer
+    * and allow to pass e.g. `1.0` for integer schema. Consequently we have to try to convert floating point numbers to integer because
+    * Everit validation throws exception for floating numbers with `.0`.
+    */
   private def encodeIntegerSchema(value: Any, schema: NumberSchema, fieldName: Option[String] = None): Validated[NonEmptyList[String], Json] = {
     //TODO: Right now wy try to convert BigDecimal to long but we should addictive conversion from schema.getMinimum and schema.getMaximum
     def encodeBigDecimalToIntegerSchema(bigDecimalValue: BigDecimal): Validated[NonEmptyList[String], Json] = Try(bigDecimalValue.toLongExact) match {

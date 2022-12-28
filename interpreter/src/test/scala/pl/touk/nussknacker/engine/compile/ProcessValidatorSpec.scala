@@ -866,8 +866,9 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
+        .view
         .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
-        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) })
+        => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) }.toMap)
 
     val processWithInvalidExpresssion =
       ScenarioBuilder
@@ -1191,7 +1192,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val resolver = SubprocessResolver(Set(fragment))
 
     val withNonUsed = resolver.resolve(scenario("nonUsedVar")).andThen(validate(_, baseDefinition).result)
-    withNonUsed shouldBe 'valid
+    withNonUsed shouldBe Symbol("valid")
 
     val withUsed = resolver.resolve(scenario(usedVarName)).andThen(validate(_, baseDefinition).result)
     val outputVar = OutputVar.fragmentOutput("output1", "")
@@ -1327,7 +1328,7 @@ class StartingWithACustomValidator extends CustomParameterValidator {
   import cats.data.Validated.{invalid, valid}
 
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (value.stripPrefix("'").startsWith("A")) valid(Unit)
+    if (value.stripPrefix("'").startsWith("A")) valid(())
     else invalid(
       CustomParameterValidationError(s"Value $value does not starts with 'A'",
         "Value does not starts with 'A'", paramName, nodeId.id))

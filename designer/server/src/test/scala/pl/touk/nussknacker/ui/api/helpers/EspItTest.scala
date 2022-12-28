@@ -172,7 +172,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
 
   protected def saveProcess(processName: ProcessName, process: CanonicalProcess, category: String)(testCode: => Assertion): Assertion =
     createProcessRequest(processName, category) { _ =>
-      val json = parser.decode[Json](responseAs[String]).right.get
+      val json = parser.decode[Json](responseAs[String]).toOption.get
       val resp = CreateProcessResponse(json)
 
       resp.processName shouldBe processName
@@ -364,37 +364,37 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   protected def parseResponseToListJsonProcess(response: String): List[ProcessJson] =
-    parser.decode[List[Json]](response).right.get.map(j => ProcessJson(j))
+    parser.decode[List[Json]](response).toOption.get.map(j => ProcessJson(j))
 
   private def decodeJsonProcess(response: String): ProcessJson =
-    ProcessJson(parser.decode[Json](response).right.get)
+    ProcessJson(parser.decode[Json](response).toOption.get)
 }
 
 final case class ProcessVersionJson(id: Long)
 
 object ProcessVersionJson {
   def apply(process: Json): ProcessVersionJson = ProcessVersionJson(
-    process.hcursor.downField("processVersionId").as[Long].right.get
+    process.hcursor.downField("processVersionId").as[Long].toOption.get
   )
 }
 
 object ProcessJson{
   def apply(process: Json): ProcessJson = {
-    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].right.get
+    val lastAction = process.hcursor.downField("lastAction").as[Option[Json]].toOption.get
 
     new ProcessJson(
-      process.hcursor.downField("id").as[String].right.get,
-      process.hcursor.downField("name").as[String].right.get,
-      process.hcursor.downField("processId").as[Long].right.get,
-      lastAction.map(_.hcursor.downField("processVersionId").as[Long].right.get),
-      lastAction.map(_.hcursor.downField("action").as[String].right.get),
-      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("icon").as[Option[String]].right.get.map(URI.create),
-      process.hcursor.downField("state").downField("tooltip").as[Option[String]].right.get,
-      process.hcursor.downField("state").downField("description").as[Option[String]].right.get,
-      process.hcursor.downField("processCategory").as[String].right.get,
-      process.hcursor.downField("isArchived").as[Boolean].right.get,
-      process.hcursor.downField("history").as[Option[List[Json]]].right.get.map(_.map(v => ProcessVersionJson(v)))
+      process.hcursor.downField("id").as[String].toOption.get,
+      process.hcursor.downField("name").as[String].toOption.get,
+      process.hcursor.downField("processId").as[Long].toOption.get,
+      lastAction.map(_.hcursor.downField("processVersionId").as[Long].toOption.get),
+      lastAction.map(_.hcursor.downField("action").as[String].toOption.get),
+      process.hcursor.downField("state").downField("status").downField("name").as[Option[String]].toOption.get,
+      process.hcursor.downField("state").downField("icon").as[Option[String]].toOption.get.map(URI.create),
+      process.hcursor.downField("state").downField("tooltip").as[Option[String]].toOption.get,
+      process.hcursor.downField("state").downField("description").as[Option[String]].toOption.get,
+      process.hcursor.downField("processCategory").as[String].toOption.get,
+      process.hcursor.downField("isArchived").as[Boolean].toOption.get,
+      process.hcursor.downField("history").as[Option[List[Json]]].toOption.get.map(_.map(v => ProcessVersionJson(v)))
     )
   }
 }
@@ -420,9 +420,9 @@ final case class ProcessJson(id: String,
 
 object CreateProcessResponse {
   def apply(data: Json): CreateProcessResponse = CreateProcessResponse(
-    data.hcursor.downField("id").as[Long].map(ProcessId(_)).right.get,
-    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).right.get,
-    data.hcursor.downField("processName").as[String].map(ProcessName(_)).right.get
+    data.hcursor.downField("id").as[Long].map(ProcessId(_)).toOption.get,
+    data.hcursor.downField("versionId").as[Long].map(VersionId(_)).toOption.get,
+    data.hcursor.downField("processName").as[String].map(ProcessName(_)).toOption.get
   )
 }
 

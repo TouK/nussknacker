@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.sql.utils._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteRuntimeTest with BeforeAndAfterAll with WithHsqlDB {
   override val prepareHsqlDDLs: List[String] = List(
@@ -56,7 +56,7 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
       .emptySink("response", "response", "name" -> "#output.NAME", "count" -> "")
 
     val validatedResult = runProcess(process, TestRequest(1))
-    validatedResult shouldBe 'valid
+    validatedResult shouldBe Symbol("valid")
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1
@@ -80,7 +80,7 @@ class DatabaseLookupLiteRuntimeTest extends AnyFunSuite with Matchers with LiteR
       .emptySink("response", "response", "name" -> "#output.name", "count" -> "")
 
     val validatedResult = runProcess(process, TestRequest(1))
-    validatedResult shouldBe 'valid
+    validatedResult shouldBe Symbol("valid")
 
     val resultList = validatedResult.getOrElse(throw new AssertionError())
     resultList should have length 1

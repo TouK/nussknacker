@@ -17,6 +17,7 @@ import pl.touk.nussknacker.ui.api.helpers.TestProcessUtil._
 import pl.touk.nussknacker.ui.api.helpers.TestProcessingTypes._
 
 import scala.reflect.ClassTag
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
 
@@ -148,7 +149,7 @@ class TestModelMigrationsSpec extends AnyFunSuite with Matchers {
     result.converted.nodes.collectFirst { case t: T => t }.get
 
   private def errorTypes(validationResult: ValidationResult): Map[String, List[String]] =
-    validationResult.errors.invalidNodes.mapValues(_.map(_.typ))
+    validationResult.errors.invalidNodes.mapValuesNow(_.map(_.typ))
 
   private def newTestModelMigrations(testMigrations: TestMigrations): TestModelMigrations =
     new TestModelMigrations(mapProcessingTypeDataProvider(Streaming -> testMigrations), TestFactory.processValidation)

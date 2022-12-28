@@ -31,7 +31,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
       override def retrieve(implicit timeout: Timeout): Future[DeploymentStatusResponse] = Future.successful(DeploymentStatusResponse(
         Map(ProcessName("id1") -> DeployInfo("deployingUser", clock.millis(), Deployment))))
     }
-    val listener = new NotificationsListener(NotificationConfig(20 minutes), (id: ProcessId) => Future.successful(Some(ProcessName(id.value + "-name"))), clock)
+    val listener = new NotificationsListener(NotificationConfig(20 minutes), (id: ProcessId) => Future.successful(Some(ProcessName("" + id.value + "-name"))), clock)
     val notificationService = new NotificationService(currentDeployments, listener)
     def notificationsFor(user: String, after: Option[Instant] = None) = notificationService.notifications(LoggedUser(user, user), after).futureValue
 
@@ -40,7 +40,7 @@ class NotificationServiceTest extends AnyFunSuite with Matchers with PatientScal
     val refreshAfterFail = List(DataToRefresh.state)
     val refreshDeployInProgress = Nil
 
-    notificationsFor("deployingUser") shouldBe 'empty
+    notificationsFor("deployingUser") shouldBe Symbol("empty")
     notificationsFor("randomUser").map(_.toRefresh) shouldBe List(Nil)
 
     val userIdForFail = "user1"

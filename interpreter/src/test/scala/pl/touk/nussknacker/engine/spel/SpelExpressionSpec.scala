@@ -37,7 +37,7 @@ import java.time.{LocalDate, LocalDateTime}
 import java.util
 import java.util.{Collections, Locale}
 import scala.annotation.varargs
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
 import scala.language.implicitConversions
 import scala.reflect.runtime.universe._
@@ -220,10 +220,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("handle string concatenation correctly") {
-    parse[String]("'' + 1") shouldBe 'valid
-    parse[Long]("2 + 1") shouldBe 'valid
-    parse[String]("'' + ''") shouldBe 'valid
-    parse[String]("4 + ''") shouldBe 'valid
+    parse[String]("'' + 1") shouldBe Symbol("valid")
+    parse[Long]("2 + 1") shouldBe Symbol("valid")
+    parse[String]("'' + ''") shouldBe Symbol("valid")
+    parse[String]("4 + ''") shouldBe Symbol("valid")
   }
 
   test("subtraction of non numeric types") {
@@ -248,10 +248,10 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("null properly") {
-    parse[String]("null") shouldBe 'valid
-    parse[Long]("null") shouldBe 'valid
-    parse[Any]("null") shouldBe 'valid
-    parse[Boolean]("null") shouldBe 'valid
+    parse[String]("null") shouldBe Symbol("valid")
+    parse[Long]("null") shouldBe Symbol("valid")
+    parse[Any]("null") shouldBe Symbol("valid")
+    parse[Boolean]("null") shouldBe Symbol("valid")
 
     parse[Any]("null").toOption.get.returnType shouldBe TypedNull
     parse[java.util.List[String]]("{'t', null, 'a'}").toOption.get.returnType shouldBe
@@ -302,11 +302,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("validate MethodReference parameter types") {
-    parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.add(1, 1)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.add(1L, 1)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.addLongs(1L, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.addLongs(1, 1L)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.add(#processHelper.toAny('1'), 1)", ctxWithGlobal) shouldBe Symbol("valid")
 
     inside(parse[Any]("#processHelper.add('1', 1)", ctxWithGlobal)) {
       case Invalid(NonEmptyList(error: ArgumentTypeError, Nil)) =>
@@ -315,15 +315,15 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("validate MethodReference for scala varargs") {
-    parse[Any]("#processHelper.addAll()", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.addAll(1)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#processHelper.addAll()", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.addAll(1)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#processHelper.addAll(1, 2, 3)", ctxWithGlobal) shouldBe Symbol("valid")
   }
 
   test("validate MethodReference for java varargs") {
-    parse[Any]("#javaClassWithVarargs.addAll()", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#javaClassWithVarargs.addAll(1)", ctxWithGlobal) shouldBe 'valid
-    parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe 'valid
+    parse[Any]("#javaClassWithVarargs.addAll()", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#javaClassWithVarargs.addAll(1)", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Any]("#javaClassWithVarargs.addAll(1, 2, 3)", ctxWithGlobal) shouldBe Symbol("valid")
   }
 
   test("evaluate MethodReference for scala varargs") {
@@ -375,7 +375,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("access list elements by index") {
     parse[String]("#obj.children[0].id").validExpression.evaluateSync[String](ctx) shouldEqual "3"
     parse[String]("#mapValue['foo']", dynamicPropertyAccessAllowed = true).validExpression.evaluateSync[String](ctx) shouldEqual "bar"
-    parse[Int]("#obj.children[0].id") shouldBe 'invalid
+    parse[Int]("#obj.children[0].id") shouldBe Symbol("invalid")
 
   }
 
@@ -399,11 +399,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
   test("stop validation when property of Any/Object type found") {
     val ctxWithVar = ctx.withVariable("obj", SampleValue(11))
-    parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar, methodExecutionForUnknownAllowed = true) shouldBe 'valid
+    parse[Any]("#obj.anyObject.anyPropertyShouldValidate", ctxWithVar, methodExecutionForUnknownAllowed = true) shouldBe Symbol("valid")
   }
 
   test("allow empty expression") {
-    parse[Any]("", ctx) shouldBe 'valid
+    parse[Any]("", ctx) shouldBe Symbol("valid")
   }
 
   test("register static variables") {
@@ -435,8 +435,8 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("check return type for map property accessed in dot notation") {
-    parse[String]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe 'valid
-    parse[Integer]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe 'invalid
+    parse[String]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Integer]("#processHelper.stringOnStringMap.key1", ctxWithGlobal) shouldBe Symbol("invalid")
   }
 
   test("allow access to objects with get method in dot notation") {
@@ -449,7 +449,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("check property if is defined even if class has get method") {
     val withObjVar = ctx.withVariable("obj", new SampleObjectWithGetMethod(Map.empty))
 
-    parse[Boolean]("#obj.definedProperty == 123", withObjVar) shouldBe 'invalid
+    parse[Boolean]("#obj.definedProperty == 123", withObjVar) shouldBe Symbol("invalid")
     parse[Boolean]("#obj.definedProperty == '123'", withObjVar).validExpression.evaluateSync[Boolean](withObjVar) shouldBe true
   }
 
@@ -464,7 +464,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   test("exact check properties in generated avro classes") {
     val withObjVar = ctx.withVariable("obj", GeneratedAvroClass.newBuilder().setText("123").build())
 
-    parse[Boolean]("#obj.notExistingProperty == 123", withObjVar) shouldBe 'invalid
+    parse[Boolean]("#obj.notExistingProperty == 123", withObjVar) shouldBe Symbol("invalid")
     parse[Boolean]("#obj.getText == '123'", withObjVar).validExpression.evaluateSync[Boolean](withObjVar) shouldBe true
   }
 
@@ -515,33 +515,33 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("validate simple literals") {
-    parse[Long]("-1", ctx) shouldBe 'valid
-    parse[Float]("-1.1", ctx) shouldBe 'valid
-    parse[Long]("-1.1", ctx) should not be 'valid
-    parse[Double]("-1.1", ctx) shouldBe 'valid
-    parse[java.math.BigDecimal]("-1.1", ctx) shouldBe 'valid
+    parse[Long]("-1", ctx) shouldBe Symbol("valid")
+    parse[Float]("-1.1", ctx) shouldBe Symbol("valid")
+    parse[Long]("-1.1", ctx) should not be (Symbol("valid"))
+    parse[Double]("-1.1", ctx) shouldBe Symbol("valid")
+    parse[java.math.BigDecimal]("-1.1", ctx) shouldBe Symbol("valid")
   }
 
   test("validate ternary operator") {
-    parse[Long]("'d'? 3 : 4", ctx) should not be 'valid
-    parse[String]("1 > 2 ? 12 : 23", ctx) should not be 'valid
-    parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe 'valid
-    parse[Number]("1 > 2 ? 12 : 23.0", ctx) shouldBe 'valid
-    parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe 'valid
-    parse[Any]("1 > 2 ? '123' : 123", ctx) shouldBe 'invalid
+    parse[Long]("'d'? 3 : 4", ctx) should not be (Symbol("valid"))
+    parse[String]("1 > 2 ? 12 : 23", ctx) should not be (Symbol("valid"))
+    parse[Long]("1 > 2 ? 12 : 23", ctx) shouldBe Symbol("valid")
+    parse[Number]("1 > 2 ? 12 : 23.0", ctx) shouldBe Symbol("valid")
+    parse[String]("1 > 2 ? 'ss' : 'dd'", ctx) shouldBe Symbol("valid")
+    parse[Any]("1 > 2 ? '123' : 123", ctx) shouldBe Symbol("invalid")
   }
 
   test("validate selection for inline list") {
-    parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be 'valid
-    parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe 'valid
+    parse[Long]("{44, 44}.?[#this.alamakota]", ctx) should not be (Symbol("valid"))
+    parse[java.util.List[_]]("{44, 44}.?[#this > 4]", ctx) shouldBe Symbol("valid")
   }
 
   test("validate selection and projection for list variable") {
     val vctx = ValidationContext.empty.withVariable("a", Typed.fromDetailedType[java.util.List[String]], paramName = None).toOption.get
 
-    parseV[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'valid
-    parseV[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe 'invalid
-    parseV[java.util.List[Int]]("#a.![#this / 5]", vctx) should not be 'valid
+    parseV[java.util.List[Int]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe Symbol("valid")
+    parseV[java.util.List[Boolean]]("#a.![#this.length()].?[#this > 4]", vctx) shouldBe Symbol("invalid")
+    parseV[java.util.List[Int]]("#a.![#this / 5]", vctx) should not be (Symbol("valid"))
   }
 
   test("allow #this reference inside functions") {
@@ -550,35 +550,35 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("allow property access in unknown classes") {
-    parseV[Any]("#input.anyObject", ValidationContext(Map("input" -> Typed[SampleValue]))) shouldBe 'valid
+    parseV[Any]("#input.anyObject", ValidationContext(Map("input" -> Typed[SampleValue]))) shouldBe Symbol("valid")
   }
 
   test("validate expression with projection and filtering") {
     val ctxWithInput = ctx.withVariable("input", SampleObject(util.Arrays.asList(SampleValue(444))))
-    parse[Any]("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput) shouldBe 'valid
+    parse[Any]("(#input.list.?[value == 5]).![value].contains(5)", ctxWithInput) shouldBe Symbol("valid")
   }
 
   test("validate map literals") {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
-    parse[Any]("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput) shouldBe 'valid
+    parse[Any]("{ Field1: 'Field1Value', Field2: 'Field2Value', Field3: #input.value }", ctxWithInput) shouldBe Symbol("valid")
   }
 
   test("validate list literals") {
-    parse[Int]("#processHelper.stringList({})", ctxWithGlobal) shouldBe 'valid
-    parse[Int]("#processHelper.stringList({'aa'})", ctxWithGlobal) shouldBe 'valid
-    parse[Int]("#processHelper.stringList({333})", ctxWithGlobal) shouldNot be ('valid)
+    parse[Int]("#processHelper.stringList({})", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Int]("#processHelper.stringList({'aa'})", ctxWithGlobal) shouldBe Symbol("valid")
+    parse[Int]("#processHelper.stringList({333})", ctxWithGlobal) shouldNot be (Symbol("valid"))
   }
 
   test("type map literals") {
     val ctxWithInput = ctx.withVariable("input", SampleValue(444))
-    parse[Any]("{ Field1: 'Field1Value', Field2: #input.value }.Field1", ctxWithInput) shouldBe 'valid
-    parse[Any]("{ Field1: 'Field1Value', 'Field2': #input }.Field2.value", ctxWithInput) shouldBe 'valid
-    parse[Any]("{ Field1: 'Field1Value', Field2: #input }.noField", ctxWithInput) shouldNot be ('valid)
+    parse[Any]("{ Field1: 'Field1Value', Field2: #input.value }.Field1", ctxWithInput) shouldBe Symbol("valid")
+    parse[Any]("{ Field1: 'Field1Value', 'Field2': #input }.Field2.value", ctxWithInput) shouldBe Symbol("valid")
+    parse[Any]("{ Field1: 'Field1Value', Field2: #input }.noField", ctxWithInput) shouldNot be (Symbol("valid"))
 
   }
 
   test("not validate plain string ") {
-    parse[Any]("abcd", ctx) shouldNot be ('valid)
+    parse[Any]("abcd", ctx) shouldNot be (Symbol("valid"))
   }
 
   test("can handle return generic return types") {
@@ -622,11 +622,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       .withVariable("input", TypedObjectTypingResult(ListMap("str" -> Typed[String], "lon" -> Typed[Long])), paramName = None).toOption.get
 
 
-    parseV[String]("#input.str", ctxWithMap) should be ('valid)
-    parseV[Long]("#input.lon", ctxWithMap) should be ('valid)
+    parseV[String]("#input.str", ctxWithMap) should be (Symbol("valid"))
+    parseV[Long]("#input.lon", ctxWithMap) should be (Symbol("valid"))
 
-    parseV[Long]("#input.str", ctxWithMap) shouldNot be ('valid)
-    parseV[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
+    parseV[Long]("#input.str", ctxWithMap) shouldNot be (Symbol("valid"))
+    parseV[String]("#input.ala", ctxWithMap) shouldNot be (Symbol("valid"))
   }
 
   test("be able to convert between primitive types") {
@@ -648,7 +648,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
 
     parseV[String]("#input.str", valCtxWithMap).validExpression.evaluateSync[String](ctx) shouldBe "aaa"
     parseV[Long]("#input.lon", valCtxWithMap).validExpression.evaluateSync[Long](ctx) shouldBe 3444
-    parseV[Any]("#input.notExisting", valCtxWithMap) shouldBe 'invalid
+    parseV[Any]("#input.notExisting", valCtxWithMap) shouldBe Symbol("invalid")
     parseV[Boolean]("#input.containsValue('aaa')", valCtxWithMap).validExpression.evaluateSync[Boolean](ctx) shouldBe true
     parseV[Int]("#input.size", valCtxWithMap).validExpression.evaluateSync[Int](ctx) shouldBe 2
     parseV[Boolean]("#input == {str: 'aaa', lon: 3444}", valCtxWithMap).validExpression.evaluateSync[Boolean](ctx) shouldBe true
@@ -666,11 +666,11 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         TypedObjectTypingResult(ListMap("lon" -> Typed[Long]))), paramName = None).toOption.get
 
 
-    parseV[String]("#input.str", ctxWithMap) should be ('valid)
-    parseV[Long]("#input.lon", ctxWithMap) should be ('valid)
+    parseV[String]("#input.str", ctxWithMap) should be (Symbol("valid"))
+    parseV[Long]("#input.lon", ctxWithMap) should be (Symbol("valid"))
 
-    parseV[Long]("#input.str", ctxWithMap) shouldNot be ('valid)
-    parseV[String]("#input.ala", ctxWithMap) shouldNot be ('valid)
+    parseV[Long]("#input.str", ctxWithMap) shouldNot be (Symbol("valid"))
+    parseV[String]("#input.ala", ctxWithMap) shouldNot be (Symbol("valid"))
   }
 
   test("expand all fields of TypedClass in union") {
@@ -681,19 +681,19 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
         Typed[SampleValue]), paramName = None).toOption.get
 
 
-    parseV[java.util.List[SampleValue]]("#input.list", ctxWithMap) should be ('valid)
-    parseV[Int]("#input.value", ctxWithMap) should be ('valid)
+    parseV[java.util.List[SampleValue]]("#input.list", ctxWithMap) should be (Symbol("valid"))
+    parseV[Int]("#input.value", ctxWithMap) should be (Symbol("valid"))
 
-    parseV[Set[_]]("#input.list", ctxWithMap) shouldNot be ('valid)
-    parseV[String]("#input.value", ctxWithMap) shouldNot be ('valid)
+    parseV[Set[_]]("#input.list", ctxWithMap) shouldNot be (Symbol("valid"))
+    parseV[String]("#input.value", ctxWithMap) shouldNot be (Symbol("valid"))
   }
 
   test("parses expression with template context") {
-    parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template) shouldBe 'valid
-    parse[String]("alamakota #{444 + #obj.value}", ctx, flavour = SpelExpressionParser.Template) shouldBe 'valid
-    parse[String]("alamakota #{444 + #nothing}", ctx, flavour = SpelExpressionParser.Template) shouldBe 'invalid
-    parse[String]("#{'raz'},#{'dwa'}", ctx, flavour = SpelExpressionParser.Template) shouldBe 'valid
-    parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe 'valid
+    parse[String]("alamakota #{444}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
+    parse[String]("alamakota #{444 + #obj.value}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
+    parse[String]("alamakota #{444 + #nothing}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("invalid")
+    parse[String]("#{'raz'},#{'dwa'}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
+    parse[String]("#{'raz'},#{12345}", ctx, flavour = SpelExpressionParser.Template) shouldBe Symbol("valid")
   }
 
   test("evaluates expression with template context") {
@@ -709,46 +709,46 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val withObjVar = ctx.withVariable("dicts", TypedMap(Map("foo" -> SampleValue(123))))
 
     parse[Int]("#dicts.foo.value", withObjVar).validExpression.evaluateSync[Int](withObjVar) should equal(123)
-    parse[String]("#dicts.bar.value", withObjVar) shouldBe 'invalid
+    parse[String]("#dicts.bar.value", withObjVar) shouldBe Symbol("invalid")
   }
 
   test("adding invalid type to number") {
     val floatAddExpr = "12.1 + #obj"
-    parse[Float](floatAddExpr, ctx) shouldBe 'invalid
+    parse[Float](floatAddExpr, ctx) shouldBe Symbol("invalid")
   }
 
   test("different types in equality") {
-    parse[Boolean]("'123' == 234", ctx) shouldBe 'invalid
-    parse[Boolean]("'123' == '234'", ctx) shouldBe 'valid
-    parse[Boolean]("'123' == null", ctx) shouldBe 'valid
+    parse[Boolean]("'123' == 234", ctx) shouldBe Symbol("invalid")
+    parse[Boolean]("'123' == '234'", ctx) shouldBe Symbol("valid")
+    parse[Boolean]("'123' == null", ctx) shouldBe Symbol("valid")
 
-    parse[Boolean]("'123' != 234", ctx) shouldBe 'invalid
-    parse[Boolean]("'123' != '234'", ctx) shouldBe 'valid
-    parse[Boolean]("'123' != null", ctx) shouldBe 'valid
+    parse[Boolean]("'123' != 234", ctx) shouldBe Symbol("invalid")
+    parse[Boolean]("'123' != '234'", ctx) shouldBe Symbol("valid")
+    parse[Boolean]("'123' != null", ctx) shouldBe Symbol("valid")
 
-    parse[Boolean]("123 == 123123123123L", ctx) shouldBe 'valid
+    parse[Boolean]("123 == 123123123123L", ctx) shouldBe Symbol("valid")
   }
 
   test("precise type parsing in two operand operators") {
     val floatAddExpr = "12.1 + 23.4"
-    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
-    parse[Float](floatAddExpr, ctx) shouldBe 'valid
-    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
-    parse[Double](floatAddExpr, ctx) shouldBe 'valid
+    parse[Int](floatAddExpr, ctx) shouldBe Symbol("invalid")
+    parse[Float](floatAddExpr, ctx) shouldBe Symbol("valid")
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe Symbol("valid")
+    parse[Double](floatAddExpr, ctx) shouldBe Symbol("valid")
 
     val floatMultiplyExpr = "12.1 * 23.4"
-    parse[Int](floatMultiplyExpr, ctx) shouldBe 'invalid
-    parse[Float](floatMultiplyExpr, ctx) shouldBe 'valid
-    parse[java.lang.Float](floatMultiplyExpr, ctx) shouldBe 'valid
-    parse[Double](floatMultiplyExpr, ctx) shouldBe 'valid
+    parse[Int](floatMultiplyExpr, ctx) shouldBe Symbol("invalid")
+    parse[Float](floatMultiplyExpr, ctx) shouldBe Symbol("valid")
+    parse[java.lang.Float](floatMultiplyExpr, ctx) shouldBe Symbol("valid")
+    parse[Double](floatMultiplyExpr, ctx) shouldBe Symbol("valid")
   }
 
   test("precise type parsing in single operand operators") {
     val floatAddExpr = "12.1++"
-    parse[Int](floatAddExpr, ctx) shouldBe 'invalid
-    parse[Float](floatAddExpr, ctx) shouldBe 'valid
-    parse[java.lang.Float](floatAddExpr, ctx) shouldBe 'valid
-    parse[Double](floatAddExpr, ctx) shouldBe 'valid
+    parse[Int](floatAddExpr, ctx) shouldBe Symbol("invalid")
+    parse[Float](floatAddExpr, ctx) shouldBe Symbol("valid")
+    parse[java.lang.Float](floatAddExpr, ctx) shouldBe Symbol("valid")
+    parse[Double](floatAddExpr, ctx) shouldBe Symbol("valid")
   }
 
   test("embedded dict values") {
@@ -757,22 +757,22 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
     val withObjVar = ctx.withVariable("embeddedDict", DictInstance(embeddedDictId, dicts(embeddedDictId)))
 
     parse[String]("#embeddedDict['fooId']", withObjVar, dicts).toOption.get.expression.evaluateSync[String](withObjVar) shouldEqual "fooId"
-    parse[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe 'invalid
+    parse[String]("#embeddedDict['wrongId']", withObjVar, dicts) shouldBe Symbol("invalid")
   }
 
   test("enum dict values") {
-    val enumDictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleEnum.Value])
-    val dicts = Map(enumDictId -> EmbeddedDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.Value])
+    val enumDictId = EmbeddedDictDefinition.enumDictId(classOf[SimpleEnum.SimpleValue])
+    val dicts = Map(enumDictId -> EmbeddedDictDefinition.forScalaEnum[SimpleEnum.type](SimpleEnum).withValueClass[SimpleEnum.SimpleValue])
     val withObjVar = ctx
       .withVariable("stringValue", "one")
       .withVariable("enumValue", SimpleEnum.One)
       .withVariable("enum", DictInstance(enumDictId, dicts(enumDictId)))
 
-    parse[SimpleEnum.Value]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSync[SimpleEnum.Value](withObjVar) shouldEqual SimpleEnum.One
-    parse[SimpleEnum.Value]("#enum['wrongId']", withObjVar, dicts) shouldBe 'invalid
+    parse[SimpleEnum.SimpleValue]("#enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSync[SimpleEnum.SimpleValue](withObjVar) shouldEqual SimpleEnum.One
+    parse[SimpleEnum.SimpleValue]("#enum['wrongId']", withObjVar, dicts) shouldBe Symbol("invalid")
 
     parse[Boolean]("#enumValue == #enum['one']", withObjVar, dicts).toOption.get.expression.evaluateSync[Boolean](withObjVar) shouldBe true
-    parse[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe 'invalid
+    parse[Boolean]("#stringValue == #enum['one']", withObjVar, dicts) shouldBe Symbol("invalid")
   }
 
   test("should be able to call generic functions") {
@@ -790,9 +790,9 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("validate selection/projection on non-list") {
-    parse[AnyRef]("{:}.![#this.sthsth]") shouldBe 'invalid
-    parse[AnyRef]("{:}.?[#this.sthsth]") shouldBe 'invalid
-    parse[AnyRef]("''.?[#this.sthsth]") shouldBe 'invalid
+    parse[AnyRef]("{:}.![#this.sthsth]") shouldBe Symbol("invalid")
+    parse[AnyRef]("{:}.?[#this.sthsth]") shouldBe Symbol("invalid")
+    parse[AnyRef]("''.?[#this.sthsth]") shouldBe Symbol("invalid")
   }
 
   test("allow selection/projection on maps") {
@@ -843,7 +843,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
   }
 
   test("should not validate constructor of unknown type") {
-    parse[Any]("new unknown.className(233)", ctx) shouldBe 'invalid
+    parse[Any]("new unknown.className(233)", ctx) shouldBe Symbol("invalid")
   }
 
   test("should not allow property access on Null") {
@@ -870,7 +870,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       ValidationContext.empty
         .withVariable("a", Typed.fromInstance(SampleGlobalObject), None)
         .validValue)
-   result shouldBe 'valid
+   result shouldBe Symbol("valid")
   }
 
   private def checkExpressionWithKnownResult(expr: String): Unit = {
@@ -917,7 +917,7 @@ class SpelExpressionSpec extends AnyFunSuite with Matchers with ValidatedValuesD
       case Invalid(NonEmptyList(e: ExpressionTypeError, Nil)) =>
         e.expected shouldBe expected
     }
-    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe 'valid
+    parser.parse("""{"aField": {"additional": "str"}}""", ValidationContext.empty, expected) shouldBe Symbol("valid")
   }
 
 }
@@ -928,10 +928,10 @@ case class SampleValue(value: Int, anyObject: Any = "")
 
 object SimpleEnum extends Enumeration {
   // we must explicitly define Value class to recognize if type is matching
-  class Value(name: String) extends Val(name)
+  class SimpleValue(name: String) extends Val(name)
 
-  val One: Value = new Value("one")
-  val Two: Value = new Value("two")
+  val One: SimpleValue = new SimpleValue("one")
+  val Two: SimpleValue = new SimpleValue("two")
 }
 
 object SampleGlobalObject {

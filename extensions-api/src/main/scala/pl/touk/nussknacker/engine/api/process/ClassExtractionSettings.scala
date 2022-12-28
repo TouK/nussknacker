@@ -220,7 +220,7 @@ object ClassExtractionSettings {
         SuperClassPredicate(ExactClassPredicate[UUID]),
         Pattern.compile(s"clockSequence|randomUUID|fromString|getLeastSignificantBits|getMostSignificantBits|node|timestamp|$ToStringMethod|variant|version")),
       ClassMemberPatternPredicate(
-        SuperClassPredicate(ExactClassPredicate(classOf[Traversable[_]], classOf[Option[_]])),
+        SuperClassPredicate(ExactClassPredicate(classOf[Iterable[_]], classOf[Option[_]])),
         Pattern.compile(s"apply|applyOrElse|contains|get|getOrDefault|indexOf|isDefined|isEmpty|size|values|keys|diff"))
     )
 

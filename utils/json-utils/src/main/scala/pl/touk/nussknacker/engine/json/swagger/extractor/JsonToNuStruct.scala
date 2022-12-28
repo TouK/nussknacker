@@ -12,7 +12,7 @@ import scala.util.Try
 // TODO: Validated
 object JsonToNuStruct {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   case class JsonToObjectError(json: Json, definition: SwaggerTyped, path: String)
     extends Exception(s"JSON returned by service has invalid type at $path. Expected: $definition. Returned json: $json")

@@ -113,5 +113,5 @@ class ProcessesChangeListenerSpec extends AnyFunSuite with ScalatestRouteTest wi
     }
   }
 
-  private def checkEventually[T](body: ⇒ T): RouteTestResult ⇒ T = check(eventually(body))
+  private def checkEventually[T](body: => T): RouteTestResult => T = check(eventually(body))
 }

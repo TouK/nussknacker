@@ -19,7 +19,7 @@ object ProcessObjectsFinder {
       .allProcesses
       .flatMap(process => process.nodes.flatMap(componentIdProvider.nodeToComponentId(process.processingType, _)))
       .groupBy(identity)
-      .mapValues(_.size)
+      .mapValuesNow(_.size)
 
   def computeComponentsUsage(componentIdProvider: ComponentIdProvider, processes: List[ProcessDetails]): Map[ComponentId, List[(ProcessDetails, List[String])]] =
     processes.flatMap(processDetails =>

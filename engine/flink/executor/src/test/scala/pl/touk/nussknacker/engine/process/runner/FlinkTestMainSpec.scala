@@ -27,7 +27,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
 
   import spel.Implicits._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -214,7 +214,7 @@ class FlinkTestMainSpec extends AnyFunSuite with Matchers with Inside with Befor
     nodeResults("out") should have length 2
 
     results.exceptions should have length 2
-    RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe 'empty
+    RecordingExceptionConsumer.dataFor(exceptionConsumerId) shouldBe Symbol("empty")
   }
 
   test("handle transient errors") {

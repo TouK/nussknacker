@@ -20,7 +20,7 @@ import pl.touk.nussknacker.test.{FailingContextClassloader, VeryPatientScalaFutu
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits._
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 trait BaseStreamingEmbeddedDeploymentManagerTest extends AnyFunSuite with SchemaRegistryMixin with Matchers with VeryPatientScalaFutures{
 

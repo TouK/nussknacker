@@ -20,6 +20,8 @@ import pl.touk.nussknacker.ui.api.helpers.TestFactory.{emptyProcessingTypeDataPr
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, TestFactory}
 import pl.touk.nussknacker.ui.process.deployment.CheckStatus
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataReload
+import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util.Collections
 
@@ -153,7 +155,7 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
     val result = Get("/app/buildInfo") ~> withoutPermissions(resources)
     result ~> check {
       status shouldBe StatusCodes.OK
-      entityAs[Map[String, Json]] shouldBe (BuildInfo.toMap.mapValues(_.toString) ++ globalConfig).mapValues(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
+      entityAs[Map[String, Json]] shouldBe (BuildInfo.toMap.mapValuesNow(_.toString) ++ globalConfig).mapValuesNow(_.asJson) + ("processingType" -> Map("test1" -> creatorWithBuildInfo.buildInfo()).asJson)
     }
   }
 

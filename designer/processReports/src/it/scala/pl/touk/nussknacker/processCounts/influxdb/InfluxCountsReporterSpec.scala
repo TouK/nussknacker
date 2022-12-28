@@ -60,7 +60,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
 
     data.writePointForCount(process, "node1", 1, startTime.minusMinutes(62))
     data.writePointForCount(process, "node1", 1, startTime.minusMinutes(59))
-    
+
     data.writePointForCount(process, "node1", 10, startTime.plusHours(2).minusMinutes(1))
     data.writePointForCount(process, "node1", 10, startTime.plusHours(2))
 
@@ -93,7 +93,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
     data.writePointForCount(process, "node1", 25, startTime.plusHours(2).minusMinutes(1))
 
     intercept[CannotFetchCountsError](data.reporter(QueryMode.OnlySingleDifference)
-          .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))) shouldBe
+      .prepareRawCounts(process, RangeCount(startTime.minusHours(1), startTime.plusHours(2)))) shouldBe
       CannotFetchCountsError.restartsDetected(List(startTime.minusMinutes(1)))
 
     forQueryModes(QueryMode.values - QueryMode.OnlySingleDifference) { mode =>

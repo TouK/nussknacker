@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
+import scala.collection.compat.immutable.LazyList
 
 import java.io.File
 import java.util.concurrent.TimeoutException
@@ -83,7 +84,7 @@ trait BaseNuKafkaRuntimeDockerTest extends ForAllTestContainer with BeforeAndAft
     }
   }.success.value
 
-  protected def errorConsumer(secondsToWait: Int): Stream[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
+  protected def errorConsumer(secondsToWait: Int): LazyList[KeyMessage[String, KafkaExceptionInfo]] = kafkaClient.createConsumer()
     .consume(fixture.errorTopic, secondsToWait = secondsToWait)
     .map(km => KeyMessage(new String(km.key()), CirceUtil.decodeJsonUnsafe[KafkaExceptionInfo](km.message()), km.timestamp))
 

@@ -13,8 +13,8 @@ import skuber.Resource.Quantity
 import skuber.apps.v1.Deployment
 import skuber.{Container, EnvVar, HTTPGetAction, LabelSelector, ObjectMeta, Pod, Probe, Volume}
 
-import scala.collection.JavaConverters._
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters._
 
 class DeploymentPreparerTest extends AnyFunSuite {
 

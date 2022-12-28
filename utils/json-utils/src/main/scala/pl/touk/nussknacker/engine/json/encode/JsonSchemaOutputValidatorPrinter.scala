@@ -6,13 +6,12 @@ import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
-import scala.collection.JavaConverters
+import scala.jdk.CollectionConverters._
 
 class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
 
   import OutputValidatorErrorsMessageFormatter._
 
-  import JavaConverters._
 
   private implicit class ListTypesPrinter(list: List[String]) {
     def printType: String = list.mkString(TypesSeparator)

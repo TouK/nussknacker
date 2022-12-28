@@ -7,7 +7,8 @@ import org.apache.flink.runtime.metrics.scope.ScopeFormat
 import pl.touk.nussknacker.engine.api.process.ProcessName
 
 import java.util.concurrent.ConcurrentHashMap
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object TestReporterUtil {
 
@@ -40,13 +41,13 @@ class TestReporter extends MetricReporter with CharacterFilter {
   private val processToMetric = new ConcurrentHashMap[(ProcessName, String), Metric]()
 
   def namedMetricsForScenario(implicit scenarioName: ProcessName): Map[String, Metric] = {
-    processToMetric.asScala.filterKeys { case (scenarioName1, _) =>
+    processToMetric.asScala.toMap.filterKeysNow { case (scenarioName1, _) =>
       scenarioName1 == scenarioName
-    }.map { case ((_, name), metric) => name -> metric }.toMap
+    }.map { case ((_, name), metric) => name -> metric }
   }
 
   def testMetrics[T<:Metric](metricNamePattern: String)(implicit scenarioName: ProcessName): Iterable[T] =
-    namedMetricsForScenario.filterKeys(_.contains(metricNamePattern)).values.map(_.asInstanceOf[T])
+    namedMetricsForScenario.filterKeysNow(_.contains(metricNamePattern)).values.map(_.asInstanceOf[T])
 
   override def notifyOfAddedMetric(metric: Metric, metricName: String, group: MetricGroup): Unit = {
     val metricId = group.getMetricIdentifier(metricName, this)

@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.util.ReflectUtils
 import pl.touk.nussknacker.openapi.parser.ParseToSwaggerService.ValidationResult
 import pl.touk.nussknacker.openapi.{ApiKeyConfig, ApiKeyInCookie, ApiKeyInHeader, ApiKeyInQuery, OpenAPISecurityConfig, SwaggerSecurity}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 private[parser] object SecuritiesParser extends LazyLogging {
 

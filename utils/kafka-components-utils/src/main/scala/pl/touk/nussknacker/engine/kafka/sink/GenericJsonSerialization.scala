@@ -6,12 +6,12 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
 import java.util.UUID
 
-case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[AnyRef](topic, element => {
+case class GenericJsonSerialization(topic: String) extends SimpleSerializationSchema[AnyRef](topic, (element: AnyRef) => {
   // TODO: would be safer if will be added expected type in Sink and during expression evaluation,
   //       would be performed conversion to it
   encoder.encode(element).noSpaces
   //UUID is *not* performant enough when volume is high...
-}, _ => UUID.randomUUID().toString)
+}, (_: AnyRef) => UUID.randomUUID().toString)
 
 object GenericJsonSerialization {
 

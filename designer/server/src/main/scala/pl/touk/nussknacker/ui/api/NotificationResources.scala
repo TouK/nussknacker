@@ -25,7 +25,7 @@ class NotificationResources(notificationsService: NotificationService)
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("notifications") {
-      parameter('after.as[Instant].optional) { notificationsAfter =>
+      parameter(Symbol("after").as[Instant].optional) { notificationsAfter =>
         get {
           complete {
             notificationsService.notifications(user, notificationsAfter)

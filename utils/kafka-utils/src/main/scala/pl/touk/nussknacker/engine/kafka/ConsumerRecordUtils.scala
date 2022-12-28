@@ -5,7 +5,7 @@ import java.nio.charset.{Charset, StandardCharsets}
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.header.internals.RecordHeaders
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object ConsumerRecordUtils {
 

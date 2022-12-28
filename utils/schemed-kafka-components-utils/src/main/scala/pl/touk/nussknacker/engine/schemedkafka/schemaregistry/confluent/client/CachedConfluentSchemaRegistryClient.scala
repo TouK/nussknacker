@@ -13,7 +13,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
  * We use there own cache engine because ConfluentCachedClient doesn't cache getLatestSchemaMetadata and getSchemaMetadata
@@ -81,7 +81,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
 private[client] object CachedSchemaRegistryClient {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def apply(c: SchemaRegistryClientKafkaConfig): CCachedSchemaRegistryClient = {
     val config = new KafkaAvroDeserializerConfig(c.kafkaProperties.asJava)

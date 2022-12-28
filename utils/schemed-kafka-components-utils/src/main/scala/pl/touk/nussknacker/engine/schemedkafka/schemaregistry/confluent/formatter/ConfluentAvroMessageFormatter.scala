@@ -38,7 +38,7 @@ private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: Sch
       encoder.flush()
       val str = bos.toString(StandardCharsets.UTF_8)
       // assume the output of encoder is correct or throw Exception trying
-      io.circe.parser.parse(str).right.get
+      io.circe.parser.parse(str).toOption.get
     } catch {
       case ex: Exception =>
         throw new SerializationException(String.format("Error serializing Avro data of schema %s to json", schema), ex)

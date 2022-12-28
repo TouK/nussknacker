@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /* We have 3 different places where expressions can be evaluated:
   - Interpreter - evaluation of service parameters and variable definitions
@@ -41,7 +42,7 @@ class ExpressionEvaluator(globalVariablesPreparer: GlobalVariablesPreparer,
                           metaDataToUse: Option[MetaData]) {
   private implicit val ecToUse: ExecutionContext = SynchronousExecutionContext.ctx
 
-  private def prepareGlobals(metaData: MetaData): Map[String, Any] = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValues(_.obj)
+  private def prepareGlobals(metaData: MetaData): Map[String, Any] = globalVariablesPreparer.prepareGlobalVariables(metaData).mapValuesNow(_.obj)
 
   private val optimizedGlobals = metaDataToUse.map(prepareGlobals)
 

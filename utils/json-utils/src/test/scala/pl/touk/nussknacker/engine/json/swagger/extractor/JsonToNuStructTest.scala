@@ -51,9 +51,9 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     val fields = value.asInstanceOf[TypedMap]
     fields.get("field1") shouldBe "value"
     fields.get("field2") shouldBe 1L
-    Option(fields.get("field3")) shouldBe 'empty
+    Option(fields.get("field3")) shouldBe Symbol("empty")
     fields.get("field4") shouldBe ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
-    Option(fields.get("field5")) shouldBe 'empty
+    Option(fields.get("field5")) shouldBe Symbol("empty")
     fields.get("field6") shouldBe OffsetTime.of(12, 12, 35, 0, ZoneOffset.ofHours(2))
     fields.get("field7") shouldBe LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     fields.get("decimalField") shouldBe BigDecimal.valueOf(1.33).bigDecimal

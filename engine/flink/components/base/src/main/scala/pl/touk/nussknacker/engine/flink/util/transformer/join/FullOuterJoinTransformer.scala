@@ -31,7 +31,8 @@ import java.time.Duration
 import java.util.concurrent.TimeUnit
 import scala.collection.immutable.SortedMap
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandler[TimestampedValue[ValueWithContext[AnyRef]]]])
   extends CustomStreamTransformer with JoinGenericNodeTransformation[FlinkCustomJoinTransformation] with ExplicitUidInOperatorsSupport
@@ -92,7 +93,7 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     val window: Duration = WindowLengthParam.extractValue(params)
 
     val aggregator: Aggregator = new MapAggregator(
-      aggregatorByBranchId.mapValues(new OptionAggregator(_).asInstanceOf[Aggregator]).asJava)
+      aggregatorByBranchId.mapValuesNow(new OptionAggregator(_).asInstanceOf[Aggregator]).asJava)
 
     val baseElement: Map[String, AnyRef] = keyByBranchId.keySet.map(_ -> None).toMap
 
@@ -108,8 +109,8 @@ class FullOuterJoinTransformer(timestampAssigner: Option[TimestampWatermarkHandl
             .returns(context.valueWithContextInfo.forBranch[StringKeyedValue[AnyRef]](id, Typed.fromDetailedType[KeyedValue[String, AnyRef]]))
       }
 
-      val types = aggregateByByBranchId.mapValues(_.returnType)
-      val optionTypes = types.mapValues(t => Typed.genericTypeClass(classOf[Option[_]], List(t)))
+      val types = aggregateByByBranchId.mapValuesNow(_.returnType)
+      val optionTypes = types.mapValuesNow(t => Typed.genericTypeClass(classOf[Option[_]], List(t)))
       val inputType = TypedObjectTypingResult(optionTypes.toList, objType = Typed.typedClass[java.util.Map[_, _]])
 
       val storedType = aggregator.computeStoredTypeUnsafe(inputType)
