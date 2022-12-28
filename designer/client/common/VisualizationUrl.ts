@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {omitBy} from "lodash"
+import {omitBy, isEqual} from "lodash"
 import Moment from "moment"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
@@ -40,6 +40,6 @@ export function normalizeParams<T extends Record<any, any>>(object: T) {
 export function setAndPreserveLocationParams<T extends Record<string, any>>(params: T, arrayFormat = defaultArrayFormat): string {
   const queryParams = queryString.parse(window.location.search, {arrayFormat, parseNumbers: true})
   const merged = {...queryParams, ...params}
-  const resultParams = omitBy(merged, (value) => value === undefined || value === [])
+  const resultParams = omitBy(merged, (value) => value === undefined || isEqual(value, []))
   return queryString.stringify(resultParams, {arrayFormat})
 }

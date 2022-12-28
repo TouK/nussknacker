@@ -2,10 +2,10 @@ import React, {ForwardedRef, useCallback, useMemo} from "react"
 import useDimensions, {Options} from "react-cool-dimensions"
 
 (async () => {
-  if (!("ResizeObserver" in window)) {
+  if (!self.ResizeObserver) {
     const {ResizeObserver, ResizeObserverEntry} = await import("@juggle/resize-observer")
-    window.ResizeObserver = ResizeObserver
-    window.ResizeObserverEntry = ResizeObserverEntry as any // Only use it when you have this trouble: https://github.com/wellyshen/react-cool-dimensions/issues/45
+    self.ResizeObserver = ResizeObserver
+    self.ResizeObserverEntry = ResizeObserverEntry as any // Only use it when you have this trouble: https://github.com/wellyshen/react-cool-dimensions/issues/45
   }
 })()
 

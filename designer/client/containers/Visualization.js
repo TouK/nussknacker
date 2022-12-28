@@ -109,7 +109,7 @@ class Visualization extends React.Component {
     return {x: Math.floor(x), y: Math.floor(y)}
   }
 
-  getGraphInstance = () => this.graphRef.current?.getDecoratedComponentInstance()
+  getGraphInstance = () => this.graphRef.current
 
   render() {
     const graphNotReady = isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
