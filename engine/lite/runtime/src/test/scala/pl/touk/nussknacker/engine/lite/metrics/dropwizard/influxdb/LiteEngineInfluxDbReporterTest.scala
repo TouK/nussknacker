@@ -6,7 +6,7 @@ import io.dropwizard.metrics5.{MetricName, MetricRegistry}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class LiteEngineInfluxDbReporterTest extends AnyFunSuite with Matchers {
 

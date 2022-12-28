@@ -26,7 +26,7 @@ import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volum
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
 import java.nio.file.Files
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.reflectiveCalls
 import scala.util.Random
@@ -330,7 +330,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
       k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
-          basicRequest.get(uri"http://localhost:$localPort").send().body.right.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest.get(uri"http://localhost:$localPort").send().body.toOption.get.contains("jvm_memory_bytes_committed") shouldBe true
         }
       }
     }

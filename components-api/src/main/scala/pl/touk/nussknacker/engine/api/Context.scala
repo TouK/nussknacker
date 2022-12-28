@@ -67,7 +67,7 @@ case class Context(id: String, variables: Map[String, Any], parentContext: Optio
   def clearUserVariables: Context = {
     //clears variables from context but leaves technical variables, hidden from user
     val variablesToLeave = Set(VariableConstants.EventTimestampVariableName)
-    copy(variables = variables.filterKeys(variablesToLeave))
+    copy(variables = variables.view.filterKeys(variablesToLeave).toMap)
   }
 
 }

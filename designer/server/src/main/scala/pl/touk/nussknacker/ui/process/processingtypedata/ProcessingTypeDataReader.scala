@@ -4,6 +4,7 @@ import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.api.deployment.ProcessingTypeDeploymentService
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.loader.ScalaServiceLoader
 import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ProcessingTypeConfig, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
@@ -23,7 +24,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
                                              categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
     val valueMap = types
-      .filterKeys(categoriesService.getProcessingTypeCategories(_).nonEmpty)
+      .filterKeysNow(categoriesService.getProcessingTypeCategories(_).nonEmpty)
       .map {
         case (name, typeConfig) =>
           name -> createProcessingTypeData(name, typeConfig)

@@ -14,27 +14,27 @@ import java.util.concurrent.TimeoutException
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
-  def consume(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[KeyMessage[K, M]] =
+  def consume(topic: String, secondsToWait: Int = defaultSecondsToWait): LazyList[KeyMessage[K, M]] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => KeyMessage(record.key(), record.value(), record.timestamp()))
 
-  def consumeWithString(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[String] =
+  def consumeWithString(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): LazyList[String] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => new String(record.value()))
 
-  def consumeWithJson(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): Stream[Json] =
+  def consumeWithJson(topic: String, secondsToWait: Int = defaultSecondsToWait)(implicit ev: M =:= Array[Byte]): LazyList[Json] =
     consumeWithConsumerRecord(topic, secondsToWait)
       .map(record => CirceUtil.decodeJsonUnsafe[Json](record.value()))
 
-  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = defaultSecondsToWait): Stream[ConsumerRecord[K, M]] = {
+  def consumeWithConsumerRecord(topic: String, secondsToWait: Int = defaultSecondsToWait): LazyList[ConsumerRecord[K, M]] = {
     val partitions = fetchTopicPartitions(topic, secondsToWait)
     consumer.assign(partitions.asJava)
     logger.debug(s"Consumer assigment: ${consumer.assignment().asScala}")
     logger.debug(s"Consumer offsets: beginning: ${consumer.beginningOffsets(consumer.assignment())}, end: ${consumer.endOffsets(consumer.assignment())}")
 
-    Stream.continually(()).flatMap(new Poller(secondsToWait))
+    LazyList.continually(()).flatMap(new Poller(secondsToWait))
   }
 
   private def fetchTopicPartitions(topic: String, secondsToWait: Int) = {
@@ -47,13 +47,13 @@ class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
   }
 
   //If we do just _ => consumer.poll(...).asScala.toStream, the stream will block indefinitely when no messages are sent
-  class Poller(secondsToWait: Int) extends Function1[Unit, Stream[ConsumerRecord[K, M]]] {
+  class Poller(secondsToWait: Int) extends Function1[Unit, LazyList[ConsumerRecord[K, M]]] {
     private var timeoutCount = 0
 
-    override def apply(v1: Unit): Stream[ConsumerRecord[K, M]] = {
+    override def apply(v1: Unit): LazyList[ConsumerRecord[K, M]] = {
       val polled = consumer.poll(Duration.ofSeconds(1))
       checkIfEmpty(polled)
-      polled.asScala.toStream
+      polled.asScala.to(LazyList)
     }
 
     def checkIfEmpty(records: ConsumerRecords[_, _]): Unit = {

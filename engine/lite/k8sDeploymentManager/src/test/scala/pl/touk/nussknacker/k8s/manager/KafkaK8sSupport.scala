@@ -10,6 +10,7 @@ import skuber.api.client.KubernetesClient
 import skuber.json.format._
 import skuber.{Container, EnvVar, HTTPGetAction, ObjectMeta, Pod, Probe, Service}
 
+import scala.collection.compat.immutable.ArraySeq
 import scala.concurrent.{ExecutionContext, Future, Promise}
 
 object KafkaK8sSupport {
@@ -95,10 +96,10 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
       k8sUtils.deleteIfExists[Service](srServiceName, 1)
     )).futureValue
     eventually {
-      k8s.getOption[Pod](kafkaPodName).futureValue shouldBe 'empty
-      k8s.getOption[Pod](srPodName).futureValue shouldBe 'empty
-      k8s.getOption[Service](kafkaServiceName).futureValue shouldBe 'empty
-      k8s.getOption[Service](srServiceName).futureValue shouldBe 'empty
+      k8s.getOption[Pod](kafkaPodName).futureValue shouldBe Symbol("empty")
+      k8s.getOption[Pod](srPodName).futureValue shouldBe Symbol("empty")
+      k8s.getOption[Service](kafkaServiceName).futureValue shouldBe Symbol("empty")
+      k8s.getOption[Service](srServiceName).futureValue shouldBe Symbol("empty")
     }
   }
 
@@ -121,7 +122,7 @@ class KafkaK8sSupport(k8s: KubernetesClient) extends ExtremelyPatientScalaFuture
       }
     }
     val inputSource = input.map(Source.single)
-    k8s.exec(podName, command.split(" "),
+    k8s.exec(podName, ArraySeq.unsafeWrapArray(command.split(" ")),
       maybeStdout = Some(sink),
       maybeStdin = inputSource,
       maybeClose = Some(close)).futureValue

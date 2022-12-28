@@ -17,13 +17,15 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-lazy val supportedScalaVersions = List(scala212)
+val scala213 = "2.13.10"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
 // https://www.scala-lang.org/2021/01/12/configuring-and-suppressing-warnings.html
-val silencerV = "1.6.0"
+lazy val silencerV = "1.7.12"
+lazy val silencerV_2_12 = "1.6.0"
 
 //TODO: replace configuration by system properties with configuration via environment after removing travis scripts
 //then we can change names to snake case, for "normal" env variables
@@ -153,7 +155,7 @@ val ignoreExternalDepsTests = Tests.Argument(TestFrameworks.ScalaTest, "-l", "or
 
 def forScalaVersion[T](version: String, default: T, specific: ((Int, Int), T)*): T = {
   CrossVersion.partialVersion(version).flatMap { case (k, v) =>
-    specific.toMap.get(k.toInt, v.toInt)
+    specific.toMap.get((k.toInt, v.toInt))
   }.getOrElse(default)
 }
 
@@ -169,9 +171,13 @@ lazy val commonSettings =
       ),
       // We ignore k8s tests to keep development setup low-dependency
       Test / testOptions ++= Seq(scalaTestReports, ignoreSlowTests, ignoreExternalDepsTests),
-      addCompilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full),
       addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
-      addCompilerPlugin("com.github.ghik" % "silencer-plugin" % silencerV cross CrossVersion.full),
+      libraryDependencies += compilerPlugin("com.github.ghik" % "silencer-plugin" % forScalaVersion(scalaVersion.value,
+        silencerV, (2, 12) -> silencerV_2_12) cross CrossVersion.full),
+      libraryDependencies ++= forScalaVersion(scalaVersion.value,
+        Seq(),
+        (2, 12) -> Seq(compilerPlugin("org.scalamacros" % "paradise" % "2.1.1" cross CrossVersion.full))
+      ),
       scalacOptions := Seq(
         "-unchecked",
         "-deprecation",
@@ -180,13 +186,15 @@ lazy val commonSettings =
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
-        "-Ypartial-unification",
         // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
         // -release option has no influence on class version so we at least setup target to 8 and check java version
         // at the begining of our Apps
         "-target:jvm-1.8",
         "-release",
         "11"
+      ) ++ forScalaVersion(scalaVersion.value, Seq(),
+        (2, 12) -> Seq("-Ypartial-unification"),
+        (2, 13) -> Seq("-Ymacro-annotations")
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
@@ -203,7 +211,8 @@ lazy val commonSettings =
       //problem with scaladoc of api: https://github.com/scala/bug/issues/10134
       Compile / doc / scalacOptions -= "-Xfatal-warnings",
       libraryDependencies ++= Seq(
-        "com.github.ghik" % "silencer-lib" % silencerV % Provided cross CrossVersion.full
+        "com.github.ghik" % "silencer-lib" % forScalaVersion(scalaVersion.value,
+          silencerV, (2, 12) -> silencerV_2_12) % Provided cross CrossVersion.full
       ),
       //here we add dependencies that we want to have fixed across all modules
       dependencyOverrides ++= Seq(
@@ -819,7 +828,15 @@ lazy val commonUtils = (project in utils("utils")).
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
       )
+    },
+    libraryDependencies ++= {
+      CrossVersion.partialVersion(scalaVersion.value) match {
+        case Some((2, scalaMinor)) if scalaMinor == 12 =>
+          libraryDependencies.value ++ Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0")
+        case _ => Seq()
+      }
     }
+
   ).dependsOn(commonApi, testUtils % "test")
 
 
@@ -894,7 +911,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
     name := "nussknacker-flink-scala-utils",
     libraryDependencies ++= {
       Seq(
-        "com.twitter" %% "chill" % "0.7.6",
+        "com.twitter" %% "chill" % "0.10.0",
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
       )
@@ -1462,6 +1479,8 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
         "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
+      ) ++ forScalaVersion(scalaVersion.value, Seq(),
+        (2, 12) -> Seq( "org.scala-lang.modules" %% "scala-xml" % "2.1.0")
       )
     }
   )

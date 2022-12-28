@@ -49,7 +49,7 @@ import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
 import java.util.concurrent.TimeUnit
-import scala.collection.JavaConverters.getClass
+
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -328,6 +328,7 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
       case Some(jdbcUrlPattern("postgresql")) => PostgresProfile
       case Some(jdbcUrlPattern("hsqldb")) => HsqldbProfile
       case None => HsqldbProfile
+      case _ => throw new IllegalStateException() //todo kgd
     }
   }
 

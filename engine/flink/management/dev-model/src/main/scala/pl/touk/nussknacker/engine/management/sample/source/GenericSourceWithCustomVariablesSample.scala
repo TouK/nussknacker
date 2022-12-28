@@ -65,7 +65,7 @@ object GenericSourceWithCustomVariablesSample extends SourceFactory with SingleI
   }
 
   override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
     new CollectionSource[String](elements, None, Typed[String])(TypeInformation.of(classOf[String]))

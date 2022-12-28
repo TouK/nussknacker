@@ -226,10 +226,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
 
     forScenariosReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.subprocess().unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosReturned(ProcessesQuery.empty.subprocess().archived()) { processes =>
       processes should have size 1
@@ -255,10 +255,10 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     createArchivedProcess(processName)
 
     forScenariosReturned(ProcessesQuery.empty.unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
     forScenariosDetailsReturned(ProcessesQuery.empty.unarchived()) { processes =>
-      processes shouldBe 'empty
+      processes shouldBe Symbol("empty")
     }
   }
 
@@ -891,12 +891,12 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     val name = stateResponse.hcursor
       .downField("status")
       .downField("name")
-      .as[String].right.get
+      .as[String].toOption.get
 
     val statusType = stateResponse.hcursor
       .downField("status")
       .downField("type")
-      .as[String].right.get
+      .as[String].toOption.get
 
     StateStatusResponse(name, statusType)
   }
@@ -925,7 +925,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   protected def withProcessToolbars(processName: ProcessName, isAdmin: Boolean = false)(callback: ProcessToolbarSettings => Unit): Unit =
     getProcessToolbars(processName, isAdmin) ~> check {
       status shouldEqual StatusCodes.OK
-      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).right.get
+      val toolbar = decode[ProcessToolbarSettings](responseAs[String]).toOption.get
       callback(toolbar)
     }
 

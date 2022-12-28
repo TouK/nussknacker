@@ -33,7 +33,7 @@ package object definition {
                                                                subprocessInputs: Map[String, UIFragmentObjectDefinition]) {
     // skipping exceptionHandlerFactory
     val allDefinitions: Map[String, UIObjectDefinition] = services ++ sourceFactories ++ sinkFactories ++
-      customStreamTransformers ++ globalVariables ++ subprocessInputs.mapValues(_.toUIObjectDefinition)
+      customStreamTransformers ++ globalVariables ++ subprocessInputs.view.mapValues(_.toUIObjectDefinition).toMap
   }
 
   @JsonCodec(encodeOnly = true) case class UIClazzDefinition(clazzName: TypingResult, methods: Map[String, UIMethodInfo], staticMethods: Map[String, UIMethodInfo])

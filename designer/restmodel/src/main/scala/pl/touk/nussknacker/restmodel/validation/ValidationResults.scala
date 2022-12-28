@@ -42,7 +42,7 @@ object ValidationResults {
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
 
     def typingInfo: Map[String, Map[String, ExpressionTypingInfo]] =
-      nodeResults.mapValues(_.typingInfo)
+      nodeResults.view.mapValues(_.typingInfo).toMap
 
     private def allErrors: List[NodeValidationError] =
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList

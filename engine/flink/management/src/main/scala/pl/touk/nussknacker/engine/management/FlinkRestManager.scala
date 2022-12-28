@@ -96,6 +96,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
       case JobStatus.FAILING => FlinkStateStatus.Failing
       case JobStatus.FAILED => FlinkStateStatus.Failed
+      case _ => throw new IllegalStateException() //todo kgd
     }
 
   }

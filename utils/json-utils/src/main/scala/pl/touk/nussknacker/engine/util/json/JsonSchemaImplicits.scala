@@ -8,7 +8,7 @@ import scala.util.Try
 
 object JsonSchemaImplicits {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   implicit class ExtendedSchema(schema: Schema) {
 

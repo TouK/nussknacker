@@ -15,7 +15,7 @@ import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import java.util
 import java.util.Collections
 import scala.annotation.tailrec
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 @JsonCodec sealed trait AdditionalProperties
@@ -173,7 +173,7 @@ object SwaggerArray {
 
 object SwaggerObject {
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
-    val properties = Option(schema.getProperties).map(_.asScala.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
+    val properties = Option(schema.getProperties).map(_.asScala.view.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
     if (properties.isEmpty) {
       schema.getAdditionalProperties match {

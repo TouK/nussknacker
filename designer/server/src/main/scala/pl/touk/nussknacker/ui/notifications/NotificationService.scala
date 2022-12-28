@@ -35,6 +35,7 @@ class NotificationsListener(config: NotificationConfig,
       case Success(Some(scenarioName)) => synchronized {
         data = NotificationEvent(UUID.randomUUID().toString, event, now, user, scenarioName) :: data
       }
+      case _ => throw new IllegalStateException() //todo kgd
     }
     filterOldNotifications(now)
   }

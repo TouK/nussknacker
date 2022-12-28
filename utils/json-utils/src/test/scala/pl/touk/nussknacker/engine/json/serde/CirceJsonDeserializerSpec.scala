@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
 

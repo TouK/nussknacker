@@ -17,7 +17,7 @@ import java.util.Collections
 
 class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val FieldName = "foo"
   
@@ -104,7 +104,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should throw when wrong time") {
@@ -112,7 +112,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = LocalDate.parse("2020-07-10", DateTimeFormatter.ISO_LOCAL_DATE)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should throw when wrong date") {
@@ -120,7 +120,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
     val date = ZonedDateTime.parse("2020-07-10T12:12:30+02:00", DateTimeFormatter.ISO_DATE_TIME)
     val encoded = encoder.encodeWithJsonValidation(date, schema)
 
-    encoded shouldBe 'invalid
+    encoded shouldBe Symbol("invalid")
   }
 
   test("should encode number") {
@@ -206,7 +206,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |}""".stripMargin)
 
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schemaObjString) shouldBe Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe 'invalid
+    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), rejectAdditionalProperties) shouldBe Symbol("invalid")
   }
 
   test("should validate additionalParameters type") {
@@ -227,7 +227,7 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
       Invalid(NonEmptyList.of("""Not expected type: String for field with schema: {"type":"number"}."""))
     encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("number")) shouldBe
       Valid(Json.obj(("foo", Json.fromString("bar")), ("redundant", Json.fromLong(15))))
-    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe 'invalid
+    encoder.encodeWithJsonValidation(Map("foo" -> "bar", "redundant" -> 15), schema("string")) shouldBe Symbol("invalid")
   }
 
   test("should encode union") {
@@ -310,8 +310,8 @@ class BestEffortJsonSchemaEncoderTest extends AnyFunSuite {
         |  }
         |}
         |""".stripMargin)
-    encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe 'valid
-    encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe 'valid
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", "aa"), schema, None) shouldBe Symbol("valid")
+    encoder.encodeWithJsonValidation(Collections.singletonMap("field", 11), schema, None) shouldBe Symbol("valid")
     encoder.encodeWithJsonValidation(Collections.singletonMap("field",
       Collections.emptyMap()), schema, None) shouldBe invalid("Not expected type: {} for field: 'field' with schema: {\"anyOf\":[{\"anyOf\":[]},{\"type\":\"string\"},{\"type\":\"integer\"}]}.")
 

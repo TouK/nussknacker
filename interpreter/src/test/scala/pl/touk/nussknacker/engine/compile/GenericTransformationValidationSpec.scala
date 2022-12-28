@@ -79,7 +79,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         )
         .emptySink("end", "dummySink")
     )
-    result.result shouldBe 'valid
+    result.result shouldBe Symbol("valid")
     val info1 = result.typing("end")
 
     info1.inputValidationContext("out1") shouldBe TypedObjectTypingResult(ListMap(
@@ -102,7 +102,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
          )
          .emptySink("end", "dummySink")
      )
-     result.result shouldBe 'valid
+     result.result shouldBe Symbol("valid")
      val info1 = result.typing("end")
 
      info1.inputValidationContext("otherNameThanInput") shouldBe TypedObjectTypingResult(ListMap(
@@ -124,7 +124,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
            "val3" -> "{false}"
          )
      )
-     result.result shouldBe 'valid
+     result.result shouldBe Symbol("valid")
 
     result.parametersInNodes("end") shouldBe expectedGenericParameters
   }
@@ -146,7 +146,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
               )
             .emptySink("end", "dummySink")
     )
-    result.result shouldBe 'valid
+    result.result shouldBe Symbol("valid")
 
     result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
     result.parametersInNodes("genericProcessor") shouldBe expectedGenericParameters
@@ -300,7 +300,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .customNodeNoOutput("generic", "twoStepsInOne")
         .emptySink("end", "dummySink"))
 
-    result.result shouldBe 'valid
+    result.result shouldBe Symbol("valid")
     val parameterNames = result.parametersInNodes("generic").map(_.name)
     parameterNames shouldEqual List("moreParams", "extraParam")
   }
@@ -311,7 +311,7 @@ class GenericTransformationValidationSpec extends AnyFunSuite with Matchers with
         .customNodeNoOutput("generic", "twoStepsInOne", "redundant" -> "''")
         .emptySink("end", "dummySink"))
 
-    result.result shouldBe 'valid
+    result.result shouldBe Symbol("valid")
     val parameterNames = result.parametersInNodes("generic").map(_.name)
     parameterNames shouldEqual List("moreParams", "extraParam")
   }

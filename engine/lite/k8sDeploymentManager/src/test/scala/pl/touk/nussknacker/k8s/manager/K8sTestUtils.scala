@@ -13,6 +13,7 @@ import skuber.{ConfigMap, Container, ObjectMeta, ObjectResource, Pod, Service, V
 
 import java.io.File
 import java.net.Socket
+import scala.collection.compat.immutable.ArraySeq
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, Promise}
@@ -40,7 +41,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
       output.append(s)
     }
     val inputSource = input.map(Source.single)
-    k8s.exec(podName, command.split(" "),
+    k8s.exec(podName, ArraySeq.unsafeWrapArray(command.split(" ")),
       maybeStdout = Some(stdoutSink),
       maybeStderr = Some(stderrSink),
       maybeStdin = inputSource,

@@ -10,14 +10,13 @@ import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.db.{DatabaseInitializer, DbConfig}
 import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 
-import scala.collection.convert.DecorateAsJava
 import scala.util.{Try, Using}
+import scala.jdk.CollectionConverters._
 
 trait DbTesting
   extends BeforeAndAfterEach
     with BeforeAndAfterAll
-    with LazyLogging
-    with DecorateAsJava {
+    with LazyLogging {
   self: Suite =>
 
   val dbProfile: JdbcProfile

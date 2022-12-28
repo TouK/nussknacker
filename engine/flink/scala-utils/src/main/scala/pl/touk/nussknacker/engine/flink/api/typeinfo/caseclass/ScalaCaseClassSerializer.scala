@@ -25,7 +25,8 @@ import org.apache.flink.api.java.typeutils.runtime.TupleSerializerConfigSnapshot
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer.lookupConstructor
 
 import java.io.ObjectInputStream
-import scala.collection.JavaConverters._
+import scala.collection.immutable.ArraySeq
+import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe
 
 /**
@@ -109,7 +110,7 @@ object ScalaCaseClassSerializer {
     val constructorMethodMirror = classMirror.reflectConstructor(primaryConstructorSymbol)
 
     arr: Array[AnyRef] => {
-      constructorMethodMirror.apply(arr: _*).asInstanceOf[T]
+      constructorMethodMirror.apply(ArraySeq.unsafeWrapArray(arr)).asInstanceOf[T]
     }
   }
 }

@@ -34,6 +34,7 @@ import shapeless.syntax.typeable.typeableOps
 
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /*
   This is main class where we translate Nussknacker model to Flink job.
@@ -148,7 +149,7 @@ class FlinkProcessRegistrar(compileProcess: (CanonicalProcess, ProcessVersion, D
       val newContextFun = (ir: ValueWithContext[_]) => ir.context.withVariable(outputVar, ir.value)
 
       val newStart = transformer
-        .transform(inputs.mapValues(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValues(_._2))))
+        .transform(inputs.mapValuesNow(_._1), nodeContext(nodeComponentInfoFrom(joinPart), Right(inputs.mapValuesNow(_._2))))
         .map((value: ValueWithContext[AnyRef]) => newContextFun(value), typeInformationDetection.forContext(joinPart.validationContext))
 
       val afterSplit = registerInterpretationPart(newStart, joinPart, BranchInterpretationName)

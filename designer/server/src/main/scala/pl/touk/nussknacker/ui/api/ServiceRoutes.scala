@@ -19,6 +19,7 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.service.query.ServiceQuery.{QueryResult, ServiceNotFoundException}
 import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
                    (implicit ec: ExecutionContext)
@@ -80,7 +81,7 @@ class ServiceRoutes(modelDataMap: ProcessingTypeDataProvider[ModelData])
       categories.forall(_.exists(isAllowed))
     }
 
-    val servicesToCategories = modelData.processDefinition.services.mapValues(_.categories)
+    val servicesToCategories = modelData.processDefinition.services.mapValuesNow(_.categories)
 
     servicesToCategories.get(serviceName).forall(hasUserDeployPermissionForCategories)
   }

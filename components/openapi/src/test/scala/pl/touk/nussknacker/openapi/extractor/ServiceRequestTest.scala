@@ -11,7 +11,7 @@ import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import sttp.client.StringBody
 import sttp.model.Uri
 
-import scala.collection.JavaConverters.{mapAsJavaMapConverter, seqAsJavaListConverter}
+import scala.jdk.CollectionConverters._
 import scala.io.Source
 
 class ServiceRequestTest extends AnyFunSuite with Matchers {

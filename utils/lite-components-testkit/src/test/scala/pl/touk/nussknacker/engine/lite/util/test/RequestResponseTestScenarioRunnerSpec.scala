@@ -50,7 +50,7 @@ class RequestResponseTestScenarioRunnerSpec extends AnyFunSuite with Matchers {
     runner.runWithRequests(scenario) { invoker =>
       val firstError = invoker(
         HttpRequest(HttpMethods.POST, entity = Map("field1" -> FailingService.failTrigger).asJson.spaces2)
-      ).left.get.head
+      ).swap.toOption.get.head
 
       firstError.nodeComponentInfo shouldBe Some(
         NodeComponentInfo("fail", Some(ComponentInfo(failingComponent, ComponentType.Enricher)))

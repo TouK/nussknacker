@@ -69,7 +69,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     val metaData = displayableProcess.metaData
 
     for {
-      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
+      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
       source <- sourceOpt.toRight("Scenario does not have source capable of generating test data")
       generatedData <- testInfoProvider.generateTestData(metaData, source, testSampleSize).toRight("Test data could not be generated for scenario")
       rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)

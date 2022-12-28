@@ -31,6 +31,7 @@ import pl.touk.nussknacker.engine.util.ThreadUtils
 import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.util.control.NonFatal
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ProcessCompiler(protected val classLoader: ClassLoader,
                       protected val sub: PartSubGraphCompiler,
@@ -54,7 +55,7 @@ trait ProcessValidator extends LazyLogging {
     try {
       CompilationResult.map2(
         CompilationResult(validateWithCustomProcessValidators(process)),
-        compile(process).map(_ => Unit): CompilationResult[Unit])((_, compiled) => {
+        compile(process).map(_ => ()): CompilationResult[Unit])((_, compiled) => {
         compiled
       })
     } catch {
@@ -129,7 +130,7 @@ protected trait ProcessCompilerBase {
           id
       }
     if (duplicatedIds.isEmpty)
-      valid(Unit)
+      valid(())
     else
       invalid(DuplicatedNodeIds(duplicatedIds.toSet))
   }
@@ -174,7 +175,7 @@ protected trait ProcessCompilerBase {
     val NodeCompilationResult(typingInfo, parameters, initialCtx, compiledSource, _) = nodeCompiler.compileSource(sourceData)
 
     val validatedSource = sub.validate(part.node, initialCtx.valueOr(_ => contextWithOnlyGlobalVariables))
-    val typesForParts = validatedSource.typing.mapValues(_.inputValidationContext)
+    val typesForParts = validatedSource.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(part.id -> NodeTypingInfo(contextWithOnlyGlobalVariables, typingInfo, parameters))
 
     CompilationResult.map4(
@@ -212,10 +213,10 @@ protected trait ProcessCompilerBase {
   def compileCustomNodePart(part: ProcessPart, node: splittednode.OneOutputNode[CustomNodeData], data: CustomNodeData,
                             ctx: Either[ValidationContext, BranchEndContexts])
                            (implicit metaData: MetaData, nodeId: NodeId): CompilationResult[compiledgraph.part.CustomNodePart] = {
-    val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) = nodeCompiler.compileCustomNodeObject(data, ctx.right.map(_.contextsForJoin(data.id)), ending = false)
+    val NodeCompilationResult(typingInfo, parameters, validatedNextCtx, compiledNode, _) = nodeCompiler.compileCustomNodeObject(data, ctx.map(_.contextsForJoin(data.id)), ending = false)
 
     val nextPartsValidation = sub.validate(node, validatedNextCtx.valueOr(_ => ctx.left.getOrElse(contextWithOnlyGlobalVariables)))
-    val typesForParts = nextPartsValidation.typing.mapValues(_.inputValidationContext)
+    val typesForParts = nextPartsValidation.typing.mapValuesNow(_.inputValidationContext)
     val nodeTypingInfo = Map(node.id -> NodeTypingInfo(ctx.left.getOrElse(contextWithOnlyGlobalVariables), typingInfo, parameters))
 
     CompilationResult.map4(

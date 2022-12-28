@@ -77,7 +77,7 @@ class RequestResponseConfigCreator extends ProcessConfigCreator with LazyLogging
 
 @JsonCodec case class Request1(field1: String, field2: String) {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def toList: java.util.List[String] = List(field1, field2).asJava
 }
@@ -87,7 +87,7 @@ case class Request2(field12: String, field22: String)
 case class Request3(field13: String, field23: String)
 
 @JsonCodec case class RequestNumber(number: Int) {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   def toList: java.util.List[Int] = (0 to number).asJava
 }
 

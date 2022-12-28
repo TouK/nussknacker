@@ -11,7 +11,7 @@ import scala.collection.immutable.ListMap
 
 class TypedFromInstanceTest extends AnyFunSuite with Matchers with LoneElement with TableDrivenPropertyChecks {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   test("should type null") {
     Typed.fromInstance(null: Any) shouldBe TypedNull

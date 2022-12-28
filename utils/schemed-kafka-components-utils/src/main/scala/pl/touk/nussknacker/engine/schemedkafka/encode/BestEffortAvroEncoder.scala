@@ -23,7 +23,7 @@ import scala.util.Try
 
 class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   type WithError[T] = ValidatedNel[String, T]
 
@@ -46,7 +46,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
         encodeEnumOrError(symbol.toString, schema, fieldName)
       case (Schema.Type.ENUM, symbol: EnumSymbol) =>
         encodeEnumOrError(symbol.toString, schema, fieldName)
-      case (Schema.Type.ARRAY, collection: Traversable[_]) =>
+      case (Schema.Type.ARRAY, collection: Iterable[_]) =>
         encodeCollection(collection, schema)
       case (Schema.Type.ARRAY, collection: util.Collection[_]) =>
         encodeCollection(collection.asScala, schema)
@@ -55,7 +55,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case (Schema.Type.MAP, map: util.Map[_, _]) =>
         encodeMap(map.asScala, schema)
       case (Schema.Type.UNION, _) =>
-        schema.getTypes.asScala.toStream.flatMap { subTypeSchema =>
+        schema.getTypes.asScala.to(LazyList).flatMap { subTypeSchema =>
           encode(value, subTypeSchema).toOption
         }.headOption.map(Valid(_)).getOrElse {
           error(s"Can't find matching union subtype for value: $value for field: $fieldName with schema: $schema")
@@ -102,17 +102,17 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
       case (Schema.Type.INT, number: java.lang.Integer) =>
         Valid(number)
       case (Schema.Type.LONG, number: java.lang.Integer) =>
-        Valid(number.longValue().underlying())
+        Valid(number.longValue().asInstanceOf[AnyRef])
       case (Schema.Type.LONG, number: java.lang.Long) =>
         Valid(number)
       case (Schema.Type.FLOAT, number: java.lang.Integer) =>
-        Valid(number.floatValue().underlying())
+        Valid(number.floatValue().asInstanceOf[AnyRef])
       case (Schema.Type.FLOAT, number: java.lang.Long) =>
-        Valid(number.floatValue().underlying())
+        Valid(number.floatValue().asInstanceOf[AnyRef])
       case (Schema.Type.FLOAT, number: java.lang.Float) =>
         Valid(number)
       case (Schema.Type.DOUBLE, number: Number) =>
-        Valid(number.doubleValue().underlying())
+        Valid(number.doubleValue().asInstanceOf[AnyRef])
       case (Schema.Type.BOOLEAN, boolean: java.lang.Boolean) =>
         Valid(boolean)
       case (Schema.Type.NULL, null) =>
@@ -175,7 +175,8 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, AnyRef]] = {
-    map.map {
+    //todo kgd
+    map.asInstanceOf[collection.Map[AnyRef, AnyRef]].map {
       case (k: String, v) =>
         encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)
       case (k: CharSequence, v) =>
@@ -185,7 +186,7 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
     }.toList.sequence.map(m => new util.HashMap(m.toMap.asJava))
   }
 
-  private def encodeCollection(collection: Traversable[_], schema: Schema): WithError[java.util.List[AnyRef]] = {
+  private def encodeCollection(collection: Iterable[_], schema: Schema): WithError[java.util.List[AnyRef]] = {
     collection.map(el => encode(el, schema.getElementType)).toList.sequence.map(l => new util.ArrayList(l.asJava))
   }
 

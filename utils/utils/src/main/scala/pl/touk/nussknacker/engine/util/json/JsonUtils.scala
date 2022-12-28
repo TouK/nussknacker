@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.util.json
 
 import io.circe.Json
 import pl.touk.nussknacker.engine.util.Implicits._
-import collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object JsonUtils {
   def jsonToAny(json: Json): Any = json.fold(

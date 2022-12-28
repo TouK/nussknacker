@@ -106,7 +106,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
     }
 
     def withTwoChildrenOfType[A: universe.TypeTag, R: universe.TypeTag](op: (A, A) => R) = {
-      val castExpectedType = CastTypedValue[A]
+      val castExpectedType = CastTypedValue[A]()
       val resultType = Typed.fromDetailedType[R]
       withTypedChildren { typingResultWithContextList =>
         typingResultWithContextList.map(_.typingResult) match {
@@ -263,6 +263,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil =>
           EmptyOperatorError(e.getOperatorName).invalidNel
+        case _ => throw new IllegalStateException() //todo kgd
       }
       case e: OpModulus =>
         val op = Some((x: Number, y: Number) =>
@@ -291,6 +292,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
+        case _ => throw new IllegalStateException() //todo kgd
       }
       case e: OperatorBetween => fixed(TypingResultWithContext(Typed[Boolean]))
       case e: OperatorInstanceof => fixed(TypingResultWithContext(Typed[Boolean]))

@@ -8,12 +8,12 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class TestResultService extends Service {
 
-  private val invocationResult: mutable.MutableList[Any] = mutable.MutableList()
+  private var invocationResult: List[Any] = List()
 
   @MethodToInvoke
   def invoke(@ParamName("value") value: Any)(implicit ec: ExecutionContext): Future[Unit] = {
     Future.successful {
-      invocationResult += value
+      invocationResult = value :: invocationResult
     }
   }
 

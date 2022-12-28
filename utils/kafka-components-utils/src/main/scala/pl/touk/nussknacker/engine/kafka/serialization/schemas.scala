@@ -73,7 +73,7 @@ object schemas {
 
   // deserialization
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private implicit val mapEncoder: Encoder[java.util.Map[_, _]] = BestEffortJsonEncoder(failOnUnkown = false, getClass.getClassLoader).circeEncoder.contramap(identity)
 
@@ -103,7 +103,7 @@ object schemas {
     //TODO: how to handle fractions here? using BigDecimal is not always good way to go...
     jsonNumber = number => {
       val d = number.toDouble
-      if (d.isWhole()) d.toLong else d
+      if (d.isWhole) d.toLong else d
     },
     jsonString = identity,
     jsonArray = _.map(jsonToMap).asJava,

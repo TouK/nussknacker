@@ -15,7 +15,7 @@ import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def isSpecificRecord[T: ClassTag]: Boolean = {
     val clazz = classTag[T].runtimeClass.asInstanceOf[Class[T]]
@@ -119,10 +119,10 @@ object AvroUtils extends LazyLogging {
       (value, schema) match {
         case (map: collection.Map[String@unchecked, _], SchemaContainsRecordSchema(recordSchema)) =>
           createRecord(recordSchema, map)
-        case (collection: Traversable[_], SchemaContainsArraySchema(arraySchema)) =>
+        case (collection: Iterable[_], SchemaContainsArraySchema(arraySchema)) =>
           collection.map(createValue(_, arraySchema.getElementType)).toList.asJava
         case (map: collection.Map[String@unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
-          map.mapValues(createValue(_, mapSchema.getValueType)).asJava
+          map.view.mapValues(createValue(_, mapSchema.getValueType)).toMap.asJava
         case _ => value
       }
     }

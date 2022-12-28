@@ -10,8 +10,7 @@ import pl.touk.nussknacker.engine.util.json._
 
 import java.time.{LocalDate, OffsetDateTime, OffsetTime, ZonedDateTime}
 import java.util.ServiceLoader
-import scala.collection.convert.ImplicitConversions.`map AsScala`
-import scala.jdk.CollectionConverters.iterableAsScalaIterableConverter
+import scala.jdk.CollectionConverters._
 import scala.util.{Failure, Success, Try}
 
 object BestEffortJsonSchemaEncoder {
@@ -29,7 +28,7 @@ object BestEffortJsonSchemaEncoder {
   }
 
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
-    fields.keys.toList.union(parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
+    fields.keys.toList.concat(parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
       val schema = Option(parentSchema.getPropertySchemas.get(key))
       val value = fields.get(key)
       (key, value,schema)
@@ -40,7 +39,7 @@ object BestEffortJsonSchemaEncoder {
         error(s"Missing property: $fieldName for schema: $parentSchema.")
       case (fieldName, Some(value), Some(schema)) =>
         encode(value, schema, Some(fieldName)).map(fieldName -> _)
-      case (fieldName, _, None) if !parentSchema.permitsAdditionalProperties() =>
+      case (fieldName, _: Option[_], None) if !parentSchema.permitsAdditionalProperties() =>
         error(s"Not expected field with name: $fieldName for schema: $parentSchema.")
       case (fieldName, Some(value), None) => Option(parentSchema.getSchemaOfAdditionalProperties) match {
         case Some(additionalPropertySchema) => encode(value, additionalPropertySchema).map(fieldName -> _)
@@ -49,7 +48,7 @@ object BestEffortJsonSchemaEncoder {
     }.sequence.map { values => Json.fromFields(values) }
   }
 
-  private def encodeCollection(collection: Traversable[_], schema: ArraySchema): EncodeOutput = {
+  private def encodeCollection(collection: Iterable[_], schema: ArraySchema): EncodeOutput = {
     collection.map(el => encode(el, schema.getAllItemSchema)).toList.sequence.map(l => Json.fromValues(l))
   }
 
@@ -57,8 +56,8 @@ object BestEffortJsonSchemaEncoder {
     val (value, schema, fieldName) = input
     (schema, value) match {
       case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
-      case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
-      case (schema: ArraySchema, value: Traversable[_]) => encodeCollection(value, schema)
+      case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.asScala.toMap, schema)
+      case (schema: ArraySchema, value: Iterable[_]) => encodeCollection(value, schema)
       case (schema: ArraySchema, value: java.util.Collection[_]) => encodeCollection(value.toArray, schema)
       case (cs: CombinedSchema, value) => cs.getSubschemas.asScala.view.map(encodeBasedOnSchema(value, _, fieldName)).find(_.isValid)
         .getOrElse(error(value, cs.toString, fieldName))
