@@ -14,14 +14,14 @@ describe("Expression suggester", () => {
     cy.contains(/^layout$/).click()
     cy.get("[model-id=kafka-string]").trigger("dblclick")
     cy.get("[data-testid=window]").as("modal")
-    cy.get("[title=value]").next().find(".ace_editor").click().type(".").wait(100)
+    cy.get("[title=value]").next().find(".ace_editor").click().type(".").contains(/\.$/)
     cy.get(".ace_autocomplete").should("be.visible").matchImage({
-      maxDiffThreshold: 0.00001,
+      maxDiffThreshold: 0.0025,
       screenshotConfig: {padding: [40, 8, 8]},
     })
-    cy.get("[title=value]").next().find(".ace_editor").click().type("c").wait(100)
+    cy.get("[title=value]").next().find(".ace_editor").click().type("c").contains(/\.$/)
     cy.get(".ace_autocomplete").should("be.visible").matchImage({
-      maxDiffThreshold: 0.00001,
+      maxDiffThreshold: 0.0025,
       screenshotConfig: {padding: [40, 8, 8]},
     })
   })
@@ -31,10 +31,10 @@ describe("Expression suggester", () => {
     cy.contains(/^layout$/).click()
     cy.get("[model-id=kafka-string]").trigger("dblclick")
     cy.get("[data-testid=window]").as("modal")
-    cy.get("[title=value]").next().find(".ace_editor").click().type("{enter}#").wait(100)
+    cy.get("[title=value]").next().find(".ace_editor").click().type("{enter}#").contains(/\.$/)
     cy.get(".ace_autocomplete").should("be.visible")
       .matchImage({
-        maxDiffThreshold: 0.00001,
+        maxDiffThreshold: 0.0025,
         screenshotConfig: {padding: [40, 8, 8]},
       })
   })

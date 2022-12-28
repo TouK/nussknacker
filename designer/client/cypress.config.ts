@@ -2,7 +2,7 @@ import {defineConfig} from "cypress"
 
 export default defineConfig({
   env: {
-    pluginVisualRegressionMaxDiffThreshold: 0.005,
+    pluginVisualRegressionMaxDiffThreshold: 0.008,
     pluginVisualRegressionUpdateImages: false,
     pluginVisualRegressionForceDeviceScaleFactor: false,
   },
@@ -44,6 +44,6 @@ export default defineConfig({
     },
     baseUrl: "http://localhost:3000",
     excludeSpecPattern: ["**/__snapshots__/*", "**/__image_snapshots__/*"],
-
+    video: false,
   },
 })
