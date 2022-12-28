@@ -244,7 +244,7 @@ class ProcessSpec extends AnyFunSuite with Matchers with ProcessTestHelpers {
     processInvoker.invokeWithSampleData(processWithoutService, Nil)
     LifecycleService.opened shouldBe false
     LifecycleService.closed shouldBe false
-    EagerLifecycleService.list shouldBe 'empty
+    EagerLifecycleService.list shouldBe Symbol("empty")
   }
 
   test("should have correct run mode") {

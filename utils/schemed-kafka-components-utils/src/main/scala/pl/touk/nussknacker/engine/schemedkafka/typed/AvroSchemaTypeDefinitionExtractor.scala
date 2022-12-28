@@ -12,7 +12,7 @@ import java.util.UUID
 
 object AvroSchemaTypeDefinitionExtractor {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val DefaultPossibleTypes: Set[TypedClass] = Set(Typed.typedClass[GenericRecord])
 

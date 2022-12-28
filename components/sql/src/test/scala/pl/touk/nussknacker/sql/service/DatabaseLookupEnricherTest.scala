@@ -14,7 +14,7 @@ import scala.concurrent.Await
 
 class DatabaseLookupEnricherTest extends BaseHsqlQueryEnricherTest {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   import scala.concurrent.duration._
 
   override val prepareHsqlDDLs: List[String] = List(

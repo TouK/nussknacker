@@ -87,7 +87,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   test("ensure nodes config is properly parsed") {
     Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
-      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         //docs url comes from reference.conf in devModel
@@ -148,7 +148,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
       val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         "environment" -> UiAdditionalPropertyConfig(

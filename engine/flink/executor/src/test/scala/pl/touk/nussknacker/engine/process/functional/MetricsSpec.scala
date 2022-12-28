@@ -46,7 +46,7 @@ class MetricsSpec extends FixtureAnyFunSuite with Matchers with VeryPatientScala
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldNot be('empty)
+    MockService.data shouldNot be(Symbol("empty"))
     withClue(reporter.namedMetricsForScenario) {
       val histogram = reporter.testMetrics[Histogram]("service.OK.serviceName.mockService.histogram").loneElement
       histogram.getCount shouldBe 1

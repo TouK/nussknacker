@@ -6,6 +6,7 @@ import org.apache.kafka.common.record.TimestampType
 import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
 
 import java.util.Optional
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 /**
   * Wrapper for ConsumerRecord fields used for test data serialization, eg. json serialization.
@@ -41,7 +42,7 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
       ConsumerRecord.NULL_SIZE,
       keyBytes,
       valueBytes,
-      ConsumerRecordUtils.toHeaders(headers.map(_.mapValues(_.orNull)).getOrElse(Map.empty)),
+      ConsumerRecordUtils.toHeaders(headers.map(_.mapValuesNow(_.orNull).toMap).getOrElse(Map.empty)),
       Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) //avoids covert null -> 0 conversion
     )
   }
@@ -57,7 +58,7 @@ object SerializableConsumerRecord {
       Option(deserializedRecord.offset()),
       Option(deserializedRecord.timestamp()),
       Option(deserializedRecord.timestampType().name),
-      Option(ConsumerRecordUtils.toMap(deserializedRecord.headers()).mapValues(s => Option(s))),
+      Option(ConsumerRecordUtils.toMap(deserializedRecord.headers()).mapValuesNow(s => Option(s))),
       Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) //avoids covert null -> 0 conversion
     )
   }

@@ -64,7 +64,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
 
     val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
 
-    state shouldBe 'empty
+    state shouldBe Symbol("empty")
   }
 
   test("findJobStatus - should return none for scenario with different processing type") {
@@ -73,7 +73,7 @@ class PeriodicDeploymentManagerTest extends AnyFunSuite
 
     val state = f.periodicDeploymentManager.findJobStatus(processName).futureValue
 
-    state shouldBe 'empty
+    state shouldBe Symbol("empty")
   }
 
   test("findJobStatus - should be scheduled when scenario scheduled and no job on Flink") {

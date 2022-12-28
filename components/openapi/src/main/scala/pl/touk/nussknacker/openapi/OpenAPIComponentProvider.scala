@@ -16,7 +16,7 @@ import pl.touk.nussknacker.openapi.enrichers.{SwaggerEnricherCreator, SwaggerEnr
 import pl.touk.nussknacker.openapi.parser.ServiceParseError
 import sttp.model.StatusCode
 
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
 
 class OpenAPIComponentProvider extends ComponentProvider with LazyLogging {

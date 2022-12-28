@@ -20,6 +20,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessDetails
 import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.collection.immutable.ListMap
 
@@ -162,7 +163,7 @@ object ComponentDefinitionPreparer {
       .groupBy {
         case (virtualGroupIndex, componentGroupName, _) => (virtualGroupIndex, componentGroupName)
       }
-      .mapValues(v => v.map(e => e._3))
+      .mapValuesNow(v => v.map(e => e._3))
       .toList
       .sortBy {
         case ((virtualGroupIndex, componentGroupName), _) => (virtualGroupIndex, componentGroupName.toLowerCase)

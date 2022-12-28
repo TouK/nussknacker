@@ -84,9 +84,8 @@ class RemoteEnvironmentResources(remoteEnvironment: RemoteEnvironment,
     : Future[Either[EspError, EnvironmentComparisonResult]] = {
     val results = Future.sequence(processes.map(p => compareOneProcess(p.json)))
     results.map { comparisonResult =>
-      comparisonResult.sequence[XError, ProcessDifference].right
+      comparisonResult.sequence[XError, ProcessDifference]
         .map(_.filterNot(_.areSame))
-        .right
         .map(EnvironmentComparisonResult.apply)
     }
   }

@@ -68,7 +68,7 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
 
     val results = run(process, ScenarioTestData(ScenarioTestRecord("start", consumerRecord) :: Nil))
 
-    results.nodeResults shouldBe 'nonEmpty
+    results.nodeResults shouldBe Symbol("nonEmpty")
   }
 
   private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {

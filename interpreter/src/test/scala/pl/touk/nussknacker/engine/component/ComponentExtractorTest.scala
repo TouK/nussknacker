@@ -13,8 +13,9 @@ import pl.touk.nussknacker.engine.modelconfig.DefaultModelConfigLoader
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.test.ClassLoaderWithServices
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ComponentExtractorTest {
 
@@ -158,7 +159,7 @@ class ComponentExtractorTest extends AnyFunSuite with Matchers {
     }
   }
 
-  private def fromMap(map: (String, Any)*): Config = ConfigFactory.parseMap(map.toMap.mapValues {
+  private def fromMap(map: (String, Any)*): Config = ConfigFactory.parseMap(map.toMap.mapValuesNow {
     case map: Map[String, Any]@unchecked => fromMap(map.toSeq: _*).root()
     case other => other
   }.asJava)

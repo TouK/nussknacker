@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.definition.{NodeDependency, Parameter}
 import pl.touk.nussknacker.engine.api.process.{Source, SourceFactory}
 import pl.touk.nussknacker.engine.api.NodeId
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait JavaGenericTransformation[T, VC, PAR, ST] {
 

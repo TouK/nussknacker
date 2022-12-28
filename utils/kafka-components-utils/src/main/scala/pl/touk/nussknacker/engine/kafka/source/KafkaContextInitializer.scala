@@ -27,7 +27,7 @@ import java.util
 class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult: TypingResult, valueTypingResult: TypingResult)
   extends BasicContextInitializer[ConsumerRecord[K, V]](valueTypingResult, outputVariableName) {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   override def validationContext(context: ValidationContext)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, ValidationContext] = {
     val contextWithInput = super.validationContext(context)

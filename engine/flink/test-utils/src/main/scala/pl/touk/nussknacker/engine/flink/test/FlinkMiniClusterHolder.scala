@@ -14,7 +14,7 @@ import org.scalatest.concurrent.Eventually.{scaled, _}
 import org.scalatest.time.{Millis, Seconds, Span}
 import pl.touk.nussknacker.engine.flink.test.FlinkMiniClusterHolder._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * This interface provides compatibility for another Flink's version.

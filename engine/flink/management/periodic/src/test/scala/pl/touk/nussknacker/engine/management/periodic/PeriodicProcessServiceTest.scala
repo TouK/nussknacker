@@ -92,7 +92,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
     val f = new Fixture
     f.repository.addActiveProcess(processName, PeriodicProcessDeploymentStatus.Scheduled, processingType = "other")
 
-    f.periodicProcessService.findToBeDeployed.futureValue shouldBe 'empty
+    f.periodicProcessService.findToBeDeployed.futureValue shouldBe Symbol("empty")
   }
 
   // Flink job could disappear from Flink console.
@@ -165,7 +165,7 @@ class PeriodicProcessServiceTest extends AnyFunSuite
     processEntity.active shouldBe true
     f.repository.deploymentEntities should have size 1
     f.repository.deploymentEntities.map(_.status) shouldBe List(PeriodicProcessDeploymentStatus.Deployed)
-    f.events.toList shouldBe 'empty
+    f.events.toList shouldBe Symbol("empty")
   }
 
   test("handle first schedule") {

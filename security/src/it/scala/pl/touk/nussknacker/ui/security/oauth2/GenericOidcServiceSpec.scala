@@ -64,7 +64,7 @@ class GenericOidcServiceSpec extends AnyFunSuite with ForAllTestContainer with M
       .send().futureValue
 
     val pattern = """.*action="([^"]*)".*""".r
-    val passwordLocation = redirectValue.body.right.get.replaceAll("\n", "") match {
+    val passwordLocation = redirectValue.body.toOption.get.replaceAll("\n", "") match {
       case pattern(url) => StringEscapeUtils.unescapeHtml4(url)
     }
 

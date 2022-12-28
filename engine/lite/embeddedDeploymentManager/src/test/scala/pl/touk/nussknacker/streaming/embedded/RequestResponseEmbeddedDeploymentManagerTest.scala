@@ -94,7 +94,7 @@ class RequestResponseEmbeddedDeploymentManagerTest extends AnyFunSuite with Matc
     request.body("""Not a correct json""").send().body shouldBe Left("""[{"message":"#: expected type: JSONObject, found: String","nodeId":"source"}]""")
     request.body("""{ productId: "11"}""").send().body shouldBe Left("""[{"message":"#/productId: expected type: Integer, found: String","nodeId":"source"}]""")
 
-    basicRequest.get(uri"http://localhost".port(port).path("scenario", name.value, "definition")).send().body.right.get should include ("\"openapi\"")
+    basicRequest.get(uri"http://localhost".port(port).path("scenario", name.value, "definition")).send().body.toOption.get should include ("\"openapi\"")
 
     manager.cancel(name, User("a", "b")).futureValue
 

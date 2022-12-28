@@ -81,8 +81,8 @@ class DBProcessRepository(val dbConfig: DbConfig, val modelVersion: ProcessingTy
         case None => processesTable.filter(_.name === action.processName).result.headOption.flatMap {
           case Some(_) => DBIOAction.successful(ProcessAlreadyExists(action.processName.value).asLeft)
           case None => (insertNew += processToSave)
-            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, false))
-            .map(_.right.map(res => res.newVersion.map(ProcessCreated(res.processId, _))))
+            .flatMap(entity => updateProcessInternal(entity.id, action.canonicalProcess, increaseVersionWhenJsonNotChanged = false))
+            .map(_.map(res => res.newVersion.map(ProcessCreated(res.processId, _))))
         }
       }
     }

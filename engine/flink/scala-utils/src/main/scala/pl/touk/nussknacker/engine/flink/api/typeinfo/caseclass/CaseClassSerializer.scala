@@ -97,7 +97,7 @@ abstract class CaseClassSerializer[T <: Product](
     }
   }
 
-  def serialize(value: T, target: DataOutputView) {
+  def serialize(value: T, target: DataOutputView): Unit = {
     var i = 0
     while (i < arity) {
       val serializer = fieldSerializers(i).asInstanceOf[TypeSerializer[Any]]
@@ -126,7 +126,7 @@ abstract class CaseClassSerializer[T <: Product](
     createInstance(fields)
   }
 
-  def initArray() = {
+  private def initArray() = {
     if (fields == null) {
       fields = new Array[AnyRef](arity)
     }

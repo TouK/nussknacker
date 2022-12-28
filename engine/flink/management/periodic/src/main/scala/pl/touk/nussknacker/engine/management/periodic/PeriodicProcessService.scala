@@ -63,7 +63,7 @@ class PeriodicProcessService(delegateDeploymentManager: DeploymentManager,
       case MultipleScheduleProperty(schedules) => schedules.map { case (k, pp) =>
         pp.nextRunAt(clock).map(v => Some(k) -> v)
       }.toList.sequence
-      case e: SingleScheduleProperty => e.nextRunAt(clock).right.map(t => List((None, t)))
+      case e: SingleScheduleProperty => e.nextRunAt(clock).map(t => List((None, t)))
     }
     (schedules match {
       case Left(error) => Left(s"Failed to parse periodic property: $error")

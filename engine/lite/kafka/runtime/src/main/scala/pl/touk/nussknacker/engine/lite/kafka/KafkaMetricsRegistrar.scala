@@ -5,7 +5,7 @@ import org.apache.kafka.common.{Metric, MetricName}
 import pl.touk.nussknacker.engine.util.metrics.{Gauge, MetricIdentifier, MetricsProviderForScenario}
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 //We have to pass taskId, as we need different tags. `metrics` map passed in constructor is mutable (by Kafka), so we 
 //create own set of registered metrics to remove them correctly

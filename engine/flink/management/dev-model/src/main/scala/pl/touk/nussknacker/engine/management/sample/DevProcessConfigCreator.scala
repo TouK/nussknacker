@@ -92,7 +92,7 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
       ),
       "real-kafka-json-SampleProduct" -> all(fixedValueKafkaSource(
         processObjectDependencies,
-        new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).right.get)(TypeInformation.of(classOf[SampleProduct]))
+        new EspDeserializationSchema(bytes => decode[SampleProduct](new String(bytes, StandardCharsets.UTF_8)).toOption.get)(TypeInformation.of(classOf[SampleProduct]))
       )),
       "real-kafka-avro" -> all(avroSourceFactory),
       "kafka" -> all(universalSourceFactory),

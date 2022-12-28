@@ -73,7 +73,7 @@ class UiProcessMarshallerSpec extends AnyFlatSpec with Matchers {
 
     val processAfterMarshallAndUnmarshall = canonical.asJson.printWith(humanReadablePrinter)
 
-    parse(processAfterMarshallAndUnmarshall).right.get shouldBe baseProcess
+    parse(processAfterMarshallAndUnmarshall).toOption.get shouldBe baseProcess
   }
 
   it should "unmarshall json without additional fields" in {

@@ -33,7 +33,7 @@ class NodeDataCodecSpec extends AnyFunSuite with Matchers {
       "edgeType" -> Json.Null
     )))
 
-    Decoder[DisplayableProcess].decodeJson(encoded).right.toOption shouldBe Some(process)
+    Decoder[DisplayableProcess].decodeJson(encoded).toOption shouldBe Some(process)
   }
 
 }

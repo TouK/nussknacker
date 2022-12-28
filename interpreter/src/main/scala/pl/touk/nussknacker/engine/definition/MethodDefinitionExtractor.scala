@@ -24,7 +24,7 @@ private[definition] trait MethodDefinitionExtractor[T] {
 private[definition] trait AbstractMethodDefinitionExtractor[T] extends MethodDefinitionExtractor[T] {
 
   def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
-    findMatchingMethod(obj, methodToInvoke).right.map { method =>
+    findMatchingMethod(obj, methodToInvoke).map { method =>
       MethodDefinition(methodToInvoke.getName,
         (obj, args) => method.invoke(obj, args.map(_.asInstanceOf[Object]):_*), extractParameters(obj, method, componentConfig),
         extractReturnTypeFromMethod(obj, method), method.getReturnType, method.getAnnotations.toList)
@@ -121,7 +121,7 @@ object MethodDefinitionExtractor {
     override def extractMethodDefinition(obj: T, methodToInvoke: Method, componentConfig: SingleComponentConfig): Either[String, MethodDefinition] = {
       val extractorsWithDefinitions = for {
         extractor <- seq
-        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, componentConfig).right.toOption
+        definition <- extractor.extractMethodDefinition(obj, methodToInvoke, componentConfig).toOption
       } yield (extractor, definition)
       extractorsWithDefinitions match {
         case Nil =>

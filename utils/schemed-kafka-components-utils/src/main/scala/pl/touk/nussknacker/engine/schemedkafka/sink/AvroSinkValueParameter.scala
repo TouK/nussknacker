@@ -16,7 +16,7 @@ import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParame
 import scala.collection.immutable.ListMap
 
 object AvroSinkValueParameter {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   type FieldName = String
 

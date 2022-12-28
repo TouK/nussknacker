@@ -12,6 +12,7 @@ import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.deployment.ProcessState
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ValidatedDisplayableProcess}
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
@@ -47,8 +48,8 @@ class AppResources(config: Config,
       get {
         complete {
           val configuredBuildInfo = config.getAs[Map[String, String]]("globalBuildInfo").getOrElse(Map())
-          val globalBuildInfo = (BuildInfo.toMap.mapValues(_.toString) ++ configuredBuildInfo).mapValues(_.asJson)
-          val modelDataInfo = modelData.all.mapValues(_.configCreator.buildInfo()).asJson
+          val globalBuildInfo = (BuildInfo.toMap.mapValuesNow(_.toString) ++ configuredBuildInfo).mapValuesNow(_.asJson)
+          val modelDataInfo = modelData.all.mapValuesNow(_.configCreator.buildInfo()).asJson
           (globalBuildInfo + ("processingType" -> modelDataInfo)).asJson
         }
       }

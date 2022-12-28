@@ -7,7 +7,7 @@ import org.everit.json.schema._
 import pl.touk.nussknacker.engine.json.swagger.{OpenAPISchemaParser, SwaggerTyped}
 
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
 

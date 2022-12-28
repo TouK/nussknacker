@@ -7,7 +7,7 @@ import java.util
 
 trait LiteralSpEL {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   protected def toSpELLiteral(data: Any): String = {
 
     def convertCollection(data: List[String]) = s"""{${data.mkString(", ")}}"""
@@ -20,7 +20,7 @@ trait LiteralSpEL {
         convertCollection(elements.toList)
       case map: util.Map[String@unchecked, _] =>
         toSpELLiteral(map.asScala)
-      case collection: Traversable[_] =>
+      case collection: Iterable[_] =>
         val elements = collection.toList.map(v => toSpELLiteral(v))
         convertCollection(elements)
       case collection: util.Collection[_] =>

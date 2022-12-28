@@ -6,9 +6,9 @@ import java.io.Serializable
 
 
 /**
- * This class has a no-arg constructor, suitable for use with reflection instantiation It has no
- * registered serializers, just the standard Kryo configured for Kryo.
- */
+  * This class has a no-arg constructor, suitable for use with reflection instantiation It has no
+  * registered serializers, just the standard Kryo configured for Kryo.
+  */
 class EmptyFlinkScalaKryoInstantiator extends KryoInstantiator {
   override def newKryo = {
     val k = new KryoBase

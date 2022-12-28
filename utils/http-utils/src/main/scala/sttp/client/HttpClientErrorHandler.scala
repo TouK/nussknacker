@@ -9,6 +9,7 @@ object HttpClientErrorHandler extends LazyLogging {
 
   def handleUnitResponse(action: String, message: Option[String] = None)(response: Response[Either[String, String]]): Future[Unit] = (response.code, response.body) match {
     case (code, Right(_)) if code.isSuccess => Future.successful(())
+    case (code, Right(body)) => handleClientError(body, code, action, message)
     case (code, Left(error)) => handleClientError(error, code, action, message)
   }
 

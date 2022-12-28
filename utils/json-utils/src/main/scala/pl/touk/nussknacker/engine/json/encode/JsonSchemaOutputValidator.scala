@@ -10,6 +10,7 @@ import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output._
 import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.language.implicitConversions
 
@@ -30,7 +31,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   import JsonSchemaOutputValidator._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val valid = Validated.Valid(())
 
@@ -95,7 +96,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       }
     }
 
-    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.filterKeys(schemaFields.contains))
+    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.view.filterKeys(schemaFields.contains).toMap)
 
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
@@ -103,11 +104,11 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
 
     val additionalFieldsValidation = {
-      val additionalFields = typingResult.fields.filterKeys(k => !schemaFields.keySet.contains(k))
+      val additionalFields = typingResult.fields.view.filterKeys(k => !schemaFields.keySet.contains(k)).toMap
       if(additionalFields.isEmpty || schema.getSchemaOfAdditionalProperties == null)
         valid
        else
-        validateFieldsType(additionalFields.mapValues(_ => schema.getSchemaOfAdditionalProperties), additionalFields)
+        validateFieldsType(additionalFields.mapValuesNow(_ => schema.getSchemaOfAdditionalProperties), additionalFields)
     }
 
     requiredFieldsValidation combine schemaFieldsValidation combine redundantFieldsValidation combine additionalFieldsValidation

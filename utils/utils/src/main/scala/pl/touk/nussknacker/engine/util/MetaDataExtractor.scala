@@ -10,7 +10,7 @@ object MetaDataExtractor {
 
   def extractTypeSpecificData[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): Either[Unit, T] = metaData.typeSpecificData match {
     case a: T => Right(a)
-    case _ => Left(Unit)
+    case _ => Left(())
   }
 
   def extractTypeSpecificDataOrFail[T <: TypeSpecificData](metaData: MetaData)(implicit classTag: ClassTag[T]): T

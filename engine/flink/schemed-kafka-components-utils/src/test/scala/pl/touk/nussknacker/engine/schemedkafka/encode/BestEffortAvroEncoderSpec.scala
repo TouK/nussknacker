@@ -20,7 +20,7 @@ import scala.collection.immutable.ListSet
 
 class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValuesDetailedMessage {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   final protected val avroEncoder = BestEffortAvroEncoder(ValidationMode.strict)
 
@@ -195,8 +195,8 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
         |  { "name": "foo", "type": "string" }
         |]""".stripMargin)
 
-    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'invalid
-    BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe 'valid
+    BestEffortAvroEncoder(ValidationMode.strict).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("invalid")
+    BestEffortAvroEncoder(ValidationMode.lax).encodeRecord(Map("foo" -> "bar", "redundant" -> 15).asJava, schema) shouldBe Symbol("valid")
   }
 
   it("should create record with logical type for timestamp-millis") {

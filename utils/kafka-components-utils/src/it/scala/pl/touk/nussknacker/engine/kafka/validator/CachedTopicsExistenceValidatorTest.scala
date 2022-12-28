@@ -30,28 +30,28 @@ class CachedTopicsExistenceValidatorWhenAutoCreateDisabledTest extends AnyFunSui
       _.createTopics(Collections.singletonList[NewTopic](topic))
     }
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic(topic.name()) shouldBe 'valid
+    v.validateTopic(topic.name()) shouldBe Symbol("valid")
   }
 
   test("should validate not existing topic") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe 'invalid
+    v.validateTopic("not.existing") shouldBe Symbol("invalid")
   }
 
   test("should not validate not existing topic when validation disabled") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig.copy(kafkaProperties = Some(Map("bootstrap.servers" -> "broken address")), topicsExistenceValidationConfig = TopicsExistenceValidationConfig(enabled = false)))
-    v.validateTopic("not.existing") shouldBe 'valid
+    v.validateTopic("not.existing") shouldBe Symbol("valid")
   }
 
   test("should fetch topics every time when not valid using cache") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("test.topic.2") shouldBe 'invalid
+    v.validateTopic("test.topic.2") shouldBe Symbol("invalid")
 
     KafkaUtils.usingAdminClient(kafkaConfig) {
       _.createTopics(Collections.singletonList[NewTopic](new NewTopic("test.topic.2", Collections.emptyMap())))
     }
 
-    v.validateTopic("test.topic.2") shouldBe 'valid
+    v.validateTopic("test.topic.2") shouldBe Symbol("valid")
   }
 }
 
@@ -62,14 +62,14 @@ class CachedTopicsExistenceValidatorWhenAutoCreateEnabledTest extends AnyFunSuit
 
   test("should validate not existing topic") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe 'valid
+    v.validateTopic("not.existing") shouldBe Symbol("valid")
   }
 
   test("should use cache when validating") {
     val v = new CachedTopicsExistenceValidator(kafkaConfig)
-    v.validateTopic("not.existing") shouldBe 'valid
+    v.validateTopic("not.existing") shouldBe Symbol("valid")
     container.stop()
-    v.validateTopic("not.existing") shouldBe 'valid
+    v.validateTopic("not.existing") shouldBe Symbol("valid")
   }
 }
 
