@@ -1,4 +1,6 @@
 **/*
+!electron
+!electron/Linux
 !electron/Linux/**/*
 *.diff.*
 *.actual.*
