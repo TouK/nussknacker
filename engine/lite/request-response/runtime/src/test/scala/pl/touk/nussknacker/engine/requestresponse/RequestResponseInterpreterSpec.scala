@@ -29,6 +29,7 @@ import java.util
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
+import scala.jdk.CollectionConverters._
 
 class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
@@ -316,10 +317,9 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val validElementList = (0 to numberOfElements).map(s => s"x = ${s * 2}").toSeq
     result should have length 1
 
-      //todo kgd
-//    inside(result.head) {
-//      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList)
-//    }
+    inside(result.head) {
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf(validElementList)
+    }
 
   }
 
@@ -342,11 +342,9 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val validElementList = (0 to numberOfElements).map(s => s"x = $s")
     result should have length 1
 
-    //todo kgd
-//    inside(result.head) {
-//      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList ++ validElementList ++ validElementList )
-//    }
-
+    inside(result.head) {
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf (validElementList)
+    }
   }
 
   def runProcess(process: CanonicalProcess,

@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import scala.collection.compat._
 import scala.collection.mutable
 
 /**
@@ -53,10 +54,8 @@ object ClassHierarchyCommonSupertypeFinder {
   }
 
   private def classesOnLowerLevel(classOnUpperLevel: Class[_]): mutable.LinkedHashSet[Class[_]] = {
-    //mutable.LinkedHashSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
-    //  mutable.LinkedHashSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
-    //todo kgd
-    ???
+    mutable.LinkedHashSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
+      mutable.LinkedHashSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
   }
 
 }

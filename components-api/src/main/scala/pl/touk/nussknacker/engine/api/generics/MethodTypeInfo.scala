@@ -16,7 +16,6 @@ object MethodTypeInfo {
       throw new AssertionError ("Method with varArgs must have at least one parameter")
     case (false, noVarArgParameters) =>
       MethodTypeInfo(noVarArgParameters, None, result)
-    //todo kgd
     case (true, _) => throw new IllegalStateException()
   }
 

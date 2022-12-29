@@ -176,7 +176,6 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
   }
 
   private def encodeMap(map: collection.Map[_, _], schema: Schema): WithError[util.Map[CharSequence, AnyRef]] = {
-    //todo kgd
     map.asInstanceOf[collection.Map[AnyRef, AnyRef]].map {
       case (k: String, v) =>
         encode(v, schema.getValueType, Some(k)).map(encodeString(k) -> _)

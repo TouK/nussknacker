@@ -111,10 +111,7 @@ class CommonSupertypeFinder(classResolutionStrategy: SupertypeClassResolutionStr
           Nil // fields type collision - skipping this field
         else
           (fieldName, leastUpperBound) :: Nil
-      //todo kgd
-      case (fieldName, types) =>
-        val leftField = types.head
-        fieldName -> leftField :: Nil
+      case _ => throw new IllegalStateException()
     }
     leftFieldsWithRightCommonFields ++ rightDoesNotIntersect
 }

@@ -30,17 +30,13 @@ object SpelHack extends SerializerWithSpecifiedClass[java.util.List[_]](false, t
     val size = in.readInt(true)
     // Go ahead and be faster, and not as functional cool, and be mutable in here
     var idx = 0
-    //todo kgd
-//    val builder = scala.collection.immutable.List.canBuildFrom[AnyRef]()
-//    builder.sizeHint(size)
-//
-//    while (idx < size) {
-//      val item = kryo.readClassAndObject(in)
-//      builder += item
-//      idx += 1
-//    }
-//    builder.result().asJava
-    ???
+    val list = new java.util.ArrayList[AnyRef](size)
+    while (idx < size) {
+      val item = kryo.readClassAndObject(in)
+      list.add(item)
+      idx += 1
+    }
+    list
   }
 
 }

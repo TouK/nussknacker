@@ -16,8 +16,6 @@ class OidcService(configuration: OidcAuthenticationConfiguration)
                  (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
   extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken](OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration), configuration.oAuth2Configuration) {
 
-  //todo kgd
-  implicit private val decoder: Decoder[OpenIdConnectUserInfo] = OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims)
   override protected lazy val jwtValidator: JwtValidator = createJwtValidator(configuration)
 
 }
