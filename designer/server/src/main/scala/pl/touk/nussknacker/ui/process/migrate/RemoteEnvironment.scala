@@ -122,7 +122,7 @@ trait StandardRemoteEnvironment extends FailFastCirceSupport with RemoteEnvironm
   override def testMigration(processToInclude: BasicProcess => Boolean = _ => true)(implicit ec: ExecutionContext): Future[Either[EspError, List[TestMigrationResult]]] = {
     (for {
       allBasicProcesses <- EitherT(fetchProcesses)
-      basicProcesses = allBasicProcesses.filter(!_.isSubprocess).filter(processToInclude)
+      basicProcesses = allBasicProcesses.filterNot(_.isSubprocess).filter(processToInclude)
       basicSubProcesses = allBasicProcesses.filter(_.isSubprocess)
       processes <- fetchGroupByGroup(basicProcesses)
       subProcesses <- fetchGroupByGroup(basicSubProcesses)
