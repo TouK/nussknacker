@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.flink.api.state
 
 import scala.collection.immutable.TreeMap
+import scala.collection.compat.toSortedExtensionMethods
 
 object MultiMap {
   def apply[K:Ordering, V] : MultiMap[K, V] = MultiMap(TreeMap())

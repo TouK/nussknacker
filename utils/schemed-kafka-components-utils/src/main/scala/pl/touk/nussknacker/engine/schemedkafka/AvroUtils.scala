@@ -10,6 +10,7 @@ import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -122,7 +123,7 @@ object AvroUtils extends LazyLogging {
         case (collection: Iterable[_], SchemaContainsArraySchema(arraySchema)) =>
           collection.map(createValue(_, arraySchema.getElementType)).toList.asJava
         case (map: collection.Map[String@unchecked, _], SchemaContainsMapSchema(mapSchema)) =>
-          map.view.mapValues(createValue(_, mapSchema.getValueType)).toMap.asJava
+          map.toMap.mapValuesNow(createValue(_, mapSchema.getValueType)).asJava
         case _ => value
       }
     }

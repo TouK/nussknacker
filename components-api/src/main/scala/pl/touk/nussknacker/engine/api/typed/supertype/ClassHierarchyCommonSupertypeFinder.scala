@@ -53,8 +53,10 @@ object ClassHierarchyCommonSupertypeFinder {
   }
 
   private def classesOnLowerLevel(classOnUpperLevel: Class[_]): mutable.LinkedHashSet[Class[_]] = {
-    mutable.LinkedHashSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
-      mutable.LinkedHashSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
+    //mutable.LinkedHashSet.from(Option[Class[_]](classOnUpperLevel.getSuperclass).filterNot(_ == classOf[Object]).toList) ++
+    //  mutable.LinkedHashSet.from(classOnUpperLevel.getInterfaces.filterNot(IgnoredCommonInterfaces.contains))
+    //todo kgd
+    ???
   }
 
 }

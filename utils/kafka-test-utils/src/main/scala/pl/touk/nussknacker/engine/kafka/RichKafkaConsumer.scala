@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.kafka.RichKafkaConsumer.defaultSecondsToWait
 
 import java.time.Duration
 import java.util.concurrent.TimeoutException
+import scala.collection.compat.immutable.LazyList
 
 class RichKafkaConsumer[K, M](consumer: Consumer[K, M]) extends LazyLogging {
 

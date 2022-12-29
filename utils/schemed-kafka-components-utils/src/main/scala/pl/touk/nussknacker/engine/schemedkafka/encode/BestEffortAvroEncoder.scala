@@ -20,6 +20,7 @@ import java.util
 import java.util.UUID
 import scala.math.BigDecimal.RoundingMode
 import scala.util.Try
+import scala.collection.compat.immutable.LazyList
 
 class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validationMode: ValidationMode) {
 

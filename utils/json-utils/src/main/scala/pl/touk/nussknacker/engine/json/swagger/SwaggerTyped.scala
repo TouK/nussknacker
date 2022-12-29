@@ -1,22 +1,21 @@
 package pl.touk.nussknacker.engine.json.swagger
 
 import com.fasterxml.jackson.core.`type`.TypeReference
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
-import io.circe.{Decoder, Encoder, Json, JsonObject}
 import io.circe.generic.JsonCodec
+import io.circe.{Decoder, Encoder, Json}
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
-import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder.getClass
+import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
-import java.util
 import java.util.Collections
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
-import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 @JsonCodec sealed trait AdditionalProperties
 case object AdditionalPropertiesDisabled extends AdditionalProperties
@@ -173,7 +172,7 @@ object SwaggerArray {
 
 object SwaggerObject {
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
-    val properties = Option(schema.getProperties).map(_.asScala.view.mapValues(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
+    val properties = Option(schema.getProperties).map(_.asScala.toMap.mapValuesNow(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
     if (properties.isEmpty) {
       schema.getAdditionalProperties match {

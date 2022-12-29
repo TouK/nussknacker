@@ -96,7 +96,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       }
     }
 
-    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.view.filterKeys(schemaFields.contains).toMap)
+    val schemaFieldsValidation = validateFieldsType(schemaFields, typingResult.fields.filterKeysNow(schemaFields.contains))
 
     val redundantFieldsValidation = {
       val redundantFields = typingResult.fields.keySet.diff(schemaFields.keySet)
@@ -104,7 +104,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
     }
 
     val additionalFieldsValidation = {
-      val additionalFields = typingResult.fields.view.filterKeys(k => !schemaFields.keySet.contains(k)).toMap
+      val additionalFields = typingResult.fields.filterKeysNow(k => !schemaFields.keySet.contains(k))
       if(additionalFields.isEmpty || schema.getSchemaOfAdditionalProperties == null)
         valid
        else

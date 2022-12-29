@@ -20,6 +20,7 @@ import java.util.UUID
 import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.Try
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 private[encode] case class AvroSchemaExpected(schema: Schema) extends OutputValidatorExpected {
   override def expected: String = AvroSchemaOutputValidatorPrinter.print(schema)
@@ -117,7 +118,7 @@ class AvroSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
       schemaFields.values.filterNot(_.hasDefaultValue).map(_.name())
     }
 
-    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.view.filterKeys(schemaFields.contains).toMap
+    val fieldsToValidate: Map[String, TypingResult] = typingResult.fields.filterKeysNow(schemaFields.contains)
 
     def prepareFields(fields: Set[String]) = fields.flatMap(buildPath(_, path))
 

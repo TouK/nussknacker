@@ -25,7 +25,7 @@ import org.apache.flink.api.java.typeutils.runtime.TupleSerializerConfigSnapshot
 import pl.touk.nussknacker.engine.flink.api.typeinfo.caseclass.ScalaCaseClassSerializer.lookupConstructor
 
 import java.io.ObjectInputStream
-import scala.collection.immutable.ArraySeq
+import scala.collection.compat.immutable.ArraySeq
 import scala.jdk.CollectionConverters._
 import scala.reflect.runtime.universe
 

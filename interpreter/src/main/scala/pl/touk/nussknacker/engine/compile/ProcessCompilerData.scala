@@ -85,7 +85,7 @@ class ProcessCompilerData(compiler: ProcessCompiler,
     val componentIds = nodesToUse.collect {
       case e:WithComponent => e.componentId
     }
-    listeners ++ services.view.filterKeys(componentIds.contains).values
+    listeners ++ services.filterKeysNow(componentIds.contains).values
   }
 
   def metaData: MetaData = process.metaData

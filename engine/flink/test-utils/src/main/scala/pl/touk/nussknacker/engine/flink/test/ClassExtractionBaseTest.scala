@@ -11,7 +11,7 @@ import io.circe.syntax._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Inside}
+import org.scalatest.Inside
 import org.springframework.util.ClassUtils
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.api.typed.typing.{TypedClass, TypingResult}

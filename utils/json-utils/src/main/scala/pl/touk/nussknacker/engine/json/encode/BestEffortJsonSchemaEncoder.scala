@@ -28,7 +28,7 @@ object BestEffortJsonSchemaEncoder {
   }
 
   private def encodeObject(fields: Map[String, _], parentSchema: ObjectSchema): EncodeOutput = {
-    fields.keys.toList.concat(parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
+    (fields.keys.toList ++ parentSchema.getPropertySchemas.keySet.asScala.toList).distinct.map{ key =>
       val schema = Option(parentSchema.getPropertySchemas.get(key))
       val value = fields.get(key)
       (key, value,schema)

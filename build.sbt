@@ -822,7 +822,6 @@ lazy val commonUtils = (project in utils("utils")).
       Seq(
         "org.springframework" % "spring-core" % springV,
         "com.github.ben-manes.caffeine" % "caffeine" % caffeineCacheV,
-        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scala-lang.modules" %% "scala-java8-compat" % scalaCompatV,
         "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
@@ -864,7 +863,8 @@ lazy val testUtils = (project in utils("test-utils")).
         "com.typesafe" % "config" % configV,
         "org.typelevel" %% "cats-core" % catsV,
         "ch.qos.logback" % "logback-classic" % logbackV,
-        "commons-io" % "commons-io" % commonsIOV
+        "commons-io" % "commons-io" % commonsIOV,
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       )
     }
   )
@@ -906,6 +906,7 @@ lazy val flinkScalaUtils = (project in flink("scala-utils")).
         "com.twitter" %% "chill" % "0.10.0",
         "org.scala-lang" % "scala-reflect" % scalaVersion.value,
         "org.apache.flink" % "flink-streaming-java" % flinkV % "provided",
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       )
     }
   )
@@ -1473,7 +1474,7 @@ lazy val designer = (project in file("designer/server"))
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
         "fr.davit" %% "akka-http-metrics-dropwizard-v5" % "1.7.1"
       ) ++ forScalaVersion(scalaVersion.value, Seq(),
-        (2, 12) -> Seq( "org.scala-lang.modules" %% "scala-xml" % "2.1.0")
+        (2, 13) -> Seq( "org.scala-lang.modules" %% "scala-xml" % "2.1.0")
       )
     }
   )

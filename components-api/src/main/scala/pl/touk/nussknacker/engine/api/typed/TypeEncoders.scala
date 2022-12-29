@@ -5,6 +5,7 @@ import io.circe._
 import pl.touk.nussknacker.engine.api.typed.TypeEncoders.typeField
 import pl.touk.nussknacker.engine.api.typed.TypingType.{TypingType, decoder}
 import pl.touk.nussknacker.engine.api.typed.typing._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.collection.immutable.ListMap
 import scala.util.{Failure, Success, Try}
@@ -40,7 +41,7 @@ object TypeEncoders {
   private def encodeSingleTypingResult(result: SingleTypingResult): JsonObject = result match {
     case TypedObjectTypingResult(fields, objType, additionalInfo) =>
       val objTypeEncoded = encodeTypedClass(objType)
-      val fieldsEncoded = "fields" -> fromFields(fields.view.mapValues(typ => fromJsonObject(encodeTypingResult(typ))).toList)
+      val fieldsEncoded = "fields" -> fromFields(fields.mapValuesNow(typ => fromJsonObject(encodeTypingResult(typ))).toList)
       val standardFields = objTypeEncoded.+:(fieldsEncoded)
       if (additionalInfo.isEmpty) {
         standardFields

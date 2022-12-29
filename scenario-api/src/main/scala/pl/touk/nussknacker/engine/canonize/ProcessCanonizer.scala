@@ -6,6 +6,7 @@ import cats.syntax.traverse._
 import pl.touk.nussknacker.engine.canonicalgraph._
 import pl.touk.nussknacker.engine.graph._
 import pl.touk.nussknacker.engine.graph.node.{BranchEnd, BranchEndData}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ProcessCanonizer {
   import MaybeArtificial.applicative
@@ -118,7 +119,7 @@ object NodeCanonizer {
       case node.SplitNode(bare, nexts) =>
         canonicalnode.SplitNode(bare, nexts.map(canonize)) :: Nil
       case node.SubprocessNode(input, nexts) =>
-        canonicalnode.Subprocess(input, nexts.view.mapValues(canonize).toMap) :: Nil
+        canonicalnode.Subprocess(input, nexts.mapValuesNow(canonize)) :: Nil
       case BranchEnd(e:BranchEndData) =>
         canonicalnode.FlatNode(e) :: Nil
     }

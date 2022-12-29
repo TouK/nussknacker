@@ -7,6 +7,7 @@ import org.apache.commons.lang3.ClassUtils
 import pl.touk.nussknacker.engine.api.typed.supertype.{CommonSupertypeFinder, NumberTypesPromotionStrategy, SupertypeClassResolutionStrategy}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed.fromInstance
 import pl.touk.nussknacker.engine.api.util.{NotNothing, ReflectUtils}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
@@ -65,7 +66,7 @@ object typing {
       fields.map{ case (k, v) => v.valueOpt.map((k, _))}.toList.sequence.map(ListMap(_: _*))
 
     override def withoutValue: TypedObjectTypingResult =
-      TypedObjectTypingResult(ListMap(fields.view.mapValues(_.withoutValue).toList: _*), objType, additionalInfo)
+      TypedObjectTypingResult(ListMap(fields.mapValuesNow(_.withoutValue).toList: _*), objType, additionalInfo)
 
     override def display: String = fields.map { case (name, typ) => s"$name: ${typ.display}"}.mkString("{", ", ", "}")
   }

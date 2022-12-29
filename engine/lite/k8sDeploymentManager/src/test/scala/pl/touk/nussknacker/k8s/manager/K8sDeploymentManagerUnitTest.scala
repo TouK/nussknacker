@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.{labelsForScenario, nussknackerInstanceNameLabel, objectNameForScenario, scenarioIdLabel, scenarioNameLabel, scenarioVersionLabel}
 import org.scalatest.prop.TableDrivenPropertyChecks._
 
-import scala.collection.immutable.LazyList.continually
+import scala.collection.compat.immutable.LazyList.continually
 
 class K8sDeploymentManagerUnitTest extends AnyFunSuite with Matchers {
 

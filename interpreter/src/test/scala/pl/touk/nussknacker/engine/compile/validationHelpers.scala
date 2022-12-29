@@ -336,7 +336,7 @@ object validationHelpers {
     }
 
     override protected def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(step.parameters.toMap.view.filterKeys(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
+      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
 

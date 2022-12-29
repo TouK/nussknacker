@@ -9,6 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.{TypeEncoders, typing}
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.restmodel.definition.UIParameter
 import pl.touk.nussknacker.engine.api.CirceUtil._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object ValidationResults {
 
@@ -42,7 +43,7 @@ object ValidationResults {
       allErrors.filter(_.errorType == NodeValidationErrorType.SaveNotAllowed)
 
     def typingInfo: Map[String, Map[String, ExpressionTypingInfo]] =
-      nodeResults.view.mapValues(_.typingInfo).toMap
+      nodeResults.mapValuesNow(_.typingInfo)
 
     private def allErrors: List[NodeValidationError] =
       (errors.invalidNodes.values.flatten ++ errors.processPropertiesErrors ++ errors.globalErrors).toList

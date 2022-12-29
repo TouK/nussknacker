@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.graph.expression.NodeExpressionId._
 import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, Enricher, NodeData, Source, Split, SubprocessInputDefinition, SubprocessUsageOutput, SubprocessOutputDefinition}
 import pl.touk.nussknacker.engine.graph.variable.Field
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.reflect._
 
@@ -46,7 +47,7 @@ trait ProcessNodesRewriter {
       case Subprocess(data, outputs) =>
         Subprocess(
           rewriteIfMatching(data),
-          outputs.view.mapValues(rewriteNodes).toMap)
+          outputs.map { case (k, v) => (k, rewriteNodes(v)) })
     }
   }
 

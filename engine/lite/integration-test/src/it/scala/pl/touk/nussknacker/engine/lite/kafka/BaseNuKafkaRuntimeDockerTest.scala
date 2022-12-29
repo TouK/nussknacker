@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.kafka.exception.KafkaExceptionInfo
 import pl.touk.nussknacker.engine.kafka.{KafkaClient, KeyMessage}
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
+import scala.collection.compat.immutable.LazyList
 
 import java.io.File
 import java.util.concurrent.TimeoutException

@@ -5,6 +5,8 @@ import io.circe.{Json, JsonObject}
 import org.json.{JSONArray, JSONObject, JSONTokener}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import scala.collection.compat.immutable.LazyList
+
 object JsonSchemaUtils {
 
   import scala.jdk.CollectionConverters._
@@ -28,7 +30,7 @@ object JsonSchemaUtils {
     case a: java.lang.String => fromString(a)
     case a: JSONArray => fromValues(a.asScala.map(jsonToCirce))
     case a if a == JSONObject.NULL => Null
-    case a: JSONObject => fromJsonObject(JsonObject.fromIterable(a.keys().asScala.map(name => (name, jsonToCirce(a.get(name)))).iterator.to(Iterable)))
+    case a: JSONObject => fromJsonObject(JsonObject.fromIterable(a.keys().asScala.map(name => (name, jsonToCirce(a.get(name)))).toList))
     //should not happen, based on JSONTokener.nextValue docs
     case a => throw new IllegalArgumentException(s"Should not happen, JSON: ${a.getClass}")
   }
