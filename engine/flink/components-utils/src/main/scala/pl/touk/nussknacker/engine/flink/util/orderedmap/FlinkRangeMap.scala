@@ -4,7 +4,7 @@ import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 
 import java.{util => jul}
 import scala.Ordering.Implicits._
-import scala.collection.compat.toSortedExtensionMethods
+import scala.collection.compat._
 import scala.collection.immutable.SortedMap
 import scala.language.higherKinds
 
