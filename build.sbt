@@ -292,7 +292,7 @@ val commonsIOV = "2.4"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x
 val dropWizardV = "5.0.0-rc11"
-val scalaCollectionsCompatV = "2.3.2"
+val scalaCollectionsCompatV = "2.9.0"
 val testcontainersScalaV = "0.40.10"
 val nettyV = "4.1.48.Final"
 
@@ -828,15 +828,7 @@ lazy val commonUtils = (project in utils("utils")).
         "org.slf4j" % "jul-to-slf4j" % slf4jV,
         "com.iheart" %% "ficus" % ficusV,
       )
-    },
-    libraryDependencies ++= {
-      CrossVersion.partialVersion(scalaVersion.value) match {
-        case Some((2, scalaMinor)) if scalaMinor == 12 =>
-          libraryDependencies.value ++ Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.9.0")
-        case _ => Seq()
-      }
     }
-
   ).dependsOn(commonApi, testUtils % "test")
 
 
@@ -1212,6 +1204,7 @@ lazy val commonApi = (project in file("common-api")).
   settings(
     name := "nussknacker-common-api",
     libraryDependencies ++= Seq(
+      "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
       "io.circe" %% "circe-parser" % circeV,
       "io.circe" %% "circe-generic" % circeV,
       "io.circe" %% "circe-generic-extras" % circeV
