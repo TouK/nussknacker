@@ -398,14 +398,6 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v2
-      - name: Cache npm
-        id: cache-npm
-        uses: actions/cache@v2
-        with:
-          path: |
-            **/node_modules
-            ~/.cache/Cypress
-          key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
@@ -414,7 +406,6 @@ jobs:
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
