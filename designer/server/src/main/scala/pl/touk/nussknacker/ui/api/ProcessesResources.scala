@@ -103,15 +103,6 @@ class ProcessesResources(
               }
             }
           }
-        } ~ path("subProcessesDetails") {
-          // To be removed in NU 1.8.
-          get {
-            complete {
-              val query = FetchProcessesDetailsQuery(isSubprocess = Some(true), isArchived = Some(false))
-              val subProcesses = processRepository.fetchProcessesDetails[CanonicalProcess](query)
-              validateAndReverseResolveAll(subProcesses)
-            }
-          }
         } ~ path("processes" / "status") {
           get {
             complete {

@@ -825,19 +825,6 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
     }
   }
 
-  test("return subprocesses details") {
-    val subprocess = ProcessTestData.sampleSubprocess
-    saveSubProcess(subprocess) {
-      status shouldEqual StatusCodes.OK
-    }
-
-    Get("/subProcessesDetails") ~> routeWithRead ~> check {
-      status shouldEqual StatusCodes.OK
-      val processes = responseAs[List[ValidatedProcessDetails]]
-      processes.map(_.name) should contain only subprocess.id
-    }
-  }
-
   test("fetching status for non exists process should return 404 ") {
     Get(s"/processes/non-exists-process/status") ~> routeWithAllPermissions ~> check {
       status shouldEqual StatusCodes.NotFound

@@ -141,11 +141,12 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
                                           subProcesses: List[ValidatedProcessDetails]) = new MockRemoteEnvironment {
 
     private def basicProcesses: List[BasicProcess] = (processes ++ subProcesses).map(BasicProcess.apply(_))
+    private def allProcesses: List[ValidatedProcessDetails] = processes ++ subProcesses
 
     override protected def request(uri: Uri, method: HttpMethod, request: MessageEntity): Future[HttpResponse] = {
       object GetBasicProcesses {
         def unapply(arg: (Uri, HttpMethod)): Boolean = {
-          arg._1.toString() == s"$baseUri/processes?isArchived=false&isSubprocess=false" && arg._2 == HttpMethods.GET
+          arg._1.toString() == s"$baseUri/processes?isArchived=false" && arg._2 == HttpMethods.GET
         }
       }
 
@@ -160,19 +161,11 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
         }
       }
 
-      object GetSubProcessesDetails {
-        def unapply(arg: (Uri, HttpMethod)): Boolean = {
-          arg._1.toString() == s"$baseUri/subProcessesDetails" && arg._2 == HttpMethods.GET
-        }
-      }
-
       (uri, method) match {
         case GetBasicProcesses() =>
           Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
         case GetProcessesDetails(names) =>
-          Marshal(processes.filter(p => names(p.name))).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
-        case GetSubProcessesDetails() =>
-          Marshal(subProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+          Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
       }
     }
 
