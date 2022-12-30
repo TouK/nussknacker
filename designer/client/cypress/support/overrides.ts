@@ -1,5 +1,6 @@
 import {defaultsDeep} from "lodash"
 import UAParser from "ua-parser-js"
+import {recurse} from "cypress-recurse"
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
@@ -10,6 +11,15 @@ declare global {
       x: number,
       y: number,
     }
+
+    interface MatchImageOptionsExtended extends Cypress.MatchImageOptions {
+      updateSnapshotsOnFail?: boolean,
+    }
+
+    interface Chainable<Subject> {
+      matchImage(options?: Cypress.MatchImageOptionsExtended): Chainable<MatchImageReturn>,
+    }
+
   }
 }
 
@@ -42,4 +52,43 @@ Cypress.Commands.overwrite("visit", (original: Cypress.Chainable["visit"], first
     pluginVisualRegressionImagesPath: `{spec_path}/__image_snapshots__/${Cypress.browser.name}/${osDir}`,
   }, Cypress.env()))
   return original(typeof first === "string" ? {auth, ...second, url: first} : {auth, ...first})
+})
+
+Cypress.Commands.overwrite("matchImage", (
+  originalFn: Cypress.CommandOriginalFnWithSubject<"matchImage", any>,
+  $el,
+  {updateSnapshotsOnFail, ...options}: Cypress.MatchImageOptionsExtended = {}
+) => {
+  if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
+    let path = null
+    const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold")
+    return recurse(
+      () => originalFn($el, {
+        ...options,
+        maxDiffThreshold: 1,
+        matchAgainstPath: path,
+        updateImages: !!path,
+        title: path && "__temp", //prevent # mismatch
+      }),
+      (r) => r.diffValue < threshold,
+      {
+        log: false,
+        delay: 200,
+        limit: 2,
+        yield: "value",
+        postLastValue: true,
+        post: ({value, limit, success}) => {
+          path ||= value.imgPath
+          if(!success)
+          {
+            return cy.log("Snapshot needs update", value)
+          }
+          if (limit <= 1) {
+            return cy.log("Updated snapshot", value)
+          }
+        },
+      },
+    )
+  }
+  return originalFn($el, options)
 })

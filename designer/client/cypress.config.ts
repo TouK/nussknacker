@@ -2,6 +2,7 @@ import {defineConfig} from "cypress"
 
 export default defineConfig({
   env: {
+    updateSnapshotsOnFail: false,
     pluginVisualRegressionMaxDiffThreshold: 0.005,
     pluginVisualRegressionUpdateImages: false,
     pluginVisualRegressionForceDeviceScaleFactor: false,
@@ -11,7 +12,7 @@ export default defineConfig({
     mochaFile: "cypress-test-results/[hash].xml",
     toConsole: false,
   },
-  defaultCommandTimeout: 10000,
+  defaultCommandTimeout: 30000,
   e2e: {
     experimentalRunAllSpecs: true,
     // We've imported your old cypress plugins here.
@@ -44,6 +45,5 @@ export default defineConfig({
     },
     baseUrl: "http://localhost:3000",
     excludeSpecPattern: ["**/__snapshots__/*", "**/__image_snapshots__/*"],
-
   },
 })
