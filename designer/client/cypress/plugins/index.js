@@ -20,7 +20,7 @@ const browserify = require("@cypress/browserify-preprocessor")
 
 module.exports = (on, config) => {
   if (process.env.CYPRESS_SNAPSHOT_UPDATE === "true") {
-    config.env.pluginVisualRegressionUpdateImages = true
+    config.env.updateSnapshotsOnFail = true
     config.video = false
   }
   require("@frsource/cypress-plugin-visual-regression-diff/dist/plugins").initPlugin(on, config)
