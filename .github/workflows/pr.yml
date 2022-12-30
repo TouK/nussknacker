@@ -465,6 +465,7 @@ jobs:
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
           CYPRESS_BASE_URL: http://localhost:8080
           DOCKER_PULL_OPTION: never
         shell: bash
@@ -481,16 +482,12 @@ jobs:
           echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
       - name: FE tests e2e on pulled image
         if: ${{ env.shouldBuildImage == 'false' }}
+        env:
+          CYPRESS_SNAPSHOT_UPDATE: "true"
         shell: bash
         run: |
           cd designer/client
           npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
-      - name: Find diffs
-        if: failure() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
-        id: snapshots_diffs
-        shell: bash
-        run: |
-          echo ::set-output name=found::$(find . -iname '*.diff.png' | wc -l)
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
@@ -507,24 +504,6 @@ jobs:
             designer/client/cypress/screenshots/
             designer/client/cypress/videos/
           if-no-files-found: ignore
-      - name: FE tests e2e on build docker image with CYPRESS_SNAPSHOT_UPDATE
-        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'true' }}
-        env:
-          CYPRESS_SNAPSHOT_UPDATE: "true"
-          CYPRESS_BASE_URL: http://localhost:8080
-          DOCKER_PULL_OPTION: never
-        shell: bash
-        run: |
-          cd designer/client
-          npx start-server-and-test backend:docker 8080 test:e2e
-      - name: FE tests e2e on pulled image with CYPRESS_SNAPSHOT_UPDATE
-        if: ${{ always() && steps.snapshots_diffs.outputs.found > 0 && env.shouldBuildImage == 'false' }}
-        env:
-          CYPRESS_SNAPSHOT_UPDATE: "true"
-        shell: bash
-        run: |
-          cd designer/client
-          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
       - name: Create Pull Request
         id: update_snapshots
         if: always() && (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
