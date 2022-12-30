@@ -413,16 +413,6 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           java-version: "openjdk@1.11"
-      - name: Cache ivy packages
-        if: ${{ env.shouldBuildImage == 'true' }}
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: ${{ runner.os }}-sbt
       - uses: actions/download-artifact@v2
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
