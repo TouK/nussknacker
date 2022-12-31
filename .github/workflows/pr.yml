@@ -391,7 +391,7 @@ jobs:
       # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
       shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
-      BE_PORT: 92519
+      BE_PORT: 7251
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
