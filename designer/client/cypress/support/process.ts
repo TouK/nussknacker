@@ -120,7 +120,7 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
 function getNode(name: string, end?: boolean) {
   return cy.get(`[model-id${end?"$=":"="}"${name}"]`, {timeout: 30000})
 }
-function layoutScenario(waitTime = 200) {
+function layoutScenario(waitTime = 300) {
   cy.contains(/^layout$/).click()
   cy.wait(waitTime) //wait for graph view (zoom, pan) to settle
 }
