@@ -14,13 +14,13 @@ describe("Process", () => {
     })
 
     it("should allow editing choice edge expression", () => {
-      cy.contains(/^layout$/).click()
+      cy.layoutScenario()
       cy.contains(/^base$/).should("be.visible").click()
       cy.contains(/^choice$/)
         .should("be.visible")
         .move({x: 580, y: 450, position: "right", force: true})
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
-      cy.contains(/^layout$/).click()
+      cy.layoutScenario()
       cy.get("[model-id$=choice-sendSms-true]").should("be.visible").trigger("dblclick")
 
       cy.get("[data-testid=window]").should("be.visible")
@@ -30,10 +30,10 @@ describe("Process", () => {
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.get(".graphPage").matchImage({screenshotConfig: {
-          blackout: [
-            "> :not(#nk-graph-main) > div",
-          ],
-        }})
+        blackout: [
+          "> :not(#nk-graph-main) > div",
+        ],
+      }})
     })
   })
 })

@@ -84,7 +84,7 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
-      cy.contains(/^layout$/).click()
+      cy.layoutScenario()
       cy.get("[title='toggle left panel']").click()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
@@ -95,7 +95,7 @@ describe("Process", () => {
     })
 
     it("should allow drag component and drop on edge", () => {
-      cy.contains(/^layout$/).click()
+      cy.layoutScenario()
       cy.contains(/^custom$/)
         .should("be.visible").click()
       cy.get("[data-testid='component:customFilter']")
@@ -189,7 +189,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "switch")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.getNode("switch")
       .click()
@@ -231,7 +231,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "filter")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
     cy.wait("@validation")

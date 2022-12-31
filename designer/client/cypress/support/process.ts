@@ -16,6 +16,7 @@ declare global {
       postFormData: typeof postFormData,
       visitProcess: typeof visitProcess,
       getNode: typeof getNode,
+      layoutScenario: typeof layoutScenario,
     }
   }
 }
@@ -119,6 +120,10 @@ function deleteAllTestProcesses({filter, force}: {filter?: string, force?: boole
 function getNode(name: string, end?: boolean) {
   return cy.get(`[model-id${end?"$=":"="}"${name}"]`, {timeout: 30000})
 }
+function layoutScenario(waitTime = 200) {
+  cy.contains(/^layout$/).click()
+  cy.wait(waitTime) //wait for graph view (zoom, pan) to settle
+}
 
 Cypress.Commands.add("createTestProcess", createTestProcess)
 Cypress.Commands.add("deleteTestProcess", deleteTestProcess)
@@ -132,5 +137,6 @@ Cypress.Commands.add("visitNewFragment", visitNewFragment)
 Cypress.Commands.add("postFormData", postFormData)
 Cypress.Commands.add("visitProcess", visitProcess)
 Cypress.Commands.add("getNode", getNode)
+Cypress.Commands.add("layoutScenario", layoutScenario)
 
 export default {}

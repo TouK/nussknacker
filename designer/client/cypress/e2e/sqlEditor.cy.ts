@@ -12,7 +12,7 @@ describe("Sql editor", () => {
 
   it("should display colorfull sql code", () => {
     cy.visitNewProcess(seed, "withSqlEditor")
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
     cy.get("[model-id=sql-source]").should("be.visible").trigger("dblclick")
     cy.get("[data-testid=window]").should("be.visible")
     cy.get("#ace-editor").should("not.have.class", "tokenizer-working").parent().matchImage({maxDiffThreshold})
@@ -23,7 +23,7 @@ describe("Sql editor", () => {
   it("should display advanced colors", () => {
     cy.viewport("macbook-15")
     cy.visitNewProcess(seed, "withSqlEditor2")
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.wrap(["sql-source", "sql-source2", "sql-source3"]).each(name => {
       cy.get(`[model-id=${name}]`).should("be.visible").trigger("dblclick")
