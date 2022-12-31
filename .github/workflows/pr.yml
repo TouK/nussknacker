@@ -391,6 +391,7 @@ jobs:
       # could cause that cypress tests will be run at stale image (because of cancel-workflow-action).
       shouldBuildImage: ${{ needs.setup.outputs.fe_changes_count != needs.setup.outputs.all_changes_count || github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/demo' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
       GIT_SOURCE_BRANCH: ${{ needs.setup.outputs.git_source_branch }}
+      BE_PORT: 92519
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
@@ -447,12 +448,12 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
           CYPRESS_SNAPSHOT_UPDATE: "true"
-          CYPRESS_BASE_URL: http://localhost:8080
+          CYPRESS_BASE_URL: http://localhost:${{ env.BE_PORT }}
           DOCKER_PULL_OPTION: never
         shell: bash
         run: |
           cd designer/client
-          npx start-server-and-test backend:docker 8080 test:e2e
+          npx start-server-and-test backend:docker ${{ env.BE_PORT }} test:e2e
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
@@ -468,7 +469,7 @@ jobs:
         shell: bash
         run: |
           cd designer/client
-          npx start-server-and-test backend:docker 8080 start-prod 3000 test:e2e
+          npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
