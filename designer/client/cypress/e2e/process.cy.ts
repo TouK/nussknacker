@@ -95,18 +95,18 @@ describe("Process", () => {
     })
 
     it("should allow drag component and drop on edge", () => {
-      cy.layoutScenario()
       cy.contains(/^custom$/)
         .should("be.visible").click()
+      cy.layoutScenario()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
       cy.get(".graphPage").matchImage(screenshotOptions)
+      //why save and test snapshot? mistake?
       cy.contains(/^save$/i).click()
       cy.get("[data-testid=window]").contains(/^ok$/i).click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.get("#nk-graph-main").should("be.visible")
-      cy.wait(100)
       cy.get(".graphPage").matchImage(screenshotOptions)
     })
 
