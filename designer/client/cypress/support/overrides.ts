@@ -59,6 +59,7 @@ Cypress.Commands.overwrite("matchImage", (
   $el,
   {updateSnapshotsOnFail, ...options}: Cypress.MatchImageOptionsExtended = {}
 ) => {
+  cy.wait(200)
   if (updateSnapshotsOnFail || Cypress.env("updateSnapshotsOnFail")) {
     let path = null
     const threshold = options?.maxDiffThreshold || Cypress.env("pluginVisualRegressionMaxDiffThreshold")
