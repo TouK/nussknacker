@@ -84,8 +84,8 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
-      cy.layoutScenario()
       cy.get("[title='toggle left panel']").click()
+      cy.layoutScenario()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
         .trigger("mousedown")
