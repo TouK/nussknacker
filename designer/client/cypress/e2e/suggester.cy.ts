@@ -34,8 +34,8 @@ describe("Expression suggester", () => {
     cy.get("[title=value]").next().find(".ace_editor").click().type("{enter}#").contains(/^#$/m)
     cy.get(".ace_autocomplete").should("be.visible")
       .matchImage({
-        maxDiffThreshold: 0.0025,
-        screenshotConfig: {padding: [40, 8, 8]},
+        maxDiffThreshold: 0.005,
+        screenshotConfig: {padding: [40, 2, 2]},
       })
   })
 })
