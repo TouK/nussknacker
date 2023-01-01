@@ -506,6 +506,12 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           message: '${{ steps.update_snapshots.outputs.pull-request-operation }}: #${{ steps.update_snapshots.outputs.pull-request-number }}'
+      - name: Force fail if update PR created
+        if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
+        uses: actions/github-script@v6.3.3
+        with:
+          script: |
+            core.setFailed('Snapshots updated, chceck comments!')
 
   #TODO: extract to different workflow?
   publish:
