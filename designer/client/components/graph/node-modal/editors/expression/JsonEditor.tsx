@@ -2,8 +2,8 @@ import React from "react"
 
 import AceEditor from "./ace"
 import {ExpressionObj} from "./types"
-import ValidationLabels from "../../../../modals/ValidationLabels";
-import {Validator} from "../Validators";
+import ValidationLabels from "../../../../modals/ValidationLabels"
+import {Validator} from "../Validators"
 
 type Props = {
   expressionObj: ExpressionObj,
@@ -38,9 +38,6 @@ export default class JsonEditor extends React.Component<Props, { value: string }
   render() {
     const THEME = "nussknacker"
 
-    //monospace font seems to be mandatory to make ace cursor work well,
-    const FONT_FAMILY = "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace"
-
     return (
       <div className={this.props.className}>
         <AceEditor
@@ -62,7 +59,6 @@ export default class JsonEditor extends React.Component<Props, { value: string }
             enableSnippets: false,
             showLineNumbers: true,
             fontSize: 16,
-            fontFamily: FONT_FAMILY,
             enableBasicAutocompletion: false,
             tabSize: 2,
           }}

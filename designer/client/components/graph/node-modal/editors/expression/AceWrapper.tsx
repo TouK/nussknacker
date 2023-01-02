@@ -28,7 +28,6 @@ const DEFAULT_OPTIONS: IAceOptions = {
   enableLiveAutocompletion: true,
   enableSnippets: false,
   fontSize: 16,
-  fontFamily: "'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well
   highlightGutterLine: false,
   highlightActiveLine: false,
 }
@@ -110,23 +109,23 @@ export default forwardRef(function AceWrapper({
   const {language, readOnly, rows = 1} = inputProps
 
   const DEFAULT_COMMANDS = useMemo<AceKeyCommand[]>(() => [
-      {
-        name: "find",
-        bindKey: {win: "Ctrl-F", mac: "Command-F"},
-        exec: () => false,
-      },
-      {
-        name: "focusNext",
-        bindKey: {win: "Tab", mac: "Tab"},
-        exec: (editor) => handleTab(editor),
-      },
-      {
-        name: "focusPrevious",
-        bindKey: {win: "Shift-Tab", mac: "Shift-Tab"},
-        exec: (editor) => handleTab(editor, true),
-      },
-    ],
-    [])
+    {
+      name: "find",
+      bindKey: {win: "Ctrl-F", mac: "Command-F"},
+      exec: () => false,
+    },
+    {
+      name: "focusNext",
+      bindKey: {win: "Tab", mac: "Tab"},
+      exec: (editor) => handleTab(editor),
+    },
+    {
+      name: "focusPrevious",
+      bindKey: {win: "Shift-Tab", mac: "Shift-Tab"},
+      exec: (editor) => handleTab(editor, true),
+    },
+  ],
+  [])
 
   return (
     <AceEditor

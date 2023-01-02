@@ -84,8 +84,8 @@ describe("Process", () => {
     })
 
     it("should allow drag node", () => {
-      cy.contains(/^layout$/).click()
       cy.get("[title='toggle left panel']").click()
+      cy.layoutScenario()
       cy.get("[model-id=dynamicService]")
         .should("be.visible")
         .trigger("mousedown")
@@ -95,18 +95,18 @@ describe("Process", () => {
     })
 
     it("should allow drag component and drop on edge", () => {
-      cy.contains(/^layout$/).click()
       cy.contains(/^custom$/)
         .should("be.visible").click()
+      cy.layoutScenario()
       cy.get("[data-testid='component:customFilter']")
         .should("be.visible")
         .drag("#nk-graph-main", {x: 580, y: 450, position: "right", force: true})
       cy.get(".graphPage").matchImage(screenshotOptions)
+      //why save and test snapshot? mistake?
       cy.contains(/^save$/i).click()
       cy.get("[data-testid=window]").contains(/^ok$/i).click()
       cy.get("[data-testid=window]").should("not.exist")
       cy.get("#nk-graph-main").should("be.visible")
-      cy.wait(100)
       cy.get(".graphPage").matchImage(screenshotOptions)
     })
 
@@ -189,7 +189,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "switch")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.getNode("switch")
       .click()
@@ -231,7 +231,7 @@ describe("Process", () => {
     })
     cy.visitNewProcess(seed, "filter")
     cy.viewport(1500, 800)
-    cy.contains(/^layout$/).click()
+    cy.layoutScenario()
 
     cy.get(`[model-id="dead-end(true)"]`).click().type("{backspace}")
     cy.wait("@validation")
