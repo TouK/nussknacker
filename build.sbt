@@ -17,8 +17,8 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
-//val scala213 = "2.13.10"
-lazy val supportedScalaVersions = List(scala212)
+val scala213 = "2.13.10"
+lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
