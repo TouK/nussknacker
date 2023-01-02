@@ -5,8 +5,8 @@ import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.Interpreter.InterpreterShape
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
-import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName}
-import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ProcessName, Source, SourceTestSupport}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord, TestRecord}
 import pl.touk.nussknacker.engine.api.{JobData, NodeId, ProcessVersion}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
@@ -56,7 +56,7 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
       val sourceId = SourceId(sourceIdValue)
       val source = scenarioInterpreter.sources.getOrElse(sourceId,
         throw new IllegalArgumentException(s"Found source '$sourceIdValue' in a test record but is not present in the scenario"))
-      sourceId -> TestDataPreparer.prepareRecordForTest[Input](source, testRecord)
+      sourceId -> prepareRecordForTest[Input](source, testRecord)
     })
 
     try {
@@ -79,6 +79,14 @@ class InterpreterTestRunner[F[_] : InterpreterShape : CapabilityTransformer : Ef
     val processVersion = ProcessVersion.empty.copy(processName = ProcessName("snapshot version"))
     val deploymentData = DeploymentData.empty
     JobData(process.metaData, processVersion)
+  }
+
+  private def prepareRecordForTest[T](source: Source, testRecord: TestRecord): T = {
+    val sourceTestSupport = source match {
+      case e: SourceTestSupport[T@unchecked] => e
+      case other => throw new IllegalArgumentException(s"Source ${other.getClass} cannot be stubbed - it doesn't provide test data parser")
+    }
+    sourceTestSupport.testRecordParser.parse(testRecord)
   }
 
   private def collectSinkResults(runId: TestRunId, results: ResultType[EndResult[Res]]): Unit = {
