@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.api.typed.supertype
 
+import scala.collection.compat._
 import scala.collection.mutable
 
 /**

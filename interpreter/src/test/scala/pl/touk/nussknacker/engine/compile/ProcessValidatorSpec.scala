@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.variables.MetaVariables
 import java.util.Collections
 import scala.collection.immutable.ListMap
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
 
@@ -866,8 +867,7 @@ class ProcessValidatorSpec extends AnyFunSuite with Matchers with Inside {
     val base = ProcessDefinitionBuilder.withEmptyObjects(baseDefinition)
     val failingDefinition = base
       .copy(sourceFactories = base.sourceFactories
-        .view
-        .mapValues { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
+        .mapValuesNow { case v:StandardObjectWithMethodDef => v.copy(methodDef = v.methodDef.copy(invocation = (_, _)
         => throw new RuntimeException("You passed incorrect parameter, cannot proceed"))) }.toMap)
 
     val processWithInvalidExpresssion =
