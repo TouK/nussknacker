@@ -181,8 +181,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
     }
 
   protected def saveProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    val category = process.category.get
-    createProcessRequest(ProcessName(process.id), category) { code =>
+    createProcessRequest(ProcessName(process.id), process.category) { code =>
       code shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }
@@ -199,8 +198,7 @@ trait EspItTest extends LazyLogging with WithHsqlDbTesting with TestPermissions 
   }
 
   protected def saveSubProcess(process: DisplayableProcess)(testCode: => Assertion): Assertion = {
-    val category = process.category.get
-    Post(s"/processes/${process.id}/$category?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
+    Post(s"/processes/${process.id}/${process.category}?isSubprocess=true") ~> processesRouteWithAllPermissions ~> check {
       status shouldBe StatusCodes.Created
       updateProcess(process)(testCode)
     }

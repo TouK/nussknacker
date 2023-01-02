@@ -201,7 +201,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
         SubprocessOutputDefinition("output1", "out1")),
       edges = List(Edge("input1", "output1", None)),
       processingType = TestProcessingTypes.Streaming,
-      Some(TestCategories.Category1)
+      category = TestCategories.Category1
     )
 
     Post(s"$endpoint/Category1?isSubprocess=true") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {

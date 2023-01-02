@@ -32,7 +32,6 @@ import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCoun
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import java.nio.charset.StandardCharsets
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -200,14 +199,14 @@ class ManagementResources(val managementActor: ActorRef,
       } ~
       //TODO: maybe Write permission is enough here?
       path("processManagement" / "test" / Segment) { processName =>
-        (post & processIdWithCategory(processName)) { idWithCategory =>
-          canDeploy(idWithCategory.id) {
+        (post & processId(processName)) { processId =>
+          canDeploy(processId.id) {
             formFields('testData, 'processJson) { (testDataContent, displayableProcessJson) =>
               complete {
                 measureTime("test", metricRegistry) {
                   parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
                     case Right(displayableProcess) =>
-                      scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                      scenarioTestService.performTest(processId, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
                         Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
                       }.recover(EspErrorToHttp.errorToHttp)
                     case Left(error) =>

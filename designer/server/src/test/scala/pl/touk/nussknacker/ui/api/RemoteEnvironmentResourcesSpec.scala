@@ -64,7 +64,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
     val remoteEnvironment = new MockRemoteEnvironment(mockDifferences = Map(processId -> difference))
 
     val route = withPermissions(new RemoteEnvironmentResources(remoteEnvironment, fetchingProcessRepository, processAuthorizer), readWritePermissions)
-    val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = Some(category))
+    val expectedDisplayable = ProcessTestData.validDisplayableProcess.toDisplayable.copy(category = category)
 
     saveProcess(processName, ProcessTestData.validProcess, category) {
       Get(s"/remoteEnvironment/$processId/2/compare/1") ~> route ~> check {

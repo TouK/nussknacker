@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                          nodes: List[NodeData],
                                          edges: List[Edge],
                                          processingType: ProcessingType,
-                                         category: Option[String]) { //todo: category can be marked as required after some time for installation of version with endpoints returning category
+                                         category: String) {
 
   val metaData: MetaData = properties.toMetaData(id)
 
@@ -30,7 +30,7 @@ import pl.touk.nussknacker.engine.graph.NodeDataCodec._
                                                   nodes: List[NodeData],
                                                   edges: List[Edge],
                                                   processingType: ProcessingType,
-                                                  category: Option[String], // optional - see the comment for a field with the same name in DisplayableProcess
+                                                  category: String,
                                                   validationResult: ValidationResult) {
 
   def this(displayableProcess: DisplayableProcess, validationResult: ValidationResult) =
