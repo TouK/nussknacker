@@ -1,0 +1,57 @@
+{
+  "metaData" : {
+    "id" : "rrtest",
+    "typeSpecificData" : {
+      "slug" : "rrtest",
+      "type" : "RequestResponseMetaData"
+    },
+    "additionalFields" : {
+      "description" : null,
+      "properties" : {
+        "inputSchema" : "{\n  \"a\": 1234567890,\n  \"b\": \"string\"\n}",
+        "outputSchema" : "{}"
+      }
+    },
+    "subprocessVersions" : {
+
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "request",
+      "ref" : {
+        "typ" : "request",
+        "parameters" : [
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "response",
+      "ref" : {
+        "typ" : "response",
+        "parameters" : [
+        ]
+      },
+      "endResult" : null,
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 180
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}
