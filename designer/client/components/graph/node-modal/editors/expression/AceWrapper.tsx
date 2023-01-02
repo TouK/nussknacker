@@ -6,7 +6,6 @@ import AceEditor from "./ace"
 import {ICommand} from "react-ace/lib/types"
 import type {Ace} from "ace-builds"
 import {trimStart} from "lodash"
-import "@fontsource/roboto-mono"
 
 export interface AceWrapperProps extends Pick<IAceEditorProps,
   | "value"
@@ -29,7 +28,6 @@ const DEFAULT_OPTIONS: IAceOptions = {
   enableLiveAutocompletion: true,
   enableSnippets: false,
   fontSize: 16,
-  fontFamily: "'Roboto Mono', 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace", //monospace font seems to be mandatory to make ace cursor work well
   highlightGutterLine: false,
   highlightActiveLine: false,
 }
