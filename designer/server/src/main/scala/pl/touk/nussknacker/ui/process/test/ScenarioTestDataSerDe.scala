@@ -11,6 +11,7 @@ import scala.util.Using
 
 object ScenarioTestDataSerDe {
 
+  // @JsonCodec is not used to keep the file format simple and avoid unnecessary object nesting.
   private implicit val scenarioTestRecordEncoder: Encoder[ScenarioTestRecord] = Encoder.instance(scenarioTestRecord =>
     Json.obj(
       "sourceId" -> Json.fromString(scenarioTestRecord.sourceId.id),
