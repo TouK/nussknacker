@@ -46,7 +46,7 @@ trait ProcessNodesRewriter {
       case Subprocess(data, outputs) =>
         Subprocess(
           rewriteIfMatching(data),
-          outputs.view.mapValues(rewriteNodes).toMap)
+          outputs.map { case (k, v) => (k, rewriteNodes(v)) })
     }
   }
 

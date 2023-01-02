@@ -26,10 +26,10 @@ import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util
-import scala.collection.convert.Wrappers.SeqWrapper
 import scala.collection.immutable.ListMap
 import scala.concurrent.Future
 import scala.util.Using
+import scala.jdk.CollectionConverters._
 
 class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with PatientScalaFutures {
 
@@ -281,16 +281,16 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
           (1 to 5).map(v => GraphBuilder.buildVariable(s"var$v", "v1", "value" -> s"'v$v'", "rank" -> v.toString)
             .branchEnd(s"branch$v", "joinWithSort")): _*),
       GraphBuilder
-        .join("joinWithSort", "union", Some("unionOutput"),
-          List(
-            "branch1" -> List("Output expression" -> "#v1"),
-            "branch2" -> List("Output expression" -> "#v1"),
-            "branch3" -> List("Output expression" -> "#v1"),
-            "branch4" -> List("Output expression" -> "#v1"),
-            "branch5" -> List("Output expression" -> "#v1"))
-        )
+      .join("joinWithSort", "union", Some("unionOutput"),
+        List(
+          "branch1" -> List("Output expression" -> "#v1"),
+          "branch2" -> List("Output expression" -> "#v1"),
+          "branch3" -> List("Output expression" -> "#v1"),
+          "branch4" -> List("Output expression" -> "#v1"),
+          "branch5" -> List("Output expression" -> "#v1"))
+      )
 
-        .customNode("sorter", "sorted", "sorter",
+      .customNode("sorter", "sorted", "sorter",
           "maxCount" -> "2", "rank" -> "#unionOutput.rank", "output" -> "#unionOutput.value")
         .emptySink("endNodeIID", "response-sink", "value" -> "#sorted")
     )
@@ -312,13 +312,13 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
     val resultE = runProcess(scenario, RequestNumber(numberOfElements))
-    resultE shouldBe 'valid
+    resultE shouldBe Symbol("valid")
     val result = resultE.map(_.asInstanceOf[List[Any]]).getOrElse(throw new AssertionError())
     val validElementList = (0 to numberOfElements).map(s => s"x = ${s * 2}").toSeq
     result should have length 1
 
     inside(result.head) {
-      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList)
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf(validElementList)
     }
 
   }
@@ -337,15 +337,14 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
       .emptySink("sink", "response-sink", "value" -> "#outCollector")
 
     val resultE = runProcess(scenario, RequestNumber(numberOfElements))
-    resultE shouldBe 'valid
+    resultE shouldBe Symbol("valid")
     val result = resultE.map(_.asInstanceOf[List[Any]]).getOrElse(throw new AssertionError())
     val validElementList = (0 to numberOfElements).map(s => s"x = $s")
     result should have length 1
 
     inside(result.head) {
-      case resp: SeqWrapper[_] => resp.underlying should contain allElementsOf(validElementList ++ validElementList ++ validElementList )
+      case resp: java.util.List[_] => resp.asScala should contain allElementsOf (validElementList)
     }
-
   }
 
   def runProcess(process: CanonicalProcess,
@@ -377,7 +376,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
     val maybeinterpreter = RequestResponseInterpreter[Future](process, ProcessVersion.empty,
       engineRuntimeContextPreparer, simpleModelData, Nil, ProductionServiceInvocationCollector, ComponentUseCase.EngineRuntime)
 
-    maybeinterpreter shouldBe 'valid
+    maybeinterpreter shouldBe Symbol("valid")
     val interpreter = maybeinterpreter.toOption.get
     interpreter
   }
