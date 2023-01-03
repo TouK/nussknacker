@@ -166,7 +166,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
           Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
         case GetProcessesDetails(names) =>
           Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
-        case _ => throw new IllegalStateException()
+        case _ => throw new IllegalArgumentException()
       }
     }
 

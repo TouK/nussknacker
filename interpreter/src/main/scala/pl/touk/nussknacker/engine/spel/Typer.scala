@@ -263,7 +263,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil =>
           EmptyOperatorError(e.getOperatorName).invalidNel
-        case _ => throw new IllegalStateException()
+        case _ => throw new IllegalStateException("should not happen")
       }
       case e: OpModulus =>
         val op = Some((x: Number, y: Number) =>
@@ -292,7 +292,7 @@ private[spel] class Typer(classLoader: ClassLoader, commonSupertypeFinder: Commo
         case TypingResultWithContext(left, _) :: Nil =>
           OperatorNonNumericError(e.getOperatorName, left).invalidNel
         case Nil => EmptyOperatorError(e.getOperatorName).invalidNel
-        case _ => throw new IllegalStateException()
+        case _ => throw new IllegalStateException("should not happen")
       }
       case e: OperatorBetween => fixed(TypingResultWithContext(Typed[Boolean]))
       case e: OperatorInstanceof => fixed(TypingResultWithContext(Typed[Boolean]))
