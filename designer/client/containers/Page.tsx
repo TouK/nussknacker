@@ -1,7 +1,16 @@
-import cn from "classnames"
-import React, {PropsWithChildren} from "react"
+import React from "react"
 import "../stylesheets/visualization.styl"
+import styled from "@emotion/styled"
 
-export function Page({children, className}: PropsWithChildren<{className?: string}>) {
-  return <div className={cn("Page", className)}>{children}</div>
-}
+export const Page = styled.div({
+  position: "relative",
+  overflow: "hidden",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+})
+
+export const GraphPage = styled(Page)({
+  backgroundColor: "#b3b3b3",
+  zIndex: 1,
+})

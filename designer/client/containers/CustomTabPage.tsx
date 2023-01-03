@@ -8,6 +8,7 @@ import {DynamicTab} from "./DynamicTab"
 import {NotFound} from "./errors/NotFound"
 import {NkThemeProvider} from "./theme"
 import "../stylesheets/visualization.styl"
+import {Page} from "./Page"
 
 export function CustomTabPage<P extends Record<string, unknown>>({id, ...props}: { id?: string } & P): JSX.Element {
   const customTabs = useSelector(getTabs)
@@ -21,9 +22,9 @@ export function CustomTabPage<P extends Record<string, unknown>>({id, ...props}:
   return tab ?
     (
       <NkThemeProvider theme={outerTheme => defaultsDeep(darkTheme, outerTheme)}>
-        <div className="Page">
+        <Page>
           <DynamicTab tab={tab} componentProps={{...props, basepath}}/>
-        </div>
+        </Page>
       </NkThemeProvider>
     ) :
     (
