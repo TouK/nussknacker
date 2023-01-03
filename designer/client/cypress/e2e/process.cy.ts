@@ -112,6 +112,7 @@ describe("Process", () => {
 
     it("should have counts button and modal", () => {
       cy.contains(/^counts$/i).as("button")
+      cy.get("@button").scrollIntoView()
       cy.wait(100)
       cy.get("@button").should("be.visible").matchImage()
       cy.get("@button").click()
