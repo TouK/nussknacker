@@ -50,7 +50,6 @@ object Serializers extends LazyLogging {
         fields.take(constructorParamsCount).foreach(field => {
           field.setAccessible(true)
           kryo.writeClassAndObject(output, field.get(obj))
-          field.setAccessible(false)
         })
       }
 
