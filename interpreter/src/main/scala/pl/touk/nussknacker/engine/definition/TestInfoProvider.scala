@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.node.{Source, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 
 
@@ -59,11 +60,11 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
     for {
       _ <- Some(size) if size > 0
       sourceTestDataGenerators = prepareTestDataGenerators(scenario) if sourceTestDataGenerators.nonEmpty
-      sourceTestDataSizes = divideEvenlyIntoParts(size, partsCount = sourceTestDataGenerators.size)
-      scenarioTestRecords = sourceTestDataGenerators.zip(sourceTestDataSizes).flatMap { case ((sourceId, testDataGenerator), testDataSize) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(testDataSize).testRecords
+      sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
+        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
         sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
-      } if scenarioTestRecords.nonEmpty
+      }
+      scenarioTestRecords = ListUtil.mergeListsFromTopics(sourceTestDataList, size) if scenarioTestRecords.nonEmpty
       // Records without timestamp are put at the end of the list.
       sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     } yield ScenarioTestData(sortedRecords)
@@ -84,15 +85,6 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
     implicit val nodeId: NodeId = NodeId(source.id)
     nodeCompiler.compileSource(source).compiledObject.toOption
-  }
-
-  private def divideEvenlyIntoParts(n: Int, partsCount: Int): List[Int] = {
-    require(n > 0)
-    require(partsCount > 0)
-
-    val partSizes = List.fill(partsCount)(n / partsCount)
-    val partSizeRemainders = List.fill(n % partsCount)(1)
-    partSizes.zipAll(partSizeRemainders, 0, 0).map { case (partSize, partRemainder) => partSize + partRemainder }
   }
 
 }

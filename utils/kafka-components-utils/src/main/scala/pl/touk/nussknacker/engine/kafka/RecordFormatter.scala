@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import pl.touk.nussknacker.engine.util.ListUtil
 
 import java.nio.charset.StandardCharsets
 

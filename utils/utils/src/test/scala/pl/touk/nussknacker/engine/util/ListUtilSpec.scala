@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.engine.util
 
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers

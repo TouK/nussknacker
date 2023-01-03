@@ -25,6 +25,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
         "genericSourceNoSupport" -> WithCategories(new GenericParametersSourceNoTestSupport),
         "genericSourceNoGenerate" -> WithCategories(new GenericParametersSourceNoGenerate),
         "sourceEmptyTimestamp" -> WithCategories(SourceGeneratingEmptyTimestamp),
+        "sourceGeneratingEmptyData" -> WithCategories(SourceGeneratingEmptyData),
       )
     }
   })
@@ -44,6 +45,18 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
       }
     }
 
+  }
+
+  object SourceGeneratingEmptyData extends GenericParametersSource {
+    override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[List[String]]): process.Source = {
+
+      new process.Source with SourceTestSupport[String] with TestDataGenerator {
+
+        override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => ???
+
+        override def generateTestData(size: Int): TestData = TestData(Nil)
+      }
+    }
   }
 
   private val testInfoProvider: TestInfoProvider = new ModelDataTestInfoProvider(modelData)
@@ -204,6 +217,9 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
           .emptySink("end", "dead-end"),
         GraphBuilder
           .source("source4", "genericSourceNoSupport", "par1" -> "'a'", "a" -> "42")
+          .emptySink("end", "dead-end"),
+        GraphBuilder
+          .source("source5", "sourceGeneratingEmptyData", "par1" -> "'a'", "a" -> "42")
           .emptySink("end", "dead-end"),
       )
   }
