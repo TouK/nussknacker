@@ -1,4 +1,4 @@
-import {css, cx} from "@emotion/css"
+import {css} from "@emotion/css"
 import React, {useCallback, useEffect, useRef, useState} from "react"
 import {alpha} from "../containers/theme"
 import HttpService, {AppBuildInfo} from "../http/HttpService"
@@ -26,7 +26,7 @@ function Nu({size}: { size?: string }): JSX.Element {
   )
 }
 
-export function VersionInfo(): JSX.Element {
+export function VersionInfo({t = 2000}: { t?: number }): JSX.Element {
   const appInfo = useAppInfo()
   const variedVersions = __BUILD_VERSION__ !== appInfo?.version
 
@@ -34,15 +34,17 @@ export function VersionInfo(): JSX.Element {
   const timeout = useRef(null)
   const show = useCallback(() => {
     clearTimeout(timeout.current)
-    setExpanded(true)
-  }, [])
+    timeout.current = setTimeout(() => {
+      setExpanded(true)
+    }, t / 5)
+  }, [t])
+
   const hide = useCallback(() => {
-    const t = 2000
     clearTimeout(timeout.current)
     timeout.current = setTimeout(() => {
       setExpanded(false)
     }, t)
-  }, [])
+  }, [t])
 
   return ((
     <div
