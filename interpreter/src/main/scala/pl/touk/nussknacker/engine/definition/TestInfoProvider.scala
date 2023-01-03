@@ -62,7 +62,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
       val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
       sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
     }
-    val scenarioTestRecords = ListUtil.mergeListsFromTopics(sourceTestDataList, size)
+    val scenarioTestRecords = ListUtil.mergeLists(sourceTestDataList, size)
     // Records without timestamp are put at the end of the list.
     val sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     Some(sortedRecords).filter(_.nonEmpty).map(ScenarioTestData)

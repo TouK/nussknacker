@@ -30,7 +30,7 @@ trait RecordFormatter extends Serializable {
 
   def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
+    val merged = ListUtil.mergeLists(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
   }
 

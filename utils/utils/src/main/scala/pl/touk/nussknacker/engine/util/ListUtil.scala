@@ -4,7 +4,7 @@ import scala.annotation.tailrec
 
 object ListUtil {
 
-  def mergeListsFromTopics[T](lists: List[List[T]], size: Int): List[T] = {
+  def mergeLists[T](lists: List[List[T]], size: Int): List[T] = {
     mergeLists(lists).take(size)
   }
 
