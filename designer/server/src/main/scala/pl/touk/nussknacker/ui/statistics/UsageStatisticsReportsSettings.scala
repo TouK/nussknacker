@@ -10,6 +10,7 @@ import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 import scala.collection.immutable.ListMap
 import scala.util.Random
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object UsageStatisticsReportsSettings {
 
@@ -54,7 +55,7 @@ object UsageStatisticsReportsSettings {
   }
 
   private def prepareValuesParams(values: Iterable[ProcessingType], metricCategoryKeyPart: String) = {
-    val countsParams = values.groupBy(identity).mapValues(_.size).map {
+    val countsParams = values.groupBy(identity).mapValuesNow(_.size).map {
       case (value, count) =>
         s"${metricCategoryKeyPart}_$value" -> count.toString
     }.toList.sortBy(_._1)

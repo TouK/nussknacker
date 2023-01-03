@@ -16,11 +16,11 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
 
   def hasReachedQuotaLimit(oldDeploymentReplicasCount: Option[Int], quotas: ResourceQuotaList, replicasCount: Int, strategy: Option[Strategy]): Validated[Throwable, Unit] = {
     quotas match {
-      case ListResource(_, _, _, List()) => valid(Unit)
+      case ListResource(_, _, _, List()) => valid(())
       case ListResource(_, _, _, List(quota)) => hasReachedQuotaLimitInternal(oldDeploymentReplicasCount, quota, replicasCount, strategy)
       case _ =>
         logger.warn("More than one resource quota is not supported")
-        valid(Unit)
+        valid(())
     }
   }
 
@@ -46,7 +46,7 @@ object K8sPodsResourceQuotaChecker extends LazyLogging {
       }
       invalid(error)
     } else {
-      valid(Unit)
+      valid(())
     }
   }
 

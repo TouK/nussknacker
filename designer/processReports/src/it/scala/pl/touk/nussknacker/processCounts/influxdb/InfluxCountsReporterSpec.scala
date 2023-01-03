@@ -3,10 +3,10 @@ package pl.touk.nussknacker.processCounts.influxdb
 import com.dimafeng.testcontainers.{ForAllTestContainer, InfluxDBContainer}
 import org.influxdb.InfluxDBFactory
 import org.influxdb.dto.Point
-import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatest.Assertion
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion}
+import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.processCounts.{CannotFetchCountsError, ExecutionCount, RangeCount}
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend}
@@ -15,7 +15,6 @@ import java.time.Duration._
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import scala.language.implicitConversions
-import scala.util.{Failure, Try}
 
 class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with TableDrivenPropertyChecks with VeryPatientScalaFutures with Matchers {
 
@@ -105,7 +104,7 @@ class InfluxCountsReporterSpec extends AnyFunSuite with ForAllTestContainer with
   }
 
   private def forQueryModes(queryModes: Set[QueryMode.Value])(fun: QueryMode.Value => Assertion): Unit = {
-    forAll(Table[QueryMode.Value]("mode", queryModes.toArray:_*))(fun)
+    forAll(Table[QueryMode.Value](heading = "mode", rows = queryModes.toArray.toIndexedSeq: _*))(fun)
   }
 
   class InfluxData(config: MetricsConfig) {

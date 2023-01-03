@@ -16,6 +16,7 @@ import java.text.ParseException
 import java.time.{Clock, ZoneOffset, ZonedDateTime}
 import java.util.Locale
 import scala.reflect.runtime.universe._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 trait BaseSpelSpec {
 
@@ -26,7 +27,7 @@ trait BaseSpelSpec {
     "DATE_FORMAT" -> new DateFormatUtils(Locale.US))
 
   protected def evaluate[T: TypeTag](expr: String, localVariables: Map[String, Any]): T = {
-    val validationCtx = ValidationContext(localVariables.mapValues(Typed.fromInstance), globalVariables.mapValues(Typed.fromInstance))
+    val validationCtx = ValidationContext(localVariables.mapValuesNow(Typed.fromInstance), globalVariables.mapValuesNow(Typed.fromInstance))
     val evaluationCtx = Context("fooId").withVariables(localVariables)
     parse(expr, validationCtx).value.expression.evaluate[T](evaluationCtx, globalVariables)
   }

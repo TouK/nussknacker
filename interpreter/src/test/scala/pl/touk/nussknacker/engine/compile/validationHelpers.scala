@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordPars
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedObjectTypingResult, Unknown}
 
 import scala.concurrent.Future
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 object validationHelpers {
 
@@ -226,7 +227,7 @@ object validationHelpers {
       case TransformationStep(("paramWithFixedValues", DefinedEagerParameter(paramWithFixedValues: Int, _)) :: Nil, _) =>
         FinalResults(context, state = Some(Valid(paramWithFixedValues)))
       case TransformationStep(("paramWithFixedValues", FailedToDefineParameter) :: Nil, _) =>
-        FinalResults(context, state = Some(Invalid(Unit)))
+        FinalResults(context, state = Some(Invalid(())))
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Validated[Unit, Int] = finalState.get
@@ -338,7 +339,7 @@ object validationHelpers {
     }
 
     override protected def fallbackFinalResult(step: TransformationStep, inputContext: ValidationContext, outputVariable: Option[String])(implicit nodeId: NodeId): FinalResults = {
-      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeys(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
+      val result = TypedObjectTypingResult(step.parameters.toMap.filterKeysNow(k => k != "par1" && k != "lazyPar1").toList.map { case (k, v) => k -> v.returnType })
       prepareFinalResultWithOptionalVariable(inputContext, outputVariable.map(name => (name, result)), step.state)
     }
 
@@ -395,7 +396,7 @@ object validationHelpers {
           Some("isLeft"))) else Nil
         NextParameters(
           List(Parameter[Any]("rightValue").copy(isLazyParameter = true,
-            additionalVariables = contexts(right(byBranch)).localVariables.mapValues(AdditionalVariableProvidedInRuntime(_)))), error)
+            additionalVariables = contexts(right(byBranch)).localVariables.mapValuesNow(AdditionalVariableProvidedInRuntime(_)))), error)
       case TransformationStep(("isLeft", DefinedEagerBranchParameter(byBranch: Map[String, Boolean]@unchecked, _)) :: ("rightValue", rightValue: DefinedSingleParameter) ::Nil, _)
         =>
         val out = rightValue.returnType

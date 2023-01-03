@@ -98,7 +98,7 @@ class PeriodicProcessServiceIntegrationTest extends AnyFunSuite
     processScheduled.periodicProcess.processVersion.processName shouldBe processName
     processScheduled.state shouldBe PeriodicProcessDeploymentState(None, None, PeriodicProcessDeploymentStatus.Scheduled)
     processScheduled.runAt shouldBe localTime(expectedScheduleTime)
-    service.getLatestDeployment(otherProcessName).futureValue shouldBe 'empty
+    service.getLatestDeployment(otherProcessName).futureValue shouldBe Symbol("empty")
 
     currentTime = timeToTriggerCheck
     

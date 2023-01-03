@@ -47,7 +47,7 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
 
           override def transform(inputs: Map[String, DataStream[Context]], context: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
 
-            val finalContextValidated = transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.right.get)
+            val finalContextValidated = transformContextsDefinition(valueByBranchId, variableName)(context.validationContext.toOption.get)
             val finalContext = finalContextValidated.toOption.get
 
             val mapTypeInfo = context.typeInformationDetection
@@ -89,12 +89,12 @@ class UnionWithMemoTransformer(timestampAssigner: Option[TimestampWatermarkHandl
     val validatedIdentical = NonEmptyList
       .fromList(ContextTransformation.checkIdenticalSanitizedNodeNames(ids.toList))
       .map(Validated.invalid)
-      .getOrElse(Validated.validNel(Unit))
+      .getOrElse(Validated.validNel(()))
 
     val validatedBranches = NonEmptyList
       .fromList(ContextTransformation.checkNotAllowedNodeNames(ids.toList, Set(KeyField)))
       .map(Validated.invalid)
-      .getOrElse(Validated.validNel(Unit))
+      .getOrElse(Validated.validNel(()))
 
     val validatedContext = ContextTransformation.findUniqueParentContext(inputContexts).map { parent =>
       val newType = TypedObjectTypingResult(

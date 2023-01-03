@@ -7,7 +7,7 @@ import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.process.registrar.FlinkProcessRegistrar._
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class InterpretationFunctionFlinkGraphSpec extends FlinkStreamGraphSpec {
 

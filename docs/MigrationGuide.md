@@ -564,7 +564,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
   Example of source with value-only deserialization and custom timestampAssigner:
   ```
   // provide new deserializer factory with old schema definition for event's value
-  val oldSchema = new EspDeserializationSchema[SampleValue](bytes => io.circe.parser.decode[SampleValue](new String(bytes)).right.get)
+  val oldSchema = new EspDeserializationSchema[SampleValue](bytes => io.circe.parser.decode[SampleValue](new String(bytes)).toOption.get)
   val schemaFactory: KafkaDeserializationSchemaFactory[ConsumerRecord[String, SampleValue]] = new FixedValueDeserializationSchemaFactory(oldSchema)
 
   // ... provide timestampAssigner that extracts timestamp from SampleValue.customTimestampField

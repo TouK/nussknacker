@@ -95,7 +95,7 @@ class DBFetchingProcessRepositorySpec
     val before = fetchMetaDataIdsForAllVersions(oldName)
     before.toSet shouldBe Set(oldName.value)
 
-    renameProcess(oldName, newName) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe Symbol("right")
 
     processExists(oldName) shouldBe false
     processExists(oldName2) shouldBe true
@@ -122,7 +122,7 @@ class DBFetchingProcessRepositorySpec
     )
     processExists(newName) shouldBe false
 
-    renameProcess(oldName, newName) shouldBe 'right
+    renameProcess(oldName, newName) shouldBe Symbol("right")
 
     val comments = fetching.fetchProcessId(newName)
       .flatMap(v => activities.findActivity(ProcessIdWithName(v.get, newName)).map(_.comments))
@@ -182,9 +182,9 @@ class DBFetchingProcessRepositorySpec
     latestDetails.processVersionId shouldBe latestVersionId
 
     val ProcessUpdated(processId, oldVersionInfoOpt, newVersionInfoOpt) = updateProcess(latestDetails.processId, ProcessTestData.validProcess, false)
-    oldVersionInfoOpt shouldBe 'defined
+    oldVersionInfoOpt shouldBe Symbol("defined")
     oldVersionInfoOpt.get shouldBe latestVersionId
-    newVersionInfoOpt shouldBe 'defined
+    newVersionInfoOpt shouldBe Symbol("defined")
     newVersionInfoOpt.get shouldBe latestVersionId.increase
 
   }
@@ -217,15 +217,15 @@ class DBFetchingProcessRepositorySpec
     val action = UpdateProcessAction(processId, canonicalProcess, None, increaseVersionWhenJsonNotChanged)
 
     val processUpdated = repositoryManager.runInTransaction(writingRepo.updateProcess(action)).futureValue
-    processUpdated shouldBe 'right
-    processUpdated.right.get
+    processUpdated shouldBe Symbol("right")
+    processUpdated.toOption.get
   }
 
   private def saveProcess(espProcess: CanonicalProcess, now: Instant, category: String = "") = {
     currentTime = now
     val action = CreateProcessAction(ProcessName(espProcess.id), category, espProcess, TestProcessingTypes.Streaming, false)
 
-    repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe 'right
+    repositoryManager.runInTransaction(writingRepo.saveNewProcess(action)).futureValue shouldBe Symbol("right")
   }
 
   private def renameProcess(processName: ProcessName, newName: ProcessName) = {
@@ -247,7 +247,7 @@ class DBFetchingProcessRepositorySpec
       fetching.fetchLatestProcessDetailsForProcessId[CanonicalProcess](_).futureValue
     )
 
-    fetchedProcess shouldBe 'defined
+    fetchedProcess shouldBe Symbol("defined")
     fetchedProcess.get
   }
 }

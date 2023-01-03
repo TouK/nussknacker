@@ -150,6 +150,7 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
     processEntities
       .filter(activeProcess(processName))
       .map(PeriodicProcessesRepository.createPeriodicProcess)
+      .toSeq
 
   override def markDeployed(id: PeriodicProcessDeploymentId): Unit = {
     update(id)(_.copy(status = PeriodicProcessDeploymentStatus.Deployed, deployedAt = Some(LocalDateTime.now())))
@@ -204,10 +205,10 @@ class InMemPeriodicProcessesRepository(processingType: String) extends PeriodicP
   private def findActive(status: PeriodicProcessDeploymentStatus): Seq[PeriodicProcessDeployment] = findActive(Seq(status))
 
   private def findActive(statusList: Seq[PeriodicProcessDeploymentStatus]): Seq[PeriodicProcessDeployment] =
-    for {
+    (for {
       p <- processEntities if p.active && p.processingType == processingType
       d <- deploymentEntities if d.periodicProcessId == p.id && statusList.contains(d.status)
-    } yield createPeriodicProcessDeployment(p, d)
+    } yield createPeriodicProcessDeployment(p, d)).toSeq
 
   private def readyToRun(deployments: Seq[PeriodicProcessDeployment]): Seq[PeriodicProcessDeployment] = {
     val now = LocalDateTime.now()

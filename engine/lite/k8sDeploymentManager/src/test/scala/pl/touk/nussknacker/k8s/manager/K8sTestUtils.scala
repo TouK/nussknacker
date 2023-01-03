@@ -40,7 +40,7 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
       output.append(s)
     }
     val inputSource = input.map(Source.single)
-    k8s.exec(podName, command.split(" "),
+    k8s.exec(podName, command.split(" ").toIndexedSeq,
       maybeStdout = Some(stdoutSink),
       maybeStderr = Some(stderrSink),
       maybeStdin = inputSource,

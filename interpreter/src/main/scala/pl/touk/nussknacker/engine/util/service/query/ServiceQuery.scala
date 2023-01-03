@@ -27,6 +27,7 @@ import pl.touk.nussknacker.engine.variables.GlobalVariablesPreparer
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.higherKinds
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 // TODO: Processes using Flink's RuntimeContex, ex. metrics throws NPE, but in another thread, so service works.
 class ServiceQuery(modelData: ModelData) {
@@ -63,8 +64,8 @@ class ServiceQuery(modelData: ModelData) {
     withOpenedService(serviceName, definitions) {
 
       val variablesPreparer = GlobalVariablesPreparer(definitions.expressionConfig)
-      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValues(_._2))
-      val ctx = Context("", localVariables.mapValues(_._1), None)
+      val validationContext = variablesPreparer.validationContextWithLocalVariables(metaData, localVariables.mapValuesNow(_._2))
+      val ctx = Context("", localVariables.mapValuesNow(_._1), None)
       implicit val componentUseCase: ComponentUseCase = ComponentUseCase.ServiceQuery
 
       val compiled = compiler.compileService(ServiceRef(serviceName, params), validationContext, Some(OutputVar.enricher("output")))(NodeId(""), metaData)

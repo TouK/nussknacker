@@ -66,7 +66,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
                                  clusterOverviewResult: Try[ClusterOverview] = Success(ClusterOverview(`slots-total` = 1000, `slots-available` = availableSlotsCount)),
                                  jobManagerConfigResult: Try[Configuration] = Success(Configuration.fromMap(Collections.emptyMap())) // be default used config with all default values
                                 ): FlinkSlotsChecker = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val slotsChecker = createSlotsCheckerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
       val toReturn = (req.uri.path, req.method) match {
         case (List("jobs", "overview"), Method.GET) =>
@@ -83,6 +83,7 @@ class FlinkSlotsCheckerTest extends AnyFunSuite with Matchers with PatientScalaF
           }).recoverWith {
             case ex: Exception => Failure(SttpClientException.defaultExceptionToSttpClientException(ex).get)
           }.get
+        case _ => throw new IllegalStateException()
       }
       Response(Right(toReturn), statusCode)
     })

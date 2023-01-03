@@ -8,6 +8,7 @@
 * [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/subprocessDetails` in favor of `/processDetails?isSubprocess=true`.
 * [#3823](https://github.com/TouK/nussknacker/pull/3823), [#3836](https://github.com/TouK/nussknacker/pull/3836) - 
   scenarios with multiple sources can be tested from file
+* [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - scala 2.12 & 2.13
 
 1.7.0
 ------------------------

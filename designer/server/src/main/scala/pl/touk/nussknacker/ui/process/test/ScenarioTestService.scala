@@ -64,7 +64,7 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
     val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
 
     for {
-      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
+      _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}")
       generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
       rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
     } yield rawTestData

@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets
 
 object AvroGen {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val AllowedStringLetters = ('a' to 'z') ++ ('A' to 'Z')
 

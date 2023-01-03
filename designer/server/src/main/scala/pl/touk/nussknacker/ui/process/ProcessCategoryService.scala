@@ -6,7 +6,7 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object  ProcessCategoryService{
   //TODO: Replace it by VO

@@ -40,7 +40,7 @@ class OAuth2AuthenticationResources(override val name: String, realm: String, se
 
   override lazy val additionalRoute: Route =
     pathEnd {
-      parameters('code,  'redirect_uri.?) { (authorizationCode, redirectUri) =>
+      parameters(Symbol("code"),  Symbol("redirect_uri").?) { (authorizationCode, redirectUri) =>
         get {
           Seq(redirectUri, configuration.redirectUri.map(_.toString)).flatten.exactlyOne.map { redirectUri =>
             complete {

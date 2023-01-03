@@ -28,10 +28,11 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import pl.touk.nussknacker.test.VeryPatientScalaFutures
 
 import java.time.Duration
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import java.util.concurrent.ConcurrentLinkedQueue
 import scala.concurrent.duration.FiniteDuration
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Matchers with VeryPatientScalaFutures {
 
@@ -113,8 +114,8 @@ class FullOuterJoinTransformerSpec extends AnyFunSuite with FlinkSpec with Match
     stoppableEnv.waitForJobState(id.getJobID, process.id, ExecutionState.FINISHED)()
 
     val outValues = collectingListener.results[Any].nodeResults(EndNodeId)
-      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala)
-      .map(_.mapValues{
+      .map(_.variableTyped[java.util.Map[String, AnyRef]](OutVariableName).get.asScala.toMap)
+      .map(_.mapValuesNow {
         case x: java.util.Map[String@unchecked, AnyRef@unchecked] => x.asScala.asInstanceOf[AnyRef]
         case x => x
       })

@@ -37,6 +37,7 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.flink.FlinkKafkaUniversalSin
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, SpecificRecordKafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.test.{NussknackerAssertions, PatientScalaFutures}
 
 import java.nio.charset.StandardCharsets
@@ -264,7 +265,7 @@ trait KafkaAvroSpecMixin extends AnyFunSuite with KafkaWithSchemaRegistryOperati
   private def validateParamsAndInitializeState(sourceFactory: KafkaSource, parameterValues: Map[String, Any]):
   Validated[NonEmptyList[ProcessCompilationError], sourceFactory.State] = {
     implicit val nodeId: NodeId = NodeId("dummy")
-    val parameters = parameterValues.mapValues(value => DefinedEagerParameter(value, null)).toList
+    val parameters = parameterValues.mapValuesNow(value => DefinedEagerParameter(value, null)).toList
     val definition = sourceFactory.contextTransformation(ValidationContext(), List(OutputVariableNameValue("dummy")))
     val stepResult = definition(sourceFactory.TransformationStep(parameters, None))
     stepResult match {

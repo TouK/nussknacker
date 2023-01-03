@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.{SingleTypingResult, Typed, U
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkCustomNodeContext, FlinkCustomStreamTransformation}
 
 import java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 /**
   * Transforms the stream in a way that succeeding nodes are executed multiple times - once for every value

@@ -30,7 +30,7 @@ class NotificationsListener(config: NotificationConfig,
   override def handle(event: ProcessChangeEvent)(implicit ec: ExecutionContext, user: User): Unit = {
     val now = Instant.now(clock)
     fetchName(event.processId).onComplete {
-      case Failure(NonFatal(e)) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}", e)
+      case Failure(e) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}", e)
       case Success(None) => logger.error(s"Failed to retrieve scenario name for id: ${event.processId}")
       case Success(Some(scenarioName)) => synchronized {
         data = NotificationEvent(UUID.randomUUID().toString, event, now, user, scenarioName) :: data

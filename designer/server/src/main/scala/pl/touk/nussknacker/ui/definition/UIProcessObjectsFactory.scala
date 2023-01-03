@@ -52,9 +52,9 @@ object UIProcessObjectsFactory {
 
     val customTransformerAdditionalData = chosenProcessDefinition.customStreamTransformers.mapValuesNow(_._2)
 
-    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValues(_.componentConfig)
+    val dynamicComponentsConfig = uiProcessDefinition.allDefinitions.mapValuesNow(_.componentConfig)
 
-    val subprocessesComponentsConfig = subprocessInputs.mapValues(_.objectDefinition.componentConfig)
+    val subprocessesComponentsConfig = subprocessInputs.mapValuesNow(_.objectDefinition.componentConfig)
     //we append fixedComponentsConfig, because configuration of default components (filters, switches) etc. will not be present in dynamicComponentsConfig...
     //maybe we can put them also in uiProcessDefinition.allDefinitions?
     val finalComponentsConfig = ComponentDefinitionPreparer.combineComponentsConfig(subprocessesComponentsConfig, fixedComponentsUiConfig, dynamicComponentsConfig)
@@ -63,7 +63,7 @@ object UIProcessObjectsFactory {
 
     val additionalPropertiesConfigForUi = additionalPropertiesConfig
       .filter(_ => !isSubprocess)// fixme: it should be introduced separate config for additionalPropertiesConfig for fragments. For now we skip that
-      .mapValues(createUIAdditionalPropertyConfig)
+      .mapValuesNow(createUIAdditionalPropertyConfig)
 
     val defaultUseAsyncInterpretationFromConfig = processConfig.as[Option[Boolean]]("asyncExecutionConfig.defaultUseAsyncInterpretation")
     val defaultAsyncInterpretation: DefaultAsyncInterpretationValue = DefaultAsyncInterpretationValueDeterminer.determine(defaultUseAsyncInterpretationFromConfig)
@@ -106,8 +106,8 @@ object UIProcessObjectsFactory {
         sig.varArg.isDefined
       )
     }
-    val methodsWithHighestArity = definition.methods.mapValues(toUIMethod)
-    val staticMethodsWithHighestArity = definition.staticMethods.mapValues(toUIMethod)
+    val methodsWithHighestArity = definition.methods.mapValuesNow(toUIMethod)
+    val staticMethodsWithHighestArity = definition.staticMethods.mapValuesNow(toUIMethod)
     UIClazzDefinition(definition.clazzName, methodsWithHighestArity, staticMethodsWithHighestArity)
   }
 
@@ -183,12 +183,12 @@ object UIProcessObjectsFactory {
     def createUIFragmentObjectDef(objDef: FragmentObjectDefinition) = createUIFragmentObjectDefinition(objDef, processCategoryService)
 
     val uiProcessDefinition = UIProcessDefinition(
-      services = processDefinition.services.mapValues(createUIObjectDef),
-      sourceFactories = processDefinition.sourceFactories.mapValues(createUIObjectDef),
-      sinkFactories = processDefinition.sinkFactories.mapValues(createUIObjectDef),
-      subprocessInputs = subprocessInputs.mapValues(createUIFragmentObjectDef),
-      customStreamTransformers = processDefinition.customStreamTransformers.mapValues(e => createUIObjectDef(e._1)),
-      globalVariables = processDefinition.expressionConfig.globalVariables.mapValues(createUIObjectDef),
+      services = processDefinition.services.mapValuesNow(createUIObjectDef),
+      sourceFactories = processDefinition.sourceFactories.mapValuesNow(createUIObjectDef),
+      sinkFactories = processDefinition.sinkFactories.mapValuesNow(createUIObjectDef),
+      subprocessInputs = subprocessInputs.mapValuesNow(createUIFragmentObjectDef),
+      customStreamTransformers = processDefinition.customStreamTransformers.mapValuesNow(e => createUIObjectDef(e._1)),
+      globalVariables = processDefinition.expressionConfig.globalVariables.mapValuesNow(createUIObjectDef),
       typesInformation = types
     )
     uiProcessDefinition

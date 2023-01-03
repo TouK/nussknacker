@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.json.swagger.parser
 
 import io.swagger.v3.oas.models.{Components, OpenAPI}
 
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 object ParseSwaggerRefSchemas {
 

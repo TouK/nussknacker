@@ -34,8 +34,9 @@ import pl.touk.nussknacker.engine.testmode.{ResultsCollectingListener, ResultsCo
 import java.time.Duration
 import java.util
 import java.util.Arrays.asList
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.collection.immutable.ListMap
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Inside {
 
@@ -407,7 +408,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   private def validateError(aggregator: String,
                             aggregateBy: String, error: String): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
-    result.result shouldBe 'invalid
+    result.result shouldBe Symbol("invalid")
     result.result.swap.toOption.get shouldBe NonEmptyList.of(CannotCreateObjectError(error, "transform"))
   }
 
@@ -415,7 +416,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
                          aggregateBy: String,
                          typingResult: TypingResult): Unit = {
     val result = validateConfig(aggregator, aggregateBy)
-    result.result shouldBe 'valid
+    result.result shouldBe Symbol("valid")
     result.variablesInNodes("end")("fragmentResult") shouldBe typingResult
   }
 
@@ -435,8 +436,8 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
     process("aggregate-session", aggregator, aggregateBy, "sessionTimeout", Map("endSessionCondition" -> endSessionCondition, "emitWhen" -> enumToExpr(emitWhen)), afterAggregateExpression)
   }
 
-  private def enumToExpr[T<:Enum[T]](enum: T): String = {
-    ParameterTypeEditorDeterminer.extractEnumValue(`enum`.getClass.asInstanceOf[Class[T]])(enum).expression
+  private def enumToExpr[T<:Enum[T]](enumValue: T): String = {
+    ParameterTypeEditorDeterminer.extractEnumValue(enumValue.getClass.asInstanceOf[Class[T]])(enumValue).expression
   }
 
   private def process(aggregatingNode: String,
@@ -456,7 +457,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       "aggregateBy" -> data.aggregateBy,
       "aggregator" -> data.aggregator,
       data.timeoutParamName -> "T(java.time.Duration).parse('PT2H')")
-      baseParams ++ data.additionalParams.mapValues(asSpelExpression).toList
+      baseParams ++ data.additionalParams.mapValuesNow(asSpelExpression).toList
     }
     val beforeAggregate = ScenarioBuilder
       .streaming("aggregateTest")

@@ -134,7 +134,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       case _ => throw new IllegalStateException("Unhandled MessageEntity type")
     }
     parser.parse(stringBody)
-      .right.getOrElse(throw new IllegalStateException("Validation request should be a json"))
+      .toOption.getOrElse(throw new IllegalStateException("Validation request should be a json"))
   }
 
   private def environmentForTestMigration(processes: List[ValidatedProcessDetails],
@@ -166,6 +166,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
           Marshal(basicProcesses).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
         case GetProcessesDetails(names) =>
           Marshal(allProcesses.filter(p => names(p.name))).to[ResponseEntity].map { entity => HttpResponse(entity = entity) }
+        case _ => throw new IllegalArgumentException()
       }
     }
 
@@ -187,9 +188,9 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     }
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe 'left
-      result.left.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
-      result.left.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
+      result shouldBe Symbol("left")
+      result.swap.toOption.get shouldBe MigrationValidationError(ValidationErrors(Map("n1" -> List(NodeValidationError("bad","message","" ,None, NodeValidationErrorType.SaveAllowed))),List(),List()))
+      result.swap.toOption.get.getMessage shouldBe "Cannot migrate, following errors occurred: n1 - message"
     }
 
   }
@@ -212,7 +213,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
 
 
     whenReady(remoteEnvironment.compare(process, None)) { result =>
-      result shouldBe 'right
+      result shouldBe Symbol("right")
     }
 
   }
@@ -233,7 +234,7 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       }
     }
     whenReady(remoteEnvironment.compare(process, None)) { result =>
-      result shouldBe 'right
+      result shouldBe Symbol("right")
     }
 
   }
@@ -248,10 +249,10 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     )
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe 'right
+      result shouldBe Symbol("right")
     }
 
-    migrated shouldBe 'defined
+    migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe false
     remoteEnvironment.addedSubprocess shouldBe None
 
@@ -271,10 +272,10 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
     )
 
     whenReady(remoteEnvironment.migrate(ProcessTestData.validDisplayableProcess.toDisplayable, ProcessTestData.validProcessDetails.processCategory)) { result =>
-      result shouldBe 'right
+      result shouldBe Symbol("right")
     }
 
-    migrated shouldBe 'defined
+    migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe true
     remoteEnvironment.addedSubprocess shouldBe Some(false)
 
@@ -295,8 +296,8 @@ class StandardRemoteEnvironmentSpec extends AnyFlatSpec with Matchers with Patie
       onMigrate = migrationFuture => migrated = Some(migrationFuture)
     )
 
-    remoteEnvironment.migrate(subprocess, category).futureValue shouldBe 'right
-    migrated shouldBe 'defined
+    remoteEnvironment.migrate(subprocess, category).futureValue shouldBe Symbol("right")
+    migrated shouldBe Symbol("defined")
     remoteEnvironment.triedToAddProcess shouldBe true
     remoteEnvironment.addedSubprocess shouldBe Some(true)
 

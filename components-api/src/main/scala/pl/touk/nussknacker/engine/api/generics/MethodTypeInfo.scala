@@ -16,6 +16,7 @@ object MethodTypeInfo {
       throw new AssertionError ("Method with varArgs must have at least one parameter")
     case (false, noVarArgParameters) =>
       MethodTypeInfo(noVarArgParameters, None, result)
+    case (true, _) => throw new IllegalStateException()
   }
 
   def withoutVarargs(params: List[Parameter], result: TypingResult): MethodTypeInfo =

@@ -7,7 +7,8 @@ import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import java.util.Optional
 import java.util.concurrent.TimeUnit
 import java.{lang, util}
-import scala.jdk.CollectionConverters.asScalaSetConverter
+import scala.jdk.CollectionConverters._
+
 import scala.util.control.NonFatal
 
 class KafkaErrorTopicInitializer(kafkaConfig: KafkaConfig, exceptionHandlerConfig: KafkaExceptionConsumerConfig) extends LazyLogging {

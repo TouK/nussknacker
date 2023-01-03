@@ -415,7 +415,7 @@ class CustomNodeValidationSpec extends AnyFunSuite with Matchers with OptionValu
       )
     val validationResult = validator.validate(validProcess)
 
-    validationResult.result shouldBe 'valid
+    validationResult.result shouldBe Symbol("valid")
   }
 
   test("eager params in joins") {

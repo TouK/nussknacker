@@ -47,7 +47,7 @@ object StateCompatibilityTest {
 class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with LazyLogging {
   import spel.Implicits._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val inTopic = "state.compatibility.input"
   private val outTopic = "state.compatibility.output"
@@ -156,7 +156,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
     val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
-    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).right.get
+    val outputEvent = io.circe.parser.decode[OutputEvent](new String(rawOutputEvent)).toOption.get
     outputEvent.input shouldBe input
     outputEvent.previousInput shouldBe previousInput
   }

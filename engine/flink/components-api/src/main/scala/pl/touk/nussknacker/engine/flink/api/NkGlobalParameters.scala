@@ -8,7 +8,7 @@ import org.apache.flink.api.common.ExecutionConfig.GlobalJobParameters
 import pl.touk.nussknacker.engine.api.ProcessVersion
 
 import _root_.java.util
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 //we can use this class to pass config through RuntimeContext to places where it would be difficult to use otherwise
 //Also, those configuration properties will be exposed via Flink REST API/webconsole

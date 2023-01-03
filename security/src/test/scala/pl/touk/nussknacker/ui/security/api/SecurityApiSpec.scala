@@ -70,10 +70,10 @@ private object Auth {
   }
   val cookieAuth = {
     cookie("authCookieToken").flatMap { cookie =>
-      extractExecutionContext.flatMap { implicit ec ⇒
+      extractExecutionContext.flatMap { implicit ec =>
         onSuccess(authenticator(cookie)).flatMap {
-          case Some(user) ⇒ provide(user)
-          case None ⇒ reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[AuthenticatedUser]
+          case Some(user) => provide(user)
+          case None => reject(AuthenticationFailedRejection(CredentialsRejected, HttpChallenge("", ""))): Directive1[AuthenticatedUser]
         }
       }
     }

@@ -30,6 +30,7 @@ import pl.touk.nussknacker.ui.util.ProcessComparator
 import pl.touk.nussknacker.ui.util.ProcessComparator.{Difference, NodeNotPresentInCurrent, NodeNotPresentInOther}
 
 import scala.concurrent.{ExecutionContext, Future}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with PatientScalaFutures with Matchers with FailFastCirceSupport
   with BeforeAndAfterEach with Inside with EspItTest {
@@ -53,8 +54,8 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
       responseAs[String] should include("No scenario fooProcess found")
     }
 
-    remoteEnvironment.compareInvocations shouldBe 'empty
-    remoteEnvironment.migrateInvocations shouldBe 'empty
+    remoteEnvironment.compareInvocations shouldBe Symbol("empty")
+    remoteEnvironment.migrateInvocations shouldBe Symbol("empty")
 
   }
 
@@ -172,7 +173,7 @@ class RemoteEnvironmentResourcesSpec extends AnyFlatSpec with ScalatestRouteTest
   private def withDecodedTypes(process: ValidatedDisplayableProcess) = {
     val validationResult = process.validationResult
     process.copy(validationResult = validationResult.copy(nodeResults = validationResult
-        .nodeResults.mapValues(v => v.copy(variableTypes = v.variableTypes.mapValues(_ => Unknown)))))
+        .nodeResults.mapValuesNow(v => v.copy(variableTypes = v.variableTypes.mapValuesNow(_ => Unknown)))))
   }
 
   class MockRemoteEnvironment(testMigrationResults: List[TestMigrationResult] = List(),

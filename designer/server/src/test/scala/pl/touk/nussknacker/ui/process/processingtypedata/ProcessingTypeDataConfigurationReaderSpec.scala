@@ -25,7 +25,7 @@ class ProcessingTypeDataConfigurationReaderSpec extends AnyFunSuite {
       |""".stripMargin
   )
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   test("should load old processTypes configuration") {
     val processTypes = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(oldConfiguration)

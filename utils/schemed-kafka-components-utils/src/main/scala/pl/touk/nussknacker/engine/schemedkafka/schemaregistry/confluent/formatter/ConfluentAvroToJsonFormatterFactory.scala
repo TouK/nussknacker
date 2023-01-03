@@ -78,6 +78,7 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
           // we handle strings this way because we want to keep result value compact and JString is formatted in quotes
           case Some(j) if j.isString => j.asString.get.getBytes(StandardCharsets.UTF_8)
           case None => null
+          case _ => throw new IllegalStateException()
         }
       } else {
         val keySchema = record.keySchemaId.map(id => getSchemaById(id)).getOrElse(throw new IllegalArgumentException("Error reading key schema: empty schema id"))

@@ -99,7 +99,7 @@ class ProcessesExportImportResourcesSpec extends AnyFunSuite with ScalatestRoute
 
     Get(s"/processesExport/${processToSave.id}/3") ~> routeWithAllPermissions ~> check {
       val latestProcessVersion = io.circe.parser.parse(responseAs[String])
-      latestProcessVersion.right.get.spaces2 should include(description)
+      latestProcessVersion.toOption.get.spaces2 should include(description)
 
       Get(s"/processesExport/${processToSave.id}") ~> routeWithAllPermissions ~> check {
         io.circe.parser.parse(responseAs[String]) shouldBe latestProcessVersion
