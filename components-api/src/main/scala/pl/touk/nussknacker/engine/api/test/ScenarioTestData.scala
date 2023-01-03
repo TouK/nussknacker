@@ -13,4 +13,7 @@ object ScenarioTestRecord {
 
 }
 
+/**
+ * Holds test records for a scenario. The difference to [[TestData]] is that records are assigned to the individual sources in the scenario.
+ */
 case class ScenarioTestData(testRecords: List[ScenarioTestRecord])

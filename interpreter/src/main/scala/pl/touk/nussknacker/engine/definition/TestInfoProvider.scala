@@ -64,7 +64,7 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
         val sourceTestRecords = testDataGenerator.generateTestData(testDataSize).testRecords
         sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
       } if scenarioTestRecords.nonEmpty
-      // Records without timestamp are at the end of the list.
+      // Records without timestamp are put at the end of the list.
       sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
     } yield ScenarioTestData(sortedRecords)
   }
