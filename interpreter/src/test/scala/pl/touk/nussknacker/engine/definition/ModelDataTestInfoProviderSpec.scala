@@ -159,20 +159,26 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
   test("should generate requested number of records") {
     val testingData = Table(
-      ("scenario", "size", "expected size"),
-      (createScenarioWithSingleSource(), 0, None),
-      (createScenarioWithMultipleSources(), 0, None),
-      (createScenarioWithSingleSource(), 1, Some(1)),
-      (createScenarioWithMultipleSources(), 1, Some(1)),
-      (createScenarioWithMultipleSources(), 2, Some(2)),
-      (createScenarioWithMultipleSources(), 3, Some(3)),
-      (createScenarioWithMultipleSources(), 4, Some(4)),
+      ("scenario", "size", "expected size", "expected size by source id"),
+      (createScenarioWithSingleSource(), 0, None, Map.empty),
+      (createScenarioWithMultipleSources(), 0, None, Map.empty),
+      (createScenarioWithSingleSource(), 1, Some(1), Map("source1" -> 1)),
+      (createScenarioWithMultipleSources(), 1, Some(1), Map("source1" -> 1)),
+      (createScenarioWithMultipleSources(), 2, Some(2), Map("source1" -> 1, "source2" -> 1)),
+      (createScenarioWithMultipleSources(), 3, Some(3), Map("source1" -> 1, "source2" -> 1, "source3" -> 1)),
+      (createScenarioWithMultipleSources(), 4, Some(4), Map("source1" -> 2, "source2" -> 1, "source3" -> 1)),
+      (createScenarioWithMultipleSources(), 5, Some(5), Map("source1" -> 2, "source2" -> 2, "source3" -> 1)),
+      (createScenarioWithMultipleSources(), 6, Some(6), Map("source1" -> 2, "source2" -> 2, "source3" -> 2)),
     )
 
-    forEvery(testingData) { (scenario, size, expectedSize) =>
+    forEvery(testingData) { (scenario, size, expectedSize, expectedSizeBySourceId) =>
       val testData = testInfoProvider.generateTestData(scenario, size)
 
       testData.map(_.testRecords.size) shouldBe expectedSize
+      if (expectedSizeBySourceId.nonEmpty) {
+        val testRecords = testData.value.testRecords
+        testRecords.groupBy(_.sourceId.id).mapValues(_.size) shouldBe expectedSizeBySourceId
+      }
     }
   }
 
