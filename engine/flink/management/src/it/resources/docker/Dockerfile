@@ -1,7 +1,8 @@
-FROM flink:1.16.0-scala_${scala.major.version}-java11
+FROM flink:1.16.0-scala_2.12-java11
 
 COPY entrypointWithIP.sh /
 COPY conf.yml /
+COPY log4j-console.properties /
 
 #TODO: figure out users...
 
@@ -9,8 +10,10 @@ USER root
 RUN chown flink /entrypointWithIP.sh
 
 RUN chown flink /conf.yml
+RUN chown flink /log4j-console.properties
 RUN chmod +x /entrypointWithIP.sh
 
+${scala.version.flink.tweak.commands}
 
 USER flink
 RUN mkdir -p /tmp/storage
