@@ -12,6 +12,7 @@ import pl.touk.nussknacker.engine.compile.nodecompilation.NodeCompiler
 import pl.touk.nussknacker.engine.graph.node.{Source, asSource}
 import pl.touk.nussknacker.engine.resultcollector.ProductionServiceInvocationCollector
 import pl.touk.nussknacker.engine.spel.SpelExpressionParser
+import pl.touk.nussknacker.engine.util.ListUtil
 import shapeless.syntax.typeable._
 
 
@@ -37,30 +38,46 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
 
   private lazy val nodeCompiler = new NodeCompiler(modelData.processWithObjectsDefinition, expressionCompiler, modelData.modelClassLoader.classLoader, ProductionServiceInvocationCollector, ComponentUseCase.TestDataGeneration)
 
-  // TODO multiple-sources-test: handle multiple sources
-  override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = modelData.withThisAsContextClassLoader {
+  override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities = {
+    collectAllSources(scenario)
+      .map(getTestingCapabilities(_, scenario.metaData))
+      .foldLeft(TestingCapabilities.Disabled)((tc1, tc2) => TestingCapabilities(
+        canBeTested = tc1.canBeTested || tc2.canBeTested,
+        canGenerateTestData = tc1.canGenerateTestData || tc2.canGenerateTestData
+      ))
+  }
+
+  private def getTestingCapabilities(source: Source, metaData: MetaData): TestingCapabilities = modelData.withThisAsContextClassLoader {
     val testingCapabilities = for {
-      source <- findFirstSource(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData)
+      sourceObj <- prepareSourceObj(source)(metaData)
       canTest = sourceObj.isInstanceOf[SourceTestSupport[_]]
       canGenerateData = sourceObj.isInstanceOf[TestDataGenerator]
     } yield TestingCapabilities(canBeTested = canTest, canGenerateTestData = canGenerateData)
     testingCapabilities.getOrElse(TestingCapabilities.Disabled)
   }
 
-  // TODO multiple-sources-test: handle multiple sources
   override def generateTestData(scenario: CanonicalProcess, size: Int): Option[ScenarioTestData] = {
-    for {
-      source <- findFirstSource(scenario)
-      sourceObj <- prepareSourceObj(source)(scenario.metaData)
-      testDataGenerator <- sourceObj.cast[TestDataGenerator]
-      testData = testDataGenerator.generateTestData(size)
-      scenarioTestRecords = testData.testRecords.map(record => ScenarioTestRecord(source.id, record.json, record.timestamp))
-    } yield ScenarioTestData(scenarioTestRecords)
+    val sourceTestDataGenerators = prepareTestDataGenerators(scenario)
+    val sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
+      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+      sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
+    }
+    val scenarioTestRecords = ListUtil.mergeLists(sourceTestDataList, size)
+    // Records without timestamp are put at the end of the list.
+    val sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    Some(sortedRecords).filter(_.nonEmpty).map(ScenarioTestData)
   }
 
-  private def findFirstSource(scenario: CanonicalProcess): Option[Source] = {
-    scenario.collectAllNodes.flatMap(asSource).headOption
+  private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
+    for {
+      source <- collectAllSources(scenario)
+      sourceObj <- prepareSourceObj(source)(scenario.metaData)
+      testDataGenerator <- sourceObj.cast[TestDataGenerator]
+    } yield (NodeId(source.id), testDataGenerator)
+  }
+
+  private def collectAllSources(scenario: CanonicalProcess): List[Source] = {
+    scenario.collectAllNodes.flatMap(asSource)
   }
 
   private def prepareSourceObj(source: Source)(implicit metaData: MetaData): Option[process.Source] = {
