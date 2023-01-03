@@ -246,7 +246,10 @@ object validationHelpers {
 
         override def testRecordParser: TestRecordParser[String] = (testRecord: TestRecord) => CirceUtil.decodeJsonUnsafe[String](testRecord.json)
 
-        override def generateTestData(size: Int): TestData = TestData(TestRecord(Json.fromString("")) :: Nil)
+        override def generateTestData(size: Int): TestData = TestData((for {
+          number <- 1 to size
+          record = TestRecord(Json.fromString(s"record $number"), timestamp = Some(number))
+        } yield record).toList)
       }
     }
   }

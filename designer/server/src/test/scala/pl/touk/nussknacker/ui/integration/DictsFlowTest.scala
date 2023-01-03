@@ -136,7 +136,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
   private def saveProcessAndTestIt(process: CanonicalProcess, expressionUsingDictWithLabel: String, expectedResult: String) = {
     saveProcessAndExtractValidationResult(process, expressionUsingDictWithLabel).asObject.value shouldBe empty
 
-    val testDataContent = "\"record1|field2\""
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK

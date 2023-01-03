@@ -72,7 +72,7 @@ case class EmptyDeploymentCommentSettingsError(message: String) extends Exceptio
 
 @JsonCodec case class IntervalTimeSettings(processes: Int, healthCheck: Int)
 
-@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxBytes: Int, resultsMaxBytes: Int)
+@JsonCodec case class TestDataSettings(maxSamplesCount: Int, testDataMaxLength: Int, resultsMaxBytes: Int)
 
 object TopTabType extends Enumeration {
 

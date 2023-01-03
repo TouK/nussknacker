@@ -32,16 +32,16 @@ class TestInfoResources(val processAuthorizer: AuthorizeProcess,
     pathPrefix("testInfo") {
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
-          processId(displayableProcess.id) { processId =>
-            canDeploy(processId) {
+          processIdWithCategory(displayableProcess.id) { idWithCategory =>
+            canDeploy(idWithCategory.id) {
 
               path("capabilities") {
                 complete {
-                  scenarioTestService.getTestingCapabilities(displayableProcess)
+                  scenarioTestService.getTestingCapabilities(idWithCategory, displayableProcess)
                 }
               } ~ path("generate" / IntNumber) { testSampleSize =>
                 complete {
-                  scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                  scenarioTestService.generateData(idWithCategory, displayableProcess, testSampleSize) match {
                     case Left(error) => HttpResponse(StatusCodes.BadRequest, entity = error)
                     case Right(rawScenarioTestData) => HttpResponse(entity = rawScenarioTestData.content)
                   }

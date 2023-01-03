@@ -285,8 +285,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
     saveProcessAndAssertSuccess(SampleProcess.process.id, SampleProcess.process)
     val displayableProcess = ProcessConverter.toDisplayable(SampleProcess.process, TestProcessingTypes.Streaming, Category1)
     val testDataContent =
-      """"ala"
-        |"bela"""".stripMargin
+      """{"sourceId":"startProcess","record":"ala"}
+        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
     val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> displayableProcess.asJson.noSpaces)()
     Post(s"/processManagement/test/${SampleProcess.process.id}", multiPart) ~> withPermissions(deployRoute(), testPermissionDeploy |+| testPermissionRead) ~> check {
 
@@ -325,8 +325,8 @@ class ManagementResourcesSpec extends AnyFunSuite with ScalatestRouteTest with F
       .filter("input", "new java.math.BigDecimal(null) == 0")
       .emptySink("end", "kafka-string", "topic" -> "'end.topic'", "value" -> "''")
     val testDataContent =
-      """"ala"
-        |"bela"""".stripMargin
+      """{"sourceId":"startProcess","record":"ala"}
+        |{"sourceId":"startProcess","record":"bela"}""".stripMargin
 
     saveProcessAndAssertSuccess(process.id, process)
 

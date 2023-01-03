@@ -8,7 +8,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.{CirceUtil, ProcessVersion}
 import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, SourceFactory, WithCategories}
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord, TestRecordParser}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord, TestRecord, TestRecordParser}
 import pl.touk.nussknacker.engine.api.typed.typing.Typed
 import pl.touk.nussknacker.engine.build.{GraphBuilder, ScenarioBuilder}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -58,8 +58,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
   }
 
   test("stubbing for test purpose should work for one source") {
-    val testData = TestData(List(1, 2, 3).map(v => TestRecord(Json.fromLong(v))))
-    val compiledProcess = testCompile(scenarioWithSingleSource, testData)
+    val scenarioTestData = ScenarioTestData(List(1, 2, 3).map(v => ScenarioTestRecord("left-source", Json.fromLong(v))))
+    val compiledProcess = testCompile(scenarioWithSingleSource, scenarioTestData)
     val sources = compiledProcess.sources.collect {
       case source: SourcePart => source.obj
     }
@@ -68,16 +68,32 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     }
   }
 
-  test("stubbing for test purpose should fail on multiple sources") {
-    val testData = TestData(List(1, 2, 3).map(v => TestRecord(Json.fromLong(v))))
-    an[Exception] shouldBe thrownBy {
-      testCompile(scenarioWithMultipleSources, testData)
+  test("stubbing for test purpose should work for multiple sources") {
+    val scenarioTestData = ScenarioTestData(List(
+      ScenarioTestRecord("left-source", Json.fromLong(11)),
+      ScenarioTestRecord("right-source", Json.fromLong(21)),
+      ScenarioTestRecord("right-source", Json.fromLong(22)),
+      ScenarioTestRecord("left-source", Json.fromLong(12)),
+      ScenarioTestRecord("left-source", Json.fromLong(13)),
+      ScenarioTestRecord("right-source", Json.fromLong(23)),
+    ))
+
+    val compiledProcess = testCompile(scenarioWithMultipleSources, scenarioTestData)
+
+    val sources = compiledProcess.sources.collect {
+      case source: SourcePart => source.node.id -> source.obj
+    }.toMap
+    sources("left-source") should matchPattern {
+      case CollectionSource(List(11, 12, 13), _, _) =>
+    }
+    sources("right-source") should matchPattern {
+      case CollectionSource(List(21, 22, 23), _, _) =>
     }
   }
 
-  private def testCompile(scenario: CanonicalProcess, testData: TestData) = {
+  private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
     val testCompiler = new TestFlinkProcessCompiler(SampleConfigCreator, minimalFlinkConfig, ResultsCollectingListenerHolder.registerRun(identity),
-      scenario, testData, DefaultNamespacedObjectNaming)
+      scenario, scenarioTestData, DefaultNamespacedObjectNaming)
     testCompiler.compileProcess(scenario, ProcessVersion.empty, DeploymentData.empty, PreventInvocationCollector)(UsedNodes.empty, getClass.getClassLoader).compileProcessOrFail()
   }
 

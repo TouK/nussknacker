@@ -664,11 +664,11 @@ Currently, you can only configure secondary environment if it uses BASIC authent
 
 ## Testing 
 
-| Parameter name                    | Importance | Type   | Default value | Description                                           |
-|-----------------------------------|------------|--------|---------------|-------------------------------------------------------|
-| testDataSettings.maxSampleCount   | Medium     | string | 20            | Limits number of samples for tests from file          |
-| testDataSettings.testDataMaxBytes | Low        | string | 200000        | Limits size of test input for tests from file         |
-| testDataSettings.resultsMaxBytes  | Low        | string | 50000000      | Limits size of returned test data for tests from file |
+| Parameter name                     | Importance | Type | Default value | Description                                                   |
+|------------------------------------|------------|------|---------------|---------------------------------------------------------------|
+| testDataSettings.maxSampleCount    | Medium     | int  | 20            | Limits number of samples for tests from file                  |
+| testDataSettings.testDataMaxLength | Low        | int  | 200000        | Limits size (in characters) of test input for tests from file |
+| testDataSettings.resultsMaxBytes   | Low        | int  | 50000000      | Limits size of returned test data for tests from file         |
 
 
 ## Other configuration options

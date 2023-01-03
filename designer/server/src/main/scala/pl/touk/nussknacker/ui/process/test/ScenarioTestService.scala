@@ -8,7 +8,6 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.engine.ModelData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{ModelDataTestInfoProvider, TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.graph.node._
 import pl.touk.nussknacker.engine.testmode.TestProcess.TestResults
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithNameAndCategory
@@ -54,24 +53,19 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
 
   private implicit val timeout: Timeout = systemRequestTimeout
 
-  def getTestingCapabilities(displayableProcess: DisplayableProcess): TestingCapabilities = {
+  def getTestingCapabilities(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess): TestingCapabilities = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val source = displayableProcess.nodes.flatMap(asSource).headOption
-    val metaData = displayableProcess.metaData
-
-    source.map(testInfoProvider.getTestingCapabilities(metaData, _))
-      .getOrElse(TestingCapabilities.Disabled)
+    val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
+    testInfoProvider.getTestingCapabilities(canonical)
   }
 
-  def generateData(displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
+  def generateData(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess, testSampleSize: Int): Either[String, RawScenarioTestData] = {
     val testInfoProvider = testInfoProviders.forTypeUnsafe(displayableProcess.processingType)
-    val sourceOpt = displayableProcess.nodes.flatMap(asSource).headOption
-    val metaData = displayableProcess.metaData
+    val canonical = toCanonicalProcess(idWithCategory, displayableProcess)
 
     for {
       _ <- Either.cond(testSampleSize <= testDataSettings.maxSamplesCount, (), s"Too many samples requested, limit is ${testDataSettings.maxSamplesCount}").right
-      source <- sourceOpt.toRight("Scenario does not have source capable of generating test data")
-      generatedData <- testInfoProvider.generateTestData(metaData, source, testSampleSize).toRight("Test data could not be generated for scenario")
+      generatedData <- testInfoProvider.generateTestData(canonical, testSampleSize).toRight("Test data could not be generated for scenario")
       rawTestData <- scenarioTestDataSerDe.serializeTestData(generatedData)
     } yield rawTestData
   }
@@ -82,14 +76,18 @@ class ScenarioTestService(testInfoProviders: ProcessingTypeDataProvider[TestInfo
                      testResultsVariableEncoder: Any => T)
                     (implicit ec: ExecutionContext, user: LoggedUser): Future[ResultsWithCounts[T]] = {
     for {
-      testData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
+      scenarioTestData <- scenarioTestDataSerDe.prepareTestData(rawTestData)
         .fold(error => Future.failed(new IllegalArgumentException(error)), Future.successful)
-      validationResult = processResolving.validateBeforeUiResolving(displayableProcess, idWithCategory.category)
-      canonical = processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
-      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, testData, user, testResultsVariableEncoder))
+      canonical = toCanonicalProcess(idWithCategory, displayableProcess)
+      testResults <- (managementActor ? Test(idWithCategory.processIdWithName, canonical, idWithCategory.category, scenarioTestData, user, testResultsVariableEncoder))
         .mapTo[TestResults[T]]
       _ <- assertTestResultsAreNotTooBig(testResults)
     } yield ResultsWithCounts(testResults, computeCounts(canonical, testResults))
+  }
+
+  private def toCanonicalProcess(idWithCategory: ProcessIdWithNameAndCategory, displayableProcess: DisplayableProcess): CanonicalProcess = {
+    val validationResult = processResolving.validateBeforeUiResolving(displayableProcess, idWithCategory.category)
+    processResolving.resolveExpressions(displayableProcess, validationResult.typingInfo)
   }
 
   private def assertTestResultsAreNotTooBig(testResults: TestResults[_]): Future[Unit] = {
