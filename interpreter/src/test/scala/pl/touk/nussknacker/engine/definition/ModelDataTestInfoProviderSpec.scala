@@ -15,6 +15,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.validationHelpers.{GenericParametersSource, GenericParametersSourceNoGenerate, GenericParametersSourceNoTestSupport}
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with OptionValues with TableDrivenPropertyChecks {
 
@@ -144,7 +145,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
   test("should generate empty data for a source not supporting generating") {
     val scenarioTestData = testInfoProvider.generateTestData(createScenarioWithSingleSource("genericSourceNoGenerate"), 3)
 
-    scenarioTestData shouldBe 'empty
+    scenarioTestData shouldBe Symbol("empty")
   }
 
   test("should generate empty data for empty scenario") {
@@ -152,7 +153,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
 
     val scenarioTestData = testInfoProvider.generateTestData(emptyScenario, 3)
 
-    scenarioTestData shouldBe 'empty
+    scenarioTestData shouldBe Symbol("empty")
   }
 
   test("should generate data for a scenario with multiple source") {
@@ -190,7 +191,7 @@ class ModelDataTestInfoProviderSpec extends AnyFunSuite with Matchers with Optio
       testData.map(_.testRecords.size) shouldBe expectedSize
       if (expectedSizeBySourceId.nonEmpty) {
         val testRecords = testData.value.testRecords
-        testRecords.groupBy(_.sourceId.id).mapValues(_.size) shouldBe expectedSizeBySourceId
+        testRecords.groupBy(_.sourceId.id).mapValuesNow(_.size) shouldBe expectedSizeBySourceId
       }
     }
   }
