@@ -13,7 +13,7 @@
 * [#3853](https://github.com/TouK/nussknacker/pull/3853) Support of patternProperties in sink with JSON Schema
 
 
-1.7.0
+1.7.0 (19 Dec 2022)
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
 * JSON Schema handling improvements:
