@@ -21,6 +21,5 @@ object AvroStringSettingsInTests {
     val field = Class.forName("pl.touk.nussknacker.engine.schemedkafka.schema.AvroStringSettings$").getDeclaredField("forceUsingStringForStringSchema")
     field.setAccessible(true)
     field.setBoolean(AvroStringSettings, value)
-    field.setAccessible(false)
   }
 }
