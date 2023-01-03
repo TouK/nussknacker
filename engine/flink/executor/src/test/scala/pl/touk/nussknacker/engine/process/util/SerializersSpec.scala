@@ -45,10 +45,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "serialize inner case class 2" in {
-    import scala.jdk.CollectionConverters._
-
-    // runtime type is scala.collection.convert.Wrappers$MutableBufferWrapper
-    val obj = scala.collection.mutable.Buffer(1,2,3).asJava
+    val obj = WrapperObj.InnerGenericCaseClass("a")
 
     val deserialized = serializeAndDeserialize(obj.asInstanceOf[Product])
 
@@ -56,10 +53,7 @@ class SerializersSpec extends AnyFlatSpec with Matchers {
   }
 
   it should "serialize inner case class 3" in {
-    import scala.jdk.CollectionConverters._
-
-    // runtime type is scala.collection.convert.Wrappers$MutableMapWrapper
-    val obj = scala.collection.mutable.Map().asJava
+    val obj = WrapperObj.InnerGenericCaseClassWithTrait[String]("a")
 
     val deserialized = serializeAndDeserialize(obj.asInstanceOf[Product])
 
@@ -82,6 +76,22 @@ case class UsualCaseClass(a: String, b: Integer, withDefaultValue: String = "aaa
 
 trait Wrapper {
   case class StaticInner(a: String)
+
+  trait SomeTrait[T] {
+    def get2: T
+  }
+
+  abstract class Abstract[T](value: T) {
+    def get1: T = value
+
+    override def equals(obj: Any): Boolean = obj != null && obj.isInstanceOf[Abstract[_]] && obj.asInstanceOf[Abstract[_]].get1 == value
+  }
+
+  case class InnerGenericCaseClass[A](value: A) extends Abstract[A](value)
+
+  case class InnerGenericCaseClassWithTrait[A](value: A) extends Abstract[A](value) with SomeTrait[A] {
+    override def get2: A = value
+  }
 }
 
 object WrapperObj extends Wrapper {

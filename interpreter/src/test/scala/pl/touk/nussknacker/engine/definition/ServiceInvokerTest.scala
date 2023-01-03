@@ -41,7 +41,7 @@ class ServiceInvokerTest extends AnyFlatSpec with PatientScalaFutures with Optio
 
     intercept[IllegalArgumentException](
       invoker.invokeService(Map("foo" -> "aa", "bar" -> "terefere")))
-        .getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String, ExecutionContextImpl): argument type mismatch"""
+        .getMessage shouldBe """Failed to invoke "invoke" on MockService with parameter types: List(String, String): argument type mismatch"""
   }
 
   it should "invoke service method with CompletionStage return type" in {

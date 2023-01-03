@@ -24,6 +24,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.metrics.common.naming.scenarioIdTag
 import pl.touk.nussknacker.test.PatientScalaFutures
+import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage.convertValidatedToValuable
 
 import java.util
 import scala.collection.immutable.ListMap
@@ -64,7 +65,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result shouldBe Valid(List("a", "b"))
+    result.validValue.asInstanceOf[List[String]] should contain theSameElementsAs List("a", "b")
   }
 
   test("collect metrics") {

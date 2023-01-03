@@ -100,6 +100,8 @@ object MethodDefinitionExtractor {
       case param: Parameter => param
     }
 
+    def definedParameterDependencies() = new OrderedDependencies(definedParameters)
+
     def prepareValues(values: Map[String, Any],
                       outputVariableNameOpt: Option[String],
                       additionalDependencies: Seq[AnyRef]): List[Any] = {

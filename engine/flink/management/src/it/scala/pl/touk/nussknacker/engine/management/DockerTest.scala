@@ -47,12 +47,26 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
   }
 
   private def prepareFlinkImage(): ImageFromDockerfile = {
-    List("Dockerfile", "entrypointWithIP.sh", "conf.yml").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
+    List("Dockerfile", "entrypointWithIP.sh", "conf.yml", "log4j-console.properties").foldLeft(new ImageFromDockerfile()) { case (image, file) =>
       val clazz = getClass
       val rezz = clazz.getResourceAsStream(s"/docker/$file")
       val resource = IOUtils.toString(rezz)
-      val withVersionReplaced = resource.replace("${scala.major.version}", ScalaMajorVersionConfig.scalaMajorVersion)
-      image.withFileFromString(file, withVersionReplaced)
+
+      val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
+        case "2.12" => ""
+        case "2.13" =>
+          """
+            |RUN rm $FLINK_HOME/lib/flink-scala_2.12-1.16.0.jar
+            |RUN wget https://search.maven.org/remotecontent?filepath=org/scala-lang/scala-library/2.13.10/scala-library-2.13.10.jar -O $FLINK_HOME/lib/scala-library-2.13.10.jar
+            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.10/scala-reflect-2.13.10.jar -O $FLINK_HOME/lib/scala-reflect-2.13.10.jar
+            |RUN chown flink $FLINK_HOME/lib/scala-library-2.13.10.jar
+            |RUN chown flink $FLINK_HOME/lib/scala-reflect-2.13.10.jar
+            |""".stripMargin
+        case v => throw new IllegalStateException(s"unsupported scala version: $v")
+      }
+      val withFlinkLibTweaks = resource.replace("${scala.version.flink.tweak.commands}", flinkLibTweakCommand)
+
+      image.withFileFromString(file, withFlinkLibTweaks)
     }
   }
 
