@@ -1,7 +1,7 @@
 
 # Changelog
 
-1.7.0 (Not released yet)
+1.7.0 (19 Dec 2022)
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
 * JSON Schema handling improvements:
