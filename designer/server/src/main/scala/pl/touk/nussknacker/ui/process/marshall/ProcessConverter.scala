@@ -28,7 +28,7 @@ object ProcessConverter {
       additionalFields = process.metaData.additionalFields,
       subprocessVersions = process.metaData.subprocessVersions
     )
-    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, category)
+    DisplayableProcess(process.metaData.id, props, nodes, edges, processingType, Some(category))
   }
 
   def findNodes(process: CanonicalProcess) : List[NodeData] = {

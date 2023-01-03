@@ -19,11 +19,11 @@ import pl.touk.nussknacker.ui.validation.ProcessValidation
   */
 class UIProcessResolving(validation: ProcessValidation, substitutorByProcessingType: ProcessingTypeDataProvider[ProcessDictSubstitutor]) {
 
-  def validateBeforeUiResolving(displayable: DisplayableProcess): ValidationResult = {
+  def validateBeforeUiResolving(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val v = validation.withExpressionParsers {
       case spel: SpelExpressionParser => spel.typingDictLabels
     }
-    v.validate(displayable)
+    v.validate(displayable, category)
   }
 
   def resolveExpressions(displayable: DisplayableProcess, typingInfo: Map[String, Map[String, ExpressionTypingInfo]]): CanonicalProcess = {

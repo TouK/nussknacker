@@ -61,7 +61,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   def withAdditionalPropertiesConfig(additionalPropertiesConfig: ProcessingTypeDataProvider[Map[String, AdditionalPropertyConfig]]) =
     new ProcessValidation(modelData, additionalPropertiesConfig, additionalValidators, subprocessResolver, None)
 
-  def validate(displayable: DisplayableProcess): ValidationResult = {
+  def validate(displayable: DisplayableProcess, category: Category): ValidationResult = {
     val uiValidationResult = uiValidation(displayable)
 
     //there is no point in further validations if ui process structure is invalid
@@ -69,7 +69,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
     if (uiValidationResult.saveAllowed) {
       val canonical = ProcessConverter.fromDisplayable(displayable)
       uiValidationResult
-        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, displayable.category))
+        .add(processingTypeValidationWithTypingInfo(canonical, displayable.processingType, category))
     } else {
       uiValidationResult
     }

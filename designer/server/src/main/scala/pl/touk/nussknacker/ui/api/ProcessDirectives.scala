@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.api
 
 import akka.http.scaladsl.server.Directive1
 import pl.touk.nussknacker.engine.api.process.ProcessName
-import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
+import pl.touk.nussknacker.restmodel.process.{ProcessIdWithName, ProcessIdWithNameAndCategory}
 import pl.touk.nussknacker.restmodel.processdetails.{BaseProcessDetails, ProcessShapeFetchStrategy}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
@@ -20,6 +20,15 @@ trait ProcessDirectives {
     handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
       onSuccess(processRepository.fetchProcessId(ProcessName(processName))).flatMap {
         case Some(processId) => provide(ProcessIdWithName(processId, ProcessName(processName)))
+        case None => failWith(ProcessNotFoundError(processName))
+      }
+    }
+  }
+
+  def processIdWithCategory(processName: String): Directive1[ProcessIdWithNameAndCategory] = {
+    handleExceptions(EspErrorToHttp.espErrorHandler).tflatMap { _ =>
+      onSuccess(processRepository.fetchProcessDetails(ProcessName(processName))).flatMap {
+        case Some(details) => provide(ProcessIdWithNameAndCategory(details.id, ProcessName(processName), details.processCategory))
         case None => failWith(ProcessNotFoundError(processName))
       }
     }

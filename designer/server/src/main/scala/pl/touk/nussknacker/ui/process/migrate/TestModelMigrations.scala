@@ -19,7 +19,7 @@ class TestModelMigrations(migrations: ProcessingTypeDataProvider[ProcessMigratio
     val migratedProcesses = processes.flatMap(migrateProcess)
     val validation = processValidation.withSubprocessResolver(new SubprocessResolver(prepareSubprocessRepository(migratedSubprocesses.map(s => (s.newProcess, s.processCategory)))))
     (migratedSubprocesses ++ migratedProcesses).map { migrationDetails =>
-      val validationResult = validation.validate(migrationDetails.newProcess)
+      val validationResult = validation.validate(migrationDetails.newProcess, migrationDetails.processCategory)
       val newErrors = extractNewErrors(migrationDetails.oldProcessErrors, validationResult)
       TestMigrationResult(new ValidatedDisplayableProcess(migrationDetails.newProcess, validationResult), newErrors, migrationDetails.shouldFail)
     }

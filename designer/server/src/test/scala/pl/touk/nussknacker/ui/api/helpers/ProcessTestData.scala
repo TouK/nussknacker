@@ -116,7 +116,7 @@ object ProcessTestData {
 
   def toValidatedDisplayable(espProcess: CanonicalProcess, category: String = TestCategories.TestCat): ValidatedDisplayableProcess = {
     val displayable = ProcessConverter.toDisplayable(espProcess, TestProcessingTypes.Streaming, category)
-    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable))
+    new ValidatedDisplayableProcess(displayable, processValidation.validate(displayable, category))
   }
 
   val multipleSourcesValidProcess: ValidatedDisplayableProcess = toValidatedDisplayable(ScenarioBuilder.streaming("fooProcess").sources(
@@ -199,7 +199,7 @@ object ProcessTestData {
     nodes = List.empty,
     edges = List.empty,
     processingType = TestProcessingTypes.Streaming,
-    category = TestCategories.TestCat
+    Some(TestCategories.TestCat)
   )
 
   val sampleDisplayableProcess: DisplayableProcess = {
@@ -220,7 +220,7 @@ object ProcessTestData {
       ),
       edges = List(Edge(from = "sourceId", to = "sinkId", edgeType = None)),
       processingType = TestProcessingTypes.Streaming,
-      category = TestCategories.TestCat
+      Some(TestCategories.TestCat)
     )
   }
 
@@ -267,7 +267,7 @@ object ProcessTestData {
       nodes = List.empty,
       edges = List.empty,
       processingType = TestProcessingTypes.Streaming,
-      category = TestCategories.Category1
+      Some(TestCategories.Category1)
     )
 
     UpdateProcessCommand(displayableProcess, comment.getOrElse(UpdateProcessComment("")))

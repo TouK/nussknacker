@@ -42,13 +42,13 @@ object TestProcessUtil {
     toDetails(
       displayable.id,
       processingType = displayable.processingType,
-      category = displayable.category
+      category = displayable.category.getOrElse(throw new IllegalArgumentException("Category must be provided"))
     ).copy(json = displayable)
 
   def toDetails(name: String, category: Category = TestCategories.Category1, isSubprocess: Boolean = false, isArchived: Boolean = false,
                 processingType: ProcessingType = Streaming, json: Option[DisplayableProcess] = None, lastAction: Option[ProcessActionType] = None,
                 description: Option[String] = None, history: Option[List[ProcessVersion]] = None) : ProcessDetails = {
-    val jsonData = json.map(_.copy(id = name, processingType = processingType, category = category)).getOrElse(createEmptyJson(name, processingType, category))
+    val jsonData = json.map(_.copy(id = name, processingType = processingType, category = Some(category))).getOrElse(createEmptyJson(name, processingType, category))
     BaseProcessDetails[DisplayableProcess](
       id = name,
       name = name,
@@ -83,14 +83,14 @@ object TestProcessUtil {
       case _ => throw new IllegalArgumentException(s"Unknown processing type: $processingType.")
     }
 
-    DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, category)
+    DisplayableProcess(id, ProcessProperties(typeSpecificProperties), Nil, Nil, processingType, Some(category))
   }
 
   def createDisplayableSubprocess(name: String, processingType: ProcessingType, category: Category): DisplayableProcess =
     createDisplayableSubprocess(name, List(SubprocessInputDefinition("input", List(SubprocessParameter("in", SubprocessClazzRef[String])))), processingType, category)
 
   def createDisplayableSubprocess(name: String, nodes: List[NodeData], processingType: ProcessingType, category: Category): DisplayableProcess =
-    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, category)
+    DisplayableProcess(name, ProcessProperties(FragmentSpecificData()), nodes, Nil, processingType, Some(category))
 
   def createProcessAction(action: ProcessActionType): ProcessAction = ProcessAction(
     processVersionId = VersionId(generateId()),

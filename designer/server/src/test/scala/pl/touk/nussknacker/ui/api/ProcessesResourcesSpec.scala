@@ -743,7 +743,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("allow to delete process") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     val processName = ProcessName(processToSave.id)
 
     saveProcess(processToSave) {
@@ -790,7 +790,7 @@ class ProcessesResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Ma
   }
 
   test("not allow to save process if already exists") {
-    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+    val processToSave = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
     saveProcess(processToSave) {
       status shouldEqual StatusCodes.OK
       Post(s"/processes/${processToSave.id}/$TestCat?isSubprocess=false") ~> routeWithWrite ~> check {

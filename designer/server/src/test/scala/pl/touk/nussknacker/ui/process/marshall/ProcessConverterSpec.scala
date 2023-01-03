@@ -60,7 +60,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
   def displayableCanonical(process: DisplayableProcess): ValidatedDisplayableProcess = {
    val canonical = ProcessConverter.fromDisplayable(process)
     val displayable = ProcessConverter.toDisplayable(canonical, TestProcessingTypes.Streaming, TestCategories.Category1)
-    new ValidatedDisplayableProcess(displayable, validation.validate(displayable))
+    new ValidatedDisplayableProcess(displayable, validation.validate(displayable, TestCategories.TestCat))
   }
 
   test("be able to convert empty process") {
@@ -74,7 +74,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(
         Processor("e", ServiceRef("ref", List())),
         Source("s", SourceRef("sourceRef", List()))
-      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming, TestCategories.Category1)
+      ), List(Edge("s", "e", None)), TestProcessingTypes.Streaming, Some(TestCategories.Category1))
 
     displayableCanonical(process).nodes.toSet shouldBe process.nodes.toSet
     displayableCanonical(process).edges.toSet shouldBe process.edges.toSet
@@ -95,7 +95,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         List(Source("s", SourceRef("sourceRef", List())), unexpectedEnd),
         List(Edge("s", "e", None)),
         TestProcessingTypes.Streaming,
-        TestCategories.Category1,
+        Some(TestCategories.Category1),
         ValidationResult.errors(
           Map(unexpectedEnd.id -> List(
             NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
@@ -119,7 +119,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       List(Source("s", SourceRef("sourceRef", List())), Variable("v", "test", Expression("spel", "''")), Filter("e", Expression("spel", "''"))),
       List(Edge("s", "v", None), Edge("v", "e", None)),
       TestProcessingTypes.Streaming,
-      TestCategories.Category1,
+      Some(TestCategories.Category1),
       ValidationResult.errors(
         Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
@@ -155,7 +155,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Edge("j1", "e", None)
       ),
       TestProcessingTypes.Streaming,
-      TestCategories.Category1
+      Some(TestCategories.Category1)
     )
 
     val processViaBuilder =  ScenarioBuilder.streaming("t1").parallelism(metaData.parallelism.get).stateOnDisk(metaData.spillStateToDisk.get).sources(

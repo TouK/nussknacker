@@ -13,8 +13,8 @@ export type Process = {
   edges: Edge[],
   properties: PropertiesType,
   validationResult: ValidationResult,
-  processingType: ProcessingType,
-  category?: string,
+  processingType?: ProcessingType,
+  category?: string, // optional - see the comment for a field with the same name in DisplayableProcess.scala
 }
 
 export type ProcessId = Process["id"]

@@ -21,7 +21,7 @@ import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData}
 class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers with FailFastCirceSupport
   with EspItTest with PatientScalaFutures with EitherValuesDetailedMessage {
 
-  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCat)
+  private val process: DisplayableProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCat))
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 

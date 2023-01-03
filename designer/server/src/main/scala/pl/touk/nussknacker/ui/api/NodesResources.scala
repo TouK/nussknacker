@@ -86,8 +86,8 @@ class NodesResources(val processRepository: FetchingProcessRepository[Future],
           implicit val requestDecoder: Decoder[PropertiesValidationRequest] = preparePropertiesRequestDecoder(modelData)
           entity(as[PropertiesValidationRequest]) { properties =>
             complete {
-              val scenario = DisplayableProcess(processName, properties.processProperties, Nil, Nil, process.processingType, process.processCategory)
-              val result = processValidation.validate(scenario)
+              val scenario = DisplayableProcess(processName, properties.processProperties, Nil, Nil, process.processingType, Some(process.processCategory))
+              val result = processValidation.validate(scenario, process.processCategory)
               NodeValidationResult(
                 parameters = None,
                 expressionType = None,

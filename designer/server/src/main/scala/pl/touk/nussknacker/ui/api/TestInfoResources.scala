@@ -1,7 +1,8 @@
 package pl.touk.nussknacker.ui.api
 
-import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypeRange, ContentTypes, HttpResponse, StatusCodes}
 import akka.http.scaladsl.server._
+import akka.http.scaladsl.unmarshalling.{FromEntityUnmarshaller, Unmarshaller}
 import akka.util.Timeout
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.definition.TestingCapabilities
@@ -31,16 +32,16 @@ class TestInfoResources(val processAuthorizer: AuthorizeProcess,
     pathPrefix("testInfo") {
       post {
         entity(as[DisplayableProcess]) { displayableProcess =>
-          processId(displayableProcess.id) { processId =>
-            canDeploy(processId.id) {
+          processIdWithCategory(displayableProcess.id) { idWithCategory =>
+            canDeploy(idWithCategory.id) {
 
               path("capabilities") {
                 complete {
-                  scenarioTestService.getTestingCapabilities(displayableProcess)
+                  scenarioTestService.getTestingCapabilities(idWithCategory, displayableProcess)
                 }
               } ~ path("generate" / IntNumber) { testSampleSize =>
                 complete {
-                  scenarioTestService.generateData(displayableProcess, testSampleSize) match {
+                  scenarioTestService.generateData(idWithCategory, displayableProcess, testSampleSize) match {
                     case Left(error) => HttpResponse(StatusCodes.BadRequest, entity = error)
                     case Right(rawScenarioTestData) => HttpResponse(entity = rawScenarioTestData.content)
                   }

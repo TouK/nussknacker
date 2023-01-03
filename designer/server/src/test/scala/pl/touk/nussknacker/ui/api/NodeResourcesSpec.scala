@@ -35,7 +35,7 @@ class NodeResourcesSpec extends AnyFunSuite with ScalatestRouteTest with FailFas
 
   import pl.touk.nussknacker.engine.api.CirceUtil._
 
-  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = TestCategories.TestCat)
+  private val testProcess = ProcessTestData.sampleDisplayableProcess.copy(category = Some(TestCategories.TestCat))
 
   private val validation = ProcessValidation(typeToConfig.mapValues(_.modelData), typeToConfig.mapValues(_.additionalPropertiesConfig), typeToConfig.mapValues(_.additionalValidators), new SubprocessResolver(subprocessRepository))
   private val nodeRoute = new NodesResources(fetchingProcessRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), validation)
