@@ -28,11 +28,6 @@ export const GraphPaperContainer = forwardRef<HTMLDivElement, ContainerProps>(({
   const styles = css({
     minHeight: 300,
     minWidth: 300,
-    ".Page > &": {
-      overflow: "hidden",
-      width: "100%",
-      height: "100%",
-    },
   })
 
   return (

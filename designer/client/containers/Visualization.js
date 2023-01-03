@@ -21,6 +21,7 @@ import {BindKeyboardShortcuts} from "./BindKeyboardShortcuts"
 import {darkTheme} from "./darkTheme"
 import {NkThemeProvider} from "./theme"
 import {isEdgeEditable} from "../common/EdgeUtils"
+import {GraphPage} from "./Page"
 
 const PROCESS_STATE_INTERVAL_TIME = 10000
 
@@ -114,7 +115,7 @@ class Visualization extends React.Component {
   render() {
     const graphNotReady = isEmpty(this.props.fetchedProcessDetails) || this.props.graphLoading
     return (
-      <div className={"Page graphPage"}>
+      <GraphPage data-testid="graphPage">
         <RouteLeavingGuard
           when={this.props.capabilities.editFrontend && !this.props.nothingToSave}
           navigate={path => this.props.history.push(path)}
@@ -139,7 +140,7 @@ class Visualization extends React.Component {
             ) :
             null}
         </SpinnerWrapper>
-      </div>
+      </GraphPage>
     )
   }
 }

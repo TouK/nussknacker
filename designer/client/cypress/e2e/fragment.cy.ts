@@ -42,7 +42,7 @@ describe("Fragment", () => {
     cy.contains(/^apply/i).should("be.enabled").click()
 
     cy.wait(750)
-    cy.get(".graphPage").matchImage({
+    cy.get("[data-testid=graphPage]").matchImage({
       screenshotConfig: {
         blackout: [
           "> :not(#nk-graph-main) > div",

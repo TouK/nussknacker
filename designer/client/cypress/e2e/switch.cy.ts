@@ -29,7 +29,7 @@ describe("Process", () => {
       cy.get("@input").click().type(" || false")
       cy.contains(/^apply/i).should("be.enabled").click()
       cy.get("[data-testid=window]").should("not.exist")
-      cy.get(".graphPage").matchImage({screenshotConfig: {
+      cy.get("[data-testid=graphPage]").matchImage({screenshotConfig: {
         blackout: [
           "> :not(#nk-graph-main) > div",
         ],
