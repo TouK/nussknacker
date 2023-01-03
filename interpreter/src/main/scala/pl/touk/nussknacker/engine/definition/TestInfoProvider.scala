@@ -57,17 +57,15 @@ class ModelDataTestInfoProvider(modelData: ModelData) extends TestInfoProvider w
   }
 
   override def generateTestData(scenario: CanonicalProcess, size: Int): Option[ScenarioTestData] = {
-    for {
-      _ <- Some(size) if size > 0
-      sourceTestDataGenerators = prepareTestDataGenerators(scenario) if sourceTestDataGenerators.nonEmpty
-      sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
-        val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
-        sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
-      }
-      scenarioTestRecords = ListUtil.mergeListsFromTopics(sourceTestDataList, size) if scenarioTestRecords.nonEmpty
-      // Records without timestamp are put at the end of the list.
-      sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
-    } yield ScenarioTestData(sortedRecords)
+    val sourceTestDataGenerators = prepareTestDataGenerators(scenario)
+    val sourceTestDataList = sourceTestDataGenerators.map { case (sourceId, testDataGenerator) =>
+      val sourceTestRecords = testDataGenerator.generateTestData(size).testRecords
+      sourceTestRecords.map(testRecord => ScenarioTestRecord(sourceId, testRecord))
+    }
+    val scenarioTestRecords = ListUtil.mergeListsFromTopics(sourceTestDataList, size)
+    // Records without timestamp are put at the end of the list.
+    val sortedRecords = scenarioTestRecords.sortBy(_.record.timestamp.getOrElse(Long.MaxValue))
+    Some(sortedRecords).filter(_.nonEmpty).map(ScenarioTestData)
   }
 
   private def prepareTestDataGenerators(scenario: CanonicalProcess): List[(NodeId, TestDataGenerator)] = {
