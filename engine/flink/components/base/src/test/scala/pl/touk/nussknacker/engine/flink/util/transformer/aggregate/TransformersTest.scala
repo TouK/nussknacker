@@ -203,7 +203,7 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
   }
 
 
-  test("sum tumbling aggregate emit on event") {
+  test("sum tumbling aggregate emit on event, emit context of variables") {
     val id = "1"
 
     val model = modelData(List(
@@ -211,12 +211,17 @@ class TransformersTest extends AnyFunSuite with FlinkSpec with Matchers with Ins
       TestRecord(id, 1, 2, "b"),
       TestRecord(id, 2, 5, "b")))
     val testProcess = tumbling("#AGG.list",
-      "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent)
+      "#input.eId", emitWhen = TumblingWindowTrigger.OnEvent, afterAggregateExpression = "#input.eId")
 
-    val aggregateVariables = runCollectOutputAggregate[Number](id, model, testProcess)
+    val nodeResults = runCollectOutputVariables(id, model, testProcess)
+
+    nodeResults.map(_.variableTyped[Number]("fooVar").get) shouldBe List(1, 2, 5)
+
+    val aggregateVariables = nodeResults.map(_.variableTyped[java.util.List[Number]]("fragmentResult").get)
     //TODO: reverse order in aggregate
     aggregateVariables shouldBe List(asList(1), asList(2, 1), asList(5))
   }
+
 
   test("sum tumbling aggregate for out of order elements") {
     val id = "1"
