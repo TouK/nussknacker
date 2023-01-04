@@ -14,9 +14,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class OidcService(configuration: OidcAuthenticationConfiguration)
                  (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
-  extends {
-    implicit private val decoder: Decoder[OpenIdConnectUserInfo] = OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims)
-  } with GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken](OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration), configuration.oAuth2Configuration) {
+  extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken](
+    OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), implicitly[Decoder[DefaultOidcAuthorizationData]], ec, sttpBackend),
+    configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), implicitly[Decoder[DefaultJwtAccessToken]], ec) {
 
   override protected lazy val jwtValidator: JwtValidator = createJwtValidator(configuration)
 
@@ -24,7 +24,7 @@ class OidcService(configuration: OidcAuthenticationConfiguration)
 
 object OidcService {
 
-  private[oidc] def createJwtValidator(configuration: OidcAuthenticationConfiguration) =  new JwtValidator(jwtHeader => {
+  private[oidc] def createJwtValidator(configuration: OidcAuthenticationConfiguration) = new JwtValidator(jwtHeader => {
     jwtHeader.keyId match {
       case Some(definedKeyId) =>
         jwkProvider(configuration).get(definedKeyId).getPublicKey
@@ -39,3 +39,4 @@ object OidcService {
   ).build()
 
 }
+

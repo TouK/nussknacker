@@ -5,7 +5,7 @@ import play.api.libs.json.Json
 import skuber.apps.v1.Deployment
 
 import java.net.URL
-import scala.jdk.CollectionConverters.{asJavaIterableConverter, collectionAsScalaIterableConverter}
+import scala.jdk.CollectionConverters._
 
 object DeploymentUtils {
   val containersPath = "spec.template.spec.containers"

@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 
 class JsonSchemaUtilsTest extends AnyFunSuite with Matchers {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val someString = "str"
   private val someInt: Int = 1

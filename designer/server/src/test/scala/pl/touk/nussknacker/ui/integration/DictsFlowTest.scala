@@ -226,7 +226,7 @@ class DictsFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCir
       .as[Json].rightValue
   }
 
-  def checkWithClue[T](body: ⇒ T): RouteTestResult ⇒ T = check {
+  def checkWithClue[T](body: => T): RouteTestResult => T = check {
     withClue(responseAs[String]) {
       body
     }

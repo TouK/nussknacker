@@ -60,7 +60,7 @@ case class SuperClassPredicate(superClassPredicate: ClassPredicate) extends Clas
     superClasses(clazz).exists(cl => superClassPredicate.matches(cl))
 
   private def superClasses(clazz: Class[_]): Seq[Class[_]] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     Seq(clazz) ++
       ClassUtils.getAllSuperclasses(clazz).asScala ++
       ClassUtils.getAllInterfaces(clazz).asScala

@@ -9,7 +9,7 @@ import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 
 /**
   * Mixin for DatumReader and DatumWriter. It collects factory methods for Datums.

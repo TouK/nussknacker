@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, ProcessVersion, Reque
 import skuber.ObjectMeta
 import skuber.networking.v1.Ingress
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class IngressPreparerTest extends AnyFunSuite {
 

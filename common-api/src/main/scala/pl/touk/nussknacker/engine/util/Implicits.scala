@@ -10,6 +10,8 @@ object Implicits {
   implicit class RichScalaMap[K <: Any, V <: Any](m: Map[K, V]) {
 
     def mapValuesNow[VV](f: V => VV): Map[K, VV] = m.map { case (k, v) => k -> f(v) }
+
+    def filterKeysNow(f: K => Boolean): Map[K, V] = m.filter { case (k, _) => f(k) }
   }
 
   implicit class RichTupleList[K, V](seq: List[(K, V)]) {
@@ -23,7 +25,7 @@ object Implicits {
     def sequenceMap: Map[V, Iterable[K]] = {
       m.map { case (k, values) =>
         values.map(v => v -> k)
-      }.toList.flatten.groupBy(_._1).mapValues(_.map(_._2))
+      }.toList.flatten.groupBy(_._1).mapValuesNow(_.map(_._2))
     }
   }
 

@@ -5,6 +5,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.engine.api.process.{Source, SourceTestSupport, TestDataGenerator}
 import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import pl.touk.nussknacker.engine.util.ListUtil
 
 import java.nio.charset.StandardCharsets
 
@@ -29,7 +30,7 @@ trait RecordFormatter extends Serializable {
 
   def generateTestData(topics: List[String], size: Int, kafkaConfig: KafkaConfig): TestData = {
     val listsFromAllTopics = topics.map(KafkaUtils.readLastMessages(_, size, kafkaConfig))
-    val merged = ListUtil.mergeListsFromTopics(listsFromAllTopics, size)
+    val merged = ListUtil.mergeLists(listsFromAllTopics, size)
     prepareGeneratedTestData(merged)
   }
 

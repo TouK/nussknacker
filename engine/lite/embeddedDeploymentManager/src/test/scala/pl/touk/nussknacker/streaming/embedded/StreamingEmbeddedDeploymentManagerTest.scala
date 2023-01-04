@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage {

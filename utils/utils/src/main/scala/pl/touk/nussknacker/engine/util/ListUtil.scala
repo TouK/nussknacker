@@ -1,11 +1,10 @@
-package pl.touk.nussknacker.engine.kafka
+package pl.touk.nussknacker.engine.util
 
 import scala.annotation.tailrec
 
-private[engine] object ListUtil {
+object ListUtil {
 
-  //TODO: is sorting ok here?
-  def mergeListsFromTopics[T](lists: List[List[T]], size: Int): List[T] = {
+  def mergeLists[T](lists: List[List[T]], size: Int): List[T] = {
     mergeLists(lists).take(size)
   }
 

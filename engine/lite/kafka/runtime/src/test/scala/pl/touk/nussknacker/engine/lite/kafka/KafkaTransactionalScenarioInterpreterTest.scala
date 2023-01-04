@@ -27,7 +27,7 @@ import java.util.Collections
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{Duration, _}
 import scala.concurrent.{Await, Future}
-import scala.jdk.CollectionConverters.mapAsScalaMapConverter
+import scala.jdk.CollectionConverters._
 import scala.language.higherKinds
 import scala.reflect.ClassTag
 import scala.util.{Failure, Try, Using}

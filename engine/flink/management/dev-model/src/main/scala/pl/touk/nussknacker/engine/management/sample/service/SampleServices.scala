@@ -8,12 +8,12 @@ import pl.touk.nussknacker.engine.management.sample.TariffType
 import pl.touk.sample.JavaSampleEnum
 
 import java.util.Optional
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.Future
 
 case object EmptyService extends Service {
   @MethodToInvoke
-  def invoke(): Future[Unit.type] = Future.successful(Unit)
+  def invoke(): Future[Unit] = Future.successful(())
 }
 
 case object OneParamService extends Service {

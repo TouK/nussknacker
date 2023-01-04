@@ -394,7 +394,7 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
                                     (implicit nodeId: NodeId,
                                      metaData: MetaData): (Map[String, ExpressionTypingInfo], ValidatedNel[ProcessCompilationError, T]) = {
     val ctx = ctxOrBranches.left.getOrElse(contextWithOnlyGlobalVariables)
-    val branchContexts = ctxOrBranches.right.getOrElse(Map.empty)
+    val branchContexts = ctxOrBranches.getOrElse(Map.empty)
 
     val compiledObjectWithTypingInfo = objectParametersExpressionCompiler.compileObjectParameters(parameterDefinitionsToUse.getOrElse(nodeDefinition.parameters),
       parameters, branchParameters, ctx, branchContexts, eager = false).andThen { compiledParameters =>
@@ -445,10 +445,10 @@ class NodeCompiler(definitions: ProcessDefinition[ObjectWithMethodDef],
   PartialFunction[ObjectWithMethodDef, Validated[NonEmptyList[ProcessCompilationError], TransformationResult]] = {
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[SingleInputGenericNodeTransformation[_]] && ctx.isLeft =>
       val transformer = nodeDefinition.obj.asInstanceOf[SingleInputGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.left.get)
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.swap.toOption.get)
     case nodeDefinition if nodeDefinition.obj.isInstanceOf[JoinGenericNodeTransformation[_]] && ctx.isRight =>
       val transformer = nodeDefinition.obj.asInstanceOf[JoinGenericNodeTransformation[_]]
-      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.right.get)
+      nodeValidator.validateNode(transformer, parameters, branchParameters, outputVar, nodeDefinition.objectDefinition.componentConfig)(ctx.toOption.get)
   }
 
   //This class is extracted to separate object, as handling service needs serious refactor (see comment in ServiceReturningType), and we don't want

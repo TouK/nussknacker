@@ -41,7 +41,7 @@ class DefinitionExtractor[T](methodDefinitionExtractor: MethodDefinitionExtracto
         val definition = ObjectDefinition(extractInitialParameters(e, mergedComponentConfig), returnType, objWithCategories.categories, mergedComponentConfig)
         Right(GenericNodeTransformationMethodDef(e, definition))
       case _ =>
-        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).right.map(fromMethodDefinition)
+        methodDefinitionExtractor.extractMethodDefinition(obj, findMethodToInvoke(obj), mergedComponentConfig).map(fromMethodDefinition)
     }).fold(msg => throw new IllegalArgumentException(msg), identity)
 
   }

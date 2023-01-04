@@ -5,7 +5,7 @@ import io.swagger.v3.oas.models.PathItem.HttpMethod
 import io.swagger.v3.oas.models.{OpenAPI, Operation}
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, ServiceName, SwaggerService}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 private[parser] object ParseToSwaggerServices {
 

@@ -27,7 +27,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   import MockDeploymentManager._
 
-  def this() {
+  def this() = {
     this(SimpleStateStatus.Running)
   }
 
@@ -53,7 +53,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
   val deploys = new ConcurrentLinkedQueue[ProcessVersion]()
 
   def withWaitForDeployFinish[T](action: => T): T = {
-    val promise = Promise[Option[ExternalDeploymentId]]
+    val promise = Promise[Option[ExternalDeploymentId]]()
     try {
       deployResult = promise.future
       action
@@ -97,7 +97,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
     }
   }
 
-  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(Unit)
+  override protected def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = Future.successful(())
 
   override protected def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = Future.successful(SavepointResult(path = savepointPath))
 
@@ -124,7 +124,7 @@ class MockDeploymentManager(val defaultProcessStateStatus: StateStatus) extends 
 
   override def close(): Unit = {}
 
-  override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(Unit)
+  override def cancel(name: ProcessName, user: User): Future[Unit] = Future.successful(())
 
   override protected def checkRequiredSlotsExceedAvailableSlots(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): Future[Unit] =
     if (canonicalProcess.metaData.typeSpecificData.cast[StreamMetaData].flatMap(_.parallelism).exists(_ > maxParallelism)) {

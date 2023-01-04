@@ -37,7 +37,10 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       .processorEnd("left-end", "mockService", "all" -> "{}"),
     GraphBuilder
       .source("right-source", "test-source2")
-      .processorEnd("right-end", "mockService", "all" -> "{}"))
+      .processorEnd("right-end", "mockService", "all" -> "{}"),
+    GraphBuilder
+      .source("source-no-test-support", "source-no-test-support")
+      .processorEnd("no-test-support-end", "mockService", "all" -> "{}"))
 
   private val minimalFlinkConfig = ConfigFactory.empty
     .withValue("timeout", fromAnyRef("10 seconds"))
@@ -53,7 +56,7 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
       case source: SourcePart => source.obj
     }
     sources should matchPattern {
-      case (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
+      case (_: EmptySource[_]) :: (_: EmptySource[_]) :: (_: EmptySource[_]) :: Nil =>
     }
   }
 
@@ -89,6 +92,9 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     sources("right-source") should matchPattern {
       case CollectionSource(List(21, 22, 23), _, _) =>
     }
+    sources("source-no-test-support") should matchPattern {
+      case EmptySource(_) =>
+    }
   }
 
   private def testCompile(scenario: CanonicalProcess, scenarioTestData: ScenarioTestData) = {
@@ -101,7 +107,8 @@ class StubbedFlinkProcessCompilerTest extends AnyFunSuite with Matchers {
     override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
       super.sourceFactories(processObjectDependencies) ++ Map(
         "test-source" -> WithCategories(SourceFactory.noParam[Int](SampleTestSupportSource)),
-        "test-source2" -> WithCategories(SourceFactory.noParam[Int](SampleTestSupportSource))
+        "test-source2" -> WithCategories(SourceFactory.noParam[Int](SampleTestSupportSource)),
+        "source-no-test-support" -> WithCategories(SourceFactory.noParam[Int](EmptySource(Typed.fromDetailedType[Int])))
       )
     }
   }

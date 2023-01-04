@@ -7,14 +7,14 @@ import scala.concurrent.duration.{Deadline, Duration, FiniteDuration}
 trait Cache[K, V] {
   def getOrCreate(key: K)(value: => V): V
   def get(key: K): Option[V]
-  def put(key: K)(value: V)
+  def put(key: K)(value: V): Unit
 }
 
 trait AsyncCache[K, V] {
   def getOrCreate(key: K)(value: => Future[V]): Future[V]
   //right now used only in tests
   def get(key: K): Option[V]
-  def put(key: K)(value: Future[V])
+  def put(key: K)(value: Future[V]): Unit
 }
 
 trait ExpiryConfig[-K, -V] {

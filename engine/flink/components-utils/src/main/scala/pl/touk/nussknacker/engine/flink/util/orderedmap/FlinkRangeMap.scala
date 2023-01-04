@@ -4,6 +4,7 @@ import org.apache.flink.api.common.typeinfo.{TypeHint, TypeInformation}
 
 import java.{util => jul}
 import scala.Ordering.Implicits._
+import scala.collection.compat._
 import scala.collection.immutable.SortedMap
 import scala.language.higherKinds
 
@@ -55,11 +56,13 @@ object FlinkRangeMap {
 
     override def empty[K: Ordering, V]: SortedMap[K, V] = SortedMap.empty[K, V]
 
-    override def from[K: Ordering, V](map: SortedMap[K, V], key: K): SortedMap[K, V] = map.from(key)
+    override def from[K: Ordering, V](map: SortedMap[K, V], key: K): SortedMap[K, V] = map.rangeFrom(key)
 
-    override def to[K: Ordering, V](map: SortedMap[K, V], key: K): SortedMap[K, V] = map.to(key)
+    override def to[K: Ordering, V](map: SortedMap[K, V], key: K): SortedMap[K, V] = map.rangeTo(key)
 
-    override def filterKeys[K, V](map: SortedMap[K, V], p: K => Boolean): SortedMap[K, V] = map.filterKeys(p)
+    override def filterKeys[K, V](map: SortedMap[K, V], p: K => Boolean): SortedMap[K, V] = map.filter {
+      case (k, _) => p(k)
+    }
 
     override def updated[K, V](map: SortedMap[K, V], key: K, value: V): SortedMap[K, V] = map.updated(key, value)
 

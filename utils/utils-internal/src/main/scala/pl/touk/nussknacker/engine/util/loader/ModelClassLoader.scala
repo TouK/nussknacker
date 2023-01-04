@@ -24,7 +24,7 @@ object ModelClassLoader extends LazyLogging {
 
   val defaultJarExtension = ".jar"
 
-  private def expandFiles(urls: Traversable[URL], jarExtension: String): Traversable[URL] = {
+  private def expandFiles(urls: Iterable[URL], jarExtension: String): Iterable[URL] = {
     urls.flatMap {
       case url if url.getProtocol.toLowerCase == "file" =>
         val file = new File(url.toURI)

@@ -35,7 +35,7 @@ class FlinkSlotsChecker(client: HttpFlinkClient)(implicit ec: ExecutionContext) 
         else
           Future.successful(Option(())))
     } yield ()
-    checkResult.value.map(_ => Unit)
+    checkResult.value.map(_ => ())
   }
 
   private def determineSlotsBalance(canonicalProcess: CanonicalProcess, currentlyDeployedJobId: Option[ExternalDeploymentId]): OptionT[Future, SlotsBalance] = {

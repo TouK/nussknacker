@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.typed.typing.Unknown
 import pl.touk.nussknacker.engine.api.{MethodToInvoke, ParamName}
 import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object BoundedSource extends SourceFactory {
 

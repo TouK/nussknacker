@@ -96,6 +96,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
       case JobStatus.RECONCILING | JobStatus.CREATED | JobStatus.SUSPENDED => FlinkStateStatus.Running
       case JobStatus.FAILING => FlinkStateStatus.Failing
       case JobStatus.FAILED => FlinkStateStatus.Failed
+      case _ => throw new IllegalStateException() // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
     }
 
   }
@@ -107,6 +108,7 @@ class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassN
     overview.tasks.running + overview.tasks.finished == overview.tasks.total
   }
 
+  // todo: drop support for Flink 1.11 & inline `checkDuringDeployForNotRunningJob` so we could benefit from pattern matching exhaustive check
   protected def checkDuringDeployForNotRunningJob(s: JobStatus): Boolean = {
     // Flink return running status even if some tasks are scheduled or initializing
     s == JobStatus.RUNNING || s == JobStatus.INITIALIZING

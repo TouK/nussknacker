@@ -71,7 +71,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
                                        freeSlots: Int = 1
                                       ): (FlinkRestManager, mutable.Buffer[HistoryEntry])
   = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     val history: mutable.Buffer[HistoryEntry] = Collections.synchronizedList(new java.util.ArrayList[HistoryEntry]()).asScala
     val manager = createManagerWithBackend(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial { case req =>
       val toReturn = (req.uri.path, req.method) match {
@@ -111,6 +111,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           ClusterOverview(1, `slots-available` = freeSlots)
         case (List("jobmanager", "config"), Method.GET) =>
           List()
+        case _ => throw new IllegalStateException()
       }
       Response(Right(toReturn), statusCode)
     })

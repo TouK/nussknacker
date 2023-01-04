@@ -23,7 +23,7 @@ import skuber.networking.v1.Ingress
 import skuber.{LabelSelector, ListResource, Service}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.language.reflectiveCalls
 import scala.util.Random
@@ -72,7 +72,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 
     f.withRunningScenario {
-      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
+      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe Symbol("defined")
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
@@ -91,7 +91,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val f = createReqRespFixture(givenScenarioName, extraDeployConfig = config)
 
     f.withRunningScenario {
-      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe 'defined
+      k8s.listSelected[ListResource[Ingress]](requirementForName(f.version.processName)).futureValue.items.headOption shouldBe Symbol("defined")
 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""

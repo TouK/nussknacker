@@ -28,7 +28,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   import pl.touk.nussknacker.engine.kafka.KafkaTestUtils._
   import spel.Implicits._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
     override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)

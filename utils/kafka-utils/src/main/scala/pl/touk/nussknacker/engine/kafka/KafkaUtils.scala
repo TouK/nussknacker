@@ -23,7 +23,7 @@ object KafkaUtils extends KafkaUtils
 
 trait KafkaUtils extends LazyLogging {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
   import scala.concurrent.ExecutionContext.Implicits.global
 
   val defaultTimeoutMillis = 10000

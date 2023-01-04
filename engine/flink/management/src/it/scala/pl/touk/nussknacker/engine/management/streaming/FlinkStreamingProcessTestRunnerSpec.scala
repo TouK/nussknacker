@@ -19,7 +19,7 @@ import sttp.client.{NothingT, SttpBackend}
 
 import java.util.UUID
 import scala.concurrent.{Await, Future}
-import scala.jdk.CollectionConverters.seqAsJavaListConverter
+import scala.jdk.CollectionConverters._
 
 class FlinkStreamingProcessTestRunnerSpec extends AnyFlatSpec with Matchers with VeryPatientScalaFutures {
 

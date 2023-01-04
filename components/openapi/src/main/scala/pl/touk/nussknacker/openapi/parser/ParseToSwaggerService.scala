@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.json.swagger.SwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.ParseSwaggerRefSchemas
 import pl.touk.nussknacker.openapi._
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 private[parser] object ParseToSwaggerService {

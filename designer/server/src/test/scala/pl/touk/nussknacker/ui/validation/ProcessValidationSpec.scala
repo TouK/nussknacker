@@ -85,7 +85,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
 
     val result = validator.validate(process, Category1)
-    result.errors.invalidNodes shouldBe 'empty
+    result.errors.invalidNodes shouldBe Symbol("empty")
   }
 
   test("check for notunique edges") {
@@ -339,8 +339,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val processValidation = mockProcessValidation(invalidSubprocess)
 
     val validationResult = processValidation.validate(process, Category1)
-    validationResult.errors.invalidNodes shouldBe 'empty
-    validationResult.errors.globalErrors shouldBe 'empty
+    validationResult.errors.invalidNodes shouldBe Symbol("empty")
+    validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
   }
 
@@ -382,7 +382,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val processValidation = mockProcessValidation(subprocess)
     val validationResult = processValidation.validate(process, Category1)
 
-    validationResult.errors.invalidNodes shouldBe 'empty
+    validationResult.errors.invalidNodes shouldBe Symbol("empty")
     validationResult.nodeResults("sink2").variableTypes("input") shouldBe typing.Unknown
     validationResult.nodeResults("sink2").variableTypes("var2") shouldBe Typed.fromInstance("42")
     validationResult.nodeResults("sink2").variableTypes("subOut2") shouldBe TypedObjectTypingResult(ListMap(
@@ -448,8 +448,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
 
     val validationResult = processValidation.validate(process, SecretCategory)
-    validationResult.errors.invalidNodes shouldBe 'empty
-    validationResult.errors.globalErrors shouldBe 'empty
+    validationResult.errors.invalidNodes shouldBe Symbol("empty")
+    validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
 
     val validationResultWithCategory2 = processValidation.validate(process, Category1)
@@ -487,8 +487,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val processValidation = mockProcessValidation(subprocess)
 
     val validationResult = processValidation.validate(process, Category1)
-    validationResult.errors.invalidNodes shouldBe 'empty
-    validationResult.errors.globalErrors shouldBe 'empty
+    validationResult.errors.invalidNodes shouldBe Symbol("empty")
+    validationResult.errors.globalErrors shouldBe Symbol("empty")
     validationResult.saveAllowed shouldBe true
 
     val validationResultWithCategory2 = processValidation.validate(process, Category2)

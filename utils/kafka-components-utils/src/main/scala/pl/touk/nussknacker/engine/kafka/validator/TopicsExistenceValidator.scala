@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.kafka.CachedTopicsExistenceValidatorConfig.Aut
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, KafkaUtils}
 import pl.touk.nussknacker.engine.util.cache.SingleValueCache
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait TopicsExistenceValidator extends Serializable  {
 

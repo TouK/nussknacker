@@ -6,7 +6,7 @@ import org.scalatest.matchers.should.Matchers
 
 import java.net.URI
 import java.nio.file.Files
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 class ConfigFactoryExtSpec extends AnyFunSuite with Matchers {
 

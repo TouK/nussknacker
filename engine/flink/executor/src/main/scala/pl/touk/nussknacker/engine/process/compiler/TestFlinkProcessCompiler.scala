@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.process.compiler
 
 import com.typesafe.config.Config
 import org.apache.flink.api.common.restartstrategy.RestartStrategies
+import org.apache.flink.api.common.typeinfo.TypeInformation
 import pl.touk.nussknacker.engine.api.namespaces.ObjectNaming
 import pl.touk.nussknacker.engine.api.process.{ComponentUseCase, ContextInitializer, ProcessConfigCreator, ProcessObjectDependencies, SourceTestSupport}
 import pl.touk.nussknacker.engine.api.test.ScenarioTestData
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.DefinitionExtractor.ObjectWithMethodDef
 import pl.touk.nussknacker.engine.flink.api.exception.FlinkEspExceptionConsumer
 import pl.touk.nussknacker.engine.flink.api.process.{FlinkIntermediateRawSource, FlinkSourceTestSupport}
-import pl.touk.nussknacker.engine.flink.util.source.CollectionSource
+import pl.touk.nussknacker.engine.flink.util.source.{CollectionSource, EmptySource}
 import pl.touk.nussknacker.engine.process.exception.FlinkExceptionHandler
 import pl.touk.nussknacker.engine.testmode.ResultsCollectingListener
 
@@ -41,7 +42,7 @@ class TestFlinkProcessCompiler(creator: ProcessConfigCreator,
               new CollectionSource[Object](samples, sourceWithTestSupport.timestampAssignerForTest, returnType)(sourceWithTestSupport.typeInformation)
           }
         case _ =>
-          throw new IllegalArgumentException(s"Source ${originalSource.getClass} cannot be stubbed - it doesn't provide test data parser")
+          EmptySource[Object](returnType)(TypeInformation.of(classOf[Object]))
       }
     })
   }

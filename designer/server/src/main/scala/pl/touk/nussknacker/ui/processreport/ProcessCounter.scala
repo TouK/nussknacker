@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.api.process.VersionId
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.canonicalgraph.canonicalnode._
 import pl.touk.nussknacker.engine.graph.node.{BranchEndData, SubprocessInputDefinition}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
 import shapeless.syntax.typeable._
 
@@ -44,7 +45,7 @@ class ProcessCounter(subprocessRepository: SubprocessRepository) {
         case SplitNode(node, nexts) => computeCountsSamePrefixes(nexts.flatten) + (node.id -> nodeCount(node.id))
         case Subprocess(node, outputs) =>
           //TODO: validate that process exists
-          val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions.mapValues(VersionId(_)), node.ref.id).get
+          val subprocess = getSubprocess(canonicalProcess.metaData.subprocessVersions.mapValuesNow(VersionId(_)), node.ref.id).get
           computeCountsSamePrefixes(outputs.values.flatten) + (node.id -> nodeCount(node.id,
             computeCounts(prefixes :+ node.id)(subprocess.allStartNodes)))
       }.toMap

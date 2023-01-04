@@ -168,7 +168,7 @@ class CustomNodeProcessSpec extends AnyFunSuite with Matchers with ProcessTestHe
 
     processInvoker.invokeWithSampleData(process, data)
 
-    MockService.data shouldBe 'empty
+    MockService.data shouldBe Symbol("empty")
 
   }
 

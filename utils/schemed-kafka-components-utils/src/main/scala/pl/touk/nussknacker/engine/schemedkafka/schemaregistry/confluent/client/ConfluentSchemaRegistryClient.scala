@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLogging {
 

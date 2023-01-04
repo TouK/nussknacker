@@ -221,7 +221,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     val schema = JsonSchemaBuilder.parseSchema(
       """{"enum": ["one", 2, 3.3, {"four": {"four": 4}, "arr": [4]}, ["five", 5, {"five" : 5}], true, null]}"""
     )
-    import collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
 
     val expected = Typed(Set(
       Typed.fromInstance("one"),

@@ -160,7 +160,7 @@ class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey:
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {
 
   override def deserialize(topic: String, data: Array[Byte]): Any = {
-    io.circe.parser.parse(new String(data, StandardCharsets.UTF_8)).right.get
+    io.circe.parser.parse(new String(data, StandardCharsets.UTF_8)).toOption.get
   }
 }
 

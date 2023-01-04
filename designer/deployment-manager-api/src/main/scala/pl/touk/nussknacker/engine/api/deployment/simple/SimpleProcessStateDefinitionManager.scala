@@ -93,7 +93,7 @@ object SimpleProcessStateDefinitionManager extends ProcessStateDefinitionManager
   override def statusDescription(stateStatus: StateStatus): Option[String] =
     statusDescriptionsMap.get(stateStatus)
 
-  def errorShouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
+  def errorshouldBeRunningState(deployedVersionId: VersionId, user: String): ProcessState =
     processState(SimpleStateStatus.Error).copy(
       icon = Some(deployFailedIcon),
       tooltip = Some(shouldBeRunningTooltip(deployedVersionId.value, user)),
