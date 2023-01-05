@@ -9,6 +9,7 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer, StringSerializer}
 import org.apache.kafka.common.utils.Time
 import org.apache.kafka.common.{IsolationLevel, Uuid}
+import org.apache.kafka.server.common.MetadataVersion
 import org.apache.zookeeper.server.{NIOServerCnxnFactory, ZooKeeperServer}
 
 import java.io.{File, PrintStream}
@@ -67,7 +68,7 @@ object EmbeddedKafkaServer {
   private def prepareRaftStorage(logDir: File, kafkaConfig: server.KafkaConfig) = {
     val uuid = Uuid.randomUuid()
     StorageTool.formatCommand(new PrintStream(new NullOutputStream), Seq(logDir.getAbsolutePath),
-      StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig), ignoreFormatted = false)
+      StorageTool.buildMetadataProperties(uuid.toString, kafkaConfig), MetadataVersion.IBP_3_3_IV3, ignoreFormatted = false)
   }
 
   private def createZookeeperServer(zkPort: Int) = {
