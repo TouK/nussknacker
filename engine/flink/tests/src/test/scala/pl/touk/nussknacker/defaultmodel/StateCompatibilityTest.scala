@@ -20,6 +20,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.ExistingSchemaVersion
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.version.BuildInfo
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 
 import java.net.URI
 import java.nio.file.{Files, Paths}
@@ -53,7 +54,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
   private val outTopic = "state.compatibility.output"
 
   private val savepointDir = {
-    val resourcesDir = Paths.get("src/test/resources/state-compatibility")
+    val resourcesDir = Paths.get(s"src/test/resources/state-compatibility/${ScalaMajorVersionConfig.scalaMajorVersion}")
     if (Files.exists(resourcesDir)) {
       // Working directory is module root directory.
       resourcesDir
