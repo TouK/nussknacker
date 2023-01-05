@@ -78,7 +78,7 @@ jobs:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         with:
           java-version: "openjdk@1.11"
@@ -169,10 +169,10 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -220,7 +220,7 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: "openjdk@1.11"
       - name: Cache ivy packages
@@ -232,7 +232,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -253,7 +253,7 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: "openjdk@1.11"
       - name: Cache ivy packages
@@ -265,7 +265,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -307,7 +307,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -411,11 +411,22 @@ jobs:
         run: |
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
+      - name: Cache ivy packages
+        if: ${{ env.shouldBuildImage == 'true' }}
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.ivy2/cache
+            ~/.cache/coursier
+            ~/.sbt
+          key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt
+      - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
@@ -423,7 +434,7 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
@@ -536,7 +547,7 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
-      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: "openjdk@1.11"
       - name: Cache ivy packages
@@ -548,13 +559,13 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
