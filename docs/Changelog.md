@@ -9,6 +9,7 @@
 * [#3823](https://github.com/TouK/nussknacker/pull/3823), [#3836](https://github.com/TouK/nussknacker/pull/3836), [#3843](https://github.com/TouK/nussknacker/pull/3843) - 
   scenarios with multiple sources can be tested from file
 * [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - scala 2.12 & 2.13
+* [#3874](https://github.com/TouK/nussknacker/pull/3874) Tumbling window with OnEvent trigger saves context
 
 1.7.0
 ------------------------
