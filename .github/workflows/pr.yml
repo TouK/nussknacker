@@ -59,8 +59,8 @@ jobs:
           SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
           VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
           NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
-          echo "::set-output name=git_source_branch::$GIT_SOURCE_BRANCH"
-          echo "::set-output name=nk_snapshot_version::$NK_SNAPSHOT_VERSION"
+          echo "git_source_branch=$GIT_SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "nk_snapshot_version=$NK_SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -129,7 +129,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -359,7 +359,7 @@ jobs:
       - name: Get Node.js version
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         uses: actions/setup-node@v2
@@ -408,7 +408,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v2
         with:
@@ -490,7 +490,7 @@ jobs:
         id: snapshots_diffs
         shell: bash
         run: |
-          echo ::set-output name=found::$(find . -iname '*.diff.png' | wc -l)
+          echo "found=$(find . -iname '*.diff.png' | wc -l)" >> $GITHUB_OUTPUT
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v2
