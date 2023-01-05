@@ -13,6 +13,12 @@
   [![PR](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md#Contributing)
 
 </div>
+<h3 align="center">
+  <a href="https://demo.nussknacker.io"><b>Demo</b></a> &bull;
+  <a href="https://nussknacker.io/documentation"><b>Documentation</b></a> &bull;
+  <a href="https://nussknacker.io/documentation/docs/installation_configuration_guide/Installation/"><b>Instalation</b></a> &bull;
+  <a href="https://cloud.nussknacker.io"><b>Nu Cloud</b></a>  
+</h3>
 
 ![image](https://nussknacker.io/documentation/assets/images/nu_designer-87526e47584a5eeb9ce59ad7509d2e7b.png)
 
@@ -21,20 +27,6 @@ Nussknacker lets you design, deploy and monitor real time decision algorithms wi
 For stateless use cases we provide lightweight, but scalable and performant engine deploying to Kubernetes. 
 When more advanced, stateful scenarios are needed we can leverage the power and reliability of [Apache Flink](https://flink.apache.org/) 
 to make your processes fast and accurate.
-
-See [nussknacker.io](https://nussknacker.io) to learn more.
-
-## Demo
-
-Demo is available at [demo.nussknacker.io](https://demo.nussknacker.io).
-
-## Nussknacker Cloud
-
-You can try [Nussknacker Cloud](https://cloud.nussknacker.io) for free.
-
-## Documentation
-
-Documentation is available at [nussknacker.io/documentation](https://nussknacker.io/documentation).
 
 ## Quickstart
 
