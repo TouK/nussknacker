@@ -7,7 +7,7 @@ import io.circe.Json._
 import org.apache.kafka.common.record.TimestampType
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.flink.test.FlinkTestConfiguration
@@ -58,8 +58,9 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
       .mapObject(_.add("key", Null)
       .add("value", obj("city" -> fromString("Lublin"), "street" -> fromString("Lipowa"))))
     val testRecordJson = obj("keySchemaId" -> Null, "valueSchemaId" -> fromInt(id), "consumerRecord" -> consumerRecord)
+    val scenarioTestData = ScenarioTestData(ScenarioTestRecord("start", testRecordJson) :: Nil)
 
-    val results = run(process, TestData(TestRecord(testRecordJson) :: Nil))
+    val results = run(process, scenarioTestData)
 
     val testResultVars = results.nodeResults("end").head.context.variables
     testResultVars.get("extractedTimestamp") shouldBe Some(expectedTimestamp)
@@ -72,9 +73,9 @@ class TestFromFileSpec extends AnyFunSuite with Matchers with LazyLogging {
     schemaRegistryMockClient.register(subject, parsedSchema)
   }
 
-  private def run(process: CanonicalProcess, testData: TestData): TestResults[Any] = {
+  private def run(process: CanonicalProcess, scenarioTestData: ScenarioTestData): TestResults[Any] = {
     ThreadUtils.withThisAsContextClassLoader(getClass.getClassLoader) {
-      FlinkTestMain.run(LocalModelData(config, creator), process, testData,
+      FlinkTestMain.run(LocalModelData(config, creator), process, scenarioTestData,
         FlinkTestConfiguration.configuration(), identity
       )
     }

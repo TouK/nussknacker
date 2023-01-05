@@ -38,7 +38,7 @@ trait Validator {
 case object MandatoryParameterValidator extends ParameterValidator {
 
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isNotBlank(expression)) valid(Unit) else invalid(error(paramName, nodeId.id))
+    if (StringUtils.isNotBlank(expression)) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): EmptyMandatoryParameter = EmptyMandatoryParameter(
     "This field is mandatory and can not be empty",
@@ -54,7 +54,7 @@ case object NotBlankParameterValidator extends ParameterValidator {
 
   // TODO: for now we correctly detect only literal expression with blank string - on this level (not evaluated expression) it is the only thing that we can do
   override def isValid(paramName: String, expression: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (isBlankStringLiteral(expression)) invalid(error(paramName, nodeId.id)) else valid(Unit)
+    if (isBlankStringLiteral(expression)) invalid(error(paramName, nodeId.id)) else valid(())
 
   private def error(paramName: String, nodeId: String): BlankParameter = BlankParameter(
     "This field value is required and can not be blank",
@@ -72,7 +72,7 @@ case class FixedValuesValidator(possibleValues: List[FixedExpressionValue]) exte
     val values = possibleValues.map(possibleValue => possibleValue.expression)
 
     if (StringUtils.isBlank(value) || values.contains(value))
-      valid(Unit)
+      valid(())
     else
       invalid(InvalidPropertyFixedValue(paramName, label, value, possibleValues.map(_.expression)))
   }
@@ -85,7 +85,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] = {
     if (StringUtils.isBlank(value) || regexpPattern.matcher(value).matches())
-      valid(Unit)
+      valid(())
     else
       invalid(MismatchParameter(message, description, paramName, nodeId.id))
   }
@@ -94,7 +94,7 @@ case class RegExpParameterValidator(pattern: String, message: String, descriptio
 case object LiteralIntegerValidator extends ParameterValidator {
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
-    if (StringUtils.isBlank(value) || Try(value.toInt).isSuccess) valid(Unit) else invalid(error(paramName, nodeId.id))
+    if (StringUtils.isBlank(value) || Try(value.toInt).isSuccess) valid(()) else invalid(error(paramName, nodeId.id))
 
   private def error(paramName: String, nodeId: String): InvalidIntegerLiteralParameter = InvalidIntegerLiteralParameter(
     "This field value has to be an integer number",
@@ -111,7 +111,7 @@ case class MinimalNumberValidator(minimalNumber: BigDecimal) extends ParameterVa
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ >= minimalNumber).isSuccess)
-      valid(Unit)
+      valid(())
     else
       invalid(error(paramName, nodeId.id))
 
@@ -130,7 +130,7 @@ case class MaximalNumberValidator(maximalNumber: BigDecimal) extends ParameterVa
   //Blank value should be not validate - we want to chain validators
   override def isValid(paramName: String, value: String, label: Option[String])(implicit nodeId: NodeId): Validated[PartSubGraphCompilationError, Unit] =
     if (StringUtils.isBlank(value) || Try(BigDecimal(normalizeStringToNumber(value))).filter(_ <= maximalNumber).isSuccess)
-      valid(Unit)
+      valid(())
     else
       invalid(error(paramName, nodeId.id))
 
@@ -152,9 +152,9 @@ case object JsonValidator extends ParameterValidator {
     val parsingResult = parse(strippedValue)
 
     if (StringUtils.isBlank(value) || parsingResult.isRight)
-      valid(Unit)
+      valid(())
     else
-      invalid(error(parsingResult.left.get, paramName, nodeId.id))
+      invalid(error(parsingResult.swap.getOrElse(throw new IllegalStateException()), paramName, nodeId.id))
   }
 
   private def error(parsingException: ParsingFailure, paramName: String, nodeId: String): JsonRequiredParameter = JsonRequiredParameter(
@@ -195,7 +195,7 @@ case class CustomParameterValidatorDelegate(name: String) extends ParameterValid
 }
 
 object CustomParameterValidatorDelegate {
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val cache: TrieMap[String, CustomParameterValidator] = TrieMap[String, CustomParameterValidator]()
 

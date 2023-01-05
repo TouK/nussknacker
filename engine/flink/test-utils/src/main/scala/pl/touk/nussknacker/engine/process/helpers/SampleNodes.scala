@@ -40,7 +40,7 @@ import pl.touk.nussknacker.engine.flink.api.datastream.DataStreamImplicits._
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Date, Optional, UUID}
 import javax.annotation.Nullable
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{ExecutionContext, Future}
 
 //TODO: clean up sample objects...
@@ -349,7 +349,7 @@ object SampleNodes {
       def trans(str: DataStream[Context], ctx: FlinkCustomNodeContext): DataStream[ValueWithContext[AnyRef]] = {
         val streamOperator = new AbstractStreamOperator[ValueWithContext[AnyRef]] with OneInputStreamOperator[Context, ValueWithContext[AnyRef]] {
           override def processElement(element: StreamRecord[Context]): Unit = {
-            val valueWithContext = ValueWithContext(element.getTimestamp.underlying(), element.getValue)
+            val valueWithContext: ValueWithContext[AnyRef] = ValueWithContext(element.getTimestamp.asInstanceOf[AnyRef], element.getValue)
             val outputResult = new StreamRecord[ValueWithContext[AnyRef]](valueWithContext, timestampToSet)
             output.collect(outputResult)
           }
@@ -411,7 +411,7 @@ object SampleNodes {
     def invoke(@ParamName("throw") throwing: Boolean): Future[Unit] = {
       if (throwing) {
         Future.failed(exception)
-      } else  Future.successful(Unit)
+      } else  Future.successful(())
     }
   }
 
@@ -524,7 +524,7 @@ object SampleNodes {
   case object SinkForAny extends SinkForType[AnyRef]
 
   object EmptyService extends Service {
-    def invoke(): Future[Unit.type] = Future.successful(Unit)
+    def invoke(): Future[Unit] = Future.successful(())
   }
 
   object GenericParametersNode extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
@@ -571,7 +571,7 @@ object SampleNodes {
 
   object NodePassingStateToImplementation extends CustomStreamTransformer with SingleInputGenericNodeTransformation[AnyRef] {
 
-    val VariableThatShouldBeDefinedBeforeNodeName = "foo"
+    val VariableThatshouldBeDefinedBeforeNodeName = "foo"
 
     override type State = Boolean
 
@@ -579,7 +579,7 @@ object SampleNodes {
                                        dependencies: List[NodeDependencyValue])(implicit nodeId: NodeId): this.NodeTransformationDefinition = {
       case TransformationStep(Nil, _) =>
         context.withVariable(OutputVar.customNode(OutputVariableNameDependency.extract(dependencies)), Typed[Boolean])
-          .map(FinalResults(_, state = Some(context.contains(VariableThatShouldBeDefinedBeforeNodeName))))
+          .map(FinalResults(_, state = Some(context.contains(VariableThatshouldBeDefinedBeforeNodeName))))
           .valueOr( errors => FinalResults(context, errors.toList))
     }
 
@@ -629,8 +629,8 @@ object SampleNodes {
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
-      val out = params("type") + "-" + params("version")
-      CollectionSource(out::Nil, None, Typed[String])
+      val out = "" + params("type") + "-" + params("version")
+      CollectionSource(out :: Nil, None, Typed[String])
     }
 
     override def nodeDependencies: List[NodeDependency] = OutputVariableNameDependency :: Nil
@@ -686,7 +686,7 @@ object SampleNodes {
     }
 
     override def implementation(params: Map[String, Any], dependencies: List[NodeDependencyValue], finalState: Option[State]): Source = {
-      import scala.collection.JavaConverters._
+      import scala.jdk.CollectionConverters._
       val elements = params(`elementsParamName`).asInstanceOf[java.util.List[String]].asScala.toList
 
       new CollectionSource(elements, None, Typed[String])

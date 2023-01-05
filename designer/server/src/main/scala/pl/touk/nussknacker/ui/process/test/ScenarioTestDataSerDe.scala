@@ -1,48 +1,66 @@
 package pl.touk.nussknacker.ui.process.test
 
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder, Json, parser}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.ui.api.TestDataSettings
 
 import java.nio.charset.StandardCharsets
 import scala.io.Source
 import scala.util.Using
-import io.circe.parser
-import pl.touk.nussknacker.ui.api.TestDataSettings
 
-// TODO multiple-sources-test: switch TestData to ScenarioTestData
+object ScenarioTestDataSerDe {
+
+  // @JsonCodec is not used to keep the file format simple and avoid unnecessary object nesting.
+  private implicit val scenarioTestRecordEncoder: Encoder[ScenarioTestRecord] = Encoder.instance(scenarioTestRecord =>
+    Json.obj(
+      "sourceId" -> Json.fromString(scenarioTestRecord.sourceId.id),
+      "record" -> scenarioTestRecord.record.json,
+      "timestamp" -> scenarioTestRecord.record.timestamp.asJson
+    ).dropNullValues
+  )
+
+  private implicit val scenarioTestRecordDecoder: Decoder[ScenarioTestRecord] = Decoder.instance(hcursor =>
+    for {
+      sourceId <- hcursor.downField("sourceId").as[String]
+      record <- hcursor.downField("record").as[Json]
+      timestamp <- hcursor.downField("timestamp").as[Option[Long]]
+    } yield ScenarioTestRecord(sourceId, record, timestamp)
+  )
+
+}
+
 class ScenarioTestDataSerDe(testDataSettings: TestDataSettings) {
 
-  def serializeTestData(testData: TestData): Either[String, RawScenarioTestData] = {
-    val content = testData.testRecords
-      .map(_.json.noSpaces)
+  import ScenarioTestDataSerDe._
+
+  def serializeTestData(scenarioTestData: ScenarioTestData): Either[String, RawScenarioTestData] = {
+    import io.circe.syntax._
+
+    val content = scenarioTestData.testRecords
+      .map(_.asJson.noSpaces)
       .mkString("\n")
-      .getBytes(StandardCharsets.UTF_8)
-    Either.cond(content.size <= testDataSettings.testDataMaxBytes,
+    Either.cond(content.length <= testDataSettings.testDataMaxLength,
       RawScenarioTestData(content),
-      s"Too much data generated, limit is: ${testDataSettings.testDataMaxBytes}")
+      s"Too much data generated, limit is: ${testDataSettings.testDataMaxLength}")
   }
 
-  def prepareTestData(rawTestData: RawScenarioTestData): Either[String, TestData] = {
+  def prepareTestData(rawTestData: RawScenarioTestData): Either[String, ScenarioTestData] = {
+    import cats.implicits.catsStdInstancesForEither
     import cats.syntax.either._
     import cats.syntax.traverse._
-    import cats.implicits.catsStdInstancesForEither
 
-    Using(Source.fromBytes(rawTestData.content, StandardCharsets.UTF_8.name())) { source =>
-      val rawTestRecords = source
-        .getLines()
-        .toList
-      val limitedRawTestRecords = Either.cond(rawTestRecords.size <= testDataSettings.maxSamplesCount,
-        rawTestRecords,
-        s"Too many samples: ${rawTestRecords.size}, limit is: ${testDataSettings.maxSamplesCount}")
-      val testRecords: Either[String, List[TestRecord]] = limitedRawTestRecords.flatMap { rawTestRecords =>
-        rawTestRecords.map { rawTestRecord =>
-          val jsonTestRecord = parser.parse(rawTestRecord)
-          jsonTestRecord
-            .map(TestRecord)
-            .leftMap(_ => Vector(s"Could not parse record: '$rawTestRecord'"))
-        }.sequence.leftMap(_.head)
-      }
-      testRecords.map(TestData(_))
-    }.fold(_ => Left("Could not read test data"), identity)
+    val rawRecords = rawTestData.content.linesIterator.toList
+    val limitedRawRecords = Either.cond(rawRecords.size <= testDataSettings.maxSamplesCount,
+      rawRecords,
+      s"Too many samples: ${rawRecords.size}, limit is: ${testDataSettings.maxSamplesCount}")
+    val records: Either[String, List[ScenarioTestRecord]] = limitedRawRecords.flatMap { rawRecord =>
+      rawRecord.map { rawTestRecord =>
+        val record = parser.decode[ScenarioTestRecord](rawTestRecord)
+        record.leftMap(_ => Vector(s"Could not parse record: '$rawTestRecord'"))
+      }.sequence.leftMap(_.head)
+    }
+    records.map(ScenarioTestData)
   }
 
 }

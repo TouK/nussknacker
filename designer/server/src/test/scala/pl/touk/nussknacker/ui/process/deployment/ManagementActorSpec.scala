@@ -126,7 +126,7 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
       deploymentManager.withWaitForDeployFinish {
         (managementActor ? Deploy(processIdName, user, None, None)).futureValue
         checkStatusAction(SimpleStateStatus.DuringDeploy, None)
-        listener.events shouldBe 'empty
+        listener.events shouldBe Symbol("empty")
       }
     }
     eventually {
@@ -142,9 +142,9 @@ class ManagementActorSpec extends AnyFunSuite with Matchers with PatientScalaFut
     deploymentManager.withProcessState(None) {
       val result = (managementActor ? Deploy(processIdName, user, None, None)).failed.futureValue
       result.getMessage shouldBe "Parallelism too large"
-      deploymentManager.deploys shouldBe 'empty
+      deploymentManager.deploys shouldBe Symbol("empty")
       fetchingProcessRepository.fetchLatestProcessDetailsForProcessId[Unit](id).futureValue.flatMap(_.lastAction) shouldBe None
-      listener.events shouldBe 'empty
+      listener.events shouldBe Symbol("empty")
       // during short period of time, status will be during deploy - because parallelism validation are done in the same critical section as deployment
       eventually {
         processService.getProcessState(processIdName).futureValue.status shouldBe SimpleStateStatus.NotDeployed

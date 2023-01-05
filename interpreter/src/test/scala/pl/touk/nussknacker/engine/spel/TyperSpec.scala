@@ -56,7 +56,7 @@ class TyperSpec extends AnyFunSuite with Matchers {
   }
 
   test("restricting simple type selection") {
-    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.left.get.head.message shouldBe
+    typeExpression("1.$[(#this.size > 1)].^[(#this==1)]").toEither.swap.toOption.get.head.message shouldBe
       s"Cannot do projection/selection on ${Typed.fromInstance(1).display}"
   }
 

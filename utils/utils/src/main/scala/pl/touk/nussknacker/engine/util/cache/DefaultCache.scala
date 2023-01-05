@@ -55,11 +55,11 @@ class DefaultCache[K, V](cacheConfig: CacheConfig[K, V], ticker: Ticker = Ticker
 
 class SingleValueCache[T](expireAfterAccess: Option[FiniteDuration], expireAfterWrite: Option[FiniteDuration]) {
 
-  private val cache = new DefaultCache[Unit.type, T](CacheConfig(1, expireAfterAccess, expireAfterWrite))
+  private val cache = new DefaultCache[Unit, T](CacheConfig(1, expireAfterAccess, expireAfterWrite))
 
-  def getOrCreate(value: => T): T = cache.getOrCreate(Unit)(value)
+  def getOrCreate(value: => T): T = cache.getOrCreate(())(value)
 
-  def get(): Option[T] = cache.get(Unit)
+  def get(): Option[T] = cache.get(())
 
-  def put(value: T): Unit = cache.put(Unit)(value)
+  def put(value: T): Unit = cache.put(())(value)
 }

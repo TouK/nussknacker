@@ -53,8 +53,8 @@ case class FlinkCustomNodeContext(jobData: JobData,
     lazy val forUnknown: TypeInformation[ValueWithContext[AnyRef]] = forType[AnyRef](Unknown)
   }
 
-  private def asOneOutputContext = validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
+  private def asOneOutputContext: ValidationContext = validationContext.left.getOrElse(throw new IllegalArgumentException("This node is a join, use asJoinContext"))
 
-  private def asJoinContext = validationContext.right.getOrElse(throw new IllegalArgumentException("This node is not a join, use asOneOutputContext"))
+  private def asJoinContext: Map[String, ValidationContext] = validationContext.getOrElse(throw new IllegalArgumentException())
 
 }

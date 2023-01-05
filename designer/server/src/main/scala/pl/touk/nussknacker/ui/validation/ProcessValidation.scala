@@ -120,7 +120,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
             val validated = processValidator.validate(process)
             //FIXME: Validation errors for subprocess nodes are not properly handled by FE
             validated.result.fold(formatErrors, _ => ValidationResult.success)
-              .withNodeResults(validated.typing.mapValues(nodeInfoToResult))
+              .withNodeResults(validated.typing.mapValuesNow(nodeInfoToResult))
           case Invalid(e) => formatErrors(e)
         }
     }

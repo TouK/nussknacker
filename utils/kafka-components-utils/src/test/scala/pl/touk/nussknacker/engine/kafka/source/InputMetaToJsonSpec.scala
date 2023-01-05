@@ -10,7 +10,7 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.DisplayJsonWithEncoder
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 class InputMetaToJsonSpec extends AnyFunSuite with Matchers with TableDrivenPropertyChecks {
 

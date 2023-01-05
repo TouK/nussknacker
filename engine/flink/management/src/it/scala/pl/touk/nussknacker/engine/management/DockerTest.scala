@@ -22,7 +22,7 @@ import pl.touk.nussknacker.test.{ExtremelyPatientScalaFutures, KafkaConfigProper
 import java.nio.file.attribute.{PosixFilePermission, PosixFilePermissions}
 import java.nio.file.{Files, Path}
 import java.util.Arrays.asList
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with ExtremelyPatientScalaFutures {
   self: Suite =>

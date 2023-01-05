@@ -32,6 +32,7 @@ import pl.touk.nussknacker.ui.process.test.{RawScenarioTestData, ResultsWithCoun
 import pl.touk.nussknacker.ui.process.{ProcessService, deployment => uideployment}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 
+import java.nio.charset.StandardCharsets
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -137,7 +138,7 @@ class ManagementResources(val managementActor: ActorRef,
 
   def securedRoute(implicit user: LoggedUser): Route = {
     path("adminProcessManagement" / "snapshot" / Segment) { processName =>
-      (post & processId(processName) & parameters('savepointDir.?)) { (processId, savepointDir) =>
+      (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
         canDeploy(processId) {
           complete {
             convertSavepointResultToResponse(managementActor ? Snapshot(processId, user, savepointDir))
@@ -146,7 +147,7 @@ class ManagementResources(val managementActor: ActorRef,
       }
     } ~
       path("adminProcessManagement" / "stop" / Segment) { processName =>
-        (post & processId(processName) & parameters('savepointDir.?)) { (processId, savepointDir) =>
+        (post & processId(processName) & parameters(Symbol("savepointDir").?)) { (processId, savepointDir) =>
           canDeploy(processId) {
             complete {
               convertSavepointResultToResponse(managementActor ? Stop(processId, user, savepointDir))
@@ -155,7 +156,7 @@ class ManagementResources(val managementActor: ActorRef,
         }
       } ~
       path("adminProcessManagement" / "deploy" / Segment ) { processName =>
-        (post & processId(processName) & parameters('savepointPath)) { (processId, savepointPath) =>
+        (post & processId(processName) & parameters(Symbol("savepointPath"))) { (processId, savepointPath) =>
           canDeploy(processId) {
             withDeploymentComment { deploymentComment =>
               complete {
@@ -201,20 +202,16 @@ class ManagementResources(val managementActor: ActorRef,
       path("processManagement" / "test" / Segment) { processName =>
         (post & processIdWithCategory(processName)) { idWithCategory =>
           canDeploy(idWithCategory.id) {
-            formFields('testData.as[Array[Byte]], 'processJson) { (testData, displayableProcessJson) =>
+            formFields(Symbol("testData"), Symbol("processJson")) { (testDataContent, displayableProcessJson) =>
               complete {
-                if (testData.length > testDataSettings.testDataMaxBytes) {
-                  HttpResponse(StatusCodes.BadRequest, entity = "Too large test request")
-                } else {
-                  measureTime("test", metricRegistry) {
-                    parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
-                      case Right(displayableProcess) =>
-                        scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testData), testResultsVariableEncoder).flatMap { results =>
-                          Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
-                        }.recover(EspErrorToHttp.errorToHttp)
-                      case Left(error) =>
-                        Future.failed(UnmarshallError(error.toString))
-                    }
+                measureTime("test", metricRegistry) {
+                  parser.parse(displayableProcessJson).flatMap(Decoder[DisplayableProcess].decodeJson) match {
+                    case Right(displayableProcess) =>
+                      scenarioTestService.performTest(idWithCategory, displayableProcess, RawScenarioTestData(testDataContent), testResultsVariableEncoder).flatMap { results =>
+                        Marshal(results).to[MessageEntity].map(en => HttpResponse(entity = en))
+                      }.recover(EspErrorToHttp.errorToHttp)
+                    case Left(error) =>
+                      Future.failed(UnmarshallError(error.toString))
                   }
                 }
               }

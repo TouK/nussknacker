@@ -4,12 +4,13 @@ import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
 import pl.touk.nussknacker.engine.json.swagger.parser.PropertyName
 import pl.touk.nussknacker.engine.json.swagger.{SwaggerArray, SwaggerObject, SwaggerTyped}
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.openapi._
 
 object ParametersExtractor {
 
   def queryParams(paramDef: QueryParameter, paramInput: Any): List[(String, String)] = {
-    import scala.collection.JavaConverters._
+    import scala.jdk.CollectionConverters._
     paramDef.`type` match {
       case SwaggerObject(fieldDefs, _) =>
         val inputs = paramInput.asInstanceOf[java.util.Map[String, AnyRef]].asScala
@@ -75,7 +76,7 @@ class ParametersExtractor(swaggerService: SwaggerService, fixedParams: Map[Strin
       case (ParameterWithBodyFlag(p, true), value) => p.name -> value
     }.toMap)
 
-    val preparedFixedParams = fixedParams.mapValues(_.apply())
+    val preparedFixedParams = fixedParams.mapValuesNow(_.apply())
 
     plainParams ++ bodyParams ++ preparedFixedParams
   }

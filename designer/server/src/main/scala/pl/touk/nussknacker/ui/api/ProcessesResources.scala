@@ -188,7 +188,7 @@ class ProcessesResources(
           }
         } ~ path("processes" / Segment / Segment) { (processName, category) =>
           authorize(user.can(category, Permission.Write)) {
-            parameter('isSubprocess ? false) { isSubprocess =>
+            parameter(Symbol("isSubprocess") ? false) { isSubprocess =>
               post {
                 complete {
                   processService
@@ -313,17 +313,17 @@ class ProcessesResources(
 
   private def processesQuery: Directive1[ProcessesQuery] = {
     parameters(
-      'isSubprocess.as[Boolean].?,
-      'isArchived.as[Boolean].?,
-      'isDeployed.as[Boolean].?,
-      'categories.as(CsvSeq[String]).?,
-      'processingTypes.as(CsvSeq[String]).?,
-      'names.as(CsvSeq[String]).?,
+      Symbol("isSubprocess").as[Boolean].?,
+      Symbol("isArchived").as[Boolean].?,
+      Symbol("isDeployed").as[Boolean].?,
+      Symbol("categories").as(CsvSeq[String]).?,
+      Symbol("processingTypes").as(CsvSeq[String]).?,
+      Symbol("names").as(CsvSeq[String]).?,
     ).as(ProcessesQuery.apply _)
   }
 
   private def skipValidateAndResolveParameter = {
-    parameters('skipValidateAndResolve.as[Boolean].withDefault(false))
+    parameters(Symbol("skipValidateAndResolve").as[Boolean].withDefault(false))
   }
 }
 

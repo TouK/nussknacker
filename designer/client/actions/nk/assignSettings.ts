@@ -30,7 +30,7 @@ export type FeaturesSettings = {
 
 export type TestDataSettings = {
   maxSamplesCount: number,
-  testDataMaxBytes: number
+  testDataMaxLength: number
 }
 
 type EngineData = {

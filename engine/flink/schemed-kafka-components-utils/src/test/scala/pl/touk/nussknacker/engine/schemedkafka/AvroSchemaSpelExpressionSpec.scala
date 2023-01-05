@@ -42,12 +42,12 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[Integer]("#input.intField", ctx) should be ('valid)
-    parse[CharSequence]("#input.intField", ctx) should be ('invalid)
-    parse[CharSequence]("#input.stringField", ctx) should be ('valid)
-    parse[Boolean]("#input.booleanField", ctx) should be ('valid)
-    parse[Integer]("#input.nonExisting", ctx) should be ('invalid)
-    parse[GenericRecord]("#input", ctx) should be ('valid)
+    parse[Integer]("#input.intField", ctx) should be (Symbol("valid"))
+    parse[CharSequence]("#input.intField", ctx) should be (Symbol("invalid"))
+    parse[CharSequence]("#input.stringField", ctx) should be (Symbol("valid"))
+    parse[Boolean]("#input.booleanField", ctx) should be (Symbol("valid"))
+    parse[Integer]("#input.nonExisting", ctx) should be (Symbol("invalid"))
+    parse[GenericRecord]("#input", ctx) should be (Symbol("valid"))
   }
 
   it("should recognize record with list field") {
@@ -69,8 +69,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[CharSequence]("#input.array[0].foo", ctx) should be ('valid)
-    parse[CharSequence]("#input.array[0].bar", ctx) should be ('invalid)
+    parse[CharSequence]("#input.array[0].foo", ctx) should be (Symbol("valid"))
+    parse[CharSequence]("#input.array[0].bar", ctx) should be (Symbol("invalid"))
   }
 
   it("should recognize record with map field") {
@@ -92,8 +92,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[CharSequence]("#input.map['ala'].foo", ctx) should be ('valid)
-    parse[CharSequence]("#input.map['ala'].bar", ctx) should be ('invalid)
+    parse[CharSequence]("#input.map['ala'].foo", ctx) should be (Symbol("valid"))
+    parse[CharSequence]("#input.map['ala'].bar", ctx) should be (Symbol("invalid"))
   }
 
   it("should recognize record with simple union") {
@@ -115,8 +115,8 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[CharSequence]("#input.union.foo", ctx) should be ('valid)
-    parse[CharSequence]("#input.union.bar", ctx) should be ('invalid)
+    parse[CharSequence]("#input.union.foo", ctx) should be (Symbol("valid"))
+    parse[CharSequence]("#input.union.bar", ctx) should be (Symbol("invalid"))
   }
 
   it("should recognize record with class union") {
@@ -133,22 +133,22 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
         |]""".stripMargin)
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[Int]("#input.union", ctx) should be ('valid)
-    parse[Long]("#input.union", ctx) should be ('valid)
-    parse[CharSequence]("#input.union", ctx) should be ('invalid)
+    parse[Int]("#input.union", ctx) should be (Symbol("valid"))
+    parse[Long]("#input.union", ctx) should be (Symbol("valid"))
+    parse[CharSequence]("#input.union", ctx) should be (Symbol("invalid"))
   }
 
   it("should recognize record with enum") {
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema), paramName = None).toOption.get
-    parse[CharSequence]("#input.currency.toString", ctx) should be ('valid)
-    parse[EnumSymbol]("#input.currency", ctx) should be ('valid)
+    parse[CharSequence]("#input.currency.toString", ctx) should be (Symbol("valid"))
+    parse[EnumSymbol]("#input.currency", ctx) should be (Symbol("valid"))
   }
 
   it("should not skipp nullable field vat from schema PaymentV1 when skippNullableFields is set") {
     val typeResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(PaymentV1.schema, AvroSchemaTypeDefinitionExtractor.DefaultPossibleTypes)
     val ctx = ValidationContext.empty.withVariable("input", typeResult, paramName = None).toOption.get
 
-    parse[Int]("#input.vat", ctx) should be ('valid)
+    parse[Int]("#input.vat", ctx) should be (Symbol("valid"))
   }
 
   it("should add dictionaryId if annotated") {
@@ -163,9 +163,9 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
     val ctx = ValidationContext.empty.withVariable("input",
       AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).andThen(_.withVariable("DICT1", TypedDict(dictId, Typed.typedClass[String]), paramName = None)).toOption.get
 
-    parse[CharSequence]("#input.withDict", ctx) should be ('valid)
-    parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be ('valid)
-    parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be ('invalid)
+    parse[CharSequence]("#input.withDict", ctx) should be (Symbol("valid"))
+    parse[Boolean]("#input.withDict == #DICT1['key1']", ctx) should be (Symbol("valid"))
+    parse[Boolean]("#input.withDict == #DICT1['noKey']", ctx) should be (Symbol("invalid"))
   }
 
   it("should recognize avro type string as String") {
@@ -177,7 +177,7 @@ class AvroSchemaSpelExpressionSpec extends AnyFunSpec with Matchers {
 
     val ctx = ValidationContext.empty.withVariable("input", AvroSchemaTypeDefinitionExtractor.typeDefinition(schema), paramName = None).toOption.get
 
-    parse[String]("#input.stringField", ctx) should be('valid)
+    parse[String]("#input.stringField", ctx) should be(Symbol("valid"))
     parse[AnyRef]("#input.mapField", ctx).map(_.returnType) shouldBe Valid(Typed.fromDetailedType[java.util.Map[String, String]])
 
   }

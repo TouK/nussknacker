@@ -9,7 +9,7 @@ import pl.touk.nussknacker.engine.api.typed.{TypedGlobalVariable, TypedMap}
   */
 object ConfigTypedGlobalVariable extends TypedGlobalVariable {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val configurations = Map(
       "prod" -> List(TypedMap(Map("a" -> 1, "b" -> "B")), TypedMap(Map("a" -> 2, "b" -> "BB"))).asJava

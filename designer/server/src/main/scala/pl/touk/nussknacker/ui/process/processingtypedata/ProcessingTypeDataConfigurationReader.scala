@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.ProcessingTypeConfig
 
 object ProcessingTypeDataConfigurationReader extends LazyLogging {
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def readProcessingTypeConfig(config: Config): Map[String, ProcessingTypeConfig] = {
     implicit val reader: ValueReader[Map[String, ProcessingTypeConfig]] = ValueReader.relative { config =>

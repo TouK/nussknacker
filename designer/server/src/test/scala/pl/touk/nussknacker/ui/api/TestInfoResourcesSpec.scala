@@ -9,9 +9,9 @@ import org.apache.commons.lang3.StringUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.MetaData
-import pl.touk.nussknacker.engine.api.test.{TestData, TestRecord}
+import pl.touk.nussknacker.engine.api.test.{ScenarioTestData, ScenarioTestRecord}
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.definition.{TestInfoProvider, TestingCapabilities}
-import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.restmodel.displayedgraph.DisplayableProcess
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
@@ -25,11 +25,11 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
 
   private def testInfoProvider(additionalDataSize: Int) = new TestInfoProvider {
 
-    override def getTestingCapabilities(metaData: MetaData, source: node.Source): TestingCapabilities
+    override def getTestingCapabilities(scenario: CanonicalProcess): TestingCapabilities
     = TestingCapabilities(canBeTested = true, canGenerateTestData = true)
 
-    override def generateTestData(metaData: MetaData, source: node.Source, size: Int): Option[TestData]
-    = Some(TestData(TestRecord(Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
+    override def generateTestData(scenario: CanonicalProcess, size: Int): Option[ScenarioTestData]
+    = Some(ScenarioTestData(ScenarioTestRecord("sourceId", Json.fromString(s"terefereKuku-$size${StringUtils.repeat("0", additionalDataSize)}")) :: Nil))
   }
 
   private implicit final val bytes: FromEntityUnmarshaller[Array[Byte]] =
@@ -41,9 +41,10 @@ class TestInfoResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Mat
   test("generates data") {
     saveProcess(process) {
       Post("/testInfo/generate/5", posting.toEntity(process)) ~> withPermissions(route(), testPermissionAll) ~> check {
+        implicit val contentUnmarshaller = Unmarshaller.stringUnmarshaller
         status shouldEqual StatusCodes.OK
-        val content = new String(entityAs[Array[Byte]])
-        content shouldBe "\"terefereKuku-5\""
+        val content = responseAs[String]
+        content shouldBe """{"sourceId":"sourceId","record":"terefereKuku-5"}"""
       }
     }
   }

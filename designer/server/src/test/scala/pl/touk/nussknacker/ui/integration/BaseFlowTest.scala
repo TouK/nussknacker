@@ -87,7 +87,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
   test("ensure nodes config is properly parsed") {
     Get("/api/processDefinitionData/streaming?isSubprocess=false") ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       val settingsJson = responseAs[Json].hcursor.downField("componentsConfig").focus.get
-      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, SingleComponentConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         //docs url comes from reference.conf in devModel
@@ -148,7 +148,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
       val settingsJson = responseAs[Json].hcursor.downField("additionalPropertiesConfig").focus.get
       val fixedPossibleValues = List(FixedExpressionValue("1", "1"), FixedExpressionValue("2", "2"))
 
-      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).right.get
+      val settings = Decoder[Map[String, UiAdditionalPropertyConfig]].decodeJson(settingsJson).toOption.get
 
       val underTest = Map(
         "environment" -> UiAdditionalPropertyConfig(
@@ -234,7 +234,8 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
 
     saveProcess(process)
 
-    val multiPart = MultipartUtils.prepareMultiParts("testData" -> "\"record1|field2\"", "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
+    val testDataContent = """{"sourceId":"source","record":"field1|field2"}"""
+    val multiPart = MultipartUtils.prepareMultiParts("testData" -> testDataContent, "processJson" -> TestProcessUtil.toJson(process).noSpaces)()
     Post(s"/api/processManagement/test/${process.id}", multiPart) ~> addCredentials(credentials) ~> mainRoute ~> checkWithClue {
       status shouldEqual StatusCodes.OK
     }
@@ -289,7 +290,7 @@ class BaseFlowTest extends AnyFunSuite with ScalatestRouteTest with FailFastCirc
     //process without errors - no parameter required
     saveProcess(processWithService()).errors shouldBe ValidationErrors.success
     val dynamicServiceParametersBeforeReload = dynamicServiceParameters
-    val testDataContent = "\"field1|field2\""
+    val testDataContent = """{"sourceId":"start","record":"field1|field2"}"""
 
     firstInvocationResult(testProcess(processWithService(), testDataContent)) shouldBe Some("")
 

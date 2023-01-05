@@ -7,6 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import sttp.client.monad.MonadError
 import scala.language.higherKinds
 import sttp.client.monad.syntax._
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 private[influxdb] class InfluxGenerator[F[_]](config: InfluxConfig, env: String)(implicit backend: SttpBackend[F, Nothing, NothingT]) extends LazyLogging {
 
@@ -75,7 +76,7 @@ object InfluxGenerator extends LazyLogging {
         //in case of our queries we know there will be only one result (we use only first/last aggregations), rest will be handled by aggregations
         val firstResult = oneSeries.toMap.headOption.getOrElse(Map())
         (oneSeries.tags.getOrElse(Map.empty).getOrElse(config.nodeIdTag, "UNKNOWN"), firstResult.getOrElse("count", 0L).asInstanceOf[Number].longValue())
-      }.groupBy(_._1).mapValues(_.map(_._2).sum)
+      }.groupBy(_._1).mapValuesNow(_.map(_._2).sum)
     }
     groupedResults.map {
       evaluated => logger.debug(s"Query: $queryString retrieved grouped results: $evaluated")

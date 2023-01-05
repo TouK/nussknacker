@@ -25,7 +25,7 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.NussknackerAssertions
 
-import scala.collection.JavaConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 trait KafkaSourceFactoryProcessMixin extends AnyFunSuite with Matchers with KafkaSourceFactoryMixin with FlinkSpec with BeforeAndAfter with NussknackerAssertions {
 

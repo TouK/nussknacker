@@ -64,7 +64,7 @@ class MockService(override val jobData: JobData) extends Service with WithJobDat
   def invoke(@ParamName("foo") foo: String, @ParamName("bar") bar: Int)
             (implicit ec: ExecutionContext): Future[Any] = {
     invoked = Some((foo, bar, jobData.metaData))
-    Future.successful(Unit)
+    Future.successful(())
   }
 
 }

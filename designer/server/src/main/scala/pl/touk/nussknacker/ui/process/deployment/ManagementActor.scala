@@ -7,14 +7,14 @@ import pl.touk.nussknacker.engine.api.deployment.ProcessActionType.ProcessAction
 import pl.touk.nussknacker.engine.api.deployment._
 import pl.touk.nussknacker.engine.api.deployment.simple.{SimpleProcessStateDefinitionManager, SimpleStateStatus}
 import pl.touk.nussknacker.engine.api.process.{ProcessId, ProcessName, VersionId}
-import pl.touk.nussknacker.engine.api.test.TestData
+import pl.touk.nussknacker.engine.api.test.ScenarioTestData
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{User => ManagerUser}
 import pl.touk.nussknacker.restmodel.process.ProcessIdWithName
 import pl.touk.nussknacker.ui.EspError
 import pl.touk.nussknacker.ui.api.ListenerApiUser
 import pl.touk.nussknacker.ui.db.entity.ProcessActionEntityData
-import pl.touk.nussknacker.ui.listener.{ProcessChangeListener, User => ListenerUser}
+import pl.touk.nussknacker.ui.listener.{User => ListenerUser}
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.repository.ProcessDBQueryRepository.ProcessNotFoundError
 import pl.touk.nussknacker.ui.process.repository.{DeploymentComment, FetchingProcessRepository}
@@ -87,13 +87,13 @@ class ManagementActor(managers: ProcessingTypeDataProvider[DeploymentManager],
     case DeploymentActionFinished(process, user, _) =>
       implicit val listenerUser: ListenerUser = ListenerApiUser(user)
       beingDeployed -= process.name
-    case Test(id, canonicalProcess, category, testData, user, encoder) =>
+    case Test(id, canonicalProcess, category, scenarioTestData, user, encoder) =>
       ensureNoDeploymentRunning {
         implicit val loggedUser: LoggedUser = user
         val testAction = for {
           manager <- deploymentManager(id.id)
           resolvedProcess <- Future.fromTry(scenarioResolver.resolveScenario(canonicalProcess, category))
-          testResult <- manager.test(id.name, resolvedProcess, testData, encoder)
+          testResult <- manager.test(id.name, resolvedProcess, scenarioTestData, encoder)
         } yield testResult
         reply(testAction)
       }
@@ -203,7 +203,7 @@ case class Stop(id: ProcessIdWithName, user: LoggedUser, savepointDir: Option[St
 
 case class CheckStatus(id: ProcessIdWithName, user: LoggedUser)
 
-case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, test: TestData, user: LoggedUser, variableEncoder: Any => T)
+case class Test[T](id: ProcessIdWithName, canonicalProcess: CanonicalProcess, category: String, scenarioTestData: ScenarioTestData, user: LoggedUser, variableEncoder: Any => T)
 
 case class DeploymentDetails(version: VersionId, deploymentComment: Option[DeploymentComment], deployedAt: Instant, action: ProcessActionType)
 

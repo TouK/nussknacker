@@ -28,9 +28,9 @@ case class CronSchedulePropertyExtractor(propertyName: String = CronPropertyDefa
 
   override def apply(canonicalProcess: CanonicalProcess): Either[String, ScheduleProperty] =
     for {
-      cronProperty <- SchedulePropertyExtractor.extractProperty(canonicalProcess, propertyName).right
-      cronScheduleProperty <- Right(CronScheduleProperty(cronProperty)).right
-      _ <- cronScheduleProperty.nextRunAt(Clock.systemDefaultZone()).right
+      cronProperty <- SchedulePropertyExtractor.extractProperty(canonicalProcess, propertyName)
+      cronScheduleProperty <- Right(CronScheduleProperty(cronProperty))
+      _ <- cronScheduleProperty.nextRunAt(Clock.systemDefaultZone())
     } yield cronScheduleProperty
 
 }

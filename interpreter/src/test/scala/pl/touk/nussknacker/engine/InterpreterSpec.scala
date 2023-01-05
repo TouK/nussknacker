@@ -107,7 +107,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
           case sink: SinkPart if sink.id == nextPartId => sink
           case endingCustomPart: CustomNodePart if endingCustomPart.id == nextPartId => endingCustomPart
         }.get
-        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.left.get.finalContext.get(resultVariable).orNull
+        interpreter.interpret(compileNode(sink), metaData, resultBeforeSink.finalContext).unsafeRunSync().head.swap.toOption.get.finalContext.get(resultVariable).orNull
       //we handle it on other level
       case _: EndReference =>
         null
@@ -384,7 +384,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
 
@@ -411,7 +411,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "deadEnd"
@@ -435,7 +435,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "333"
   }
@@ -463,7 +463,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess, nested)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "333"), List()) shouldBe "deadEnd"
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
@@ -490,7 +490,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result1"
 
@@ -510,7 +510,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
 
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
 
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List()) shouldBe "result"
   }
@@ -533,7 +533,7 @@ class InterpreterSpec extends AnyFunSuite with Matchers {
       ), List.empty)
 
     val resolved = SubprocessResolver(Set(subprocess)).resolve(process)
-    resolved shouldBe 'valid
+    resolved shouldBe Symbol("valid")
     interpretValidatedProcess(resolved, Transaction(accountId = "a"), List.empty) shouldBe "8"
   }
 

@@ -10,7 +10,7 @@ import java.time.Year
 
 object JsonTestData {
 
-  import collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   val ObjectFieldName: String = "field"
 

@@ -6,7 +6,7 @@ import scala.util.Using
 class JdbcMetaDataProvider(getConnection: () => Connection) extends DbMetaDataProvider {
   private def query(tableName: String) = s"SELECT * FROM $tableName"
 
-  def getDialectMetaData(): DialectMetaData =
+  override def getDialectMetaData: DialectMetaData =
     Using.resource(getConnection()) { connection  =>
       val metaData = connection.getMetaData
       DialectMetaData(metaData.getIdentifierQuoteString)

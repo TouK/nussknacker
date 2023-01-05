@@ -4,7 +4,7 @@ import com.typesafe.config.{Config, ConfigFactory, ConfigValueFactory}
 import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeContextPreparer
 import pl.touk.nussknacker.sql.db.pool.DBPoolConfig
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 trait BaseHsqlQueryEnricherTest extends BaseDatabaseQueryEnricherTest with WithHsqlDB {
 

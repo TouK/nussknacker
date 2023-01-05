@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testmode.TestProcess.ExpressionInvocationResult
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-import scala.jdk.CollectionConverters.mapAsJavaMapConverter
+import scala.jdk.CollectionConverters._
 
 class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage {
@@ -198,7 +198,7 @@ class StreamingEmbeddedDeploymentManagerTest extends BaseStreamingEmbeddedDeploy
     kafkaClient.sendMessage(inputTopic, message("1")).futureValue
     kafkaClient.sendMessage(inputTopic, message("2")).futureValue
 
-    val testData = testInfoProvider.generateTestData(scenario.metaData, scenario.nodes.head.data.asInstanceOf[Source], 2).value
+    val testData = testInfoProvider.generateTestData(scenario, 2).value
 
     val results = wrapInFailingLoader {
       manager.test(name, scenario, testData, identity[Any]).futureValue
