@@ -111,9 +111,8 @@ describe("Process", () => {
     })
 
     it("should have counts button and modal", () => {
+      cy.viewport("macbook-15")
       cy.contains(/^counts$/i).as("button")
-      cy.get("@button").scrollIntoView()
-      cy.wait(100)
       cy.get("@button").should("be.visible").matchImage()
       cy.get("@button").click()
       cy.get("[data-testid=window]").contains("Quick ranges").should("be.visible")
