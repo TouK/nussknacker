@@ -295,7 +295,7 @@ jobs:
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/checkout@v3
-      - uses: olafurpg/setup-scala@v11
+      - uses: olafurpg/setup-scala@v13
         with:
           java-version: "openjdk@1.11"
       - name: Cache ivy packages
