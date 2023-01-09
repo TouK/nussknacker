@@ -58,6 +58,17 @@ module.exports = {
         },
       },
     })],
+    splitChunks: {
+      cacheGroups: {
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          minSize: 100000,
+          maxSize: 500000,
+        },
+      },
+    },
   },
   performance: {
     maxEntrypointSize: 3000000,
@@ -77,7 +88,7 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: isProd ? "[contenthash].js": "[name].js",
+    filename: isProd ? "[name].js": "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
