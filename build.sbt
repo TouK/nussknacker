@@ -255,7 +255,7 @@ lazy val commonSettings =
 val flinkV = "1.16.0"
 val avroV = "1.11.0"
 //we should use max(version used by confluent, version acceptable by flink), https://docs.confluent.io/platform/current/installation/versions-interoperability.html - confluent version reference
-val kafkaV = "3.2.3"
+val kafkaV = "3.3.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
 val scalaTestV = "3.2.10"
@@ -294,7 +294,7 @@ val slickV = "3.3.3"
 val hsqldbV = "2.5.1"
 val postgresV = "42.3.4"
 val flywayV = "6.3.3"
-val confluentV = "7.2.0"
+val confluentV = "7.3.0"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.3"
 val javaxValidationApiV = "2.0.1.Final"
