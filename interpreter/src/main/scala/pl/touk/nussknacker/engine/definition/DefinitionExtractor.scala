@@ -165,7 +165,7 @@ object DefinitionExtractor {
           //this usually indicates that parameters do not match or argument list is incorrect
           logger.debug(s"Failed to invoke method: ${methodDef.name}, with params: $values", ex)
           def className(obj: Any) = Option(obj).map(o => ReflectUtils.simpleNameWithoutSuffix(o.getClass)).getOrElse("null")
-          val parameterValues = methodDef.orderedDependencies.definedParameterDependencies().prepareValues(params, outputVariableNameOpt, additional)
+          val parameterValues = methodDef.orderedDependencies.definedParameters.map(_.name).map(params)
           throw new IllegalArgumentException(
             s"""Failed to invoke "${methodDef.name}" on ${className(obj)} with parameter types: ${parameterValues.map(className)}: ${ex.getMessage}""", ex)
         //this is somehow an edge case - normally service returns failed future for exceptions

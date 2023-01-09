@@ -55,12 +55,13 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
       val flinkLibTweakCommand = ScalaMajorVersionConfig.scalaMajorVersion match {
         case "2.12" => ""
         case "2.13" =>
-          """
-            |RUN rm $FLINK_HOME/lib/flink-scala_2.12-1.16.0.jar
-            |RUN wget https://search.maven.org/remotecontent?filepath=org/scala-lang/scala-library/2.13.10/scala-library-2.13.10.jar -O $FLINK_HOME/lib/scala-library-2.13.10.jar
-            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.13.10/scala-reflect-2.13.10.jar -O $FLINK_HOME/lib/scala-reflect-2.13.10.jar
-            |RUN chown flink $FLINK_HOME/lib/scala-library-2.13.10.jar
-            |RUN chown flink $FLINK_HOME/lib/scala-reflect-2.13.10.jar
+          val scalaV = util.Properties.versionNumberString
+          s"""
+            |RUN rm $$FLINK_HOME/lib/flink-scala_2.12-1.16.0.jar
+            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
+            |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
+            |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
+            |RUN chown flink $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |""".stripMargin
         case v => throw new IllegalStateException(s"unsupported scala version: $v")
       }

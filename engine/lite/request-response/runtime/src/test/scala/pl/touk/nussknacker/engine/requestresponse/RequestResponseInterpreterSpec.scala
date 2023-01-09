@@ -65,7 +65,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
 
     val result = runProcess(process, Request1("a", "b"))
 
-    result.validValue.asInstanceOf[List[String]] should contain theSameElementsAs List("a", "b")
+    result.validValue.toSet shouldBe Set("a", "b")
   }
 
   test("collect metrics") {
@@ -352,7 +352,7 @@ class RequestResponseInterpreterSpec extends AnyFunSuite with Matchers with Pati
                  input: Any,
                  creator: RequestResponseConfigCreator = new RequestResponseConfigCreator,
                  metricRegistry: MetricRegistry = new MetricRegistry,
-                 contextId: Option[String] = None): ValidatedNel[ErrorType, Any] =
+                 contextId: Option[String] = None): ValidatedNel[ErrorType, List[Any]] =
     Using.resource(prepareInterpreter(
       process = process,
       creator = creator,
