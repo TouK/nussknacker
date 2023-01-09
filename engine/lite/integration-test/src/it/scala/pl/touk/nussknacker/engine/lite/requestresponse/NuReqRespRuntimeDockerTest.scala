@@ -15,10 +15,12 @@ class NuReqRespRuntimeDockerTest extends AnyFunSuite with ForAllTestContainer wi
 
   private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
 
-  protected var runtimeContainer: GenericContainer = _
+  protected var runtimeContainer: GenericContainer = null
 
   override def container: Container = {
-    runtimeContainer = startRuntimeContainer(NuRuntimeTestUtils.saveScenarioToTmp(pingPongScenario, testCaseId(suiteName, pingPongScenario)), logger.underlying)
+    if (runtimeContainer == null) {
+      runtimeContainer = startRuntimeContainer(NuRuntimeTestUtils.saveScenarioToTmp(pingPongScenario, testCaseId(suiteName, pingPongScenario)), logger.underlying)
+    }
     runtimeContainer
   }
 
