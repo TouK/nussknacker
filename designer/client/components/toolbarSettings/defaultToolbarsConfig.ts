@@ -5,6 +5,7 @@ import {ButtonsVariant} from "../toolbarComponents/ToolbarButtons"
 import {BuiltinButtonTypes} from "./buttons"
 import {DEV_TOOLBARS} from "./DEV_TOOLBARS"
 import {ToolbarsConfig} from "./types"
+import {WIP_TOOLBARS} from "./WIP_TOOLBARS"
 
 //It's only to local development
 export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean): WithId<ToolbarsConfig> {
@@ -72,6 +73,7 @@ export function defaultToolbarsConfig(isSubprocess: boolean, isArchived: boolean
       },
     ],
     [ToolbarsSide.TopLeft]: [
+      ...WIP_TOOLBARS,
       {id: "tips-panel"},
       {id: "creator-panel"},
       {id: "versions-panel"},

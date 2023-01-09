@@ -13,6 +13,12 @@ export type UsageStatisticsReports = {
   url: string,
 }
 
+export type SurveySettings ={
+  link: string,
+  text: string,
+  key: string,
+}
+
 export type FeaturesSettings = {
   counts: boolean,
   search: { url: string },
@@ -26,6 +32,7 @@ export type FeaturesSettings = {
   testDataSettings?: TestDataSettings,
   redirectAfterArchive: boolean,
   usageStatisticsReports: UsageStatisticsReports,
+  surveySettings: SurveySettings,
 };
 
 export type TestDataSettings = {

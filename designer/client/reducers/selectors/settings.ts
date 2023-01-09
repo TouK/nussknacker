@@ -13,6 +13,7 @@ export const getAuthenticationSettings = createSelector(getSettings, (s): Authen
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
 export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => uniqBy((s.tabs || []), t => t.id))
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
+export const getSurveySettings = createSelector(getFeatureSettings, s => s?.surveySettings)
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
 export const getProcessDefinitionData = createSelector(getSettings, s => s.processDefinitionData || {} as ProcessDefinitionData)
 export const getCategories = createSelector(getLoggedUser, u => u.categories || [])
