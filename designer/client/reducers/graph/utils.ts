@@ -5,6 +5,8 @@ import {ExpressionLang} from "../../components/graph/node-modal/editors/expressi
 import NodeUtils from "../../components/graph/NodeUtils"
 import {Edge, EdgeType, NodeId, NodeType, Process, ProcessDefinitionData} from "../../types"
 import {GraphState} from "./types"
+import {v4 as uuid4} from "uuid"
+import {groupByActionTypes} from "redux-undo"
 
 export function updateLayoutAfterNodeIdChange(layout: Layout, oldId: NodeId, newId: NodeId): Layout {
   return map(layout, (n) => oldId === n.id ? {...n, id: newId} : n)
@@ -158,4 +160,18 @@ export function enrichNodeWithProcessDependentData(originalNode: NodeType, proce
   }
 
   return node
+}
+
+export const batchGroupBy = {
+  _group: null,
+  start(group = uuid4()) {
+    this._group = group
+  },
+  end() {
+    this._group = null
+  },
+  init(rawActions) {
+    const defaultGroupBy = groupByActionTypes(rawActions)
+    return (action) => this._group || defaultGroupBy(action, null, null)
+  },
 }

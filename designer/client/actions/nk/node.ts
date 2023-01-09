@@ -6,6 +6,7 @@ import {layoutChanged, Position} from "./ui/layout"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 import {debounce} from "lodash"
+import {batchGroupBy} from "../../reducers/graph/utils"
 
 //TODO: identify
 type Edges = $TodoType[]
@@ -121,8 +122,10 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edge:
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {
   return dispatch => {
+    batchGroupBy.start()
     dispatch({type: "NODE_ADDED", node, position})
     dispatch(layoutChanged())
+    batchGroupBy.end()
   }
 }
 
