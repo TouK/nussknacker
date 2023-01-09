@@ -439,7 +439,7 @@ jobs:
           addDevArtifacts: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: ./ciRunSbt.sh "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
+        run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
       - name: Test docker
         if: ${{env.shouldBuildImage == 'true' }}
         shell: bash
