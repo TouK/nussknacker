@@ -39,7 +39,7 @@ jobs:
       git_source_branch: ${{ steps.variables.outputs.git_source_branch }}
       nk_snapshot_version: ${{ steps.variables.outputs.nk_snapshot_version }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 100
       - uses: dorny/paths-filter@v2
@@ -60,8 +60,8 @@ jobs:
           SANITIZED_BRANCH=`echo ${GIT_SOURCE_BRANCH} | sed 's/[^a-zA-Z0-9._-]/\_/g' | awk '{print tolower($0)}'`
           VERSION_SUFFIX="-$SANITIZED_BRANCH-$(date -I)-$GITHUB_RUN_NUMBER-$GITHUB_SHA"
           NK_SNAPSHOT_VERSION=`cat version.sbt | sed -e 's/.*:= *"//' -e 's/" *//' | sed "s/-SNAPSHOT/${VERSION_SUFFIX}-SNAPSHOT/"`
-          echo "::set-output name=git_source_branch::$GIT_SOURCE_BRANCH"
-          echo "::set-output name=nk_snapshot_version::$NK_SNAPSHOT_VERSION"
+          echo "git_source_branch=$GIT_SOURCE_BRANCH" >> $GITHUB_OUTPUT
+          echo "nk_snapshot_version=$NK_SNAPSHOT_VERSION" >> $GITHUB_OUTPUT
 
   build:
     name: Build
@@ -73,18 +73,18 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformBackendBuild == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-      - uses: olafurpg/setup-scala@v10
+      - uses: coursier/setup-action@v1
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
       - name: Cache ivy packages
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -102,7 +102,7 @@ jobs:
         run:  find . -wholename "**/target/**/*" -printf '%P\0' | tar --null -C '.' --files-from=- -czf 'target.tgz'
       - name: Store target
         if: ${{ env.shouldPerformBackendBuild == 'true' }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-target
           path: target.tgz
@@ -116,13 +116,13 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Cache npm
         id: cache-npm
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             **/node_modules
@@ -130,9 +130,9 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
@@ -152,7 +152,7 @@ jobs:
         shell: bash
         run:  tar -czf 'fe-dist.tgz' designer/client/dist designer/submodules/dist
       - name: Store dist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: build-fe-dist
           path: fe-dist.tgz
@@ -165,21 +165,21 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
+          jvm: temurin:1.11.0.17
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
       - name: Cache ivy packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -197,7 +197,7 @@ jobs:
         run: ./ciRunSbt.sh test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: BackendTests-results
           path: '**/test-reports/*.xml'
@@ -216,15 +216,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
       - name: Cache ivy packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -232,7 +232,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -249,15 +249,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
       - name: Cache ivy packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -265,7 +265,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -278,7 +278,7 @@ jobs:
         run: ./ciRunSbt.sh It/test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: IntegrationTests-results
           path: '**/it-reports/*.xml'
@@ -291,15 +291,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v11
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
       - name: Cache ivy packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -307,7 +307,7 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
@@ -328,7 +328,7 @@ jobs:
         run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: SlowTests-results
           path: '**/test-reports/*.xml'
@@ -343,15 +343,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: ${{ env.shouldPerformFrontendTests == 'true' && github.event_name != 'push' }}
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
       - name: Cache npm
         id: cache-npm
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             **/node_modules
@@ -360,10 +360,10 @@ jobs:
       - name: Get Node.js version
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
         if: ${{ env.shouldPerformFrontendTests == 'true' }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
@@ -376,7 +376,7 @@ jobs:
         run: (cd designer/client; npm run test:unit)
       - name: Test Report
         if: ${{ env.shouldPerformFrontendTests == 'true' && (success() || failure()) }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: FrontendTests-results
           path: designer/client/junit.xml
@@ -396,26 +396,26 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Get Node.js version
         id: nvm
-        run: echo ::set-output name=NODE_VERSION::$(cat designer/client/.nvmrc)
+        run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
       - name: Download node modules
         run: |
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
-      - uses: olafurpg/setup-scala@v10
+      - uses: coursier/setup-action@v1
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
-          java-version: "openjdk@1.11"
-      - uses: actions/download-artifact@v2
+          jvm: temurin:1.11.0.17
+      - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           name: build-target
@@ -423,7 +423,7 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
@@ -439,7 +439,7 @@ jobs:
           addDevArtifacts: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
+        run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
       - name: Test docker
         if: ${{env.shouldBuildImage == 'true' }}
         shell: bash
@@ -473,13 +473,13 @@ jobs:
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
       - name: Test Report
         if: success() || failure()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: CypressTests-results
           path: designer/client/cypress-test-results/*.xml
       - name: Store test results
         if: always()
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: e2e-test-results
           path: |
@@ -500,7 +500,7 @@ jobs:
           title: Update Cypress snapshots in ${{ env.BRANCH }}
           commit-message: Updated snapshots
           body: Updated snapshots in ${{ github.event_name == 'pull_request' && env.HASH || env.BRANCH}}
-        uses: peter-evans/create-pull-request@v3
+        uses: peter-evans/create-pull-request@v4
       - name: Comment PR
         if: ${{ always() && github.event_name == 'pull_request' && steps.update_snapshots.outputs.pull-request-number }}
         uses: thollander/actions-comment-pull-request@v1
@@ -532,15 +532,15 @@ jobs:
     steps:
       - name: Cancel previous runs
         if: github.event_name != 'push'
-        uses: styfle/cancel-workflow-action@0.8.0
+        uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
-      - uses: actions/checkout@v2
-      - uses: olafurpg/setup-scala@v10
+      - uses: actions/checkout@v3
+      - uses: coursier/setup-action@v1
         with:
-          java-version: "openjdk@1.11"
+          jvm: temurin:1.11.0.17
       - name: Cache ivy packages
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: |
             ~/.ivy2/cache
@@ -548,13 +548,13 @@ jobs:
             ~/.sbt
           key: ${{ runner.os }}-sbt-cache-${{ hashFiles('**/*.sbt') }}
           restore-keys: ${{ runner.os }}-sbt
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-target
       - name: Untar artifacts
         shell: bash
         run:  tar xfz target.tgz
-      - uses: actions/download-artifact@v2
+      - uses: actions/download-artifact@v3
         with:
           name: build-fe-dist
       - name: Untar fe artifacts
