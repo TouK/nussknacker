@@ -57,7 +57,7 @@ trait DockerTest extends BeforeAndAfterAll with ForAllTestContainer with Extreme
         case "2.13" =>
           val scalaV = util.Properties.versionNumberString
           s"""
-            |RUN rm $$FLINK_HOME/lib/flink-scala_2.12-1.16.0.jar
+            |RUN rm $$FLINK_HOME/lib/flink-scala*.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-library/$scalaV/scala-library-$scalaV.jar -O $$FLINK_HOME/lib/scala-library-$scalaV.jar
             |RUN wget https://repo1.maven.org/maven2/org/scala-lang/scala-reflect/$scalaV/scala-reflect-$scalaV.jar -O $$FLINK_HOME/lib/scala-reflect-$scalaV.jar
             |RUN chown flink $$FLINK_HOME/lib/scala-library-$scalaV.jar
