@@ -85,10 +85,13 @@ function useClipboardPermission(): boolean | string {
     }
   }, [])
 
-  // if possible monitor clipboard for new content on each render
-  if (state === "granted") {
-    checkClipboard()
-  }
+  // if possible monitor clipboard for new content
+  useEffect(() => {
+    if (state === "granted") {
+      const interval = setInterval(checkClipboard, 500)
+      return () => {clearInterval(interval)}
+    }
+  }, [checkClipboard, state])
 
   useEffect(() => {
     // parse clipboard content on change only
@@ -189,7 +192,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
     const selectionLayoutNodePosition = {x: pasteNodePosition.x - minNodeX, y: pasteNodePosition.y - minNodeY}
     const randomizedNodePosition = {
       x: selectionLayoutNodePosition.x + random,
-      y: selectionLayoutNodePosition.y + random
+      y: selectionLayoutNodePosition.y + random,
     }
     return randomizedNodePosition
   }
@@ -200,10 +203,10 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
       const {x, y} = props.pastePosition()
       const minNodeX: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.x))
       const minNodeY: number = _.min(selection.nodes.map((node) => node.additionalFields.layoutData.y))
-      const random = (Math.floor(Math.random() * 20) + 1)
+      const random = Math.floor(Math.random() * 20) + 1
       const nodesWithPositions = selection.nodes.map((node, ix) => ({
         node,
-        position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random)
+        position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random),
       }))
       dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
       dispatch(success(t("userActions.paste.success", {
