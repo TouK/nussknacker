@@ -106,7 +106,7 @@ export class Graph extends React.Component<Props> {
 
   }
 
-  setEspGraphRef = ((instance: HTMLElement): void => {
+  setEspGraphRef = (instance: HTMLElement): void => {
     const {connectDropTarget} = this.props
     this.instance = instance
     if (connectDropTarget && instance) {
@@ -114,7 +114,7 @@ export class Graph extends React.Component<Props> {
       const node = findDOMNode(instance)
       connectDropTarget(node)
     }
-  })
+  }
   graph: dia.Graph
   processGraphPaper: dia.Paper
   highlightHoveredLink = rafThrottle((forceDisable?: boolean) => {
