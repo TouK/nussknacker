@@ -316,7 +316,10 @@ val jmxPrometheusJavaagentV = "0.16.1"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
+    dockerBaseImage := forScalaVersion(scalaVersion.value,
+      "eclipse-temurin:17-jre-jammy",
+      (2, 12) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
+    ),
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildCommand := {
@@ -341,6 +344,7 @@ lazy val commonDockerSettings = {
 
       List(dockerVersion, updateLatest, latestBranch, dockerTagName)
         .flatten
+        .flatMap(v => List(v, s"${v}_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}"))
         .map(tag => alias.withTag(Some(sanitize(tag))))
         .distinct
     }
@@ -351,7 +355,6 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
     dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
@@ -1146,7 +1149,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     },
     buildAndImportRuntimeImageToK3d := {
       (liteEngineRuntimeApp / Docker / publishLocal).value
-      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}" #|| "echo 'No k3d installed!'" !
+      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}" #|| "echo 'No k3d installed!'" !
     },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
       buildAndImportRuntimeImageToK3d

@@ -6,6 +6,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import pl.touk.nussknacker.engine.api.{LiteStreamMetaData, MetaData, ProcessVersion, RequestResponseMetaData, TypeSpecificData}
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.k8s.manager.{K8sDeploymentManager, K8sDeploymentManagerConfig}
 import skuber.EnvVar.{FieldRef, SecretKeyRef}
@@ -62,7 +63,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
@@ -151,7 +152,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
                   EnvVar("CONFIG_FILE", "/opt/nussknacker/conf/application.conf,/runtime-config/runtimeConfig.conf"),
@@ -233,7 +234,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
             Pod.Spec(containers = List(
               Container(
                 name = "runtime",
-                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}",
+                image = s"touk/nussknacker-lite-runtime-app:${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}",
                 env = List(
                   EnvVar("my-env-name", SecretKeyRef("my-key", "my-secret")),
                   EnvVar("SCENARIO_FILE", "/config/scenario.json"),
