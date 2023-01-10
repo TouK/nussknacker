@@ -301,7 +301,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   }
 
   test("should expose prometheus metrics") {
-    val port = 8080
+    val port = 8041
     val f = createKafkaFixture(deployConfig = kafkaDeployConfig
       .withValue("k8sDeploymentConfig.spec.template.spec.containers",
         fromIterable(List(
