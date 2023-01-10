@@ -11,6 +11,7 @@ import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.DeploymentData
+import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
@@ -31,7 +32,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
 
   protected lazy val k8s: KubernetesClient = k8sInit
   protected lazy val k8sTestUtils = new K8sTestUtils(k8s)
-  protected val dockerTag = sys.env.getOrElse("dockerTagName", BuildInfo.version)
+  protected val dockerTag = sys.env.getOrElse("dockerTagName", s"${BuildInfo.version}_scala-${ScalaMajorVersionConfig.scalaMajorVersion}")
 
   protected def baseDeployConfig(mode: String): Config = ConfigFactory.empty
     .withValue("dockerImageTag", fromAnyRef(dockerTag))
