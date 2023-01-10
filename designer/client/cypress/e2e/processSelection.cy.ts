@@ -19,7 +19,7 @@ describe("Process mouse drag", () => {
 
   beforeEach(() => {
     cy.visitNewProcess(NAME, "testProcess")
-    cy.get(".graphPage", {timeout: 20000}).as("graph").within(() => {
+    cy.get("[data-testid=graphPage]", {timeout: 20000}).as("graph").within(() => {
       cy.get("#nk-graph-main svg", {timeout: 20000}).as("canvas")
     })
     cy.get("[title='toggle left panel']").click()
