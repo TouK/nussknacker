@@ -1,4 +1,4 @@
-describe("Undo/Redo", () => {
+describe.only("Undo/Redo", () => {
   const seed = "undo"
   const screenshotOptions: Cypress.MatchImageOptions = {
     maxDiffThreshold: 0.005,
