@@ -18,6 +18,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 val scala213 = "2.13.10"
+val defaultScalaV = scala212
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
@@ -165,7 +166,7 @@ lazy val commonSettings =
       assembly / test := {},
       licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
       crossScalaVersions := supportedScalaVersions,
-      scalaVersion := scala212,
+      scalaVersion := defaultScalaV,
       resolvers ++= Seq(
         "confluent" at "https://packages.confluent.io/maven"
       ),
@@ -316,7 +317,10 @@ val jmxPrometheusJavaagentV = "0.16.1"
 
 lazy val commonDockerSettings = {
   Seq(
-    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
+    dockerBaseImage := forScalaVersion(scalaVersion.value,
+      "eclipse-temurin:17-jre-jammy",
+      (2, 12) -> "eclipse-temurin:11-jre-jammy" // jre11, cause for jdk17 minimum scala version is 2.12.15, we use 2.12.10
+    ),
     dockerUsername := dockerUserName,
     dockerUpdateLatest := dockerUpLatestFromProp.getOrElse(!isSnapshot.value),
     dockerBuildCommand := {
@@ -339,8 +343,11 @@ lazy val commonDockerSettings = {
       val currentBranch = sys.env.getOrElse("GIT_SOURCE_BRANCH", git.gitCurrentBranch.value)
       val latestBranch = Some(currentBranch + "-latest")
 
-      List(dockerVersion, updateLatest, latestBranch, dockerTagName)
-        .flatten
+      val tags = List(dockerVersion, updateLatest, latestBranch, dockerTagName).flatten
+      val scalaSuffix = s"_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}"
+      val tagsWithScalaSuffix = tags.map(t => s"$t$scalaSuffix")
+
+      (tagsWithScalaSuffix ++ tags.filter(_ => scalaVersion.value == defaultScalaV))
         .map(tag => alias.withTag(Some(sanitize(tag))))
         .distinct
     }
@@ -351,7 +358,7 @@ lazy val distDockerSettings = {
   val nussknackerDir = "/opt/nussknacker"
 
   commonDockerSettings ++ Seq(
-    dockerBaseImage := "eclipse-temurin:11-jre-jammy",
+    dockerBaseImage := "eclipse-temurin:11-jre-jammy", // designer should run on java11 since it may run Flink in-memory-cluster, which does not support newer java
     dockerEntrypoint := Seq(s"$nussknackerDir/bin/nussknacker-entrypoint.sh"),
     dockerExposedPorts := Seq(dockerPort),
     dockerEnvVars := Map(
@@ -1146,7 +1153,7 @@ lazy val liteK8sDeploymentManager = (project in lite("k8sDeploymentManager")).
     },
     buildAndImportRuntimeImageToK3d := {
       (liteEngineRuntimeApp / Docker / publishLocal).value
-      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}" #|| "echo 'No k3d installed!'" !
+      "k3d --version" #&& s"k3d image import touk/nussknacker-lite-runtime-app:${version.value}_scala-${CrossVersion.binaryScalaVersion(scalaVersion.value)}" #|| "echo 'No k3d installed!'" !
     },
     ExternalDepsTests / Keys.test := (ExternalDepsTests / Keys.test).dependsOn(
       buildAndImportRuntimeImageToK3d
