@@ -36,6 +36,8 @@ object NuRuntimeApp extends App with LazyLogging {
 
   import system.dispatcher
 
+  private val akkaHttpCloseTimeout = 10 seconds
+
   // Because actor system creates non-daemon threads, all exceptions from current thread will be suppressed and process
   // will be still alive even if something fail (like scenarioInterpreter creation)
   val exitCode = try {
@@ -49,8 +51,6 @@ object NuRuntimeApp extends App with LazyLogging {
     Await.result(system.terminate(), 5.seconds)
   }
   System.exit(exitCode)
-
-  private val akkaHttpCloseTimeout = 10 seconds
 
   private def runAfterActorSystemCreation(): Unit = {
     val scenarioInterpreter = RunnableScenarioInterpreterFactory.prepareScenarioInterpreter(scenario, runtimeConfig, deploymentConfig, system)
