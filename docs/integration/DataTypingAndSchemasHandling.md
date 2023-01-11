@@ -249,7 +249,7 @@ enabled.
 | allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 | passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 
-General intuition is that in `strict` mode a scenario that was successfully validated should not produce any type connect encoding errors during runtime (it can still produce errors e.g. for range validation in json schema or valid enum entry validation in avro).
+General intuition is that in `strict` mode a scenario that was successfully validated should not produce any type connect encoding errors during runtime (it can still produce errors e.g. for range validation in JSON Schema or valid enum entry validation in Avro).
 On the other hand, in `lax` mode NU allows to deploy scenario if there is any chance it can encode data properly, but responsibility for passing valid type to sink (e.g. in Unknown type) is on end-user side.
 
 We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
