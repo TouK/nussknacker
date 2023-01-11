@@ -204,7 +204,7 @@ These properties will be not validated by the Designer, because on during scenar
 #### Pattern properties
 Pattern properties are supported only in sinks. Using patternProperties with sources can produce runtime errors.
 
-Pattern properties add additional requirements during scenario authoring for types that should be encoded into json schema object type:
+Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON Schema object type:
 * Strict mode
   * only records types are allowed (no map types) and only if their fields' types are valid according to pattern properties restrictions (in addition to properties and additionalProperties)
 * Lax mode
