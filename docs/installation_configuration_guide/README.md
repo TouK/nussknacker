@@ -10,7 +10,7 @@ This file is not used by the [Helm chart](https://artifacthub.io/packages/helm/t
 
 Nussknacker configuration is divided into several configuration areas, each area addressing a specific aspect of using Nussknacker:
 
-* [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings),
+* [Designer](/about/GLOSSARY#nussknacker-designer) configuration (web application ports, security, various UI settings, database),
 * Scenario Types configuration, comprising of:
   * [Deployment Manager](/about/GLOSSARY#deployment-manager) configuration, 
   * [Model](/about/GLOSSARY#model) configuration.

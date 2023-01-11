@@ -22,7 +22,7 @@ The default Designer configuration is defined in [defaultDesignerConfig.conf](ht
 
 ## Database configuration
 
-Currently, Nussknacker supports following databases:
+Database is used to store scenario definitions; data processed by Nussknacker are not stored. Currently, Nussknacker supports following databases:
 
 * HSQL (embedded), we use `syntax_ora` option
 * PostgreSQL
@@ -36,7 +36,7 @@ The table below presents most important options, or the ones that have Nussknack
 | Parameter name       | Importance | Type   | Default value                                             | Description                                                                                 |
 |----------------------|------------|--------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------|
 | db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                       |
-| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              |                                                                                             |
+| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              | In case of PostgreSQL the driver can be downloaded from PostgresQL website; ensure that the jar with the driver is is on a [model classPath](./ModelConfiguration#classpath-configuration)  |
 | db.user              | High       | string | "SA"                                                      |                                                                                             |
 | db.password          | High       | string | ""                                                        |                                                                                             |
 | db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
