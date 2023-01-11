@@ -195,11 +195,21 @@ depends on `additionalProperties` type configuration and can be `Unknown`.
 | [string](https://json-schema.org/understanding-json-schema/reference/string.html)         | [length](https://json-schema.org/understanding-json-schema/reference/string.html#length), [regular expressions](https://json-schema.org/understanding-json-schema/reference/string.html#length), [format](https://json-schema.org/understanding-json-schema/reference/string.html#length)                                                                                                                                                                                                                                                                                                                                  |                                                               |
 | [numeric](https://json-schema.org/understanding-json-schema/reference/numeric.html)       | [multiples](https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples), [range](https://json-schema.org/understanding-json-schema/reference/numeric.html#multiples)                                                                                                                                                                                                                                                                                                                                                                                                                               |                                                               |
 | [array](https://json-schema.org/understanding-json-schema/reference/array.html)           | [additional items](https://json-schema.org/understanding-json-schema/reference/array.html#additional-items), [tuple validation](https://json-schema.org/understanding-json-schema/reference/array.html#tuple-validation), [contains](https://json-schema.org/understanding-json-schema/reference/array.html#contains), [min/max](https://json-schema.org/understanding-json-schema/reference/array.html#mincontains-maxcontains), [length](https://json-schema.org/understanding-json-schema/reference/array.html#length), [uniqueness](https://json-schema.org/understanding-json-schema/reference/array.html#uniqueness) |                                                               |
-| [object](https://json-schema.org/understanding-json-schema/reference/object.html)         | [pattern properties](https://json-schema.org/understanding-json-schema/reference/object.html#pattern-properties), [unevaluatedProperties](https://json-schema.org/understanding-json-schema/reference/object.html#unevaluated-properties), [extending closed](https://json-schema.org/understanding-json-schema/reference/object.html#extending-closed-schemas), [property names](https://json-schema.org/understanding-json-schema/reference/object.html#property-names), [size](https://json-schema.org/understanding-json-schema/reference/object.html#size)                                                            |                                                               |
+| [object](https://json-schema.org/understanding-json-schema/reference/object.html)         | [unevaluatedProperties](https://json-schema.org/understanding-json-schema/reference/object.html#unevaluated-properties), [extending closed](https://json-schema.org/understanding-json-schema/reference/object.html#extending-closed-schemas), [property names](https://json-schema.org/understanding-json-schema/reference/object.html#property-names), [size](https://json-schema.org/understanding-json-schema/reference/object.html#size)                                                            |                                                               |
 | [composition](https://json-schema.org/understanding-json-schema/reference/combining.html) | [allOf](https://json-schema.org/understanding-json-schema/reference/combining.html#allof), [not](https://json-schema.org/understanding-json-schema/reference/combining.html#not)                                                                                                                                                                                                                                                                                                                                                                                                                                           | Read more about [validation modes](#validation-and-encoding). |
 
 These properties will be not validated by the Designer, because on during scenario authoring time we work only on
 `Typing Information` not on real value. Validation will be still done at runtime.
+
+#### Pattern properties
+Pattern properties are supported only in sinks. Using patternProperties with sources can produce runtime errors.
+
+Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON Schema object type:
+* Strict mode
+  * only records types are allowed (no map types) and only if their fields' types are valid according to pattern properties restrictions (in addition to properties and additionalProperties)
+* Lax mode
+  * records are allowed under the same conditions as in strict mode but additionally Unknown type is allowed as a value's type
+  * map types are allowed if their value's type matches any of property, patternProperty or additionalProperties schema or is an Unknown type
 
 ## Validation and encoding
 
@@ -214,7 +224,7 @@ and `Union` types.
 
 ##### type `Unknown`
 
-A situation when Nussknacker can not detect type of data, it's similar to Any of the type.
+A situation when Nussknacker can not detect the exact type of data.
 
 ##### type `Union`
 
@@ -238,6 +248,9 @@ enabled.
 | require providing optional fields | yes                                                                           | no                                                              |                                                                                                                                                        |
 | allow passing `Unknown`           | no                                                                            | yes                                                             | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
 | passing `Union`                   | `Typing Information` union has to<br/>be the same as union schema of the sink | Any of element from `Typing Information`<br/>union should match | When data at runtime will not match against the sink schema, then error be reported during encoding.                                                   |
+
+General intuition is that in `strict` mode a scenario that was successfully validated should not produce any type connect encoding errors during runtime (it can still produce errors e.g. for range validation in JSON Schema or valid enum entry validation in Avro).
+On the other hand, in `lax` mode NU allows to deploy scenario if there is any chance it can encode data properly, but responsibility for passing valid type to sink (e.g. in Unknown type) is on end-user side.
 
 We leave to the user the decision of which validation mode to choose. But be aware of it, and remember it only impacts
 how we validate data during scenario authoring, and some errors can still occur during encoding at runtime.
