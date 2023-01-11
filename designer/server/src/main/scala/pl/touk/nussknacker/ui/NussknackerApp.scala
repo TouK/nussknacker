@@ -282,12 +282,16 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
     //JmxReporter does not allocate resources, safe to close
     JmxReporter.forRegistry(metricsRegistry).build().start()
 
-    SslConfigParser.sslEnabled(config) match {
+
+    val bindingResultF = SslConfigParser.sslEnabled(config) match {
       case Some(keyStoreConfig) =>
         bindHttps(interface, port, HttpsConnectionContextFactory.createServerContext(keyStoreConfig), route, metricsRegistry)
       case None =>
         bindHttp(interface, port, route, metricsRegistry)
     }
+    bindingResultF.foreach { bindingResult =>
+      logger.info(s"Nussknacker designer started on ${interface}:${bindingResult.localAddress.getPort}")
+    }(ExecutionContext.global)
 
     (route, objectsToClose)
   }

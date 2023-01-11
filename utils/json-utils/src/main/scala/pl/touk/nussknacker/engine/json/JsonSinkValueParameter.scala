@@ -8,7 +8,6 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
 import pl.touk.nussknacker.engine.api.definition.Parameter
 import pl.touk.nussknacker.engine.graph.expression.Expression
 import pl.touk.nussknacker.engine.json.swagger.implicits.RichSwaggerTyped
-import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.{SinkRecordParameter, SinkSingleValueParameter, SinkValueParameter}
 
 import scala.collection.immutable.ListMap
@@ -16,6 +15,7 @@ import scala.collection.immutable.ListMap
 object JsonSinkValueParameter {
 
   import scala.jdk.CollectionConverters._
+  import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
 
   type FieldName = String
 

@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components.utils
 
 import io.circe.Json
 import io.circe.Json._
+import org.everit.json.schema.regexp.JavaUtilRegexpFactory
 import org.everit.json.schema.{ArraySchema, CombinedSchema, NullSchema, NumberSchema, ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.SpecialSpELElement
@@ -208,4 +209,17 @@ object JsonTestData {
         throw new IllegalArgumentException(s"Unknown `additionalProperties` value: $additionalProperties.")
     }
   }
+
+  def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None): Schema = {
+    val builder = ObjectSchema.builder()
+    val regexpFactory = new JavaUtilRegexpFactory
+    patternProperties.foreach { case (pattern, schema) =>
+      builder.patternProperty(regexpFactory.createHandler(pattern), schema)
+    }
+    additionalPropertySchema.foreach { additionalPropertySchema =>
+      builder.schemaOfAdditionalProperties(additionalPropertySchema)
+    }
+    builder.build()
+  }
+
 }

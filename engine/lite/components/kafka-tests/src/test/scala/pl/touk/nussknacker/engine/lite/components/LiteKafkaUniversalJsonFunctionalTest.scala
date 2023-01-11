@@ -4,7 +4,7 @@ import cats.data.Validated
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{Schema => EveritSchema}
+import org.everit.json.schema.{EmptySchema, Schema => EveritSchema}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -194,6 +194,30 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
     runtimeError.throwable.asInstanceOf[RuntimeException].getMessage shouldBe "#: [1,2] is not a valid enum value"
   }
 
+  test("patternProperties handling") {
+    val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger))
+    val inputObjectIntPropValue = fromInt(1)
+    val inputObject = obj("foo_int" -> inputObjectIntPropValue)
+
+    //@formatter:off
+    val testData = Table(
+      ("input",       "sourceSchema",                                 "sinkSchema",                                   "sinkExpression",                             "validationModes",   "result"),
+      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
+      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,              invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
+      (inputObject,   objWithIntPatternPropsAndOpenAdditionalSchema,  objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
+    )
+    //@formatter:on
+
+    forAll(testData) {
+      (input: Json, sourceSchema: EveritSchema, sinkSchema: EveritSchema, sinkExpression: SpecialSpELElement, validationModes: List[ValidationMode], expected: Validated[_, RunResult[_]]) =>
+        validationModes.foreach { mode =>
+          val cfg = config(input, sourceSchema, sinkSchema, output = sinkExpression, Some(mode))
+          val results = runWithValueResults(cfg)
+          results shouldBe expected
+        }
+    }
+  }
+
   test("should catch runtime errors at deserialization - source") {
     val testData = Table(
       ("input", "sourceSchema", "expected"),
@@ -202,11 +226,13 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (JsonObj(obj("t1" -> fromString("1"))), schemaObjMapInt, s"#/$ObjectFieldName/t1: expected type: Integer, found: String"),
       (obj("first" -> sampleJStr), createObjSchema(true, true, schemaInteger), s"#: required key [$ObjectFieldName] not found"),
       (obj("t1" -> fromString("1"), ObjectFieldName -> fromString("1")), schemaObjStr, "#: extraneous key [t1] is not permitted"),
-      (Json.fromString("X"), schemaEnumAB, "#: X is not a valid enum value")
+      (Json.fromString("X"), schemaEnumAB, "#: X is not a valid enum value"),
+      (obj("foo_int" -> fromString("foo")), createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)), "#/foo_int: expected type: Integer, found: String")
     )
 
     forAll(testData) { (input: Json, sourceSchema: EveritSchema, expected: String) =>
-      val cfg = config(input, sourceSchema, sourceSchema)
+      // here we're testing only source runtime validation so to prevent typing issues we pass literal as sink expression
+      val cfg = config(input, sourceSchema, schemaString, output = "someString")
       val results = runWithValueResults(cfg)
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
@@ -217,7 +243,18 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
   test("should catch runtime errors at encoding - sink") {
     val testData = Table(
       ("config", "expected"),
-      (config(obj(), schemaObjStr, schemaObjStr, objOutputAsInputField), s"Not expected type: Null for field: 'field' with schema: $schemaString."),
+      (config(
+        obj(),
+        schemaObjStr,
+        schemaObjStr,
+        objOutputAsInputField),
+        s"Not expected type: Null for field: 'field' with schema: $schemaString."),
+      (config(
+        obj("foo_int" -> fromString("foo")),
+        schemaMapAny,
+        createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger)),
+        validationMode = Some(ValidationMode.lax)
+      ), s"#/foo_int: expected type: Integer, found: String"),
     )
 
     forAll(testData) { (cfg: ScenarioConfig, expected: String) =>

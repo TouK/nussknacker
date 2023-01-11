@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.json.encode
 
 import org.everit.json.schema.{ObjectSchema, Schema, StringSchema}
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits.ExtendedSchema
 import pl.touk.nussknacker.engine.util.output.OutputValidatorErrorsMessageFormatter
 
 import java.time.{LocalDate, LocalDateTime, LocalTime}
@@ -11,6 +10,8 @@ import scala.jdk.CollectionConverters._
 class JsonSchemaOutputValidatorPrinter(parentSchema: Schema) {
 
   import OutputValidatorErrorsMessageFormatter._
+  import pl.touk.nussknacker.engine.util.json.JsonSchemaImplicits._
+
 
 
   private implicit class ListTypesPrinter(list: List[String]) {
