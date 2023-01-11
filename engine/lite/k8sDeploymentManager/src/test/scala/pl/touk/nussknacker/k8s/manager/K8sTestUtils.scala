@@ -119,11 +119,13 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
         reverseProxyConfConfigMapName, Volume.ConfigMapVolumeSource(reverseProxyConfConfigMapName)
       ))
     ))
+    // We setup keepalive_timeout to 0 to make sure that nginx won't keep any idle connection to terminating pods
     val configMap = ConfigMap(metadata = ObjectMeta(reverseProxyConfConfigMapName), data = Map("nginx.conf" ->
       s"""server {
          |  listen $reverseProxyPodRemotePort;
          |  location / {
          |    proxy_pass $targetUrl;
+         |    keepalive_timeout 0;
          |  }
          |}""".stripMargin))
     cleanupReverseProxyPod()

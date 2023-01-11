@@ -18,15 +18,18 @@ import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.k8s.manager.K8sDeploymentManager.requirementForName
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 import skuber.LabelSelector.dsl._
+import skuber.Pod.LogQueryParams
+import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{LabelSelector, ListResource, Service}
+import skuber.{LabelSelector, ListResource, Pod, Service}
 import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
 
-import scala.jdk.CollectionConverters._
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters._
 import scala.language.reflectiveCalls
 import scala.util.Random
+import scala.util.control.NonFatal
 
 // we use this tag to mark tests using external dependencies
 @Network
@@ -252,11 +255,29 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
                                    extraClasses: K8sExtraClasses) extends K8sDeploymentManagerTestFixture(manager, scenario, version) {
     override def withRunningScenario(action: => Unit): Unit = {
       extraClasses.withExtraClassesSecret {
-        super.withRunningScenario(action)
+        try {
+          super.withRunningScenario(action)
+        } catch {
+          case NonFatal(ex) =>
+            printResourcesDetails()
+            throw ex
+        }
         //should not fail
         assertNoGarbageLeft()
       }
     }
+  }
+
+  private def printResourcesDetails(): Unit = {
+    val pods = k8s.list[ListResource[Pod]]().futureValue.items
+    logger.info("pods:\n" + pods.mkString("\n"))
+    pods.foreach { p =>
+      logger.info(s"Printing logs for pod: ${p.name}")
+      k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue
+      logger.info(s"Finished printing logs for pod: ${p.name}")
+    }
+    logger.info("services:\n" + k8s.list[ListResource[Service]]().futureValue.items.mkString("\n"))
+    logger.info("deployments:\n" + k8s.list[ListResource[Deployment]]().futureValue.items.mkString("\n"))
   }
 
 }
