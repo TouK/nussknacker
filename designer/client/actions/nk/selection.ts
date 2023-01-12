@@ -3,6 +3,7 @@ import {getProcessToDisplay} from "../../reducers/selectors/graph"
 import {ThunkAction} from "../reduxTypes"
 import {deleteNodes} from "./node"
 import {reportEvent} from "./reportEvent"
+import {batchGroupBy} from "../../reducers/graph/batchGroupBy"
 
 type Event = { category: string, action: string }
 type Callback = () => void
@@ -88,6 +89,7 @@ const clearTextSelection = () => window.getSelection().removeAllRanges()
 
 export function toggleSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
+    batchGroupBy.end()
     clearTextSelection()
     dispatch({type: "TOGGLE_SELECTION", nodeIds})
   }
@@ -95,6 +97,7 @@ export function toggleSelection(...nodeIds: string[]): ThunkAction {
 
 export function expandSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
+    batchGroupBy.end()
     clearTextSelection()
     dispatch({type: "EXPAND_SELECTION", nodeIds})
   }
@@ -102,6 +105,7 @@ export function expandSelection(...nodeIds: string[]): ThunkAction {
 
 export function resetSelection(...nodeIds: string[]): ThunkAction {
   return dispatch => {
+    batchGroupBy.end()
     clearTextSelection()
     dispatch({type: "RESET_SELECTION", nodeIds})
   }
