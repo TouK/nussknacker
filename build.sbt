@@ -269,10 +269,10 @@ val avroV = "1.11.0"
 val kafkaV = "3.3.1"
 //TODO: Spring 5.3 has some problem with handling our PrimitiveOrWrappersPropertyAccessor
 val springV = "5.2.21.RELEASE"
-val scalaTestV = "3.2.10"
-val scalaCheckV = "1.15.0"
+val scalaTestV = "3.2.15"
+val scalaCheckV = "1.17.0"
 val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
-val scalaTestPlusV = "3.2.10.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
+val scalaTestPlusV = "3.2.15.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.2"
