@@ -143,15 +143,7 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
 
       if (canModifySelected) {
         await ClipboardUtils.writeText(JSON.stringify(selection))
-        const {nodes} = selection
-        if (!silent) {
-          dispatch(success(t("userActions.copy.success", {
-            defaultValue: "Copied node",
-            defaultValue_plural: "Copied {{count}} nodes",
-            count: nodes.length,
-          })))
-        }
-        return nodes
+        return selection.nodes
       } else {
         dispatch(error(t(
           "userActions.copy.failed",
@@ -206,11 +198,6 @@ export default function SelectionContextProvider(props: PropsWithChildren<{ past
         position: calculatePastedNodePosition(node, x, minNodeX, y, minNodeY, random)
       }))
       dispatch(nodesWithEdgesAdded(nodesWithPositions, selection.edges))
-      dispatch(success(t("userActions.paste.success", {
-        defaultValue: "Pasted node",
-        defaultValue_plural: "Pasted {{count}} nodes",
-        count: selection.nodes.length,
-      })))
     } else {
       dispatch(error(t("userActions.paste.failed", "Cannot paste content from clipboard")))
     }
