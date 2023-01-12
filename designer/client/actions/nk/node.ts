@@ -39,11 +39,6 @@ type NodesWithEdgesAddedAction = {
   processDefinitionData: ProcessDefinitionData,
 }
 
-type ValidationStartedAction = {
-  type: "VALIDATION_STARTED",
-  process: Process,
-}
-
 type ValidationResultAction = {
   type: "VALIDATION_RESULT",
   validationResult: ValidationResult,
