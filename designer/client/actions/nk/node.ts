@@ -6,6 +6,7 @@ import {layoutChanged, Position} from "./ui/layout"
 import {EditNodeAction, RenameProcessAction} from "./editNode"
 import {getProcessDefinitionData} from "../../reducers/selectors/settings"
 import {debounce} from "lodash"
+import {batchGroupBy} from "../../reducers/graph/batchGroupBy"
 
 //TODO: identify
 type Edges = $TodoType[]
@@ -55,17 +56,19 @@ type NodeAddedAction = {
 }
 
 const debouncedValidate = debounce(
-  (dispatch: ThunkDispatch<RootState>, getState: () => RootState) => HttpService
+  (dispatch: ThunkDispatch<RootState>, getState: () => RootState, callback?: () => void) => HttpService
     .validateProcess(getState().graphReducer.processToDisplay)
-    .then(({data}) => dispatch({type: "VALIDATION_RESULT", validationResult: data})),
+    .then(({data}) => dispatch({type: "VALIDATION_RESULT", validationResult: data}))
+    .finally(callback),
   250
 )
 
 //this WON'T work for async actions - have to handle promises separately
 function runSyncActionsThenValidate<S extends RootState>(syncActions: (state: S) => Action[]): ThunkAction<void, S> {
   return (dispatch, getState) => {
+    batchGroupBy.startOrContinue()
     syncActions(getState()).forEach(action => dispatch(action))
-    debouncedValidate(dispatch, getState)
+    debouncedValidate(dispatch, getState, () => batchGroupBy.end())
   }
 }
 
@@ -120,14 +123,16 @@ export function injectNode(from: NodeType, middle: NodeType, to: NodeType, edge:
 }
 
 export function nodeAdded(node: NodeType, position: Position): ThunkAction {
-  return dispatch => {
+  return (dispatch) => {
+    batchGroupBy.startOrContinue()
     dispatch({type: "NODE_ADDED", node, position})
     dispatch(layoutChanged())
-  }
-}
+    batchGroupBy.end()
+  }}
 
 export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edges: Edges): ThunkAction {
   return (dispatch, getState) => {
+    batchGroupBy.startOrContinue()
     dispatch({
       type: "NODES_WITH_EDGES_ADDED",
       nodesWithPositions,
@@ -135,8 +140,8 @@ export function nodesWithEdgesAdded(nodesWithPositions: NodesWithPositions, edge
       processDefinitionData: getProcessDefinitionData(getState()),
     })
     dispatch(layoutChanged())
-  }
-}
+    batchGroupBy.end()
+  }}
 
 export type NodeActions =
   | NodeAddedAction

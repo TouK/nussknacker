@@ -72,11 +72,27 @@ export class Graph extends React.Component<Props> {
     })
 
     return paper
+      //trigger new custom event on finished cell move
+      .on(Events.CELL_POINTERDOWN, (cellView: dia.CellView) => {
+        const model = cellView.model
+        const moveCallback = () => {
+          cellView.once(Events.CELL_POINTERUP, () => {
+            cellView.trigger(Events.CELL_MOVED, cellView)
+            paper.trigger(Events.CELL_MOVED, cellView)
+          })
+        }
+
+        model.once(Events.CHANGE_POSITION, moveCallback)
+        cellView.once(Events.CELL_POINTERUP, () => {
+          model.off(Events.CHANGE_POSITION, moveCallback)
+        })
+      })
       //we want to inject node during 'Drag and Drop' from graph paper
-      .on(Events.CELL_POINTERUP, (cell: dia.CellView) => {
-        this.changeLayoutIfNeeded()
+      .on(Events.CELL_MOVED, (cell: dia.CellView) => {
         if (isModelElement(cell.model)) {
-          this.handleInjectBetweenNodes(cell.model)
+          const linkBelowCell = this.getLinkBelowCell()
+          this.changeLayoutIfNeeded(!!linkBelowCell)
+          this.handleInjectBetweenNodes(cell.model, linkBelowCell)
         }
       })
       .on(Events.LINK_CONNECT, ({sourceView, targetView, model}) => {
@@ -90,6 +106,12 @@ export class Graph extends React.Component<Props> {
       .on(Events.LINK_DISCONNECT, ({model}) => {
         this.disconnectPreviousEdge(model.attributes.edgeData.from, model.attributes.edgeData.to)
       })
+  }
+
+  private getLinkBelowCell() {
+    const links = this.graph.getLinks()
+    const [linkBelowCell] = filterDragHovered(links)
+    return linkBelowCell
   }
 
   drawGraph = (process: Process, layout: Layout, processDefinitionData: ProcessDefinitionData): void => {
@@ -239,7 +261,8 @@ export class Graph extends React.Component<Props> {
     //we want to inject node during 'Drag and Drop' from toolbox
     this.graph.on(Events.ADD, (cell: dia.Element) => {
       if (isModelElement(cell)) {
-        this.handleInjectBetweenNodes(cell)
+        const linkBelowCell = this.getLinkBelowCell()
+        this.handleInjectBetweenNodes(cell, linkBelowCell)
         setLinksHovered(cell.graph)
       }
     })
@@ -328,10 +351,8 @@ export class Graph extends React.Component<Props> {
     return this.props.processToDisplay.edges.some(edge => edge.from === from && edge.to === to)
   }
 
-  handleInjectBetweenNodes = (middleMan: shapes.devs.Model): void => {
+  handleInjectBetweenNodes = (middleMan: shapes.devs.Model, linkBelowCell?: dia.Link): void => {
     const {processToDisplay, injectNode, processDefinitionData} = this.props
-    const links = this.graph.getLinks()
-    const [linkBelowCell] = filterDragHovered(links)
 
     if (linkBelowCell && middleMan) {
       const {sourceNode, targetNode} = getLinkNodes(linkBelowCell)
@@ -411,7 +432,7 @@ export class Graph extends React.Component<Props> {
     }
   }
 
-  changeLayoutIfNeeded = (): void => {
+  changeLayoutIfNeeded = (batched?: boolean): void => {
     const {layout, layoutChanged, isSubprocess} = this.props
 
     if (isSubprocess) {
@@ -429,7 +450,7 @@ export class Graph extends React.Component<Props> {
     const oldLayout = sortBy(layout, iteratee)
 
     if (!isEqual(oldLayout, newLayout)) {
-      layoutChanged(newLayout)
+      layoutChanged(newLayout, !batched)
     }
   }
 
