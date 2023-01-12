@@ -79,8 +79,10 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     )
   }
 
-  def initMetrics(metricsRegistry: MetricRegistry, processRepository: DBFetchingProcessRepository[Future] with BasicRepository): Unit = {
-    new RepositoryGauges(metricsRegistry, processRepository).prepareGauges()
+  def initMetrics(metricsRegistry: MetricRegistry,
+                  config: Config,
+                  processRepository: DBFetchingProcessRepository[Future] with BasicRepository): Unit = {
+    new RepositoryGauges(metricsRegistry, config.getDuration("repositoryGaugesCacheDuration"), processRepository).prepareGauges()
   }
 
   override def create(config: Config, dbConfig: DbConfig, metricsRegistry: MetricRegistry)(implicit system: ActorSystem, materializer: Materializer): (Route, Iterable[AutoCloseable]) = {
@@ -161,7 +163,7 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val notificationService = new NotificationService(new ManagementActorCurrentDeployments(managementActor), notificationListener)
 
-    initMetrics(metricsRegistry, processRepository)
+    initMetrics(metricsRegistry, config, processRepository)
 
     val apiResourcesWithAuthentication: List[RouteWithUser] = {
       val routes = List(
