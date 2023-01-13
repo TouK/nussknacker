@@ -15,6 +15,7 @@ describe("Dropdown", () => {
     cy.get("[model-id=enricher]").should("be.visible").trigger("dblclick")
     cy.get("[data-testid=window]").should("be.visible")
     cy.get("div[class$=singleValue").contains("normal").parent().click()
+    cy.get("[data-testid=window]").matchImage()
     cy.get("div[id$=react-select-2-option-0]").contains("normal").should("be.visible")
     cy.get("div[id$=react-select-2-option-1]").contains("gold").should("be.visible")
       .click()
