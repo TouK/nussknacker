@@ -22,7 +22,7 @@ Types of events in the Kafka streams or data returned by enrichers can be often 
 
 The data types used in the execution engine, SpEL expressions and data structures are Java based. 
 These are also the data type names that appear in code completion hints. 
-In most cases Nussknacker can automatically convert between Java data types and JSON and AVRO formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
+In most cases Nussknacker can automatically convert between Java data types and JSON and Avro formats. JSON will be used for REST API enrichers, while AVRO should be first choice for format of Kafka messages.
 
 Below is the list of the most common data types. In Java types column package names are omitted for brevity, 
 they are usually `java.lang` (primitives), `java.util` (List, Map) and `java.time`
@@ -63,7 +63,7 @@ For example, `#input.name` is valid, while `#input.noname` or `#input.name > 0` 
 
 On the other hand, `map` describes "generic" structure - Nussknacker tacitly assumes it can contain **any** field, but only of certain type (e.g. we can have a "map of Strings", "map of Integers" etc. If this type is `Unknown` the values might be of any type).
                                                              
-Nussknacker usually infers structure of record from external source (e.g. AVRO schema), but it can also detect it from map literals.
+Nussknacker usually infers structure of record from external source (e.g. Avro schema), but it can also detect it from map literals.
 
 ### Arrays/lists
 

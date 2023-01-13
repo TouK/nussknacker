@@ -61,6 +61,6 @@ Environment variables are described in [Installation guide](./Installation.md), 
 * `nussknacker.config.locations` Java system property (`CONFIG_FILE` environment variable for Docker image) defines location of configuration files (separated by comma). The files are read in order, entries from later files can override the former (using HoCon fallback mechanism) - see docker demo for example:
   * [setting multiple configuration files](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/common/docker-compose.yml#L13)
   * [file with configuration override](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/nussknacker/nussknacker.conf)
-* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker docker image.
+* If `config.override_with_env_vars` Java system property is set to true, it is possible to override settings with env variables. This property is set to true in the official Nussknacker Docker image.
 
 It’s important to remember that model configuration is prepared a bit differently. Please read [model configuration](ModelConfiguration.md) for the details. 

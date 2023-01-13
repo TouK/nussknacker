@@ -25,11 +25,11 @@ docker run -it --network host -e DEFAULT_SCENARIO_TYPE=streaming-lite-embedded -
 ```
 where:
 - `-e DEFAULT_SCENARIO_TYPE=streaming-lite-embedded` - turning on embedded Lite engine in Streaming processing mode. By default, this variable is set to `streaming` (Flink engine) which needs external dependencies.
-- `--network host` - to be able to connect with kafka and schema registry exposed on host machine
-- `-e KAFKA_ADDRESS=localhost:3032` - kafka address
-- `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - schema registry url
+- `--network host` - to be able to connect with Kafka and Schema Registry exposed on host machine
+- `-e KAFKA_ADDRESS=localhost:3032` - Kafka address
+- `-e SCHEMA_REGISTRY_URL=http://localhost:3082` - Schema Registry URL
 
-Both kafka and schema registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
+Both Kafka and Schema Registry can be exposed e.g. using `docker-compose-env.yml` inside [Nussknacker Quickstart](https://github.com/TouK/nussknacker-quickstart)
 
 After it started go to http://localhost:8080 and login using credentials: admin/admin.
 

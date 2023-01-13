@@ -85,7 +85,7 @@ Flink provides various metrics describing its health and performance, see:
 
 Flink blog post: [https://flink.apache.org/news/2019/02/25/monitoring-best-practices.html](https://flink.apache.org/news/2019/02/25/monitoring-best-practices.html) is also a valuable reference.
 
-Recommended Nussknacker setup (i.e., the one provided with docker based demo) uses InfluxDB + Telegraf, 
+Recommended Nussknacker setup (i.e., the one provided with Docker based demo) uses InfluxDB + Telegraf, 
 but you can also easily access metrics on demand using e.g. JMX + Jolokia. To do this you have to:
 - enable jolokia - download Jolokia JVM agent, pass `-javaagent:{path_to_jar}/jolokia-jvm-agent.jar=port=9972,host=localhost,agentId=flink-taskmanager-demo` to Flink VM options (either via `FLINK_ENV_JAVA_OPTS`/`FLINK_ENV_JAVA_OPTS_JM` variable or `env.java.opts.(task/job)manager` configuration option)
 - enable [JMX reporter](https://ci.apache.org/projects/flink/flink-docs-stable/docs/deployment/metric_reporters/#jmx)
@@ -319,7 +319,7 @@ What’s more, increasing parallelism above the count of partitions of the Kafka
 
 * Flink Savepoints/checkpoints path should have some retention mechanism configured (e.g. S3 has some retention configuration options) - savepoints are not deleted automatically, while checkpoints are not deleted in case of e.g. jobmanager failures
 * Logs retention
-* Nussknacker stores database files when using HSQL on filesystem (in /opt/nussknacker/storage for default docker configuration) - make sure to configure appropriate backups/persistent volumes
+* Nussknacker stores database files when using HSQL on filesystem (in /opt/nussknacker/storage for default Docker configuration) - make sure to configure appropriate backups/persistent volumes
 * Make sure to configure proper backups/retention (please consult relevant tools documentation for information on how to back up) for
   * ZooKeeper
   * Kafka
