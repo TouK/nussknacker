@@ -301,6 +301,7 @@ const undoableReducer = undoable(reducer, {
       "DISPLAY_PROCESS",
       "UPDATE_IMPORTED_PROCESS",
       "PROCESS_STATE_LOADED",
+      "UPDATE_BACKEND_NOTIFICATIONS",
     ]),
     (action, nextState, prevState) => {
       const keys: Array<keyof GraphState> = [
