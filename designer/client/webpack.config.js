@@ -88,7 +88,7 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: isProd ? "[name].js": "[name].js",
+    filename: isProd ? "[contenthash].js": "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
