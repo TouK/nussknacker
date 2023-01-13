@@ -62,9 +62,6 @@ export default class FixedValuesEditor extends React.Component<Props> {
           formatCreateLabel={(x) => x}
           menuPortalTarget={document.body}
           createOptionPosition={"first"}
-          styles={{
-            menuPortal: base => ({...base, zIndex: 1000}),
-          }}
         />
         {showValidation && <ValidationLabels validators={validators} values={[currentOption.value]}/>}
       </div>
