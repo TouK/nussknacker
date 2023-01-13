@@ -40,7 +40,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3692](https://github.com/TouK/nussknacker/pull/3692) Rename `mockedResult` to  `externalInvocation` in test results collectors.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. As a replacement you can use:
   * nussknacker-request-response-app in version <= 1.6
-  * Lite k8s engine with request-response processing mode
+  * Lite K8s engine with request-response processing mode
   * `lite-embedded` Deployment Manager with request-response processing mode
 * [#3610](https://github.com/TouK/nussknacker/pull/3610) Removed deprecated code. For details see changes in pull request.
 * [#3607](https://github.com/TouK/nussknacker/pull/3607) Request-response jsonSchema based encoder:
@@ -133,7 +133,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   [#3316](https://github.com/TouK/nussknacker/pull/3316) [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3328](https://github.com/TouK/nussknacker/pull/3328) [#3330](https://github.com/TouK/nussknacker/pull/3330) Changes related with UniversalKafkaSource/Sink:
   * `RuntimeSchemaData` is generic - parametrized by `ParsedSchema` (AvroSchema and JsonSchema is supported).
   * `NkSerializableAvroSchema` renamed to `NkSerializableParsedSchema`
-  * `SchemaWithMetadata` wraps `ParsedSchema` instead of avro `Schema`.
+  * `SchemaWithMetadata` wraps `ParsedSchema` instead of Avro `Schema`.
   * `SchemaRegistryProvider` refactoring:
     * rename `SchemaRegistryProvider` to `SchemaBasedSerdeProvider`
     * decouple `SchemaRegistryClientFactory` from `SchemaBasedSerdeProvider`
@@ -145,7 +145,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `Typed.typedClass(Class[_], List[TypingResult])` is not available anymore. You should use more explicit `Typed.genericTypeClass` instead
   * We check count of generic parameters in `Typed.genericTypeClass` - wrong number will cause throwing exception now
   * We populate generic parameters by correct number of `Unknown` in non-generic aware versions of `Typed` factory methods like `Typed.apply` or `Typed.typedClass`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict avro schema validation:
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) More strict Avro schema validation:
   * `ValidationMode.allowOptional` was removed, instead of it please use `ValidationMode.lax`
   * `ValidationMode.allowRedundantAndOptional` was removed, instead of it please use `ValidationMode.lax`
   * Changes of `ValidationMode`, fields: `acceptUnfilledOptional` and `acceptRedundant` were removed
@@ -165,7 +165,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 
 ### REST API changes
 
-* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short JSON answer with "OK" status is now not secured - before change it required to be an authenticated user with "read" permission.
 
 ### Scenario authoring changes
 
@@ -388,7 +388,7 @@ Summary:
   * `KafkaAvroBaseTransformer` companion object renamed to `KafkaAvroBaseComponentTransformer` 
   * `KryoGenericRecordSchemaIdSerializationSupport` renamed to `GenericRecordSchemaIdSerializationSupport` 
 * [#2305](https://github.com/TouK/nussknacker/pull/2305) Enhancement: change `processingTypeToDashboard` configuration to `scenarioTypeToDashboard`
-* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process json, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
+* [#2296](https://github.com/TouK/nussknacker/pull/2296) Scenarios & Fragments have separate TypeSpecificData implementations. Also, we remove `isSubprocess` field from process JSON, and respectively from MetaData constructor. See corresponding db migration `V1_031__FragmentSpecificData.scala`
 * [#2368](https://github.com/TouK/nussknacker/pull/2368) `WithCategories` now takes categories as an `Option[List[String]]` instead of `List[String]`. 
 You should wrap given list of categories with `Some(...)`. `None` mean that component will be available in all categories.
 * [#2360](https://github.com/TouK/nussknacker/pull/2360) `union`, `union-memo` and `dead-end` components were extracted from `model/genericModel.jar` to `components/baseComponents.jar`
@@ -611,7 +611,7 @@ may cause __runtime__ consequences - make sure your custom services/listeners in
 * [#1799](https://github.com/TouK/nussknacker/pull/1799)
   - RecordFormatterFactory instead of one, uses two type parameters: K, V
   - ConfluentAvroToJsonFormatter is produced by ConfluentAvroToJsonFormatterFactory
-  - ConfluentAvroToJsonFormatter produces test data in valid json format, does not use Separator
+  - ConfluentAvroToJsonFormatter produces test data in valid JSON format, does not use Separator
   - ConfluentAvroMessageFormatter has asJson method instead of writeTo
   - ConfluentAvroMessageReader has readJson method instead of readMessage
   Example test data object:
@@ -694,7 +694,7 @@ If you already have done some Flink's `ExecutionConfig` set up before you've reg
 * [#1039](https://github.com/TouK/nussknacker/pull/1039) `FlinkSourceFactory` doesn't take `TypeInformation` type class as a generic parameter now. Instead of this, it takes `ClassTag`.
 `TypeInformation` is determined during source creation. `typeInformation[T]` method was moved from `BasicFlinkSource` to `FlinkSource` because still must be some place to determine it for tests purpose.
 * [#965](https://github.com/TouK/nussknacker/pull/965) 'aggregate' node in generic model was renamed to 'aggregate-sliding'
-* [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and json responses:
+* [#922](https://github.com/TouK/nussknacker/pull/922) HealthCheck API has new structure, naming and JSON responses:
   - old `/healthCheck` is moved to `/healthCheck/process/deployment`
   - old `/sanityCheck` is moved to `/healthCheck/process/validation`
   - top level `/healthCheck` indicates general "app-is-running" state
@@ -774,7 +774,7 @@ Additional changes:
 - (Refactor KafkaAvro API) Removed `FixedKafkaAvroSourceFactory` and `FixedKafkaAvroSinkFactory` (now we don't support fixed schema)
 - (Refactor Kafka API) Replaced `topics: List[String]` by `List[PreparedKafkaTopic]` and removed `processObjectDependencies` in `KafkaSource`
 
-Be aware that we are using avro 1.9.2 instead of default Flink's 1.8.2 (for java time logical types conversions purpose).
+Be aware that we are using Avro 1.9.2 instead of default Flink's 1.8.2 (for Java time logical types conversions purpose).
 
 * [#1013](https://github.com/TouK/nussknacker/pull/1013) Expression evaluation is synchronous now. It shouldn't cause any problems 
 (all languages were synchronous anyway), but some internal code may have to change.

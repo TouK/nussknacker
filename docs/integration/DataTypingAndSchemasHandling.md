@@ -11,9 +11,9 @@ enrich data using e.g. [OpenAPI](https://swagger.io/specification/) or databases
 types of data like JSON, Binary, and DB data. In each case format of these data is described in a different way:
 
 * Request-response inputs and outputs are described by JSON Schema, stored in Nussknacker scenario's properties
-* Source [kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
-* Source [kafka](https://kafka.apache.org/) with binary data is described by Avro Schema, stored in the schema registry
-* [OpenAPI](https://swagger.io/specification/) enricher uses JSON data described by OpenAPI Schema
+* Source [Kafka](https://kafka.apache.org/) with JSON data is described by JSON Schema, stored in the schema registry
+* Source [Kafka](https://kafka.apache.org/) with binary data is described by Avro schema, stored in the schema registry
+* [OpenAPI](https://swagger.io/specification/) enricher uses JSON data described by OpenAPI schema
 * Database data are described by JDBC metadata, that contain column information
 
 ![Typing architecture](./img/typing.png)
@@ -22,9 +22,9 @@ To provide consistent and proper support for these formats Nussknacker converts 
 own `Typing Information`, which is used on the Designer's part to hint and validate the data. Each part of the diagram
 is statically validated and typed on an ongoing basis.
 
-## Avro Schema
+## Avro schema
 
-We support [Avro Schema](https://avro.apache.org/) in version: `1.11.0`. Avro is available only
+We support [Avro schema](https://avro.apache.org/) in version: `1.11.0`. Avro is available only
 on [Streaming](/docs/scenarios_authoring/DataSourcesAndSinks.md). You need
 [Schema Registry](/docs/integration/KafkaIntegration.md#schema-registry-integration) if you want to use Avro Schema.
 
@@ -32,25 +32,25 @@ on [Streaming](/docs/scenarios_authoring/DataSourcesAndSinks.md). You need
 
 #### [Primitive types](https://avro.apache.org/docs/1.11.0/spec.html#schema_primitive)
 
-| Avro Schema | Java type     | Comment                                                                                                                                                |
-|-------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------|
-| null        | null          |                                                                                                                                                        |
-| string      | String / Char | String schema is by default represented by java UTF-8 String. Using advance config `AVRO_USE_STRING_FOR_STRING_TYPE=false`, you can change it to Char. |
-| boolean     | Boolean       |                                                                                                                                                        |
-| int         | Integer       | 32bit                                                                                                                                                  |
-| long        | Long          | 64bit                                                                                                                                                  |
-| float       | Float         | single precision                                                                                                                                       |
-| double      | Double        | double precision                                                                                                                                       |
-| bytes       | ByteBuffer    |                                                                                                                                                        |
+| Avro type | Java type     | Comment                                                                                                                                         |
+|-----------|---------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| null      | null          |                                                                                                                                                 |
+| string    | String / Char | Defaults to Java `String` (UTF-8). Use the advanced configuration option `AVRO_USE_STRING_FOR_STRING_TYPE=false` to change it to `CharSequence` |
+| boolean   | Boolean       |                                                                                                                                                 |
+| int       | Integer       | 32 bit                                                                                                                                          |
+| long      | Long          | 64 bit                                                                                                                                          |
+| float     | Float         | single precision                                                                                                                                |
+| double    | Double        | double precision                                                                                                                                |
+| bytes     | ByteBuffer    |                                                                                                                                                 |
 
 #### [Logical types](https://avro.apache.org/docs/1.11.0/spec.html#Logical+Types)
 
 Conversion at source to the specific type means that behind the scene Nussknacker
 converts [primitive type](https://avro.apache.org/docs/1.11.0/spec.html#schema_primitive)
-to [logical type](https://avro.apache.org/docs/1.11.0/spec.html#Logical+Types) - java objects, consequently, the
+to [logical type](https://avro.apache.org/docs/1.11.0/spec.html#Logical+Types) - Java objects, consequently, the
 end-user has access to methods of these objects.
 
-| Avro Schema                              | Java type  | Sample               | Comment                                                       |
+| Avro type                                | Java type  | Sample               | Comment                                                       |
 |------------------------------------------|------------|----------------------|---------------------------------------------------------------|
 | decimal (bytes or fixed)                 | BigDecimal |                      |                                                               |
 | uuid (string)                            | UUID       |                      |                                                               |
@@ -64,18 +64,18 @@ end-user has access to methods of these objects.
 
 #### [Complex types](https://avro.apache.org/docs/1.11.0/spec.html#schema_complex)
 
-| Avro Schema | Java type                                                  | Comment                                                     |
-|-------------|------------------------------------------------------------|-------------------------------------------------------------|
-| array       | [list](/docs/scenarios_authoring/Spel.md#arrayslists)      |                                                             |
-| map         | [map](/docs/scenarios_authoring/Spel.md#recordsobjects)    | Key - value map, where key is always represented by String. |
-| record      | [record](/docs/scenarios_authoring/Spel.md#recordsobjects) |                                                             |
-| enums       | org.apache.avro.generic.GenericData.EnumSymbol             |                                                             |
-| fixed       | org.apache.avro.generic.GenericData.Fixed                  |                                                             |
-| union       | Any of the above types                                     | It can be any of the defined type in union.                 |
+| Avro type | Java type                                                  | Comment                                                     |
+|-----------|------------------------------------------------------------|-------------------------------------------------------------|
+| array     | [list](/docs/scenarios_authoring/Spel.md#arrayslists)      |                                                             |
+| map       | [map](/docs/scenarios_authoring/Spel.md#recordsobjects)    | Key - value map, where key is always represented by String. |
+| record    | [record](/docs/scenarios_authoring/Spel.md#recordsobjects) |                                                             |
+| enums     | org.apache.avro.generic.GenericData.EnumSymbol             |                                                             |
+| fixed     | org.apache.avro.generic.GenericData.Fixed                  |                                                             |
+| union     | Any of the above types                                     | It can be any of the defined type in union.                 |
 
 ### Sink validation & encoding
 
-| Java type                                                    | Avro Schema                              | Comment                                                                                                                       |
+| Java type                                                    | Avro type                                | Comment                                                                                                                       |
 |--------------------------------------------------------------|------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------|
 | null                                                         | null                                     |                                                                                                                               |
 | String                                                       | string                                   |                                                                                                                               |
@@ -213,7 +213,7 @@ Pattern properties add additional requirements during scenario authoring for typ
 
 ## Validation and encoding
 
-As we can see above on the diagram, finally preparing data (e.g. kafka sink / response sink) is divided into two parts:
+As we can see above on the diagram, finally preparing data (e.g. Kafka sink / response sink) is divided into two parts:
 
 * during validation on the Designer, the `Typing Information` is compared against the sink schema
 * encoding data at runtime based on the data type, the data is converted to the internal representation expected by the

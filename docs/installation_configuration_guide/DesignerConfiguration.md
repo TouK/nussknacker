@@ -2,7 +2,7 @@
 sidebar_position: 4
 ---
 # Designer configuration
-                             
+
 The default Designer configuration is defined in [defaultDesignerConfig.conf](https://github.com/TouK/nussknacker/blob/staging/designer/server/src/main/resources/defaultDesignerConfig.conf).
 
 
@@ -33,24 +33,24 @@ for detailed list of configuration options.
 
 The table below presents most important options, or the ones that have Nussknacker specific defaults.
 
-| Parameter name       | Importance | Type   | Default value                                             | Description                                                                                 |
-|----------------------|------------|--------|-----------------------------------------------------------|---------------------------------------------------------------------------------------------|
-| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                       |
-| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              | In case of PostgreSQL the driver can be downloaded from PostgresQL website; ensure that the jar with the driver is is on a [classPath](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/bin/nussknacker-entrypoint.sh#L17)  |
-| db.user              | High       | string | "SA"                                                      |                                                                                             |
-| db.password          | High       | string | ""                                                        |                                                                                             |
-| db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                             |
-| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
-| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
-| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application |
+| Parameter name       | Importance | Type   | Default value                                             | Description                                                                                                                                                                                                                                            |
+|----------------------|------------|--------|-----------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| db.url               | High       | string | "jdbc:hsqldb:file:"${storageDir}"/db;sql.syntax_ora=true" | Default HSQL location                                                                                                                                                                                                                                  |
+| db.driver            | High       | string | "org.hsqldb.jdbc.JDBCDriver"                              | In case of PostgreSQL the driver can be downloaded from PostgresQL website; ensure that the jar with the driver is on a [classPath](https://github.com/TouK/nussknacker/blob/staging/nussknacker-dist/src/universal/bin/nussknacker-entrypoint.sh#L17) |
+| db.user              | High       | string | "SA"                                                      |                                                                                                                                                                                                                                                        |
+| db.password          | High       | string | ""                                                        |                                                                                                                                                                                                                                                        |
+| db.connectionTimeout | Low        | int    | 30000                                                     |                                                                                                                                                                                                                                                        |
+| db.maximumPoolSize   | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
+| db.minimumIdle       | Low        | int    | 1                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
+| db.numThreads        | Low        | int    | 5                                                         | We have lower limits than default config, since then Designer is not heavy-load application                                                                                                                                                            |
 
 ## Metrics settings
                                                                      
 ### Metric dashboard
 
-Each scenario can have a link to grafana dashboard. In [docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/grafana) we
-provide `nussknacker-scenario` dashboard. 
-You can modify/configure own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
+Each scenario can have a link to Grafana dashboard. In [Docker setup](https://github.com/TouK/nussknacker-quickstart/tree/main/docker/common/grafana) we
+provide a sample `nussknacker-scenario` dashboard.
+You can modify/configure your own, the only assumption that we make is that [variable](https://grafana.com/docs/grafana/latest/variables/) `scenarioName` is used to display metrics for particular scenario.
 
 Each scenario type can have different dashboard, this is configured by 
 `metricsSettings.scenarioTypeToDashboard` settings. If no mapping is configured, `metricsSettings.defaultDashboard` is used.
@@ -61,8 +61,8 @@ in `metricsSettings.url` setting.
 
 | Parameter name                          | Importance | Type   | Default value                                                                                      | Description                                                                                                                    |
 |-----------------------------------------|------------|--------|----------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------|
-| metricsSettings.url                     | High       | string | `/grafana/d/$dashboard?theme=dark&var-scenarioName=$scenarioName&var-env=local` (for docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
-| metricsSettings.defaultDashboard        | Medium     | string | nussknacker-scenario (for docker setup)                                                            | Default dashboard                                                                                                              |
+| metricsSettings.url                     | High       | string | `/grafana/d/$dashboard?theme=dark&var-scenarioName=$scenarioName&var-env=local` (for Docker setup) | URL (accessible from user browser, in docker setup its configured as relative URL) to Grafana dashboard, see above for details |
+| metricsSettings.defaultDashboard        | Medium     | string | nussknacker-scenario (for Docker setup)                                                            | Default dashboard                                                                                                              |
 | metricsSettings.scenarioTypeToDashboard | Low        | map    |                                                                                                    | Mapping of scenario types to dashboard                                                                                         |
 
 

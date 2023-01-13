@@ -196,7 +196,7 @@ abstract class TypedObjectBasedSerializerSnapshot[T] extends TypeSerializerSnaps
           TypeSerializerSchemaCompatibility.incompatible()
         } else {
           logger.info(s"Schema migration needed, as fields are not equal (old keys: ${currentKeys.mkString(", ")}, new keys: ${newKeys.mkString(", ")}), " +
-            s" fields compatibility is is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
+            s" fields compatibility is [$fieldsCompatibilityMessage] - returning compatibleAfterMigration")
           TypeSerializerSchemaCompatibility.compatibleAfterMigration()
         }
       }

@@ -83,7 +83,7 @@ If the event which arrived to some node originally came from the Kafka topic, th
 * timestamp 
 * timestampType 
 * topic. 
-Consult Kafka [documentation](https://kafka.apache.org/24/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
+Consult Kafka [documentation](https://kafka.apache.org/33/javadoc/org/apache/kafka/clients/consumer/ConsumerRecord.html) for the exact meaning of those fields. 
 
 
 The `#meta` variable carries meta information about the currently executed scenario. The following meta information elements are available:

@@ -22,9 +22,9 @@ Below there are described possible options.
 
 After you execute any of them, you probably want to run also `submodules` as described [here](#Submodules). This step is optional, but most of the application's functionality relies on it. 
 
-## Using backend started with docker
+## Using backend started with Docker
 
-This option requires docker and connection to docker hub registry. It will use `touk/nussknacker` image in `staging-latest` version.
+This option requires Docker and connection to DockerHub registry. It will use `touk/nussknacker` image in `staging-latest` version.
 ```
 npm run start:backend-staging
 ```
@@ -98,7 +98,7 @@ Just like in options above, you should run backend and frontend before and the s
 #### Using unified linux environment 
 
 This is the correct option if you want to add/modify image snapshots and make sure that it was done in deterministic way.
-It runs backend in docker container, frontend connected to this backend and after that it runs cypress tests also in docker container.
+It runs backend in Docker container, frontend connected to this backend and after that it runs cypress tests also in Docker container.
 
 You should run once: 
 ```

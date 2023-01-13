@@ -24,7 +24,7 @@ As you can see in the `variable` configuration form below, Nussknacker inferred 
 ![alt_text](img/variableDeclarationForm.png "Variable declaration form")
 
 
-In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains json objects and they contain `operation` field, the value of this field can be obtained in the following way: 
+In the next example `#input` variable is used to create an expression returning a boolean value. If the input Kafka topic contains JSON objects and they contain `operation` field, the value of this field can be obtained in the following way: 
 
 
 `#input.operation` 

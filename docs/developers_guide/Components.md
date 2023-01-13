@@ -43,7 +43,7 @@ This is the most powerful way to define components. It allows for:
 - Dynamic parameters. In particular:
     - Parameters may depend on configuration. E.g., in OpenAPI enricher URL with definition is passed in configuration,
       the parameters are generated on the base of this definition. 
-    - Parameters may depend on each other. Good example is Kafka/Schema registry Sink. The first parameter determines the target topic and its schema, which 
+    - Parameters may depend on each other. Good example is Kafka/Schema Registry Sink. The first parameter determines the target topic and its schema, which 
       defines the rest of the parameters
                                   
 Examples:

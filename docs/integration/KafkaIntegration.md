@@ -16,24 +16,24 @@ If you want to use Flink engine, this is also recommended:
 
 ## Sources and sinks
 
-Kafka topics are native streaming data input to Nussknacker and the native output where results of Nussknacker scenarios processing are placed. In Nussknacker terminology input topics are called sources, output topics are called sinks. This section provides important details of Nussknacker's integration with Kafka and schema registry.
+Kafka topics are native streaming data input to Nussknacker and the native output where results of Nussknacker scenarios processing are placed. In Nussknacker terminology input topics are called sources, output topics are called sinks. This section provides important details of Nussknacker's integration with Kafka and Schema Registry.
 
-## Schema registry integration
+## Schema Registry integration
 
-Nussknacker integrates with a schema registry. It is the source of topics available to choose from in sources and sinks. It also allows Nussknacker to provide syntax suggestions and validation. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the schema registry.
+Nussknacker integrates with Schema Registry. It is the source of topics available to choose from in Kafka sources and sinks. It also allows Nussknacker to provide syntax suggestions and validation. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the schema registry.
 
 Schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions.
 
-Nussknacker supports both JSON and AVRO schemas, and JSON and AVRO topic payloads. Detailed information on how AVRO data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format).
+Nussknacker supports both JSON and Avro schemas, and JSON and Avro topic payloads. Detailed information on how Avro data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format).
 
 ### Schema and payload types
 
 By default, Nussknacker supports two combinations of schema type and payload type:
 
-* AVRO schema + AVRO payload
+* Avro schema + Avro payload
 * JSON schema + JSON payload
 
-If you prefer using JSON payload with AVRO schema, you can use `avroAsJsonSerialization` configuration setting to change that behaviour ([see Configuration for details](/docs/installation_configuration_guide/ModelConfiguration#common-kafka-configuration)).
+If you prefer using JSON payload with Avro schema, you can use `avroAsJsonSerialization` configuration setting to change that behaviour ([see Configuration for details](/docs/installation_configuration_guide/ModelConfiguration#common-kafka-configuration)).
 
 ### Schema ID
 
@@ -56,7 +56,7 @@ Both streaming Engines (Lite and Flink) share some common Kafka settings this se
 
 ### Kafka connection configuration
 
-Important thing to remember is that Kafka server addresses/schema registry addresses have to be resolvable from:
+Important thing to remember is that Kafka server addresses/Schema Registry addresses have to be resolvable from:
 - Nussknacker Designer host (to enable schema discovery and scenario testing)
 - Lite/Flink engine - to be able to run job
 
@@ -74,7 +74,7 @@ Important thing to remember is that Kafka server addresses/schema registry addre
 | schemaRegistryCacheConfig.availableSchemasExpirationTime                    | Low        | duration | 10 seconds       | How often available schemas cache will be invalidated. This determines the maximum time you'll have to wait after adding new schema or new schema version until it will be available in Designer                                                             |
 | schemaRegistryCacheConfig.parsedSchemaAccessExpirationTime                  | Low        | duration | 2 hours          | How long parsed schema will be cached after first access to it                                                                                                                                                                                               |
 | schemaRegistryCacheConfig.maximumSize                                       | Low        | number   | 10000            | Maximum entries size for each caches: available schemas cache and parsed schema cache                                                                                                                                                                        |
-| lowLevelComponentsEnabled                                                   | Medium     | boolean  | false            | Add low level (deprecated) kafka components: 'kafka-json', 'kafka-avro', 'kafka-registry-typed-json'                                                                                                                                                         |
+| lowLevelComponentsEnabled                                                   | Medium     | boolean  | false            | Add low level (deprecated) Kafka components: 'kafka-json', 'kafka-avro', 'kafka-registry-typed-json'                                                                                                                                                         |
 | avroAsJsonSerialization                                                     | Low        | boolean  | false            | Send and receive json messages serialized using Avro schema                                                                                                                                                                                                  |
 
 ### Exception handling
@@ -162,7 +162,7 @@ See [common config](../ModelConfiguration#kafka-connection-configuration) for th
 |---------------------------------------------------|------------|----------------------------|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | kafkaEspProperties.defaultMaxOutOfOrdernessMillis | Medium     | duration                   | 60s              | Configuration of [bounded of orderness watermark generator](https://ci.apache.org/projects/flink/flink-docs-stable/docs/dev/datastream/event-time/built_in/#fixed-amount-of-lateness) used by Kafka sources |
 | consumerGroupNamingStrategy                       | Low        | processId/processId-nodeId | processId-nodeId | How consumer groups for sources should be named                                                                                                                                                             |
-| avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should AVRO messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
+| avroKryoGenericRecordSchemaIdSerialization        | Low        | boolean                    | true             | Should Avro messages from topics registered in schema registry be serialized in optimized way, by serializing only schema id, not the whole schema                                                          |
             
 
 ### Configuration for Lite engine
