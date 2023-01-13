@@ -17,7 +17,8 @@ import {
   updateAfterNodeIdChange,
 } from "./utils"
 import {Edge, ValidationResult} from "../../types"
-import NodeUtils from "../../components/graph/NodeUtils";
+import NodeUtils from "../../components/graph/NodeUtils"
+import {batchGroupBy} from "./batchGroupBy"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
@@ -134,12 +135,12 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "NODES_CONNECTED": {
       let newEdges: Edge[]
 
-      const availableEdges = NodeUtils.edgesForNode(action.fromNode, action.processDefinitionData).edges;
+      const availableEdges = NodeUtils.edgesForNode(action.fromNode, action.processDefinitionData).edges
       const freeOutputEdges = state.processToDisplay.edges
         .filter(e => e.from === action.fromNode.id && !e.to)
         //we do this to skip e.g. edges that became incorrect/unavailable
         .filter(e => availableEdges.find(available => available?.name == e?.edgeType?.name && available?.type == e?.edgeType?.type))
-      
+
       const freeOutputEdge = freeOutputEdges.find(e => e.edgeType === action.edgeType) || (freeOutputEdges.length == 0 ? null : freeOutputEdges[0])
       if (freeOutputEdge) {
         newEdges = state.processToDisplay.edges.map(e => e === freeOutputEdge ?
@@ -292,12 +293,15 @@ const undoableReducer = undoable(reducer, {
   undoType: "UNDO",
   redoType: "REDO",
   clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
+  groupBy: batchGroupBy.init(),
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
       "VALIDATION_RESULT",
       "DISPLAY_PROCESS",
       "UPDATE_IMPORTED_PROCESS",
+      "PROCESS_STATE_LOADED",
+      "UPDATE_BACKEND_NOTIFICATIONS",
     ]),
     (action, nextState, prevState) => {
       const keys: Array<keyof GraphState> = [

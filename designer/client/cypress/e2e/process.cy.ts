@@ -86,11 +86,7 @@ describe("Process", () => {
     it("should allow drag node", () => {
       cy.get("[title='toggle left panel']").click()
       cy.layoutScenario()
-      cy.get("[model-id=dynamicService]")
-        .should("be.visible")
-        .trigger("mousedown")
-        .trigger("mousemove", {clientX: 100, clientY: 100})
-        .trigger("mouseup", {force: true})
+      cy.dragNode("dynamicService", {x: 100, y: 100})
       cy.get("[data-testid=graphPage]").matchImage(screenshotOptions)
     })
 
