@@ -58,6 +58,17 @@ module.exports = {
         },
       },
     })],
+    splitChunks: {
+      cacheGroups: {
+        vendors: {
+          test: /[\\/]node_modules[\\/]/,
+          name: 'vendors',
+          chunks: 'all',
+          minSize: 100000,
+          maxSize: 500000,
+        },
+      },
+    },
   },
   performance: {
     maxEntrypointSize: 3000000,
