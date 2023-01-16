@@ -34,7 +34,7 @@ object PrettyValidationErrors {
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
-      case InvalidTailOfBranch(_) => node("Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer")
+      case InvalidTailOfBranch(_) => node("Scenario must end with sink or processor", "Scenario branch can only end with sink, processor or ending custom transformer")
 
       case MissingParameters(params, _) =>
         node(s"Node parameters not filled: ${params.mkString(", ")}", s"Please fill missing node parameters: : ${params.mkString(", ")}")
