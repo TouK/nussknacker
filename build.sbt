@@ -306,6 +306,9 @@ val hsqldbV = "2.7.1"
 val postgresV = "42.5.1"
 val flywayV = "6.3.3"
 val confluentV = "7.3.0"
+val azureKafkaSchemaRegistryV = "1.0.0-beta.9"
+val azureSchemaRegistryV = "1.3.1"
+val azureIdentityV = "1.7.3"
 val jbcryptV = "0.4"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
@@ -726,6 +729,18 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
           ExclusionRule("log4j", "log4j"),
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
+        "com.microsoft.azure" % "azure-schemaregistry-kafka-avro" % azureKafkaSchemaRegistryV excludeAll (
+          ExclusionRule("com.azure", "azure-core-http-netty")
+        ),
+        "com.azure" % "azure-data-schemaregistry" % azureSchemaRegistryV excludeAll (
+          ExclusionRule("com.azure", "azure-core-http-netty")
+        ),
+        "com.azure" % "azure-identity" % azureIdentityV excludeAll(
+          ExclusionRule("com.azure", "azure-core-http-netty")
+        ),
+        // we use azure-core-http-okhttp instead of azure-core-http-netty to avoid netty version collisions
+        //TODO: switch to jdk implementation after releasing it: https://github.com/Azure/azure-sdk-for-java/issues/27065
+        "com.azure" % "azure-core-http-okhttp" % "1.11.5",
         // it is workaround for missing VerifiableProperties class - see https://github.com/confluentinc/schema-registry/issues/553
         "org.apache.kafka" %% "kafka" % kafkaV % "provided" excludeAll(
           ExclusionRule("log4j", "log4j"),
@@ -734,7 +749,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
         "tech.allegro.schema.json2avro" % "converter" % "0.2.15",
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
-    }
+    },
   ).dependsOn(componentsUtils % Provided, kafkaComponentsUtils, interpreter % "test", kafkaTestUtils % "test", jsonUtils)
 
 lazy val flinkSchemedKafkaComponentsUtils = (project in flink("schemed-kafka-components-utils")).
@@ -981,6 +996,8 @@ lazy val liteKafkaComponents: Project = (project in lite("components/kafka")).
   schemedKafkaComponentsUtils)
 
 lazy val liteKafkaComponentsTests: Project =  (project in lite("components/kafka-tests")).
+  configs(ExternalDepsTests).
+  settings(externalDepsTestsSettings).
   settings(commonSettings).
   settings(
     name := "nussknacker-lite-kafka-components-tests",

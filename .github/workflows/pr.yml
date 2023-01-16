@@ -325,7 +325,7 @@ jobs:
             --trace
       - name: Slow tests
         shell: bash
-        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test
+        run: ./ciRunSbt.sh designer/Slow/test liteK8sDeploymentManager/ExternalDepsTests/test liteKafkaComponentsTests/ExternalDepsTests/test
       - name: Test Report
         if: success() || failure()
         uses: actions/upload-artifact@v3
