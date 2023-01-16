@@ -406,14 +406,24 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Download node modules
-        run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
+      - name: debug
+        shell: bash
+        run: ls
       - uses: coursier/setup-action@v1
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           jvm: temurin:1.11.0.17
+      - name: debug
+        if: ${{ env.shouldBuildImage == 'true' }}
+        shell: bash
+        run: java --version
+      - name: debug
+        shell: bash
+        run: ls
+      - name: Download node modules
+        run: |
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
@@ -432,6 +442,10 @@ jobs:
         if: ${{ env.shouldBuildImage == 'true' }}
         shell: bash
         run: echo "NUSSKNACKER_VERSION=${{ needs.setup.outputs.nk_snapshot_version }}" >> $GITHUB_ENV
+      - name: debug
+        shell: bash
+        run: ls
+
       - name: Prepare docker
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
@@ -439,11 +453,19 @@ jobs:
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
         run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
+      - name: debug
+        shell: bash
+        run: ls
+
       - name: Test docker
         if: ${{env.shouldBuildImage == 'true' }}
         shell: bash
         working-directory: e2e-tests
         run: ./setupAndRun.sh
+      - name: debug
+        shell: bash
+        run: ls
+
       - name: FE tests e2e on build docker image
         if: ${{ env.shouldBuildImage == 'true' }}
         env:
@@ -454,6 +476,9 @@ jobs:
         run: |
           cd designer/client
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} test:e2e
+      - name: debug
+        shell: bash
+        run: ls
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
         shell: bash
@@ -462,6 +487,9 @@ jobs:
           NK_REF_VERSION=`[ "${GITHUB_REF}" != "" ] && echo "${GITHUB_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
           NK_BASE_REF_VERSION=`[ "${NK_REF_VERSION}" != "" ] && echo "${NK_REF_VERSION}" || [ "${GITHUB_BASE_REF}" != "" ] && echo "${GITHUB_BASE_REF}" | sed -e 's/refs\/heads\///g' -e 's/[^a-zA-Z0-9._-]/\_/g' -e 's/$/-latest/' | xargs -I VER sh -c 'docker pull touk/nussknacker:VER > /dev/null && echo VER || echo ""'`
           echo "NUSSKNACKER_VERSION=`[ \"${NK_BASE_REF_VERSION}\" != \"\" ] && echo \"${NK_BASE_REF_VERSION}\" || echo staging-latest`" >> $GITHUB_ENV
+      - name: debug
+        shell: bash
+        run: ls
       - name: FE tests e2e on pulled image
         if: ${{ env.shouldBuildImage == 'false' }}
         env:
