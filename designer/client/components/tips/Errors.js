@@ -59,7 +59,7 @@ export default class Errors extends React.Component {
 
     //TODO: this is dependent on messages from BE. Should be unified to proper resource bundle :/
     const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
-    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of scenario"))
+    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Scenario must end with sink or processor"))
     const otherNodeErrorIds = _.difference(nodeIds, _.concat(looseNodeIds, invalidEndNodeIds))
     const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors)
 
@@ -81,7 +81,7 @@ export default class Errors extends React.Component {
           />
           <NodeErrorsLinkSection
             nodeIds={invalidEndNodeIds}
-            message={i18next.t("errors.invalidScenarioEnd", "Invalid end of scenario: ")}
+            message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with sink or processor: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}
