@@ -55,5 +55,6 @@
     <logger name="org.apache.fop.apps.FOUserAgent" level="ERROR"/>
     <!-- skuber by default logs all requests to k8s on INFO -->
     <logger name="skuber" level="${SKUBER_LOG_LEVEL:-WARN}"/>
+    <logger name="com.azure" level="INFO"/>
 
 </configuration>

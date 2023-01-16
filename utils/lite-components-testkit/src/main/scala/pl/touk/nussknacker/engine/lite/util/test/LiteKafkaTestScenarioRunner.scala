@@ -19,8 +19,9 @@ import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
-import pl.touk.nussknacker.engine.lite.util.test.confluent.ConfluentKafkaAvroElementSerde
+import pl.touk.nussknacker.engine.lite.util.test.confluent.{AzureKafkaAvroElementSerde, ConfluentKafkaAvroElementSerde}
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.AzureSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
@@ -71,6 +72,7 @@ case class LiteKafkaTestScenarioRunnerBuilder(extraComponents: List[ComponentDef
     val schemaRegistryClient = schemaRegistryClientFactor.create(KafkaConfig.parseConfig(config))
     val serde = schemaRegistryClient match {
       case _: ConfluentSchemaRegistryClient => ConfluentKafkaAvroElementSerde
+      case _: AzureSchemaRegistryClient => AzureKafkaAvroElementSerde
       case _ =>
         throw new IllegalArgumentException(s"Not supported schema registry client: ${schemaRegistryClient.getClass}. " +
           s"Kafka tests mechanism is currently supported only for Confluent schema registry implementation")

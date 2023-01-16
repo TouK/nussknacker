@@ -12,7 +12,7 @@ import java.io.ByteArrayOutputStream
 
 class SchemaIdFromMessageExtractorTest extends AnyFunSuite with Matchers with OptionValues {
 
-  private val extractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true)
+  private val extractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true, isAzure = false)
 
   test("extract schema id from nu specific headers") {
     extractor.getSchemaId(

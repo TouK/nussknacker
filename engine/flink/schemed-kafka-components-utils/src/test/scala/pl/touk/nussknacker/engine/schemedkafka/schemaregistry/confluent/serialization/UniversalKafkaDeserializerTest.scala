@@ -28,7 +28,7 @@ class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrive
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 
-  private val schemaIdExtractor: ChainedSchemaIdFromMessageExtractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true)
+  private val schemaIdExtractor: ChainedSchemaIdFromMessageExtractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true, isAzure = false)
 
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema => SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
     UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory),
