@@ -28,7 +28,8 @@ env:
   #we use this variable in ciRunSbt.sh
   #NOTE: for publishing we use different settings, we don't use ciRunSbt.sh there
   CROSS_BUILD: ${{ github.ref == 'refs/heads/staging' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/preview') || startsWith(github.ref, 'refs/heads/release') }}
-
+  #disable JVMCICompiler as of (https://github.com/playframework/playframework/issues/11137)
+  SBT_JOPTS: "-J-Xms1500M -J-Xmx1500M -J-XX:+UnlockExperimentalVMOptions -J-XX:-UseJVMCICompiler"
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -406,14 +407,14 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ steps.nvm.outputs.NODE_VERSION }}
-      - name: Download node modules
-        run: |
-          npm ci --no-audit --prefix designer/client
-          npm ci --no-audit --prefix designer/submodules
       - uses: coursier/setup-action@v1
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
           jvm: temurin:1.11.0.17
+      - name: Download node modules
+        run: |
+          npm ci --no-audit --prefix designer/client
+          npm ci --no-audit --prefix designer/submodules
       - uses: actions/download-artifact@v3
         if: ${{ env.shouldBuildImage == 'true' }}
         with:
@@ -438,7 +439,7 @@ jobs:
           addDevArtifacts: true
         shell: bash
         #Doc generation is rather costly, we don't want it in test image creation
-        run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
+        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" dist/Docker/publishLocal
       - name: Test docker
         if: ${{env.shouldBuildImage == 'true' }}
         shell: bash
@@ -568,12 +569,12 @@ jobs:
         if: ${{ github.ref == 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
       - name: Publish without scaladocs
         if: ${{ github.ref != 'refs/heads/staging' }}
         shell: bash
         #TODO: handle version better, do we want to publish docker image for older scala versions? If so, how should it be tagged?
-        run: sbt -J-Xms1500M -J-Xmx1500M "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
+        run: sbt $SBT_JOPTS "set ThisBuild / version := \"$NUSSKNACKER_VERSION\"; set publishArtifact in (ThisBuild, packageDoc) := false; set sources in (Compile,doc) := Seq.empty" +publish +dist/Docker/publish +liteEngineRuntimeApp/Docker/publish
 
   trigger-external-build:
     runs-on: ubuntu-latest
