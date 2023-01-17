@@ -1,6 +1,7 @@
 import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
+import type {EnvironmentTagColor} from "../../containers/EnvironmentTag"
 
 export type MetricsType = {
   url: string,
@@ -19,12 +20,17 @@ export type SurveySettings ={
   key: string,
 }
 
+export interface EnvironmentTagSettings {
+  content: string,
+  color: EnvironmentTagColor,
+}
+
 export type FeaturesSettings = {
   counts: boolean,
   search: { url: string },
   metrics: MetricsType,
   remoteEnvironment: { targetEnvironmentId: string },
-  environmentAlert: { content: string, cssClass: string },
+  environmentAlert: EnvironmentTagSettings,
   commentSettings: { substitutionPattern: string, substitutionLink: string },
   deploymentCommentSettings?: { exampleComment: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
