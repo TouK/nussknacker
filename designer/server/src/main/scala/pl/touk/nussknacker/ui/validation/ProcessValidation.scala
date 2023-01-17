@@ -4,7 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.{Invalid, Valid}
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError
-import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ScenarioPropertiesError
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{DisabledNode, DuplicatedNodeIds, EmptyNodeId, InvalidCharacters, LooseNode, NonUniqueEdge, NonUniqueEdgeType, ScenarioPropertiesError}
 import pl.touk.nussknacker.engine.api.expression.ExpressionParser
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.compile.{NodeTypingInfo, ProcessValidator}
@@ -37,8 +37,6 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
                         additionalValidators: ProcessingTypeDataProvider[List[CustomProcessValidator]],
                         subprocessResolver: SubprocessResolver,
                         expressionParsers: Option[PartialFunction[ExpressionParser, ExpressionParser]]) {
-
-  val uiValidationError = "UiValidation"
 
   /**
     * We cache there model with category as a key, because model can be reloaded.
@@ -135,7 +133,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
 
   private def warningValidation(process: DisplayableProcess): ValidationResult = {
     val disabledNodes = process.nodes.collect { case d: NodeData with Disableable if d.isDisabled.getOrElse(false) => d }
-    val disabledNodesWarnings = disabledNodes.map(node => (node.id, List(PrettyValidationErrors.disabledNode(uiValidationError)))).toMap
+    val disabledNodesWarnings = disabledNodes.map(node => (node.id, List(PrettyValidationErrors.formatErrorMessage(DisabledNode(node.id))))).toMap
     ValidationResult.warnings(disabledNodesWarnings)
   }
 
@@ -144,7 +142,8 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
 
     ValidationResult.errors(
       displayable.nodes.map(_.id).filter(n => invalidCharsRegexp.findFirstIn(n).isDefined)
-        .map(n => n -> List(PrettyValidationErrors.invalidCharacters(uiValidationError))).toMap,
+        .map(n => n -> List(PrettyValidationErrors.formatErrorMessage(InvalidCharacters(n))))
+        .toMap,
       List(),
       List()
     )
@@ -161,17 +160,17 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
   private def validateEdgeUniqueness(displayableProcess: DisplayableProcess): ValidationResult = {
     val edgesByFrom = displayableProcess.edges.groupBy(_.from)
 
-    def findNonUniqueEdge(edgesFromNode: List[Edge]) = {
+    def findNonUniqueEdge(nodeId: String, edgesFromNode: List[Edge]) = {
       val nonUniqueByType = edgesFromNode.groupBy(_.edgeType).collect { case (Some(eType), list) if eType.mustBeUnique && list.size > 1 =>
-        PrettyValidationErrors.nonuniqeEdgeType(uiValidationError, eType)
+        PrettyValidationErrors.formatErrorMessage(NonUniqueEdgeType(eType.toString, nodeId))
       }
       val nonUniqueByTarget = edgesFromNode.groupBy(_.to).collect { case (to, list) if list.size > 1 =>
-        PrettyValidationErrors.nonuniqeEdge(uiValidationError, to)
+        PrettyValidationErrors.formatErrorMessage(NonUniqueEdge(nodeId, to))
       }
       (nonUniqueByType ++ nonUniqueByTarget).toList
     }
 
-    val edgeUniquenessErrors = edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(edges) }.filterNot(_._2.isEmpty)
+    val edgeUniquenessErrors = edgesByFrom.map { case (from, edges) => from -> findNonUniqueEdge(from, edges) }.filterNot(_._2.isEmpty)
     ValidationResult.errors(edgeUniquenessErrors, List(), List())
   }
 
@@ -181,7 +180,7 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
       //source & subprocess inputs don't have inputs
       .filterNot(n => n.isInstanceOf[SubprocessInputDefinition] || n.isInstanceOf[Source])
       .filterNot(n => displayableProcess.edges.exists(_.to == n.id))
-      .map(n => n.id -> List(PrettyValidationErrors.looseNode(uiValidationError)))
+      .map(n => n.id -> List(PrettyValidationErrors.formatErrorMessage(LooseNode(n.id))))
       .toMap
     ValidationResult.errors(looseNodes, List(), List())
   }
@@ -193,13 +192,13 @@ class ProcessValidation(modelData: ProcessingTypeDataProvider[ModelData],
     if (duplicates.isEmpty) {
       ValidationResult.success
     } else {
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.duplicatedNodeIds(uiValidationError, duplicates)))
+      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.formatErrorMessage(DuplicatedNodeIds(duplicates.toSet))))
     }
   }
 
   private def validateEmptyId(displayableProcess: DisplayableProcess): ValidationResult = {
     if (displayableProcess.nodes.exists(_.id.isEmpty)) {
-      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.emptyNodeId(uiValidationError)))
+      ValidationResult.errors(Map(), List(), List(PrettyValidationErrors.formatErrorMessage(EmptyNodeId)))
     } else {
       ValidationResult.success
     }
