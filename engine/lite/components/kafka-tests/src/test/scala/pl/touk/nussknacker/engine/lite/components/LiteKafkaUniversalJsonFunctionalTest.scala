@@ -196,15 +196,22 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
   test("patternProperties handling") {
     val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger))
+    val objWithPatternPropsAndStringAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString))
+    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString), Map("definedProp" -> schemaString))
+
     val inputObjectIntPropValue = fromInt(1)
     val inputObject = obj("foo_int" -> inputObjectIntPropValue)
 
     //@formatter:off
     val testData = Table(
-      ("input",       "sourceSchema",                                 "sinkSchema",                                   "sinkExpression",                             "validationModes",   "result"),
-      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
-      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,              invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
-      (inputObject,   objWithIntPatternPropsAndOpenAdditionalSchema,  objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
+      ("input",       "sourceSchema",                                       "sinkSchema",                                   "sinkExpression",                             "validationModes",    "result"),
+      (inputObject,   schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,   schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,               invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
+      (inputObject,   objWithIntPatternPropsAndOpenAdditionalSchema,        objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
+      (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Unknown' expected: 'Long'")),
+      (inputObject,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
     )
     //@formatter:on
 

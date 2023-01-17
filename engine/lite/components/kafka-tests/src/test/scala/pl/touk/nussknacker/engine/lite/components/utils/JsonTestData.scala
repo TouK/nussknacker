@@ -210,8 +210,11 @@ object JsonTestData {
     }
   }
 
-  def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None): Schema = {
+  def createObjectSchemaWithPatternProperties(patternProperties: Map[String, Schema], additionalPropertySchema: Option[Schema] = None, definedProperties: Map[String, Schema] = Map.empty): Schema = {
     val builder = ObjectSchema.builder()
+    definedProperties.foreach { case (propertyName, schema) =>
+      builder.addPropertySchema(propertyName, schema)
+    }
     val regexpFactory = new JavaUtilRegexpFactory
     patternProperties.foreach { case (pattern, schema) =>
       builder.patternProperty(regexpFactory.createHandler(pattern), schema)
