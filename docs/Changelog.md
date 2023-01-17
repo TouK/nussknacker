@@ -11,6 +11,7 @@
 * [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - scala 2.12 & 2.13
 * [#3874](https://github.com/TouK/nussknacker/pull/3874) Tumbling window with OnEvent trigger saves context
 * [#3853](https://github.com/TouK/nussknacker/pull/3853) Support of patternProperties in sink with JSON Schema
+* [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4 
 
 
 1.7.0 (19 Dec 2022)

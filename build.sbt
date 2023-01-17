@@ -277,8 +277,7 @@ val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.3"
 val jwtCirceV = "9.1.2"
-//TODO: upgrade to 2.13.x
-val jacksonV = "2.11.3"
+val jacksonV = "2.13.4"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
@@ -1251,7 +1250,7 @@ lazy val security = (project in file("security")).
       "io.circe" %% "circe-core" % circeV,
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-      "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+      "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
