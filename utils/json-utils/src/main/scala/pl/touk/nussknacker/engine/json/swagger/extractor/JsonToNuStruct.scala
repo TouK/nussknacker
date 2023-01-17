@@ -7,6 +7,7 @@ import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
+import java.util.regex.Pattern
 import scala.util.Try
 
 // TODO: Validated
@@ -32,8 +33,12 @@ object JsonToNuStruct {
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+              // todo: use unapply instead of findMatchingPatternSchema
+            case (key, value) if findMatchingPatternSchema(obj.patternProperties, key).isDefined =>
+              val patternPropertySchema = findMatchingPatternSchema(obj.patternProperties, key)
+              key -> JsonToNuStruct(value, patternPropertySchema.get, addPath(key))
             case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesSwaggerTyped =>
+              case add: AdditionalPropertiesSwaggerTyped if obj.patternProperties.isEmpty =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
               case _ =>
                 key -> jsonToAny(value)
@@ -41,6 +46,11 @@ object JsonToNuStruct {
           }
         )
       )
+
+    def findMatchingPatternSchema(patternProperties: Map[Pattern, SwaggerTyped], propertyName: String): Option[SwaggerTyped] = {
+      //todo: what if multiple schemas match?
+      patternProperties.collectFirst { case (pattern, typed) if pattern.matcher(propertyName).matches() => typed }
+    }
 
     def extractMap(valuesType: Option[SwaggerTyped]): AnyRef = extract[JsonObject](
       _.asObject,

@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.`type`.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.node.{ArrayNode, ObjectNode}
 import io.circe.generic.JsonCodec
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, Json, KeyDecoder, KeyEncoder}
 import io.swagger.v3.oas.models.media.{ArraySchema, MapSchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.json.swagger.parser.{PropertyName, SwaggerRefSchemas}
@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
 import java.util.Collections
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
@@ -68,7 +69,9 @@ object SwaggerEnum {
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additionalProperties: AdditionalProperties = AdditionalPropertiesWithoutType) extends SwaggerTyped
+@JsonCodec case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
+                                    additionalProperties: AdditionalProperties = AdditionalPropertiesWithoutType,
+                                    patternProperties: Map[Pattern, SwaggerTyped] = Map.empty) extends SwaggerTyped
 
 case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
 
@@ -135,7 +138,7 @@ object SwaggerTyped {
   def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
     case SwaggerMap(valueType: Option[SwaggerTyped]) =>
       Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], valueType.map(typingResult).getOrElse(Unknown)))
-    case SwaggerObject(elementType, _) =>
+    case SwaggerObject(elementType, _, _) =>
       import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
       TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
     case SwaggerArray(ofType) =>
@@ -171,23 +174,32 @@ object SwaggerArray {
 }
 
 object SwaggerObject {
+  private implicit val patternKeyDecoder: KeyDecoder[Pattern] = KeyDecoder[String].map(Pattern.compile)
+  private implicit val patternKeyEncoder: KeyEncoder[Pattern] = KeyEncoder[String].contramap(_.pattern())
+
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.toMap.mapValuesNow(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
 
     if (properties.isEmpty) {
       schema.getAdditionalProperties match {
-        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
+        case a: Schema[_] if schema.getPatternProperties == null || schema.getPatternProperties.isEmpty => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
         case b if b == false => new SwaggerObject(Map.empty, AdditionalPropertiesDisabled)
         case _ => SwaggerMap(None)
       }
-    } else{
+    } else {
       val additionalProperties = schema.getAdditionalProperties match {
         case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas, usedRefs))
         case any if any == false => AdditionalPropertiesDisabled
         case _ => AdditionalPropertiesWithoutType
       }
 
-      SwaggerObject(properties, additionalProperties)
+      val patternProperties = Option(schema.getPatternProperties)
+        .map(_.asScala)
+        .getOrElse(Map.empty)
+        .map { case (patternString, patternPropertySchema) => (Pattern.compile(patternString), SwaggerTyped(patternPropertySchema, swaggerRefSchemas, usedRefs))}
+        .toMap
+
+      SwaggerObject(properties, additionalProperties, patternProperties)
     }
   }
 }

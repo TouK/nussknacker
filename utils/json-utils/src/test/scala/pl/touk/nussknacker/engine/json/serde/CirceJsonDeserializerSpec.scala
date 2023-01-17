@@ -169,4 +169,37 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     }
   }
 
+  test("json object with defined, pattern and additional properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "someDefinedProp": {
+        |      "type": "boolean"
+        |    }
+        |  },
+        |  "additionalProperties": {
+        |    "type": "string"
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "someDefinedProp": true,
+        |  "someAdditionalProp": "string",
+        |  "somePatternProp_int": 1234
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "someDefinedProp" -> true,
+      "someAdditionalProp" -> "string",
+      "somePatternProp_int" -> java.math.BigDecimal.valueOf(1234L)
+    ).asJava
+  }
+
 }
