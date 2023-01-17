@@ -95,7 +95,7 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(invalidCharacters) {
       status shouldEqual StatusCodes.BadRequest
       val entity = entityAs[String]
-      entity should include("Node id contains invalid characters")
+      entity should include("Node f1\"' contains invalid characters")
     }
 
     val duplicateIds = newDisplayableProcess("p1",
@@ -156,8 +156,8 @@ class ValidationResourcesSpec extends AnyFlatSpec with ScalatestRouteTest with F
     createAndValidateScenario(processWithDisabledFilterAndProcessor) {
       status shouldEqual StatusCodes.OK
       val validation = responseAs[ValidationResult]
-      validation.warnings.invalidNodes("filter1").head.message should include("Node is disabled")
-      validation.warnings.invalidNodes("proc1").head.message should include("Node is disabled")
+      validation.warnings.invalidNodes("filter1").head.message should include("Node filter1 is disabled")
+      validation.warnings.invalidNodes("proc1").head.message should include("Node proc1 is disabled")
     }
   }
 

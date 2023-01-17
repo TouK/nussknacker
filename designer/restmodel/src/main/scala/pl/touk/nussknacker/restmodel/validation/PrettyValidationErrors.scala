@@ -35,7 +35,7 @@ object PrettyValidationErrors {
       case SpecificDataValidationError(field, message) => node(message, message, fieldName = Some(field))
       case EmptyProcess => node("Empty scenario", "Scenario is empty, please add some nodes")
       case InvalidRootNode(_) => node("Invalid root node", "Scenario can start only from source node")
-      case InvalidTailOfBranch(_) => node("Scenario must end with sink or processor", "Scenario branch can only end with sink, processor or ending custom transformer")
+      case InvalidTailOfBranch(_) => node("Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment")
       case EmptyNodeId => node("Nodes cannot have empty id", "Nodes cannot have empty id", errorType = NodeValidationErrorType.RenderNotAllowed)
       case NonUniqueEdgeType(etype, nodeId) => node("Edges are not unique", s"Node $nodeId has duplicate outgoing edges of type: $etype, it cannot be saved properly", errorType = NodeValidationErrorType.SaveNotAllowed)
       case NonUniqueEdge(nodeId, target) => node("Edges are not unique", s"Node $nodeId has duplicate outgoing edges to: $target, it cannot be saved properly", errorType = NodeValidationErrorType.SaveNotAllowed)

@@ -80,7 +80,7 @@ export default class Errors extends React.Component {
           />
           <NodeErrorsLinkSection
             nodeIds={invalidEndNodeIds}
-            message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with sink or processor: ")}
+            message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}
