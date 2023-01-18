@@ -99,7 +99,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
         Some(TestCategories.Category1),
         ValidationResult.errors(
           Map(unexpectedEnd.id -> List(
-            NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
+            NodeValidationError("InvalidTailOfBranch", "Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment", None, errorType = NodeValidationErrorType.SaveAllowed))),
           List.empty,
           List.empty
         )
@@ -122,7 +122,7 @@ class ProcessConverterSpec extends AnyFunSuite with Matchers with TableDrivenPro
       TestProcessingTypes.Streaming,
       Some(TestCategories.Category1),
       ValidationResult.errors(
-        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Invalid end of scenario", "Scenario branch can only end with sink, processor or ending custom transformer", None, errorType = NodeValidationErrorType.SaveAllowed))),
+        Map("e" -> List(NodeValidationError("InvalidTailOfBranch", "Scenario must end with a sink, processor or fragment", "Scenario must end with a sink, processor or fragment", None, errorType = NodeValidationErrorType.SaveAllowed))),
         List.empty,
         List.empty).copy(nodeResults = Map(
           "s" -> NodeTypingData(Map("meta" -> MetaVariables.typingResult(meta)), None, Map.empty),

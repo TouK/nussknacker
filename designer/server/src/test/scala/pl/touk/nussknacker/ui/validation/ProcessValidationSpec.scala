@@ -29,6 +29,7 @@ import pl.touk.nussknacker.engine.{CustomProcessValidator, spel}
 import pl.touk.nussknacker.restmodel.displayedgraph.displayablenode.Edge
 import pl.touk.nussknacker.restmodel.displayedgraph.{DisplayableProcess, ProcessProperties}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.restmodel.validation.ValidationResults.NodeValidationErrorType.{RenderNotAllowed, SaveNotAllowed, SaveAllowed}
 import pl.touk.nussknacker.restmodel.validation.ValidationResults.{NodeValidationError, NodeValidationErrorType, ValidationErrors, ValidationResult, ValidationWarnings}
 import pl.touk.nussknacker.restmodel.validation.{PrettyValidationErrors, ValidationResults}
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.{mapProcessingTypeDataProvider, possibleValues}
@@ -45,7 +46,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
   import TestCategories._
   import spel.Implicits._
 
-  test("check for notunique edge types") {
+  test("check for not unique edge types") {
     val process = createProcess(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
@@ -65,7 +66,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val result = validator.validate(process, Category1)
 
     result.errors.invalidNodes shouldBe Map(
-      "subIn" -> List(PrettyValidationErrors.nonuniqeEdgeType(validator.uiValidationError, EdgeType.SubprocessOutput("out2")))
+      "subIn" -> List(NodeValidationError("NonUniqueEdgeType", "Edges are not unique",
+        "Node subIn has duplicate outgoing edges of type: SubprocessOutput(out2), it cannot be saved properly", None, NodeValidationErrorType.SaveNotAllowed))
     )
   }
 
@@ -88,7 +90,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     result.errors.invalidNodes shouldBe Symbol("empty")
   }
 
-  test("check for notunique edges") {
+  test("check for not unique edges") {
     val process = createProcess(
       List(
         Source("in", SourceRef(existingSourceFactory, List())),
@@ -105,7 +107,8 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val result = validator.validate(process, Category1)
 
     result.errors.invalidNodes shouldBe Map(
-      "subIn" -> List(PrettyValidationErrors.nonuniqeEdge(validator.uiValidationError, "out2"))
+      "subIn" -> List(NodeValidationError("NonUniqueEdge", "Edges are not unique",
+        "Node subIn has duplicate outgoing edges to: out2, it cannot be saved properly", None, SaveNotAllowed))
     )
   }
 
@@ -121,7 +124,25 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
     val result = validator.validate(process, Category1)
 
-    result.errors.invalidNodes shouldBe Map("loose" -> List(PrettyValidationErrors.looseNode(validator.uiValidationError)))
+    result.errors.invalidNodes shouldBe Map("loose" -> List(NodeValidationError("LooseNode", "Loose node", "Node loose is not connected to source, it cannot be saved properly", None, SaveNotAllowed)))
+  }
+
+  test("check for disabled nodes") {
+    val process = createProcess(
+      List(
+        Source("in", SourceRef(existingSourceFactory, List())),
+        Sink("out", SinkRef(existingSinkFactory, List())),
+        Filter("filter", Expression("spel", "true"), isDisabled = Some(true))
+      ),
+      List(
+        Edge("in", "filter", None),
+        Edge("filter", "out", Some(EdgeType.FilterTrue)),
+      )
+
+    )
+    val result = validator.validate(process, Category1)
+
+    result.warnings.invalidNodes shouldBe Map("filter" -> List(NodeValidationError("DisabledNode", "Node filter is disabled", "Deploying scenario with disabled node can have unexpected consequences", None, SaveAllowed)))
   }
 
   test("check for empty ids") {
@@ -134,7 +155,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
     val result = validator.validate(process, Category1)
 
-    result.errors.globalErrors shouldBe List(PrettyValidationErrors.emptyNodeId(validator.uiValidationError))
+    result.errors.globalErrors shouldBe List(NodeValidationError("EmptyNodeId", "Nodes cannot have empty id", "Nodes cannot have empty id", None, RenderNotAllowed))
   }
 
 
@@ -149,7 +170,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     )
     val result = validator.validate(process, Category1)
 
-    result.errors.globalErrors shouldBe List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("inID")))
+    result.errors.globalErrors shouldBe List(NodeValidationError("DuplicatedNodeIds", "Two nodes cannot have same id", "Duplicate node ids: inID", None, RenderNotAllowed))
   }
 
   test("check for duplicated ids when duplicated id is switch id") {
@@ -169,7 +190,7 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
 
     val result = validator.validate(process, Category1)
 
-    result.errors.globalErrors shouldBe List(PrettyValidationErrors.duplicatedNodeIds(validator.uiValidationError, List("switchID")))
+    result.errors.globalErrors shouldBe List((NodeValidationError("DuplicatedNodeIds", "Two nodes cannot have same id", "Duplicate node ids: switchID", None, RenderNotAllowed)))
     result.errors.invalidNodes shouldBe empty
     result.warnings shouldBe ValidationWarnings.success
   }
@@ -507,6 +528,21 @@ class ProcessValidationSpec extends AnyFunSuite with Matchers {
     val result = mockProcessValidation(process).validate(displayable, Category1)
 
     result.errors.processPropertiesErrors shouldBe List(PrettyValidationErrors.formatErrorMessage(SampleCustomProcessValidator.badNameError))
+  }
+
+  test("check for invalid characters") {
+    val process = createProcess(
+      List(
+        Source("in\"'.", SourceRef(existingSourceFactory, List())),
+        Sink("out", SinkRef(existingSinkFactory, List()))
+      ),
+      List(Edge("in\"'.", "out", None))
+    )
+    val result = validator.validate(process, Category1)
+
+    result.errors.invalidNodes shouldBe Map(
+      "in\"'." -> List(NodeValidationError("InvalidCharacters", "Invalid characters", "Node in\"'. contains invalid characters: \", . and ' are not allowed in node id", None, RenderNotAllowed))
+    )
   }
 }
 
