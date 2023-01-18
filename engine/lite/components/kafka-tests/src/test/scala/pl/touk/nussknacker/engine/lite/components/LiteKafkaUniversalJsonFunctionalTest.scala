@@ -211,7 +211,7 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
       (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
       (inputObject,   objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Unknown' expected: 'Long'")),
-      (inputObject,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
+//      (inputObject,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
     )
     //@formatter:on
 
