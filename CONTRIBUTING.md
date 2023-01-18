@@ -119,10 +119,14 @@ For more details see [client README](designer/client/README.md)
 ```sbt dist/Universal/packageZipTarball```
 
 #### Building stage - stage is a local directory with all the files laid out as they would be in the final distribution
-```sbt dist/Universal/stage```
+```
+sbt dist/Universal/stage
+```
 
 #### Publish Docker images to local repository
-```sbt dist/Docker/publishLocal```
+```
+sbt dist/Docker/publishLocal
+```
 
 #### Publish jars to local maven repository
 ```sbt publishM2```
