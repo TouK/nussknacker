@@ -7,7 +7,6 @@ import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.format.DateTimeFormatter
 import java.time.{LocalDate, OffsetTime, ZonedDateTime}
-import java.util.regex.Pattern
 import scala.util.Try
 
 // TODO: Validated
@@ -26,19 +25,25 @@ object JsonToNuStruct {
 
     def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(obj: SwaggerObject): AnyRef =
+    def extractObject(obj: SwaggerObject): AnyRef = {
+      object KeyMatchingPatternSchema {
+        def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
+          val (propertyName, _) = keyValue
+          obj.patternProperties.collectFirst { case (pattern, typed) if pattern.matcher(propertyName).matches() => typed }
+        }
+      }
+
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
-              // todo: use unapply instead of findMatchingPatternSchema
-            case (key, value) if findMatchingPatternSchema(obj.patternProperties, key).isDefined =>
-              val patternPropertySchema = findMatchingPatternSchema(obj.patternProperties, key)
-              key -> JsonToNuStruct(value, patternPropertySchema.get, addPath(key))
+            case keyValue@KeyMatchingPatternSchema(patternPropertySchema) =>
+              val (key, value) = keyValue
+              key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
             case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesSwaggerTyped if obj.patternProperties.isEmpty =>
+              case add: AdditionalPropertiesSwaggerTyped =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
               case _ =>
                 key -> jsonToAny(value)
@@ -46,10 +51,6 @@ object JsonToNuStruct {
           }
         )
       )
-
-    def findMatchingPatternSchema(patternProperties: Map[Pattern, SwaggerTyped], propertyName: String): Option[SwaggerTyped] = {
-      //todo: what if multiple schemas match?
-      patternProperties.collectFirst { case (pattern, typed) if pattern.matcher(propertyName).matches() => typed }
     }
 
     def extractMap(valuesType: Option[SwaggerTyped]): AnyRef = extract[JsonObject](
