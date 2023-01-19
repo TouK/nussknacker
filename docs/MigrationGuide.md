@@ -17,6 +17,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `TestData.newLineSeparated` helper was removed. Scenario test records have to be created explicitly. Each scenario test record has assigned source
   * `DeploymentManager#test` takes `ScenarioTestData` instead of `TestData`
   * Designer configuration `testDataSettings.testDataMaxBytes` renamed to `testDataMaxLength`
+* [#3916](https://github.com/TouK/nussknacker/pull/3916) Designer configuration `environmentAlert.cssClass` renamed to `environmentAlert.color`
 
 ## In version 1.7.0 
 
