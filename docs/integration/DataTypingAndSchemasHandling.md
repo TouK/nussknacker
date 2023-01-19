@@ -202,8 +202,17 @@ These properties will be not validated by the Designer, because on during scenar
 `Typing Information` not on real value. Validation will be still done at runtime.
 
 #### Pattern properties
-Pattern properties are supported only in sinks. Using patternProperties with sources can produce runtime errors.
+WhPattern properties are supported in sources and sinks.
 
+##### Sources
+Object (also nested) in source schema will be represented during scenario authoring as:
+* Map - when there is no property defined in "properties" field
+  * if only additional properties are defined then map values will be typed to according to schema in additionalProperty field
+  * if both additional and pattern properties are defined then values will be typed to `Unknown` and can be casted to exact type by end user
+* Record otherwise
+  * pattern and additionalProperties can then be accessed using `record["patternOrAdditionalPropertyName"]` syntax but only if `pl.touk.nussknacker.engine.api.process.ExpressionConfig.dynamicPropertyAccessAllowed` is enabled
+
+##### Sinks
 Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON Schema object type:
 * Strict mode
   * only records types are allowed (no map types) and only if their fields' types are valid according to pattern properties restrictions (in addition to properties and additionalProperties)
