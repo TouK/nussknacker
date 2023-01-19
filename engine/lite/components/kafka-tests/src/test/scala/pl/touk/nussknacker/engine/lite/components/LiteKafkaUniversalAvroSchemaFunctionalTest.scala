@@ -20,7 +20,7 @@ import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.util.test.KafkaAvroConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}

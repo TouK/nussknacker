@@ -5,7 +5,6 @@ import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
-import org.apache.flink.formats.avro.typeutils.{LogicalTypesGenericRecordAvroTypeInfo, LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo}
 import org.openjdk.jmh.annotations._
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -21,22 +20,14 @@ class AvroBenchmark {
 
   private val avroKryoTypeInfo = TypeInformation.of(classOf[GenericData.Record])
 
-  private val avroFlinkTypeInfo = new LogicalTypesGenericRecordAvroTypeInfo(AvroSamples.sampleSchema)
-
-  private val avroFlinkWithSchemaIdTypeInfo = new LogicalTypesGenericRecordWithSchemaIdAvroTypeInfo(AvroSamples.sampleSchema, AvroSamples.sampleSchemaId)
-
   private[avro] val defaultFlinkKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecord,
     config => new AvroSerializersRegistrar().register(ConfigFactory.empty(), config))
-
-  private[avro] val defaultFlinkAvroSetup = new SerializationBenchmarkSetup(avroFlinkTypeInfo, AvroSamples.sampleRecord)
-
-  private[avro] val flinkAvroWithSchemaIdSetup = new SerializationBenchmarkSetup(avroFlinkWithSchemaIdTypeInfo, AvroSamples.sampleRecordWithSchemaId)
 
   private[avro] val schemaIdBasedKryoSetup = new SerializationBenchmarkSetup(avroKryoTypeInfo, AvroSamples.sampleRecordWithSchemaId,
     config => {
       val schemaRegistryMockClient = new MockSchemaRegistryClient
       val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
-      schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId)
+      schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId.asInt)
       val factory: CachedConfluentSchemaRegistryClientFactory =
         new CachedConfluentSchemaRegistryClientFactory {
           override protected def confluentClient(kafkaConfig: SchemaRegistryClientKafkaConfig): SchemaRegistryClient =
@@ -53,13 +44,6 @@ class AvroBenchmark {
   @OutputTimeUnit(TimeUnit.MICROSECONDS)
   def defaultFlinkKryoRoundTripSerialization(): AnyRef = {
     defaultFlinkKryoSetup.roundTripSerialization()
-  }
-
-  @Benchmark
-  @BenchmarkMode(Array(Mode.AverageTime))
-  @OutputTimeUnit(TimeUnit.MICROSECONDS)
-  def defaultFlinkAvroRoundTripSerialization(): AnyRef = {
-    defaultFlinkAvroSetup.roundTripSerialization()
   }
 
   @Benchmark

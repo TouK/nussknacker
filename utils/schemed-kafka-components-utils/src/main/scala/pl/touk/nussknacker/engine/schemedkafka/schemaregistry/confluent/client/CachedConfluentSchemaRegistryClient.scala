@@ -10,7 +10,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryError, SchemaWithMetadata}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 
 import scala.jdk.CollectionConverters._
@@ -55,22 +55,22 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
 
   private def latestSchemaRequest(subject: String): SchemaWithMetadata = {
     val schemaMetadata = client.getLatestSchemaMetadata(subject)
-    caches.latestSchemaIdCache.put(subject)(schemaMetadata.getId)
+    caches.latestSchemaIdCache.put(subject)(SchemaId.fromInt(schemaMetadata.getId))
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
       SchemaWithMetadata(schemaMetadata, config)
     }
   }
 
-  override def getSchemaById(id: Int): SchemaWithMetadata = {
+  override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
     caches.schemaByIdCache.getOrCreate(id) {
-      val rawSchema = client.getSchemaById(id)
-      SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+      val rawSchema = client.getSchemaById(id.asInt)
+      SchemaWithMetadata(new SchemaMetadata(id.asInt, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
     }
   }
 
-  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int] = {
+  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId] = {
     val subject = ConfluentUtils.topicSubject(topic, isKey)
     caches.latestSchemaIdCache.get(subject) match {
       case Some(id) => valid(id)

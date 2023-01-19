@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
  * It is lightened version of Confluent's SchemaMetadata. We don't want to use their class, because our SchemaRegistryClient
  * is not coupled with concrete schema registry implementation.
  */
-case class SchemaWithMetadata private(schema: ParsedSchema, id: Int)
+case class SchemaWithMetadata private(schema: ParsedSchema, id: SchemaId)
 
 object SchemaWithMetadata {
   val unknownVersion: Int = -1
@@ -26,8 +26,8 @@ object SchemaWithMetadata {
     }
 
     withExtraSchemaTypes(schemaMetadata.getSchemaType match {
-      case "AVRO" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), schemaMetadata.getId)
-      case "JSON" => SchemaWithMetadata(OpenAPIJsonSchema(schemaMetadata.getSchema), schemaMetadata.getId)
+      case "AVRO" => SchemaWithMetadata(new AvroSchema(schemaMetadata.getSchema), SchemaId.fromInt(schemaMetadata.getId))
+      case "JSON" => SchemaWithMetadata(OpenAPIJsonSchema(schemaMetadata.getSchema), SchemaId.fromInt(schemaMetadata.getId))
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     })
   }

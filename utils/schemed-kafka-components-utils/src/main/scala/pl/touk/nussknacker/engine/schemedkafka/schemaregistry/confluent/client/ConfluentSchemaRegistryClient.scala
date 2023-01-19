@@ -61,12 +61,12 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
       client.getAllVersions(subject).asScala.toList
     }
 
-  override def getSchemaById(id: Int): SchemaWithMetadata = {
-    val rawSchema = client.getSchemaById(id)
-    SchemaWithMetadata(new SchemaMetadata(id, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+  override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
+    val rawSchema = client.getSchemaById(id.asInt)
+    SchemaWithMetadata(new SchemaMetadata(id.asInt, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
   }
 
-  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int] = getLatestFreshSchema(topic, isKey).map(_.id)
+  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId] = getLatestFreshSchema(topic, isKey).map(_.id)
 }
 
 object ConfluentSchemaRegistryClient {

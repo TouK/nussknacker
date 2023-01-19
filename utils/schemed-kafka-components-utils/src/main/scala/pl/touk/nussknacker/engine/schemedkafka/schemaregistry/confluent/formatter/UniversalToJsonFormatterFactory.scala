@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentUtils, JsonPayloadRecordFormatterSupport, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.UniversalSchemaIdFromMessageExtractor
@@ -78,8 +79,8 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
     val deserializedRecord = deserializeRecord(record, messageWithSchemaId = valueSchemaIdOpt.isDefined)
 
     val serializableRecord = UniversalSerializableConsumerRecord(
-      keySchemaIdOpt,
-      valueSchemaIdOpt,
+      keySchemaIdOpt.map(_.asInt),
+      valueSchemaIdOpt.map(_.asInt),
       SerializableConsumerRecord(deserializedRecord)
     )
     TestRecord(consumerRecordEncoder(keySchemaIdOpt.map(getParsedSchemaById), valueSchemaIdOpt.map(getParsedSchemaById))(serializableRecord))
@@ -102,11 +103,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
           case _ => throw new IllegalStateException()
         }
       } else {
-        val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id))
+        val keySchema = record.keySchemaId.map(SchemaId.fromInt).map(getParsedSchemaById)
         keyOpt.map(keyJson => readMessage(keySchema, ConfluentUtils.keySubject(topic), keyJson)
           ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
-      val valueSchema = record.valueSchemaId.map(getParsedSchemaById)
+      val valueSchema = record.valueSchemaId.map(SchemaId.fromInt).map(getParsedSchemaById)
       val valueBytes = readMessage(valueSchema, ConfluentUtils.valueSubject(topic), value)
       (keyBytes, valueBytes)
     }
@@ -132,7 +133,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
     deriveConfiguredEncoder
   }
 
-  private def getParsedSchemaById(schemaId:Int): ParsedSchema = schemaRegistryClient.getSchemaById(schemaId).schema
+  private def getParsedSchemaById(schemaId: SchemaId): ParsedSchema = schemaRegistryClient.getSchemaById(schemaId).schema
 
 }
 
