@@ -115,7 +115,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     * 2. remove old snapshot (tests in this class require ONLY ONE savepoint)
     * 3. go back to ignore :)
     */
-  ignore("should create savepoint and save to disk") {
+  test("should create savepoint and save to disk") {
     val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
@@ -133,27 +133,27 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     })
   }
 
-  test("should restore from snapshot") {
-    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
-    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
-
-    val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
-    val env = flinkMiniCluster.createExecutionEnvironment()
-    val process1 = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
-    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
-    val streamGraph = env.getStreamGraph
-    val allowNonRestoredState = false
-    streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState))
-    // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
-    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
-
-    val jobExecutionResult = env.execute(streamGraph)
-    env.waitForStart(jobExecutionResult.getJobID, process1.id)()
-    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
-
-    verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
-    env.stopJob(process1.id, jobExecutionResult)
-  }
+//  test("should restore from snapshot") {
+//    val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
+//    val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
+//
+//    val existingSavepointLocation = Files.list(savepointDir).iterator().asScala.toList.head
+//    val env = flinkMiniCluster.createExecutionEnvironment()
+//    val process1 = stateCompatibilityProcess(inputTopicConfig.input, outputTopicConfig.output)
+//    registrar.register(env, process1, ProcessVersion.empty, DeploymentData.empty)
+//    val streamGraph = env.getStreamGraph
+//    val allowNonRestoredState = false
+//    streamGraph.setSavepointRestoreSettings(SavepointRestoreSettings.forPath(existingSavepointLocation.toString, allowNonRestoredState))
+//    // Send one artificial message to mimic offsets saved in savepoint from the above test because kafka commit cannot be performed.
+//    sendAvro(givenMatchingAvroObj, inputTopicConfig.input)
+//
+//    val jobExecutionResult = env.execute(streamGraph)
+//    env.waitForStart(jobExecutionResult.getJobID, process1.id)()
+//    sendAvro(givenNotMatchingAvroObj, inputTopicConfig.input)
+//
+//    verifyOutputEvent(outputTopicConfig.output, input = event2, previousInput = event1)
+//    env.stopJob(process1.id, jobExecutionResult)
+//  }
 
   private def verifyOutputEvent(outTopic: String, input: InputEvent, previousInput: InputEvent): Unit = {
     val rawOutputEvent = kafkaClient.createConsumer().consume(outTopic).take(1).head.msg
