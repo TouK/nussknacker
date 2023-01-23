@@ -21,7 +21,6 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3929](https://github.com/TouK/nussknacker/pull/3929) From now, `SchemaId` value class is used in every place 
   where schema id was represented as an Int. For conversion between `SchemaId` and `Int` use `SchemaId.fromInt` and `SchemaId.asInt`.
   Use `ConfluentUtils.toSchemaWithMetadata` instead of `SchemaWithMetadata.apply` for conversion between Confluent's `SchemaMetadata` and ours `SchemaWithMetadata`.
-  Be aware that it causes Flink state incompatibility because of changes in the way how is serialized `GenericRecordWithSchemaId`.
 
 ## In version 1.7.0 
 

@@ -19,17 +19,19 @@ object SchemaIdBasedAvroGenericRecordSerializer {
   }
 }
 
-@SerialVersionUID(42553325228496L)
+@SerialVersionUID(42553325228495L)
 class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
 
-  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
+  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig).client
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 
   @transient protected lazy val decoderFactory: DecoderFactory = DecoderFactory.get
 
   override def clazz: Class[_] = classOf[GenericRecordWithSchemaId]
+
+  private val stringSchemaMarker: Int = -1
 
   override def write(kryo: Kryo, out: Output, record: GenericRecordWithSchemaId): Unit = {
     // Avro decoder during decoding base on information that will occur EOF. Because of this we need to additionally
@@ -40,10 +42,9 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
     out.writeVarInt(bos.size(), true)
     record.getSchemaId match {
       case IntSchemaId(value) =>
-        out.writeByte(1)
         out.writeVarInt(value, true)
       case StringSchemaId(value) =>
-        out.writeByte(2)
+        out.writeVarInt(stringSchemaMarker, true)
         out.writeString(value)
     }
     out.writeBytes(bos.toByteArray)
@@ -57,23 +58,23 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
 
   override def read(kryo: Kryo, input: Input, clazz: Class[GenericRecordWithSchemaId]): GenericRecordWithSchemaId = {
     val lengthOfData = input.readVarInt(true)
-    val schemaId = input.readByte match {
-      case 1 =>
-        SchemaId.fromInt(input.readInt(true))
-      case 2 =>
-        SchemaId.fromString(input.readString())
-      case other =>
-        throw new IllegalArgumentException(s"Unsupported schema id type: $other")
+    val schemaIdInt = input.readVarInt(true)
+    val schemaId = if (schemaIdInt >= 0) {
+      SchemaId.fromInt(schemaIdInt)
+    } else if (schemaIdInt == stringSchemaMarker) {
+      val schemaIdString = input.readString()
+      SchemaId.fromString(schemaIdString)
+    } else {
+      throw new IllegalArgumentException(s"Unsupported schemaId format: $schemaIdInt. Should be non-negative integer or -1 for string schemas")
     }
     val dataBuffer = input.readBytes(lengthOfData)
-
     val recordWithoutSchemaId = readRecord(lengthOfData, schemaId, dataBuffer)
     new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaId, false)
   }
 
   private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
-    val parsedSchema = schemaRegistry.getSchemaById(schemaId)
-    val writerSchema = ConfluentUtils.extractSchema(parsedSchema.schema)
+    val parsedSchema = schemaRegistry.getSchemaById(schemaId.asInt)
+    val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
     val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
