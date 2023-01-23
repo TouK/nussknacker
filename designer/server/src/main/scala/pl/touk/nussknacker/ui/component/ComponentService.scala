@@ -211,7 +211,7 @@ class DefaultComponentService private(config: Config,
         def createLinks(componentId: ComponentId, component: ComponentTemplate): List[ComponentLink] = {
           val componentLinks = componentLinksConfig
             .filter(_.isAvailable(component.`type`))
-            .map(_.toComponentLink(componentId, component.label))
+            .map(_.toComponentLink(componentId, component))
 
           //If component configuration contains documentation link then we add base link
           getComponentDoc(uiProcessObjects.componentsConfig, component)

@@ -8,10 +8,12 @@ import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.component.ComponentType._
 import pl.touk.nussknacker.engine.api.component.{ComponentGroupName, ComponentId}
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
+import pl.touk.nussknacker.engine.graph.node
 import pl.touk.nussknacker.engine.management.FlinkStreamingDeploymentManagerProvider
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.{BaseModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.component.{ComponentLink, ComponentListElement, ComponentUsagesInScenario}
+import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.security.Permission
@@ -59,6 +61,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
     ComponentLinkConfig.create(invokeLinkId, s"Invoke component $ComponentNameTemplate", s"/assets/components/links/invoke.svg", s"https://components.com/$ComponentIdTemplate/Invoke", Some(List(Enricher, Processor))),
     ComponentLinkConfig.create(editLinkId, s"Edit component $ComponentNameTemplate", "/assets/components/links/edit.svg", s"https://components.com/$ComponentIdTemplate/", Some(List(CustomNode, Enricher, Processor))),
     ComponentLinkConfig.create(filterLinkId, s"Custom link $ComponentNameTemplate", "https://other-domain.com/assets/components/links/filter.svg", s"https://components.com/$ComponentIdTemplate/filter", Some(List(Filter))),
+    ComponentLinkConfig.create(filterLinkId, s"Service link $ComponentNameTemplate", "/links/service.svg", s"https://components.com?categories=$ComponentCategoryNameTemplate", Some(List(Processor))),
   )
 
   private val filterDocsLink = ComponentLink.createDocumentationLink(filterDocsUrl)
@@ -267,7 +270,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def sharedComponent(name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
     val id = componentId.getOrElse(ComponentId(name))
-    val links = createLinks(id, name, componentType)
+    val links = createLinks(id, name, componentType, categories)
     val usageCount = componentCount(id, user)
 
     val availableCategories = if (categories.isEmpty)
@@ -281,14 +284,14 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private val subprocessMarketingComponents: List[ComponentListElement] = MarketingAllCategories.map(cat => {
     val componentId = cid(Streaming, cat, Fragments)
     val icon = DefaultsComponentIcon.fromComponentType(Fragments)
-    val links = createLinks(componentId, cat, Fragments)
+    val links = createLinks(componentId, cat, Fragments, List(cat))
     ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
   private val subprocessFraudComponents: List[ComponentListElement] = FraudAllCategories.map(cat => {
     val componentId = cid(Fraud, cat, Fragments)
     val icon = if (cat == CategoryFraud) overriddenIcon else DefaultsComponentIcon.fromComponentType(Fragments)
-    val links = createLinks(componentId, cat, Fragments)
+    val links = createLinks(componentId, cat, Fragments, List(cat))
     ComponentListElement(componentId, cat, icon, Fragments, FragmentsGroupName, List(cat), links, 0)
   })
 
@@ -307,7 +310,7 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
 
   private def createComponent(processingType: String, name: String, icon: String, componentType: ComponentType, componentGroupName: ComponentGroupName, categories: List[String], componentId: Option[ComponentId] = None)(implicit user: LoggedUser) = {
     val compId = componentId.getOrElse(cid(processingType, name, componentType))
-    val links = createLinks(compId, name, componentType)
+    val links = createLinks(compId, name, componentType, categories)
     val usageCount = componentCount(compId, user)
     ComponentListElement(compId, name, icon, componentType, componentGroupName, categories, links, usageCount)
   }
@@ -318,14 +321,16 @@ class DefaultComponentServiceSpec extends AnyFlatSpec with Matchers with Patient
   private def baseComponent(componentType: ComponentType, componentName: String, icon: String, componentGroupName: ComponentGroupName, categories: List[String]): ComponentListElement = {
     val componentId = bid(componentType)
     val docsLinks = if (componentType == Filter) List(filterDocsLink) else Nil
-    val links = docsLinks ++ createLinks(componentId, componentName, componentType)
+    val links = docsLinks ++ createLinks(componentId, componentName, componentType, categories)
     ComponentListElement(componentId, componentName, icon, componentType, componentGroupName, categories, links, 0)
   }
 
-  private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType): List[ComponentLink] =
+  private def createLinks(componentId: ComponentId, componentName: String, componentType: ComponentType, categories: List[String]): List[ComponentLink] = {
+    val fakeComponentTemplate = ComponentTemplate(componentType, componentName, node.Split("fake"), categories)
     linkConfigs
       .filter(_.isAvailable(componentType))
-      .map(_.toComponentLink(componentId, componentName))
+      .map(_.toComponentLink(componentId, fakeComponentTemplate))
+  }
 
   private def componentCount(componentId: ComponentId, user: LoggedUser) = {
     val sourceComponentId = ComponentId(SharedSourceName)

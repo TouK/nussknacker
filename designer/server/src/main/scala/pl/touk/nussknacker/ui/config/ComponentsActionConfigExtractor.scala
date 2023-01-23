@@ -6,6 +6,7 @@ import pl.touk.nussknacker.engine.api.component.ComponentId
 import pl.touk.nussknacker.engine.api.component.ComponentType.ComponentType
 import pl.touk.nussknacker.engine.util.UriUtils
 import pl.touk.nussknacker.restmodel.component.ComponentLink
+import pl.touk.nussknacker.restmodel.definition.ComponentTemplate
 
 import java.net.URI
 
@@ -14,26 +15,28 @@ case class ComponentLinkConfig(id: String, title: String, icon: URI, url: URI, s
 
   def isAvailable(componentType: ComponentType): Boolean = supportedComponentTypes.isEmpty || supportedComponentTypes.exists(_.contains(componentType))
 
-  def toComponentLink(componentId: ComponentId, componentName: String): ComponentLink = ComponentLink(
+  def toComponentLink(componentId: ComponentId, component: ComponentTemplate): ComponentLink = ComponentLink(
       id,
-      fillByComponentData(title, componentId, componentName),
-      URI.create(fillByComponentData(icon.toString, componentId, componentName, urlOption = true)),
-      URI.create(fillByComponentData(url.toString, componentId, componentName, urlOption = true))
+      fillByComponentData(title, componentId, component),
+      URI.create(fillByComponentData(icon.toString, componentId, component, urlOption = true)),
+      URI.create(fillByComponentData(url.toString, componentId, component, urlOption = true))
     )
 }
 
 object ComponentLinkConfig {
   val ComponentIdTemplate = "$componentId"
   val ComponentNameTemplate = "$componentName"
+  val ComponentCategoryNameTemplate = "$categoryName"
 
   def create(id: String, title: String, icon: String, url: String, supportedComponentTypes: Option[List[ComponentType]]): ComponentLinkConfig =
     ComponentLinkConfig(id, title, URI.create(icon), URI.create(url), supportedComponentTypes)
 
-  def fillByComponentData(text: String, componentId: ComponentId, componentName: String, urlOption: Boolean = false): String = {
-    val name = if (urlOption) UriUtils.encodeURIComponent(componentName) else componentName
+  def fillByComponentData(text: String, componentId: ComponentId, component: ComponentTemplate, urlOption: Boolean = false): String = {
+    val name = if (urlOption) UriUtils.encodeURIComponent(component.label) else component.label
 
     text
       .replace(ComponentIdTemplate, componentId.value)
+      .replace(ComponentCategoryNameTemplate, component.categories.mkString(","))
       .replace(ComponentNameTemplate, name)
   }
 }
