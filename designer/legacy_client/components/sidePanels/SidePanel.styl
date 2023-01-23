@@ -1,0 +1,40 @@
+@import "../../stylesheets/_variables.styl"
+
+:local
+
+    .collapsible
+        pointer-events none
+        user-select none
+        width (panelWidth)
+        transition left 0.5s ease, right 0.5s ease
+        position absolute
+        z-index 1
+        top 0
+        bottom 0
+        overflow hidden
+
+    .side-panel
+        width panelWidth
+        box-sizing border-box
+        min-height 100%
+        display flex
+        flex-direction column
+        pointer-events none
+
+    .left
+        left: -(panelWidth)
+
+        &.is-opened
+            left: 0
+
+        .side-panel
+            align-items flex-start
+
+    .right
+        right -(panelWidth)
+
+        &.is-opened
+            right 0
+
+        .side-panel
+            align-items flex-end

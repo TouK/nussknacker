@@ -1,0 +1,42 @@
+@import "../../stylesheets/_variables.styl"
+
+:local
+    .vertical {
+    }
+
+    .track
+        top (toolbarsGap - scrollThumbSize/3)
+        bottom @top
+
+        :global(.LEFT) &
+            right 0
+
+        :global(.RIGHT) &
+            left 0
+
+        width (scrollThumbSize - 1px)
+        background-color transparent
+        border-radius scrollThumbSize
+
+    .thumb
+        cursor all-scroll
+        border-radius scrollThumbSize
+        background-color rgba(black, .45)
+
+    .content
+        display flex
+
+    .enabled
+        pointer-events auto
+
+    .disabled
+        pointer-events inherit
+
+    .wrapper
+        min-height 100%
+        display flex
+        transition all .25s
+        overflow hidden
+
+        &.enabled
+            background #646464

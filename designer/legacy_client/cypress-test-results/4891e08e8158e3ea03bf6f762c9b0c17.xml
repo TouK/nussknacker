@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="17.028" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-30T14:38:38" tests="0" file="cypress/e2e/switch.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Process" timestamp="2022-12-30T14:38:38" tests="0" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="with data" timestamp="2022-12-30T14:38:38" tests="1" time="16.909" failures="0">
+    <testcase name="Process with data should allow editing choice edge expression" time="16.026" classname="should allow editing choice edge expression">
+    </testcase>
+  </testsuite>
+</testsuites>

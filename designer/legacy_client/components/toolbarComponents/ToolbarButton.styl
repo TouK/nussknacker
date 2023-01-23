@@ -1,0 +1,64 @@
+@require "../../stylesheets/_variables.styl"
+
+:local
+    .button
+        position relative
+        width buttonSize
+        min-width buttonSize
+        height @width
+        border 0px solid panelBorder
+        padding 0
+
+        font-weight 600
+        font-size rightPanelButtonFontSize
+
+        border-radius 6px
+
+        display flex
+        flex-direction column
+        align-items center
+        justify-content center
+
+        background-color buttonBkgColor
+        color buttonTextColor
+
+        cursor pointer
+        user-select none
+
+        &.disabled
+            opacity 0.3
+            cursor not-allowed
+
+        &:not(.disabled):hover
+            background-color buttonBkgHover
+            border 3px solid panelBackground
+
+        .icon
+            width (buttonSize / 2)
+
+        &:focus
+            outline 2px solid focusColor
+            outline-offset -1px
+            z-index 10000
+
+    .has-error
+        &.button
+            border-color errorColor
+        .icon svg *
+            fill errorColor
+        .label
+            color errorColor
+
+    .is-active
+        .icon svg *
+            fill okColor
+        .label
+            color okColor
+
+    .small
+        width buttonSmallSize
+        min-width buttonSmallSize
+        height @width
+
+        .label
+            display none

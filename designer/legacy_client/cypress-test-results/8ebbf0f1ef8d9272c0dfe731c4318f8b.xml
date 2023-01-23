@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="108.709" tests="13" failures="0" skipped="1">
+  <testsuite name="Root Suite" timestamp="2022-12-29T00:20:00" tests="0" file="cypress/e2e/process.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Process" timestamp="2022-12-29T00:20:00" tests="2" time="0.000" failures="0">
+    <testcase name="Process should preserve condition on link move (switch)" time="17.259" classname="should preserve condition on link move (switch)">
+    </testcase>
+    <testcase name="Process should preserve condition on link move (filter)" time="10.692" classname="should preserve condition on link move (filter)">
+    </testcase>
+  </testsuite>
+  <testsuite name="initially clean" timestamp="2022-12-29T00:20:28" tests="4" time="35.133" failures="0">
+    <testcase name="Process initially clean should allow rename" time="7.269" classname="should allow rename">
+    </testcase>
+    <testcase name="Process initially clean should allow archive with redirect to list" time="11.376" classname="should allow archive with redirect to list">
+    </testcase>
+    <testcase name="Process initially clean should open properites from tips panel" time="6.753" classname="should open properites from tips panel">
+    </testcase>
+    <testcase name="Process initially clean should import JSON and save" time="7.958" classname="should import JSON and save">
+    </testcase>
+  </testsuite>
+  <testsuite name="with data" timestamp="2022-12-29T00:21:04" tests="7" time="44.797" failures="0">
+    <testcase name="Process with data should allow drag node" time="4.463" classname="should allow drag node">
+    </testcase>
+    <testcase name="Process with data should allow drag component and drop on edge" time="7.914" classname="should allow drag component and drop on edge">
+    </testcase>
+    <testcase name="Process with data should have counts button and modal" time="5.732" classname="should have counts button and modal">
+    </testcase>
+    <testcase name="Process with data should return 400 status code and show info about required comment" time="2.837" classname="should return 400 status code and show info about required comment">
+    </testcase>
+    <testcase name="Process with data should not have &quot;latest deploy&quot; button by default" time="9.591" classname="should not have &quot;latest deploy&quot; button by default">
+    </testcase>
+    <testcase name="Process with data should display some node details in modal" time="10.211" classname="should display some node details in modal">
+    </testcase>
+  </testsuite>
+</testsuites>

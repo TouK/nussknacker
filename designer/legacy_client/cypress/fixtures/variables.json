@@ -1,0 +1,114 @@
+{
+  "metaData" : {
+    "id" : "variables",
+    "typeSpecificData" : {
+      "parallelism" : 1,
+      "spillStateToDisk" : true,
+      "useAsyncInterpretation" : null,
+      "checkpointIntervalInSeconds" : null,
+      "type" : "StreamMetaData"
+    },
+    "additionalFields" : {
+      "description" : null,
+      "groups" : [
+      ],
+      "properties" : {
+        "numberOfThreads" : "1",
+        "environment" : "test"
+      }
+    }
+  },
+  "nodes" : [
+    {
+      "id" : "real-kafka",
+      "ref" : {
+        "typ" : "real-kafka",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'input'"
+            }
+          }
+        ]
+      },
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 0
+        }
+      },
+      "type" : "Source"
+    },
+    {
+      "id" : "mapVariable",
+      "varName" : "mapVarName",
+      "fields" : [
+        {
+          "name" : "UPERCASE",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "'value'"
+          }
+        },
+        {
+          "name" : "lowercase",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "1"
+          }
+        },
+        {
+          "name" : "camelCase",
+          "expression" : {
+            "language" : "spel",
+            "expression" : "\"Test\""
+          }
+        }
+      ],
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 179
+        }
+      },
+      "type" : "VariableBuilder"
+    },
+    {
+      "id" : "kafka-string",
+      "ref" : {
+        "typ" : "kafka-string",
+        "parameters" : [
+          {
+            "name" : "topic",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "'output'"
+            }
+          },
+          {
+            "name" : "value",
+            "expression" : {
+              "language" : "spel",
+              "expression" : "#mapVarName"
+            }
+          }
+        ]
+      },
+      "isDisabled" : null,
+      "additionalFields" : {
+        "description" : null,
+        "layoutData" : {
+          "x" : 0,
+          "y" : 360
+        }
+      },
+      "type" : "Sink"
+    }
+  ],
+  "additionalBranches" : [
+  ]
+}

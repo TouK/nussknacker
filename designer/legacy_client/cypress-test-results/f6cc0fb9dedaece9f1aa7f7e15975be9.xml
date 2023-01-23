@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="38.193" tests="3" failures="1" skipped="1">
+  <testsuite name="Root Suite" timestamp="2022-11-30T16:57:00" tests="0" file="cypress/e2e/fragment.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Fragment" timestamp="2022-11-30T16:57:00" tests="3" time="38.132" failures="1">
+    <testcase name="Fragment should allow adding input parameters and display used fragment graph in modal" time="0.000" classname="should allow adding input parameters and display used fragment graph in modal">
+      <failure message="Cannot read properties of null (reading &apos;stop&apos;)" type="TypeError"><![CDATA[TypeError: Cannot read properties of null (reading 'stop')
+    at eval (webpack-internal:///./node_modules/react-ladda/node_modules/ladda/dist/ladda.min.js:9:1562)
+    at i (http://localhost:3000/visualization/e2e-1669827437082-fragment-test-process:3:1401)
+    at http://localhost:3000/visualization/e2e-1669827437082-fragment-test-process:3:2171
+    at Array.forEach (<anonymous>)
+    at $Cypress.pause (http://localhost:3000/visualization/e2e-1669827437082-fragment-test-process:3:2088)]]></failure>
+    </testcase>
+    <testcase name="Fragment should open properties" time="5.585" classname="should open properties">
+    </testcase>
+  </testsuite>
+</testsuites>

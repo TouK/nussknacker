@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="47.5250" tests="3" failures="0" skipped="1">
+  <testsuite name="Root Suite" timestamp="2022-10-15T12:54:09" tests="0" file="cypress/e2e/fragment.cy.ts" time="0.0000" failures="0">
+  </testsuite>
+  <testsuite name="Fragment" timestamp="2022-10-15T12:54:09" tests="3" time="47.5250" failures="0">
+    <testcase name="Fragment should allow adding input parameters and display used fragment graph in modal" time="41.4340" classname="should allow adding input parameters and display used fragment graph in modal">
+    </testcase>
+    <testcase name="Fragment should open properties" time="6.0910" classname="should open properties">
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="138.517" tests="13" failures="1" skipped="1">
+  <testsuite name="Root Suite" timestamp="2022-12-02T23:55:48" tests="0" file="cypress/e2e/process.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Process" timestamp="2022-12-02T23:55:48" tests="2" time="0.000" failures="0">
+    <testcase name="Process should preserve condition on link move (switch)" time="19.654" classname="should preserve condition on link move (switch)">
+    </testcase>
+    <testcase name="Process should preserve condition on link move (filter)" time="11.854" classname="should preserve condition on link move (filter)">
+    </testcase>
+  </testsuite>
+  <testsuite name="initially clean" timestamp="2022-12-02T23:56:21" tests="4" time="41.931" failures="0">
+    <testcase name="Process initially clean should allow rename" time="8.097" classname="should allow rename">
+    </testcase>
+    <testcase name="Process initially clean should allow archive with redirect to list" time="15.274" classname="should allow archive with redirect to list">
+    </testcase>
+    <testcase name="Process initially clean should open properites from tips panel" time="7.910" classname="should open properites from tips panel">
+    </testcase>
+    <testcase name="Process initially clean should import JSON and save" time="8.556" classname="should import JSON and save">
+    </testcase>
+  </testsuite>
+  <testsuite name="with data" timestamp="2022-12-02T23:57:02" tests="7" time="64.269" failures="1">
+    <testcase name="Process with data should allow drag node" time="5.011" classname="should allow drag node">
+    </testcase>
+    <testcase name="Process with data should allow drag component and drop on edge" time="0.000" classname="should allow drag component and drop on edge">
+      <failure message="Timed out retrying after 10000ms: Expected &lt;div.css-1btkpj2&gt; not to exist in the DOM, but it was continuously found." type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 10000ms: Expected <div.css-1btkpj2> not to exist in the DOM, but it was continuously found.
+    at Context.eval (cypress/e2e/process.cy.ts:107:37)]]></failure>
+    </testcase>
+    <testcase name="Process with data should have counts button and modal" time="7.082" classname="should have counts button and modal">
+    </testcase>
+    <testcase name="Process with data should return 400 status code and show info about required comment" time="5.771" classname="should return 400 status code and show info about required comment">
+    </testcase>
+    <testcase name="Process with data should not have &quot;latest deploy&quot; button by default" time="11.493" classname="should not have &quot;latest deploy&quot; button by default">
+    </testcase>
+    <testcase name="Process with data should display some node details in modal" time="11.397" classname="should display some node details in modal">
+    </testcase>
+  </testsuite>
+</testsuites>

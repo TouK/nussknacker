@@ -1,0 +1,683 @@
+@import "./_variables.styl"
+@import "./_mixins.styl"
+
+#process-name
+  position: absolute
+  margin-left: 15px
+
+.baseEspGraph
+  overflow-y: overlay
+  overflow-x: auto
+  background-color: graphBkgColor
+  #svg-pan-zoom-controls
+    transform: translate(0, 0px) scale(0.75)
+  svg
+    width: 100%
+    height 100%
+
+#nk-graph-main
+  height: 100% !important
+  @extend .baseEspGraph;
+
+#nk-graph-subprocess
+  width: 100% !important
+  @extend .baseEspGraph;
+  #svg-pan-zoom-controls
+    transform: translate(0, 0px) scale(0.5)
+
+node-highlight(strokeColor, backgroundFill)
+  .body
+    stroke: strokeColor
+    stroke-width: 2px
+  .background
+    fill: backgroundFill
+  .joint-port-body
+    stroke-width: 3px
+    fill: backgroundFill
+    stroke: strokeColor
+
+.node-validation-error
+  node-highlight(errorColor, #fbd2d6)
+
+.node-focused-with-validation-error
+  node-highlight(focusColor, #f2dede)
+
+.node-grouping
+  node-highlight(#5ba935, #caf2d6)
+
+.node-focused
+  node-highlight(focusColor, #e6ecff)
+
+.joint-type-basic-rect.node-focused
+  rect
+    stroke-width 2
+    opacity .2
+
+.ReactModal__Overlay
+  z-index: 100
+  background-color: rgba(23, 22, 21, 0.3) !important //fixme why important?
+
+
+espCheckbox(checkboxWidth)
+  input[type='checkbox']
+    text-rendering optimizeSpeed
+    width checkboxWidth
+    height checkboxWidth
+    margin 0
+    margin-right 1px
+    display block
+    position relative
+    cursor pointer
+    -moz-appearance: none
+    border none
+
+  input[type='checkbox']:after
+    content ""
+    vertical-align middle
+    text-align center
+    line-height checkboxWidth
+    position absolute
+    cursor pointer
+    height checkboxWidth
+    width checkboxWidth
+    font-size checkboxWidth - 6
+    box-shadow inset 0px 1px 1px #000, 0px 1px 0px #444
+    background #333
+
+  input[type='checkbox']:checked
+    &:after
+      background #333
+      content '\2714'
+      color #fff
+
+  input[type='checkbox']:disabled
+    opacity 0.3
+    cursor auto
+
+.espModal
+  max-height fit-content
+  max-height -moz-max-content
+  height -moz-max-content
+  height -webkit-max-content
+  max-width modalMaxWidth
+  width modalMaxWidth
+  position relative
+  background modalBkgColor
+  background-color modalBkgColor
+  outline: none;
+  border-radius: 0px;
+  padding: 0px
+  border: 2px solid modalBorder
+  box-shadow: 0 0 8px 0 rgba(0,0,0,0.2)
+
+.draggable-container
+  position absolute
+  top 0
+  bottom 0
+  left 0
+  right 0
+  display flex
+  justify-content center
+
+.ReactModal__Content, ReactModal__Content--after-open
+  background none !important
+  border none !important
+
+.compareModal
+  max-width 1000
+  font-size: 15px
+  font-weight: 700
+  .notPresent
+    margin-bottom: 50px
+    margin-top: 50px
+    margin-left 30px
+    margin-right 30px
+    color: modalLabelTextColor
+  .versionHeader
+    margin-bottom: 15px
+    margin-top: 15px
+    margin-left 30px
+    margin-right 30px
+  .compareContainer
+    zoom: 0.9
+    >:first-child
+      width: 50%
+      display: inline-block
+      vertical-align:top
+
+    >:nth-child(2)
+      width: 50%
+      display: inline-block
+      vertical-align:top
+
+.modalHeader
+  text-transform: lowercase
+  font-size 14px
+  font-weight 600
+  height: modalHeaderHeight
+  span
+    display inline-block
+    margin-top 5px
+    margin-left 5px
+    margin-right 5px
+  .docsLink
+    color #FFFFFF
+    height: modalHeaderHeight
+    display inline-block
+    svg
+      width 22px
+      height 22px
+      padding-top 8px
+
+.modal-title-container
+  height modalHeaderHeight
+  float left
+
+.modal-draggable-handle
+  &:hover
+    cursor grab
+  &:active
+    cursor grabbing
+
+.modal-title
+  height modalHeaderHeight
+  float left
+  display inline-block
+  padding-left 7px
+  padding-right 10px
+  svg
+    width 18px
+    height 18px
+    display inline-block
+
+.edge-modal-title
+  @extend .modal-title
+  padding-left 10px
+
+.modal-title-icon
+  width 18px
+  height 24px
+  display inline-block
+  float left
+  padding-top 6px
+
+.modal-subtype-header
+  height modalHeaderHeight
+  background #3a3a3a
+  display inline-block
+  padding-left 10px
+  padding-right 10px
+
+.modal-subtype-header-docs
+  @extend .modal-subtype-header
+  &:hover
+    background lighten(#3a3a3a, 15%)
+  .docsIcon
+    float  right
+
+.modal-docs-link
+  @extend .modal-subtype-header-docs
+  padding-left 6px
+  padding-right 6px
+
+modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+  overflow auto
+  clear both
+  labelWidth = 20%
+  .warning
+    margin 15px
+    color errorColor
+    .icon
+      float left
+      width: 30px
+      height: 30px
+  .node-table
+    font-size 11px
+    margin: 0 25px
+    .node-table-body
+      clear: both
+    .node-row
+      margin-bottom: 14px
+      margin-top: 14px
+      display flex
+      flex-wrap wrap
+    .movable-row
+      margin-top 0
+      flex-wrap nowrap
+      column-gap 5px
+      row-gap 5px
+    .node-label
+      color modalLabelTextColor
+      flex-basis 20%
+      max-width 20em
+      display inline-block
+      vertical-align sub
+      margin-top 9px
+      font-size 12px
+      font-weight 700
+      .labelFooter
+        font-weight 500
+        opacity: 0.7
+      span
+        margin-top: 10px
+        margin-left: 10px
+        font-size: 15px
+        &:hover
+          cursor pointer
+    .node-block
+      &.removed
+        border 1px solid errorColor
+        padding 5px
+      &.added
+        border 1px solid okColor
+        padding 5px
+    .node-value
+      flex 1
+      flex-basis 60%
+      display: inline-block
+      color: #686868
+      textarea
+        overflow hidden
+        height auto
+      textarea:-moz-read-only
+        background-color #444
+      textarea:read-only
+        background-color #444
+      input:-moz-read-only
+        background-color #444
+      input:read-only
+        background-color #444
+      espCheckbox(20px)
+      input[type='checkbox']
+        margin-top 7px
+        margin-bottom 7px
+      &.partly-hidden
+        textarea
+          height 100px !important
+      &.node-value-type-select
+        width: 100%
+        max-height: 35
+        outline 1px solid rgba(255,255,255,0.075)
+        &.switchable
+          width: 70%
+      &.switchable
+        width: 70%
+
+    .node-error
+      width: 100%
+      color: errorColor
+      font-size: 14px
+      font-weight: 400
+      margin-bottom: 10px
+      margin-top: 10px
+    .node-tip
+      margin-left 10px
+      width 15px
+      height 15px
+
+      svg
+        // disable svg <title> behaviour
+        pointer-events none
+
+      &.node-error-tip
+        margin-right 10px
+        float right
+    .node-test-results
+      border: 1px solid testResultsColor
+      padding: 5px
+    .node-input
+      height: 35px
+      common-node-input(10px)
+    .node-input:-moz-disabled
+      background-color #444
+    .node-input:disabled
+      background-color #444
+    .read-only
+      background-color #444
+      .labelFooter
+        font-weight 500
+        opacity: 0.7
+      span
+        margin-top: 10px
+        font-size: 15px
+        &:hover
+          cursor pointer
+    .node-group
+      padding-top 15px
+      width: 100%
+      padding-left: 50px
+      .node-label
+        text-transform: none
+    textarea.node-input
+      resize: vertical
+      line-height: 1.5
+      padding-top: 7px
+      padding-bottom: 7px
+    input[type=checkbox].node-input
+      height: 20px
+    .node-input-with-error
+      outline 1px solid errorColor !important
+      border-radius 2px
+    .testResultDownload
+      padding-left: 15px
+      font-size: 14
+      a
+        color: modalLabelTextColor
+        text-decoration none
+        &:hover
+          color: processesHoverColor
+  hr
+    border-top 1px solid hrColor
+    margin-top 10px
+    margin-bottom 10px
+
+  &.edge-details
+    height 270px
+
+.modalContentDye
+  modalContent(
+          modalBkgColor:white,
+          errorColor:pink,
+          modalLabelTextColor:black,
+          testResultsColor:pink,
+          modalInputTextColor:black,
+          processesHoverColor:pink,
+          hrColor:pink,
+          modalInputBkgColor:white)
+  .node-table .node-input
+    border: solid 1px #ccc
+
+.modalContentDark
+  modalContent(modalBkgColor,errorColor,modalLabelTextColor,testResultsColor,modalInputTextColor,processesHoverColor,hrColor,modalInputBkgColor)
+
+.modalFooter
+  margin-top: 5px
+  border-top: 2px solid modalBorder
+  height modalFooterHeight
+  background-color modalFooterBkgColor
+  .footerButtons
+    text-align right
+    button
+      margin-right 20px
+      text-transform uppercase
+    .modalConfirmButton
+      color modalConfirmButtonColor
+
+espButton()
+  espButtonBase()
+  width: 180px
+  height: 44px
+  font-weight: 600
+  font-size: 18px
+
+espButtonIcon()
+  espButtonBase()
+  width: buttonSize
+  height: buttonSize
+  font-size rightPanelButtonFontSize
+  margin 10px buttonPadding 10px 0
+  img
+    display block
+    margin auto
+  svg
+    width 40px
+    display block
+    margin auto
+  &.dropzone
+    padding-top 4px //why?
+    display inline-block
+
+espPanelButton()
+  espButton()
+  width: 120px
+  height: 25px
+  font-size: 15px
+  &.right-panel
+    espButtonIcon()
+  &.add-comment
+    espButtonIcon()
+    width 40px
+    height 30px
+    margin-right 0
+  &.download-button
+    width 27px
+    height 27px
+    border 1px solid buttonBorderColor
+
+.espButton
+  espPanelButton()
+
+.esp-button-error
+  espPanelButton()
+  &.right-panel
+    border-color: errorColor
+  &.add-comment
+    border-color: errorColor
+  &.download-button
+    border-color: errorColor
+  &.attachment-button
+    border-color: errorColor
+  :first-child
+    svg
+      g
+        .a
+          fill: errorColor
+  :nth-of-type(2)
+    color: errorColor
+
+body .modalButton
+  espButtonBase()
+  width: 120px;
+  height 30px
+  font-size: 18px;
+  margin-top: 10px;
+  font-weight: 600;
+  margin-left 10px
+  &:disabled
+    background: labelBkgColor
+
+.error
+  background-color: #FBB03B
+
+.element
+  cursor: pointer
+  &:active
+    cursor: -moz-grabbing;
+    cursor: -webkit-grabbing;
+    cursor: grabbing;
+
+.link
+  .connection-wrap
+    &:hover
+      stroke: transparent
+      stroke-width: 10px
+      stroke-linecap: initial
+  .esp-label
+    rect
+      transform: translateY(0.1em) scale(1.2, 1.4)
+    &:hover
+      cursor: zoom-in
+      display: table
+      rect
+        transform: translateY(0.8em) scale(2.5, 3.5)
+      text
+        font-size: 16
+        display: table-cell
+  &:hover
+    .connection
+      stroke: #46BFDB
+    .marker-target, .marker-source
+      fill: #46BFDB
+    .marker-vertices circle
+      fill: #B5B5B5
+      r: 6px
+
+.code-completion
+  color: #686868
+  position: relative
+  top: -25px
+  float: right
+
+.row-ace-editor
+  color:  #686868
+  padding-top: 8px
+  padding-bottom: 8px
+  padding-left: 10px
+  padding-right: 10px
+  background-color: #333
+  min-height 35px
+  outline 1px solid rgba(255,255,255,0.075)
+  &.focused
+    outline 2px solid #0058a9 !important
+    outline-offset -1px !important
+
+.switch-icon
+  height 35px
+  width 35px
+  margin-left 5px
+  cursor pointer
+  background-color modalInputBkgColor
+  border none
+  padding 0
+
+:local
+  .switch-icon-active
+    path
+      fill #8fad60
+
+  .switch-icon-read-only
+    path
+      opacity 0.3
+
+.testResultsSummary
+  font-size 13px
+  font-weight bold
+
+.nodeIcon
+    opacity 0.75
+
+    &:hover
+        opacity 1
+
+    .joint-type-esp-group &
+    .joint-type-basic-rect &
+        display none
+
+    .forced-hover &
+    .joint-type-esp-group:hover &
+        display block
+
+.fadeout {
+  position: relative;
+  bottom: 4em;
+  height: 4em;
+  background: -webkit-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -moz-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -o-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+  background-image: -ms-linear-gradient(
+          rgba(20, 20, 20, 0) 0%,
+          rgba(20, 20, 20, 1) 100%
+  );
+}
+
+//  TODO use it in all forms
+.esp-form-row
+  labelWidth = 20%
+  margin-bottom: 8px
+  margin-top: 7px
+  margin-left 30px
+  margin-right 30px
+
+  >:first-child
+    width: labelWidth
+    color: modalLabelTextColor
+    display: inline-block
+    vertical-align: top
+    padding-top: 10px
+    font-size: 12px
+    font-weight: 700
+
+  >:nth-child(2)
+    width: 100% - labelWidth
+    height: 40px
+    padding: 0 20px
+    display: inline-block
+    color: modalInputTextColor
+    background-color: modalInputBkgColor
+    border: none
+    font-size: 14px
+    font-weight: 400
+
+.marked
+  border 2px solid markColor !important
+
+.fieldsControl
+  .addRemoveButton
+    espButtonBase()
+    width: 35px
+    height: 35px
+    font-weight bold
+    font-size 20px
+  .fieldName
+    width: 28%
+  .handle-bars
+    height 35px
+    width 12px
+    margin-left 6px
+    cursor grab
+  .node-value
+    &.fieldName
+      flex-basis 30%
+      max-width 20em
+    &.fieldRemove
+      flex 0
+
+.branch-parameter-row
+  margin-top 0
+  margin-bottom 0
+  display flex
+  & .branch-param-label
+    color #ccc
+    font-weight 400
+    font-size 14px
+    padding 8px 10px 8px 10px
+    width 30%
+
+.branch-parameter-expr-container
+  width 100%
+
+.branch-parameter-expr
+  display inline-flex
+  width 100%
+  .node-value
+    width 100% !important
+
+.branch-parameter-expr-value
+  width 100%
+  display inline-block
+
+.branch-param-select
+  width 100%
+  padding 0 10px
+  border none
+  background-color #333
+  color #ccc
+  font-weight 400
+  font-size 16px
+
+
+.drop-down-menu-placeholder
+  height 100px

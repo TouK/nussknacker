@@ -1,0 +1,69 @@
+@import "./_variables.styl"
+@import "./_mixins.styl"
+
+.tagsBlockVis
+  tagsBlockMixin()
+
+#esp-action-panel
+  position: absolute
+  top: 110px
+  right: 10px
+  z-index: 100
+  .tag-warning
+    margin: 0 5px 0
+
+tipsPanel(bkrd-color, txt-color = undefined)
+  height: 75px
+  background-color: bkrd-color
+  padding: 8px 1px 8px 10px
+  font-weight: light
+  font-size: 14px
+  color: txt-color
+  .icon
+    width: 16px
+    height: 16px
+    float left
+    margin-right 5px
+    margin-top 2px
+  .valid-tip
+    margin-bottom 5px
+
+.tipsPanel
+  tipsPanel(#4D4D4D)
+
+.tipsPanelHighlighted
+  tipsPanel(alpha(errorColor,0.1), defaultTextColor)
+
+.tipsPanelHighlighted
+  outline: 2px solid errorColor
+  outline-offset -2px
+
+.thumbVertical
+  border-radius 3px
+
+.node-error-section
+  margin-bottom 5px
+
+.node-error-links
+.warning-links
+  display inline
+
+.error-secondary-container
+  margin-top 5px
+
+.node-warning-link
+  color warningColor
+  font-weight 600
+  white-space normal!important;
+  &:hover
+    color lighten(warningColor, 25%)
+  &:focus
+    color warningColor
+    text-decoration none
+
+.predefinedRangeButton
+  espButtonBase()
+  min-width: 80px;
+  font-size: 12px;
+  padding 5px
+  font-weight: 400;

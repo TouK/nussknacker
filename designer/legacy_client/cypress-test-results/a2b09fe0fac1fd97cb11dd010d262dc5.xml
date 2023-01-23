@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="32.118" tests="3" failures="1" skipped="1">
+  <testsuite name="Root Suite" timestamp="2022-12-02T23:54:09" tests="0" file="cypress/e2e/fragment.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Fragment" timestamp="2022-12-02T23:54:09" tests="3" time="32.078" failures="1">
+    <testcase name="Fragment should allow adding input parameters and display used fragment graph in modal" time="0.000" classname="should allow adding input parameters and display used fragment graph in modal">
+      <failure message="Timed out retrying after 10000ms: expected &apos;&lt;input.css-ge3ap8.node-input&gt;&apos; to have value &apos;xxxx&apos;, but the value was &apos;i111&apos;" type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 10000ms: expected '<input.css-ge3ap8.node-input>' to have value 'xxxx', but the value was 'i111'
+    at Context.eval (cypress/e2e/fragment.cy.ts:19:67)
+
+      + expected - actual
+
+      -'i111'
+      +'xxxx'
+      ]]></failure>
+    </testcase>
+    <testcase name="Fragment should open properties" time="7.982" classname="should open properties">
+    </testcase>
+  </testsuite>
+</testsuites>

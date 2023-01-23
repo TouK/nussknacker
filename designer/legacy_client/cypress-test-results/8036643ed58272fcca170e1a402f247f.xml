@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="36.596" tests="4" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-02T23:59:33" tests="0" file="cypress/e2e/processSelection.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Process" timestamp="2022-12-02T23:59:33" tests="0" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="mouse drag" timestamp="2022-12-02T23:59:33" tests="4" time="36.530" failures="0">
+    <testcase name="Process mouse drag should allow pan view" time="9.709" classname="should allow pan view">
+    </testcase>
+    <testcase name="Process mouse drag should select only fully covered (to right)" time="8.286" classname="should select only fully covered (to right)">
+    </testcase>
+    <testcase name="Process mouse drag should select partially covered (to left)" time="6.783" classname="should select partially covered (to left)">
+    </testcase>
+    <testcase name="Process mouse drag should switch modes, append and inverse select with shift" time="9.896" classname="should switch modes, append and inverse select with shift">
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,40 @@
+@import "~react-datetime/css/react-datetime.css";
+
+.rdtOpen .rdtPicker {
+	position: fixed;
+	background-color: #222222;
+	border-color: #666666;
+}
+
+.rdtPicker tfoot,
+.rdtPicker th {
+	border-color: #666666;
+	padding-top: .25em;
+	padding-bottom: .25em;
+}
+
+.rdtPicker td.rdtActive, .rdtPicker td.rdtActive:hover {
+	background-color: #DB7E3A;
+	color: #000000;
+}
+
+.rdtPicker thead tr:first-child th:hover {
+	background-color: inherit;
+	color: #DB7E3A;
+}
+
+.rdtCounter .rdtBtn:hover,
+td.rdtMonth:hover, td.rdtYear:hover,
+.rdtPicker td.rdtDay:hover, .rdtPicker td.rdtHour:hover, .rdtPicker td.rdtMinute:hover, .rdtPicker td.rdtSecond:hover, .rdtPicker .rdtTimeToggle:hover {
+	background-color: #000000;
+	color: #DB7E3A;
+}
+
+.rdtPicker td.rdtToday:before {
+	border-bottom-color: #DB7E3A;
+}
+
+.rdtPicker td.rdtActive.rdtToday:before {
+	border-bottom-color: #000000;
+}
+

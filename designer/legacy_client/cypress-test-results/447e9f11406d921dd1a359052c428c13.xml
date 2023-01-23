@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="163.510" tests="12" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-29T00:29:24" tests="0" file="cypress/e2e/components.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Components list" timestamp="2022-12-29T00:29:24" tests="12" time="163.455" failures="0">
+    <testcase name="Components list should display component" time="19.493" classname="should display component">
+    </testcase>
+    <testcase name="Components list should have dynamic page size" time="16.623" classname="should have dynamic page size">
+    </testcase>
+    <testcase name="Components list should allow filtering by name" time="9.890" classname="should allow filtering by name">
+    </testcase>
+    <testcase name="Components list should allow filtering by name with multiple words" time="11.712" classname="should allow filtering by name with multiple words">
+    </testcase>
+    <testcase name="Components list should allow filtering by group" time="16.304" classname="should allow filtering by group">
+    </testcase>
+    <testcase name="Components list should allow filtering by usage" time="17.992" classname="should allow filtering by usage">
+    </testcase>
+    <testcase name="Components list should display component usage with working scenario link" time="11.755" classname="should display component usage with working scenario link">
+    </testcase>
+    <testcase name="Components list should apply filters from query" time="9.970" classname="should apply filters from query">
+    </testcase>
+    <testcase name="Components list should apply category filters by cell click" time="12.833" classname="should apply category filters by cell click">
+    </testcase>
+    <testcase name="Components list should apply group filter by cell click" time="8.096" classname="should apply group filter by cell click">
+    </testcase>
+    <testcase name="Components list should display usages" time="10.162" classname="should display usages">
+    </testcase>
+    <testcase name="Components list should filter usages" time="9.444" classname="should filter usages">
+    </testcase>
+  </testsuite>
+</testsuites>

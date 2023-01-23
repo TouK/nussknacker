@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="14.2750" tests="9" failures="1" skipped="3">
+  <testsuite name="Root Suite" timestamp="2022-10-15T13:00:22" tests="0" file="cypress/e2e/processes.cy.ts" time="0.0000" failures="0">
+  </testsuite>
+  <testsuite name="Processes list" timestamp="2022-10-15T13:00:22" tests="3" time="0.0000" failures="1">
+    <testcase name="Processes list &quot;before each&quot; hook for &quot;should have no process matching filter&quot;" time="0.0000" classname="&quot;before each&quot; hook for &quot;should have no process matching filter&quot;">
+      <failure message="Timed out retrying after 60000ms: Expected to find element: `[placeholder=&apos;Search...&apos;]`, but never found it.
+
+Because this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `Processes list`" type="AssertionError"><![CDATA[AssertionError: Timed out retrying after 60000ms: Expected to find element: `[placeholder='Search...']`, but never found it.
+
+Because this error occurred during a `before each` hook we are skipping the remaining tests in the current suite: `Processes list`
+    at Context.eval (cypress/e2e/processes.cy.ts:16:58)]]></failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="Processes list (new table)" timestamp="2022-10-15T13:01:28" tests="3" time="0.0000" failures="0">
+  </testsuite>
+  <testsuite name="Processes list (legacy)" timestamp="2022-10-15T13:01:28" tests="3" time="14.2750" failures="0">
+    <testcase name="Processes list (legacy) should have no process matching filter" time="4.7800" classname="should have no process matching filter">
+    </testcase>
+    <testcase name="Processes list (legacy) should allow creating new process" time="5.3330" classname="should allow creating new process">
+    </testcase>
+    <testcase name="Processes list (legacy) should have test process on list" time="4.1620" classname="should have test process on list">
+    </testcase>
+  </testsuite>
+</testsuites>

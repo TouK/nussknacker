@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="20.361" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-29T15:56:08" tests="0" file="cypress/e2e/suggester.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Expression suggester" timestamp="2022-12-29T15:56:08" tests="2" time="20.314" failures="0">
+    <testcase name="Expression suggester should display colorfull and sorted completions" time="12.998" classname="should display colorfull and sorted completions">
+    </testcase>
+    <testcase name="Expression suggester should display completions for second line (bugfix)" time="5.763" classname="should display completions for second line (bugfix)">
+    </testcase>
+  </testsuite>
+</testsuites>

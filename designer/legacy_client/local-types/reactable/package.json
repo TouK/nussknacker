@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "@types/react": "*"
+  },
+  "deprecated": false,
+  "description": "TypeScript definitions for reactable",
+  "main": "index.js",
+  "name": "@types/reactable",
+  "typeScriptVersion": "2.8",
+  "types": "index",
+  "version": "1.0.0",
+  "scripts": {},
+  "author": "",
+  "license": "ISC"
+}

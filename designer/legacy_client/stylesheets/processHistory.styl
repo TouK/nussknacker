@@ -1,0 +1,77 @@
+@import "./_variables.styl"
+
+:local
+  .inner-scroll
+    width 8px!important;
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    top: 2px;
+    border-radius: 6px!important;
+    visibility: visible;
+
+#process-history
+  process-history-color=defaultTextColor
+  font-size 12px
+  padding 5px 0
+  list-style none
+  margin 0
+
+  li.future
+    color rgba(process-history-color,0.3)
+
+  li.past
+    color rgba(process-history-color, 0.8)
+
+  li
+    cursor pointer
+    overflow hidden
+    position relative
+    padding 5px 0 5px 42px
+    .date
+      pointer-events none
+
+  li::before
+       content ''
+       position absolute
+       left 20px
+       top 0
+       width 20px
+       height 999px
+       border 2px solid defaultTextColor
+       border-width 0px 0 0 2px
+       padding-left 10px
+
+  li:last-child::before
+    height 14px
+
+  li:first-child::before
+    top 14px
+
+  li::after
+       content ''
+       position absolute
+       left 13px
+       top 14px
+       width 16px
+       height 16px
+       background panelBkgColor
+       border 2px solid defaultTextColor
+       border-radius 50%
+       padding-left 10px
+
+  li.current
+    color defaultTextColor
+    &:hover::after
+    &::after
+      background-color defaultTextColor
+
+  li:hover
+    background-color toolHoverBkgColor
+    box-sizing border-box
+
+  li:hover::after
+    background-color #8d8d8d
+
+  span.glyphicon
+    margin 0 3px

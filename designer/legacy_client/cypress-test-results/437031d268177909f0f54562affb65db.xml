@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="35.253" tests="9" failures="0" skipped="3">
+  <testsuite name="Root Suite" timestamp="2022-12-29T00:22:30" tests="0" file="cypress/e2e/processes.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Processes list" timestamp="2022-12-29T00:22:31" tests="3" time="26.333" failures="0">
+    <testcase name="Processes list should have no process matching filter" time="12.166" classname="should have no process matching filter">
+    </testcase>
+    <testcase name="Processes list should allow creating new process" time="6.886" classname="should allow creating new process">
+    </testcase>
+    <testcase name="Processes list should have test process on list" time="5.213" classname="should have test process on list">
+    </testcase>
+  </testsuite>
+  <testsuite name="Processes list (new table)" timestamp="2022-12-29T00:22:57" tests="3" time="0.020" failures="0">
+  </testsuite>
+  <testsuite name="Processes list (legacy)" timestamp="2022-12-29T00:22:57" tests="3" time="8.844" failures="0">
+    <testcase name="Processes list (legacy) should have no process matching filter" time="2.034" classname="should have no process matching filter">
+    </testcase>
+    <testcase name="Processes list (legacy) should allow creating new process" time="2.653" classname="should allow creating new process">
+    </testcase>
+    <testcase name="Processes list (legacy) should have test process on list" time="1.754" classname="should have test process on list">
+    </testcase>
+  </testsuite>
+</testsuites>

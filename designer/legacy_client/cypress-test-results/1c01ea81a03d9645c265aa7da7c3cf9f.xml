@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="32.414" tests="2" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-29T16:35:03" tests="0" file="cypress/e2e/sqlEditor.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Sql editor" timestamp="2022-12-29T16:35:03" tests="2" time="32.359" failures="0">
+    <testcase name="Sql editor should display colorfull sql code" time="14.465" classname="should display colorfull sql code">
+    </testcase>
+    <testcase name="Sql editor should display advanced colors" time="16.553" classname="should display advanced colors">
+    </testcase>
+  </testsuite>
+</testsuites>

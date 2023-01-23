@@ -1,0 +1,34 @@
+@require "./_variables.styl"
+
+tagsBlockMixin()
+  display: inline-block
+  margin: 0 5px 0
+  border-radius: 3px
+  padding: 4px 18px
+  background-color: #FEB58A
+  font-size: 13px
+  color: white
+
+
+espButtonBase()
+  border: 1px solid buttonBorderColor;
+  border-radius: 0
+  background-color: buttonBkgColor
+  color: buttonTextColor
+  transition: background-color 0.2s
+  user-select none
+  &:disabled,&.disabled
+    opacity 0.3
+    cursor: not-allowed !important
+  &:not(:disabled):hover,&:not(.disabled):hover
+    background-color: buttonBkgHover
+
+common-node-input(padding)
+  width: 100%
+  padding: 0 padding
+  border: none
+  background-color: modalInputBkgColor
+  color: modalInputTextColor
+  font-weight: 400
+  font-size: 14px
+  outline 1px solid rgba(255,255,255,0.075)

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="Mocha Tests" time="12.729" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2022-12-12T16:07:10" tests="0" file="cypress/e2e/nodeWindow.cy.ts" time="0.000" failures="0">
+  </testsuite>
+  <testsuite name="Node window" timestamp="2022-12-12T16:07:10" tests="1" time="12.649" failures="0">
+    <testcase name="Node window should display periodic source" time="11.497" classname="should display periodic source">
+    </testcase>
+  </testsuite>
+</testsuites>
