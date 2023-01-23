@@ -29,7 +29,7 @@ object JsonToNuStruct {
       object KeyMatchingPatternSchema {
         def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
           val (propertyName, _) = keyValue
-          obj.patternProperties.collectFirst { case (pattern, typed) if pattern.matcher(propertyName).matches() => typed }
+          obj.patternProperties.collectFirst { case (pattern, typed) if pattern.asPredicate.test(propertyName) => typed }
         }
       }
 

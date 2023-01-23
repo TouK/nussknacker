@@ -198,7 +198,7 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     result shouldEqual Map(
       "someDefinedProp" -> true,
       "someAdditionalProp" -> "string",
-      "somePatternProp_int" -> java.math.BigDecimal.valueOf(1234L)
+      "somePatternProp_int" -> 1234L
     ).asJava
   }
 
