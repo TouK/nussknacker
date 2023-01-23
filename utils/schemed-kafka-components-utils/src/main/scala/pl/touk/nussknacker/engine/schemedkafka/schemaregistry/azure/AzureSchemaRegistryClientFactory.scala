@@ -4,7 +4,7 @@ import cats.data.Validated
 import cats.data.Validated.{Invalid, Valid}
 import com.azure.core.util.{BinaryData, Context, FluxUtil}
 import com.azure.data.schemaregistry.SchemaRegistryVersion
-import com.azure.data.schemaregistry.implementation.models.SchemasGetByIdResponse
+import com.azure.data.schemaregistry.implementation.models.{SchemasGetByIdResponse, SchemasRegisterHeaders}
 import com.azure.data.schemaregistry.implementation.{AzureSchemaRegistryImpl, AzureSchemaRegistryImplBuilder}
 import com.google.common.base.CaseFormat
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
@@ -111,10 +111,10 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
   }
 
   // TODO: handle json schema as well (take ParsedSchema here)
-  def registerSchema(schema: AvroSchema): String = {
+  def registerSchema(schema: AvroSchema): SchemasRegisterHeaders = {
     FluxUtil.withContext(context =>
       schemaRegistryImpl.getSchemas.registerWithResponseAsync(
-        schemaGroup, schema.name(), BinaryData.fromString(schema.canonicalString()), schema.canonicalString().length, context)).block().getDeserializedHeaders.getSchemaId
+        schemaGroup, schema.name(), BinaryData.fromString(schema.canonicalString()), schema.canonicalString().length, context)).block().getDeserializedHeaders
   }
 
   private def invokeBlocking[T](f: Context => Mono[T]): Validated[SchemaRegistryError, T] = {

@@ -5,13 +5,15 @@ import cats.data.ValidatedNel
 import com.microsoft.azure.schemaregistry.kafka.avro.{KafkaAvroDeserializer, KafkaAvroSerializer}
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.generic.IndexedRecord
+import org.apache.avro.generic.{GenericContainer, IndexedRecord}
 import org.apache.kafka.clients.consumer.ConsumerRecord
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer}
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.kafka.serialization.KafkaDeserializationSchema
+import pl.touk.nussknacker.engine.kafka.serialization.{DelegatingKafkaSerializer, KafkaDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryError}
 import pl.touk.nussknacker.engine.schemedkafka.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedKeyValueDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory, KafkaSchemaBasedValueSerializationSchemaFactory}
 
@@ -24,7 +26,18 @@ class AzureSchemaBasedSerdeProvider extends SchemaBasedSerdeProvider {
     new KafkaSchemaBasedValueSerializationSchemaFactory {
       // TODO: handle schemaOpt
       override protected def createValueSerializer(schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Serializer[Any] = {
-        val serializer = new KafkaAvroSerializer[Any]
+        val azureSerializer = new KafkaAvroSerializer[Any]
+        val serializer = schemaOpt.map { schema =>
+          new DelegatingKafkaSerializer[Any](azureSerializer) {
+            val schemaEvolution = new DefaultAvroSchemaEvolution
+            override protected def preprocessData(data: Any, topic: String, headers: Headers): Any = {
+              data match {
+                case generic: GenericContainer => schemaEvolution.alignRecordToSchema(generic, schema.schema.asInstanceOf[AvroSchema].rawSchema())
+                case other => other
+              }
+            }
+          }
+        } getOrElse azureSerializer
         val adjustedConfig = adjustConfig(kafkaConfig)
         serializer.configure(adjustedConfig.asJava, false)
         serializer
