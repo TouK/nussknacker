@@ -4,6 +4,7 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
@@ -12,9 +13,11 @@ import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
@@ -41,6 +44,16 @@ object ConfluentUtils extends LazyLogging {
 
   def topicFromSubject: PartialFunction[String, String] = {
     case ValueSubjectPattern(value) => value
+  }
+
+  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata, config: SchemaRegistryClientKafkaConfig): SchemaWithMetadata = {
+    val confluentParsedSchema = schemaMetadata.getSchemaType match {
+      case "AVRO" => new AvroSchema(schemaMetadata.getSchema)
+      case "JSON" => OpenAPIJsonSchema(schemaMetadata.getSchema)
+      case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
+    }
+    val adjustedSchema = AvroUtils.adjustParsedSchema(confluentParsedSchema, config)
+    SchemaWithMetadata(adjustedSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =

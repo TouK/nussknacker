@@ -8,10 +8,10 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
 import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import scala.jdk.CollectionConverters._
 
@@ -33,7 +33,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
       caches.schemaCache.getOrCreate(s"$subject-$version") {
         logger.debug(s"Cache schema for subject: $subject and version: $version.")
         val schemaMetadata = client.getSchemaMetadata(subject, version)
-        SchemaWithMetadata(schemaMetadata, config)
+        ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
       }
     }
 
@@ -58,7 +58,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     caches.latestSchemaIdCache.put(subject)(SchemaId.fromInt(schemaMetadata.getId))
     caches.schemaCache.getOrCreate(s"$subject-${schemaMetadata.getVersion}") {
       logger.debug(s"Cache parsed latest schema for subject: $subject, version: ${schemaMetadata.getVersion}.")
-      SchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
     }
   }
 
@@ -66,7 +66,7 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
     caches.schemaByIdCache.getOrCreate(id) {
       val rawSchema = client.getSchemaById(id.asInt)
-      SchemaWithMetadata(new SchemaMetadata(id.asInt, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+      SchemaWithMetadata(AvroUtils.adjustParsedSchema(rawSchema, config), id)
     }
   }
 

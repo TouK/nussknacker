@@ -5,10 +5,10 @@ import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaWithMetadata.unknownVersion
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import scala.jdk.CollectionConverters._
 
@@ -40,14 +40,14 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getLatestSchemaMetadata(subject)
-      SchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
     }
 
   override def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
       val subject = ConfluentUtils.topicSubject(topic, isKey)
       val schemaMetadata = client.getSchemaMetadata(subject, version)
-      SchemaWithMetadata(schemaMetadata, config)
+      ConfluentUtils.toSchemaWithMetadata(schemaMetadata, config)
     }
 
   override def getAllTopics: Validated[SchemaRegistryError, List[String]] =
@@ -63,7 +63,7 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
 
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     val rawSchema = client.getSchemaById(id.asInt)
-    SchemaWithMetadata(new SchemaMetadata(id.asInt, unknownVersion, rawSchema.schemaType(), rawSchema.references(), rawSchema.canonicalString()), config)
+    SchemaWithMetadata(AvroUtils.adjustParsedSchema(rawSchema, config), id)
   }
 
   override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId] = getLatestFreshSchema(topic, isKey).map(_.id)

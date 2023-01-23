@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{IntSchemaId, SchemaId, StringSchemaId}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -110,16 +110,11 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     }
   }
 
-  implicit protected val schemaIdDecoder: Decoder[SchemaId] = Decoder[Int].map(IntSchemaId) or Decoder[String].map(StringSchemaId)
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
 
   implicit protected val keyEncoder: Encoder[K] = createKeyEncoder(messageFormatter)
   implicit protected val valueEncoder: Encoder[V] = createValueEncoder(messageFormatter)
-  implicit protected val schemaIdEncoder: Encoder[SchemaId] = Encoder.instance[SchemaId] {
-    case IntSchemaId(value) => Json.fromInt(value)
-    case StringSchemaId(value) => Json.fromString(value)
-  }
   implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
   protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
 

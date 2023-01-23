@@ -79,8 +79,8 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
     val deserializedRecord = deserializeRecord(record, messageWithSchemaId = valueSchemaIdOpt.isDefined)
 
     val serializableRecord = UniversalSerializableConsumerRecord(
-      keySchemaIdOpt.map(_.asInt),
-      valueSchemaIdOpt.map(_.asInt),
+      keySchemaIdOpt,
+      valueSchemaIdOpt,
       SerializableConsumerRecord(deserializedRecord)
     )
     TestRecord(consumerRecordEncoder(keySchemaIdOpt.map(getParsedSchemaById), valueSchemaIdOpt.map(getParsedSchemaById))(serializableRecord))
@@ -103,11 +103,11 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
           case _ => throw new IllegalStateException()
         }
       } else {
-        val keySchema = record.keySchemaId.map(SchemaId.fromInt).map(getParsedSchemaById)
+        val keySchema = record.keySchemaId.map(getParsedSchemaById)
         keyOpt.map(keyJson => readMessage(keySchema, ConfluentUtils.keySubject(topic), keyJson)
           ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
-      val valueSchema = record.valueSchemaId.map(SchemaId.fromInt).map(getParsedSchemaById)
+      val valueSchema = record.valueSchemaId.map(getParsedSchemaById)
       val valueBytes = readMessage(valueSchema, ConfluentUtils.valueSubject(topic), value)
       (keyBytes, valueBytes)
     }
@@ -137,6 +137,6 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
 
 }
 
-case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[Int],
-                                                     valueSchemaId: Option[Int],
+case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[SchemaId],
+                                                     valueSchemaId: Option[SchemaId],
                                                      consumerRecord: SerializableConsumerRecord[K, V])

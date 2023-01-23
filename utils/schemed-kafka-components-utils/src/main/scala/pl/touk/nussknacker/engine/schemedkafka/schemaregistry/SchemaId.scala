@@ -1,5 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
+import io.circe.{Decoder, Encoder, Json}
+
 sealed trait SchemaId {
   def asInt: Int = this match {
     case IntSchemaId(value) => value
@@ -22,6 +24,13 @@ object SchemaId {
   }
 
   def fromString(value: String): SchemaId = StringSchemaId(value)
+
+  implicit val schemaIdEncoder: Encoder[SchemaId] = Encoder.instance[SchemaId] {
+    case IntSchemaId(value) => Json.fromInt(value)
+    case StringSchemaId(value) => Json.fromString(value)
+  }
+
+  implicit val schemaIdDecoder: Decoder[SchemaId] = Decoder[Int].map(IntSchemaId) or Decoder[String].map(StringSchemaId)
 
 }
 
