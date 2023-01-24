@@ -1,12 +1,7 @@
 import {FeaturesSettings} from "../actions/nk"
 import {Action} from "../actions/reduxTypes"
 import User from "../common/models/User"
-import {DEV_TOOLBARS} from "../components/toolbarSettings/DEV_TOOLBARS"
 import {ProcessDefinitionData} from "../types"
-import {WithId} from "../types/common"
-import {ToolbarsConfig} from "../components/toolbarSettings/types"
-import {ToolbarsSide} from "./toolbars"
-import {WIP_TOOLBARS} from "../components/toolbarSettings/WIP_TOOLBARS"
 
 export enum AuthStrategy {
   BROWSER = "Browser",
@@ -20,7 +15,6 @@ export type SettingsState = {
   authenticationSettings: AuthenticationSettings,
   analyticsSettings: $TodoType,
   processDefinitionData: ProcessDefinitionData,
-  processToolbarsConfiguration: WithId<ToolbarsConfig>,
 }
 
 export type BaseAuthenticationSettings = {
@@ -54,7 +48,6 @@ const initialState: SettingsState = {
   authenticationSettings: {},
   analyticsSettings: {},
   processDefinitionData: {},
-  processToolbarsConfiguration: null,
 }
 
 export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
@@ -79,15 +72,6 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
       return {
         ...state,
         processDefinitionData: action.processDefinitionData,
-      }
-    }
-    case "PROCESS_TOOLBARS_CONFIGURATION_LOADED": {
-      return {
-        ...state,
-        processToolbarsConfiguration: {
-          ...action.data,
-          [ToolbarsSide.TopRight]: [...WIP_TOOLBARS, ...action.data.topRight],
-          [ToolbarsSide.BottomRight]: [...action.data.bottomRight, ...DEV_TOOLBARS]},
       }
     }
     default:

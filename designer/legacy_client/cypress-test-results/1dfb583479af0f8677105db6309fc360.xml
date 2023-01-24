@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Mocha Tests" time="45.188" tests="1" failures="0">
-  <testsuite name="Root Suite" timestamp="2022-12-01T14:22:36" tests="0" file="cypress/e2e/components.cy.ts" time="0.000" failures="0">
-  </testsuite>
-  <testsuite name="Components list" timestamp="2022-12-01T14:22:37" tests="1" time="45.052" failures="0">
-    <testcase name="Components list should display component" time="44.062" classname="should display component">
-    </testcase>
-  </testsuite>
-</testsuites>

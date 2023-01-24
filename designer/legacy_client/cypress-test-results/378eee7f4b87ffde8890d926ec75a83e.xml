@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Mocha Tests" time="12.951" tests="1" failures="0">
-  <testsuite name="Root Suite" timestamp="2022-11-30T17:27:53" tests="0" file="cypress/e2e/creatorToolbar.cy.ts" time="0.000" failures="0">
-  </testsuite>
-  <testsuite name="Creator toolbar" timestamp="2022-11-30T17:27:53" tests="1" time="12.887" failures="0">
-    <testcase name="Creator toolbar should allow filtering" time="11.203" classname="should allow filtering">
-    </testcase>
-  </testsuite>
-</testsuites>

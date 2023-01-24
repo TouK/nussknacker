@@ -1,5 +1,4 @@
-import {Layout} from "../../actions/nk"
-import {ProcessStateType, ProcessType} from "../../components/Process/types"
+import {ProcessType} from "../../components/Process/types"
 import {Process} from "../../types"
 import {TestResults} from "../../common/TestResultUtils"
 
@@ -16,7 +15,6 @@ export type GraphState = {
   fetchedProcessDetails?: ProcessType,
   processToDisplay?: Process,
   selectionState?: string[],
-  layout: Layout,
   testCapabilities?: $TodoType,
   testResults: TestResults,
   processCounts: ProcessCounts,

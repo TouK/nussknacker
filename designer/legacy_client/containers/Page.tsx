@@ -9,8 +9,3 @@ export const Page = styled.div({
   display: "flex",
   flexDirection: "column",
 })
-
-export const GraphPage = styled(Page)({
-  backgroundColor: "#b3b3b3",
-  zIndex: 1,
-})

@@ -1,4 +1,3 @@
-import {DynamicTabData} from "../../containers/DynamicTab"
 import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
 
@@ -13,7 +12,7 @@ export type UsageStatisticsReports = {
   url: string,
 }
 
-export type SurveySettings ={
+export type SurveySettings = {
   link: string,
   text: string,
   key: string,
@@ -28,16 +27,15 @@ export type FeaturesSettings = {
   commentSettings: { substitutionPattern: string, substitutionLink: string },
   deploymentCommentSettings?: { exampleComment: string },
   intervalTimeSettings: { processes: number, healthCheck: number },
-  tabs: DynamicTabData[],
   testDataSettings?: TestDataSettings,
   redirectAfterArchive: boolean,
   usageStatisticsReports: UsageStatisticsReports,
   surveySettings: SurveySettings,
-};
+}
 
 export type TestDataSettings = {
   maxSamplesCount: number,
-  testDataMaxLength: number
+  testDataMaxLength: number,
 }
 
 type EngineData = {

@@ -7,16 +7,12 @@ import {SettingsData, ValidationData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
-import {ToolbarsConfig} from "../components/toolbarSettings/types"
 import {AuthenticationSettings} from "../reducers/settings"
-import {Process, ProcessDefinitionData, ProcessId} from "../types"
-import {WithId, Instant} from "../types/common"
+import {ProcessDefinitionData} from "../types"
+import {Instant} from "../types/common"
 import {BackendNotification} from "../containers/Notifications"
 import {ProcessCounts} from "../reducers/graph"
 import {TestResults} from "../common/TestResultUtils"
-import {AdditionalInfo} from "../components/graph/node-modal/NodeAdditionalInfoBox"
-import {omit} from "lodash";
-import {withoutHackOfEmptyEdges} from "../components/graph/GraphPartialsInTS/EdgeUtils";
 
 type HealthCheckProcessDeploymentType = {
   status: string,
@@ -126,6 +122,7 @@ class HttpService {
         return []
       })
   }
+
   fetchHealthCheckProcessDeployment(): Promise<HealthCheckResponse> {
     return api.get("/app/healthCheck/process/deployment")
       .then(() => ({state: HealthState.ok}))
@@ -182,28 +179,8 @@ class HttpService {
     return promise
   }
 
-  /**
-   * @deprecated
-   */
-  fetchComponentIds() {
-    // `id` is not the same as in //api/component response
-    return api.get<string[]>("/processDefinitionData/componentIds")
-  }
-
-  fetchServices() {
-    return api.get<Services>("/processDefinitionData/services")
-  }
-
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
     return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
-  }
-
-  fetchComponents(): Promise<AxiosResponse<ComponentType[]>> {
-    return api.get<ComponentType[]>("/components")
-  }
-
-  fetchComponentUsages(componentId: string): Promise<AxiosResponse<ComponentUsageType[]>> {
-    return api.get<ComponentUsageType[]>(`/components/${encodeURIComponent(componentId)}/usages`)
   }
 
   fetchProcesses(data: FetchProcessQueryParams = {}): Promise<AxiosResponse<ProcessType[]>> {
@@ -221,15 +198,6 @@ class HttpService {
       .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
   }
 
-  fetchProcessToolbarsConfiguration(processId) {
-    const promise = api.get<WithId<ToolbarsConfig>>(`/processes/${encodeURIComponent(processId)}/toolbars`)
-    promise.catch(error => this.#addError(i18next.t(
-      "notification.error.cannotFetchToolbarConfiguration",
-      "Cannot fetch toolbars configuration"
-    ), error))
-    return promise
-  }
-
   fetchProcessState(processId) {
     return api.get(`/processes/${encodeURIComponent(processId)}/status`)
       .catch(error => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
@@ -240,21 +208,6 @@ class HttpService {
       .then(res => res.data
         .filter(({action}) => action === "DEPLOY")
         .map(({performedAt}) => performedAt))
-  }
-
-  deploy(processId, comment?): Promise<{ isSuccess: boolean }> {
-    return api.post(`/processManagement/deploy/${encodeURIComponent(processId)}`, comment).then(() => {
-      return {isSuccess: true}
-    }).catch(error => {
-      if (error?.response?.status != 400) {
-        return this.#addError(i18next.t("notification.error.failedToDeploy", "Failed to deploy {{processId}}", {processId}), error, true)
-          .then((error) => {
-            return {isSuccess: false}
-          })
-      } else {
-        throw error
-      }
-    })
   }
 
   customAction(processId: string, actionName: string, params: Record<string, unknown>) {
@@ -268,10 +221,6 @@ class HttpService {
         return {isSuccess: false}
       })
     })
-  }
-
-  invokeService(processingType, serviceName, parameters) {
-    return api.post(`/service/${processingType}/${serviceName}`, parameters)
   }
 
   cancel(processId, comment?) {
@@ -336,25 +285,10 @@ class HttpService {
       })
   }
 
-  exportProcess(process: Process, versionId) {
-    return api.post("/processesExport", this.#sanitizeProcess(process), {responseType: "blob"})
-      .then(response => FileSaver.saveAs(response.data, `${process.id}-${versionId}.json`))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToExport", "Failed to export"), error))
-  }
-
   exportProcessToPdf(processId, versionId, data) {
     return api.post(`/processesExport/pdf/${encodeURIComponent(processId)}/${versionId}`, data, {responseType: "blob"})
       .then(response => FileSaver.saveAs(response.data, `${processId}-${versionId}.pdf`))
       .catch(error => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
-  }
-
-  //to prevent closing edit node modal and corrupting graph display
-  validateProcess(process: Process) {
-    return api.post("/processValidation", this.#sanitizeProcess(process))
-      .catch(error => {
-        this.#addError(i18next.t("notification.error.fatalValidationError", "Fatal validation error, cannot save"), error, true)
-        return Promise.reject(error)
-      })
   }
 
   validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
@@ -370,45 +304,10 @@ class HttpService {
   validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
     const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
     promise.catch(error => this.#addError(
-        i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-        error,
-        true
-    ))
-    return promise
-  }
-
-  getNodeAdditionalInfo(processId, node): Promise<AxiosResponse<AdditionalInfo>> {
-    const promise = api.post<AdditionalInfo>(`/nodes/${encodeURIComponent(processId)}/additionalInfo`, node)
-    promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToFetchNodeAdditionalInfo", "Failed to get node additional info"),
+      i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
       error,
       true
     ))
-    return promise
-  }
-
-  getPropertiesAdditionalInfo(processId, processProperties): Promise<AxiosResponse<AdditionalInfo>> {
-    const promise = api.post<AdditionalInfo>(`/properties/${encodeURIComponent(processId)}/additionalInfo`, processProperties)
-    promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToFetchPropertiesAdditionalInfo", "Failed to get properties additional info"),
-      error,
-      true
-    ))
-    return promise
-  }
-
-  //This method will return *FAILED* promise if validation fails with e.g. 400 (fatal validation error)
-
-  getTestCapabilities(process: Process) {
-    return api.post("/testInfo/capabilities", this.#sanitizeProcess(process))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToGetCapabilities", "Failed to get capabilities"), error, true))
-  }
-
-  generateTestData(processId: string, testSampleSize: string, process: Process): Promise<AxiosResponse<any>> {
-    const promise = api.post(`/testInfo/generate/${testSampleSize}`, this.#sanitizeProcess(process), {responseType: "blob"})
-    promise
-      .then(response => FileSaver.saveAs(response.data, `${processId}-testData`))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToGenerateTestData", "Failed to generate test data"), error, true))
     return promise
   }
 
@@ -423,32 +322,10 @@ class HttpService {
     return promise
   }
 
-  //to prevent closing edit node modal and corrupting graph display
-  saveProcess(processId, processJson: Process, comment) {
-    const data = {process: this.#sanitizeProcess(processJson), comment: comment}
-    return api.put(`/processes/${encodeURIComponent(processId)}`, data)
-      .catch(error => {
-        this.#addError(i18next.t("notification.error.failedToSave", "Failed to save"), error, true)
-        return Promise.reject(error)
-      })
-  }
-
-  archiveProcess(processId) {
-    return api.post(`/archive/${encodeURIComponent(processId)}`)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToArchive", "Failed to archive scenario"), error, true))
-  }
-
-  unArchiveProcess(processId) {
-    return api.post(`/unarchive/${encodeURIComponent(processId)}`)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToUnArchive", "Failed to unarchive scenario"), error, true))
-  }
-
-  //This method will return *FAILED* promise if save/validation fails with e.g. 400 (fatal validation error)
-
   createProcess(processId: string, processCategory: string, isSubprocess = false) {
     const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`)
     promise.catch(error => {
-      if(error?.response?.status != 400)
+      if (error?.response?.status != 400)
         this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true)
     })
     return promise
@@ -460,18 +337,6 @@ class HttpService {
 
     return api.post(`/processes/import/${encodeURIComponent(processId)}`, data)
       .catch(error => this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
-  }
-
-  testProcess(processId: ProcessId, file: File, processJson: Process): Promise<AxiosResponse<TestProcessResponse>> {
-    const sanitized = this.#sanitizeProcess(processJson)
-    
-    const data = new FormData()
-    data.append("testData", file)
-    data.append("processJson", new Blob([JSON.stringify(sanitized)], {type: "application/json"}))
-
-    const promise = api.post(`/processManagement/test/${encodeURIComponent(processId)}`, data)
-    promise.catch(error => this.#addError(i18next.t("notification.error.failedToTest", "Failed to test"), error, true))
-    return promise
   }
 
   compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
@@ -496,6 +361,7 @@ class HttpService {
       .then(() => this.#addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
       .catch(error => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
   }
+
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
     return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}${redirectUri ? `&redirect_uri=${redirectUri}` : ""}`)
   }
@@ -525,15 +391,7 @@ class HttpService {
     this.#addErrorMessage(message, errorMessage, showErrorText)
     return Promise.resolve(error)
   }
-  
-  #sanitizeProcess(process: Process) {
-    //don't send validationResult, it's not needed and can be v. large,
-    const {id, nodes, edges, properties, processingType, category}: Omit<Process, "validationResult">
-      //don't send empty edges
-      = withoutHackOfEmptyEdges(process)
-    return {id, nodes, edges, properties, processingType, category}
-  }
-  
+
 }
 
 export default new HttpService()

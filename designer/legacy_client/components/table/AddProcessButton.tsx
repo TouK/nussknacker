@@ -3,8 +3,6 @@ import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {useSelector} from "react-redux"
 import {getLoggedUser} from "../../reducers/selectors/settings"
-import {useWindows} from "../../windowManager"
-import {WindowKind} from "../../windowManager/WindowKind"
 import {ThemedButton} from "../themed/ThemedButton"
 
 type Props = {
@@ -43,15 +41,10 @@ export function useAddProcessButtonProps(isSubprocess?: boolean): { action: () =
     [isSubprocess, t]
   )
 
-  const {open} = useWindows()
-
-  const action = useCallback(() => open({
-    isResizable: true,
-    isModal: true,
-    shouldCloseOnEsc: true,
-    kind: isSubprocess ? WindowKind.addSubProcess : WindowKind.addProcess,
+  const action = useCallback(() => console.log({
+    kind: isSubprocess ? "WindowKind.addSubProcess" : "WindowKind.addProcess",
     title,
-  }), [isSubprocess, open, title])
+  }), [isSubprocess, title])
 
   return useMemo(() => ({title, action}), [action, title])
 }
