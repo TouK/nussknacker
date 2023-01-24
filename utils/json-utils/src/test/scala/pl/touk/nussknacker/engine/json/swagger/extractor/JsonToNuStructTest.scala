@@ -40,8 +40,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "decimalField" -> SwaggerBigDecimal,
         "doubleField" -> SwaggerDouble,
         "nullField" -> SwaggerNull,
-        "mapField" -> SwaggerMap(None),
-        "mapOfStringsField" -> SwaggerMap(Some(SwaggerString))
+        "mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesWithoutType),
+        "mapOfStringsField" -> SwaggerObject(Map.empty, AdditionalPropertiesSwaggerTyped(SwaggerString))
       ), AdditionalPropertiesDisabled
     )
 
@@ -67,7 +67,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should reject map with incorrect values types") {
-    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))), AdditionalPropertiesDisabled)
+    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesSwaggerTyped(SwaggerString))), AdditionalPropertiesDisabled)
 
     val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
 
@@ -75,7 +75,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     ex.path shouldBe "mapField.b"
   }
 
-  test("should skip addionalFields when schema/SwaggerObject does not allow them") {
+  test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
     extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
 

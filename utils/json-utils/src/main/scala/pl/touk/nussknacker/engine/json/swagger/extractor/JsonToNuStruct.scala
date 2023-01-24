@@ -88,7 +88,6 @@ object JsonToNuStruct {
         case SwaggerArray(elementType) =>
           extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
         case obj: SwaggerObject => extractObject(obj)
-        case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
         case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
           .headOption.getOrElse(throw JsonToObjectError(json, u, path))
         case SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
