@@ -16,7 +16,7 @@ npm ci
 
 # Run
 
-You can run frontend connected to one of different backends, depending on your needs. After each "run" command, frontend will be available at http://localhost:3000. 
+You can run frontend connected to one of different backends, depending on your needs. After each "run" command, frontend will be available at http://localhost:3013. 
 
 Below there are described possible options. 
 
@@ -59,7 +59,7 @@ npm test
 ## E2E (cypress) tests
 
 Background: Cypress is a framework for end-to-end frontend tests. It verifies correctness of results using captured image snapshots.
-It runs tests in browser connected to our frontend application at http://localhost:3000. It uses some variables available
+It runs tests in browser connected to our frontend application at http://localhost:3013. It uses some variables available
 in `cypress.env.json` like credentials.
 
 > WARNING: Image snapshots are **OS** and even **resolution** dependent! Please add image snapshots captured on unified environment.
@@ -121,12 +121,12 @@ npm run test:e2e:linux:update
 Independent parts of application e.g. scenarios and components tabs
 
 To render views using submodules in dev mode you need to run submodules app in dev mode as well (available on port 5001). 
-Assuming that core frontend is running on `localhost:3000` as described [here](#Run), to make it happen just: 
+Assuming that core frontend is running on `localhost:3013` as described [here](#Run), to make it happen just: 
 ```
 cd ../submodules
-NU_FE_CORE_URL=http://localhost:3000 npm start
+NU_FE_CORE_URL=http://localhost:3013 npm start
 ```
-> WARNING: When using **unified linux environment** prefix npm start invocation with NU_FE_CORE_URL=http://host.docker.internal:3000 and add entry in `/etc/hosts` leading to `127.0.0.1`
+> WARNING: When using **unified linux environment** prefix npm start invocation with NU_FE_CORE_URL=http://host.docker.internal:3013 and add entry in `/etc/hosts` leading to `127.0.0.1`
 
 ### Fixing cypress tests
 

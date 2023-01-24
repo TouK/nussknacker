@@ -43,7 +43,7 @@ export default defineConfig({
       })
       return require("./cypress/plugins/index.js")(on, config)
     },
-    baseUrl: "http://localhost:3000",
+    baseUrl: "http://localhost:3013",
     excludeSpecPattern: ["**/__snapshots__/*", "**/__image_snapshots__/*"],
   },
 })

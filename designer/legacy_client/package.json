@@ -27,9 +27,9 @@
     "test:unit": "jest --reporters=default --reporters=jest-junit",
     "test:e2e": "cypress run",
     "test:e2e:dev": "cypress open",
-    "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
+    "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3013",
     "@comment script versions updating image snapshots": "",
-    "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3000",
+    "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3013",
     "coverage": "npx merge-cypress-jest-coverage",
     "commit": "lint-staged",
     "make-types": "make-federated-types --outputDir ./.federated-types"

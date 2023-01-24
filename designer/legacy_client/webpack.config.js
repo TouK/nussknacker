@@ -58,17 +58,19 @@ module.exports = {
         },
       },
     })],
-    splitChunks: {
-      cacheGroups: {
-        vendors: {
-          test: /[\\/]node_modules[\\/]/,
-          name: 'vendors',
-          chunks: 'all',
-          minSize: 100000,
-          maxSize: 500000,
+    splitChunks: isProd ?
+      {
+        cacheGroups: {
+          vendors: {
+            test: /[\\/]node_modules[\\/]/,
+            name: "vendors",
+            chunks: "all",
+            minSize: 100000,
+            maxSize: 500000,
+          },
         },
-      },
-    },
+      } :
+      {},
   },
   performance: {
     maxEntrypointSize: 3000000,
@@ -107,7 +109,7 @@ module.exports = {
       "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
       "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization",
     },
-    port: 3000,
+    port: 3013,
     proxy: {
       "/api": {
         target: process.env.BACKEND_DOMAIN,
@@ -137,7 +139,7 @@ module.exports = {
         changeOrigin: true,
       },
       "/static": {
-        target: "http://localhost:3000",
+        target: "http://localhost:3013",
         changeOrigin: true,
         pathRewrite: {
           "^/static": "/",
