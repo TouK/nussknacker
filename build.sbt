@@ -716,6 +716,8 @@ lazy val kafkaComponentsUtils = (project in utils("kafka-components-utils")).
   ).dependsOn(kafkaUtils, componentsUtils % Provided, componentsApi % Provided, testUtils % "it, test")
 
 lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-components-utils")).
+  configs(ExternalDepsTests).
+  settings(externalDepsTestsSettings).
   settings(commonSettings).
   settings(
     name := "nussknacker-schemed-kafka-components-utils",

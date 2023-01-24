@@ -14,13 +14,6 @@ import pl.touk.nussknacker.engine.util.KeyedValue
 import java.nio.charset.StandardCharsets
 import java.util.Optional
 
-/**
-  * To run this test you should have configured one of authentication options described here:
-  * https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authenticating-with-defaultazurecredential
-  * e.g. Intellij plugin, Azure CLI or environment variables
-  * Test connects to the schema registry registered in your Event Hubs Namespace (it will be taken from AZURE_EVENT_HUBS_NAMESPACE
-  * environment variable - by default nu-cloud). Test will auto create pl.touk.nussknacker.test_schema inside test-group there.
-  */
 @Network
 class AzureSchemaBasedSerdeProviderIntegrationTest extends AnyFunSuite with OptionValues with Matchers {
 

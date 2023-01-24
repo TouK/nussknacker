@@ -3,8 +3,7 @@ package pl.touk.nussknacker.engine.lite.components
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
 import com.typesafe.config.{ConfigFactory, ConfigValueFactory}
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
-import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecordBuilder}
-import org.apache.avro.io.EncoderFactory
+import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.avro.{Schema, SchemaBuilder}
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
@@ -23,7 +22,7 @@ import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunnerBuilder
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaBasedSerdeProvider, AzureSchemaRegistryClientFactory, AzureUtils, FullSchemaNameDecomposed}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaBasedSerdeProvider, AzureSchemaRegistryClientFactory, AzureUtils, SchemaNameTopicMatchingStrategy}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
@@ -33,7 +32,6 @@ import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.test.{KafkaConfigProperties, ValidatedValuesDetailedMessage}
 
-import java.io.ByteArrayOutputStream
 import java.util.Optional
 
 // TODO: make this test use mocked schema registry instead of the real one
@@ -69,11 +67,11 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
 
     val aFieldOnly = (assembler: SchemaBuilder.FieldAssembler[Schema]) =>
       assembler.name("a").`type`(AvroTestData.stringSchema).noDefault()
-    val inputSchema = createRecordScheme(inputTopic, aFieldOnly)
-    val outputSchema = createRecordScheme(outputTopic, aFieldOnly)
+    val inputSchema = createRecordSchema(inputTopic, aFieldOnly)
+    val outputSchema = createRecordSchema(outputTopic, aFieldOnly)
 
-    val inputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchema(inputSchema).getSchemaId)
-    val outputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchema(outputSchema).getSchemaId)
+    val inputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchemaVersionIfNotExists(inputSchema).getId)
+    val outputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchemaVersionIfNotExists(outputSchema).getId)
 
     val scenario = ScenarioBuilder.streamingLite(scenarioName)
       .source("source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
@@ -83,7 +81,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     val inputValue = new GenericRecordBuilder(inputSchema.rawSchema())
       .set("a", "aValue")
       .build()
-    val inputConsumerRecord = wrapWithConsumerRecord(inputTopic, inputSchemaId, serialize(inputSchema.rawSchema(), inputValue))
+    val inputConsumerRecord = wrapWithConsumerRecord(inputTopic, inputSchemaId, AvroUtils.serializeContainerToBytesArray(inputValue))
 
     val result = testRunner.runWithRawData(scenario, List(inputConsumerRecord))
     val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
@@ -91,8 +89,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     resultSchemaIdHeader shouldEqual outputSchemaId
   }
 
-  // FIXME
-  ignore("schema evolution in Avro source using Azure Schema Registry") {
+  test("schema evolution in Avro source using Azure Schema Registry") {
     val scenarioName = "avro-schemaevolution"
     val inputTopic = s"$scenarioName-input"
     val outputTopic = s"$scenarioName-output"
@@ -104,29 +101,31 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
       assembler
         .name("a").`type`(AvroTestData.stringSchema).noDefault()
         .name("b").`type`(AvroTestData.stringSchema).withDefault(bDefaultValue)
-    val inputSchemaV1 = createRecordScheme(inputTopic, aFieldOnly)
-    val inputSchemaV2 = createRecordScheme(inputTopic, abFields)
-    val outputSchema = createRecordScheme(outputTopic, abFields)
+    val inputSchemaV1 = createRecordSchema(inputTopic, aFieldOnly)
+    val inputSchemaV2 = createRecordSchema(inputTopic, abFields)
+    val outputSchema = createRecordSchema(outputTopic, abFields)
 
-    val inputSchemaV1Data = schemaRegistryClient.registerSchema(inputSchemaV1)
-    val inputSchemaV2Data = schemaRegistryClient.registerSchema(inputSchemaV2)
-    val outputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchema(outputSchema).getSchemaId)
+    val inputSchemaV1Props = schemaRegistryClient.registerSchemaVersionIfNotExists(inputSchemaV1)
+    val inputSchemaV2Props = schemaRegistryClient.registerSchemaVersionIfNotExists(inputSchemaV2)
+    val outputSchemaId = SchemaId.fromString(schemaRegistryClient.registerSchemaVersionIfNotExists(outputSchema).getId)
 
     val scenario = ScenarioBuilder.streamingLite(scenarioName)
-      .source("source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${inputSchemaV2Data.getSchemaVersion}'")
-      .filter("filter-b-default", s"#input.b == '$bDefaultValue''")
+      .source("source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${inputSchemaV2Props.getVersion}'")
+      .filter("filter-b-default", s"#input.b == '$bDefaultValue'")
       .emptySink("sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "", SinkRawEditorParamName -> "true", SinkValueParamName -> "#input")
 
     val inputValue = new GenericRecordBuilder(inputSchemaV1.rawSchema())
       .set("a", "aValue")
       .build()
-    val inputConsumerRecord = wrapWithConsumerRecord(inputTopic, SchemaId.fromString(inputSchemaV1Data.getSchemaId), serialize(inputSchemaV1.rawSchema(), inputValue))
+    val inputConsumerRecord = wrapWithConsumerRecord(inputTopic, SchemaId.fromString(inputSchemaV1Props.getId), AvroUtils.serializeContainerToBytesArray(inputValue))
 
     val result = testRunner.runWithRawData(scenario, List(inputConsumerRecord))
     val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
     resultSchemaIdHeader shouldEqual outputSchemaId
-    resultProducerRecord.value() shouldEqual inputConsumerRecord.value()
+    val deserializedValue = AvroUtils.deserialize[GenericRecord](resultProducerRecord.value(), outputSchema.rawSchema())
+    deserializedValue.get("a") shouldEqual "aValue"
+    deserializedValue.get("b") shouldEqual bDefaultValue
   }
 
   private def verifyOneSuccessRecord(result: RunnerListResult[ProducerRecord[Array[Byte], Array[Byte]]]): (ProducerRecord[Array[Byte], Array[Byte]], SchemaId) = {
@@ -139,22 +138,13 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
     (resultProducerRecord, resultSchemaIdHeader)
   }
 
-  private def createRecordScheme(topicName: String,
+  private def createRecordSchema(topicName: String,
                                  assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]) = {
     val fields = SchemaBuilder
-      .record(FullSchemaNameDecomposed.valueSchemaNameFromTopicName(topicName))
+      .record(SchemaNameTopicMatchingStrategy.valueSchemaNameFromTopicName(topicName))
       .namespace("not.important.namespace")
       .fields()
     new AvroSchema(assemblyFields(fields).endRecord())
-  }
-
-  private def serialize(schema: Schema, record: GenericData.Record) = {
-    val writer = new GenericDatumWriter[Any](schema, AvroUtils.genericData)
-    val output = new ByteArrayOutputStream()
-    val encoder = EncoderFactory.get().binaryEncoder(output, null)
-    writer.write(record, encoder)
-    encoder.flush()
-    output.toByteArray
   }
 
   private def wrapWithConsumerRecord(topic: String, schemaId: SchemaId, serializedValue: Array[Byte]) = {

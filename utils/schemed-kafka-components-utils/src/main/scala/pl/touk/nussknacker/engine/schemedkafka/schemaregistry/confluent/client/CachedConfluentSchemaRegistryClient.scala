@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import cats.data.Validated
-import cats.data.Validated.valid
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.SchemaProvider
 import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -70,13 +69,6 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
     }
   }
 
-  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId] = {
-    val subject = ConfluentUtils.topicSubject(topic, isKey)
-    caches.latestSchemaIdCache.get(subject) match {
-      case Some(id) => valid(id)
-      case None => getLatestFreshSchema(topic, isKey).map(_.id)
-    }
-  }
 }
 
 private[client] object CachedSchemaRegistryClient {

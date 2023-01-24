@@ -10,7 +10,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.{Deserializer, Serializer, StringDeserializer}
 import pl.touk.nussknacker.engine.api.test.TestRecord
-import pl.touk.nussknacker.engine.kafka.serialization.{DelegatingKafkaSerializer, KafkaDeserializationSchema}
+import pl.touk.nussknacker.engine.kafka.serialization.{DelegatingKafkaDeserializer, DelegatingKafkaSerializer, KafkaDeserializationSchema}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
@@ -24,7 +24,6 @@ import scala.reflect.ClassTag
 class AzureSchemaBasedSerdeProvider extends SchemaBasedSerdeProvider {
   override def serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory =
     new KafkaSchemaBasedValueSerializationSchemaFactory {
-      // TODO: handle schemaOpt
       override protected def createValueSerializer(schemaOpt: Option[RuntimeSchemaData[ParsedSchema]], kafkaConfig: KafkaConfig): Serializer[Any] = {
         val azureSerializer = new KafkaAvroSerializer[Any]
         val serializer = schemaOpt.map { schema =>
@@ -46,12 +45,20 @@ class AzureSchemaBasedSerdeProvider extends SchemaBasedSerdeProvider {
 
   override def deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory =
     new KafkaSchemaBasedKeyValueDeserializationSchemaFactory {
-      // TODO: handle schemaDataOpt
       protected def createDeserializer[T: ClassTag](kafkaConfig: KafkaConfig,
                                                     schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
                                                     isKey: Boolean): Deserializer[T] = {
         val adjustedConfig = adjustConfig(kafkaConfig)
-        val deserializer = new KafkaAvroDeserializer[IndexedRecord]()
+        // TODO: KafkaAvroDeserializer handles only <: IndexedRecord, what about other, non IndexedRecord types? e.g. simple types
+        val azureDeserializer = new KafkaAvroDeserializer[IndexedRecord]()
+        val deserializer = schemaDataOpt.map { schema =>
+          new DelegatingKafkaDeserializer[IndexedRecord](azureDeserializer) {
+            val schemaEvolution = new DefaultAvroSchemaEvolution
+            override protected def postprocess(deserialized: IndexedRecord, topic: String, headers: Headers): IndexedRecord = {
+              schemaEvolution.alignRecordToSchema(deserialized, schema.schema.asInstanceOf[AvroSchema].rawSchema()).asInstanceOf[IndexedRecord]
+            }
+          }
+        } getOrElse azureDeserializer
         deserializer.configure(adjustedConfig.asJava, isKey)
         deserializer.asInstanceOf[Deserializer[T@unchecked]]
       }
