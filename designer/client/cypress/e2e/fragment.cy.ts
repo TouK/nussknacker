@@ -1,7 +1,7 @@
 describe("Fragment", () => {
   const seed = "fragment"
   before(() => {
-    cy.viewport(1440, 1000)
+    cy.viewport(1440, 1200)
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
@@ -65,7 +65,6 @@ describe("Fragment", () => {
 
   it("should add documentation url in fragment properties and show it in modal within scenario", () => {
     const seed2 = "fragment2"
-    cy.viewport("macbook-15")
     cy.visitNewFragment(seed2, "fragment").as("fragmentName")
     cy.contains(/^properties/i).should("be.enabled").click()
 
