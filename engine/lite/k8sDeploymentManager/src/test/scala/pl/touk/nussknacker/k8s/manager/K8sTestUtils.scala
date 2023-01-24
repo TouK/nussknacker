@@ -54,11 +54,6 @@ class K8sTestUtils(k8s: KubernetesClient) extends K8sUtils(k8s) with Matchers wi
     }
   }
 
-  def dumpClusterInfo(): Unit = {
-    val dumpProcess = new ProcessBuilder("kubectl", "cluster-info", "dump").start()
-    ProcessUtils.attachLoggingAndReturnWaitingFuture(dumpProcess).futureValue shouldBe 0
-  }
-
   def withPortForwarded(obj: ObjectResource, remotePort:Int)(action: Int => Unit): Unit = {
     ensureRunningStatus(obj)
     val localPort = AvailablePortFinder.findAvailablePorts(1).head
