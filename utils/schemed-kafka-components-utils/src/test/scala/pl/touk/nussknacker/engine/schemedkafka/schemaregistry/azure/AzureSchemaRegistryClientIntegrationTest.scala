@@ -58,14 +58,14 @@ class AzureSchemaRegistryClientIntegrationTest extends AnyFunSuite with Matchers
     // Azure Serializer doesn't support reflect schema inferring but generally reflect schema approach shows convention
     // which Avro follow in other places like generated specific record approach)
     val schema = ReflectData.get().getSchema(classOf[NuCloudIntegrationTestValue])
-    SchemaNameTopicMatchingStrategy.topicNameFromValueSchemaName(schema.getFullName).value shouldEqual topicName
+    SchemaNameTopicMatchStrategy.topicNameFromValueSchemaName(schema.getFullName).value shouldEqual topicName
 
     schemaRegistryClient.registerSchemaVersionIfNotExists(new AvroSchema(schema))
   }
   private def createRecordSchema(topicName: String,
                                  assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]) = {
     val fields = SchemaBuilder
-      .record(SchemaNameTopicMatchingStrategy.valueSchemaNameFromTopicName(topicName))
+      .record(SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(topicName))
       .namespace("not.important.namespace")
       .fields()
     new AvroSchema(assemblyFields(fields).endRecord())

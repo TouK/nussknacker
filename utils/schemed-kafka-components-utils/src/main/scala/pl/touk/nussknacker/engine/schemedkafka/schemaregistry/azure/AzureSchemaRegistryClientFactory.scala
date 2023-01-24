@@ -10,7 +10,7 @@ import com.azure.data.schemaregistry.{SchemaRegistryClientBuilder, SchemaRegistr
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.commons.io.IOUtils
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchingStrategy.FullSchemaNameDecomposed
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.SchemaNameTopicMatchStrategy.FullSchemaNameDecomposed
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaNotFound, SchemaRegistryClient, SchemaRegistryClientFactory, SchemaRegistryError, SchemaRegistryUnknownError, SchemaWithMetadata}
 import reactor.core.publisher.Mono
 

@@ -22,7 +22,7 @@ import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunnerBuilder
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValueParamName, TopicParamName}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaBasedSerdeProvider, AzureSchemaRegistryClientFactory, AzureUtils, SchemaNameTopicMatchingStrategy}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaBasedSerdeProvider, AzureSchemaRegistryClientFactory, AzureUtils, SchemaNameTopicMatchStrategy}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
@@ -141,7 +141,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
   private def createRecordSchema(topicName: String,
                                  assemblyFields: SchemaBuilder.FieldAssembler[Schema] => SchemaBuilder.FieldAssembler[Schema]) = {
     val fields = SchemaBuilder
-      .record(SchemaNameTopicMatchingStrategy.valueSchemaNameFromTopicName(topicName))
+      .record(SchemaNameTopicMatchStrategy.valueSchemaNameFromTopicName(topicName))
       .namespace("not.important.namespace")
       .fields()
     new AvroSchema(assemblyFields(fields).endRecord())
