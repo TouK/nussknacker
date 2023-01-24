@@ -1,6 +1,8 @@
 package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.ParsedSchema
+import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
@@ -8,8 +10,10 @@ import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.io.DatumReader
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificRecord}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.AvroSchemaWithJsonPayload
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import scala.reflect.{ClassTag, classTag}
@@ -77,12 +81,19 @@ object AvroUtils extends LazyLogging {
   def parseSchema(avroSchema: String): Schema =
     parser.parse(avroSchema)
 
+  def adjustParsedSchema(confluentParsedSchema: ParsedSchema, config: SchemaRegistryClientKafkaConfig): ParsedSchema = {
+    (confluentParsedSchema, config.avroAsJsonSerialization) match {
+      case (schema: AvroSchema, Some(true)) => AvroSchemaWithJsonPayload(schema)
+      case _ => confluentParsedSchema
+    }
+  }
+
   // It is need because regards to that https://github.com/confluentinc/schema-registry/issues/1293 someone
   // could register schema with invalid default in lower avro version and despite this in newer version we want to read it
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
 
-  def wrapWithGenericRecordWithSchemaIdIfDefined[T](record: T, nullableSchemaId: Integer): T = {
+  def wrapWithGenericRecordWithSchemaIdIfDefined[T](record: T, nullableSchemaId: SchemaId): T = {
     (record, Option(nullableSchemaId)) match {
       case (genericRecord: GenericData.Record, Some(schemaId)) => new GenericRecordWithSchemaId(genericRecord, schemaId, false).asInstanceOf[T]
       case _ => record

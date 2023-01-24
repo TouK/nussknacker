@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.C
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
 import pl.touk.nussknacker.engine.kafka.serialization
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -127,5 +128,6 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
     kafkaClient.sendRawMessage(topic, record.key(), record.value(), headers = record.headers()).futureValue
   }
 
-  private def toRuntimeSchemaData(topic: String, valueSchema: Schema): RuntimeSchemaData[ParsedSchema] =  RuntimeSchemaData(valueSchema, Option(schemaRegistryClient.getId(s"$topic-value", new AvroSchema(valueSchema)))).toParsedSchemaData
+  private def toRuntimeSchemaData(topic: String, valueSchema: Schema): RuntimeSchemaData[ParsedSchema] =
+    RuntimeSchemaData(valueSchema, Option(SchemaId.fromInt(schemaRegistryClient.getId(s"$topic-value", new AvroSchema(valueSchema))))).toParsedSchemaData
 }

@@ -4,7 +4,7 @@ import cats.data.Validated
 
 trait SchemaRegistryClient extends Serializable {
 
-  def getSchemaById(id: Int): SchemaWithMetadata
+  def getSchemaById(id: SchemaId): SchemaWithMetadata
 
   protected def getBySubjectAndVersion(topic: String, version: Int, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
@@ -17,7 +17,7 @@ trait SchemaRegistryClient extends Serializable {
     */
   protected def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
-  def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, Int]
+  def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId]
 
   def getFreshSchema(topic: String, version: Option[Int], isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     version

@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.CirceUtil._
 import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.kafka._
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentUtils, JsonPayloadRecordFormatterSupport, UniversalSchemaSupport}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{ConfluentSchemaRegistryClient, ConfluentSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.UniversalSchemaIdFromMessageExtractor
@@ -102,7 +103,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
           case _ => throw new IllegalStateException()
         }
       } else {
-        val keySchema = record.keySchemaId.map(id => getParsedSchemaById(id))
+        val keySchema = record.keySchemaId.map(getParsedSchemaById)
         keyOpt.map(keyJson => readMessage(keySchema, ConfluentUtils.keySubject(topic), keyJson)
           ).getOrElse(throw new IllegalArgumentException("Error reading key schema: expected valid key"))
       }
@@ -132,10 +133,10 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
     deriveConfiguredEncoder
   }
 
-  private def getParsedSchemaById(schemaId:Int): ParsedSchema = schemaRegistryClient.getSchemaById(schemaId).schema
+  private def getParsedSchemaById(schemaId: SchemaId): ParsedSchema = schemaRegistryClient.getSchemaById(schemaId).schema
 
 }
 
-case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[Int],
-                                                     valueSchemaId: Option[Int],
+case class UniversalSerializableConsumerRecord[K, V](keySchemaId: Option[SchemaId],
+                                                     valueSchemaId: Option[SchemaId],
                                                      consumerRecord: SerializableConsumerRecord[K, V])

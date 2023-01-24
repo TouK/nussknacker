@@ -7,7 +7,7 @@ import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputDeserializer, DataOutputSerializer}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializerSpec.schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
@@ -46,7 +46,7 @@ object SchemaIdBasedAvroGenericRecordSerializerSpec {
   val (schemaRegistryClient, id) = {
     val client = new MockSchemaRegistryClient
     val id = client.register("t1", new AvroSchema(schema))
-    (client, id)
+    (client, SchemaId.fromInt(id))
   }
 
 }
