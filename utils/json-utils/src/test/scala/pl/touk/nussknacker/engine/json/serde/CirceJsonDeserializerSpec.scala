@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
@@ -199,6 +200,60 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
       "someDefinedProp" -> true,
       "someAdditionalProp" -> "string",
       "somePatternProp_int" -> 1234L
+    ).asJava
+  }
+
+  test("json object pattern properties and with disabled additional properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": false,
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "somePatternProp_int": 1234
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "somePatternProp_int" -> 1234L
+    ).asJava
+  }
+
+  test("json object pattern properties when no explicit properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {
+        |    "type": "string"
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    },
+        |    "_date$": {
+        |      "type": "string",
+        |      "format": "date"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "somePatternProp_int": 1234,
+        |  "somePatternProp_date": "2023-01-23",
+        |  "someAdditionalProp": "1234"
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "somePatternProp_int" -> 1234L,
+      "somePatternProp_date" -> LocalDate.parse("2023-01-23"),
+      "someAdditionalProp" -> "1234"
     ).asJava
   }
 
