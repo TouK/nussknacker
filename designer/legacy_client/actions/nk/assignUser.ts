@@ -13,4 +13,3 @@ export function assignUser(data: UserData): LoggedUserAction {
   }
 }
 
-export default assignUser

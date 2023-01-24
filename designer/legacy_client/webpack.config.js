@@ -90,7 +90,7 @@ module.exports = {
   entry: entry,
   output: {
     path: outputPath,
-    filename: isProd ? "[contenthash].js": "[name].js",
+    filename: isProd ? "[contenthash].js" : "[name].js",
   },
   devtool: isProd ? "hidden-source-map" : "eval-source-map",
   devServer: {
@@ -220,19 +220,19 @@ module.exports = {
       favicon: "assets/img/favicon.svg",
     }),
     new HtmlWebpackHarddiskPlugin(),
-    new WebpackShellPluginNext({
-      swallowError: !isProd,
-      onAfterDone: {
-        scripts: [
-          `rm -rf .federated-types/*`,
-          `npx make-federated-types --outputDir .federated-types/${federationConfig.name}`,
-          // this .tgz with types for exposed modules lands in public root
-          // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
-          `mkdir -p "${outputPath}"`,
-          `tar -C .federated-types/${federationConfig.name} -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
-        ],
-      },
-    }),
+    // new WebpackShellPluginNext({
+    //   swallowError: !isProd,
+    //   onAfterDone: {
+    //     scripts: [
+    //       `rm -rf .federated-types/*`,
+    //       `npx make-federated-types --outputDir .federated-types/${federationConfig.name}`,
+    //       // this .tgz with types for exposed modules lands in public root
+    //       // and could be downloaded by remote side (e.g. `webpack-remote-types-plugin`).
+    //       `mkdir -p "${outputPath}"`,
+    //       `tar -C .federated-types/${federationConfig.name} -czf "${path.join(outputPath, `${federationConfig.name}-dts.tgz`)}" .`,
+    //     ],
+    //   },
+    // }),
     new CopyPlugin({
       patterns: [
         {from: "translations", to: "assets/locales", noErrorOnMissing: true},
@@ -266,7 +266,8 @@ module.exports = {
     new ForkTsCheckerWebpackPlugin({
       typescript: {
         memoryLimit: 5000,
-      }}),
+      },
+    }),
     isProd ? null : new ReactRefreshWebpackPlugin({overlay: false}),
     new webpack.ProgressPlugin(progressBar),
   ].filter(Boolean),

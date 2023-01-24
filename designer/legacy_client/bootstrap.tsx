@@ -3,7 +3,6 @@ import ReactDOM from "react-dom"
 import {Router} from "react-router-dom"
 import ErrorBoundary from "./components/common/ErrorBoundary"
 import LoaderSpinner from "./components/Spinner"
-import {Notifications} from "./containers/Notifications"
 import NussknackerInitializer from "./containers/NussknackerInitializer"
 import {SettingsProvider} from "./containers/SettingsInitializer"
 import {NkThemeProvider} from "./containers/theme"
@@ -23,7 +22,6 @@ const Root = () => (
         <Router history={history}>
           <SettingsProvider>
             <NussknackerInitializer>
-              <Notifications/>
               <NkThemeProvider>
                 <ProcessTabs/>
               </NkThemeProvider>

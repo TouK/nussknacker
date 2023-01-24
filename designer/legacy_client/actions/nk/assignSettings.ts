@@ -1,18 +1,18 @@
 import {AuthenticationSettings} from "../../reducers/settings"
 import {UnknownRecord} from "../../types/common"
 
-export type MetricsType = {
+type MetricsType = {
   url: string,
   defaultDashboard: string,
   scenarioTypeToDashboard: UnknownRecord,
 }
 
-export type UsageStatisticsReports = {
+type UsageStatisticsReports = {
   enabled: boolean,
   url: string,
 }
 
-export type SurveySettings = {
+type SurveySettings = {
   link: string,
   text: string,
   key: string,
@@ -33,7 +33,7 @@ export type FeaturesSettings = {
   surveySettings: SurveySettings,
 }
 
-export type TestDataSettings = {
+type TestDataSettings = {
   maxSamplesCount: number,
   testDataMaxLength: number,
 }
