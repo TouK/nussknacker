@@ -2,14 +2,13 @@ import {TypingResult, UIParameter} from "./definition"
 import {NodeType, PropertiesType} from "./node"
 import {ValidationResult} from "./validation"
 import {ComponentGroup, SingleComponentConfig} from "./component"
-import {ProcessingType} from "../actions/nk"
 
 export type Process = {
   id: string,
   nodes: NodeType[],
   properties: PropertiesType,
   validationResult: ValidationResult,
-  processingType?: ProcessingType,
+  processingType?: string,
   category?: string, // optional - see the comment for a field with the same name in DisplayableProcess.scala
 }
 

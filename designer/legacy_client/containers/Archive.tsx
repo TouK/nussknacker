@@ -11,7 +11,6 @@ import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
 import {useTranslation} from "react-i18next"
-import {ArchiveTabDataPath} from "./paths"
 
 const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process => (
   <Tr className="row-hover" key={process.name}>
@@ -20,9 +19,13 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
     <Td column="createdBy" className="centered-column" value={process.createdBy}>{process.createdBy}</Td>
     <Td column="createdAt" className="centered-column" value={process.createdAt}><Date date={process.createdAt}/></Td>
     <Td column="actionDate" className="centered-column" value={process?.lastAction?.performedAt}><Date
-      date={process?.lastAction?.performedAt}/></Td>
-    <Td column="actionUser" className="centered-column"
-        value={process?.lastAction?.user}>{process?.lastAction?.user}</Td>
+      date={process?.lastAction?.performedAt}
+    /></Td>
+    <Td
+      column="actionUser"
+      className="centered-column"
+      value={process?.lastAction?.user}
+    >{process?.lastAction?.user}</Td>
     <Td column="subprocess" className="centered-column" value={process.isSubprocess}>
       <Glyphicon glyph={process.isSubprocess ? "ok" : "remove"}/>
     </Td>
@@ -65,7 +68,7 @@ function Archive() {
 }
 
 export const ArchiveTabData = {
-  path: ArchiveTabDataPath,
+  path: `/processes/archived`,
   header: "Archive",
   Component: Archive,
 }

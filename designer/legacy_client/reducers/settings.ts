@@ -23,7 +23,11 @@ export type BaseAuthenticationSettings = {
   anonymousAccessAllowed?: boolean,
 }
 
-export type AuthenticationSettings = BaseAuthenticationSettings | BrowserAuthenticationSettings | RemoteAuthenticationSettings | OAuth2Settings
+export type AuthenticationSettings =
+  BaseAuthenticationSettings
+  | BrowserAuthenticationSettings
+  | RemoteAuthenticationSettings
+  | OAuth2Settings
 
 export type BrowserAuthenticationSettings = {
   strategy: AuthStrategy.BROWSER,
@@ -66,12 +70,6 @@ export function reducer(state: SettingsState = initialState, action: Action): Se
         featuresSettings: action.settings.features,
         authenticationSettings: action.settings.authentication,
         analyticsSettings: action.settings.analytics,
-      }
-    }
-    case "PROCESS_DEFINITION_DATA": {
-      return {
-        ...state,
-        processDefinitionData: action.processDefinitionData,
       }
     }
     default:

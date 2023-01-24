@@ -1,7 +1,7 @@
 import vars from "../stylesheets/darkColors.styl"
 import {NkTheme, tintPrimary} from "./theme"
 
-const {borderRadius, marginSize} = vars
+const {borderRadius} = vars
 
 const [d, d1, d2, d3, d4, base, l4, l3, l2, l1, l] = [
   // eslint-disable-next-line i18next/no-literal-string

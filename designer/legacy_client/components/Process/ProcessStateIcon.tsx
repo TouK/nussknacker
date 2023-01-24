@@ -7,8 +7,8 @@ import {CssFade} from "../CssFade"
 
 import {Popover} from "react-bootstrap"
 import {OverlayTrigger} from "react-bootstrap/lib"
-import ProcessStateUtils from "./ProcessStateUtils"
 import {css, cx} from "@emotion/css"
+import {getStatusIcon, getStatusTooltip} from "./ProcessStateUtils"
 
 type State = {
   animationTimeout: {
@@ -76,8 +76,8 @@ class ProcessStateIcon extends React.Component<Props, State> {
 
   render() {
     const {animation, process, processState, isStateLoaded, height, width, popover} = this.props
-    const icon = ProcessStateUtils.getStatusIcon(process, processState, isStateLoaded)
-    const tooltip = ProcessStateUtils.getStatusTooltip(process, processState, isStateLoaded)
+    const icon = getStatusIcon(process, processState, isStateLoaded)
+    const tooltip = getStatusTooltip(process, processState, isStateLoaded)
     const errors = (isStateLoaded ? processState?.errors : process?.state?.errors) || []
 
     const iconClass = cx(

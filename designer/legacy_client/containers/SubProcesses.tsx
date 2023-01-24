@@ -12,7 +12,6 @@ import {Filterable, ProcessesList, RowsRenderer} from "./ProcessesList"
 import {ProcessLink} from "./processLink"
 import tabStyles from "../components/tabs/processTabs.styl"
 import {SearchItem} from "./TableFilters"
-import {SubProcessesTabDataPath} from "./paths"
 
 function ShowProcessIcon({process}: {process: ProcessType}) {
   const {t} = useTranslation()
@@ -36,7 +35,6 @@ const ElementsRenderer: RowsRenderer = ({processes}) => processes.map(process =>
 
 const sortable = ["name", "category", "modifyDate", "createdAt", "createdBy"]
 const filterable: Filterable = ["name", "processCategory", "createdBy"]
-
 
 function SubProcesses() {
   const {t} = useTranslation()
@@ -67,7 +65,7 @@ function SubProcesses() {
 }
 
 export const SubProcessesTabData = {
-  path: SubProcessesTabDataPath,
+  path: `/processes/subprocesses`,
   header: "Fragments",
   Component: SubProcesses,
 }

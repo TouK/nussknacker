@@ -2,24 +2,32 @@ import {AnyAction, Reducer as ReduxReducer} from "redux"
 import {ThunkAction as TA, ThunkDispatch as TD} from "redux-thunk"
 
 import {ActionTypes} from "./actionTypes"
-import {DisplayProcessActivityAction, DisplayProcessCountsAction, HandleHTTPErrorAction, ReportEventAction} from "./nk"
+import {
+  DisplayProcessActivityAction,
+  HandleHTTPErrorAction,
+  LoggedUserAction,
+  ReportEventAction,
+  UiSettingsAction
+} from "./nk"
 import {FeatureFlagsActions} from "./nk/featureFlags"
-import {UserSettingsActions} from "./nk/userSettings"
-import {SettingsActions} from "./settingsActions"
 import {RootState} from "../reducers"
-import {UndoRedoActions} from "./undoRedoActions"
 import {NotificationActions} from "./nk/notifications"
+import {UserSettings} from "../reducers/userSettings"
 
 type TypedAction =
   | HandleHTTPErrorAction
   | ReportEventAction
-  | SettingsActions
+  | LoggedUserAction
+  | UiSettingsAction
   | DisplayProcessActivityAction
-  | UndoRedoActions
+  | { type: "UNDO" }
+  | { type: "REDO" }
+  | { type: "CLEAR" }
+  | { type: "JUMP_TO_STATE", direction: "PAST" | "FUTURE", index: number }
   | FeatureFlagsActions
-  | UserSettingsActions
+  | { type: "TOGGLE_SETTINGS", settings: Array<keyof UserSettings> }
+  | { type: "SET_SETTINGS", settings: UserSettings }
   | NotificationActions
-  | DisplayProcessCountsAction
 
 interface UntypedAction extends AnyAction {
   type: Exclude<ActionTypes, TypedAction["type"]>,
