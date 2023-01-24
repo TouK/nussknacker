@@ -142,7 +142,9 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
     manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
     waitFor(version).inState(SimpleStateStatus.DuringDeploy)
 
-    val oldPod = k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+    val oldPod = eventually {
+      k8s.listSelected[ListResource[Pod]](requirementForName(version.processName)).futureValue.items.head
+    }
 
     manager.deploy(otherVersion, DeploymentData.empty, otherScenario, None).futureValue
 
