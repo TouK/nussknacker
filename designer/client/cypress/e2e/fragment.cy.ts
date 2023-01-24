@@ -1,12 +1,15 @@
 describe("Fragment", () => {
   const seed = "fragment"
   before(() => {
-    cy.viewport(1440, 1200)
     cy.deleteAllTestProcesses({filter: seed, force: true})
   })
 
   after(() => {
     cy.deleteAllTestProcesses({filter: seed})
+  })
+  
+  beforeEach(() => {
+    cy.viewport(1440, 1200)
   })
 
   it("should allow adding input parameters and display used fragment graph in modal", () => {
