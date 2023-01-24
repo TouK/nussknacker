@@ -3,7 +3,7 @@ import {AxiosError, AxiosResponse} from "axios"
 import FileSaver from "file-saver"
 import i18next from "i18next"
 import {Moment} from "moment"
-import {SettingsData, ValidationData} from "../actions/nk"
+import {SettingsData} from "../actions/nk"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessActionType, ProcessStateType, ProcessType} from "../components/Process/types"
@@ -291,26 +291,6 @@ class HttpService {
       .catch(error => this.#addError(i18next.t("notification.error.failedToExportPdf", "Failed to export PDF"), error))
   }
 
-  validateNode(processId, node): Promise<AxiosResponse<ValidationData>> {
-    const promise = api.post(`/nodes/${encodeURIComponent(processId)}/validation`, node)
-    promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToValidateNode", "Failed to get node validation"),
-      error,
-      true
-    ))
-    return promise
-  }
-
-  validateProperties(processId, processProperties): Promise<AxiosResponse<ValidationData>> {
-    const promise = api.post(`/properties/${encodeURIComponent(processId)}/validation`, {processProperties})
-    promise.catch(error => this.#addError(
-      i18next.t("notification.error.failedToValidateProperties", "Failed to get properties validation"),
-      error,
-      true
-    ))
-    return promise
-  }
-
   fetchProcessCounts(processId: string, dateFrom: Moment, dateTo: Moment): Promise<AxiosResponse<ProcessCounts>> {
     //we use offset date time instead of timestamp to pass info about user time zone to BE
     const format = (date: Moment) => date?.format("YYYY-MM-DDTHH:mm:ssZ")
@@ -320,46 +300,6 @@ class HttpService {
 
     promise.catch(error => this.#addError(i18next.t("notification.error.failedToFetchCounts", "Cannot fetch process counts"), error, true))
     return promise
-  }
-
-  createProcess(processId: string, processCategory: string, isSubprocess = false) {
-    const promise = api.post(`/processes/${encodeURIComponent(processId)}/${processCategory}?isSubprocess=${isSubprocess}`)
-    promise.catch(error => {
-      if (error?.response?.status != 400)
-        this.#addError(i18next.t("notification.error.failedToCreate", "Failed to create scenario:"), error, true)
-    })
-    return promise
-  }
-
-  importProcess(processId, file) {
-    const data = new FormData()
-    data.append("process", file)
-
-    return api.post(`/processes/import/${encodeURIComponent(processId)}`, data)
-      .catch(error => this.#addError(i18next.t("notification.error.failedToImport", "Failed to import"), error, true))
-  }
-
-  compareProcesses(processId, thisVersion, otherVersion, remoteEnv) {
-    const path = remoteEnv ? "remoteEnvironment" : "processes"
-
-    const promise = api.get(`/${path}/${encodeURIComponent(processId)}/${thisVersion}/compare/${otherVersion}`)
-    promise.catch(error => this.#addError(i18next.t("notification.error.cannotCompare", "Cannot compare scenarios"), error, true))
-    return promise
-  }
-
-  fetchRemoteVersions(processId) {
-    const promise = api.get(`/remoteEnvironment/${encodeURIComponent(processId)}/versions`)
-    promise.catch(error => this.#addError(i18next.t(
-      "notification.error.failedToGetVersions",
-      "Failed to get versions from second environment"
-    ), error))
-    return promise
-  }
-
-  migrateProcess(processId, versionId) {
-    return api.post(`/remoteEnvironment/${encodeURIComponent(processId)}/${versionId}/migrate`)
-      .then(() => this.#addInfo(i18next.t("notification.info.scenarioMigrated", "Scenario {{processId}} was migrated", {processId})))
-      .catch(error => this.#addError(i18next.t("notification.error.failedToMigrate", "Failed to migrate"), error, true))
   }
 
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {

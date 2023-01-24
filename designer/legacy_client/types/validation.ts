@@ -1,5 +1,4 @@
 import {TypingInfo, TypingResult, UIParameter} from "./definition"
-import {Error} from "../components/graph/node-modal/editors/Validators"
 
 export type ValidationResult = {
   validationErrors: ValidationErrors[],

@@ -1,16 +1,12 @@
-import {EditorProps} from "../components/graph/node-modal/editors/expression/Editor"
 import {TypingResult, UIParameter} from "./definition"
-import {Edge, EdgeType} from "./edge"
 import {NodeType, PropertiesType} from "./node"
 import {ValidationResult} from "./validation"
 import {ComponentGroup, SingleComponentConfig} from "./component"
 import {ProcessingType} from "../actions/nk"
-import {AdditionalPropertyConfig} from "../components/graph/node-modal/AdditionalProperty"
 
 export type Process = {
   id: string,
   nodes: NodeType[],
-  edges: Edge[],
   properties: PropertiesType,
   validationResult: ValidationResult,
   processingType?: ProcessingType,
@@ -25,15 +21,7 @@ export type CustomAction = {
   name: string,
   allowedStateStatusNames: Array<string>,
   icon?: string,
-  parameters?: Array<CustomActionParameter>,
 }
-
-export type CustomActionParameter = {
-  name: string,
-  editor: EditorProps,
-}
-
-export type AdditionalPropertiesConfig = Record<string, AdditionalPropertyConfig>
 
 //"ReturnType" is builtin type alias
 export interface ReturnedType {
@@ -65,7 +53,6 @@ export interface ProcessDefinitionData {
   componentsConfig?: ComponentsConfig,
   processDefinition?: ProcessDefinition,
   componentGroups?: ComponentGroup[],
-  additionalPropertiesConfig?: AdditionalPropertiesConfig,
   edgesForNodes?: EdgesForNode[],
   customActions?: Array<CustomAction>,
   defaultAsyncInterpretation?: boolean,
@@ -73,7 +60,6 @@ export interface ProcessDefinitionData {
 
 export type EdgesForNode = {
   nodeId: NodeTypeId,
-  edges: EdgeType[],
   canChooseNodes: boolean,
   isForInputDefinition: boolean,
 }

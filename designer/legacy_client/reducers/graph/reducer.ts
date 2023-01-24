@@ -3,13 +3,11 @@ import {isEqual, pick, sortBy} from "lodash"
 import undoable, {combineFilters, excludeAction} from "redux-undo"
 import {Reducer} from "../../actions/reduxTypes"
 import {GraphState} from "./types"
-import {batchGroupBy} from "./batchGroupBy"
 
 //TODO: We should change namespace from graphReducer to currentlyDisplayedProcess
 
 const emptyGraphState: GraphState = {
   graphLoading: false,
-  processToDisplay: null,
   fetchedProcessDetails: null,
   testCapabilities: {},
   selectionState: [],
@@ -42,7 +40,6 @@ const graphReducer: Reducer<GraphState> = (state = emptyGraphState, action) => {
     case "CLEAR_PROCESS": {
       return {
         ...state,
-        processToDisplay: null,
         fetchedProcessDetails: null,
         testResults: null,
       }
@@ -70,7 +67,6 @@ const undoableReducer = undoable(graphReducer, {
   undoType: "UNDO",
   redoType: "REDO",
   clearHistoryType: ["CLEAR", "PROCESS_FETCH"],
-  groupBy: batchGroupBy.init(),
   filter: combineFilters(
     excludeAction([
       "USER_TRACKING",
@@ -83,7 +79,6 @@ const undoableReducer = undoable(graphReducer, {
     (action, nextState, prevState) => {
       const keys: Array<keyof GraphState> = [
         "fetchedProcessDetails",
-        "processToDisplay",
         "unsavedNewName",
         "selectionState",
       ]

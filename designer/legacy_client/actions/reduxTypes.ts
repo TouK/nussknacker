@@ -8,7 +8,6 @@ import {UserSettingsActions} from "./nk/userSettings"
 import {SettingsActions} from "./settingsActions"
 import {RootState} from "../reducers"
 import {UndoRedoActions} from "./undoRedoActions"
-import {NodeDetailsActions} from "./nk/nodeDetails"
 import {NotificationActions} from "./nk/notifications"
 
 type TypedAction =
@@ -16,7 +15,6 @@ type TypedAction =
   | ReportEventAction
   | SettingsActions
   | DisplayProcessActivityAction
-  | NodeDetailsActions
   | UndoRedoActions
   | FeatureFlagsActions
   | UserSettingsActions

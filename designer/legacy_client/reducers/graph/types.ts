@@ -13,7 +13,6 @@ export type ProcessCounts = Record<string, NodeCounts>
 export type GraphState = {
   graphLoading: boolean,
   fetchedProcessDetails?: ProcessType,
-  processToDisplay?: Process,
   selectionState?: string[],
   testCapabilities?: $TodoType,
   testResults: TestResults,
