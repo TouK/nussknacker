@@ -5,7 +5,7 @@ import com.google.common.base.CaseFormat
 // TODO: It probable should be configurable: e.g would be nice to have possibility to define static topic -> schemaName map in config
 //       Thanks to that would be possible to use existing schemas that not follow our convention in Nussknacker.
 //       Also in case of ambiguity (>1 schemas with only different namespaces), we could pick the correct one schema.
-object SchemaNameTopicMatchingStrategy {
+object SchemaNameTopicMatchStrategy {
 
   val KeySuffix = "Key"
   val ValueSuffix = "Value"
