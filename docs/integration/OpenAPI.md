@@ -22,17 +22,17 @@ of HTTP method, path and parameters (to provide some level of uniqueness)
 
 Table below describes data types that OpenAPI integration handles:
 
-| OpenAPI Type  | OpenAPI Format | Type in Nussknacker |
-| ------------- | -------------- | ------------------- |
-| boolean       |                | Boolean             |
-| string        |                | String              |
-| string        | date-time      | LocalDateTime       |
-| integer       |                | Long                |
-| number        |                | BigDecimal          |
-| number        | double         | Double              |
-| number        | float          | Double              |
-| array         |                | array               |
-| map/object    |                | record              |
+| OpenAPI Type | OpenAPI Format | Type in Nussknacker |
+|--------------|----------------|---------------------|
+| boolean      |                | Boolean             |
+| string       |                | String              |
+| string       | date-time      | LocalDateTime       |
+| integer      |                | Long                |
+| number       |                | BigDecimal          |
+| number       | double         | Double              |
+| number       | float          | Double              |
+| array        |                | array               |
+| map/object   |                | record              |
 
 OpenAPI integration can handle schema references. However, we don't support recursive schemas at the moment. 
 Recursive schema occurrences will be replaced with `Unknown` type. 
@@ -63,7 +63,7 @@ components {
 ```
 
 | Parameter      | Required | Default | Description                                                                                                                   |
-| ----------     | -------- | ------- | -----------                                                                                                                   |
+|----------------|----------|---------|-------------------------------------------------------------------------------------------------------------------------------|
 | url            | true     |         | URL with OpenAPI resource                                                                                                     |
 | rootUrl        | false    |         | Base URL of service, can be used to override value from OpenAPI in NAT settings                                               |
 | allowedMethods | false    | ["GET"] | Usually only GET services should be used as enrichers are meant to be idempotent and not change data                          |
@@ -72,6 +72,10 @@ components {
 
 ## Operations 
 
-You can enable logging invocations in the runtime by setting logger
+You can enable enricher level runtime logging by
 `pl.touk.nussknacker.openapi.enrichers.[enricher name]` to `DEBUG`. In particular, setting `pl.touk.nussknacker.openapi.enrichers` 
-level to `DEBUG` will turn on logging on all enrichers. Please remember to configure logging on appropriate component (e.g. Lite runtime or Flink TaskManager).
+level to `DEBUG` will turn on logging on all enrichers.
+
+Enricher level logging can be enabled:
+- in Flink TaskManager [configuration](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/flink/log4j-console.properties)
+- in Lite runtime [configuration](../installation_configuration_guide/DeploymentManagerConfiguration#configuring-runtime-logging)
