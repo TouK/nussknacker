@@ -12,9 +12,10 @@
 * [#3874](https://github.com/TouK/nussknacker/pull/3874) Tumbling window with OnEvent trigger saves context
 * [#3853](https://github.com/TouK/nussknacker/pull/3853) Support of patternProperties in sink with JSON Schema
 * [#3916](https://github.com/TouK/nussknacker/pull/3916) `environmentAlert.cssClass` setting renamed to `environmentAlert.color`
+* [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4 
 
 
-1.7.0
+1.7.0 (19 Dec 2022)
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
 * JSON Schema handling improvements:

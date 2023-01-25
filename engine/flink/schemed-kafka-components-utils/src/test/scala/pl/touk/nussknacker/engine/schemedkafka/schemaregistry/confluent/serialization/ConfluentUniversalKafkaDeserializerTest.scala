@@ -14,6 +14,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentSchemaBasedSerdeProvider, ConfluentUtils}
 import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 
 import java.io.OutputStream
 
@@ -87,7 +88,7 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
       val topicConfig = createAndRegisterTopicConfig(topic, schemas)
 
       val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-      val inputSchemaId = schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
+      val inputSchemaId = SchemaId.fromInt(schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema)))
 
       val expectedRuntimeSchemaData = RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId))
       val schemaDataOpt = if (schemaEvolution) {

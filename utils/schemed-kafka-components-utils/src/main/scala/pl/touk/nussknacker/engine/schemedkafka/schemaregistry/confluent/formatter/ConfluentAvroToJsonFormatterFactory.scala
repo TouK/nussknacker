@@ -10,7 +10,8 @@ import pl.touk.nussknacker.engine.api.test.TestRecord
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.SerializableConsumerRecord
-import pl.touk.nussknacker.engine.kafka.{RecordFormatter, KafkaConfig, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag
@@ -117,13 +118,13 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
   implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
   protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
 
-  private def getSchemaById(schemaId: Int): Schema = {
-    val parsedSchema = schemaRegistryClient.getSchemaById(schemaId)
+  private def getSchemaById(schemaId: SchemaId): Schema = {
+    val parsedSchema = schemaRegistryClient.getSchemaById(schemaId.asInt)
     ConfluentUtils.extractSchema(parsedSchema)
   }
 
 }
 
-case class AvroSerializableConsumerRecord[K, V](keySchemaId: Option[Int],
-                                                valueSchemaId: Int,
+case class AvroSerializableConsumerRecord[K, V](keySchemaId: Option[SchemaId],
+                                                valueSchemaId: SchemaId,
                                                 consumerRecord: SerializableConsumerRecord[K, V])

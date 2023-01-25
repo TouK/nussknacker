@@ -18,7 +18,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
 val scala212 = "2.12.10"
 val scala213 = "2.13.10"
-val defaultScalaV = scala212
+val defaultScalaV = scala213
 lazy val supportedScalaVersions = List(scala212, scala213)
 
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
@@ -275,18 +275,17 @@ val scalaCheckVshort = scalaCheckV.take(4).replace(".","-")
 val scalaTestPlusV = "3.2.15.0" //has to match scalatest and scalacheck versions, see https://github.com/scalatest/scalatestplus-scalacheck/releases
 val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
-val circeV = "0.14.2"
-val jwtCirceV = "9.0.5"
-//TODO: upgrade to 2.13.x
-val jacksonV = "2.11.3"
+val circeV = "0.14.3"
+val jwtCirceV = "9.1.2"
+val jacksonV = "2.13.4"
 val catsV = "2.6.1"
 val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
-val slf4jV = "1.7.30"
-val scalaLoggingV = "3.9.2"
+val slf4jV = "1.7.36"
+val scalaLoggingV = "3.9.5"
 val scalaCompatV = "1.0.2"
 val ficusV = "1.4.7"
-val configV = "1.4.1"
+val configV = "1.4.2"
 val commonsLangV = "3.3.2"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
@@ -297,19 +296,20 @@ val scalaCollectionsCompatV = "2.9.0"
 val testcontainersScalaV = "0.40.10"
 val nettyV = "4.1.48.Final"
 
-val akkaV = "2.6.19"
+val akkaV = "2.6.20"
 val akkaHttpV = "10.2.10"
-val akkaManagementV = "1.1.3"
+val akkaManagementV = "1.1.4"
 val akkaHttpCirceV = "1.39.2"
-val slickV = "3.3.3"
-val hsqldbV = "2.5.1"
-val postgresV = "42.3.4"
+val slickV = "3.4.1"
+val hikariCpV = "5.0.1"
+val hsqldbV = "2.7.1"
+val postgresV = "42.5.1"
 val flywayV = "6.3.3"
 val confluentV = "7.3.0"
 val jbcryptV = "0.4"
-val cronParserV = "9.1.3"
+val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
-val caffeineCacheV = "2.8.8"
+val caffeineCacheV = "3.1.2"
 val sttpV = "2.2.9"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
@@ -1250,7 +1250,7 @@ lazy val security = (project in file("security")).
       "io.circe" %% "circe-core" % circeV,
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
-      "com.auth0" % "jwks-rsa" % "0.19.0", // a tool library for reading a remote JWK store, not an Auth0 service dependency
+      "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
       "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
@@ -1346,7 +1346,7 @@ lazy val sqlComponents = (project in component("sql")).
   settings(
     name := "nussknacker-sql",
     libraryDependencies ++= Seq(
-      "com.zaxxer" % "HikariCP" % "4.0.3",
+      "com.zaxxer" % "HikariCP" % hikariCpV,
       //      It won't run on Java 16 as Hikari will fail while trying to load IgniteJdbcThinDriver https://issues.apache.org/jira/browse/IGNITE-14888
       "org.apache.ignite" % "ignite-core" % "2.10.0" % Provided,
       "org.apache.ignite" % "ignite-indexing" % "2.10.0" % Provided,
@@ -1470,6 +1470,7 @@ lazy val designer = (project in file("designer/server"))
 
         "com.typesafe.slick" %% "slick" % slickV,
         "com.typesafe.slick" %% "slick-hikaricp" % slickV,
+        "com.zaxxer" % "HikariCP" % hikariCpV,
         "org.hsqldb" % "hsqldb" % hsqldbV,
         "org.postgresql" % "postgresql" % postgresV,
         "org.flywaydb" % "flyway-core" % flywayV,

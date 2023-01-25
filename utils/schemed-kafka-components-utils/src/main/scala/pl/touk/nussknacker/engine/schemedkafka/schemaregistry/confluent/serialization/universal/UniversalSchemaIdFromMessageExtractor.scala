@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal
 
 import org.apache.kafka.common.header.Headers
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils.readIdAndGetBuffer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
@@ -10,7 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serializ
 import java.nio.ByteBuffer
 import scala.util.Try
 
-case class SchemaIdWithPositionedBuffer(value: Int, buffer: ByteBuffer) {
+case class SchemaIdWithPositionedBuffer(value: SchemaId, buffer: ByteBuffer) {
   def bufferStartPosition: Int = buffer.position()
 }
 
@@ -22,7 +23,7 @@ trait UniversalSchemaIdFromMessageExtractor {
   // * from kafka header
   // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])
   // * from source editor version param - this is just an assumption we make (when processing no-schemed-data, everything can happen)
-  def getSchemaId(headers: Headers, data: Array[Byte], isKey: Boolean, fallback: Option[Int]): SchemaIdWithPositionedBuffer = {
+  def getSchemaId(headers: Headers, data: Array[Byte], isKey: Boolean, fallback: Option[SchemaId]): SchemaIdWithPositionedBuffer = {
     val headerName = if (isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
 
     headers.getSchemaId(headerName) match {

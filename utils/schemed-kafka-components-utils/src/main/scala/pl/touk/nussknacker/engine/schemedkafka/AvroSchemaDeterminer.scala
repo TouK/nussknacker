@@ -7,6 +7,7 @@ import io.confluent.kafka.schemaregistry.json.JsonSchema
 import org.apache.avro.Schema
 import org.apache.flink.formats.avro.typeutils.NkSerializableParsedSchema
 import org.everit.json
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 
 trait AvroSchemaDeterminer {
 
@@ -28,7 +29,7 @@ trait AvroSchemaDeterminer {
  * @param serializableSchema Serializable Avro schema
  * @param schemaIdOpt optional schema id fetched from schema registry - for further optimizations of record processing in runtime
  */
-case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializableParsedSchema[T], schemaIdOpt: Option[Int]) {
+case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializableParsedSchema[T], schemaIdOpt: Option[SchemaId]) {
   def schema: T = serializableSchema.getParsedSchema
 
   // Will be better to make T covariant but NkSerializableParsedSchema is java class and it is not supported there
@@ -36,9 +37,9 @@ case class RuntimeSchemaData[T <: ParsedSchema](serializableSchema: NkSerializab
 }
 
 object RuntimeSchemaData {
-  def apply(schema: Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData[AvroSchema] =
+  def apply(schema: Schema, schemaIdOpt: Option[SchemaId]): RuntimeSchemaData[AvroSchema] =
     RuntimeSchemaData(new NkSerializableParsedSchema[AvroSchema](new AvroSchema(schema)), schemaIdOpt)
-  def apply(schema: json.schema.Schema, schemaIdOpt: Option[Int]): RuntimeSchemaData[JsonSchema] =
+  def apply(schema: json.schema.Schema, schemaIdOpt: Option[SchemaId]): RuntimeSchemaData[JsonSchema] =
     RuntimeSchemaData(new NkSerializableParsedSchema[JsonSchema](new JsonSchema(schema)), schemaIdOpt)
 }
 

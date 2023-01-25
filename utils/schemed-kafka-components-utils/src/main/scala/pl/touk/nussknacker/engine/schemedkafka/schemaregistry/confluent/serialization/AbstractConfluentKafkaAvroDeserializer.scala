@@ -9,6 +9,7 @@ import org.apache.avro.io.DecoderFactory
 import org.apache.kafka.common.errors.SerializationException
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{DatumReaderWriterMixin, RecordDeserializer}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadToAvroConverter
@@ -37,7 +38,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
     try {
       schemaId = buffer.getInt
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
-      val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(schemaId))
+      val writerSchemaData = RuntimeSchemaData(ConfluentUtils.extractSchema(parsedSchema), Some(SchemaId.fromInt(schemaId)))
       val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
       confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer, bufferDataStart).asInstanceOf[AnyRef]
     } catch {

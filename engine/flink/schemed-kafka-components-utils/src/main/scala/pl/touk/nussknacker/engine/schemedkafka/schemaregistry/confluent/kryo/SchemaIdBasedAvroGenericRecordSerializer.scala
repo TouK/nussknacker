@@ -5,7 +5,7 @@ import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, IntSchemaId, SchemaId, StringSchemaId}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
@@ -31,6 +31,8 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
 
   override def clazz: Class[_] = classOf[GenericRecordWithSchemaId]
 
+  private val stringSchemaMarker: Int = -1
+
   override def write(kryo: Kryo, out: Output, record: GenericRecordWithSchemaId): Unit = {
     // Avro decoder during decoding base on information that will occur EOF. Because of this we need to additionally
     // store information about length.
@@ -38,7 +40,13 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
     writeDataBytes(record, bos)
 
     out.writeVarInt(bos.size(), true)
-    out.writeVarInt(record.getSchemaId, true)
+    record.getSchemaId match {
+      case IntSchemaId(value) =>
+        out.writeVarInt(value, true)
+      case StringSchemaId(value) =>
+        out.writeVarInt(stringSchemaMarker, true)
+        out.writeString(value)
+    }
     out.writeBytes(bos.toByteArray)
   }
 
@@ -50,15 +58,22 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
 
   override def read(kryo: Kryo, input: Input, clazz: Class[GenericRecordWithSchemaId]): GenericRecordWithSchemaId = {
     val lengthOfData = input.readVarInt(true)
-    val schemaId = input.readVarInt(true)
+    val schemaIdInt = input.readVarInt(true)
+    val schemaId = if (schemaIdInt >= 0) {
+      SchemaId.fromInt(schemaIdInt)
+    } else if (schemaIdInt == stringSchemaMarker) {
+      val schemaIdString = input.readString()
+      SchemaId.fromString(schemaIdString)
+    } else {
+      throw new IllegalArgumentException(s"Unsupported schemaId format: $schemaIdInt. Should be non-negative integer or -1 for string schemas")
+    }
     val dataBuffer = input.readBytes(lengthOfData)
-
     val recordWithoutSchemaId = readRecord(lengthOfData, schemaId, dataBuffer)
     new GenericRecordWithSchemaId(recordWithoutSchemaId, schemaId, false)
   }
 
-  private def readRecord(lengthOfData: Int, schemaId: Int, dataBuffer: Array[Byte]) = {
-    val parsedSchema = schemaRegistry.getSchemaById(schemaId)
+  private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
+    val parsedSchema = schemaRegistry.getSchemaById(schemaId.asInt)
     val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
     val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)

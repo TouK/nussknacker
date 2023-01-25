@@ -57,9 +57,8 @@ export default class Errors extends React.Component {
     const {showDetails, currentProcess} = this.props
     const nodeIds = Object.keys(nodeErrors)
 
-    //TODO: this is dependent on messages from BE. Should be unified to proper resource bundle :/
-    const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Loose node"))
-    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.message === "Invalid end of scenario"))
+    const looseNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.typ === "LooseNode"))
+    const invalidEndNodeIds = nodeIds.filter(nodeId => nodeErrors[nodeId].some(error => error.typ === "InvalidTailOfBranch"))
     const otherNodeErrorIds = _.difference(nodeIds, _.concat(looseNodeIds, invalidEndNodeIds))
     const errorsOnTop = this.errorsOnTopPresent(otherNodeErrorIds, propertiesErrors)
 
@@ -81,7 +80,7 @@ export default class Errors extends React.Component {
           />
           <NodeErrorsLinkSection
             nodeIds={invalidEndNodeIds}
-            message={i18next.t("errors.invalidScenarioEnd", "Invalid end of scenario: ")}
+            message={i18next.t("errors.invalidScenarioEnd", "Scenario must end with a sink, processor or fragment: ")}
             showDetails={showDetails}
             currentProcess={currentProcess}
             className={errorsOnTop ? "error-secondary-container" : null}

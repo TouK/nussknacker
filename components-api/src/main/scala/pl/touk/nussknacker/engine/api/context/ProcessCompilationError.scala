@@ -53,6 +53,20 @@ object ProcessCompilationError {
 
   case class DuplicatedNodeIds(nodeIds: Set[String]) extends ProcessCompilationError
 
+  case class NonUniqueEdgeType(edgeType: String, nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class NonUniqueEdge(nodeId: String, target: String) extends ProcessCompilationError with InASingleNode
+
+  case class LooseNode(nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class DisabledNode(nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  case class InvalidCharacters(nodeId: String) extends ProcessCompilationError with InASingleNode
+
+  object EmptyNodeId extends ProcessCompilationError {
+    override def nodeIds = Set()
+  }
+
   case class NotSupportedExpressionLanguage(languageId: String, nodeId: String)
     extends PartSubGraphCompilationError with InASingleNode
 

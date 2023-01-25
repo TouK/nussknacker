@@ -9,6 +9,7 @@ import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{FullNameV1, PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
@@ -84,7 +85,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
 
     val fromSubjectVersionDeserializer = {
       val subject = ConfluentUtils.topicSubject(fromSubjectVersionTopic.input, fromSubjectVersionTopic.isKey)
-      val schemaId = schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema))
+      val schemaId = SchemaId.fromInt(schemaRegistryClient.getId(subject, ConfluentUtils.convertToAvroSchema(PaymentV1.schema)))
       val schemaData = RuntimeSchemaData(PaymentV1.schema, Some(schemaId))
       avroSetup.provider.deserializationSchemaFactory.create(kafkaConfig, None, Some(schemaData.toParsedSchemaData))
     }
@@ -101,7 +102,7 @@ class ConfluentKafkaAvroDeserializationSpec extends SchemaRegistryMixin with Tab
 
       val schemaDataOpt = if (schemaEvolution) {
         val inputSubject = ConfluentUtils.topicSubject(topicConfig.input, topicConfig.isKey)
-        val inputSchemaId = schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema))
+        val inputSchemaId = SchemaId.fromInt(schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(expectedObj.getSchema)))
         Option(RuntimeSchemaData(expectedObj.getSchema, Some(inputSchemaId)))
       } else {
         None

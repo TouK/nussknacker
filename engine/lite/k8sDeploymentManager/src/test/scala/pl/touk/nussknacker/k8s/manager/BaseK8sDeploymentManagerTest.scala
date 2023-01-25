@@ -15,13 +15,15 @@ import pl.touk.nussknacker.engine.util.config.ScalaMajorVersionConfig
 import pl.touk.nussknacker.engine.version.BuildInfo
 import pl.touk.nussknacker.test.ExtremelyPatientScalaFutures
 import skuber.LabelSelector.dsl._
+import skuber.Pod.LogQueryParams
 import skuber.api.client.KubernetesClient
 import skuber.apps.v1.Deployment
 import skuber.json.format._
 import skuber.networking.v1.Ingress
-import skuber.{ConfigMap, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
+import skuber.{ConfigMap, Event, LabelSelector, ListResource, Pod, Resource, Secret, Service, k8sInit}
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with ExtremelyPatientScalaFutures with BeforeAndAfterAll {
   self: LazyLogging =>
@@ -76,29 +78,50 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
     cleanup()
   }
 
-}
+  class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: CanonicalProcess, val version: ProcessVersion)
+    extends ExtremelyPatientScalaFutures with Matchers with LazyLogging {
 
-class K8sDeploymentManagerTestFixture(val manager: K8sDeploymentManager, val scenario: CanonicalProcess, val version: ProcessVersion) extends ExtremelyPatientScalaFutures with Matchers {
+    def withRunningScenario(action: => Unit): Unit = {
+      try {
+        manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+        waitForRunning(version)
 
-  def withRunningScenario(action: => Unit): Unit = {
-    manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
-    waitForRunning(version)
-
-    try {
-      action
-    } finally {
-      manager.cancel(version.processName, DeploymentData.systemUser).futureValue
-      eventually {
-        manager.findJobStatus(version.processName).futureValue shouldBe None
+        try {
+          action
+        } finally {
+          manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+          eventually {
+            manager.findJobStatus(version.processName).futureValue shouldBe None
+          }
+        }
+      } catch {
+        case NonFatal(ex) =>
+          printResourcesDetails()
+          throw ex
       }
     }
+
+    def waitForRunning(version: ProcessVersion) = {
+      eventually {
+        val state = manager.findJobStatus(version.processName).futureValue
+        state.flatMap(_.version) shouldBe Some(version)
+        state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
+      }
+    }
+
+    private def printResourcesDetails(): Unit = {
+      val pods = k8s.list[ListResource[Pod]]().futureValue.items
+      logger.info("pods:\n" + pods.mkString("\n"))
+      logger.info("services:\n" + k8s.list[ListResource[Service]]().futureValue.items.mkString("\n"))
+      logger.info("deployments:\n" + k8s.list[ListResource[Deployment]]().futureValue.items.mkString("\n"))
+      logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
+      pods.foreach { p =>
+        logger.info(s"Printing logs for pod: ${p.name}")
+        k8s.getPodLogSource(p.name, LogQueryParams()).futureValue.runForeach(bs => println(bs.utf8String)).futureValue
+        logger.info(s"Finished printing logs for pod: ${p.name}")
+      }
+    }
+
   }
 
-  def waitForRunning(version: ProcessVersion) = {
-    eventually {
-      val state = manager.findJobStatus(version.processName).futureValue
-      state.flatMap(_.version) shouldBe Some(version)
-      state.map(_.status) shouldBe Some(SimpleStateStatus.Running)
-    }
-  }
 }

@@ -4,6 +4,7 @@ import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import io.confluent.kafka.schemaregistry.json.JsonSchema
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
@@ -12,8 +13,11 @@ import org.apache.avro.io.{DecoderFactory, EncoderFactory}
 import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
@@ -42,6 +46,16 @@ object ConfluentUtils extends LazyLogging {
     case ValueSubjectPattern(value) => value
   }
 
+  def toSchemaWithMetadata(schemaMetadata: SchemaMetadata, config: SchemaRegistryClientKafkaConfig): SchemaWithMetadata = {
+    val confluentParsedSchema = schemaMetadata.getSchemaType match {
+      case "AVRO" => new AvroSchema(schemaMetadata.getSchema)
+      case "JSON" => OpenAPIJsonSchema(schemaMetadata.getSchema)
+      case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
+    }
+    val adjustedSchema = AvroUtils.adjustParsedSchema(confluentParsedSchema, config)
+    SchemaWithMetadata(adjustedSchema, SchemaId.fromInt(schemaMetadata.getId))
+  }
+
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
     version.map(new AvroSchema(schema, _)).getOrElse(new AvroSchema(schema))
 
@@ -63,19 +77,19 @@ object ConfluentUtils extends LazyLogging {
       Validated.valid(buffer)
   }
 
-  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (Int, ByteBuffer)] = ConfluentUtils
+  def readIdAndGetBuffer(bytes: Array[Byte]): Validated[IllegalArgumentException, (SchemaId, ByteBuffer)] = ConfluentUtils
     .parsePayloadToByteBuffer(bytes)
-    .map(b => (b.getInt(), b))
+    .map(b => (SchemaId.fromInt(b.getInt()), b))
 
-  def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (Int, ByteBuffer) = readIdAndGetBuffer(bytes)
+  def readIdAndGetBufferUnsafe(bytes: Array[Byte]): (SchemaId, ByteBuffer) = readIdAndGetBuffer(bytes)
     .valueOr(exc => throw new SerializationException(exc.getMessage, exc))
 
-  def readId(bytes: Array[Byte]): Int = readIdAndGetBufferUnsafe(bytes)._1
+  def readId(bytes: Array[Byte]): SchemaId = readIdAndGetBufferUnsafe(bytes)._1
 
   /**
     * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
     */
-  def serializeContainerToBytesArray(container: GenericContainer, schemaId: Int): Array[Byte] = {
+  def serializeContainerToBytesArray(container: GenericContainer, schemaId: SchemaId): Array[Byte] = {
     val output = new ByteArrayOutputStream()
     writeSchemaId(schemaId, output)
 
@@ -107,13 +121,13 @@ object ConfluentUtils extends LazyLogging {
     bytes
   }
 
-  def writeSchemaId(schemaId: Int, stream: OutputStream): Unit = {
+  def writeSchemaId(schemaId: SchemaId, stream: OutputStream): Unit = {
     val dos = new DataOutputStream(stream)
     dos.write(MagicByte)
-    dos.writeInt(schemaId)
+    dos.writeInt(schemaId.asInt)
   }
 
-  def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (Int, T) = {
+  def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (SchemaId, T) = {
     val schemaId = ConfluentUtils.readId(payload)
 
     val data = if (readerWriterSchema.getType.equals(Schema.Type.BYTES)) {

@@ -71,13 +71,11 @@ object CompilationResult extends Applicative[CompilationResult] {
     }
   }
 
-  implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = new MaybeArtificialExtractor[CompilationResult[A]] {
-    override def get(errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]): CompilationResult[A] = {
-      errors match {
-        case Nil => rawValue
-        case e :: es => rawValue.copy(typing = rawValue.typing - MaybeArtificial.DummyObjectName, result = Invalid(NonEmptyList.of(
-          fromUncanonizationError(e), es.map(fromUncanonizationError): _*)))
-      }
+  implicit def artificialExtractor[A]: MaybeArtificialExtractor[CompilationResult[A]] = (errors: List[canonize.ProcessUncanonizationError], rawValue: CompilationResult[A]) => {
+    errors match {
+      case Nil => rawValue
+      case e :: es => rawValue.copy(typing = rawValue.typing.filterKeysNow(key => !key.startsWith(MaybeArtificial.DummyObjectNamePrefix)), result = Invalid(NonEmptyList.of(
+        fromUncanonizationError(e), es.map(fromUncanonizationError): _*)))
     }
   }
 
