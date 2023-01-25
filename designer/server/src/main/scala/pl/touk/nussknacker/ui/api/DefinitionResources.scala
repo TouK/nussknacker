@@ -43,9 +43,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
     } ~ path("processDefinitionData" / "categoriesWithProcessingType") {
       get {
         complete {
-            processCategoryService.getUserCategories(user)
-            .map(category => category -> processCategoryService.getTypeForCategory(category))
-            .toMap[Category, Option[ProcessingType]]
+            processCategoryService.getUserCategoriesWithType(user)
         }
       }
     // TODO: Now we can't have processingType = componentIds or services - we should redesign our API (probably fetch componentIds and services only for given processingType)
