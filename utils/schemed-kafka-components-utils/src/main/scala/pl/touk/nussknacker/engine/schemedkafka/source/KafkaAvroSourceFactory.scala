@@ -2,7 +2,6 @@ package pl.touk.nussknacker.engine.schemedkafka.source
 
 import cats.data.Validated
 import cats.data.Validated.Valid
-import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import pl.touk.nussknacker.engine.api.{MetaData, NodeId}

@@ -15,8 +15,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaReg
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.helpers.SchemaRegistryMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.FullNameV1
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory
 import pl.touk.nussknacker.engine.spel.Implicits._
 
@@ -36,7 +36,7 @@ class KafkaUniversalSinkExceptionHandlingSpec extends AnyFunSuite with FlinkSpec
 
       override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
         val schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
-        val universalProvider = ConfluentSchemaBasedSerdeProvider.universal(schemaRegistryClientFactory)
+        val universalProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryClientFactory)
         Map(
           "kafka" -> WithCategories(new UniversalKafkaSinkFactory(schemaRegistryClientFactory, universalProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory)),
         )

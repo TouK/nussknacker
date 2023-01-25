@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordDeserializ
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.BaseSimpleSerializationSchema
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaConfig, KafkaSpec, serialization}
 import pl.touk.nussknacker.engine.util.namespaces.ObjectNamingProvider
 import pl.touk.nussknacker.test.PatientScalaFutures
 
@@ -31,7 +31,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
   val sampleValue: SampleValue = SampleValue("first", "last")
   val sampleKey: SampleKey = SampleKey("one", 2L)
   val sampleHeadersMap: Map[String, String] = Map("headerOne" -> "valueOfHeaderOne", "headerTwo" -> null)
-  val sampleHeaders: Headers = ConsumerRecordUtils.toHeaders(sampleHeadersMap)
+  val sampleHeaders: Headers = KafkaRecordUtils.toHeaders(sampleHeadersMap)
 
   val sampleTopic = "topic"
   val constTimestamp: Long = 123L
@@ -43,7 +43,7 @@ trait KafkaSourceFactoryMixin extends AnyFunSuite with Matchers with KafkaSpec w
     topic,
     (obj: ObjToSerialize) => Option(obj.value).map(v => implicitly[Encoder[SampleValue]].apply(v).noSpaces).orNull,
     (obj: ObjToSerialize) => Option(obj.key).map(k => implicitly[Encoder[SampleKey]].apply(k).noSpaces).orNull,
-    (obj: ObjToSerialize) => ConsumerRecordUtils.toHeaders(obj.headers)
+    (obj: ObjToSerialize) => KafkaRecordUtils.toHeaders(obj.headers)
   ).asInstanceOf[serialization.KafkaSerializationSchema[Any]]
 
   protected def createTopic(name: String, partitions: Int = 1): String = {

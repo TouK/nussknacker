@@ -8,7 +8,7 @@ import pl.touk.nussknacker.engine.api.runtimecontext.ContextIdGenerator
 import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.{Context, VariableConstants}
 import pl.touk.nussknacker.engine.api.NodeId
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
 import java.util
 
@@ -39,7 +39,7 @@ class KafkaContextInitializer[K, V](outputVariableName: String, keyTypingResult:
     new BasicContextInitializingFunction[ConsumerRecord[K, V]](contextIdGenerator, outputVariableName) {
       override def apply(input: ConsumerRecord[K, V]): Context = {
         //Scala map wrapper causes some serialization problems
-        val headers: util.Map[String, String] = new util.HashMap(ConsumerRecordUtils.toMap(input.headers).asJava)
+        val headers: util.Map[String, String] = new util.HashMap(KafkaRecordUtils.toMap(input.headers).asJava)
         //null won't be serialized properly
         val safeLeaderEpoch = input.leaderEpoch().orElse(-1)
         val inputMeta = InputMeta(input.key, input.topic, input.partition, input.offset, input.timestamp, input.timestampType(), headers, safeLeaderEpoch)

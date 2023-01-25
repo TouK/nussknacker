@@ -18,7 +18,7 @@ import pl.touk.nussknacker.engine.kafka.serialization.schemas.{JsonSerialization
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory.KafkaSourceFactoryState
 import pl.touk.nussknacker.engine.kafka.source.flink.KafkaSourceFactoryMixin._
 import pl.touk.nussknacker.engine.kafka.source.{KafkaContextInitializer, KafkaSourceFactory}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaSpec, serialization}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, KafkaSpec, serialization}
 import pl.touk.nussknacker.test.PatientScalaFutures
 
 import java.util.Collections.singletonMap
@@ -58,7 +58,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       ConsumerRecord.NULL_SIZE,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0: Integer)
     )
     pushMessage(new SimpleSerializationSchema[Any](topic, String.valueOf), givenObj, topic, timestamp = constTimestamp)
@@ -77,7 +77,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
@@ -96,7 +96,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       null,
       givenObj,
-      ConsumerRecordUtils.emptyHeaders,
+      KafkaRecordUtils.emptyHeaders,
       Optional.of(0)
     )
     pushMessage(new JsonSerializationSchema[SampleValue](topic).asInstanceOf[serialization.KafkaSerializationSchema[Any]], givenObj, topic, timestamp = constTimestamp)
@@ -115,7 +115,7 @@ class KafkaSourceFactorySpec extends AnyFunSuite with Matchers with KafkaSpec wi
       TimestampType.CREATE_TIME,
       sampleKey,
       sampleValue,
-      ConsumerRecordUtils.toHeaders(sampleHeadersMap),
+      KafkaRecordUtils.toHeaders(sampleHeadersMap),
       Optional.of(0)
     )
     pushMessage(objToSerializeSerializationSchema(topic), givenObj, topic, timestamp = constTimestamp)

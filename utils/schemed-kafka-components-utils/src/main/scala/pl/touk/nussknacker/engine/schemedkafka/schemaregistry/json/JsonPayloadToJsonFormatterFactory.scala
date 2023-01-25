@@ -1,14 +1,14 @@
-package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.formatter
+package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.json
 
 import io.circe.Json
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.serialization.Deserializer
 import pl.touk.nussknacker.engine.api.CirceUtil
-import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 import pl.touk.nussknacker.engine.kafka.consumerrecord.ConsumerRecordToJsonFormatter
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, RecordFormatter, RecordFormatterFactory, serialization}
+import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
+import pl.touk.nussknacker.engine.schemedkafka.serialization.KafkaSchemaBasedKeyValueDeserializationSchemaFactory
 
 import java.nio.charset.StandardCharsets
 import scala.reflect.ClassTag

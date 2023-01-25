@@ -9,14 +9,13 @@ import org.apache.kafka.clients.producer.RecordMetadata
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor5}
 import pl.touk.nussknacker.engine.flink.util.keyed.StringKeyedValue
+import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
+import pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolutionException, FullNameV1, PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
-import pl.touk.nussknacker.engine.kafka.KafkaTestUtils.richConsumer
-import pl.touk.nussknacker.engine.kafka.serialization
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.ValueSchemaIdHeaderName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 
@@ -26,7 +25,7 @@ class ConfluentKafkaAvroSerializationSpec extends KafkaAvroSpecMixin with TableD
 
   override protected def schemaRegistryClient: CSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def confluentClientFactory: ConfluentSchemaRegistryClientFactory = factory
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = factory
 
   private val encode = BestEffortJsonEncoder.defaultForTests.encode _
 

@@ -1,4 +1,4 @@
-package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent
+package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
 import cats.data.ValidatedNel
 import io.circe.Json
@@ -16,9 +16,11 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.SinkValueParamName
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.JsonPayloadKafkaSerializer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
 import pl.touk.nussknacker.engine.schemedkafka.sink.AvroSinkValueParameter
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
 import pl.touk.nussknacker.engine.util.output.OutputValidatorError
@@ -31,10 +33,11 @@ sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupp
 }
 
 object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
-  override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentAvroPayloadDeserializer.default
+  override def payloadDeserializer(kafkaConfig: KafkaConfig): UniversalSchemaPayloadDeserializer = AvroPayloadDeserializer(kafkaConfig)
 
-  override def serializer[T](schema: ParsedSchema, client: ConfluentSchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[T] =
-    ConfluentKafkaAvroSerializer(kafkaConfig, client, Some(schema.cast()), isKey = isKey).asInstanceOf[Serializer[T]]
+  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] = {
+    ConfluentKafkaAvroSerializer(kafkaConfig, client, schemaOpt.map(_.cast()), isKey = isKey)
+  }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
@@ -48,14 +51,21 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
-  override val recordFormatterSupport: RecordFormatterSupport = AvroPayloadRecordFromatterSupport
+  override def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
+    // We pass None to schema, because message readers should not do schema evolution.
+    // It is done this way because we want to keep messages in the original format as they were serialized on Kafka
+    val createSerializer = serializer(None, schemaRegistryClient, kafkaConfig, _)
+    val avroKeySerializer = createSerializer(true)
+    val avroValueSerializer = createSerializer(false)
+    new AvroPayloadRecordFormatterSupport(new AvroMessageReader(avroKeySerializer), new AvroMessageReader(avroValueSerializer))
+  }
 }
 
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
-  override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonSchemaPayloadDeserializer
+  override def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
-  override def serializer[T](schema: ParsedSchema, c: ConfluentSchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[T] = (topic: String, data: T) => data match {
+  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[Any] = (topic: String, data: Any) => data match {
     case j: Json => j.noSpaces.getBytes()
     case _ => throw new SerializationException(s"Expecting json but got: $data")
   }
@@ -72,16 +82,17 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
     new JsonSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
-  override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
+  override def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+    JsonPayloadRecordFormatterSupport
 }
 
 
 object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWithJsonPayload] {
 
-  override val payloadDeserializer: UniversalSchemaPayloadDeserializer = ConfluentJsonPayloadDeserializer
+  override def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer = JsonPayloadDeserializer
 
-  override def serializer[T](schema: ParsedSchema, client: ConfluentSchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[T] =
-    new JsonPayloadKafkaSerializer(kafkaConfig, client, new DefaultAvroSchemaEvolution, Some(schema.cast().avroSchema), isKey = isKey).asInstanceOf[Serializer[T]]
+  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] =
+    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, client, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast().avroSchema), isKey = isKey)
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 
@@ -95,5 +106,6 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
-  override val recordFormatterSupport: RecordFormatterSupport = JsonPayloadRecordFormatterSupport
+  override def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+    JsonPayloadRecordFormatterSupport
 }

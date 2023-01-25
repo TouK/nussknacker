@@ -2,17 +2,15 @@ package pl.touk.nussknacker.engine.schemedkafka.encode
 
 import cats.data.ValidatedNel
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
-import org.apache.avro.generic.{GenericData, GenericDatumWriter, GenericRecord}
-import org.apache.avro.io.{DecoderFactory, EncoderFactory}
+import org.apache.avro.generic.{GenericData, GenericRecord}
 import org.apache.avro.{AvroRuntimeException, Schema}
 import org.scalatest.funspec.AnyFunSpec
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company, FullNameV1, StringForcingDatumReaderProvider}
+import pl.touk.nussknacker.engine.schemedkafka.schema.{Address, Company, FullNameV1}
 import pl.touk.nussknacker.test.EitherValuesDetailedMessage
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.nio.charset.StandardCharsets
 import java.time._
 import java.util.UUID
@@ -308,15 +306,9 @@ class BestEffortAvroEncoderSpec extends AnyFunSpec with Matchers with EitherValu
     readRecord
   }
 
-  private def roundTripWriteRead(givenRecord: GenericData.Record) = {
-    val bos = new ByteArrayOutputStream()
-    val encoder = EncoderFactory.get().binaryEncoder(bos, null)
-    val schema = givenRecord.getSchema
-    new GenericDatumWriter[GenericRecord](schema, AvroUtils.genericData).write(givenRecord, encoder)
-    encoder.flush()
-    val decoder = DecoderFactory.get().binaryDecoder(new ByteArrayInputStream(bos.toByteArray), null)
-    val readRecord = StringForcingDatumReaderProvider.genericDatumReader[GenericRecord](schema, schema, AvroUtils.genericData).read(null, decoder)
-    readRecord
+  private def roundTripWriteRead(givenRecord: GenericRecord) = {
+    val bytes = AvroUtils.serializeContainerToBytesArray(givenRecord)
+    AvroUtils.deserialize[GenericRecord](bytes, givenRecord.getSchema)
   }
 
 }

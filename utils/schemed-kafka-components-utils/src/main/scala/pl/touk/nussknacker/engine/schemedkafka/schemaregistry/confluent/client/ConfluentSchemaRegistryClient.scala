@@ -4,11 +4,11 @@ import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 import scala.jdk.CollectionConverters._
 

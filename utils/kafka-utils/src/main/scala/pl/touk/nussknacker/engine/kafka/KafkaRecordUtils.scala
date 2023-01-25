@@ -7,11 +7,15 @@ import org.apache.kafka.common.header.internals.RecordHeaders
 
 import scala.jdk.CollectionConverters._
 
-object ConsumerRecordUtils {
+object KafkaRecordUtils {
 
   private val cs: Charset = StandardCharsets.UTF_8
 
   def emptyHeaders: RecordHeaders = new RecordHeaders()
+
+  def toHeaders(list: (String, String)*): Headers = {
+    toHeaders(list.toMap)
+  }
 
   def toHeaders(map: Map[String, String]): Headers = {
     val headers = new RecordHeaders()

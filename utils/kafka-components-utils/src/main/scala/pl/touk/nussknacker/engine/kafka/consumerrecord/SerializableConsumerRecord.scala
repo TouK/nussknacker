@@ -3,7 +3,7 @@ package pl.touk.nussknacker.engine.kafka.consumerrecord
 import com.github.ghik.silencer.silent
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.common.record.TimestampType
-import pl.touk.nussknacker.engine.kafka.ConsumerRecordUtils
+import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils
 
 import java.util.Optional
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
@@ -42,7 +42,7 @@ case class SerializableConsumerRecord[K, V](key: Option[K],
       ConsumerRecord.NULL_SIZE,
       keyBytes,
       valueBytes,
-      ConsumerRecordUtils.toHeaders(headers.map(_.mapValuesNow(_.orNull).toMap).getOrElse(Map.empty)),
+      KafkaRecordUtils.toHeaders(headers.map(_.mapValuesNow(_.orNull).toMap).getOrElse(Map.empty)),
       Optional.ofNullable(leaderEpoch.map(Integer.valueOf).orNull) //avoids covert null -> 0 conversion
     )
   }
@@ -58,7 +58,7 @@ object SerializableConsumerRecord {
       Option(deserializedRecord.offset()),
       Option(deserializedRecord.timestamp()),
       Option(deserializedRecord.timestampType().name),
-      Option(ConsumerRecordUtils.toMap(deserializedRecord.headers()).mapValuesNow(s => Option(s))),
+      Option(KafkaRecordUtils.toMap(deserializedRecord.headers()).mapValuesNow(s => Option(s))),
       Option(deserializedRecord.leaderEpoch().orElse(null)).map(_.intValue()) //avoids covert null -> 0 conversion
     )
   }

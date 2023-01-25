@@ -6,19 +6,19 @@ import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor6}
+import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, SimpleKafkaAvroSerializer}
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.DefaultConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaDeserializer
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.ValueSchemaIdHeaderName
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.{ConfluentSchemaBasedSerdeProvider, ConfluentUtils}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.ValueSchemaIdHeaderName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalKafkaDeserializer, UniversalSchemaBasedSerdeProvider}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaIdFromMessageExtractor}
 
 import java.io.OutputStream
 
-class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
+class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrivenPropertyChecks with ConfluentKafkaAvroSeDeSpecMixin {
 
   import MockSchemaRegistry._
 
@@ -29,9 +29,9 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema => SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
-    ConfluentSchemaBasedSerdeProvider.universal(MockSchemaRegistry.factory),
+    UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory),
     new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
-    new ConfluentUniversalKafkaDeserializer(confluentSchemaRegistryClient, Some(readerSchema), isKey = false))
+    new UniversalKafkaDeserializer(confluentSchemaRegistryClient, kafkaConfig, UniversalSchemaBasedSerdeProvider.schemaIdFromMessageExtractor, Some(readerSchema), isKey = false))
 
   lazy val payloadWithoutSchemaIdSetup: CreateSetup = readerSchema => payloadWithSchemaIdSetup(readerSchema).copy(valueSerializer = new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false) {
     override def writeHeader(data: Any, avroSchema: Schema, schemaId: Int, out: OutputStream): Unit = ()
@@ -101,8 +101,8 @@ class ConfluentUniversalKafkaDeserializerTest extends SchemaRegistryMixin with T
 
       val headers = if(shouldSendHeaders) {
         val givenObjSchemaId = schemaRegistryClient.getId(inputSubject, ConfluentUtils.convertToAvroSchema(givenObj.getSchema))
-        ConsumerRecordUtils.toHeaders(Map(ValueSchemaIdHeaderName -> s"$givenObjSchemaId"))
-      } else ConsumerRecordUtils.emptyHeaders
+        KafkaRecordUtils.toHeaders(Map(ValueSchemaIdHeaderName -> s"$givenObjSchemaId"))
+      } else KafkaRecordUtils.emptyHeaders
       setup.pushMessage(givenObj, topicConfig.input, headers = headers)
 
       setup.consumeAndVerifyMessages(deserializer, topicConfig.input, List(expectedObj))

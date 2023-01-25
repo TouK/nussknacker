@@ -52,7 +52,7 @@ class KafkaAvroSinkFactoryWithEditor(val schemaRegistryClientFactory: SchemaRegi
         .leftMap(SchemaDeterminerErrorHandler.handleSchemaRegistryError(_))
         .leftMap(NonEmptyList.one)
       val validatedSchema = determinedSchema.andThen { s =>
-        schemaBasedMessagesSerdeProvider.validateSchema(s.schema)
+        schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(s.schema)
           .map(_ => s)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
         }

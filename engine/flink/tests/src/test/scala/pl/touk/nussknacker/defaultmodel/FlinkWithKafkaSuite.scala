@@ -57,7 +57,7 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
     )
   }
 
-  protected val avroAsJsonSerialization = false
+  protected def avroAsJsonSerialization = false
 
   override lazy val config: Config = ConfigFactory.load()
     .withValue(KafkaConfigProperties.bootstrapServersProperty("components.mockKafka.config"), fromAnyRef(kafkaServer.kafkaAddress))
@@ -81,7 +81,6 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
   protected val givenMatchingAvroObj = avroEncoder.encodeRecordOrError(
     Map("first" -> "Jan", "last" -> "Kowalski"), RecordSchemaV1
   )
-
 
   protected def run(process: CanonicalProcess)(action: => Unit): Unit = {
     val env = flinkMiniCluster.createExecutionEnvironment()

@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.UniversalSchemaSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
@@ -62,7 +62,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     ) =>
       val determinedSchema = getSchema(topic, version)
       val validationResult = determinedSchema.map(_.schema)
-        .andThen(schemaBasedMessagesSerdeProvider.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
+        .andThen(schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
         .andThen { schema =>
           UniversalSchemaSupport.forSchemaType(schema.schemaType())
             .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
@@ -86,7 +86,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
       ) =>
       val determinedSchema = getSchema(topic, version)
       val validatedSchema = determinedSchema.andThen { s =>
-        schemaBasedMessagesSerdeProvider.validateSchema(s.schema)
+        schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(s.schema)
           .map(_ => s)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }

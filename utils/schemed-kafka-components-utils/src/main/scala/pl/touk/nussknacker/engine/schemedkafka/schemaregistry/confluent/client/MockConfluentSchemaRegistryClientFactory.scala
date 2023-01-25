@@ -1,14 +1,15 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryClient, SchemaRegistryClientFactory}
 
 /**
  * MockSchemaRegistryClient must be passed by name, because schemaRegistryMockClient is not serializable.
  */
 class MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient: => MockSchemaRegistryClient)
-  extends ConfluentSchemaRegistryClientFactory {
+  extends SchemaRegistryClientFactory {
 
-  override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
+  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClient = {
     new DefaultConfluentSchemaRegistryClient(schemaRegistryMockClient, config)
   }
 
