@@ -194,6 +194,10 @@ class HttpService {
     return api.get<Services>("/processDefinitionData/services")
   }
 
+  fetchCategoriesWithProcessingType() {
+    return api.get<Map<string, string>>("/processDefinitionData/categoriesWithProcessingType")
+  }
+
   fetchDictLabelSuggestions(processingType, dictId, labelPattern) {
     return api.get(`/processDefinitionData/${processingType}/dict/${dictId}/entry?label=${labelPattern}`)
   }
