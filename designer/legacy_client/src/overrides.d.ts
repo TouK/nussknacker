@@ -12,5 +12,6 @@ declare module "react-bootstrap/lib/Panel" {
 }
 
 declare module "react-select" {
+  // eslint-disable-next-line import/no-unresolved
   export {defaultTheme} from "react-select/src/theme"
 }

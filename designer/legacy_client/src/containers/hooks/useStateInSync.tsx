@@ -1,7 +1,7 @@
 import {isEqual} from "lodash"
-import {useEffect, useState} from "react"
+import {Dispatch, SetStateAction, useEffect, useState} from "react"
 
-export const useStateInSync = <T extends any>(value: T): [T, React.Dispatch<React.SetStateAction<T>>] => {
+export function useStateInSync<T>(value: T): [T, Dispatch<SetStateAction<T>>] {
   const [inputValue, setInputValue] = useState(value)
   useEffect(
     () => {

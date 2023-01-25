@@ -25,8 +25,10 @@ export function ProcessTableTools(props: PropsWithChildren<Props>) {
   )
 }
 
-const Group = ({children, expand}: PropsWithChildren<{expand?: boolean}>) => !children ? null : (
-  <div className={cn(styles.group, expand && styles.expand)}>
-    {children}
-  </div>
-)
+const Group = ({children, expand}: PropsWithChildren<{expand?: boolean}>) => !children ?
+  null :
+  (
+    <div className={cn(styles.group, expand && styles.expand)}>
+      {children}
+    </div>
+  )

@@ -29,9 +29,11 @@ export function TableItemsCount(props: Props): JSX.Element {
     margin: "0 0.5em",
   }), [])
 
-  return rows <= 0 ? null : (
-    <div className={styles}>
-      <span>{text}</span>
-    </div>
-  )
+  return rows <= 0 ?
+    null :
+    (
+      <div className={styles}>
+        <span>{text}</span>
+      </div>
+    )
 }

@@ -40,7 +40,7 @@ export function TableFilters(props: Props): JSX.Element {
     if (!isEqual(value, state)) {
       onChange(state, prev)
     }
-  }, [state])
+  }, [onChange, prev, state, value])
 
   return (
     <>
