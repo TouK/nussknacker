@@ -1,8 +1,7 @@
 import {css, cx} from "@emotion/css"
 import React, {useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
-import {useSelector} from "react-redux"
-import {getLoggedUser} from "../../reducers/selectors/settings"
+import {useLoggedUser} from "../../reducers/selectors/settings"
 import {ThemedButton} from "../themed/ThemedButton"
 
 type Props = {
@@ -13,7 +12,7 @@ type Props = {
 
 function AddButton(props: Props) {
   const {onClick, className, title} = props
-  const loggedUser = useSelector(getLoggedUser)
+  const loggedUser = useLoggedUser()
 
   return loggedUser.isWriter() ?
     (

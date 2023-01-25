@@ -1,7 +1,6 @@
 import {css} from "@emotion/css"
 import React, {PropsWithChildren, useCallback, useEffect, useRef, useState} from "react"
 import {useTranslation} from "react-i18next"
-import {useSelector} from "react-redux"
 import {Transition} from "react-transition-group"
 import {ReactComponent as TipsWarningIcon} from "../assets/icons/tipsWarning.svg"
 import {ReactComponent as CollapseIcon} from "../assets/img/arrows/panel-hide-arrow.svg"
@@ -10,12 +9,12 @@ import {useInterval} from "../containers/Interval"
 import {ProcessLink} from "../containers/processLink"
 import {NkTheme, useNkTheme} from "../containers/theme"
 import HttpService, {HealthCheckResponse, HealthState} from "../http/HttpService"
-import {getHealthcheckIntervalTime} from "../reducers/selectors/settings"
+import {useHealthcheckIntervalTime} from "../reducers/selectors/settings"
 
 const getIconSize = (theme: NkTheme) => theme.spacing.controlHeight / 2
 const getBackground = (theme: NkTheme) => theme.colors.primaryBackground
 
-const ProcessItem = ({name}: {name: string}) => {
+const ProcessItem = ({name}: { name: string }) => {
   const {theme} = useNkTheme()
   return (
     <ProcessLink
@@ -28,7 +27,7 @@ const ProcessItem = ({name}: {name: string}) => {
   )
 }
 
-function Content({data}: {data: Omit<HealthCheckResponse, "state">}) {
+function Content({data}: { data: Omit<HealthCheckResponse, "state"> }) {
   const {t} = useTranslation()
   return (
     <span className={css({fontWeight: 600})}>
@@ -44,7 +43,7 @@ function Content({data}: {data: Omit<HealthCheckResponse, "state">}) {
   )
 }
 
-function Collipsable({iconSize, children}: PropsWithChildren<{iconSize: number}>) {
+function Collipsable({iconSize, children}: PropsWithChildren<{ iconSize: number }>) {
   const [expanded, setExpanded] = useState<boolean>(false)
   useEffect(
     () => {
@@ -128,7 +127,7 @@ function HealthCheck(): JSX.Element {
   const updateState = useCallback(async () => {
     setState(await HttpService.fetchHealthCheckProcessDeployment())
   }, [])
-  const refreshTime = useSelector(getHealthcheckIntervalTime)
+  const refreshTime = useHealthcheckIntervalTime()
   useInterval(updateState, {refreshTime, ignoreFirst: false})
 
   const {t} = useTranslation()

@@ -1,13 +1,12 @@
 import React from "react"
-import {useSelector} from "react-redux"
-import {getFilterCategories} from "../../reducers/selectors/settings"
+import {useFilterCategories} from "../../reducers/selectors/settings"
 import {ValueFieldProps} from "../valueField"
 import TableSelect, {OptionType} from "./TableSelect"
 import {useParseValues} from "./useParseValue"
 
 export function CategoriesFilter(props: ValueFieldProps<string[]>): JSX.Element {
   const {onChange} = props
-  const options: OptionType<string>[] = useSelector(getFilterCategories)
+  const options: OptionType<string>[] = useFilterCategories()
   const value = useParseValues<string>(options, props.value)
   return (
     <TableSelect

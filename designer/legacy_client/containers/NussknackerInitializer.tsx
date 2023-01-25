@@ -1,21 +1,24 @@
 import React, {PropsWithChildren, useCallback} from "react"
-import {useDispatch, useSelector} from "react-redux"
-import {assignUser} from "../actions/nk"
+import {useDispatch} from "react-redux"
 import HttpService from "../http/HttpService"
-import {getAuthenticationSettings} from "../reducers/selectors/settings"
 import {AuthInitializer} from "./Auth"
+import {useAuthenticationSettings} from "../reducers/selectors/settings"
+import User from "../common/models/User"
 
 function NussknackerInitializer({children}: PropsWithChildren<unknown>): JSX.Element {
   const dispatch = useDispatch()
 
   const onAuth = useCallback(
     () => HttpService.fetchLoggedUser().then(({data}) => {
-      dispatch(assignUser(data))
+      dispatch({
+        type: "LOGGED_USER",
+        user: new User(data),
+      })
     }),
     [dispatch],
   )
 
-  const authenticationSettings = useSelector(getAuthenticationSettings)
+  const authenticationSettings = useAuthenticationSettings()
 
   return (
     <AuthInitializer authenticationSettings={authenticationSettings} onAuthFulfilled={onAuth}>

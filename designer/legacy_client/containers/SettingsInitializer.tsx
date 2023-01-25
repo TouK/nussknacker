@@ -1,6 +1,6 @@
 import React, {PropsWithChildren, useEffect, useState} from "react"
 import {useDispatch} from "react-redux"
-import {assignSettings, SettingsData} from "../actions/nk"
+import {SettingsData} from "../actions/nk"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
 
@@ -12,7 +12,10 @@ export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.El
     HttpService.fetchSettingsWithAuth()
       .then((settings) => {
         setData(settings)
-        dispatch(assignSettings(settings))
+        dispatch({
+          type: "UI_SETTINGS",
+          settings: settings,
+        })
       })
       .catch((error) => setData(() => {
         throw error

@@ -1,14 +1,6 @@
-import {AnyAction} from "redux"
+import {SettingsData} from "./nk"
+import User from "../common/models/User"
 
-import {ActionTypes} from "./actionTypes"
-import {LoggedUserAction, UiSettingsAction} from "./nk"
-
-type TypedAction =
-  | LoggedUserAction
-  | UiSettingsAction
-
-interface UntypedAction extends AnyAction {
-  type: Exclude<ActionTypes, TypedAction["type"]>,
-}
-
-export type Action = UntypedAction | TypedAction
+export type Action =
+  | { type: "LOGGED_USER", user: User }
+  | { type: "UI_SETTINGS", settings: SettingsData }

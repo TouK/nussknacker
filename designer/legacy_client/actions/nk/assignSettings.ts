@@ -52,14 +52,3 @@ export interface SettingsData {
   analytics?: $TodoType,
 }
 
-export type UiSettingsAction = {
-  type: "UI_SETTINGS",
-  settings: SettingsData,
-}
-
-export function assignSettings(settings: SettingsData): UiSettingsAction {
-  return {
-    type: "UI_SETTINGS",
-    settings: settings,
-  }
-}
