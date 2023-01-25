@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
@@ -96,6 +96,12 @@ object AvroUtils extends LazyLogging {
   // could register schema with invalid default in lower avro version and despite this in newer version we want to read it
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
+
+
+  // This method use Confluent's class under the hood but it hasn't got any Confluent specific logic
+  def getSchema(obj: Any): Schema = {
+    AvroSchemaUtils.getSchema(obj)
+  }
 
   // Copy from LogicalTypesAvroFactory
   def extractAvroSpecificSchema(clazz: Class[_]): Schema = {

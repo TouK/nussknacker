@@ -46,7 +46,7 @@ class UniversalToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfi
   private def formatMessage(schemaOpt: Option[ParsedSchema], data: Any) = {
     // We do not support formatting AVRO messages without schemaId to json. So when schema is missing we assume it must be JSON payload.
     val support = schemaOpt.map(_.schemaType()).map(UniversalSchemaSupport.forSchemaType).map(_.recordFormatterSupport).getOrElse(JsonPayloadRecordFormatterSupport)
-    support.formatMessage(schemaRegistryClient.client, data)
+    support.formatMessage(data)
   }
 
   private def readMessage(schemaOpt: Option[ParsedSchema], subject: String, jsonObj: Json) = {

@@ -1,28 +1,21 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.formatter
 
 import io.circe.Json
-import io.confluent.kafka.schemaregistry.avro.AvroSchemaUtils
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import io.confluent.kafka.serializers.AbstractKafkaAvroDeserializer
 import org.apache.avro.io.EncoderFactory
 import org.apache.kafka.common.errors.SerializationException
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
 
 import java.io.{ByteArrayOutputStream, PrintStream}
 import java.nio.ByteBuffer
 import java.nio.charset.StandardCharsets
 
-/**
-  * @param schemaRegistryClient schema registry client
-  */
-private[confluent] class ConfluentAvroMessageFormatter(schemaRegistryClient: SchemaRegistryClient) extends AbstractKafkaAvroDeserializer with DatumReaderWriterMixin {
+private[schemaregistry] object ConfluentAvroMessageFormatter extends DatumReaderWriterMixin {
 
   private val encoderFactory = EncoderFactory.get
 
-  schemaRegistry = schemaRegistryClient
-
   def asJson(obj: Any): Json = {
-    val schema = AvroSchemaUtils.getSchema(obj)
+    val schema = AvroUtils.getSchema(obj)
     val bos = new ByteArrayOutputStream()
     val output = new PrintStream(bos, true, StandardCharsets.UTF_8.toString)
 

@@ -26,10 +26,9 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
   override def create[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig, kafkaSourceDeserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]): RecordFormatter = {
 
     val schemaRegistryClient = schemaRegistryClientFactory.create(kafkaConfig)
-    val messageFormatter = new ConfluentAvroMessageFormatter(schemaRegistryClient.client)
     val messageReader = new ConfluentAvroMessageReader(schemaRegistryClient.client)
 
-    new ConfluentAvroToJsonFormatter(kafkaConfig, schemaRegistryClient.client, messageFormatter, messageReader, kafkaSourceDeserializationSchema)
+    new ConfluentAvroToJsonFormatter(kafkaConfig, schemaRegistryClient.client, messageReader, kafkaSourceDeserializationSchema)
   }
 
 }
@@ -43,7 +42,6 @@ class ConfluentAvroToJsonFormatterFactory(schemaRegistryClientFactory: Confluent
   */
 class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaConfig,
                                                              schemaRegistryClient: SchemaRegistryClient,
-                                                             messageFormatter: ConfluentAvroMessageFormatter,
                                                              messageReader: ConfluentAvroMessageReader,
                                                              deserializationSchema: serialization.KafkaDeserializationSchema[ConsumerRecord[K, V]]
                                                             ) extends RecordFormatter {
@@ -93,28 +91,20 @@ class ConfluentAvroToJsonFormatter[K: ClassTag, V: ClassTag](kafkaConfig: KafkaC
     record.consumerRecord.toKafkaConsumerRecord(topic, serializeKeyValue)
   }
 
-  protected def createKeyEncoder(messageFormatter: ConfluentAvroMessageFormatter): Encoder[K] = {
-    new Encoder[K] {
-      override def apply(key: K): Json = key match {
-        case str: String => Json.fromString(str)
-        case _ => messageFormatter.asJson(key) // generic or specific record
-      }
-    }
-  }
-
-  protected def createValueEncoder(messageFormatter: ConfluentAvroMessageFormatter): Encoder[V] = {
-    new Encoder[V] {
-      override def apply(value: V): Json = {
-        messageFormatter.asJson(value)
-      }
-    }
-  }
-
   implicit protected val serializableRecordDecoder: Decoder[SerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
   protected val consumerRecordDecoder: Decoder[AvroSerializableConsumerRecord[Json, Json]] = deriveConfiguredDecoder
 
-  implicit protected val keyEncoder: Encoder[K] = createKeyEncoder(messageFormatter)
-  implicit protected val valueEncoder: Encoder[V] = createValueEncoder(messageFormatter)
+  implicit protected val keyEncoder: Encoder[K] = new Encoder[K] {
+    override def apply(key: K): Json = key match {
+      case str: String => Json.fromString(str)
+      case _ => ConfluentAvroMessageFormatter.asJson(key) // generic or specific record
+    }
+  }
+  implicit protected val valueEncoder: Encoder[V] = new Encoder[V] {
+    override def apply(value: V): Json = {
+      ConfluentAvroMessageFormatter.asJson(value)
+    }
+  }
   implicit protected val serializableRecordEncoder: Encoder[SerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
   protected val consumerRecordEncoder: Encoder[AvroSerializableConsumerRecord[K, V]] = deriveConfiguredEncoder
 
