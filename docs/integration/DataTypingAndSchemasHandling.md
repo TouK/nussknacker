@@ -202,7 +202,6 @@ These properties will be not validated by the Designer, because on during scenar
 `Typing Information` not on real value. Validation will be still done at runtime.
 
 #### Pattern properties
-WhPattern properties are supported in sources and sinks.
 
 ##### Sources
 Object (also nested) in source schema will be represented during scenario authoring as:
