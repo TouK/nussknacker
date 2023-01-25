@@ -6,7 +6,7 @@
   "license": "UNLICENSED",
   "private": true,
   "scripts": {
-    "prebuild": "i18next '!(node_modules|cypress|dist|test)/**/*.{js,ts,tsx}'",
+    "prebuild": "i18next '!(node_modules|dist|test)/**/*.{js,ts,tsx}'",
     "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R src/assets/license dist",
     "clean-build": "rm -rf dist && NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R src/assets/license dist",
     "check-types": "tsc",
@@ -25,12 +25,6 @@
     "backend:docker": "docker run -i -p ${BE_PORT:-8080}:8080 -e CONFIG_FORCE_usageStatisticsReports_enabled=false -e SCHEMA_REGISTRY_URL=http://dummy:8888 -e KAFKA_ADDRESS=dummy:9092 -e OPENAPI_SERVICE_URL=http://dummy:5000 -e SQL_ENRICHER_URL=dummy:5432 -e CONFIG_FORCE_scenarioTypes_streaming__dev_deploymentConfig_type=stub -e CONFIG_FILE=/opt/nussknacker/conf/dev-application.conf -v `readlink -f ../../nussknacker-dist/src/universal/conf/dev-application.conf`:/opt/nussknacker/conf/dev-application.conf --pull ${DOCKER_PULL_OPTION:=always} -P touk/nussknacker:${NUSSKNACKER_VERSION:=staging-latest}",
     "pretest": "npm run check",
     "test:unit": "jest --reporters=default --reporters=jest-junit",
-    "test:e2e": "cypress run",
-    "test:e2e:dev": "cypress open",
-    "test:e2e:linux": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3013",
-    "@comment script versions updating image snapshots": "",
-    "test:e2e:linux:update": "docker run $([ \"$(uname)\" != 'Darwin' ] && echo --user $(id -u):$(id -g)) --ipc=host --add-host=host.docker.internal:host-gateway -it -v $PWD:/client -w /client -e CYPRESS_SNAPSHOT_UPDATE=true cypress/included:11.2.0 --config baseUrl=http://host.docker.internal:3013",
-    "coverage": "npx merge-cypress-jest-coverage",
     "commit": "lint-staged",
     "make-types": "make-federated-types --outputDir ./.federated-types"
   },
@@ -105,7 +99,6 @@
     "uuid": "8.3.2"
   },
   "devDependencies": {
-    "@4tw/cypress-drag-drop": "1.8.1",
     "@babel/cli": "7.20.7",
     "@babel/core": "7.18.5",
     "@babel/eslint-parser": "7.16.5",
@@ -136,7 +129,6 @@
     "@cypress/code-coverage": "3.10.0",
     "@fontsource/open-sans": "4.5.13",
     "@fontsource/roboto-mono": "4.5.8",
-    "@frsource/cypress-plugin-visual-regression-diff": "3.2.3",
     "@hot-loader/react-dom": "17.0.2",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.4",
     "@svgr/webpack": "6.5.1",
@@ -181,7 +173,6 @@
     "crypto-browserify": "3.12.0",
     "css-loader": "5.2.6",
     "cypress": "11.2.0",
-    "cypress-recurse": "1.26.0",
     "enzyme": "3.11.0",
     "eslint": "8.25.0",
     "eslint-plugin-i18next": "6.0.0-4",
@@ -207,7 +198,6 @@
     "less": "4.1.2",
     "less-loader": "10.2.0",
     "lint-staged": "13.0.3",
-    "merge-cypress-jest-coverage": "1.7.0",
     "millify": "4.0.0",
     "moment-locales-webpack-plugin": "1.2.0",
     "node-libs-browser": "2.2.1",
@@ -254,13 +244,6 @@
     "**/*.svg": [
       "npm run svgo",
       "git add"
-    ]
-  },
-  "nyc": {
-    "report-dir": "cypress-coverage",
-    "reporter": [
-      "html",
-      "json"
     ]
   },
   "engines": {
