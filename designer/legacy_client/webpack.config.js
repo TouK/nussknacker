@@ -20,7 +20,7 @@ const isProd = NODE_ENV === "production"
 
 const {ModuleFederationPlugin} = webpack.container
 const entry = {
-  main: path.resolve(__dirname, "./init.js"),
+  main: path.resolve(__dirname, "./src/init.js"),
 }
 
 const cssPreLoaders = [

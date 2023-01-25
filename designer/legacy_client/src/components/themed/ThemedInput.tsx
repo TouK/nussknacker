@@ -1,7 +1,7 @@
 import {css, cx} from "@emotion/css"
 import React, {forwardRef, Ref} from "react"
 import {useNkTheme} from "../../containers/theme"
-import {bootstrapStyles} from "../../../styles"
+import {bootstrapStyles} from "../../styles"
 import {ValueFieldProps} from "../valueField"
 import {InputWithFocus} from "../withFocus"
 
