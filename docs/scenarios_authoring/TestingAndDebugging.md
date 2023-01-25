@@ -4,7 +4,7 @@ sidebar_position: 8
 
 # Testing and Debugging
 
-There are several features in Nussknacker designed specifically to ease testing and debugging; this page provides a brief explanation how to use them. This functionality is grouped in the Test panel docked on the right side of the Designer canvas; if you did not rearrange panels it is in the right part of the Designer canvas. 
+There are several features in Nussknacker designed specifically to ease testing and debugging; this page provides a brief explanation how to use them. This functionality is grouped in the Test panel; if you did not rearrange panels it is in the right part of the Designer canvas. 
 
 ![alt_text](img/testPanel.png "Designer Test panel")
 

@@ -72,6 +72,10 @@ components {
 
 ## Operations 
 
-You can enable logging invocations in the runtime by setting logger
+You can enable enricher level runtime logging by
 `pl.touk.nussknacker.openapi.enrichers.[enricher name]` to `DEBUG`. In particular, setting `pl.touk.nussknacker.openapi.enrichers` 
-level to `DEBUG` will turn on logging on all enrichers. Please remember to configure logging on appropriate component (e.g. Lite runtime or Flink TaskManager).
+level to `DEBUG` will turn on logging on all enrichers.
+
+Enricher level logging can be enabled:
+- in Flink TaskManager [configuration](https://github.com/TouK/nussknacker-quickstart/blob/main/docker/streaming/flink/log4j-console.properties)
+- in Lite runtime [configuration](../installation_configuration_guide/DeploymentManagerConfiguration#configuring-runtime-logging)
