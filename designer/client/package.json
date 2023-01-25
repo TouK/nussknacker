@@ -17,7 +17,7 @@
     "clean-translations": "rm -rf ./translations/*",
     "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} webpack serve",
     "start-prod": "BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} node server.js",
-    "start:backend-docker": "npm run clean-translations && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start",
+    "start:backend-docker": "npm run clean-translations && ! wait-on -t 250 tcp:localhost:${BE_PORT:-8080} && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start || echo \"Port: ${BE_PORT:-8080} already in use!\" && exit 1",
     "start:backend-remote": "npm run clean-translations && webpack serve",
     "start:backend-staging": "BACKEND_DOMAIN=https://staging.nussknacker.io npm run start:backend-remote",
     "start:backend-cloud": "BACKEND_DOMAIN=https://default-nussknacker.carpinion.touk.pl npm run start:backend-remote",
