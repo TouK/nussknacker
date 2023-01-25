@@ -2,7 +2,7 @@
 import {isEqual, omitBy} from "lodash"
 import * as  queryString from "query-string"
 import {ParseOptions} from "query-string"
-import {NodeId} from "../../types"
+import {NodeId} from "../types"
 
 export function visualizationUrl(processName: string, nodeId?: NodeId): string {
   const baseUrl = `/visualization/${encodeURIComponent(processName)}`

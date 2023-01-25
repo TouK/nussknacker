@@ -1,5 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
-import {UnknownRecord, Instant} from "../../../types/common"
+import {UnknownRecord, Instant} from "../../types/common"
 
 export enum ActionType {
   Deploy = "DEPLOY",

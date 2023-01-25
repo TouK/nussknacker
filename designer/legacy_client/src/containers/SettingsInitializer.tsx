@@ -1,6 +1,6 @@
 import React, {PropsWithChildren, useEffect, useState} from "react"
 import {useDispatch} from "react-redux"
-import {SettingsData} from "../../types/settings"
+import {SettingsData} from "../types/settings"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
 import {ActionType} from "../reducers/settings"

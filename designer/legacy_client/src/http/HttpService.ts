@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import {AxiosError, AxiosResponse} from "axios"
 import i18next from "i18next"
-import {SettingsData} from "../../types/settings"
+import {SettingsData} from "../types/settings"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"

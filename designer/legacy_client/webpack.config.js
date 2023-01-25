@@ -217,7 +217,7 @@ module.exports = {
       //see ./config.ts
       base: isProd ? "__publicPath__/static/" : "/",
       filename: "main.html",
-      favicon: "assets/img/favicon.svg",
+      favicon: "src/assets/img/favicon.svg",
     }),
     new HtmlWebpackHarddiskPlugin(),
     // new WebpackShellPluginNext({

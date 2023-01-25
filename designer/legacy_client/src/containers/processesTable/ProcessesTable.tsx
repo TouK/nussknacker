@@ -3,7 +3,7 @@ import React, {PropsWithChildren, useCallback, useMemo} from "react"
 import {useTranslation} from "react-i18next"
 import {SortType, TableComponentProperties} from "reactable"
 import LoaderSpinner from "../../components/Spinner"
-import {UnknownRecord} from "../../../types/common"
+import {UnknownRecord} from "../../types/common"
 import {useSearchQuery} from "../hooks/useSearchQuery"
 import {TableWithDynamicRows} from "./TableWithDynamicRows"
 

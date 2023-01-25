@@ -5,7 +5,7 @@
 // TypeScript Version: 2.8
 
 import * as React from "react"
-import {UnknownRecord} from "../../types/common"
+import {UnknownRecord} from "../../src/types/common"
 
 export interface KeyLabelObject {
   key: string,

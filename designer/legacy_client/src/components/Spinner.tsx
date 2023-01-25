@@ -1,6 +1,6 @@
 import React from "react"
 import "../stylesheets/spinner.styl"
-import {UnknownRecord} from "../../types/common"
+import {UnknownRecord} from "../types/common"
 
 type State = UnknownRecord
 

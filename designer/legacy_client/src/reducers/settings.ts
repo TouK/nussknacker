@@ -1,4 +1,4 @@
-import {FeaturesSettings, SettingsData} from "../../types/settings"
+import {FeaturesSettings, SettingsData} from "../types/settings"
 import User from "../common/models/User"
 import {combineReducers} from "redux"
 
