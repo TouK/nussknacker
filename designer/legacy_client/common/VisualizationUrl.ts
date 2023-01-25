@@ -20,15 +20,6 @@ export function visualizationUrl(processName: string, nodeId?: NodeId): string {
   return queryString.stringifyUrl({url: baseUrl, query: {nodeId}})
 }
 
-export function extractCountParams(queryParams) {
-  if (queryParams.from || queryParams.to) {
-    const from = queryParams.from ? fromTimestampOrDate(queryParams.from) : null
-    const to = queryParams.to ? fromTimestampOrDate(queryParams.to) : Moment()
-    return {from, to}
-  }
-
-  return null
-}
 
 export const defaultArrayFormat: ParseOptions["arrayFormat"] = "comma"
 
