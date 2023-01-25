@@ -12,7 +12,7 @@ export const ClearIcon = () => {
     },
   })
   return (
-    <AddonIcon className={iconStyles} svg="toolbarButtons/delete.svg"/>
+    <AddonIcon className={iconStyles} svg="delete.svg"/>
   )
 }
 
