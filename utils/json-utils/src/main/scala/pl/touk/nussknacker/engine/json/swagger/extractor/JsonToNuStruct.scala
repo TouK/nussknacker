@@ -29,7 +29,7 @@ object JsonToNuStruct {
       object KeyMatchingPatternSchema {
         def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
           val (propertyName, _) = keyValue
-          obj.patternProperties.collectFirst { case (pattern, typed) if pattern.asPredicate.test(propertyName) => typed }
+          obj.patternProperties.find(_.testPropertyName(propertyName)).map(_.propertyType)
         }
       }
 
@@ -52,14 +52,6 @@ object JsonToNuStruct {
         )
       )
     }
-
-    def extractMap(valuesType: Option[SwaggerTyped]): AnyRef = extract[JsonObject](
-      _.asObject,
-      jo => TypedMap(jo.toMap.collect {
-        case (key, value) if valuesType.isDefined => key -> JsonToNuStruct(value, valuesType.get, addPath(key))
-        case (key, value) => key -> jsonToAny(value)
-      })
-    )
 
     //we handle null here to enable pattern matching exhaustive check
     if (json.isNull) {
