@@ -82,6 +82,8 @@ module.exports = {
       crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
       stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
       buffer: require.resolve("buffer-browserify"), //reason: jsonwebtoken
+      util: require.resolve("util"), //reason: jsonwebtoken
+      events: false,
       fs: false,
     },
   },
