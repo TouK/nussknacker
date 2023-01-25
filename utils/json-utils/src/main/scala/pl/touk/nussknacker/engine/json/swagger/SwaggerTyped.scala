@@ -200,8 +200,9 @@ object SwaggerObject {
       .toMap
 
     val additionalProperties = schema.getAdditionalProperties match {
-      case null | true => AdditionalPropertiesWithoutType
-      case false => AdditionalPropertiesDisabled
+      case null => AdditionalPropertiesWithoutType
+      case boolean if boolean == true => AdditionalPropertiesWithoutType
+      case boolean if boolean == false => AdditionalPropertiesDisabled
       case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas, usedRefs))
     }
     SwaggerObject(properties, additionalProperties, patternProperties)
