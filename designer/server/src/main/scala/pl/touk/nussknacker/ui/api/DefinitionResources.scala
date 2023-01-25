@@ -43,11 +43,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
     } ~ path("processDefinitionData" / "categoriesWithProcessingType") {
       get {
         complete {
-          val categories = user match {
-            case user: CommonUser => processCategoryService.getAllCategories.filter(user.can(_, Read))
-            case _: AdminUser => processCategoryService.getAllCategories
-          }
-          categories
+            processCategoryService.getUserCategories(user)
             .map(category => category -> processCategoryService.getTypeForCategory(category))
             .toMap[Category, Option[ProcessingType]]
         }
