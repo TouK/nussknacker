@@ -1,4 +1,4 @@
-import {AuthenticationSettings} from "../reducers/settings"
+import {AuthenticationSettings} from "../src/reducers/settings"
 import {UnknownRecord} from "./common"
 
 type MetricsType = {

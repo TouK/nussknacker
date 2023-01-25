@@ -2,7 +2,7 @@ import Adapter from "@wojtekmaj/enzyme-adapter-react-17"
 import Enzyme, {mount} from "enzyme"
 import React from "react"
 import {MemoryRouter} from "react-router"
-import {isExternalUrl, PlainStyleLink} from "../containers/plainStyleLink"
+import {isExternalUrl, PlainStyleLink} from "../src/containers/plainStyleLink"
 import {describe, expect} from '@jest/globals';
 
 const Link = props => (
