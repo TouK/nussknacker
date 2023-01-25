@@ -91,34 +91,13 @@ object ConfluentUtils extends LazyLogging {
     */
   def serializeContainerToBytesArray(container: GenericContainer, schemaId: SchemaId): Array[Byte] = {
     val output = new ByteArrayOutputStream()
-    writeSchemaId(schemaId, output)
-
-    val data = container match {
-      case non: NonRecordContainer => non.getValue
-      case any => any
+    try {
+      writeSchemaId(schemaId, output)
+      AvroUtils.serializeContainerToBytesArray(container, output)
+      output.toByteArray
+    } finally {
+      output.close()
     }
-
-    data match {
-      case v: ByteBuffer =>
-        output.write(v.array())
-      case v: Array[Byte] =>
-        output.write(v)
-      case v =>
-        val writer = data match {
-          case _: SpecificRecord =>
-            new SpecificDatumWriter[Any](container.getSchema, AvroUtils.specificData)
-          case _ =>
-            new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
-        }
-
-        val encoder = EncoderFactory.get().binaryEncoder(output, null)
-        writer.write(v, encoder)
-        encoder.flush()
-    }
-
-    val bytes = output.toByteArray
-    output.close()
-    bytes
   }
 
   def writeSchemaId(schemaId: SchemaId, stream: OutputStream): Unit = {
@@ -129,15 +108,7 @@ object ConfluentUtils extends LazyLogging {
 
   def deserializeSchemaIdAndData[T](payload: Array[Byte], readerWriterSchema: Schema): (SchemaId, T) = {
     val schemaId = ConfluentUtils.readId(payload)
-
-    val data = if (readerWriterSchema.getType.equals(Schema.Type.BYTES)) {
-      util.Arrays.copyOfRange(payload, ConfluentUtils.HeaderSize, payload.length).asInstanceOf[T]
-    } else {
-      val decoder = DecoderFactory.get().binaryDecoder(payload, ConfluentUtils.HeaderSize, payload.length - ConfluentUtils.HeaderSize, null)
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
-      reader.read(null.asInstanceOf[T], decoder)
-    }
-
+    val data = AvroUtils.deserialize[T](payload, readerWriterSchema, HeaderSize)
     (schemaId, data)
   }
 

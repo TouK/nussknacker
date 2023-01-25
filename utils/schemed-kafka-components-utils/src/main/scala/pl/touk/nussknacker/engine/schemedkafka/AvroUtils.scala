@@ -3,19 +3,23 @@ package pl.touk.nussknacker.engine.schemedkafka
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.{GenericData, GenericRecord}
-import org.apache.avro.io.DatumReader
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericDatumWriter, GenericRecord}
+import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import org.apache.avro.reflect.ReflectData
-import org.apache.avro.specific.{SpecificData, SpecificRecord}
+import org.apache.avro.specific.{SpecificData, SpecificDatumWriter, SpecificRecord}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.AvroSchemaWithJsonPayload
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.GenericRecordWithSchemaId
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
+import java.io.{ByteArrayOutputStream, OutputStream}
+import java.nio.ByteBuffer
+import java.util
 import scala.reflect.{ClassTag, classTag}
 
 object AvroUtils extends LazyLogging {
@@ -93,13 +97,6 @@ object AvroUtils extends LazyLogging {
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
 
-  def wrapWithGenericRecordWithSchemaIdIfDefined[T](record: T, nullableSchemaId: SchemaId): T = {
-    (record, Option(nullableSchemaId)) match {
-      case (genericRecord: GenericData.Record, Some(schemaId)) => new GenericRecordWithSchemaId(genericRecord, schemaId, false).asInstanceOf[T]
-      case _ => record
-    }
-  }
-
   // Copy from LogicalTypesAvroFactory
   def extractAvroSpecificSchema(clazz: Class[_]): Schema = {
     tryExtractAvroSchemaViaInstance(clazz).getOrElse(specificData.getSchema(clazz))
@@ -114,6 +111,55 @@ object AvroUtils extends LazyLogging {
         logger.warn("Could not extract schema from Avro-generated SpecificRecord class {}: {}.", clazz, e)
         None
     }
+
+
+  def serializeContainerToBytesArray(container: GenericContainer): Array[Byte] = {
+    val output = new ByteArrayOutputStream()
+    try {
+      serializeContainerToBytesArray(container, output)
+      output.toByteArray
+    } finally {
+      output.close()
+    }
+  }
+
+  /**
+    * Based on serializeImpl from [[io.confluent.kafka.serializers.AbstractKafkaAvroSerializer]]
+    */
+  def serializeContainerToBytesArray(container: GenericContainer, output: OutputStream): Unit = {
+    val data = container match {
+      case non: NonRecordContainer => non.getValue
+      case any => any
+    }
+
+    data match {
+      case v: ByteBuffer =>
+        output.write(v.array())
+      case v: Array[Byte] =>
+        output.write(v)
+      case v =>
+        val writer = data match {
+          case _: SpecificRecord =>
+            new SpecificDatumWriter[Any](container.getSchema, AvroUtils.specificData)
+          case _ =>
+            new GenericDatumWriter[Any](container.getSchema, AvroUtils.genericData)
+        }
+
+        val encoder = EncoderFactory.get().binaryEncoder(output, null)
+        writer.write(v, encoder)
+        encoder.flush()
+    }
+  }
+
+  def deserialize[T](payload: Array[Byte], readerWriterSchema: Schema, offset: Int = 0): T = {
+    if (readerWriterSchema.getType.equals(Schema.Type.BYTES)) {
+      util.Arrays.copyOfRange(payload, offset, payload.length).asInstanceOf[T]
+    } else {
+      val decoder = DecoderFactory.get().binaryDecoder(payload, offset, payload.length - offset, null)
+      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
+      reader.read(null.asInstanceOf[T], decoder)
+    }
+  }
 
   /**
     * It's a simply mapper scala Map[String, Any] to Avro GenericRecord
@@ -140,8 +186,7 @@ object AvroUtils extends LazyLogging {
     }
 
     val builder = new LogicalTypesGenericRecordBuilder(schema)
-    data.foreach{ case (key, value) =>
-
+    data.foreach { case (key, value) =>
       val valueToSet = Option(schema.getField(key))
         .map(field => createValue(value, field.schema()))
         .getOrElse(throw new IllegalArgumentException(s"Unknown field $key in schema $schema."))
