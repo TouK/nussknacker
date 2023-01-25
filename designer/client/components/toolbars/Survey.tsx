@@ -35,8 +35,8 @@ function Survey(): JSX.Element {
         <Stack p={1} spacing={.5}>
           <Typography variant="body2">{survey.text}</Typography>
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="text" onClick={onOpen}>{t("panels.survey.ok", "ok, let's go!")}</Button>
-            <Button size="small" variant="text" onClick={hideSurvey}>{t("panels.survey.no", "no, thanks")}</Button>
+            <Button size="small" variant="text" onClick={onOpen}>{t("panels.survey.ok", "let's go!")}</Button>
+            <Button size="small" variant="text" onClick={hideSurvey}>{t("panels.survey.no", "close")}</Button>
           </Stack>
         </Stack>
       </DragHandle>
