@@ -6,12 +6,13 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
 import pl.touk.nussknacker.restmodel.process.ProcessingType
+import pl.touk.nussknacker.security.Permission.Read
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.ProcessCategoryService.Category
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
 import pl.touk.nussknacker.ui.process.subprocess.SubprocessRepository
-import pl.touk.nussknacker.ui.security.api.LoggedUser
+import pl.touk.nussknacker.ui.security.api.{AdminUser, CommonUser, LoggedUser}
 import pl.touk.nussknacker.ui.util.EspPathMatchers
 
 import scala.concurrent.ExecutionContext
@@ -42,7 +43,11 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
     } ~ path("processDefinitionData" / "categoriesWithProcessingType") {
       get {
         complete {
-          processCategoryService.getAllCategories
+          val categories = user match {
+            case user: CommonUser => processCategoryService.getAllCategories.filter(user.can(_, Read))
+            case _: AdminUser => processCategoryService.getAllCategories
+          }
+          categories
             .map(category => category -> processCategoryService.getTypeForCategory(category))
             .toMap[Category, Option[ProcessingType]]
         }
