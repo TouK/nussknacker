@@ -2,6 +2,7 @@
     "name": "nu_components",
     "exposes": {
         "./list": "./src/componentsNkView",
-        "./scenarios": "./src/scenariosNkView"
+        "./scenarios": "./src/scenariosNkView",
+        "./scenarios_table": "./src/scenariosTableNkView"
     }
 }
