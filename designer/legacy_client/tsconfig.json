@@ -30,7 +30,6 @@
   "exclude": [
     "node_modules",
     ".federated-types",
-    "flow_typed",
-    "cypress"
+    "flow_typed"
   ]
 }

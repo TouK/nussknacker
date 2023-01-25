@@ -16,7 +16,3 @@ coverage/
 *-coverage/
 .nyc_output/
 reports/
-
-cypress.env.json
-cypress/videos
-cypress/screenshots
