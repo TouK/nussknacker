@@ -2,10 +2,7 @@
 import {applyMiddleware, createStore} from "redux"
 import {composeWithDevTools} from "redux-devtools-extension"
 import thunk from "redux-thunk"
-import {persistStore} from "redux-persist"
 import {reducer} from "../reducers"
-import {ThunkDispatch} from "../actions/reduxTypes"
-import {useDispatch} from "react-redux"
 import {createStateSyncMiddleware, initMessageListener} from "redux-state-sync"
 
 export default function configureStore() {
@@ -16,15 +13,11 @@ export default function configureStore() {
       applyMiddleware(
         thunk,
         createStateSyncMiddleware({
-          whitelist: [
-            "TOGGLE_SETTINGS",
-            "SET_SETTINGS",
-          ],
+          whitelist: [],
         }),
       ),
     ),
   )
-  const persistor = persistStore(store)
   initMessageListener(store)
 
   if (module.hot) {
@@ -35,9 +28,6 @@ export default function configureStore() {
     })
   }
 
-  return {store, persistor}
+  return {store}
 }
 
-export function useThunkDispatch() {
-  return useDispatch<ThunkDispatch>()
-}

@@ -1,6 +1,5 @@
 /* eslint-disable i18next/no-literal-string */
 import {AxiosRequestConfig} from "axios"
-import {v4 as uuid4} from "uuid"
 import api from "../api"
 import _ from "lodash"
 
@@ -43,13 +42,6 @@ class SystemUtils {
     return this.saveAccessToken(token)
   }
 
-  public getUserId = (): string => {
-    if (_.isEmpty(localStorage.getItem(SystemUtils.USER_ID_NAMESPACE))) {
-      localStorage.setItem(SystemUtils.USER_ID_NAMESPACE, uuid4())
-    }
-    
-    return localStorage.getItem(SystemUtils.USER_ID_NAMESPACE)
-  }
 }
 
 export const AUTHORIZATION_HEADER_NAMESPACE = SystemUtils.AUTHORIZATION_HEADER_NAMESPACE

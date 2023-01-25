@@ -50,8 +50,6 @@ export type NodeType<F extends Field = Field> = {
   [key: string]: any,
 }
 
-export type SubprocessNodeType = NodeType
-
 export type Field = {
   name: string,
   expression: Expression,
@@ -74,5 +72,3 @@ export type PropertiesType = NodeType & {
 }
 
 export type NodeId = NodeType["id"]
-
-export type UINodeType = NodeType
