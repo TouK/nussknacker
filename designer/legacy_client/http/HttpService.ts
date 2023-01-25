@@ -1,7 +1,7 @@
 /* eslint-disable i18next/no-literal-string */
 import {AxiosError, AxiosResponse} from "axios"
 import i18next from "i18next"
-import {SettingsData} from "../actions/nk"
+import {SettingsData} from "../types/settings"
 import api from "../api"
 import {UserData} from "../common/models/User"
 import {ProcessStateType, ProcessType} from "../components/Process/types"
@@ -53,12 +53,12 @@ class HttpService {
       })
   }
 
-  fetchSettings() {
+  #fetchSettings() {
     return api.get<SettingsData>("/settings")
   }
 
   fetchSettingsWithAuth(): Promise<SettingsData & { authentication: AuthenticationSettings }> {
-    return this.fetchSettings()
+    return this.#fetchSettings()
       .then(({data}) => {
         const {provider} = data.authentication
         const settings = data

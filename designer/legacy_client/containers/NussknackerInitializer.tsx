@@ -4,6 +4,7 @@ import HttpService from "../http/HttpService"
 import {AuthInitializer} from "./Auth"
 import {useAuthenticationSettings} from "../reducers/selectors/settings"
 import User from "../common/models/User"
+import {ActionType} from "../reducers/settings"
 
 function NussknackerInitializer({children}: PropsWithChildren<unknown>): JSX.Element {
   const dispatch = useDispatch()
@@ -11,7 +12,7 @@ function NussknackerInitializer({children}: PropsWithChildren<unknown>): JSX.Ele
   const onAuth = useCallback(
     () => HttpService.fetchLoggedUser().then(({data}) => {
       dispatch({
-        type: "LOGGED_USER",
+        type: ActionType.loggedUser,
         user: new User(data),
       })
     }),

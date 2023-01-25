@@ -1,7 +1,6 @@
-import {FeaturesSettings} from "../actions/nk"
-import {Action} from "../actions/reduxTypes"
+import {FeaturesSettings, SettingsData} from "../types/settings"
 import User from "../common/models/User"
-import {ProcessDefinitionData} from "../types"
+import {combineReducers} from "redux"
 
 export enum AuthStrategy {
   BROWSER = "Browser",
@@ -13,8 +12,6 @@ export type SettingsState = {
   loggedUser: Partial<User>,
   featuresSettings: Partial<FeaturesSettings>,
   authenticationSettings: AuthenticationSettings,
-  analyticsSettings: $TodoType,
-  processDefinitionData: ProcessDefinitionData,
 }
 
 export type BaseAuthenticationSettings = {
@@ -46,33 +43,47 @@ export type OAuth2Settings = {
   implicitGrantEnabled?: boolean,
 } & BaseAuthenticationSettings
 
-const initialState: SettingsState = {
-  loggedUser: {},
-  featuresSettings: {},
-  authenticationSettings: {},
-  analyticsSettings: {},
-  processDefinitionData: {},
+export enum ActionType {
+  loggedUser = "LOGGED_USER",
+  settings = "UI_SETTINGS"
 }
 
-export function reducer(state: SettingsState = initialState, action: Action): SettingsState {
+type Action =
+  | { type: ActionType.loggedUser, user: User }
+  | { type: ActionType.settings, settings: SettingsData }
+
+function authenticationSettings(state = {}, action: Action) {
   switch (action.type) {
-    case "LOGGED_USER": {
-      const {user} = action
-      return {
-        ...state,
-        //FIXME: remove class from store - plain data only
-        loggedUser: user,
-      }
-    }
-    case "UI_SETTINGS": {
-      return {
-        ...state,
-        featuresSettings: action.settings.features,
-        authenticationSettings: action.settings.authentication,
-        analyticsSettings: action.settings.analytics,
-      }
+    case ActionType.settings: {
+      return action.settings.authentication
     }
     default:
       return state
   }
 }
+
+function featuresSettings(state = {}, action: Action) {
+  switch (action.type) {
+    case ActionType.settings: {
+      return action.settings.features
+    }
+    default:
+      return state
+  }
+}
+
+function loggedUser(state = {}, action: Action) {
+  switch (action.type) {
+    case ActionType.loggedUser: {
+      return action.user
+    }
+    default:
+      return state
+  }
+}
+
+export const reducer = combineReducers<SettingsState>({
+  loggedUser,
+  featuresSettings,
+  authenticationSettings,
+})

@@ -1,8 +1,9 @@
 import React, {PropsWithChildren, useEffect, useState} from "react"
 import {useDispatch} from "react-redux"
-import {SettingsData} from "../actions/nk"
+import {SettingsData} from "../types/settings"
 import LoaderSpinner from "../components/Spinner"
 import HttpService from "../http/HttpService"
+import {ActionType} from "../reducers/settings"
 
 export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.Element {
   const [data, setData] = useState<SettingsData>(null)
@@ -13,7 +14,7 @@ export function SettingsProvider({children}: PropsWithChildren<unknown>): JSX.El
       .then((settings) => {
         setData(settings)
         dispatch({
-          type: "UI_SETTINGS",
+          type: ActionType.settings,
           settings: settings,
         })
       })

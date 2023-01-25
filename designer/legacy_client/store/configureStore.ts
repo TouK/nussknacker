@@ -1,18 +1,9 @@
 /* eslint-disable i18next/no-literal-string */
-import {applyMiddleware, createStore} from "redux"
-import {composeWithDevTools} from "redux-devtools-extension"
-import thunk from "redux-thunk"
+import {createStore} from "redux"
 import {reducer} from "../reducers/settings"
 
-export default function configureStore() {
-  const store = createStore(
-    reducer,
-    composeWithDevTools(
-      applyMiddleware(
-        thunk,
-      ),
-    ),
-  )
+export default () => {
+  const store = createStore(reducer)
 
   if (module.hot) {
     module.hot.accept("../reducers/settings", () => {
