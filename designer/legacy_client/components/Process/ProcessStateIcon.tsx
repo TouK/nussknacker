@@ -1,7 +1,6 @@
 import React from "react"
 import {SwitchTransition} from "react-transition-group"
 import {WithTranslation, withTranslation} from "react-i18next"
-import {compose} from "redux"
 import {ProcessStateType, ProcessType} from "./types"
 import {CssFade} from "../CssFade"
 
@@ -114,9 +113,5 @@ class ProcessStateIcon extends React.Component<Props, State> {
   }
 }
 
-const enhance = compose(
-  withTranslation(),
-)
-
-export default enhance(ProcessStateIcon)
+export default withTranslation()(ProcessStateIcon)
 

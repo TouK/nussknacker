@@ -88,11 +88,6 @@ class HttpService {
       .catch(error => Promise.reject(this.#addError(i18next.t("notification.error.cannotFetchStatuses", "Cannot fetch statuses"), error)))
   }
 
-  fetchProcessState(processId) {
-    return api.get(`/processes/${encodeURIComponent(processId)}/status`)
-      .catch(error => this.#addError(i18next.t("notification.error.cannotFetchStatus", "Cannot fetch status"), error))
-  }
-
   fetchOAuth2AccessToken<T>(provider: string, authorizeCode: string | string[], redirectUri: string | null) {
     return api.get<T>(`/authentication/${provider.toLowerCase()}?code=${authorizeCode}${redirectUri ? `&redirect_uri=${redirectUri}` : ""}`)
   }
