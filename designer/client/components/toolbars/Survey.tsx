@@ -15,13 +15,12 @@ function Survey(): JSX.Element {
   const {open} = useWindows()
   const onOpen = useCallback(
     () => survey && open({
-      title: "Survey",
       kind: WindowKind.survey,
       meta: survey.link,
       isResizable: true,
       shouldCloseOnEsc: false,
-      width: 500,
-      height: 500,
+      width: 750,
+      height: 900,
     }),
     [open, survey]
   )

@@ -53,7 +53,7 @@ class SettingsResources(config: FeatureTogglesConfig,
 
 @JsonCodec case class RemoteEnvironmentConfig(targetEnvironmentId: String)
 
-@JsonCodec case class EnvironmentAlert(content: String, cssClass: String)
+@JsonCodec case class EnvironmentAlert(content: String, color: String)
 
 @JsonCodec case class CommentSettings(substitutionPattern: String, substitutionLink: String)
 
