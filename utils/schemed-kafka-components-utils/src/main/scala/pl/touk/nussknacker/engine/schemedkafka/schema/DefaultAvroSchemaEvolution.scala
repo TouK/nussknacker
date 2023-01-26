@@ -30,7 +30,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
 
   override protected final val decoderFactory = DecoderFactory.get
 
-  override def alignRecordToSchema(record: GenericContainer, schema: Schema): Any = {
+  override def alignRecordToSchema(record: GenericContainer, schema: Schema): GenericContainer = {
     val writerSchema = record.getSchema
     if (writerSchema.equals(schema)) {
       record
@@ -47,12 +47,12 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.
     */
-  protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): Any = {
+  protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): GenericContainer = {
     try {
       // We always want to create generic record at the end, because speecific can has other fields than expected
       val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
       val buffer = ByteBuffer.wrap(payload)
-      deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0)
+      deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0).asInstanceOf[GenericContainer]
     } catch {
       case exc@(_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
