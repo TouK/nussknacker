@@ -78,6 +78,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
 
   private def modifyContainers(containers: List[Container]): List[Container] = {
     val image = s"${config.dockerImageName}:${config.dockerImageTag}"
+    val defaultTimeoutSeconds = 3
     val runtimeContainer = Container(
       name = "runtime",
       image = image,
@@ -97,8 +98,8 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
       // TODO we should tune failureThreshold to some lower value
-      readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-      livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
+      readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = defaultTimeoutSeconds)),
+      livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = defaultTimeoutSeconds))
     )
 
     def modifyRuntimeContainer(value: Container): Container = {
