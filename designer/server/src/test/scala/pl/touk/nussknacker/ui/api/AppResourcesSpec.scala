@@ -37,7 +37,9 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
   private def prepareBasicAppResources(statusCheck: TestProbe, withConfigExposed: Boolean = true) = {
     val processService = createDBProcessService(statusCheck.ref)
-    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, fetchingProcessRepository, TestFactory.processValidation, processService, exposeConfig = withConfigExposed)
+    new AppResources(ConfigFactory.empty(), emptyReload, emptyProcessingTypeDataProvider, fetchingProcessRepository,
+      TestFactory.processValidation, processService, exposeConfig = withConfigExposed, processCategoryService
+    )
   }
 
   test("it should return healthcheck also if cannot retrieve statuses") {
@@ -150,7 +152,8 @@ class AppResourcesSpec extends AnyFunSuite with ScalatestRouteTest with Matchers
 
     val processService = createDBProcessService(TestProbe().ref)
     val resources = new AppResources(ConfigFactory.parseMap(Collections.singletonMap("globalBuildInfo", globalConfig.asJava)), emptyReload,
-       mapProcessingTypeDataProvider("test1" -> modelData), fetchingProcessRepository, TestFactory.processValidation, processService, exposeConfig = false)
+       mapProcessingTypeDataProvider("test1" -> modelData), fetchingProcessRepository, TestFactory.processValidation,
+      processService, exposeConfig = false, processCategoryService)
 
     val result = Get("/app/buildInfo") ~> withoutPermissions(resources)
     result ~> check {
