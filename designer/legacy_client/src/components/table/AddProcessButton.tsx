@@ -1,17 +1,17 @@
-import {css, cx} from "@emotion/css"
-import React, {useCallback, useMemo} from "react"
+import {css} from "@emotion/css"
+import React, {useContext} from "react"
 import {useTranslation} from "react-i18next"
 import {useLoggedUser} from "../../reducers/selectors/settings"
 import {ThemedButton} from "../themed/ThemedButton"
+import {ScenariosContext} from "../../containers/ProcessTabs"
 
-type Props = {
+interface AddButtonProps {
   onClick: () => void,
   className?: string,
   title: string,
 }
 
-function AddButton(props: Props) {
-  const {onClick, className, title} = props
+function AddButton({className, title, onClick}: AddButtonProps): JSX.Element {
   const loggedUser = useLoggedUser()
 
   return loggedUser.isWriter() ?
@@ -30,29 +30,23 @@ function AddButton(props: Props) {
 
 }
 
-export function useAddProcessButtonProps(isSubprocess?: boolean): { action: () => void, title: string } {
-  const {t} = useTranslation()
-
-  const title = useMemo(
-    () => isSubprocess ?
-      t("addProcessButton.subprocess", "Create new fragment") :
-      t("addProcessButton.process", "Create new scenario"),
-    [isSubprocess, t]
-  )
-
-  const action = useCallback(() => console.log({
-    kind: isSubprocess ? "WindowKind.addSubProcess" : "WindowKind.addProcess",
-    title,
-  }), [isSubprocess, title])
-
-  return useMemo(() => ({title, action}), [action, title])
+interface AddProcessButtonProps {
+  isSubprocess?: boolean,
+  className?: string,
 }
 
-export function AddProcessButton(props: { isSubprocess?: boolean, className?: string }): JSX.Element {
-  const {isSubprocess} = props
-  const {title, action} = useAddProcessButtonProps(isSubprocess)
+export function AddProcessButton({isSubprocess, className}: AddProcessButtonProps): JSX.Element {
+  const {t} = useTranslation()
+  const {onScenarioAdd, onFragmentAdd} = useContext(ScenariosContext)
+  const action = isSubprocess ? onFragmentAdd : onScenarioAdd
 
   return (
-    <AddButton className={cx(props.className)} onClick={action} title={title}/>
+    <AddButton
+      className={className}
+      title={isSubprocess ?
+        t("addProcessButton.subprocess", "Create new fragment") :
+        t("addProcessButton.process", "Create new scenario")}
+      onClick={action}
+    />
   )
 }
