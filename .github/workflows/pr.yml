@@ -399,6 +399,12 @@ jobs:
         uses: styfle/cancel-workflow-action@0.11.0
         with:
           access_token: ${{ secrets.GITHUB_TOKEN }}
+      # On self-hosted runners, docker can have some obsolete containers. Because of that, we clean them all
+      - name: Clean all docker containers
+        shell: bash
+        run: |
+          c=$(docker ps -q)
+          [[ $c ]] && docker kill $c || echo "No container run"
       - uses: actions/checkout@v3
       - name: Cache ivy packages
         uses: actions/cache@v3
@@ -472,6 +478,7 @@ jobs:
         shell: bash
         run: |
           cd designer/client
+          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} test:e2e
       - name: Determine docker tag version to use
         if: ${{ env.shouldBuildImage == 'false' }}
@@ -488,6 +495,7 @@ jobs:
         shell: bash
         run: |
           cd designer/client
+          ! npx wait-on -t 250 tcp:localhost:${{ env.BE_PORT }} 2> /dev/null || (echo "Port: ${BE_PORT} already in use!" && exit 1)
           npx start-server-and-test backend:docker ${{ env.BE_PORT }} start-prod 3000 test:e2e
       - name: Test Report
         if: success() || failure()
