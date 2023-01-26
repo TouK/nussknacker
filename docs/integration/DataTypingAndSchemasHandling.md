@@ -205,11 +205,11 @@ These properties will be not validated by the Designer, because on during scenar
 
 ##### Sources
 Object (also nested) in source schema will be represented during scenario authoring as:
-* Map - when there is no property defined in "properties" field
-  * if only additional properties are defined then map values will be typed to according to schema in additionalProperty field
-  * if both additional and pattern properties are defined then values will be typed to `Unknown` and can be casted to exact type by end user
+* Map - when there is no property defined in `properties` field
+  * if only `additionalProperties` are defined then map values will be typed to according to schema in `additionalProperties` field
+  * if both `additionalProperties` and `patternProperties` are defined then values will be typed as `Union` with all possible types from `additionalProperties` and `patternProperties`
 * Record otherwise
-  * pattern and additionalProperties can then be accessed using `record["patternOrAdditionalPropertyName"]` syntax but only if `pl.touk.nussknacker.engine.api.process.ExpressionConfig.dynamicPropertyAccessAllowed` is enabled
+  * all non explicit properties can then be accessed using `record["patternOrAdditionalPropertyName"]` syntax but for now only if `pl.touk.nussknacker.engine.api.process.ExpressionConfig.dynamicPropertyAccessAllowed` is enabled (only possible in deprecated instalations with own `ProcessConfigCreator`)
 
 ##### Sinks
 Pattern properties add additional requirements during scenario authoring for types that should be encoded into JSON Schema object type:
