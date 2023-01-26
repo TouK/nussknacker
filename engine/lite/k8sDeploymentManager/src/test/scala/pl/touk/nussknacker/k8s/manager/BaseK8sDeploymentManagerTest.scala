@@ -82,22 +82,20 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
     extends ExtremelyPatientScalaFutures with Matchers with LazyLogging {
 
     def withRunningScenario(action: => Unit): Unit = {
-      try {
-        manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
-        waitForRunning(version)
+      manager.deploy(version, DeploymentData.empty, scenario, None).futureValue
+      waitForRunning(version)
 
-        try {
-          action
-        } finally {
-          manager.cancel(version.processName, DeploymentData.systemUser).futureValue
-          eventually {
-            manager.findJobStatus(version.processName).futureValue shouldBe None
-          }
-        }
+      try {
+        action
       } catch {
         case NonFatal(ex) =>
           printResourcesDetails()
           throw ex
+      } finally {
+        manager.cancel(version.processName, DeploymentData.systemUser).futureValue
+        eventually {
+          manager.findJobStatus(version.processName).futureValue shouldBe None
+        }
       }
     }
 
@@ -114,6 +112,7 @@ class BaseK8sDeploymentManagerTest extends AnyFunSuite with Matchers with Extrem
       logger.info("pods:\n" + pods.mkString("\n"))
       logger.info("services:\n" + k8s.list[ListResource[Service]]().futureValue.items.mkString("\n"))
       logger.info("deployments:\n" + k8s.list[ListResource[Deployment]]().futureValue.items.mkString("\n"))
+      logger.info("ingresses:\n" + k8s.list[ListResource[Ingress]]().futureValue.items.mkString("\n"))
       logger.info("events:\n" + k8s.list[ListResource[Event]]().futureValue.items.mkString("\n"))
       pods.foreach { p =>
         logger.info(s"Printing logs for pod: ${p.name}")
