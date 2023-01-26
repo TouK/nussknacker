@@ -47,7 +47,7 @@ private[parser] object ParseToSwaggerService {
 }
 
 private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: OpenAPIServicesConfig)
-    extends LazyLogging {
+  extends LazyLogging {
 
   private val swaggerRefSchemas = ParseSwaggerRefSchemas(openapi)
   private val servers = openapi.getServers.asScala.toList
@@ -55,39 +55,26 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
   import ParseToSwaggerService._
   import cats.implicits._
 
-  def apply(
-    serviceName: ServiceName,
-    uriWithParameters: String,
-    method: HttpMethod,
-    endpointDefinition: Operation
-  ): ValidatedNel[String, SwaggerService] = {
+  def apply(serviceName: ServiceName,
+            uriWithParameters: String,
+            method: HttpMethod,
+            endpointDefinition: Operation): ValidatedNel[String, SwaggerService] = {
     logger.debug(s"Generating $serviceName")
     response(endpointDefinition).andThen { response =>
       service(serviceName, uriWithParameters, endpointDefinition, response, method)
     }
   }
 
-  private def service(
-    serviceName: ServiceName,
-    relativeUriWithParameters: String,
-    operation: Operation,
-    response: ApiResponse,
-    method: HttpMethod
-  ): ValidationResult[SwaggerService] =
-    (categories(operation), documentation(operation), resultType(response), prepareParameters(operation), parseSecurities(operation)).mapN {
-      case (serviceCategories, docs, serviceResultType, parameters, parsedSecurities) =>
-          SwaggerService(
-            serviceName,
-            serviceCategories,
-            docs,
-            pathParts = parseUriWithParams(relativeUriWithParameters),
-            parameters = parameters,
-            responseSwaggerType = serviceResultType,
-            method.toString,
-            servers.map(_.getUrl),
-            parsedSecurities
-          )
+  private def service(serviceName: ServiceName,
+                      relativeUriWithParameters: String,
+                      operation: Operation,
+                      response: ApiResponse,
+                      method: HttpMethod): ValidationResult[SwaggerService] =
+    (categories(operation), documentation(operation), resultType(response), prepareParameters(operation), parseSecurities(operation), parseContentType(operation)).mapN {
+      case (serviceCategories, docs, serviceResultType, parameters, parsedSecurities, parsedContentType) =>
+        SwaggerService(serviceName, serviceCategories, docs, pathParts = parseUriWithParams(relativeUriWithParameters), parameters = parameters, responseSwaggerType = serviceResultType, method.toString, servers.map(_.getUrl), parsedSecurities, parsedContentType)
     }
+
   private def parseSecurities(operation: Operation): ValidationResult[List[SwaggerSecurity]] = {
     // security requirements from operation shadows global ones:
     val securityRequirements =
@@ -101,8 +88,16 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
   private def prepareParameters(operation: Operation): ValidationResult[List[SwaggerParameter]] = {
     List(
       parameters(operation),
-      requestParameter(operation.getRequestBody).map(_.toList)
+      requestBodyParameter(operation.getRequestBody).map(_.toList)
     ).sequence.map(_.flatten)
+  }
+
+  private def parseContentType(operation: Operation): ValidationResult[Option[String]] = {
+    Valid(
+      Option(operation.getRequestBody)
+        .flatMap(requestBody => Option(requestBody.getContent))
+        .flatMap(findContentType)
+    )
   }
 
   private def documentation(operation: Operation): ValidationResult[Option[String]] = Valid(
@@ -113,7 +108,7 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
     val paramPlaceholder = "^\\{(.*)\\}$".r
     relativeUriWithParameters.split("/").filterNot(_.isEmpty).toList.map {
       case paramPlaceholder(name) => PathParameterPart(name)
-      case normalPath             => PlainPart(normalPath)
+      case normalPath => PlainPart(normalPath)
     }
   }
 
@@ -123,7 +118,7 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
         None.validNel
       case Some(content) =>
         findMediaType(content).flatMap[Schema[_]](o => Option(o.getSchema)) match {
-          case None     => "No response with application/json or */* media types found".invalidNel
+          case None => "No response with application/json or */* media types found".invalidNel
           case Some(sw) => toSwaggerTyped(sw).map(Option(_))
         }
     }
@@ -138,7 +133,15 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
       .map(_._2)
   }
 
-  private def requestParameter(request: RequestBody): ValidationResult[Option[SwaggerParameter]] = {
+  private def findContentType(content: Content): Option[String] = {
+    val scalaVersion = content.asScala
+    scalaVersion
+      .find(_._1.startsWith("application/json"))
+      .orElse(scalaVersion.find(_._1.contains("*/*")))
+      .map(_._1)
+  }
+
+  private def requestBodyParameter(request: RequestBody): ValidationResult[Option[SwaggerParameter]] = {
     Option(request)
       .flatMap(requestBody => Option(requestBody.getContent))
       .flatMap(findMediaType)

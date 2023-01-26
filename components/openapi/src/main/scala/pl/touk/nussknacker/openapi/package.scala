@@ -41,7 +41,6 @@ package openapi {
 
   case class PathParameterPart(parameterName: String) extends PathPart
 
-  //TODO: content type?
   @JsonCodec final case class SwaggerService(name: ServiceName,
                                              categories: List[String],
                                              documentation: Option[String],
@@ -50,8 +49,8 @@ package openapi {
                                              responseSwaggerType: Option[SwaggerTyped],
                                              method: String,
                                              servers: List[String],
-                                             securities: List[SwaggerSecurity]
-                                            )
+                                             securities: List[SwaggerSecurity],
+                                             requestContentType: Option[String])
 
   case class ServiceName(value: String)
 
