@@ -82,7 +82,7 @@ object JsonToNuStruct {
         case obj: SwaggerObject => extractObject(obj)
         case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
           .headOption.getOrElse(throw JsonToObjectError(json, u, path))
-        case _: SwaggerUnknownFallback => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        case SwaggerAny => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         //should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }

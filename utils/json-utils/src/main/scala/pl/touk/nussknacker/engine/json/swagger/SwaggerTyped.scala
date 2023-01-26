@@ -82,11 +82,7 @@ case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 }
 
 //mapped to Unknown in type system
-sealed trait SwaggerUnknownFallback extends SwaggerTyped
-
-case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
-
-case object SwaggerAny extends SwaggerUnknownFallback
+object SwaggerAny extends SwaggerTyped
 
 object SwaggerTyped {
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
@@ -99,7 +95,7 @@ object SwaggerTyped {
     case _ => Option(schema.get$ref()) match {
       //handle recursive schemas better
       case Some(ref) if usedSchemas.contains(ref) =>
-        SwaggerRecursiveSchema
+        SwaggerAny
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
@@ -168,7 +164,7 @@ object SwaggerTyped {
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
     case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
-    case _: SwaggerUnknownFallback =>
+    case SwaggerAny =>
       Unknown
     case SwaggerNull =>
       TypedNull
