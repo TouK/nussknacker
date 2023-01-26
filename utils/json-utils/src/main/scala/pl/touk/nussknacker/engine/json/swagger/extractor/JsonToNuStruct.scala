@@ -43,7 +43,7 @@ object JsonToNuStruct {
               val (key, value) = keyValue
               key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
             case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesSwaggerTyped =>
+              case add: AdditionalPropertiesEnabled =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
               case _ =>
                 key -> jsonToAny(value)
@@ -82,7 +82,7 @@ object JsonToNuStruct {
         case obj: SwaggerObject => extractObject(obj)
         case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
           .headOption.getOrElse(throw JsonToObjectError(json, u, path))
-        case SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        case _: SwaggerUnknownFallback => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         //should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }

@@ -5,7 +5,7 @@ import cats.data.Validated.Invalid
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{Schema => EveritSchema}
+import org.everit.json.schema.{TrueSchema, Schema => EveritSchema}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
@@ -16,6 +16,7 @@ import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.Expression
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.engine.lite.util.test.KafkaConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
@@ -274,6 +275,22 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
       message shouldBe expected
+    }
+  }
+
+  test("should pass everything under 'any' schema") {
+    val testData = Table(
+      ("config", "result"),
+      (sampleJInt, valid(sampleJInt)),
+      (fromLong(Integer.MAX_VALUE), valid(fromInt(Integer.MAX_VALUE))),
+      (samplePerson, valid(samplePerson))
+    )
+
+    forAll(testData) { (input: Json, expected: Validated[_, RunResult[_]]) =>
+      List(trueSchema, emptySchema).foreach { schema =>
+        val results = runWithValueResults(config(input, schema, schema))
+        results shouldBe expected
+      }
     }
   }
 

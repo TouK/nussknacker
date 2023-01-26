@@ -55,6 +55,7 @@ object BestEffortJsonSchemaEncoder {
   def encodeBasedOnSchema(input: EncodeInput): EncodeOutput = {
     val (value, schema, fieldName) = input
     (schema, value) match {
+      case (schema: EmptySchema, _) => Valid(jsonEncoder.encode(value))
       case (schema: ObjectSchema, map: scala.collection.Map[String@unchecked, _]) => encodeObject(map.toMap, schema)
       case (schema: ObjectSchema, map: java.util.Map[String@unchecked, _]) => encodeObject(map.asScala.toMap, schema)
       case (schema: ArraySchema, value: Iterable[_]) => encodeCollection(value, schema)

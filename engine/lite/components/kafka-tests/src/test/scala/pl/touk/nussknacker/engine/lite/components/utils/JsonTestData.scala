@@ -34,6 +34,9 @@ object JsonTestData {
       |  "additionalProperties": false
       |}""".stripMargin)
 
+  val trueSchema: Schema = JsonSchemaBuilder.parseSchema("true")
+
+  val emptySchema: Schema = JsonSchemaBuilder.parseSchema("{}")
 
   val schemaNull: Schema = NullSchema.INSTANCE
 

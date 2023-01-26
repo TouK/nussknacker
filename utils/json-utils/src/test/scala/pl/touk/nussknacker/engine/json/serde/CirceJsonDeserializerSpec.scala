@@ -257,4 +257,61 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
     ).asJava
   }
 
+  test("handle 'everything allowed' schema in additionalProperties properly") {
+    val emptySchemaInAdditionalProperties =
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {}
+        |}""".stripMargin
+    val implicitAdditionalProperties =
+      """{
+        |  "type": "object"
+        |}""".stripMargin
+    val trueInAdditionalProperties =
+      """{
+        |  "type": "object",
+        |  "additionalProperties": true
+        |}""".stripMargin
+
+    forAll(Table(
+      ("schema"),
+      (emptySchemaInAdditionalProperties),
+      (implicitAdditionalProperties),
+      (trueInAdditionalProperties),
+    )) { schemaStr =>
+      val schema = JsonSchemaBuilder.parseSchema(
+        schemaStr.stripMargin)
+      val result = new CirceJsonDeserializer(schema).deserialize(
+        """{
+          |  "additionalInt": 1234,
+          |  "additionalString": "foo",
+          |  "additionalObject": {"foo": "bar"}
+          |}""".stripMargin)
+
+      result shouldEqual Map(
+        "additionalInt" -> java.math.BigDecimal.valueOf(1234),
+        "additionalString" -> "foo",
+        "additionalObject" -> Map("foo" -> "bar").asJava
+      ).asJava
+    }
+  }
+
+  test("handle empty always true schema") {
+    forAll(Table(
+      ("json", "schema", "expected"),
+      ("{}", "{}", Map.empty.asJava),
+      ("{}", "true", Map.empty.asJava),
+      ("\"foo\"", "{}", "foo"),
+      ("\"foo\"", "true", "foo"),
+      ("{\"foo\": \"bar\"}", "{}", Map("foo" -> "bar").asJava),
+      ("{\"foo\": \"bar\"}", "true", Map("foo" -> "bar").asJava),
+    )) { (json, schemaStr, expected) =>
+      val schema = JsonSchemaBuilder.parseSchema(
+        schemaStr.stripMargin)
+      val deserializer = new CirceJsonDeserializer(schema)
+      val result = deserializer.deserialize(json)
+      result shouldEqual expected
+    }
+  }
+
 }

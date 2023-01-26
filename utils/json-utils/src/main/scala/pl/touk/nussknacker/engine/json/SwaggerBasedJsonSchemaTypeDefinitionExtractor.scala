@@ -1,6 +1,7 @@
 package pl.touk.nussknacker.engine.json
 
-import com.fasterxml.jackson.databind.{JsonNode, ObjectMapper}
+import com.fasterxml.jackson.databind.node.ObjectNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import io.swagger.v3.oas.models.media
 import io.swagger.v3.parser.ObjectMapperFactory
 import org.everit.json.schema._
@@ -14,10 +15,18 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
   private val mapper: ObjectMapper = ObjectMapperFactory.createJson()
 
   def swaggerType(schema: Schema, parentSchema: Option[Schema] = None): SwaggerTyped = {
-    val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(schema.toString)
+    val normalizedSchema = mapTrueSchemaToEmptySchema(schema)
+    val deserializedSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(normalizedSchema.toString)
     val refsFromParent = parentSchema.map(collectSchemaDefs).getOrElse(Map.empty)
-    val refsFromSchema = collectSchemaDefs(schema)
+    val refsFromSchema = collectSchemaDefs(normalizedSchema)
     SwaggerTyped(deserializedSchema, refsFromParent ++ refsFromSchema)
+  }
+
+  private def mapTrueSchemaToEmptySchema(schema: Schema): Schema = {
+    schema match {
+      case _: TrueSchema => EmptySchema.INSTANCE
+      case _ => schema
+    }
   }
 
   // We extract schema definitions that can be used in refs using lowlevel schema extension mechanism.
@@ -30,7 +39,7 @@ object SwaggerBasedJsonSchemaTypeDefinitionExtractor {
       case (extKey, extNode: util.Map[String@unchecked, _]) =>
         extNode.asScala.flatMap {
           case (key: String, node: util.Map[String@unchecked, _]) =>
-            val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[JsonNode](node))
+            val nodeSchema: media.Schema[_] = OpenAPISchemaParser.parseSchema(mapper.valueToTree[ObjectNode](node))
             if (extKey == "$defs") {
               Map[String, media.Schema[_]](
                 s"#/$extKey/$key" -> nodeSchema,
