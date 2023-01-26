@@ -165,6 +165,10 @@ class HttpService {
     return api.get<AppBuildInfo>("/app/buildInfo")
   }
 
+  fetchCategoriesWithProcessingType() {
+    return api.get<Map<string, string>>("/app/config/categoriesWithProcessingType")
+  }
+
   fetchProcessDefinitionData(processingType: string, isSubprocess: boolean) {
     const promise = api.get<ProcessDefinitionData>(`/processDefinitionData/${processingType}?isSubprocess=${isSubprocess}`)
       .then(response => {

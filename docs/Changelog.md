@@ -3,6 +3,7 @@
 
 1.8.0 (Not released yet)
 ------------------------
+* [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.
 * [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled). 
 * [#3819](https://github.com/TouK/nussknacker/pull/3819) - Handle JSON Schema refs in sinks
 * [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/subprocessDetails` in favor of `/processDetails?isSubprocess=true`.

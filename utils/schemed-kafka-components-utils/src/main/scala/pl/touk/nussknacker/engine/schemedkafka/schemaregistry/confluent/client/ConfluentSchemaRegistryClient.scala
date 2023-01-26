@@ -66,7 +66,6 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
     SchemaWithMetadata(AvroUtils.adjustParsedSchema(rawSchema, config), id)
   }
 
-  override def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId] = getLatestFreshSchema(topic, isKey).map(_.id)
 }
 
 object ConfluentSchemaRegistryClient {

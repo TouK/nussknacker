@@ -6,7 +6,6 @@ import akka.http.scaladsl.server._
 import akka.http.scaladsl.server.directives.SecurityDirectives
 import com.typesafe.config.{Config, ConfigRenderOptions}
 import com.typesafe.scalalogging.LazyLogging
-import db.util.DBIOActionInstances.DB
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import io.circe.syntax._
 import net.ceedubs.ficus.Ficus._
@@ -19,7 +18,7 @@ import pl.touk.nussknacker.restmodel.processdetails.BaseProcessDetails
 import pl.touk.nussknacker.ui.process.processingtypedata.{ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository
 import pl.touk.nussknacker.ui.process.repository.FetchingProcessRepository.FetchProcessesDetailsQuery
-import pl.touk.nussknacker.ui.process.{ProcessObjectsFinder, ProcessService}
+import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessService}
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.validation.ProcessValidation
 
@@ -32,7 +31,8 @@ class AppResources(config: Config,
                    processRepository: FetchingProcessRepository[Future],
                    processValidation: ProcessValidation,
                    processService: ProcessService,
-                   exposeConfig: Boolean
+                   exposeConfig: Boolean,
+                   processCategoryService: ProcessCategoryService
                   )(implicit ec: ExecutionContext)
   extends Directives with FailFastCirceSupport with LazyLogging with RouteWithUser with RouteWithoutUser with SecurityDirectives {
 
@@ -96,6 +96,12 @@ class AppResources(config: Config,
                 createHealthCheckHttpResponse(ERROR, Some("Scenarios with validation errors"), Some(processes.toSet))
               }
             }
+          }
+        }
+      } ~ path("config" / "categoriesWithProcessingType") {
+        get {
+          complete {
+            processCategoryService.getUserCategoriesWithType(user)
           }
         }
       } ~ path("config") {

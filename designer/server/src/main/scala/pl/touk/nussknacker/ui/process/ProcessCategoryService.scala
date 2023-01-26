@@ -8,7 +8,7 @@ import pl.touk.nussknacker.ui.security.api.LoggedUser
 
 import scala.jdk.CollectionConverters._
 
-object  ProcessCategoryService{
+object ProcessCategoryService{
   //TODO: Replace it by VO
   type Category = String
 }
@@ -17,6 +17,7 @@ trait ProcessCategoryService {
   //It's temporary solution - category will be separated from process type
   def getTypeForCategory(category: Category) : Option[ProcessingType]
   def getAllCategories : List[Category]
+  def getUserCategoriesWithType(user: LoggedUser): Map[Category, ProcessingType]
   def getUserCategories(user: LoggedUser) : List[Category]
   def getProcessingTypeCategories(processingType: ProcessingType) : List[Category]
 }
@@ -41,6 +42,10 @@ class ConfigProcessCategoryService(config: Config) extends ProcessCategoryServic
   override def getUserCategories(user: LoggedUser): List[Category] =
     if (user.isAdmin) getAllCategories else getAllCategories.filter(user.can(_, Permission.Read))
 
+  override def getUserCategoriesWithType(user: LoggedUser): Map[Category, ProcessingType] =
+    if (user.isAdmin) categoriesToTypesMap
+    else categoriesToTypesMap.filter { case (category, _) => user.can(category, Permission.Read) }
+
   override def getProcessingTypeCategories(processingType: ProcessingType): List[Category] =
-    categoriesToTypesMap.filter{case (_, procType) => procType.equals(processingType)}.keys.toList.sorted
+    categoriesToTypesMap.filter { case (_, procType) => procType.equals(processingType) }.keys.toList.sorted
 }

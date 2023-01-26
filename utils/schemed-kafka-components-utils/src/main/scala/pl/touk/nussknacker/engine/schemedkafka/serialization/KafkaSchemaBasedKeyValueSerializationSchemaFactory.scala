@@ -2,14 +2,16 @@ package pl.touk.nussknacker.engine.schemedkafka.serialization
 
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.apache.kafka.common.serialization.Serializer
+import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
+import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.universal.ConfluentUniversalKafkaSerde.ValueSchemaIdHeaderName
-import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
-import pl.touk.nussknacker.engine.kafka.{ConsumerRecordUtils, KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang
+import java.nio.charset.StandardCharsets
 
 /**
   * Abstract base implementation of [[pl.touk.nussknacker.engine.kafka.serialization.KafkaSerializationSchemaFactory]]
@@ -26,15 +28,14 @@ abstract class KafkaSchemaBasedValueSerializationSchemaFactory extends KafkaSche
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt, kafkaConfig)
-      private lazy val headersMap = schemaOpt.flatMap(_.schemaIdOpt).map(id => Map(ValueSchemaIdHeaderName-> id.toString)).getOrElse(Map.empty)
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
-        KafkaProducerHelper.createRecord(topic,
-          keySerializer.serialize(topic, element.key),
-          valueSerializer.serialize(topic, element.value),
-          timestamp,
-          ConsumerRecordUtils.toHeaders(headersMap)
-        )
+        val key = keySerializer.serialize(topic, element.key)
+        // we have to create headers for each record because it can be enriched (mutated) by valueSerializer
+        val headers = new RecordHeaders()
+        schemaOpt.flatMap(_.schemaIdOpt).foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
+        val value = valueSerializer.serialize(topic, headers, element.value)
+        KafkaProducerHelper.createRecord(topic, key, value, timestamp, headers)
       }
     }
   }
@@ -65,12 +66,14 @@ abstract class KafkaSchemaBasedKeyValueSerializationSchemaFactory extends KafkaS
     new serialization.KafkaSerializationSchema[KeyedValue[AnyRef, AnyRef]] {
       private lazy val keySerializer = createKeySerializer(kafkaConfig)
       private lazy val valueSerializer = createValueSerializer(schemaOpt, kafkaConfig)
-      private lazy val headersMap = schemaOpt.flatMap(_.schemaIdOpt).map(id => Map(ValueSchemaIdHeaderName-> id.toString)).getOrElse(Map.empty)
 
       override def serialize(element: KeyedValue[AnyRef, AnyRef], timestamp: lang.Long): ProducerRecord[Array[Byte], Array[Byte]] = {
         val key = keySerializer.serialize(topic, extractKey(element.value))
-        val value = valueSerializer.serialize(topic, extractValue(element.value))
-        KafkaProducerHelper.createRecord(topic, key, value, timestamp, ConsumerRecordUtils.toHeaders(headersMap))
+        // we have to create headers for each record because it can be enriched (mutated) by valueSerializer
+        val headers = new RecordHeaders()
+        schemaOpt.flatMap(_.schemaIdOpt).foreach(id => headers.add(ValueSchemaIdHeaderName, id.toString.getBytes(StandardCharsets.UTF_8)))
+        val value = valueSerializer.serialize(topic, headers, extractValue(element.value))
+        KafkaProducerHelper.createRecord(topic, key, value, timestamp, headers)
       }
     }
   }

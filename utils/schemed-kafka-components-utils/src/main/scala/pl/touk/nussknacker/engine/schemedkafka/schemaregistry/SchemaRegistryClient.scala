@@ -17,8 +17,6 @@ trait SchemaRegistryClient extends Serializable {
     */
   protected def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata]
 
-  def getLatestSchemaId(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaId]
-
   def getFreshSchema(topic: String, version: Option[Int], isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     version
       .map(ver => getBySubjectAndVersion(topic, ver, isKey))

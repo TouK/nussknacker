@@ -155,7 +155,16 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
     val processAuthorizer = new AuthorizeProcess(processRepository)
-    val appResources = new AppResources(config, reload, modelData, processRepository, processValidation, processService, exposeConfig = featureTogglesConfig.enableConfigEndpoint)
+    val appResources = new AppResources(
+      config = config,
+      processingTypeDataReload = reload,
+      modelData = modelData,
+      processRepository = processRepository,
+      processValidation = processValidation,
+      processService = processService,
+      exposeConfig = featureTogglesConfig.enableConfigEndpoint,
+      processCategoryService = processCategoryService
+    )
 
     val countsReporter = featureTogglesConfig.counts.flatMap(prepareCountsReporter(environment, _))
 
