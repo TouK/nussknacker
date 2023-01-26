@@ -406,23 +406,6 @@ jobs:
           c=$(docker ps -q)
           [[ $c ]] && docker kill $c || echo "No container run"
       - uses: actions/checkout@v3
-      - name: Cache ivy packages
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.ivy2/cache
-            ~/.cache/coursier
-            ~/.sbt
-          key: sbt-cache-${{ hashFiles('**/*.sbt') }}
-          restore-keys: sbt
-      - name: Cache npm
-        id: cache-npm
-        uses: actions/cache@v3
-        with:
-          path: |
-            **/node_modules
-            ~/.cache/Cypress
-          key: ${{ hashFiles('designer/client/package-lock.json', 'designer/client/.nvmrc', 'designer/submodules/package-lock.json', 'designer/submodules/.nvmrc') }}
       - name: Get Node.js version
         id: nvm
         run: echo "NODE_VERSION=$(cat designer/client/.nvmrc)" >> $GITHUB_OUTPUT
@@ -435,7 +418,6 @@ jobs:
         with:
           jvm: temurin:1.11.0.17
       - name: Download node modules
-        if: steps.cache-npm.outputs.cache-hit != 'true'
         run: |
           npm ci --no-audit --prefix designer/client
           npm ci --no-audit --prefix designer/submodules
