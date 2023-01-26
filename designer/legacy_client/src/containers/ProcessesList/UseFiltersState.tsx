@@ -2,19 +2,15 @@ import {useCallback, useMemo, useState} from "react"
 import {FiltersState} from "../TableFilters"
 import {Queries} from "./types"
 
-interface UseFiltersState {
-  (defaultQuery: Queries): {
-    search: string,
-    setFilters: (value: Partial<FiltersState>) => void,
-    filters: Omit<FiltersState & Queries, "search">,
-  },
-}
-
-export const useFiltersState: UseFiltersState = (defaultQuery) => {
+export const useFiltersState = (forcedQuery: Queries): {
+  search: string,
+  setFilters: (value: Partial<FiltersState>) => void,
+  filters: Omit<FiltersState & Queries, "search">,
+} => {
   const [_filters, _setFilters] = useState<FiltersState & Queries>({})
-  const setFilters: (value: Partial<FiltersState>) => void = useCallback(value => {
-    _setFilters({...value, ...defaultQuery})
-  }, [_setFilters, defaultQuery])
+  const setFilters = useCallback(value => {
+    _setFilters({...value, ...forcedQuery})
+  }, [forcedQuery])
 
   const [search, filters] = useMemo(() => {
     if (_filters) {

@@ -7,10 +7,12 @@ type Props = {
   onChange: (value: FiltersState) => void,
 }
 
-function SearchQuery(props: PropsWithChildren<Props>): JSX.Element {
+export function SearchQuery(props: PropsWithChildren<Props>): JSX.Element {
   const {onChange} = props
   const [query, setQuery] = useSearchQuery<FiltersState>()
-  useEffect(() => {onChange(query)}, [query, onChange])
+  useEffect(() => {
+    onChange(query)
+  }, [query, onChange])
   return (
     <TableFilters
       filters={props.filters}
@@ -19,5 +21,3 @@ function SearchQuery(props: PropsWithChildren<Props>): JSX.Element {
     />
   )
 }
-
-export const SearchQueryComponent = SearchQuery

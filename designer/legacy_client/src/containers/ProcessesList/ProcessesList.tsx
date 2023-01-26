@@ -5,7 +5,7 @@ import {useFetch} from "../hooks/useFetch"
 import styles from "../processesTable.styl"
 import {ProcessesTable} from "../processesTable/ProcessesTable"
 import {ProcessTableTools} from "../ProcessTableTools"
-import {SearchQueryComponent} from "../SearchQuery"
+import {SearchQuery} from "../SearchQuery"
 import {BaseProcessesOwnProps} from "./types"
 import {useFilteredProcesses} from "./UseFilteredProcesses"
 import {useFiltersState} from "./UseFiltersState"
@@ -42,7 +42,7 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
   return (
     <>
       <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
-        <SearchQueryComponent filters={searchItems} onChange={setFilters}/>
+        <SearchQuery filters={searchItems} onChange={setFilters}/>
       </ProcessTableTools>
 
       {children}

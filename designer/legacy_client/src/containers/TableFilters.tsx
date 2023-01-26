@@ -1,12 +1,11 @@
 import {isEqual} from "lodash"
-import React, {useEffect} from "react"
+import React, {useEffect, useState} from "react"
 import {CategoriesFilter} from "../components/table/CategoriesFilter"
 import {StatusFilter} from "../components/table/StatusFilter"
 import SearchFilter from "../components/table/SearchFilter"
 import {SubprocessFilter} from "../components/table/SubprocessFilter"
 import {ensureArray} from "../common/arrayUtils"
 import {usePrevious} from "./hooks/usePrevious"
-import {useStateInSync} from "./hooks/useStateInSync"
 
 export enum SearchItem {
   categories = "categories",
@@ -33,7 +32,7 @@ export function TableFilters(props: Props): JSX.Element {
   const {filters = []} = props
   const {value, onChange} = props
 
-  const [state, setState] = useStateInSync<FiltersState>(value)
+  const [state, setState] = useState<FiltersState>(() => value)
   const prev = usePrevious(state)
 
   useEffect(() => {
