@@ -48,7 +48,7 @@ val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val addDevArtifacts = propOrEnv("addDevArtifacts", "false").toBoolean
+val prepareManagersArtifacts = propOrEnv("prepareManagersArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -439,20 +439,22 @@ devModelArtifacts := {
   )
 }
 
+lazy val managerArtifacts = taskKey[List[(File, String)]]("manager artifacts")
+managerArtifacts := {
+  List(
+    (flinkDeploymentManager / assembly).value -> "managers/nussknacker-flink-manager.jar",
+    (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
+    (liteK8sDeploymentManager / assembly).value -> "managers/lite-k8s-manager.jar",
+    (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar"
+  )
+}
+
 lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
   .settings(commonSettings)
   .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
     Universal / packageName := ("nussknacker" + "-" + version.value),
-    Universal / mappings ++= (Seq(
-      (flinkDeploymentManager / assembly).value -> "managers/nussknacker-flink-manager.jar",
-      (requestResponseRuntime / assembly).value -> "managers/nussknacker-request-response-manager.jar",
-      (liteK8sDeploymentManager / assembly).value -> "managers/lite-k8s-manager.jar",
-      (liteEmbeddedDeploymentManager / assembly).value -> "managers/lite-embedded-manager.jar")
-      ++ (if (addDevArtifacts) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar") else Nil)
-      ++ (root / componentArtifacts).value
-      ++ (if (addDevArtifacts) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked)
-      ),
+    Universal / mappings ++= (root / managerArtifacts).value ++ (root / componentArtifacts).value,
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
       //we don't want docker-* stuff in .tgz
@@ -1596,7 +1598,8 @@ lazy val root = (project in file("."))
 lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
-  val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
+  val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
+    (if (prepareManagersArtifacts) managerArtifacts.value else Nil)
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
 }
