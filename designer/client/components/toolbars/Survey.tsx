@@ -15,13 +15,12 @@ function Survey(): JSX.Element {
   const {open} = useWindows()
   const onOpen = useCallback(
     () => survey && open({
-      title: "Survey",
       kind: WindowKind.survey,
       meta: survey.link,
       isResizable: true,
       shouldCloseOnEsc: false,
-      width: 500,
-      height: 500,
+      width: 750,
+      height: 900,
     }),
     [open, survey]
   )
@@ -36,8 +35,8 @@ function Survey(): JSX.Element {
         <Stack p={1} spacing={.5}>
           <Typography variant="body2">{survey.text}</Typography>
           <Stack direction="row" spacing={1}>
-            <Button size="small" variant="text" onClick={onOpen}>{t("panels.survey.ok", "ok, let's go!")}</Button>
-            <Button size="small" variant="text" onClick={hideSurvey}>{t("panels.survey.no", "no, thanks")}</Button>
+            <Button size="small" variant="text" onClick={onOpen}>{t("panels.survey.ok", "let's go!")}</Button>
+            <Button size="small" variant="text" onClick={hideSurvey}>{t("panels.survey.no", "close")}</Button>
           </Stack>
         </Stack>
       </DragHandle>

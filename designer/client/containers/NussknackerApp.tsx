@@ -21,6 +21,7 @@ import loadable from "@loadable/component"
 import LoaderSpinner from "../components/Spinner"
 import * as Paths from "./paths"
 import {NotFound} from "./errors/NotFound"
+import {EnvironmentTag} from "./EnvironmentTag"
 
 type OwnProps = UnknownRecord
 type State = UnknownRecord
@@ -73,14 +74,6 @@ export class NussknackerApp extends React.Component<Props, State> {
     }
   }
 
-  environmentAlert(params) {
-    if (params && params.content) {
-      return (
-        <span className={`indicator ${params.cssClass}`} title={params.content}>{params.content}</span>
-      )
-    }
-  }
-
   render() {
     const {resolved, tabs, featuresSettings} = this.props
     const rootTab = tabs.find(e => e.id === "scenarios")
@@ -105,7 +98,7 @@ export class NussknackerApp extends React.Component<Props, State> {
           <MenuBar
             appPath={Paths.RootPath}
             leftElement={this.renderTopLeftButton()}
-            rightElement={this.environmentAlert(featuresSettings.environmentAlert)}
+            rightElement={<EnvironmentTag/>}
           />
           <main>
             <VersionInfo/>

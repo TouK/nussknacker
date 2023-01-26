@@ -17,6 +17,7 @@ To see the biggest differences please consult the [changelog](Changelog.md).
   * `TestData.newLineSeparated` helper was removed. Scenario test records have to be created explicitly. Each scenario test record has assigned source
   * `DeploymentManager#test` takes `ScenarioTestData` instead of `TestData`
   * Designer configuration `testDataSettings.testDataMaxBytes` renamed to `testDataMaxLength`
+* [#3916](https://github.com/TouK/nussknacker/pull/3916) Designer configuration `environmentAlert.cssClass` renamed to `environmentAlert.color`
 * [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks: 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4
 * [#3929](https://github.com/TouK/nussknacker/pull/3929) From now, `SchemaId` value class is used in every place 
   where schema id was represented as an Int. For conversion between `SchemaId` and `Int` use `SchemaId.fromInt` and `SchemaId.asInt`.

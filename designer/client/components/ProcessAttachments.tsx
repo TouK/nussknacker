@@ -2,16 +2,16 @@ import _ from "lodash"
 import React from "react"
 import Dropzone from "react-dropzone"
 import {WithTranslation, withTranslation} from "react-i18next"
-import {connect, useSelector} from "react-redux"
-import {mapDispatchWithEspActions} from "../actions/ActionsUtils"
+import {connect} from "react-redux"
 import InlinedSvgs from "../assets/icons/InlinedSvgs"
 import {UnknownRecord} from "../types/common"
 import {NkButton} from "./NkButton"
 import HttpService from "../http/HttpService"
-import {RootState} from "../reducers/index"
+import {RootState} from "../reducers"
 import Date from "./common/Date"
 import {FocusOutline, InputWithFocus} from "./withFocus"
 import {getCapabilities} from "../reducers/selectors/other"
+import {addAttachment} from "../actions/nk"
 
 type State = { pendingRequest: boolean }
 
@@ -28,7 +28,7 @@ export class ProcessAttachments extends React.Component<Props, State> {
 
   addAttachment = (files: File[]) => {
     this.setState({pendingRequest: true})
-    Promise.all(files.map((file)=> this.props.actions.addAttachment(this.props.processId, this.props.processVersionId, file))).then(() => {
+    Promise.all(files.map((file) => this.props.addAttachment(this.props.processId, this.props.processVersionId, file))).then(() => {
       this.setState(this.initState)
     })
   }
@@ -59,21 +59,21 @@ export class ProcessAttachments extends React.Component<Props, State> {
         </ul>
         {
           this.props.capabilities.write ?
-            <FocusOutline className="add-attachments">
-              <Dropzone onDrop={this.addAttachment}>
-                {({getRootProps, getInputProps}) => (
-                  <FocusOutline className="attachments-container" {...getRootProps()}>
-                    <FocusOutline
-                      className={"attachment-drop-zone attachment-button"}
-                      dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
-                    />
-                    <div className="attachment-button-text">
-                      <span>{t("attachments.buttonText", "drop or choose a file")}</span>
-                    </div>
-                    <InputWithFocus {...getInputProps()}/>
-                  </FocusOutline>
-                )}
-              </Dropzone>
+              <FocusOutline className="add-attachments">
+                <Dropzone onDrop={this.addAttachment}>
+                  {({getRootProps, getInputProps}) => (
+                    <FocusOutline className="attachments-container" {...getRootProps()}>
+                      <FocusOutline
+                        className={"attachment-drop-zone attachment-button"}
+                        dangerouslySetInnerHTML={{__html: InlinedSvgs.buttonUpload_1}}
+                      />
+                      <div className="attachment-button-text">
+                        <span>{t("attachments.buttonText", "drop or choose a file")}</span>
+                      </div>
+                      <InputWithFocus {...getInputProps()}/>
+                    </FocusOutline>
+                  )}
+                </Dropzone>
             </FocusOutline> : null
         }
       </div>
@@ -90,6 +90,8 @@ function mapState(state: RootState) {
   }
 }
 
-type Props = OwnProps & ReturnType<typeof mapDispatchWithEspActions> & ReturnType<typeof mapState>
+const mapDispatchWithEspActions = {addAttachment}
+
+type Props = OwnProps & typeof mapDispatchWithEspActions & ReturnType<typeof mapState>
 
 export default connect(mapState, mapDispatchWithEspActions)(withTranslation()(ProcessAttachments))
