@@ -54,7 +54,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
         //here we use id to avoid sanitization problems
         selector = LabelSelector(LabelSelector.IsEqualRequirement(K8sDeploymentManager.scenarioIdLabel, "1")),
         progressDeadlineSeconds = None,
-        minReadySeconds = 10,
+        minReadySeconds = 0,
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
             name = "scenario-1-x",
@@ -79,8 +79,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),
@@ -168,8 +169,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"))),
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 resources = Some(
                   skuber.Resource.Requirements(
                     limits = Map("cpu" -> Quantity("20m"), "memory" -> Quantity("256Mi")),
@@ -225,7 +227,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
         //here we use id to avoid sanitization problems
         selector = LabelSelector(LabelSelector.IsEqualRequirement(K8sDeploymentManager.scenarioIdLabel, "1")),
         progressDeadlineSeconds = None,
-        minReadySeconds = 10,
+        minReadySeconds = 0,
         template = Pod.Template.Spec(
           metadata = ObjectMeta(
             name = "scenario-1-x",
@@ -251,8 +253,9 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60))),
-                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive")))
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
+                livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),
               volumes = List(
                 Volume("common-conf", Volume.ConfigMapVolumeSource(configMapId)),

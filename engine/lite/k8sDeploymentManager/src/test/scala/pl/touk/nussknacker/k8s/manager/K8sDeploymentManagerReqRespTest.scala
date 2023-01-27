@@ -5,7 +5,9 @@ import com.typesafe.config.{Config, ConfigFactory}
 import com.typesafe.scalalogging.LazyLogging
 import io.circe.parser
 import org.scalatest.OptionValues
+import org.scalatest.concurrent.PatienceConfiguration
 import org.scalatest.tags.Network
+import org.scalatest.time.{Seconds, Span}
 import pl.touk.nussknacker.engine.api.ProcessVersion
 import pl.touk.nussknacker.engine.api.component.ComponentProvider
 import pl.touk.nussknacker.engine.api.deployment.simple.SimpleStateStatus
@@ -55,7 +57,8 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
         val pingMessage = s"""{"ping":"$pingContent"}"""
         val instanceIds = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
-          val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+          val response = request.body(pingMessage).send().body.rightValue
+          val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
           jsonResponse.hcursor.downField("instanceId").as[String].rightValue
         }.toSet
@@ -77,13 +80,16 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
       val request = basicRequest.post(uri"http://localhost".port(8081).path(givenScenarioName))
-      val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+      val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+        request.body(pingMessage).send().body.rightValue
+      }
+      val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
   }
 
   test("deployment of secured req-resp") {
-    val givenScenarioName = "reqresp-ingress"
+    val givenScenarioName = "reqresp-secured"
     val config = ConfigFactory.empty()
       .withValue("ingress.enabled", fromAnyRef(true))
       .withValue("configExecutionOverrides.request-response.security.basicAuth.user", fromAnyRef("publisher"))
@@ -96,7 +102,10 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
       val pingContent = """Nussknacker!"""
       val pingMessage = s"""{"ping":"$pingContent"}"""
       val request = basicRequest.auth.basic("publisher", "rrPassword").post(uri"http://localhost".port(8081).path(givenScenarioName))
-      val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+      val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+        request.body(pingMessage).send().body.rightValue
+      }
+      val jsonResponse = parser.parse(response).rightValue
       jsonResponse.hcursor.downField("pong").as[String].rightValue shouldEqual pingContent
     }
   }
@@ -105,7 +114,7 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
     val givenScenarioName = "reqresp-redeploy"
     val firstVersion = 1
     val f = createReqRespFixture(givenScenarioName, firstVersion,
-      extraDeployConfig = ConfigFactory.empty().withValue("scalingConfig.fixedReplicasCount", fromAnyRef(1)))
+      extraDeployConfig = ConfigFactory.empty().withValue("scalingConfig.fixedReplicasCount", fromAnyRef(2)))
 
     f.withRunningScenario {
       k8sTestUtils.withForwardedProxyPod(s"http://$givenScenarioName:$givenServicePort") { proxyLocalPort =>
@@ -114,7 +123,10 @@ class K8sDeploymentManagerReqRespTest extends BaseK8sDeploymentManagerTest with 
 
         def checkVersions() = (1 to 10).map { _ =>
           val request = basicRequest.post(uri"http://localhost".port(proxyLocalPort))
-          val jsonResponse = parser.parse(request.body(pingMessage).send().body.rightValue).rightValue
+          val response = eventually(PatienceConfiguration.Timeout(Span(10, Seconds))) { // nginx returns 503 even if service is ready
+            request.body(pingMessage).send().body.rightValue
+          }
+          val jsonResponse = parser.parse(response).rightValue
           jsonResponse.hcursor.downField("version").as[Int].rightValue
         }.toSet
 
