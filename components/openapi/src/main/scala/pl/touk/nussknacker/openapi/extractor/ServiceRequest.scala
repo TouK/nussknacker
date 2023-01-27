@@ -68,7 +68,7 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
       case e@SingleBodyParameter(sw@SwaggerObject(_, _)) => safeParam(e.name)
       case e@SingleBodyParameter(sw@_) => primitiveBodyParam(e.name)
     }.flatten match {
-      case None => requestWithContentType
+      case None => request
       case Some(body) =>
         requestWithContentType.body(encoder.encode(body).noSpaces)
     }).response(asJson[Option[Json]])
