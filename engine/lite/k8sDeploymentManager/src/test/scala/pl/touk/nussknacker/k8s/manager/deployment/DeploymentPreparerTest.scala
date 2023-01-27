@@ -79,7 +79,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),
@@ -169,7 +169,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 resources = Some(
@@ -253,7 +253,7 @@ class DeploymentPreparerTest extends AnyFunSuite {
                   Volume.Mount(name = "runtime-conf", mountPath = "/runtime-config")
                 ),
                 // used standard AkkaManagement see HealthCheckServerRunner for details
-                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
+                startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = 5)),
                 readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5)),
                 livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = 5))
               )),

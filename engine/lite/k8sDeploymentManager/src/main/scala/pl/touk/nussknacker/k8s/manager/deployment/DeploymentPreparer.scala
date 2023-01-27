@@ -97,7 +97,7 @@ class DeploymentPreparer(config: K8sDeploymentManagerConfig) extends LazyLogging
         Volume.Mount(name = "runtime-conf", mountPath = RuntimeConfigMountPath),
       ),
       // used standard AkkaManagement see HealthCheckServerRunner for details
-      startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = defaultTimeoutSeconds)),
+      startupProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(1), failureThreshold = Some(60), timeoutSeconds = defaultTimeoutSeconds)),
       readinessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/ready"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = defaultTimeoutSeconds)),
       livenessProbe = Some(Probe(new HTTPGetAction(Left(8080), path = "/alive"), periodSeconds = Some(5), failureThreshold = Some(3), timeoutSeconds = defaultTimeoutSeconds))
     )
