@@ -1592,11 +1592,16 @@ lazy val root = (project in file("."))
     )
   )
 
-lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
-prepareDev := {
+lazy val copyDevArtifacts = taskKey[Unit]("copy dev artifacts")
+copyDevArtifacts := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
+}
+
+lazy val prepareDev = taskKey[Unit]("Prepare components and model for running from IDE")
+prepareDev := {
+  (root / copyDevArtifacts).value
   (designer / copyClientDist).value
 }
 
