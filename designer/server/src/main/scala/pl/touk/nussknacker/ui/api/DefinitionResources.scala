@@ -5,6 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
+import pl.touk.nussknacker.security.Permission.Read
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
@@ -34,7 +35,11 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
     } ~ path("processDefinitionData" / "services") {
       get {
         complete {
-          modelDataProvider.mapValues(_.processDefinition.services.mapValuesNow(UIProcessObjectsFactory.createUIObjectDefinition(_, processCategoryService))).all
+          modelDataProvider.mapValues(
+            _.processDefinition.services.filter {
+              case (_, definition) => definition.categories.forall(_.exists(user.can(_, Read)))
+            }.mapValuesNow(UIProcessObjectsFactory.createUIObjectDefinition(_, processCategoryService))
+          ).all
         }
       }
     // TODO: Now we can't have processingType = componentIds or services - we should redesign our API (probably fetch componentIds and services only for given processingType)
