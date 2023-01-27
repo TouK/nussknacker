@@ -5,7 +5,7 @@ import cats.data.Validated.Invalid
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{TrueSchema, Schema => EveritSchema}
+import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
