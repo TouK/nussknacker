@@ -7,7 +7,7 @@ let version
 if (process.env.NUSSKNACKER_VERSION) {
   version = process.env.NUSSKNACKER_VERSION
 } else {
-  const [, value] = fs.readFileSync(path.join(__dirname, "../../version.sbt")).toString().split(":=")
+  const [, value] = fs.readFileSync(path.join(__dirname, "../../../../version.sbt")).toString().split(":=")
   const GIT_BRANCH = childProcess.execSync("git rev-parse --abbrev-ref HEAD").toString().trim()
   const GIT_HASH = childProcess.execSync("git log -1 --format=%H").toString().trim()
   const GIT_DATE = childProcess.execSync("git log -1 --format=%cs").toString().trim()
