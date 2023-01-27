@@ -9,7 +9,7 @@ import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
 import sttp.client._
 import sttp.client.circe._
 import sttp.model.Uri.PathSegment
-import sttp.model.{Header, Method, Uri}
+import sttp.model.{Header, MediaType, Method, Uri}
 
 import java.net.URL
 
@@ -59,19 +59,25 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
       .method(Method(swaggerService.method), uri)
       .headers(headers: _*)
 
+    val requestWithContentType = swaggerService.requestContentType match {
+      case Some(value) => request.contentType(value)
+      case None => request
+    }
+
     (swaggerService.parameters.collectFirst {
-      case e@SingleBodyParameter(sw@SwaggerObject(_,_)) => safeParam(e.name)
+      case e@SingleBodyParameter(sw@SwaggerObject(_, _)) => safeParam(e.name)
       case e@SingleBodyParameter(sw@_) => primitiveBodyParam(e.name)
     }.flatten match {
       case None => request
       case Some(body) =>
-        request.body(encoder.encode(body).noSpaces)
+        requestWithContentType.body(encoder.encode(body).noSpaces)
     }).response(asJson[Option[Json]])
 
   }
 
   //flatMap is for handling null values in the map
   private def safeParam(name: String): Option[Any] = inputParams.get(name).flatMap(Option(_))
+
   //primitive body params are wrapped twice
   private def primitiveBodyParam(name: String): Option[Any] = inputParams.get(name)
     .map(_.asInstanceOf[Map[String, Any]].get(name))

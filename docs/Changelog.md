@@ -14,6 +14,7 @@
 * [#3853](https://github.com/TouK/nussknacker/pull/3853) Support of patternProperties in sink with JSON Schema
 * [#3916](https://github.com/TouK/nussknacker/pull/3916) `environmentAlert.cssClass` setting renamed to `environmentAlert.color`
 * [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4 
+* [#3958](https://github.com/TouK/nussknacker/pull/3958) OpenAPI: specify Content-Type header based on schema 
 
 
 1.7.0 (19 Dec 2022)
