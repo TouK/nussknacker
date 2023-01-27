@@ -15,10 +15,12 @@ paths:
 components:
   schemas:
     Item:
+      type: object
       properties:
         field:
           type: string
     WithArray:
+      type: object
       properties:
         itemsWithType:
           items:

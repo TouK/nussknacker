@@ -289,6 +289,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
   test("typed schema should produce same typingResult as typed swagger for SwaggerDateTime") {
     val schema = JsonSchemaBuilder.parseSchema(
       """{
+        |   "type": "object",
         |   "properties":{
         |      "time":{
         |         "type":"string",
@@ -306,23 +307,6 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
       Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))
 
-  }
-
-  test("should support schema without type") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
-        |   "properties":{
-        |      "id":{
-        |         "type":"string"
-        |      }
-        |   }
-        |}""".stripMargin)
-
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
-
-    val results = List("id" -> Typed.apply[String])
-
-    result shouldBe TypedObjectTypingResult.apply(results)
   }
 
   test("should support union - constructed with 'type' array") {
