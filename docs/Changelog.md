@@ -52,6 +52,7 @@
 * [#3754](https://github.com/TouK/nussknacker/pull/3754) Fix for migrating scenarios not existing on target environment [#3700](https://github.com/TouK/nussknacker/issues/3700)
   * Will work after upgrading NU installations on both environments to version containing the fixup.
   * In conversation between versions 1.6 - 1.7 (and reversed) only migration of scenarios that exists on both envs will work. 
+* [#3958](https://github.com/TouK/nussknacker/pull/3958) OpenAPI: specify Content-Type header based on schema
   
 1.6.1 (8 Nov 2022)
 ------------------------

@@ -20,6 +20,7 @@ import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
 import sttp.client.testing.SttpBackendStub
 import sttp.client.{Response, SttpBackend}
+import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
 
 import java.net.URL
 import java.nio.charset.StandardCharsets
@@ -44,7 +45,13 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   }
 
   val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
-    case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+    case request =>
+      request.headers match {
+        case headers if headers.exists(_.name == HeaderNames.ContentType)
+          && !headers.contains(Header(HeaderNames.ContentType, MediaType.ApplicationJson.toString())) =>
+          Response("Unsupported media type", StatusCode.UnsupportedMediaType)
+        case _ => Response.ok((s"""{"name": "Robert Wright", "id": 10, "category": "GOLD"}"""))
+      }
   }
 
   it should "should enrich scenario with data" in withSwagger(stubbedBackend) { testScenarioRunner =>
@@ -60,7 +67,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   }
 
 
-  it should "call enricher with primitive request body" in withPrimitiveRequestBody (stubbedBackend) { testScenarioRunner =>
+  it should "call enricher with primitive request body" in withPrimitiveRequestBody(stubbedBackend) { testScenarioRunner =>
     //given
     val data = List("10")
     val scenario = scenarioWithEnricher((SingleBodyParameter.name, "#input"))
