@@ -126,19 +126,18 @@ private[parser] class ParseToSwaggerService(openapi: OpenAPI, openAPIsConfig: Op
 
   // FIXME: nicer way of handling application/json;charset...
   private def findMediaType(content: Content): Option[MediaType] = {
-    val scalaVersion = content.asScala
-    scalaVersion
-      .find(_._1.startsWith("application/json"))
-      .orElse(scalaVersion.find(_._1.contains("*/*")))
-      .map(_._2)
+    findSupportedMediaMap(content).map(_._2)
   }
 
   private def findContentType(content: Content): Option[String] = {
+    findSupportedMediaMap(content).map(_._1)
+  }
+
+  private def findSupportedMediaMap(content: Content) = {
     val scalaVersion = content.asScala
     scalaVersion
       .find(_._1.startsWith("application/json"))
       .orElse(scalaVersion.find(_._1.contains("*/*")))
-      .map(_._1)
   }
 
   private def requestBodyParameter(request: RequestBody): ValidationResult[Option[SwaggerParameter]] = {
