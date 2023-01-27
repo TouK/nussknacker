@@ -20,6 +20,9 @@ trait TestPermissions {
   val testPermissionRead: CategorizedPermission = Map(TestCat -> Set(Permission.Read), TestCat2 -> Set(Permission.Read))
   val testPermissionWrite: CategorizedPermission = Map(TestCat -> Set(Permission.Write), TestCat2 -> Set(Permission.Write))
   val testPermissionAll: CategorizedPermission = testPermissionDeploy |+| testPermissionRead |+| testPermissionWrite
+
+  val allCategoriesWithReadPermissions: CategorizedPermission = AllCategories.map(_ -> Set(Permission.Read)).toMap
+  val userCategoryWithReadPermissions: CategorizedPermission = Map(UserCategory -> Set(Permission.Read))
 }
 
 object TestPermissions {

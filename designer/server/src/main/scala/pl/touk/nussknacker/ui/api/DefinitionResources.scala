@@ -5,7 +5,7 @@ import akka.http.scaladsl.server.{Directives, Route}
 import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.{ModelData, ProcessingTypeData}
-import pl.touk.nussknacker.security.Permission.Read
+import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.ui.definition.UIProcessObjectsFactory
 import pl.touk.nussknacker.ui.process.processingtypedata.ProcessingTypeDataProvider
 import pl.touk.nussknacker.ui.process.{ProcessCategoryService, ProcessObjectsFinder}
@@ -37,7 +37,7 @@ class DefinitionResources(modelDataProvider: ProcessingTypeDataProvider[ModelDat
         complete {
           modelDataProvider.mapValues(
             _.processDefinition.services.filter {
-              case (_, definition) => definition.categories.forall(_.exists(user.can(_, Read)))
+              case (_, definition) => definition.categories.forall(_.exists(user.can(_, Permission.Read)))
             }.mapValuesNow(UIProcessObjectsFactory.createUIObjectDefinition(_, processCategoryService))
           ).all
         }

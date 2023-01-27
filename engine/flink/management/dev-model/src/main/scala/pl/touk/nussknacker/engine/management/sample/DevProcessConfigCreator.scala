@@ -3,7 +3,6 @@ package pl.touk.nussknacker.engine.management.sample
 import com.cronutils.model.CronType
 import com.cronutils.model.definition.CronDefinitionBuilder
 import com.cronutils.parser.CronParser
-import com.typesafe.config.Config
 import io.circe.parser.decode
 import io.circe.{Decoder, Encoder}
 import net.ceedubs.ficus.Ficus._
@@ -21,7 +20,6 @@ import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactoryWithEdi
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.flink.util.sink.{EmptySink, SingleValueSinkFactory}
 import pl.touk.nussknacker.engine.flink.util.source.{EspDeserializationSchema, ReturningClassInstanceSource, ReturningTestCaseClass}
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryCacheConfig}
 import pl.touk.nussknacker.engine.kafka.consumerrecord.{ConsumerRecordToJsonFormatterFactory, FixedValueDeserializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.generic.sinks.FlinkKafkaSinkImplFactory
 import pl.touk.nussknacker.engine.kafka.serialization.schemas.SimpleSerializationSchema
@@ -57,11 +55,11 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
 
   private def tests[T](value: T): WithCategories[T] = WithCategories(value, "TESTCAT")
 
+  private def userCategories[T](value: T): WithCategories[T] = WithCategories(value, "UserCategory1")
+
   private def categories[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2")
 
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT" , "DevelopmentTests")
-
-  private def kafkaConfig(config: Config) = KafkaConfig.parseConfig(config)
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
     val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
@@ -121,6 +119,8 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
     "componentService" -> categories(EmptyService),
     "transactionService" -> categories(EmptyService),
     "serviceModelService" -> categories(EmptyService),
+    "userService1" -> userCategories(EmptyService),
+    "userService2" -> userCategories(EmptyService),
     "paramService" -> categories(OneParamService),
     "enricher" -> categories(Enricher),
     "enricherNullResult" -> categories(EnricherNullResult),
