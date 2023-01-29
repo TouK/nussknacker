@@ -1,23 +1,8 @@
 {
+  "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "sourceMap": true,
+    "module": "esnext",
     "moduleResolution": "Node",
-    "module": "ESNext",
-    "target": "ESNext",
-    "jsx": "preserve",
-    "resolveJsonModule": true,
-    "lib": [
-      "dom",
-      "ESNext"
-    ],
-    "allowJs": true,
-    "noEmit": true,
-    "preserveSymlinks": true,
-    "skipLibCheck": true,
-    "downlevelIteration": true,
-    "isolatedModules": true,
     "plugins": [
       {
         "name": "typescript-plugin-css-modules",
@@ -29,7 +14,11 @@
   },
   "exclude": [
     "node_modules",
-    ".federated-types",
-    "flow_typed"
-  ]
+    ".federated-types"
+  ],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }

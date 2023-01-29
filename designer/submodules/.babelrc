@@ -3,7 +3,15 @@
     "plugins": ["@babel/plugin-transform-runtime"],
     "env": {
         "development": {
-            "plugins": ["react-refresh/babel"]
+            "plugins": [
+              "react-refresh/babel",
+              [
+                "istanbul",
+                {
+                  "useInlineSourceMaps": false
+                }
+              ]
+            ]
         }
     }
 }

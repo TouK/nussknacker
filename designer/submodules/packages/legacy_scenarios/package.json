@@ -1,5 +1,7 @@
 {
-  "name": "nussknacker-designer-client",
+  "name": "@nu/legacy_scenarios",
+  "author": "",
+  "contextPath": "legacy_scenarios",
   "version": "0.0.0",
   "description": "Nussknacker designer - client",
   "main": "server.js",
@@ -163,7 +165,7 @@
     "typescript": "4.9.4",
     "typescript-plugin-css-modules": "3.4.0",
     "webpack": "5.67.0",
-    "webpack-cli": "4.9.2",
+    "webpack-cli": "4.10.0",
     "webpack-dev-server": "4.7.3",
     "webpack-remote-types-plugin": "0.2.6",
     "webpack-shell-plugin-next": "2.2.2"
