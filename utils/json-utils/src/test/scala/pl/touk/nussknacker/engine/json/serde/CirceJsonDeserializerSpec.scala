@@ -8,6 +8,7 @@ import pl.touk.nussknacker.engine.api.typed.CustomNodeValidationException
 import pl.touk.nussknacker.engine.json.JsonSchemaBuilder
 import pl.touk.nussknacker.test.ValidatedValuesDetailedMessage
 
+import java.time.LocalDate
 import scala.jdk.CollectionConverters._
 
 class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailedMessage with Matchers {
@@ -166,6 +167,150 @@ class CirceJsonDeserializerSpec extends AnyFunSuite with ValidatedValuesDetailed
 
     assertThrows[CustomNodeValidationException] {
       new CirceJsonDeserializer(integerSchema).deserialize("1.0")
+    }
+  }
+
+  test("json object with defined, pattern and additional properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "properties": {
+        |    "someDefinedProp": {
+        |      "type": "boolean"
+        |    }
+        |  },
+        |  "additionalProperties": {
+        |    "type": "string"
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "someDefinedProp": true,
+        |  "someAdditionalProp": "string",
+        |  "somePatternProp_int": 1234
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "someDefinedProp" -> true,
+      "someAdditionalProp" -> "string",
+      "somePatternProp_int" -> 1234L
+    ).asJava
+  }
+
+  test("json object pattern properties and with disabled additional properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": false,
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "somePatternProp_int": 1234
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "somePatternProp_int" -> 1234L
+    ).asJava
+  }
+
+  test("json object pattern properties when no explicit properties") {
+    val schema = JsonSchemaBuilder.parseSchema(
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {
+        |    "type": "string"
+        |  },
+        |  "patternProperties": {
+        |    "_int$": {
+        |      "type": "integer"
+        |    },
+        |    "_date$": {
+        |      "type": "string",
+        |      "format": "date"
+        |    }
+        |  }
+        |}""".stripMargin)
+
+    val result = new CirceJsonDeserializer(schema).deserialize(
+      """{
+        |  "somePatternProp_int": 1234,
+        |  "somePatternProp_date": "2023-01-23",
+        |  "someAdditionalProp": "1234"
+        |}""".stripMargin)
+
+    result shouldEqual Map(
+      "somePatternProp_int" -> 1234L,
+      "somePatternProp_date" -> LocalDate.parse("2023-01-23"),
+      "someAdditionalProp" -> "1234"
+    ).asJava
+  }
+
+  test("handle 'everything allowed' schema in additionalProperties properly") {
+    val emptySchemaInAdditionalProperties =
+      """{
+        |  "type": "object",
+        |  "additionalProperties": {}
+        |}""".stripMargin
+    val implicitAdditionalProperties =
+      """{
+        |  "type": "object"
+        |}""".stripMargin
+    val trueInAdditionalProperties =
+      """{
+        |  "type": "object",
+        |  "additionalProperties": true
+        |}""".stripMargin
+
+    forAll(Table(
+      ("schema"),
+      (emptySchemaInAdditionalProperties),
+      (implicitAdditionalProperties),
+      (trueInAdditionalProperties),
+    )) { schemaStr =>
+      val schema = JsonSchemaBuilder.parseSchema(
+        schemaStr.stripMargin)
+      val result = new CirceJsonDeserializer(schema).deserialize(
+        """{
+          |  "additionalInt": 1234,
+          |  "additionalString": "foo",
+          |  "additionalObject": {"foo": "bar"}
+          |}""".stripMargin)
+
+      result shouldEqual Map(
+        "additionalInt" -> java.math.BigDecimal.valueOf(1234),
+        "additionalString" -> "foo",
+        "additionalObject" -> Map("foo" -> "bar").asJava
+      ).asJava
+    }
+  }
+
+  test("handle empty always true schema") {
+    forAll(Table(
+      ("json", "schema", "expected"),
+      ("{}", "{}", Map.empty.asJava),
+      ("{}", "true", Map.empty.asJava),
+      ("\"foo\"", "{}", "foo"),
+      ("\"foo\"", "true", "foo"),
+      ("{\"foo\": \"bar\"}", "{}", Map("foo" -> "bar").asJava),
+      ("{\"foo\": \"bar\"}", "true", Map("foo" -> "bar").asJava),
+    )) { (json, schemaStr, expected) =>
+      val schema = JsonSchemaBuilder.parseSchema(
+        schemaStr.stripMargin)
+      val deserializer = new CirceJsonDeserializer(schema)
+      val result = deserializer.deserialize(json)
+      result shouldEqual expected
     }
   }
 

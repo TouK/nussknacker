@@ -1,16 +1,18 @@
 package pl.touk.nussknacker.engine.lite.components
 
-import cats.data.Validated
+import cats.data.{NonEmptyList, Validated}
+import cats.data.Validated.Invalid
 import io.circe.Json
 import io.circe.Json.{Null, fromInt, fromLong, fromString, obj}
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.everit.json.schema.{EmptySchema, Schema => EveritSchema}
+import org.everit.json.schema.{Schema => EveritSchema}
 import org.scalatest.Inside
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.CirceUtil
+import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.ExpressionParserCompilationError
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
@@ -196,15 +198,25 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
 
   test("patternProperties handling") {
     val objWithIntPatternPropsAndOpenAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger))
+    val objWithPatternPropsAndStringAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString))
+    val objWithDefinedPropsPatternPropsAndAdditionalSchema = createObjectSchemaWithPatternProperties(Map("foo_int" -> schemaInteger), Some(schemaString), Map("definedProp" -> schemaString))
+
     val inputObjectIntPropValue = fromInt(1)
+    val inputObjectDefinedPropValue = fromString("someString")
     val inputObject = obj("foo_int" -> inputObjectIntPropValue)
+    val inputObjectWithDefinedProp = obj("definedProp" -> inputObjectDefinedPropValue)
 
     //@formatter:off
     val testData = Table(
-      ("input",       "sourceSchema",                                 "sinkSchema",                                   "sinkExpression",                             "validationModes",   "result"),
-      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
-      (inputObject,   schemaMapAny,                                   objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,              invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
-      (inputObject,   objWithIntPatternPropsAndOpenAdditionalSchema,  objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                 valid(inputObject)),
+      ("input",                      "sourceSchema",                                       "sinkSchema",                                   "sinkExpression",                             "validationModes",    "result"),
+      (inputObject,                  schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  schemaMapAny,                                         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        strict,               invalidTypes("actual: 'Map[String,Unknown]' expected: 'Map[String, Any]'")),
+      (inputObject,                  objWithIntPatternPropsAndOpenAdditionalSchema,        objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         objWithIntPatternPropsAndOpenAdditionalSchema,  Input,                                        lax,                  valid(inputObject)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  valid(inputObjectIntPropValue)),
+      (inputObject,                  objWithPatternPropsAndStringAdditionalSchema,         schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      strict,               invalidTypes("actual: 'Long | String' expected: 'Long'")),
+      (inputObject,                  objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaInteger,                                  SpecialSpELElement("#input['foo_int']"),      lax,                  Invalid(NonEmptyList(ExpressionParserCompilationError("Dynamic property access is not allowed", "my-sink", Some("Value"), "#input['foo_int']"), Nil))),
+      (inputObjectWithDefinedProp,   objWithDefinedPropsPatternPropsAndAdditionalSchema,   schemaString,                                   SpecialSpELElement("#input.definedProp"),     strict,               valid(inputObjectDefinedPropValue)),
     )
     //@formatter:on
 
@@ -262,6 +274,22 @@ class LiteKafkaUniversalJsonFunctionalTest extends AnyFunSuite with Matchers wit
       val message = results.validValue.errors.head.throwable.asInstanceOf[RuntimeException].getMessage
 
       message shouldBe expected
+    }
+  }
+
+  test("should pass everything under 'any' schema") {
+    val testData = Table(
+      ("config", "result"),
+      (sampleJInt, valid(sampleJInt)),
+      (fromLong(Integer.MAX_VALUE), valid(fromInt(Integer.MAX_VALUE))),
+      (samplePerson, valid(samplePerson))
+    )
+
+    forAll(testData) { (input: Json, expected: Validated[_, RunResult[_]]) =>
+      List(trueSchema, emptySchema).foreach { schema =>
+        val results = runWithValueResults(config(input, schema, schema))
+        results shouldBe expected
+      }
     }
   }
 

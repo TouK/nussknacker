@@ -13,14 +13,15 @@ import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.engine.util.json.JsonUtils.jsonToAny
 
 import java.time.{LocalDate, LocalTime, ZonedDateTime}
+import java.util
 import java.util.Collections
+import java.util.regex.Pattern
 import scala.annotation.tailrec
 import scala.jdk.CollectionConverters._
 
 @JsonCodec sealed trait AdditionalProperties
 case object AdditionalPropertiesDisabled extends AdditionalProperties
-case object AdditionalPropertiesWithoutType extends AdditionalProperties
-case class AdditionalPropertiesSwaggerTyped(value: SwaggerTyped) extends AdditionalProperties
+case class AdditionalPropertiesEnabled(value: SwaggerTyped) extends AdditionalProperties
 
 @JsonCodec sealed trait SwaggerTyped {
   self =>
@@ -68,14 +69,20 @@ object SwaggerEnum {
 
 case class SwaggerArray(elementType: SwaggerTyped) extends SwaggerTyped
 
-case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped], additionalProperties: AdditionalProperties = AdditionalPropertiesWithoutType) extends SwaggerTyped
+@JsonCodec case class SwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
+                                    additionalProperties: AdditionalProperties = AdditionalPropertiesEnabled(SwaggerAny),
+                                    patternProperties: List[PatternWithSwaggerTyped] = List.empty) extends SwaggerTyped
 
-case class SwaggerMap(valuesType: Option[SwaggerTyped]) extends SwaggerTyped
+
+@JsonCodec case class PatternWithSwaggerTyped(pattern: String, propertyType: SwaggerTyped) {
+  private lazy val compiledPattern: Pattern = Pattern.compile(pattern)
+  def testPropertyName(propertyName: PropertyName): Boolean = {
+    compiledPattern.asPredicate().test(propertyName)
+  }
+}
 
 //mapped to Unknown in type system
-sealed trait SwaggerUnknownFallback extends SwaggerTyped
-
-case object SwaggerRecursiveSchema extends SwaggerUnknownFallback
+object SwaggerAny extends SwaggerTyped
 
 object SwaggerTyped {
   def apply(schema: Schema[_], swaggerRefSchemas: SwaggerRefSchemas): SwaggerTyped = apply(schema, swaggerRefSchemas, Set.empty)
@@ -88,7 +95,7 @@ object SwaggerTyped {
     case _ => Option(schema.get$ref()) match {
       //handle recursive schemas better
       case Some(ref) if usedSchemas.contains(ref) =>
-        SwaggerRecursiveSchema
+        SwaggerAny
       case Some(ref) =>
         SwaggerTyped(swaggerRefSchemas(ref), swaggerRefSchemas, usedSchemas = usedSchemas + ref)
       case None => (extractType(schema), Option(schema.getFormat)) match {
@@ -98,7 +105,7 @@ object SwaggerTyped {
         // We do not track information whether is 'oneOf' or 'anyOf', as result of this method is used only for typing
         // Actual data validation is made in runtime in de/serialization layer and it is performed against actual schema, not our representation
         case (Some("object") | None, _) if Option(schema.getOneOf).exists(!_.isEmpty) => swaggerUnion(schema.getOneOf, swaggerRefSchemas, usedSchemas)
-        case (Some("object") | None, _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
+        case (Some("object"), _) => SwaggerObject(schema.asInstanceOf[Schema[Object@unchecked]], swaggerRefSchemas, usedSchemas)
         case (Some("boolean"), _) => SwaggerBool
         case (Some("string"), Some("date-time")) => SwaggerDateTime
         case (Some("string"), Some("date")) => SwaggerDate
@@ -110,6 +117,7 @@ object SwaggerTyped {
         case (Some("number"), Some("double")) => SwaggerDouble
         case (Some("number"), Some("float")) => SwaggerDouble
         case (Some("null"), None) => SwaggerNull
+        case (None, _) => SwaggerAny
         case (typeName, format) =>
           val formatError = format.map(f => s" in format '$f'").getOrElse("")
           throw new Exception(s"Type '${typeName.getOrElse("empty")}'$formatError is not supported")
@@ -133,11 +141,8 @@ object SwaggerTyped {
       .orElse(Option(schema.getTypes).map(_.asScala.head))
 
   def typingResult(swaggerTyped: SwaggerTyped): TypingResult = swaggerTyped match {
-    case SwaggerMap(valueType: Option[SwaggerTyped]) =>
-      Typed.genericTypeClass(classOf[java.util.Map[_, _]], List(Typed[String], valueType.map(typingResult).getOrElse(Unknown)))
-    case SwaggerObject(elementType, _) =>
-      import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
-      TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy(_._1))
+    case SwaggerObject(elementType, additionalProperties, patternProperties) =>
+      handleSwaggerObject(elementType, additionalProperties, patternProperties)
     case SwaggerArray(ofType) =>
       Typed.genericTypeClass(classOf[java.util.List[_]], List(typingResult(ofType)))
     case SwaggerEnum(values) =>
@@ -159,10 +164,29 @@ object SwaggerTyped {
     case SwaggerTime =>
       Typed.typedClass[LocalTime]
     case SwaggerUnion(types) => Typed(types.map(typingResult).toSet)
-    case _: SwaggerUnknownFallback =>
+    case SwaggerAny =>
       Unknown
     case SwaggerNull =>
       TypedNull
+  }
+
+  private def handleSwaggerObject(elementType: Map[PropertyName, SwaggerTyped],
+                                  additionalProperties: AdditionalProperties,
+                                  patternProperties: List[PatternWithSwaggerTyped]): TypingResult = {
+    import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
+    def typedStringKeyMap(valueType: TypingResult) = {
+      Typed.genericTypeClass(classOf[util.Map[_, _]], List(Typed[PropertyName], valueType))
+    }
+    if (elementType.isEmpty) {
+      val patternPropertiesTypesSet = patternProperties.map { case PatternWithSwaggerTyped(_, propertySwaggerTyped) => typingResult(propertySwaggerTyped)}.toSet
+      additionalProperties match {
+        case AdditionalPropertiesDisabled if patternPropertiesTypesSet.isEmpty => TypedObjectTypingResult(List.empty)
+        case AdditionalPropertiesDisabled => typedStringKeyMap(Typed(patternPropertiesTypesSet))
+        case AdditionalPropertiesEnabled(value) => typedStringKeyMap(Typed(patternPropertiesTypesSet + typingResult(value)))
+      }
+    } else {
+      TypedObjectTypingResult(elementType.mapValuesNow(typingResult).toList.sortBy { case (propertyName, _) => propertyName })
+    }
   }
 }
 object SwaggerArray {
@@ -171,23 +195,23 @@ object SwaggerArray {
 }
 
 object SwaggerObject {
+
   private[swagger] def apply(schema: Schema[Object], swaggerRefSchemas: SwaggerRefSchemas, usedRefs: Set[String]): SwaggerTyped = {
     val properties = Option(schema.getProperties).map(_.asScala.toMap.mapValuesNow(SwaggerTyped(_, swaggerRefSchemas, usedRefs)).toMap).getOrElse(Map())
+    val patternProperties = Option(schema.getPatternProperties)
+      .map(_.asScala.toList)
+      .getOrElse(List.empty)
+      .map { case (patternString, patternPropertySchema) => PatternWithSwaggerTyped(patternString, SwaggerTyped(patternPropertySchema, swaggerRefSchemas, usedRefs)) }
 
-    if (properties.isEmpty) {
-      schema.getAdditionalProperties match {
-        case a: Schema[_] => SwaggerMap(Some(SwaggerTyped(a, swaggerRefSchemas, usedRefs)))
-        case b if b == false => new SwaggerObject(Map.empty, AdditionalPropertiesDisabled)
-        case _ => SwaggerMap(None)
-      }
-    } else{
-      val additionalProperties = schema.getAdditionalProperties match {
-        case a: Schema[_] => AdditionalPropertiesSwaggerTyped(SwaggerTyped(a, swaggerRefSchemas, usedRefs))
-        case any if any == false => AdditionalPropertiesDisabled
-        case _ => AdditionalPropertiesWithoutType
-      }
-
-      SwaggerObject(properties, additionalProperties)
+    val additionalProperties = schema.getAdditionalProperties match {
+      case null => AdditionalPropertiesEnabled(SwaggerAny)
+      case additionalPropertyEnabled if additionalPropertyEnabled == true => AdditionalPropertiesEnabled(SwaggerAny)
+      case additionalPropertyEnabled if additionalPropertyEnabled == false => AdditionalPropertiesDisabled
+      case additionalPropertySchema: Schema[_] =>
+        val typed = AdditionalPropertiesEnabled(SwaggerTyped(additionalPropertySchema, swaggerRefSchemas, usedRefs))
+        typed
     }
+    SwaggerObject(properties, additionalProperties, patternProperties)
   }
+
 }

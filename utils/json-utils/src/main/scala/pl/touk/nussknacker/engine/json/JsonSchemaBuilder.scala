@@ -12,7 +12,12 @@ object JsonSchemaBuilder {
   //TODO: parsing schema should be consistent with [io.confluent.kafka.schemaregistry.json.JsonSchema.rawSchema]
   //TODO: Remove strict setting DRAFT7
   def parseSchemaAs[T <: Schema](rawJsonSchema: String, useDefaults: Boolean): T = {
-    val rawSchema: JSONObject = new JSONObject(rawJsonSchema)
+    val trimmedRawSchema = rawJsonSchema.trim
+    val rawSchema: Object = if (trimmedRawSchema != "true") {
+      new JSONObject(rawJsonSchema)
+    } else {
+      true.asInstanceOf[Object]
+    }
 
     SchemaLoader
       .builder()

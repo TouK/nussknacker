@@ -65,7 +65,7 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
     }
 
     (swaggerService.parameters.collectFirst {
-      case e@SingleBodyParameter(sw@SwaggerObject(_, _)) => safeParam(e.name)
+      case e@SingleBodyParameter(sw@SwaggerObject(_, _, _)) => safeParam(e.name)
       case e@SingleBodyParameter(sw@_) => primitiveBodyParam(e.name)
     }.flatten match {
       case None => request

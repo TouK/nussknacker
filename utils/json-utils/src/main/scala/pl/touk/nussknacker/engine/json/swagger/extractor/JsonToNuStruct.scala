@@ -25,15 +25,25 @@ object JsonToNuStruct {
 
     def addPath(next: String): String = if (path.isEmpty) next else s"$path.$next"
 
-    def extractObject(obj: SwaggerObject): AnyRef =
+    def extractObject(obj: SwaggerObject): AnyRef = {
+      object KeyMatchingPatternSchema {
+        def unapply(keyValue: (String, Json)): Option[SwaggerTyped] = {
+          val (propertyName, _) = keyValue
+          obj.patternProperties.find(_.testPropertyName(propertyName)).map(_.propertyType)
+        }
+      }
+
       extract[JsonObject](
         _.asObject,
         jo => TypedMap(
           jo.toMap.collect {
             case (key, value) if obj.elementType.contains(key) =>
               key -> JsonToNuStruct(value, obj.elementType(key), addPath(key))
+            case keyValue@KeyMatchingPatternSchema(patternPropertySchema) =>
+              val (key, value) = keyValue
+              key -> JsonToNuStruct(value, patternPropertySchema, addPath(key))
             case (key, value) if obj.additionalProperties != AdditionalPropertiesDisabled => obj.additionalProperties match {
-              case add: AdditionalPropertiesSwaggerTyped =>
+              case add: AdditionalPropertiesEnabled =>
                 key -> JsonToNuStruct(value, add.value, addPath(key))
               case _ =>
                 key -> jsonToAny(value)
@@ -41,14 +51,7 @@ object JsonToNuStruct {
           }
         )
       )
-
-    def extractMap(valuesType: Option[SwaggerTyped]): AnyRef = extract[JsonObject](
-      _.asObject,
-      jo => TypedMap(jo.toMap.collect {
-        case (key, value) if valuesType.isDefined => key -> JsonToNuStruct(value, valuesType.get, addPath(key))
-        case (key, value) => key -> jsonToAny(value)
-      })
-    )
+    }
 
     //we handle null here to enable pattern matching exhaustive check
     if (json.isNull) {
@@ -77,10 +80,9 @@ object JsonToNuStruct {
         case SwaggerArray(elementType) =>
           extract[Vector[Json]](_.asArray, _.zipWithIndex.map { case (el, idx) => JsonToNuStruct(el, elementType, s"$path[$idx]") }.asJava)
         case obj: SwaggerObject => extractObject(obj)
-        case SwaggerMap(maybeTyped) => extractMap(maybeTyped)
         case u@SwaggerUnion(types) => types.view.flatMap(aType => Try(apply(json, aType)).toOption)
           .headOption.getOrElse(throw JsonToObjectError(json, u, path))
-        case SwaggerRecursiveSchema => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
+        case SwaggerAny => extract[AnyRef](j => Option(jsonToAny(j).asInstanceOf[AnyRef]))
         //should not happen as we handle null above
         case SwaggerNull => throw JsonToObjectError(json, definition, path)
       }
