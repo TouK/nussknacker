@@ -25,7 +25,8 @@ import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, LatestSchemaVersion, SchemaVersionOption}
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.engine.util.LoggingListener
@@ -51,7 +52,7 @@ abstract class FlinkWithKafkaSuite extends AnyFunSuite with FlinkSpec with Kafka
       new UnoptimizedSerializationPreparer(modelData),
       new ExecutionConfigPreparer {
         override def prepareExecutionConfig(config: ExecutionConfig)(jobData: JobData, deploymentData: DeploymentData): Unit = {
-          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient), kafkaConfig)
+          AvroSerializersRegistrar.registerGenericRecordSchemaIdSerializationIfNeed(config, MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient), kafkaConfig)
         }
       }
     )

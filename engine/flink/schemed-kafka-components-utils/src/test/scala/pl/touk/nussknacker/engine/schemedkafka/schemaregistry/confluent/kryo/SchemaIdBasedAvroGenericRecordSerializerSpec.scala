@@ -7,16 +7,17 @@ import org.apache.flink.api.java.typeutils.runtime.kryo.KryoSerializer
 import org.apache.flink.core.memory.{DataInputDeserializer, DataOutputSerializer}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializerSpec.schema
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializerSpec.schema
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, SchemaId}
 
 class SchemaIdBasedAvroGenericRecordSerializerSpec extends AnyFunSuite with Matchers {
 
   test("should be able to duplicate serializer after use") {
     val config = KafkaConfig(Some(Map("bootstrap.servers" -> "dummy:9092")), None, None)
-    val factory = new MockConfluentSchemaRegistryClientFactory(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
+    val factory = MockSchemaRegistryClientFactory.confluentBased(SchemaIdBasedAvroGenericRecordSerializerSpec.schemaRegistryClient)
 
     val ec = new ExecutionConfig
     SchemaIdBasedAvroGenericRecordSerializer(factory, config).registerIn(ec)

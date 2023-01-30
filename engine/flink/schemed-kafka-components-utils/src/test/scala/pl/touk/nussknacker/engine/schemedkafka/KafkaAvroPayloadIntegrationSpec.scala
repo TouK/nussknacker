@@ -16,7 +16,8 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientBuilder, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientBuilder, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.spel
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
@@ -31,7 +32,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
   import scala.jdk.CollectionConverters._
 
   private lazy val creator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+    override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
   protected val paymentSchemas: List[Schema] = List(PaymentV1.schema, PaymentV2.schema)
@@ -39,7 +40,7 @@ class KafkaAvroPayloadIntegrationSpec extends KafkaAvroSpecMixin with BeforeAndA
 
   override protected def schemaRegistryClient: MockSchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()

@@ -10,18 +10,19 @@ import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.serialization.StringDeserializer
-import pl.touk.nussknacker.engine.api.component.ComponentDefinition
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.kafka.KafkaConfig
-import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
-import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import org.everit.json.schema.{Schema => EveritSchema}
+import pl.touk.nussknacker.engine.api.component.ComponentDefinition
 import pl.touk.nussknacker.engine.api.process.ProcessObjectDependencies
 import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaId
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.util.namespaces.DefaultNamespacedObjectNaming
+import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
+import pl.touk.nussknacker.engine.util.test.{TestScenarioRunner, TestScenarioRunnerBuilder}
 import pl.touk.nussknacker.test.KafkaConfigProperties
 
 import java.nio.charset.StandardCharsets
@@ -37,7 +38,7 @@ object LiteKafkaTestScenarioRunner {
         // we disable default kafka components to replace them by mocked
         .withValue("components.kafka.disabled", ConfigValueFactory.fromAnyRef(true)))
       val mockSchemaRegistryClient = new MockSchemaRegistryClient
-      val mockedKafkaComponents = new LiteKafkaComponentProvider(new MockConfluentSchemaRegistryClientFactory(mockSchemaRegistryClient))
+      val mockedKafkaComponents = new LiteKafkaComponentProvider(MockSchemaRegistryClientFactory.confluentBased(mockSchemaRegistryClient))
       val processObjectDependencies = ProcessObjectDependencies(config, DefaultNamespacedObjectNaming)
       val mockedComponents = mockedKafkaComponents.create(config, processObjectDependencies)
       LiteKafkaTestScenarioRunnerBuilder(mockedComponents, List.empty, config, mockSchemaRegistryClient)

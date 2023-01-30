@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.kafka.serialization
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolutionException, FullNameV1, PaymentV1, PaymentV2}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.ValueSchemaIdHeaderName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.util.KeyedValue
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder

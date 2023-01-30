@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal
 
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.{SchemaIdFromNuHeadersAndPotentiallyConfluentPayload, SchemaIdFromPayloadInConfluentFormat}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.{SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload, SchemaIdFromPayloadInConfluentFormat}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.{KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory, KafkaSchemaRegistryBasedValueSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 
@@ -11,7 +11,7 @@ object UniversalSchemaBasedSerdeProvider {
   // * from payload serialized in 'Confluent way' ([magicbyte][schemaid][payload])
   // * (fallback) from source editor version param - this is just an assumption we make (when processing no-schemed-data, everything can happen)
   val schemaIdFromMessageExtractor = new ChainedSchemaIdFromMessageExtractor(List(
-    SchemaIdFromNuHeadersAndPotentiallyConfluentPayload,
+    SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload,
     SchemaIdFromPayloadInConfluentFormat))
 
   def create(schemaRegistryClientFactory: SchemaRegistryClientFactory): SchemaBasedSerdeProvider = {

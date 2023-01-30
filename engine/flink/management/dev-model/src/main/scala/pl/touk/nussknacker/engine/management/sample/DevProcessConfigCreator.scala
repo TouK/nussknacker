@@ -30,8 +30,8 @@ import pl.touk.nussknacker.engine.management.sample.source._
 import pl.touk.nussknacker.engine.management.sample.transformer._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{MockSchemaRegistryClientFactory, UniversalSchemaBasedSerdeProvider, UniversalSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
@@ -64,27 +64,27 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def all[T](value: T): WithCategories[T] = WithCategories(value, "Category1", "Category2", "DemoFeatures", "TESTCAT" , "DevelopmentTests")
 
   override def sinkFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SinkFactory]] = {
-    val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
-    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
-    val universalPayloadSerdeProvider = UniversalSchemaBasedSerdeProvider.create(confluentFactory)
+    val schemaRegistryFactory = createSchemaRegistryClientFactory(processObjectDependencies)
+    val avroPayloadSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryFactory)
+    val universalPayloadSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryFactory)
     Map(
       "sendSms" -> all(new SingleValueSinkFactory(new DiscardingSink)),
       "monitor" -> categories(SinkFactory.noParam(EmptySink)),
       "communicationSink" -> categories(DynamicParametersSink),
       "kafka-string" -> all(new KafkaSinkFactory(new SimpleSerializationSchema[AnyRef](_, String.valueOf), processObjectDependencies, FlinkKafkaSinkImplFactory)),
-      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(confluentFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
-      "kafka" -> all(new UniversalKafkaSinkFactory(confluentFactory, universalPayloadSerdeProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory))
+      "kafka-avro" -> all(new KafkaAvroSinkFactoryWithEditor(schemaRegistryFactory, avroPayloadSerdeProvider, processObjectDependencies, FlinkKafkaAvroSinkImplFactory)),
+      "kafka" -> all(new UniversalKafkaSinkFactory(schemaRegistryFactory, universalPayloadSerdeProvider, processObjectDependencies, FlinkKafkaUniversalSinkImplFactory))
     )
   }
 
   override def listeners(processObjectDependencies: ProcessObjectDependencies) = List(LoggingListener)
 
   override def sourceFactories(processObjectDependencies: ProcessObjectDependencies): Map[String, WithCategories[SourceFactory]] = {
-    val confluentFactory = createSchemaRegistryClientFactory(processObjectDependencies)
-    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(confluentFactory)
-    val universalMessagesSerdeProvider = UniversalSchemaBasedSerdeProvider.create(confluentFactory)
-    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](confluentFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
-    val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](confluentFactory, universalMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+    val schemaRegistryFactory = createSchemaRegistryClientFactory(processObjectDependencies)
+    val schemaBasedMessagesSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryFactory)
+    val universalMessagesSerdeProvider = UniversalSchemaBasedSerdeProvider.create(schemaRegistryFactory)
+    val avroSourceFactory = new KafkaAvroSourceFactory[Any, Any](schemaRegistryFactory, schemaBasedMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
+    val universalSourceFactory = new UniversalKafkaSourceFactory[Any, Any](schemaRegistryFactory, universalMessagesSerdeProvider, processObjectDependencies, new FlinkKafkaSourceImplFactory(None))
     Map(
       "real-kafka" -> all(fixedValueKafkaSource[String](
         processObjectDependencies,
@@ -110,9 +110,9 @@ class DevProcessConfigCreator extends ProcessConfigCreator {
   private def createSchemaRegistryClientFactory(processObjectDependencies: ProcessObjectDependencies): SchemaRegistryClientFactory = {
     val mockConfluent = processObjectDependencies.config.getAs[Boolean](DevProcessConfigCreator.emptyMockedSchemaRegistryProperty).contains(true)
     if (mockConfluent) {
-      new MockConfluentSchemaRegistryClientFactory(new MockSchemaRegistryClient)
+      MockSchemaRegistryClientFactory.confluentBased(new MockSchemaRegistryClient)
     } else {
-      CachedConfluentSchemaRegistryClientFactory
+      UniversalSchemaRegistryClientFactory
     }
   }
 

@@ -7,7 +7,13 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import java.nio.ByteBuffer
 import scala.util.Try
 
-object SchemaIdFromNuHeadersAndPotentiallyConfluentPayload extends SchemaIdFromMessageExtractor with Serializable {
+/**
+  * This class basically extract schema id from our specific headers: key/value.schemaId.
+  * Because we always produce those headers, we can have situation when schema id is in headers but also payload
+  * is in Confluent format (magic byte + schema id + bytes). Because of that we need to shift this payload
+  * so next step (payload deserializer) will have clear situation - buffer pointer pointing to bytes with message
+  */
+object SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload extends SchemaIdFromMessageExtractor with Serializable {
 
   val ValueSchemaIdHeaderName = "value.schemaId"
   val KeySchemaIdHeaderName = "key.schemaId"

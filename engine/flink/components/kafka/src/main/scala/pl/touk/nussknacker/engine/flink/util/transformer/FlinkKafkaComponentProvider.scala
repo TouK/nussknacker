@@ -11,8 +11,7 @@ import pl.touk.nussknacker.engine.kafka.generic.sources.{GenericJsonSourceFactor
 import pl.touk.nussknacker.engine.kafka.source.flink.FlinkKafkaSourceImplFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalSchemaBasedSerdeProvider, UniversalSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
@@ -20,7 +19,7 @@ import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 class FlinkKafkaComponentProvider extends ComponentProvider {
 
-  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
+  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = UniversalSchemaRegistryClientFactory
 
   override def providerName: String = "kafka"
 

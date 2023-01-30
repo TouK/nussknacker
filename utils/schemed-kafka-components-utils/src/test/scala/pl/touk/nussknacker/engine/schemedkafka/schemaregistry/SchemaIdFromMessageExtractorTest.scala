@@ -5,7 +5,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.kafka.KafkaRecordUtils.{emptyHeaders, toHeaders}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.{KeySchemaIdHeaderName, ValueSchemaIdHeaderName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 
 import java.io.ByteArrayOutputStream

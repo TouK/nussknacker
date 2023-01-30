@@ -10,9 +10,9 @@ import pl.touk.nussknacker.engine.api.component.ComponentProviderConfig
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializersRegistrar
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.GenericRecordSchemaIdSerializationSupport
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaRegistryClientFactory
 
 // We need it because we use avro records inside our Context class
 class AvroSerializersRegistrar extends SerializersRegistrar with LazyLogging {
@@ -73,7 +73,7 @@ object AvroSerializersRegistrar extends LazyLogging {
   val autoRegisterRecordSchemaIdSerializationProperty = "autoRegisterRecordSchemaIdSerialization"
 
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, kafkaConfig: KafkaConfig): Unit = {
-    registerGenericRecordSchemaIdSerializationIfNeed(config, CachedConfluentSchemaRegistryClientFactory, kafkaConfig)
+    registerGenericRecordSchemaIdSerializationIfNeed(config, UniversalSchemaRegistryClientFactory, kafkaConfig)
   }
 
   def registerGenericRecordSchemaIdSerializationIfNeed(config: ExecutionConfig, schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig): Unit = {

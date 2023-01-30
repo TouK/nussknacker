@@ -6,11 +6,13 @@ import org.apache.avro.generic.GenericContainer
 import pl.touk.nussknacker.engine.api.LazyParameter
 import pl.touk.nussknacker.engine.api.typed.typing
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.schema._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockConfluentSchemaRegistryClientBuilder}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientBuilder
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.typed.AvroSchemaTypeDefinitionExtractor
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, TestSchemaRegistryClientFactory}
 
 trait KafkaAvroSourceSpecMixin {
 
@@ -70,6 +72,6 @@ trait KafkaAvroSourceSpecMixin {
       .register(GeneratedWithLogicalTypesTopic, GeneratedAvroClassWithLogicalTypes.getClassSchema, 1, isKey = false)
       .build
 
-    val factory: CachedConfluentSchemaRegistryClientFactory = TestSchemaRegistryClientFactory(schemaRegistryMockClient)
+    val factory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 }

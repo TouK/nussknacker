@@ -7,7 +7,7 @@ import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.serialization.{CharSequenceSerializer, KafkaProducerHelper}
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, serialization}
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.ValueSchemaIdHeaderName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.util.KeyedValue
 
 import java.lang

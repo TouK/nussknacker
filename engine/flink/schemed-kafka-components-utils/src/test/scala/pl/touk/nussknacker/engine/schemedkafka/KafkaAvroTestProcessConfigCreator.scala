@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.process.helpers.SampleNodes.ExtractAndTransfor
 import pl.touk.nussknacker.engine.process.helpers.SinkForType
 import pl.touk.nussknacker.engine.schemedkafka.schema.{GeneratedAvroClassSample, GeneratedAvroClassWithLogicalTypes}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.flink.{FlinkKafkaAvroSinkImplFactory, FlinkKafkaUniversalSinkImplFactory}
@@ -66,7 +65,7 @@ abstract class KafkaAvroTestProcessConfigCreator extends EmptyProcessConfigCreat
 
   protected def defaultCategory[T](obj: T): WithCategories[T] = WithCategories(obj, "TestAvro")
 
-  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = CachedConfluentSchemaRegistryClientFactory
+  protected def schemaRegistryClientFactory: SchemaRegistryClientFactory
 
   protected def createSchemaBasedMessagesSerdeProvider: SchemaBasedSerdeProvider = ConfluentSchemaBasedSerdeProvider.avroPayload(schemaRegistryClientFactory)
 

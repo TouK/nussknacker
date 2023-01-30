@@ -13,14 +13,12 @@ import pl.touk.nussknacker.engine.kafka.sink.{GenericJsonSerialization, KafkaSin
 import pl.touk.nussknacker.engine.kafka.source.KafkaSourceFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentSchemaBasedSerdeProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.CachedConfluentSchemaRegistryClientFactory
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaBasedSerdeProvider
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalSchemaBasedSerdeProvider, UniversalSchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.{KafkaAvroSinkFactory, KafkaAvroSinkFactoryWithEditor, UniversalKafkaSinkFactory}
 import pl.touk.nussknacker.engine.schemedkafka.source.{KafkaAvroSourceFactory, UniversalKafkaSourceFactory}
 import pl.touk.nussknacker.engine.util.config.DocsConfig
 
 import java.util
-import scala.language.higherKinds
 
 object LiteKafkaComponentProvider {
   val KafkaUniversalName = "kafka"
@@ -36,7 +34,7 @@ class LiteKafkaComponentProvider(schemaRegistryClientFactory: SchemaRegistryClie
 
   import LiteKafkaComponentProvider._
 
-  def this() = this(CachedConfluentSchemaRegistryClientFactory)
+  def this() = this(UniversalSchemaRegistryClientFactory)
 
   override def providerName: String = "kafka"
 

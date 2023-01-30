@@ -12,7 +12,7 @@ import pl.touk.nussknacker.engine.schemedkafka.helpers.{SchemaRegistryMixin, Sim
 import pl.touk.nussknacker.engine.schemedkafka.schema.{PaymentV1, PaymentV2}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.DefaultConfluentSchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersAndPotentiallyConfluentPayload.ValueSchemaIdHeaderName
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalKafkaDeserializer, UniversalSchemaBasedSerdeProvider}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaIdFromMessageExtractor}
 

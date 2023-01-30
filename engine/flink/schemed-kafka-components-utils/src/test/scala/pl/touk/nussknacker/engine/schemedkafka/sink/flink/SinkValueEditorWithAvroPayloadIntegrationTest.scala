@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaAvroIntegrationMockSchemaReg
 import pl.touk.nussknacker.engine.schemedkafka.encode.BestEffortAvroEncoder
 import pl.touk.nussknacker.engine.schemedkafka.helpers.KafkaAvroSpecMixin
 import pl.touk.nussknacker.engine.schemedkafka.schema.TestSchemaWithRecord
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockConfluentSchemaRegistryClientFactory
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVersion, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, KafkaAvroTestProcessConfigCreator}
 import pl.touk.nussknacker.engine.spel.Implicits.asSpelExpression
@@ -89,12 +89,12 @@ class SinkValueEditorWithAvroPayloadIntegrationTest extends KafkaAvroSpecMixin w
   private var topicConfigs: Map[String, TopicConfig] = Map.empty
 
   private lazy val processConfigCreator: KafkaAvroTestProcessConfigCreator = new KafkaAvroTestProcessConfigCreator {
-    override protected def schemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+    override protected def schemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
   }
 
   override protected def schemaRegistryClient: SchemaRegistryClient = schemaRegistryMockClient
 
-  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = new MockConfluentSchemaRegistryClientFactory(schemaRegistryMockClient)
+  override protected def schemaRegistryClientFactory: SchemaRegistryClientFactory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
 
   override protected def beforeAll(): Unit = {
     super.beforeAll()
