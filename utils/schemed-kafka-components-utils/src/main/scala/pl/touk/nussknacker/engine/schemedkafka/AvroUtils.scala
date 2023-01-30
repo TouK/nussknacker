@@ -53,7 +53,7 @@ object AvroUtils extends LazyLogging {
   })
 
   def createGenericDatumReader[T](writer: Schema, reader: Schema): GenericDatumReader[T] = {
-    StringForcingDatumReaderProvider.genericDatumReader[T](writer, reader, AvroUtils.genericData)
+    StringForcingDatumReaderProvider.genericDatumReader[T](writer, reader, genericData)
   }
 
   def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_) {
@@ -166,7 +166,7 @@ object AvroUtils extends LazyLogging {
       util.Arrays.copyOfRange(payload, offset, payload.length).asInstanceOf[T]
     } else {
       val decoder = DecoderFactory.get().binaryDecoder(payload, offset, payload.length - offset, null)
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
+      val reader = createGenericDatumReader[T](readerWriterSchema, readerWriterSchema)
       reader.read(null.asInstanceOf[T], decoder)
     }
   }

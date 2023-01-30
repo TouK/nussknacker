@@ -7,7 +7,10 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaRegistryCli
 object UniversalSchemaRegistryClientFactory extends UniversalSchemaRegistryClientFactory
 
 class UniversalSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
-  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClient =
+
+  override type SchemaRegistryClientT = SchemaRegistryClient
+
+  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT =
     createConfluentFactory.create(config)
 
   private def createConfluentFactory: SchemaRegistryClientFactory = {
