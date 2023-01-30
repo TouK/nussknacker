@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.encode
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyList, ValidatedNel}
 import cats.implicits._
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.GenericData.{EnumSymbol, Fixed}
 import org.apache.avro.generic.{GenericContainer, GenericData}
 import org.apache.avro.util.Utf8
@@ -37,6 +38,10 @@ class BestEffortAvroEncoder(avroSchemaEvolution: AvroSchemaEvolution, validation
     (schema.getType, value) match {
       case (_, Some(nested)) =>
         encode(nested, schema)
+      case (_, nonRecord: NonRecordContainer) =>
+        // It is rather synthetic situation, only for purpose of tests - we use this class in some places for purpose of
+        // preparation input test data. During this, we can't loose information about schema
+        encode(nonRecord.getValue, schema).map(new NonRecordContainer(schema, _))
       case (Schema.Type.RECORD, container: GenericContainer) =>
         encodeGenericContainer(container, schema)
       case (Schema.Type.RECORD, map: collection.Map[String@unchecked, _]) =>

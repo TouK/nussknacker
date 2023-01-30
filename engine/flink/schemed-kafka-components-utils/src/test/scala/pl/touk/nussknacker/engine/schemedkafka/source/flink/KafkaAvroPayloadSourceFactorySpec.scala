@@ -4,6 +4,7 @@ import cats.data.NonEmptyList
 import cats.data.Validated.Invalid
 import com.typesafe.config.ConfigFactory
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.generic.{GenericData, GenericRecord}
 import pl.touk.nussknacker.engine.api.component.SingleComponentConfig
 import pl.touk.nussknacker.engine.api.context.ProcessCompilationError.{CustomNodeError, InvalidPropertyFixedValue}
@@ -23,6 +24,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ExistingSchemaVer
 import pl.touk.nussknacker.engine.spel.Implicits._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 
+import scala.jdk.CollectionConverters._
 import java.nio.charset.StandardCharsets
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.collection.immutable.ListMap
@@ -124,6 +126,28 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     roundTripKeyValueObject(universalSourceFactory, useStringForKey = true, InvalidDefaultsTopic, ExistingSchemaVersion(1), null, givenObj)
   }
 
+  test("should read array of primitives on top level") {
+    val topic = ArrayOfNumbersTopic
+    val arrayOfInts = List(123).asJava
+    val arrayOfLongs = List(123L).asJava
+    val wrappedObj = new NonRecordContainer(ArrayOfIntsSchema, arrayOfInts)
+    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+
+    readLastMessageAndVerify(universalSourceFactory(useStringForKey = true), topic, ExistingSchemaVersion(2), null, arrayOfLongs)
+  }
+
+  test("should read array of records on top level") {
+    val topic = ArrayOfRecordsTopic
+    val recordV1 = FullNameV1.createRecord("Jan", "Kowalski")
+    val arrayOfRecordsV1 = List(recordV1).asJava
+    val recordV2 = FullNameV2.createRecord("Jan", null, "Kowalski")
+    val arrayOfRecordsV2 = List(recordV2).asJava
+    val wrappedObj = new NonRecordContainer(ArrayOfRecordsV1Schema, arrayOfRecordsV1)
+    pushMessageWithKey(null, wrappedObj, topic, useStringForKey = true)
+
+    readLastMessageAndVerify(universalSourceFactory(useStringForKey = true), topic, ExistingSchemaVersion(2), null, arrayOfRecordsV2)
+  }
+
   test("should read last generated key-value object, simple type") {
     val givenKey = 123
     val givenValue = 456
@@ -164,7 +188,8 @@ class KafkaAvroPayloadSourceFactorySpec extends KafkaAvroSpecMixin with KafkaAvr
     val result = validate(TopicParamName -> "'terefere'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
 
     result.errors shouldBe
-      InvalidPropertyFixedValue(TopicParamName, None, "'terefere'", List("", "'testAvroIntTopic1NoKey'", "'testAvroIntTopic1WithKey'", "'testAvroInvalidDefaultsTopic1'",
+      InvalidPropertyFixedValue(TopicParamName, None, "'terefere'", List("", "'testArrayOfNumbersTopic'", "'testArrayOfRecordsTopic'",
+        "'testAvroIntTopic1NoKey'", "'testAvroIntTopic1WithKey'", "'testAvroInvalidDefaultsTopic1'",
         "'testAvroRecordTopic1'", "'testAvroRecordTopic1WithKey'", "'testGeneratedWithLogicalTypesTopic'", "'testPaymentDateTopic'"), "id") :: Nil
     result.outputContext shouldBe ValidationContext(Map(VariableConstants.InputVariableName -> Unknown, VariableConstants.InputMetaVariableName -> InputMeta.withType(Unknown)))
   }

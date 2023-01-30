@@ -31,6 +31,8 @@ trait KafkaAvroSourceSpecMixin {
     val RecordTopicWithKey: String = "testAvroRecordTopic1WithKey"
     val IntTopicWithKey: String = "testAvroIntTopic1WithKey"
     val IntTopicNoKey: String = "testAvroIntTopic1NoKey"
+    val ArrayOfNumbersTopic: String = "testArrayOfNumbersTopic"
+    val ArrayOfRecordsTopic: String = "testArrayOfRecordsTopic"
     val InvalidDefaultsTopic: String = "testAvroInvalidDefaultsTopic1"
     val PaymentDateTopic: String = "testPaymentDateTopic"
     val GeneratedWithLogicalTypesTopic: String = "testGeneratedWithLogicalTypesTopic"
@@ -41,6 +43,21 @@ trait KafkaAvroSourceSpecMixin {
         |}
     """.stripMargin
     )
+
+    val ArrayOfIntsSchema: Schema = arraySchema("\"int\"")
+
+    val ArrayOfLongsSchema: Schema = arraySchema("\"long\"")
+
+    val ArrayOfRecordsV1Schema: Schema = arraySchema(FullNameV1.schema.toString)
+
+    val ArrayOfRecordsV2Schema: Schema = arraySchema(FullNameV2.schema.toString)
+
+    private def arraySchema(itemsType: String) = AvroUtils.parseSchema(
+      s"""{
+         |  "type": "array",
+         |  "items": $itemsType
+         |}
+       """.stripMargin)
 
     val InvalidDefaultsSchema: Schema = AvroUtils.nonRestrictiveParseSchema(
       """{
@@ -68,6 +85,10 @@ trait KafkaAvroSourceSpecMixin {
       .register(IntTopicWithKey, IntSchema, 1, isKey = false)
       .register(IntTopicWithKey, IntSchema, 1, isKey = true)
       .register(InvalidDefaultsTopic, InvalidDefaultsSchema, 1, isKey = false)
+      .register(ArrayOfNumbersTopic, ArrayOfIntsSchema, 1, isKey = false)
+      .register(ArrayOfNumbersTopic, ArrayOfLongsSchema, 2, isKey = false)
+      .register(ArrayOfRecordsTopic, ArrayOfRecordsV1Schema, 1, isKey = false)
+      .register(ArrayOfRecordsTopic, ArrayOfRecordsV2Schema, 2, isKey = false)
       .register(PaymentDateTopic, PaymentDate.schema, 1, isKey = false)
       .register(GeneratedWithLogicalTypesTopic, GeneratedAvroClassWithLogicalTypes.getClassSchema, 1, isKey = false)
       .build
