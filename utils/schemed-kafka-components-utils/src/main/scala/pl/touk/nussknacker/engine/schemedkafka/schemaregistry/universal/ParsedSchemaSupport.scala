@@ -17,7 +17,7 @@ import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransforme
 import pl.touk.nussknacker.engine.schemedkafka.encode._
 import pl.touk.nussknacker.engine.schemedkafka.schema.DefaultAvroSchemaEvolution
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, ConfluentSchemaRegistryClient, OpenAPIJsonSchema}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.ConfluentJsonPayloadKafkaSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.AvroMessageReader
@@ -36,7 +36,13 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override def payloadDeserializer(kafkaConfig: KafkaConfig): UniversalSchemaPayloadDeserializer = AvroPayloadDeserializer(kafkaConfig)
 
   override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] = {
-    ConfluentKafkaAvroSerializer(kafkaConfig, client, schemaOpt.map(_.cast()), isKey = isKey)
+    client match {
+      case confluentClient: ConfluentSchemaRegistryClient => ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
+      case _ =>
+        throw new IllegalArgumentException(s"Not supported schema registry client: ${client.getClass}. " +
+          s"Avro serialization is currently supported only for Confluent schema registry implementation")
+    }
+
   }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
@@ -65,10 +71,11 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
-  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[Any] = (topic: String, data: Any) => data match {
-    case j: Json => j.noSpaces.getBytes()
-    case _ => throw new SerializationException(s"Expecting json but got: $data")
-  }
+  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[Any] =
+    (topic: String, data: Any) => data match {
+      case j: Json => j.noSpaces.getBytes()
+      case _ => throw new SerializationException(s"Expecting json but got: $data")
+    }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = schema.cast().returnType
 
@@ -91,8 +98,15 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
 
   override def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer = JsonPayloadDeserializer
 
-  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] =
-    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, client, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast().avroSchema), isKey = isKey)
+  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] = {
+    client match {
+      case confluentClient: ConfluentSchemaRegistryClient =>
+        new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast().avroSchema), isKey = isKey), isKey = isKey)
+      case _ =>
+        throw new IllegalArgumentException(s"Not supported schema registry client: ${client.getClass}. " +
+          s"Avro with JSON payload serialization is currently supported only for Confluent schema registry implementation")
+    }
+  }
 
   override def typeDefinition(schema: ParsedSchema): TypingResult = AvroSchemaTypeDefinitionExtractor.typeDefinition(schema.cast().rawSchema())
 

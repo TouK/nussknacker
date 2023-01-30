@@ -40,8 +40,8 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
 }
 
 object ConfluentKafkaAvroSerializer {
-  def apply(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient, avroSchemaOpt: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer = {
-    new ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient], new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey)
+  def apply(kafkaConfig: KafkaConfig, schemaRegistryClient: ConfluentSchemaRegistryClient, avroSchemaOpt: Option[AvroSchema], isKey: Boolean): ConfluentKafkaAvroSerializer = {
+    new ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = isKey)
   }
 }
 
@@ -55,7 +55,7 @@ object ConfluentAvroSerializerFactory extends SchemaRegistryBasedSerializerFacto
       case schema: AvroSchema => schema
       case schema => throw new IllegalArgumentException(s"Not supported schema type: ${schema.schemaType()}")
     }
-    ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient, avroSchemaOpt, isKey = isKey)
+    ConfluentKafkaAvroSerializer(kafkaConfig, schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient], avroSchemaOpt, isKey = isKey)
   }
 
 }

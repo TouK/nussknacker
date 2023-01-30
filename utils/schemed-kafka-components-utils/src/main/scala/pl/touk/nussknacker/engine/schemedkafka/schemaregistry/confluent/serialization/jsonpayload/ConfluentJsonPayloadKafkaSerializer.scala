@@ -17,10 +17,10 @@ import java.io.OutputStream
 
 //TODO: handle situation, where we have both json and avro payloads for one schema registry
 class ConfluentJsonPayloadKafkaSerializer(kafkaConfig: KafkaConfig,
-                                          confluentSchemaRegistryClient: SchemaRegistryClient,
+                                          confluentSchemaRegistryClient: ConfluentSchemaRegistryClient,
                                           schemaEvolutionHandler: AvroSchemaEvolution,
                                           avroSchemaOpt: Option[AvroSchema], isKey: Boolean)
-  extends ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient], schemaEvolutionHandler, avroSchemaOpt, isKey = false) {
+  extends ConfluentKafkaAvroSerializer(kafkaConfig, confluentSchemaRegistryClient, schemaEvolutionHandler, avroSchemaOpt, isKey = false) {
 
   override protected def encoderToUse(schema: Schema, out: OutputStream): Encoder = new NoWrappingJsonEncoder(schema, out)
 
@@ -37,7 +37,7 @@ object ConfluentJsonPayloadSerializerFactory extends SchemaRegistryBasedSerializ
       case schema: AvroSchema => schema
       case schema => throw new IllegalArgumentException(s"Not supported schema type: ${schema.schemaType()}")
     }
-    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient, new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = false)
+    new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, schemaRegistryClient.asInstanceOf[ConfluentSchemaRegistryClient], new DefaultAvroSchemaEvolution, avroSchemaOpt, isKey = false)
   }
 
 }
