@@ -19,6 +19,7 @@
 * [#3948](https://github.com/TouK/nussknacker/pull/3948) 
   * Performance fix: `kafka` source on Flink engine doesn't serialize schema during record serialization
   * Configuration handling fixes: `avroKryoGenericRecordSchemaIdSerialization` wasn't checked properly
+  * Avro: added support for top level array schema
 
 1.7.0 (19 Dec 2022)
 ------------------------

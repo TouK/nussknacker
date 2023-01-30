@@ -59,6 +59,7 @@ class KafkaAvroSinkFactory(val schemaRegistryClientFactory: SchemaRegistryClient
       val validatedSchema = determinedSchema.andThen { s =>
         schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(s.schema)
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
+          .map(_ => s.schema)
       }
       val validationResult = validatedSchema
         .andThen { schema =>

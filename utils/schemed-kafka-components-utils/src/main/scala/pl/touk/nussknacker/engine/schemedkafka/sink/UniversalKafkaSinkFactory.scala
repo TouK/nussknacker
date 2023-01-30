@@ -62,8 +62,11 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
     ) =>
       val determinedSchema = getSchema(topic, version)
       val validationResult = determinedSchema.map(_.schema)
-        .andThen(schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(_).leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None))))
         .andThen { schema =>
+          schemaBasedMessagesSerdeProvider.schemaValidator.validateSchema(schema)
+            .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
+            .map(_ => schema)
+        }.andThen { schema =>
           UniversalSchemaSupport.forSchemaType(schema.schemaType())
             .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)

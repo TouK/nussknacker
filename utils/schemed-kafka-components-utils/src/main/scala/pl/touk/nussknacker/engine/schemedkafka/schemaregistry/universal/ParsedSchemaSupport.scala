@@ -101,7 +101,7 @@ object AvroSchemaWithJsonPayloadSupport extends ParsedSchemaSupport[AvroSchemaWi
   override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] = {
     client match {
       case confluentClient: ConfluentSchemaRegistryClient =>
-        new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast().avroSchema), isKey = isKey), isKey = isKey)
+        new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast().avroSchema), isKey = isKey)
       case _ =>
         throw new IllegalArgumentException(s"Not supported schema registry client: ${client.getClass}. " +
           s"Avro with JSON payload serialization is currently supported only for Confluent schema registry implementation")

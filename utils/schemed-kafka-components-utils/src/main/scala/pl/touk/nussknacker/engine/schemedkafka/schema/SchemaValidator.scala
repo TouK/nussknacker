@@ -6,6 +6,6 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryErro
 
 trait SchemaValidator extends Serializable {
 
-  def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T]
+  def validateSchema(schema: ParsedSchema): ValidatedNel[SchemaRegistryError, Unit]
 
 }

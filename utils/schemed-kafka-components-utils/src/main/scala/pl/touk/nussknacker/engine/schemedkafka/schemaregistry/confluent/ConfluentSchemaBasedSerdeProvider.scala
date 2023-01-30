@@ -1,5 +1,6 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent
 
+import pl.touk.nussknacker.engine.schemedkafka.schema.AvroSchemaValidator
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromPayloadInConfluentFormat
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization._
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.jsonpayload.{ConfluentJsonPayloadDeserializerFactory, ConfluentJsonPayloadSerializerFactory}
@@ -19,7 +20,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
         schemaRegistryClientFactory,
         SchemaIdFromPayloadInConfluentFormat,
         serializerFactory),
-      ConfluentAvroSchemaValidator
+      AvroSchemaValidator
     )
   }
 
@@ -28,7 +29,7 @@ object ConfluentSchemaBasedSerdeProvider extends Serializable {
       new KafkaSchemaRegistryBasedValueSerializationSchemaFactory(schemaRegistryClientFactory, ConfluentJsonPayloadSerializerFactory),
       new KafkaSchemaRegistryBasedKeyValueDeserializationSchemaFactory(schemaRegistryClientFactory, ConfluentJsonPayloadDeserializerFactory),
       new JsonPayloadToJsonFormatterFactory,
-      ConfluentAvroSchemaValidator
+      AvroSchemaValidator
     )
   }
 
