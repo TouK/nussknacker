@@ -9,7 +9,7 @@
   "private": true,
   "scripts": {
     "prebuild": "i18next '!(node_modules|dist|test)/**/*.{js,ts,tsx}'",
-    "build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R src/assets/license dist",
+    "#build": "NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R src/assets/license dist",
     "clean-build": "rm -rf dist && NODE_OPTIONS=--max_old_space_size=4096 NODE_ENV=production webpack --progress && cp -R src/assets/license dist",
     "check-types": "tsc",
     "lint": "eslint --fix .",
@@ -17,7 +17,8 @@
     "check": "npm run check-types && npm run lint -- . --rule 'i18next/no-literal-string: warn'",
     "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
     "clean-translations": "rm -rf ./translations/*",
-    "start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} webpack serve",
+    "start": "exit 0",
+    "#start": "npm run clean-translations && BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} webpack serve",
     "start-prod": "BACKEND_DOMAIN=http://localhost:${BE_PORT:-8080} node server.js",
     "start:backend-docker": "npm run clean-translations && start-server-and-test backend:docker http-get://localhost:${BE_PORT:-8080}/static/main.html start",
     "start:backend-remote": "npm run clean-translations && webpack serve",
@@ -28,7 +29,7 @@
     "pretest": "npm run check",
     "test": "jest --reporters=default --reporters=jest-junit",
     "commit": "lint-staged",
-    "make-types": "make-federated-types --outputDir ./.federated-types"
+    "#make-types": "make-federated-types --outputDir ./.federated-types"
   },
   "dependencies": {
     "@emotion/css": "11.9.0",
