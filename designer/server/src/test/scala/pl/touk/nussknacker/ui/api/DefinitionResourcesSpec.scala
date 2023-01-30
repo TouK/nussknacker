@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, PatientScalaFutures}
 import pl.touk.nussknacker.ui.api.helpers.TestCategories.TestCat
 import pl.touk.nussknacker.ui.api.helpers.TestFactory.withPermissions
+import pl.touk.nussknacker.ui.api.helpers.TestPermissions.CategorizedPermission
 import pl.touk.nussknacker.ui.api.helpers.{EspItTest, ProcessTestData, SampleProcess, TestCategories, TestProcessingTypes}
 import pl.touk.nussknacker.ui.process.marshall.ProcessConverter
 
@@ -67,6 +68,15 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
     getProcessDefinitionServices ~> check {
       status shouldBe StatusCodes.OK
       responseAs[Json]
+    }
+  }
+
+  it("should filter services for user with UserCategory1 category") {
+    getProcessDefinitionServicesWithPermissions(userCategoryWithReadPermissions) ~> check {
+      status shouldBe StatusCodes.OK
+      val services = getServices
+      services shouldBe Symbol("defined")
+      services.get should contain theSameElementsAs List("userService1", "userService2")
     }
   }
 
@@ -407,6 +417,10 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
     }
   }
 
+  private def getServices: Option[Iterable[String]] = {
+    responseAs[Json].hcursor.downField("streaming").keys
+  }
+
   private def getParamEditor(serviceName: String, paramName: String) = {
     responseAs[Json].hcursor
       .downField("streaming")
@@ -432,7 +446,11 @@ class DefinitionResourcesSpec extends AnyFunSpec with ScalatestRouteTest with Fa
   }
 
   private def getProcessDefinitionServices: RouteTestResult = {
-    Get("/processDefinitionData/services") ~> withPermissions(definitionResources, testPermissionRead)
+    getProcessDefinitionServicesWithPermissions(allCategoriesWithReadPermissions)
+  }
+
+  private def getProcessDefinitionServicesWithPermissions(permissions: CategorizedPermission): RouteTestResult = {
+    Get("/processDefinitionData/services") ~> withPermissions(definitionResources, permissions)
   }
 
 }
