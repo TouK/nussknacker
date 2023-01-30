@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
 import pl.touk.nussknacker.engine.api.typed.TypedMap
 import pl.touk.nussknacker.engine.api.typed.typing.{Typed, TypedNull, TypedObjectTypingResult, Unknown}
-import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesSwaggerTyped, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
+import pl.touk.nussknacker.engine.json.swagger.{AdditionalPropertiesDisabled, AdditionalPropertiesEnabled, SwaggerDateTime, SwaggerLong, SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.json.swagger.extractor.JsonToNuStruct
 
 class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with TableDrivenPropertyChecks {
@@ -26,7 +26,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
       ),
       (
         """{"type": "object", "properties": {"field": {"type": "string"}}, "additionalProperties": {"type": "integer"}}""",
-        baseSwaggerTyped.copy(additionalProperties = AdditionalPropertiesSwaggerTyped(SwaggerLong))
+        baseSwaggerTyped.copy(additionalProperties = AdditionalPropertiesEnabled(SwaggerLong))
       ),
       (
         """{"type": "object", "properties": {"field": {"type": "string"}}, "additionalProperties": false}""",
@@ -289,6 +289,7 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
   test("typed schema should produce same typingResult as typed swagger for SwaggerDateTime") {
     val schema = JsonSchemaBuilder.parseSchema(
       """{
+        |   "type": "object",
         |   "properties":{
         |      "time":{
         |         "type":"string",
@@ -306,23 +307,6 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
     swaggerTypeExtracted.asInstanceOf[TypedObjectTypingResult].fields("time") shouldBe
       Typed.fromInstance(jsonToObjectExtracted.asInstanceOf[TypedMap].get("time"))
 
-  }
-
-  test("should support schema without type") {
-    val schema = JsonSchemaBuilder.parseSchema(
-      """{
-        |   "properties":{
-        |      "id":{
-        |         "type":"string"
-        |      }
-        |   }
-        |}""".stripMargin)
-
-    val result = SwaggerBasedJsonSchemaTypeDefinitionExtractor.swaggerType(schema).typingResult
-
-    val results = List("id" -> Typed.apply[String])
-
-    result shouldBe TypedObjectTypingResult.apply(results)
   }
 
   test("should support union - constructed with 'type' array") {
@@ -508,13 +492,13 @@ class SwaggerBasedJsonSchemaTypeDefinitionExtractorTest extends AnyFunSuite with
         |  "properties": {
         |    "items": {
         |      "$ref": "#/defs/RecursiveList"
-        |    }  
+        |    }
         |  },
         |  "defs": {
         |    "RecursiveList": {
         |      "type": "object",
         |      "properties": {
-        |        "value": { "type": "string" }, 
+        |        "value": { "type": "string" },
         |        "next": { "$ref": "#/defs/RecursiveList" }
         |      }
         |    }

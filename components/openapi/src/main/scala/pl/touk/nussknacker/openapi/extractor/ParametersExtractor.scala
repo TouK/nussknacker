@@ -11,7 +11,7 @@ object ParametersExtractor {
   def queryParams(paramDef: QueryParameter, paramInput: Any): List[(String, String)] = {
     import scala.collection.JavaConverters._
     paramDef.`type` match {
-      case SwaggerObject(fieldDefs, _) =>
+      case SwaggerObject(fieldDefs, _, _) =>
         val inputs = paramInput.asInstanceOf[java.util.Map[String, AnyRef]].asScala
         inputs.toList.flatMap { case (a, b) =>
           queryParams(QueryParameter(s"${paramDef.name}.$a", fieldDefs(a)), b)
@@ -28,7 +28,7 @@ object ParametersExtractor {
 
   private def flattenBodyParameter(bodyParameter: SingleBodyParameter): List[ParameterWithBodyFlag] = {
     bodyParameter.`type` match {
-      case SwaggerObject(elementType, _) =>
+      case SwaggerObject(elementType, _, _) =>
         elementType.map { case (propertyName, swaggerType) =>
           prepareParameter(propertyName, swaggerType, isBodyPart = true)
         }.toList

@@ -4,7 +4,7 @@ import cats.data.Validated.condNel
 import cats.data.{NonEmptyList, Validated, ValidatedNel}
 import cats.implicits._
 import com.typesafe.scalalogging.LazyLogging
-import org.everit.json.schema.{ObjectSchema, Schema}
+import org.everit.json.schema.{EmptySchema, ObjectSchema, Schema}
 import pl.touk.nussknacker.engine.api.typed.typing._
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.json.SwaggerBasedJsonSchemaTypeDefinitionExtractor
@@ -44,6 +44,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   //todo: add support for: enums, logical types
   final private def validateTypingResult(typingResult: TypingResult, schema: Schema, parentSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
     (typingResult, schema) match {
+      case (_, _: EmptySchema) => valid
       case (Unknown, _) => validateUnknownInputType(schema, parentSchema, path)
       case (union: TypedUnion, _) => validateUnionInputType(union, schema, parentSchema, path)
       case (tc: TypedClass, s: ObjectSchema) if tc.representsMapWithStringKeys => validateMapInputType(tc, tc.params.tail.head, s, parentSchema, path)

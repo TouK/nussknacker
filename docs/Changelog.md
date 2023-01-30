@@ -3,6 +3,8 @@
 
 1.8.0 (Not released yet)
 ------------------------
+* [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
+* [#3945](https://github.com/TouK/nussknacker/pull/3945) - Allow to get Map category -> processingType through new categoriesWithProcessingType endpoint.
 * [#3821](https://github.com/TouK/nussknacker/pull/3821) - Exact typing & validation of JsonSchema enums (before only String values were handled). 
 * [#3819](https://github.com/TouK/nussknacker/pull/3819) - Handle JSON Schema refs in sinks
 * [#3654](https://github.com/TouK/nussknacker/pull/3654) Removed `/subprocessDetails` in favor of `/processDetails?isSubprocess=true`.
@@ -10,10 +12,13 @@
   scenarios with multiple sources can be tested from file
 * [#3869](https://github.com/TouK/nussknacker/pull/3869) cross-compile - scala 2.12 & 2.13
 * [#3874](https://github.com/TouK/nussknacker/pull/3874) Tumbling window with OnEvent trigger saves context
-* [#3853](https://github.com/TouK/nussknacker/pull/3853) Support of patternProperties in sink with JSON Schema
+* [#3853](https://github.com/TouK/nussknacker/pull/3853) [#3924](https://github.com/TouK/nussknacker/pull/3924) Support of patternProperties in sources/sinks with JSON Schema
+* [#3916](https://github.com/TouK/nussknacker/pull/3916) `environmentAlert.cssClass` setting renamed to `environmentAlert.color`
+* [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4 
+* [#3958](https://github.com/TouK/nussknacker/pull/3958) OpenAPI: specify Content-Type header based on schema 
 
 
-1.7.0
+1.7.0 (19 Dec 2022)
 ------------------------
 * [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3560](https://github.com/TouK/nussknacker/pull/3560), [#3595](https://github.com/TouK/nussknacker/pull/3595) Migrate from Flink Scala API to Java API
 * JSON Schema handling improvements:
@@ -49,7 +54,7 @@
   * [#3738](https://github.com/TouK/nussknacker/pull/3738) Kafka 3.2.3
   * [#3683](https://github.com/TouK/nussknacker/pull/3683) Flink 1.16
 
-* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base Docker image to eclipse temurin due to openjdk deprecation.
 * [#3606](https://github.com/TouK/nussknacker/pull/3606) Removed nussknacker-request-response-app. See MigrationGuide for details.
 * [#3626](https://github.com/TouK/nussknacker/pull/3626) Fix for: using Typed.fromDetailedType with scala type aliases cause exception
 * [#3576](https://github.com/TouK/nussknacker/pull/3576) Unified `/processes` and `/processesDetails`. Both endpoints support the same query parameters.
@@ -67,11 +72,11 @@
   
 1.6.1 (8 Nov 2022)
 ------------------------
-* [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenApi definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
+* [#3647](https://github.com/TouK/nussknacker/pull/3647) Fix for serving OpenAPI definition and SwaggerUI for deployed RequestResponse scenarios in embedded mode
 * [#3657](https://github.com/TouK/nussknacker/pull/3657) Fix for json-schema additionalProperties validation
 * [#3672](https://github.com/TouK/nussknacker/pull/3672) Fix contextId assignment for the output of ForEachTransformer (flink)
 * [#3671](https://github.com/TouK/nussknacker/pull/3671) Fix: do not show extra scrollbar on scenario screen when panel too large
-* [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario jsons (without `outputVariableNames` field in `SubprocessRef`)
+* [#3681](https://github.com/TouK/nussknacker/pull/3681) Fix: validate multiple same fragments used in a row in legacy scenario JSON (without `outputVariableNames` field in `SubprocessRef`)
 * [#3685](https://github.com/TouK/nussknacker/pull/3685) Fix: inconsistent SwaggerDateTime typing (LocalDateTime/ZonedDateTime)
 
 1.6.0 (18 Oct 2022)
@@ -79,7 +84,7 @@
 * [#3382](https://github.com/TouK/nussknacker/pull/3382) Security fix: Http cookie created by NU when using OAuth2 is now secure.
 * [#3385](https://github.com/TouK/nussknacker/pull/3385) Security fix: add http headers `'X-Content-Type-Options':'nosniff'` and `'Referrer-Policy':'no-referrer'`.
 * [#3370](https://github.com/TouK/nussknacker/pull/3370) Feature: scenario node category verification on validation
-* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-Response mode available for k8s deployment
+* [#3390](https://github.com/TouK/nussknacker/pull/3390) Request-Response mode available for K8s deployment
 * [#3392](https://github.com/TouK/nussknacker/pull/3392) Validate scenario before deploy
 * [#3436](https://github.com/TouK/nussknacker/pull/3436) Added types with value to results of operators
 * [#3406](https://github.com/TouK/nussknacker/pull/3406) Scalatest 3.0.8 -> 3.2.10, Scalacheck 1.14.0 -> 1.15.0
@@ -109,7 +114,7 @@
 * [#3619](https://github.com/TouK/nussknacker/pull/3619) Patch `KafkaMetricWrapper.java` until Flink 1.15.3 is released. Read [more](https://issues.apache.org/jira/browse/FLINK-28488) about this bug. 
 * [#3574](https://github.com/TouK/nussknacker/pull/3574) Feature: instance logo can be shown next to Nu logo, by convention it has
   to be available at path `<nu host>/assets/img/instance-logo.svg`
-* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base docker image to eclipse temurin due to openjdk deprecation.
+* [#3524](https://github.com/TouK/nussknacker/pull/3524) Change base Docker image to Eclipse Temurin due to OpenJDK image deprecation.
 * [#3632](https://github.com/TouK/nussknacker/pull/3632) Fix presenting validation errors for properties.
 
 1.5.0 (16 Aug 2022)
@@ -123,7 +128,7 @@
 * [#3134](https://github.com/TouK/nussknacker/pull/3134) Metric counters (e.g. nodeCount) are initialized eagerly to minimize problems with initial count computations.
 * [#3162](https://github.com/TouK/nussknacker/pull/3162) OAuth2 access token can be optionally set in cookie (useful e.g. for Grafana proxy authentication)             
 * [#3165](https://github.com/TouK/nussknacker/pull/3165) Added configuration `enableConfigEndpoint` which controls whether expose config over http (GET /api/app/config/). Default value is false.
-* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short json answer with "OK" status is now not secured - you can use it without authentication
+* [#3169](https://github.com/TouK/nussknacker/pull/3169) API endpoint `/api/app/healthCheck` returning short JSON answer with "OK" status is now not secured - you can use it without authentication
 * [#3075](https://github.com/TouK/nussknacker/pull/3075) Added full outer join
 * [#3183](https://github.com/TouK/nussknacker/pull/3183) Attachments table has proper column format (migration is automatic, doesn't need any manual actions)
 * [#3189](https://github.com/TouK/nussknacker/pull/3189) Pass accessToken to iframes
@@ -149,12 +154,12 @@
   [#3288](https://github.com/TouK/nussknacker/pull/3288) [#3295](https://github.com/TouK/nussknacker/pull/3295) [#3297](https://github.com/TouK/nussknacker/pull/3297)
   [#3299](https://github.com/TouK/nussknacker/pull/3299) [#3309](https://github.com/TouK/nussknacker/pull/3309) [#3316](https://github.com/TouK/nussknacker/pull/3316)
   [#3322](https://github.com/TouK/nussknacker/pull/3322) [#3337](https://github.com/TouK/nussknacker/pull/3337) [#3287](https://github.com/TouK/nussknacker/pull/3287)
-  Universal kafka source/sink, handling multiple scenarios like: avro message for avro schema, json message for json schema. Legacy, low level kafka components can be turned on by new lowLevelComponentsEnabled flag 
-  * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support json schema in universal source
-  * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle json payload with avro schema
+  Universal Kafka source/sink, handling multiple scenarios like: Avro message for Avro schema, JSON message for JSON schema. Legacy, low level Kafka components can be turned on by new lowLevelComponentsEnabled flag 
+  * [#3317](https://github.com/TouK/nussknacker/pull/3317) Support JSON Schema in universal source
+  * [#3332](https://github.com/TouK/nussknacker/pull/3332) Config option to handle JSON payload with Avro schema
   * [#3354](https://github.com/TouK/nussknacker/pull/3354) Universal source optimization - if message without schemaId, using cache when getting one
   * [#3346](https://github.com/TouK/nussknacker/pull/3346) UniversalKafkaSink provides also 'raw editor'
-  * [#3345](https://github.com/TouK/nussknacker/pull/3345) Swagger 2.2.1, OpenAPI 3.1, jsonSchema typing and deserialization same as in openapi components
+  * [#3345](https://github.com/TouK/nussknacker/pull/3345) Swagger 2.2.1, OpenAPI 3.1, JSON Schema typing and deserialization same as in OpenAPI components
   
 * [#3249](https://github.com/TouK/nussknacker/pull/3249) Confluent 5.5->7.2, avro 1.9->1.11 bump
 * [#3250](https://github.com/TouK/nussknacker/pull/3250) [#3302](https://github.com/TouK/nussknacker/pull/3302) Kafka 2.4 -> 2.8, Flink 1.14.4 -> 1.14.5
@@ -164,20 +169,20 @@
 * [#3264](https://github.com/TouK/nussknacker/pull/3264) Added support for generic functions
 * [#3253](https://github.com/TouK/nussknacker/pull/3253) Separate validation step during scenario deployment
 * [#3328](https://github.com/TouK/nussknacker/pull/3328) Schema type aware serialization of `NkSerializableParsedSchema`
-* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict avro schema validation: include optional fields validation, 
+* [#3071](https://github.com/TouK/nussknacker/pull/3071) [3379](https://github.com/TouK/nussknacker/pull/3379) More strict Avro schema validation: include optional fields validation, 
   handling some invalid cases like putting long to int field, strict union types validation, reduced number of validation modes to lax | strict.
 * [#3289](https://github.com/TouK/nussknacker/pull/3289) Handle asynchronous deployment and status checks better
 * [#3071](https://github.com/TouK/nussknacker/pull/3334) Improvements: Allow to import file with different id
 * [#3412](https://github.com/TouK/nussknacker/pull/3412) Corrected filtering disallowed types in methods
 * [#3363](https://github.com/TouK/nussknacker/pull/3363) Kafka consumer no longer set `auto.offset.reset` to `earliest` by default. Instead, Kafka client will use default Kafka value which is `latest`
 * [#3371](https://github.com/TouK/nussknacker/pull/3371) Fix for: Indexing on arrays wasn't possible
-* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling) 
+* [#3376](https://github.com/TouK/nussknacker/pull/3376) (Flink) Handling Kafka source deserialization errors by exceptionHandler (https://nussknacker.io/documentation/docs/installation_configuration_guide/model/Flink#configuring-exception-handling) 
 
 1.4.0 (14 Jun 2022)
 ------------------------
 * [#2983](https://github.com/TouK/nussknacker/pull/2983) Extract Permission to extensions-api
 * [#3010](https://github.com/TouK/nussknacker/pull/3010) Feature: Docker Java Debug Option
-* [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of k8s resource quotas
+* [#3003](https://github.com/TouK/nussknacker/pull/3003) Streaming-lite runtime aware of K8s resource quotas
 * [#3028](https://github.com/TouK/nussknacker/pull/3028) Force synchronous interpretation for scenario parts that does not contain any services
   (enrichers, processors). Disable the feature with flag `globalParameters.forceSyncInterpretationForSyncScenarioPart: false`.
 * [#3006](https://github.com/TouK/nussknacker/pull/3006) Fixed passing RESTARTING status to GUI (applies to both Flink and K8 engines)
@@ -200,7 +205,7 @@
 ------------------------
 * [#2967](https://github.com/TouK/nussknacker/pull/2967) Add json-utils module and move there json-utils from `liteRequestResponseComponents`.
 * [#2955](https://github.com/TouK/nussknacker/pull/2955) Add Json schema sink/source (with editor) for request/response. Move inputSchema to properties.
-* [#2841](https://github.com/TouK/nussknacker/pull/2841) Some performance improvements - reduced number of serialization round-trips for scenario jsons  
+* [#2841](https://github.com/TouK/nussknacker/pull/2841) Some performance improvements - reduced number of serialization round-trips for scenario JSON  
 * [#2741](https://github.com/TouK/nussknacker/pull/2741) [#2841](https://github.com/TouK/nussknacker/pull/2841) Remove custom scenario (custom process)
 * [#2773](https://github.com/TouK/nussknacker/pull/2773) Using VersionId / ProcessId / ProcessName instead of Long or String
 * [#2830](https://github.com/TouK/nussknacker/pull/2830) `RunMode` is renamed to `ComponanteUseCase` and `Normal` value is split into: `EngineRuntime`, `Validation`, `ServiceQuery`, `TestDataGeneration`. `RunMode.Test` becomes `ComponanteUseCase.TestRuntime`
@@ -228,11 +233,11 @@
 * [#2535](https://github.com/TouK/nussknacker/pull/2535), [#2625](https://github.com/TouK/nussknacker/pull/2625) Rename `standalone` to `request-response`, 
   move request-response modules to `base` dir. Also - small refactorings in the engine and configuration format
 * [#2483](https://github.com/TouK/nussknacker/pull/2483) Embedded DeploymentManager for Lite Streaming.
-* [#2441](https://github.com/TouK/nussknacker/pull/2441) avro sink supports defaults of primitive avro types
+* [#2441](https://github.com/TouK/nussknacker/pull/2441) Avro sink supports defaults of primitive avro types
 * [#2498](https://github.com/TouK/nussknacker/pull/2498), [#2499](https://github.com/TouK/nussknacker/pull/2499), [#2503](https://github.com/TouK/nussknacker/pull/2503), [#2539](https://github.com/TouK/nussknacker/pull/2539) EspExceptionHandler is removed from ProcessConfigCreator.
   Flink engine uses now fixed exception handler: FlinkExceptionHandler. All deprecated FlinkEspExceptionHandler implementations are removed.
 * [#2543](https://github.com/TouK/nussknacker/pull/2543) Eager parameters can have helpers injected.
-* [#2493](https://github.com/TouK/nussknacker/pull/2493) kafka configuration is now provided by components provider configuration, if not provided avroKryoGenericRecordSchemaIdSerialization default is set to true - previously false
+* [#2493](https://github.com/TouK/nussknacker/pull/2493) Kafka configuration is now provided by components provider configuration, if not provided avroKryoGenericRecordSchemaIdSerialization default is set to true - previously false
 * [#2569](https://github.com/TouK/nussknacker/pull/2569) Flink aggregations are now part of flinkBaseComponents. `flink-model-util` is no longer needed and is removed.
 * [#2651](https://github.com/TouK/nussknacker/pull/2651) Fixed behaviour of fragments which use components which clear context. 
 * [#2564](https://github.com/TouK/nussknacker/pull/2564) Flink union simplification, it now takes only 'Output expression' parameters for branches (previously 'value' parameter), output variable must be of the same type
@@ -316,7 +321,7 @@ and `GenericNodeTransformation.implementation` is not invoked in this case
 load additional encoders.
 * [#1439](https://github.com/TouK/nussknacker/pull/1439) Upgrade to Flink 1.13
 * [#1993](https://github.com/TouK/nussknacker/pull/1993) Demo was moved to https://github.com/TouK/nussknacker-quickstart. 
-Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed docker defaults from default configs.
+Some additional refactors done: logback configuration enhancements, simpler run.sh script, removed Docker defaults from default configs.
 * [#2105](https://github.com/TouK/nussknacker/pull/2105) [#2112](https://github.com/TouK/nussknacker/pull/2112)
 Better handling Flink's job deploying - we report job initialization as a "DURING_DEPLOY" instead of "RUNNING" now, and we are checking available slots on Flink before deploy
 * [#2152](https://github.com/TouK/nussknacker/pull/2152) Possibility to create `SchedulePropertyExtractor` using deployment manager's configuration.
@@ -368,14 +373,14 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#1363](https://github.com/TouK/nussknacker/pull/1363) Open/close only services that are actually used in process
 * [#1367](https://github.com/TouK/nussknacker/pull/1367) Custom actions - first, experimental version
 * Migration of CI to github actions
-    * [#1368](https://github.com/TouK/nussknacker/pull/1368) Publish docker images/jars via GH actions (experimental)
+    * [#1368](https://github.com/TouK/nussknacker/pull/1368) Publish Docker images/jars via GH actions (experimental)
     * [#1381](https://github.com/TouK/nussknacker/pull/1381) Use GH Actions for coverage
     * [#1383](https://github.com/TouK/nussknacker/pull/1383) Switch github badges
 * [#1382](https://github.com/TouK/nussknacker/pull/1382) First E2E FE tests                                                             
 * [#1373](https://github.com/TouK/nussknacker/pull/1373) Ability to load custom model config programmatically
 * [#1406](https://github.com/TouK/nussknacker/pull/1406) Eager services - ability to create service object using static parameters
 * [#962](https://gihub.com/TouK/nussknacker/pull/962) New ways of querying InfluxDB for counts, integration tests, no default database name in code
-* [#1428](https://github.com/TouK/nussknacker/pull/1428) Kafka SchemaRegistry source/sink can use JSON payloads. In this PR we assume one schema registry contains either json or avro payloads but not both.                                         
+* [#1428](https://github.com/TouK/nussknacker/pull/1428) Kafka SchemaRegistry source/sink can use JSON payloads. In this PR we assume one schema registry contains either JSON or Avro payloads but not both.                                         
 * [#1445](https://github.com/TouK/nussknacker/pull/1445) Small refactor of RecordFormatter, correct handling different formatting in kafka-json in test data generation
 * [#1433](https://github.com/TouK/nussknacker/pull/1433) Pass DeploymentData to process, including deploymentId and possible additional info                
 * [#1458](https://github.com/TouK/nussknacker/pull/1458) `PeriodicProcessListener` allows custom handling of `PeriodicProcess` events                
@@ -384,8 +389,8 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#1514](https://github.com/TouK/nussknacker/pull/1514) Expose DeploymentData in Flink UI via `NkGlobalParameters`
 * [#1510](https://github.com/TouK/nussknacker/pull/1510) `FlinkSource` API allows to create stream of `Context` (FlinkSource API and test support API refactoring).
 * [#1497](https://github.com/TouK/nussknacker/pull/1497) Initial support for multiple (named) schedules in `PeriodicProcessManager`
-* [#1499](https://github.com/TouK/nussknacker/pull/1499) ClassTag is provided in params in avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
-* [#1533](https://github.com/TouK/nussknacker/pull/1533) Fix: Update process with same json
+* [#1499](https://github.com/TouK/nussknacker/pull/1499) ClassTag is provided in params in Avro key-value deserialization schema factory: `KafkaAvroKeyValueDeserializationSchemaFactory`
+* [#1533](https://github.com/TouK/nussknacker/pull/1533) Fix: Update process with same JSON
 * [#1546](https://github.com/TouK/nussknacker/pull/1546) Unions (e.g after split) are possible in standalone mode. Also, it's possible to define transformers which operate on all results (e.g. for sorting recommendations)
 * [#1547](https://github.com/TouK/nussknacker/pull/1547) Publish first version of BOM including dependencyOverrides
 * [#1543](https://github.com/TouK/nussknacker/pull/1543) `ComponentProvider` API enables adding new extensions without changing e.g. `ProcessConfigCreator`
@@ -401,7 +406,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
 * [#1809](https://github.com/TouK/nussknacker/pull/1809) Performance optimization for aggregates: do not update state if added element is neutral for current state
 * [#1886](https://github.com/TouK/nussknacker/pull/1886) Performance optimization for aggregates: do not save context in state. Added `#AGG` utility for easier switching from simple aggregating functions like `'Sum'` to more complex `#AGG.map()`
 * [#1820](https://github.com/TouK/nussknacker/pull/1820) Added missing support for some logical types (LocalDate, LocalTime, UUID) in json encoding
-* [#1799](https://github.com/TouK/nussknacker/pull/1799) ConfluentAvroToJsonFormatter produces and reads test data in valid json format with full kafka metadata and schema ids.
+* [#1799](https://github.com/TouK/nussknacker/pull/1799) ConfluentAvroToJsonFormatter produces and reads test data in valid JSON format with full kafka metadata and schema ids.
 * [#1839](https://github.com/TouK/nussknacker/pull/1839) Set up `explicitUidInStatefulOperators` model's flag to `true` by default.
 * [#1357](https://github.com/TouK/nussknacker/pull/1357) Add run mode to nodes to be able to determine if we are inside e.g. test process run.
   Run mode is can be declared as a dependency in generic node transformations. Nodes created via `@MethodToInvoke` can declare `RunMode` as an implicit parameter.
@@ -417,7 +422,7 @@ Better handling Flink's job deploying - we report job initialization as a "DURIN
     * [#1334](https://github.com/TouK/nussknacker/pull/1334) Type promotion cache
     * [#1335](https://github.com/TouK/nussknacker/pull/1335) Omitting zeros for sum aggregate to avoid unnecessary buckets 
     * [#1336](https://github.com/TouK/nussknacker/pull/1336) Aggregation metrics
-* [#1321](https://github.com/TouK/nussknacker/pull/1321) Exception handler accessible via custom node context, avro record encoding errors reported by exception handler
+* [#1321](https://github.com/TouK/nussknacker/pull/1321) Exception handler accessible via custom node context, Avro record encoding errors reported by exception handler
 
 0.3.0 (17 Nov 2020)
 ------------------------
@@ -465,7 +470,7 @@ ProcessManager implementations are separated from UI to allow easier changes in 
 * [#1024](https://github.com/TouK/nussknacker/pull/1024) Added default async interpretation value configured by `asyncExecutionConfig.defaultUseAsyncInterpretation` (false if missing).
 * [#879](https://github.com/TouK/nussknacker/pull/879) Metrics can now use Flink variables for better reporting, it's recommended to use InfluxDB native protocol instead of legacy Graphite protocol to send metrics to InfluxDB.
 * [#940](https://github.com/TouK/nussknacker/pull/940) More detailed node errors 
-* [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in docker and standalone distribution) 
+* [#949](https://github.com/TouK/nussknacker/pull/949) JVM options can be configured via JDK_JAVA_OPTIONS env variable (in Docker and standalone distribution) 
 * [#954](https://github.com/TouK/nussknacker/pull/954) Correct handling of types in empty inline lists 
 * [#944](https://github.com/TouK/nussknacker/pull/903) System cache mechanism
 * [#704](https://github.com/TouK/nussknacker/pull/704) Preloaded creator panel node icons

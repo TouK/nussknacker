@@ -40,8 +40,8 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
         "decimalField" -> SwaggerBigDecimal,
         "doubleField" -> SwaggerDouble,
         "nullField" -> SwaggerNull,
-        "mapField" -> SwaggerMap(None),
-        "mapOfStringsField" -> SwaggerMap(Some(SwaggerString))
+        "mapField" -> SwaggerObject(Map.empty),
+        "mapOfStringsField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))
       ), AdditionalPropertiesDisabled
     )
 
@@ -67,7 +67,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
   }
 
   test("should reject map with incorrect values types") {
-    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerMap(Some(SwaggerString))), AdditionalPropertiesDisabled)
+    val definition = SwaggerObject(elementType = Map("mapField" -> SwaggerObject(Map.empty, AdditionalPropertiesEnabled(SwaggerString))), AdditionalPropertiesDisabled)
 
     val ex = intercept[JsonToObjectError](JsonToNuStruct(json, definition))
 
@@ -75,7 +75,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     ex.path shouldBe "mapField.b"
   }
 
-  test("should skip addionalFields when schema/SwaggerObject does not allow them") {
+  test("should skip additionalFields when schema/SwaggerObject does not allow them") {
     val definitionWithoutFields = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesDisabled)
     extractor.JsonToNuStruct(json, definitionWithoutFields) shouldBe TypedMap(Map.empty)
 
@@ -93,7 +93,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
     ))
 
     val jsonIntegers = Json.obj("field1" -> fromInt(2), "field2" -> fromInt(1))
-    val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+    val definition2 = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
     extractor.JsonToNuStruct(jsonIntegers, definition2) shouldBe TypedMap(Map(
       "field1" -> 2L,
       "field2" -> 1L
@@ -102,7 +102,7 @@ class JsonToNuStructTest extends AnyFunSuite with Matchers {
 
   test("should throw exception on trying convert string to integer") {
     val json = Json.obj("field1" -> fromString("value"), "field2" -> Json.fromInt(1))
-    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesSwaggerTyped(SwaggerLong))
+    val definition = SwaggerObject(elementType = Map("field3" -> SwaggerLong), AdditionalPropertiesEnabled(SwaggerLong))
 
     val ex = intercept[JsonToObjectError] {
       extractor.JsonToNuStruct(json, definition)
