@@ -4,7 +4,20 @@
 To see the biggest differences please consult the [changelog](Changelog.md).
 
 ## In version 1.8.0
-           
+
+### Scenario authoring changes
+* [#3924](https://github.com/TouK/nussknacker/pull/3924) 
+  * Fixup: `{}` is now interpreted as "allow everything schema", not as "object schema". Objects schemas have to have declared `"type": "object"`.
+  * Unknown is now allowed on sinks in both validation modes if output schema is "everything allowed schema".
+
+### Code API changes
+* [#3924](https://github.com/TouK/nussknacker/pull/3924) - changes to `SwaggerTyped` hierarchy
+  * `SwaggerMap(valuesType)` -> `SwaggerObject(Map.empty, additionalProperties = AdditionalPropertiesEnabled(valuesType))`
+  * `AdditionalPropertiesSwaggerTyped` -> `AdditionalPropertiesEnabled`
+  * `AdditionalPropertiesWithoutType` -> `AdditionalPropertiesEnabled(SwaggerAny)`
+  * `SwaggerRecursiveSchema/SwaggerUnknownFallback` -> `SwaggerAny`
+
+### Other changes
 * [#3835](https://github.com/TouK/nussknacker/pull/3835) Removed Signals and QueryableState. This change affects:
   * Configuration
   * Components and DeploymentManager API
