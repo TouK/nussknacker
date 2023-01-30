@@ -46,7 +46,7 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
       // We always want to create generic record at the end, because specific can has other fields than expected
       val reader = AvroUtils.createGenericDatumReader[AnyRef](writerSchema, readerSchema)
       val buffer = ByteBuffer.wrap(payload)
-      val data = recordDeserializer.deserializeRecord(readerSchema, reader, buffer, 0)
+      val data = recordDeserializer.deserializeRecord(readerSchema, reader, buffer)
       data match {
         case c: GenericContainer => c
         case _ => new NonRecordContainer(readerSchema, data)

@@ -29,11 +29,11 @@ class SchemaIdFromMessageExtractorTest extends AnyFunSuite with Matchers with Op
     val resultForKey = extractor.getSchemaId(emptyHeaders, bos.toByteArray, isKey = true).value
     resultForKey.value shouldEqual schemaId
     resultForKey.buffer.array() shouldEqual Array(ConfluentUtils.MagicByte, 0, 0, 0, schemaId.asInt.byteValue())
-    resultForKey.bufferStartPosition shouldEqual ConfluentUtils.HeaderSize
+    resultForKey.buffer.position() shouldEqual ConfluentUtils.HeaderSize
     val resultForValue = extractor.getSchemaId(emptyHeaders, bos.toByteArray, isKey = false).value
     resultForValue.value shouldEqual schemaId
     resultForValue.buffer.array() shouldEqual Array(ConfluentUtils.MagicByte, 0, 0, 0, schemaId.asInt.byteValue())
-    resultForKey.bufferStartPosition shouldEqual ConfluentUtils.HeaderSize
+    resultForKey.buffer.position() shouldEqual ConfluentUtils.HeaderSize
   }
 
   test("schema id from headers is more important than schema id from payload") {
@@ -55,7 +55,7 @@ class SchemaIdFromMessageExtractorTest extends AnyFunSuite with Matchers with Op
     val result = extractor.getSchemaId(headersWithSchemaIdAvailable, bos.toByteArray, isKey = false).value
     result.value shouldEqual schemaIdInBothHeaderAndPayload
     result.buffer.array() shouldEqual Array(ConfluentUtils.MagicByte, 0, 0, 0, schemaIdInBothHeaderAndPayload.asInt.byteValue())
-    result.bufferStartPosition shouldEqual ConfluentUtils.HeaderSize
+    result.buffer.position() shouldEqual ConfluentUtils.HeaderSize
   }
 
 }

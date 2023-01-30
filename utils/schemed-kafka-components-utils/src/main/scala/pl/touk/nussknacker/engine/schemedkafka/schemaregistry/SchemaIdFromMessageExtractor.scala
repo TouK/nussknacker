@@ -14,9 +14,7 @@ trait SchemaIdFromMessageExtractor {
 
 }
 
-case class SchemaIdWithPositionedBuffer(value: SchemaId, buffer: ByteBuffer) {
-  def bufferStartPosition: Int = buffer.position()
-}
+case class SchemaIdWithPositionedBuffer(value: SchemaId, buffer: ByteBuffer)
 
 case class GetSchemaIdArgs(headers: Headers, data: Array[Byte], isKey: Boolean)
 

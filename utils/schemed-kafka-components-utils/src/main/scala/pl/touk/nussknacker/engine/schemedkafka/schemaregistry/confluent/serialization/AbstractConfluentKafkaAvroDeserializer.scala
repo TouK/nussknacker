@@ -37,8 +37,7 @@ abstract class AbstractConfluentKafkaAvroDeserializer extends AbstractKafkaAvroD
       schemaId = buffer.getInt
       val parsedSchema = schemaRegistry.getSchemaById(schemaId)
       val writerSchemaData = RuntimeSchemaData(AvroUtils.extractSchema(parsedSchema), Some(SchemaId.fromInt(schemaId)))
-      val bufferDataStart = 1 + AbstractKafkaSchemaSerDe.idSize
-      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer, bufferDataStart)
+      confluentAvroPayloadDeserializer.deserialize(expectedSchemaData.map(_.toParsedSchemaData), writerSchemaData.toParsedSchemaData, buffer)
     } catch {
       case exc: RestClientException =>
         throw new SerializationException(s"Error retrieving Avro schema for id : $schemaId", exc)

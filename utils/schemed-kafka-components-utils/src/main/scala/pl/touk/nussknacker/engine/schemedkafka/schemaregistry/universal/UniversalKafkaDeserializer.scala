@@ -36,7 +36,7 @@ class UniversalKafkaDeserializer[T](schemaRegistryClient: SchemaRegistryClient,
 
     UniversalSchemaSupport.forSchemaType(writerSchema.schemaType())
       .payloadDeserializer(kafkaConfig)
-      .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer, writerSchemaId.bufferStartPosition)
+      .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]
   }
 }
