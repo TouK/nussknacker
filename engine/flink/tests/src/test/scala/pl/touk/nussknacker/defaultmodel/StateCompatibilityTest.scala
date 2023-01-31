@@ -115,7 +115,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     * 2. remove old snapshot (tests in this class require ONLY ONE savepoint)
     * 3. go back to ignore :)
     */
-  test("should create savepoint and save to disk") {
+  ignore("should create savepoint and save to disk") {
     val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
@@ -133,7 +133,7 @@ class StateCompatibilityTest extends FlinkWithKafkaSuite with Eventually with La
     })
   }
 
-  ignore("should restore from snapshot") {
+  test("should restore from snapshot") {
     val inputTopicConfig = createAndRegisterAvroTopicConfig(inTopic, RecordSchemaV1)
     val outputTopicConfig = createAndRegisterTopicConfig(outTopic, JsonSchemaV1)
 
