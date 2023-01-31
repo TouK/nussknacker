@@ -11,6 +11,7 @@ export const getSettings = (state: RootState): SettingsState => state.settings
 
 export const getAuthenticationSettings = createSelector(getSettings, (s): AuthenticationSettings => s.authenticationSettings)
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
+export const getEnvironmentAlert = createSelector(getFeatureSettings, s => s?.environmentAlert || {})
 export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => uniqBy((s.tabs || []), t => t.id))
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
 export const getSurveySettings = createSelector(getFeatureSettings, s => s?.surveySettings)

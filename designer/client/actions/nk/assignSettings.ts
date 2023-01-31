@@ -21,8 +21,8 @@ export type SurveySettings ={
 }
 
 export interface EnvironmentTagSettings {
-  content: string,
-  color: EnvironmentTagColor,
+  content?: string,
+  color?: EnvironmentTagColor,
 }
 
 export type FeaturesSettings = {
