@@ -23,7 +23,6 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchema;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Parser;
 import org.apache.avro.reflect.Nullable;
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.AvroSchemaWithJsonPayload;
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema;
 
 import java.io.IOException;
@@ -41,7 +40,8 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
     private static final long serialVersionUID = 2;
     private static final byte avroSchemaType = 1;
     private static final byte jsonSchemaType = 2;
-    private static final byte avroSchemaWithJsonPayloadType = 3;
+    // TODO: remove it after state will be fully migrated
+    private static final byte legacyAvroSchemaWithJsonPayloadType = 3;
 
     private transient @Nullable T schema;
 
@@ -67,11 +67,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
             } else if (schema instanceof OpenAPIJsonSchema) {
                 oos.writeByte(jsonSchemaType);
                 oos.writeObject(((OpenAPIJsonSchema) schema).rawSchema().toString());
-            } else if (schema instanceof AvroSchemaWithJsonPayload) {
-                oos.writeByte(avroSchemaWithJsonPayloadType);
-                oos.writeObject(((AvroSchemaWithJsonPayload) schema).rawSchema().toString());
-            }
-            else {
+            } else {
                 throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schema.schemaType());
             }
         }
@@ -82,6 +78,7 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
         if (ois.readBoolean()) {
             byte schemaType = ois.readByte();
             switch (schemaType) {
+                case legacyAvroSchemaWithJsonPayloadType:
                 case avroSchemaType:
                     String avroSchemaStr = (String) ois.readObject();
                     this.schema = (T) new AvroSchema(new Parser().parse(avroSchemaStr));
@@ -89,10 +86,6 @@ public final class NkSerializableParsedSchema<T extends ParsedSchema> implements
                 case jsonSchemaType:
                     String jsonSchemaStr = (String) ois.readObject();
                     this.schema = (T) new OpenAPIJsonSchema(jsonSchemaStr);
-                    break;
-                case avroSchemaWithJsonPayloadType:
-                    String avroSchema = (String) ois.readObject();
-                    this.schema = (T) new AvroSchemaWithJsonPayload(new AvroSchema(avroSchema));
                     break;
                 default:
                     throw new IllegalStateException("Shouldn't happen. Unsupported schema type: " + schemaType);

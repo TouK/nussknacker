@@ -46,8 +46,7 @@ object ConfluentUtils extends LazyLogging {
       case "JSON" => OpenAPIJsonSchema(schemaMetadata.getSchema)
       case other => throw new IllegalArgumentException(s"Not supported schema type: $other")
     }
-    val adjustedSchema = AvroUtils.adjustParsedSchema(confluentParsedSchema, config)
-    SchemaWithMetadata(adjustedSchema, SchemaId.fromInt(schemaMetadata.getId))
+    SchemaWithMetadata(confluentParsedSchema, SchemaId.fromInt(schemaMetadata.getId))
   }
 
   def convertToAvroSchema(schema: Schema, version: Option[Int] = None): AvroSchema =
