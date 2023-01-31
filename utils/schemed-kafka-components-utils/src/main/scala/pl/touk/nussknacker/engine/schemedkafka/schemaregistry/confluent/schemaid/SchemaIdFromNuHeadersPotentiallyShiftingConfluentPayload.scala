@@ -3,9 +3,18 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemai
 import org.apache.kafka.common.header.Headers
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GetSchemaIdArgs, SchemaId, SchemaIdFromMessageExtractor, SchemaIdWithPositionedBuffer}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload._
 
 import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets
 import scala.util.Try
+
+object SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload {
+
+  val ValueSchemaIdHeaderName = "value.schemaId"
+  val KeySchemaIdHeaderName = "key.schemaId"
+
+}
 
 /**
   * This class basically extract schema id from our specific headers: key/value.schemaId.
@@ -13,26 +22,32 @@ import scala.util.Try
   * is in Confluent format (magic byte + schema id + bytes). Because of that we need to shift this payload
   * so next step (payload deserializer) will have clear situation - buffer pointer pointing to bytes with message
   */
-object SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload extends SchemaIdFromMessageExtractor with Serializable {
-
-  val ValueSchemaIdHeaderName = "value.schemaId"
-  val KeySchemaIdHeaderName = "key.schemaId"
+class SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload(intSchemaId: Boolean,
+                                                               potentiallyShiftConfluentPayload: Boolean)
+  extends SchemaIdFromMessageExtractor {
 
   implicit class RichHeaders(h: Headers) {
     def getSchemaId(headerName: String): Option[SchemaId] = Option(h.lastHeader(headerName))
-      .map(h => new String(h.value()))
-      .map { v =>
-        Try(v.toInt).fold(
-          e => throw new InvalidSchemaIdHeader(headerName, v, e),
-          // TODO: handle string schema ids
-          v => SchemaId.fromInt(v))
+      .map(header => new String(header.value(), StandardCharsets.UTF_8))
+      .map { stringValue =>
+        if (intSchemaId) {
+          Try(stringValue.toInt).fold(
+            e => throw new InvalidSchemaIdHeader(headerName, stringValue, e),
+            SchemaId.fromInt)
+        } else {
+          SchemaId.fromString(stringValue)
+        }
       }
   }
 
   override def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {
     val headerName = if (args.isKey) KeySchemaIdHeaderName else ValueSchemaIdHeaderName
     args.headers.getSchemaId(headerName).map { idFromHeader =>
-      val buffer = ConfluentUtils.readIdAndGetBuffer(args.data).toOption.map(_._2).getOrElse(ByteBuffer.wrap(args.data))
+      val buffer = if (potentiallyShiftConfluentPayload) {
+        ConfluentUtils.readIdAndGetBuffer(args.data).toOption.map(_._2).getOrElse(ByteBuffer.wrap(args.data))
+      } else {
+        ByteBuffer.wrap(args.data)
+      }
       SchemaIdWithPositionedBuffer(idFromHeader, buffer)
     }
   }

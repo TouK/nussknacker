@@ -45,14 +45,14 @@ object MessageWithoutSchemaIdException extends IllegalArgumentException("Missing
 
 class MismatchReaderWriterSchemaException(expectedType: String, actualType: String) extends IllegalArgumentException(s"Expecting schema of type $expectedType. but got payload with $actualType schema type")
 
-class UniversalKafkaDeserializerFactory(schemaIdFromMessageExtractor: ChainedSchemaIdFromMessageExtractor)
+class UniversalKafkaDeserializerFactory(createSchemaIdFromMessageExtractor: SchemaRegistryClient => ChainedSchemaIdFromMessageExtractor)
   extends SchemaRegistryBasedDeserializerFactory {
 
   def createDeserializer[T: ClassTag](schemaRegistryClient: SchemaRegistryClient,
                                       kafkaConfig: KafkaConfig,
                                       schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
                                       isKey: Boolean): Deserializer[T] = {
-    new UniversalKafkaDeserializer[T](schemaRegistryClient, kafkaConfig, schemaIdFromMessageExtractor, schemaDataOpt, isKey)
+    new UniversalKafkaDeserializer[T](schemaRegistryClient, kafkaConfig, createSchemaIdFromMessageExtractor(schemaRegistryClient), schemaDataOpt, isKey)
   }
 
 }

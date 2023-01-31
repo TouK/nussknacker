@@ -14,7 +14,7 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.Confluen
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.DefaultConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.schemaid.SchemaIdFromNuHeadersPotentiallyShiftingConfluentPayload.ValueSchemaIdHeaderName
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.{UniversalKafkaDeserializer, UniversalSchemaBasedSerdeProvider}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaIdFromMessageExtractor}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{ChainedSchemaIdFromMessageExtractor, SchemaId}
 
 import java.io.OutputStream
 
@@ -28,10 +28,12 @@ class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrive
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 
+  private val schemaIdExtractor: ChainedSchemaIdFromMessageExtractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true)
+
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema => SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
     UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory),
     new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false),
-    new UniversalKafkaDeserializer(confluentSchemaRegistryClient, kafkaConfig, UniversalSchemaBasedSerdeProvider.schemaIdFromMessageExtractor, Some(readerSchema), isKey = false))
+    new UniversalKafkaDeserializer(confluentSchemaRegistryClient, kafkaConfig, schemaIdExtractor, Some(readerSchema), isKey = false))
 
   lazy val payloadWithoutSchemaIdSetup: CreateSetup = readerSchema => payloadWithSchemaIdSetup(readerSchema).copy(valueSerializer = new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false) {
     override def writeHeader(data: Any, avroSchema: Schema, schemaId: Int, out: OutputStream): Unit = ()

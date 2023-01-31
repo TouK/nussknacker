@@ -5,7 +5,7 @@ import org.apache.kafka.common.header.Headers
 import java.nio.ByteBuffer
 import scala.collection.compat.immutable.LazyList
 
-trait SchemaIdFromMessageExtractor {
+trait SchemaIdFromMessageExtractor extends Serializable {
 
   final def getSchemaId(headers: Headers, data: Array[Byte], isKey: Boolean): Option[SchemaIdWithPositionedBuffer] =
     getSchemaId(GetSchemaIdArgs(headers, data, isKey))
@@ -18,7 +18,7 @@ case class SchemaIdWithPositionedBuffer(value: SchemaId, buffer: ByteBuffer)
 
 case class GetSchemaIdArgs(headers: Headers, data: Array[Byte], isKey: Boolean)
 
-class ChainedSchemaIdFromMessageExtractor(chain: List[SchemaIdFromMessageExtractor]) extends SchemaIdFromMessageExtractor with Serializable {
+class ChainedSchemaIdFromMessageExtractor(chain: List[SchemaIdFromMessageExtractor]) extends SchemaIdFromMessageExtractor {
   override private[schemedkafka] def getSchemaId(args: GetSchemaIdArgs): Option[SchemaIdWithPositionedBuffer] = {
     chain.to(LazyList)
       .map(f => f.getSchemaId(args))
