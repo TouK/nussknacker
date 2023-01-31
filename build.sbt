@@ -732,6 +732,7 @@ lazy val schemedKafkaComponentsUtils = (project in utils("schemed-kafka-componen
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
         "tech.allegro.schema.json2avro" % "converter" % "0.2.15",
+        "org.scala-lang.modules" %% "scala-collection-compat" % scalaCollectionsCompatV,
         "org.scalatest" %% "scalatest" % scalaTestV % "test"
       )
     }

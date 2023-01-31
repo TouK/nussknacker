@@ -2,26 +2,20 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent
 
 import cats.data.Validated
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider, AvroSchemaUtils}
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaProvider}
 import io.confluent.kafka.schemaregistry.client.SchemaMetadata
 import io.confluent.kafka.schemaregistry.json.JsonSchema
-import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
-import org.apache.avro.generic.{GenericContainer, GenericDatumWriter}
-import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import org.apache.avro.specific.{SpecificDatumWriter, SpecificRecord}
+import org.apache.avro.generic.GenericContainer
 import org.apache.kafka.common.errors.SerializationException
 import org.everit.json.schema.{Schema => EveritSchema}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schema.StringForcingDatumReaderProvider
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
 
 import java.io.{ByteArrayOutputStream, DataOutputStream, OutputStream}
 import java.nio.ByteBuffer
-import java.util
 
 object ConfluentUtils extends LazyLogging {
 
@@ -61,9 +55,6 @@ object ConfluentUtils extends LazyLogging {
 
   def convertToJsonSchema(schema: EveritSchema, version: Option[Int] = None): JsonSchema =
     version.map(new JsonSchema(schema, _)).getOrElse(new JsonSchema(schema))
-
-  def extractSchema(parsedSchema: ParsedSchema): Schema =
-    parsedSchema.rawSchema().asInstanceOf[Schema]
 
   def parsePayloadToByteBuffer(payload: Array[Byte]): Validated[IllegalArgumentException, ByteBuffer] = {
     val buffer = ByteBuffer.wrap(payload)

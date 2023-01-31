@@ -1,21 +1,23 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 
 import com.typesafe.scalalogging.LazyLogging
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaWithMetadata}
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.{SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClient, SchemaRegistryClientFactory, SchemaWithMetadata}
 import pl.touk.nussknacker.engine.util.cache.{CacheConfig, DefaultCache, SingleValueCache}
 
 import scala.collection.mutable
 
 object CachedConfluentSchemaRegistryClientFactory extends CachedConfluentSchemaRegistryClientFactory
 
-class CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistryClientFactory {
+class CachedConfluentSchemaRegistryClientFactory extends SchemaRegistryClientFactory {
+
+  override type SchemaRegistryClientT = ConfluentSchemaRegistryClient
 
   //Cache engines are shared by many of CachedConfluentSchemaRegistryClient
   @transient private lazy val caches = mutable.Map[SchemaRegistryClientKafkaConfig, SchemaRegistryCaches]()
 
-  override def create(config: SchemaRegistryClientKafkaConfig): ConfluentSchemaRegistryClient = {
+  override def create(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClientT = {
     val client = confluentClient(config)
     val cache = synchronized {
       caches.getOrElseUpdate(config, {
@@ -25,7 +27,7 @@ class CachedConfluentSchemaRegistryClientFactory extends ConfluentSchemaRegistry
     new CachedConfluentSchemaRegistryClient(client, cache, config)
   }
 
-  protected def confluentClient(config: SchemaRegistryClientKafkaConfig): SchemaRegistryClient = CachedSchemaRegistryClient(config)
+  protected def confluentClient(config: SchemaRegistryClientKafkaConfig): CSchemaRegistryClient = CachedSchemaRegistryClient(config)
 }
 
 class SchemaRegistryCaches(cacheConfig: SchemaRegistryCacheConfig) extends LazyLogging {

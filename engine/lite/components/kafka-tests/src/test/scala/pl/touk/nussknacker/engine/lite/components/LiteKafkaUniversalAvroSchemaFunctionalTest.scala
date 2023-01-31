@@ -20,11 +20,11 @@ import pl.touk.nussknacker.engine.lite.components.utils.AvroTestData._
 import pl.touk.nussknacker.engine.lite.components.utils.{AvroGen, ExcludedConfig}
 import pl.touk.nussknacker.engine.lite.util.test.KafkaAvroConsumerRecord
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaVersionOption}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaVersionOption
 import pl.touk.nussknacker.engine.util.test.TestScenarioRunner.RunnerListResult
 import pl.touk.nussknacker.engine.util.test.{RunListResult, RunResult}
 import pl.touk.nussknacker.test.{SpecialSpELElement, ValidatedValuesDetailedMessage}
-
+import scala.jdk.CollectionConverters._
 import java.nio.ByteBuffer
 
 class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matchers with ScalaCheckDrivenPropertyChecks with Inside
@@ -202,6 +202,8 @@ class LiteKafkaUniversalAvroSchemaFunctionalTest extends AnyFunSuite with Matche
   test("should test end to end kafka avro record data at sink / source with input as output with arrays") {
     testEnd2End(Table(
       ("config", "result"),
+      (sConfig(List("12").asJava, arrayOfStringsSchema, arrayOfStringsSchema, Input), valid(List("12").asJava)),
+
       (rConfig(List("12"), recordArrayOfStringsSchema, recordArrayOfNumbersSchema, Input), invalidTypes("path 'field[]' actual: 'String' expected: 'Integer | Double'")),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema, List(1.0, 2.5)), rValid(List(1.0, 2.5), recordArrayOfNumbersSchema)),
       (rConfig(sampleInteger, recordIntegerSchema, recordArrayOfNumbersSchema,  List(sampleString)), invalidTypes(s"path 'field[]' actual: '${typedStr.display}' expected: 'Integer | Double'")),

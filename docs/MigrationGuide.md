@@ -35,6 +35,18 @@ To see the biggest differences please consult the [changelog](Changelog.md).
 * [#3929](https://github.com/TouK/nussknacker/pull/3929) From now, `SchemaId` value class is used in every place 
   where schema id was represented as an Int. For conversion between `SchemaId` and `Int` use `SchemaId.fromInt` and `SchemaId.asInt`.
   Use `ConfluentUtils.toSchemaWithMetadata` instead of `SchemaWithMetadata.apply` for conversion between Confluent's `SchemaMetadata` and ours `SchemaWithMetadata`.
+* [#3948](https://github.com/TouK/nussknacker/pull/3948) Now, we are less dependent from Confluent schema registry.
+  To make it possible, some kafka universal/avro components refactors were done. Most important changes in public API:
+  * ConfluentSchemaBasedSerdeProvider.universal was replaced by UniversalSchemaBasedSerdeProvider.create
+  
+  Some other, internal changes:
+  * Non-confluent classes renamed and moved to desired packages
+  * Extracted new class: SchemaIdFromMessageExtractor to make Confluent logic explicit and moved to top level
+  * Extracted SchemaValidator to make Confluent logic explicit and be able to compose
+  * Some renames: ConsumerRecordUtils -> KafkaRecordUtils
+  * RecordDeserializer -> AvroRecordDeserializer (also inheritance replaced by composition)
+  * (De)SerializerFactory - easier abstractions
+  * ConfluentSchemaRegistryFactory is not necessary now - removed
 
 ## In version 1.7.0 
 

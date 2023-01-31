@@ -2,12 +2,12 @@ package pl.touk.nussknacker.engine.schemedkafka
 
 import com.typesafe.scalalogging.LazyLogging
 import io.confluent.kafka.schemaregistry.ParsedSchema
-import io.confluent.kafka.schemaregistry.avro.AvroSchema
+import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
 import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Conversions.{DecimalConversion, UUIDConversion}
 import org.apache.avro.Schema
 import org.apache.avro.data.TimeConversions
-import org.apache.avro.generic.{GenericContainer, GenericData, GenericDatumWriter, GenericRecord}
+import org.apache.avro.generic.{GenericContainer, GenericData, GenericDatumReader, GenericDatumWriter, GenericRecord}
 import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
 import org.apache.avro.reflect.ReflectData
 import org.apache.avro.specific.{SpecificData, SpecificDatumWriter, SpecificRecord}
@@ -21,6 +21,7 @@ import java.io.{ByteArrayOutputStream, OutputStream}
 import java.nio.ByteBuffer
 import java.util
 import scala.reflect.{ClassTag, classTag}
+import scala.util.Using
 
 object AvroUtils extends LazyLogging {
 
@@ -45,11 +46,15 @@ object AvroUtils extends LazyLogging {
       }
     }
 
-    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
-      .genericDatumReader(writer, reader, this.asInstanceOf[GenericData])
+    override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] =
+      createGenericDatumReader(writer, reader)
 
     override def createDatumReader(schema: Schema): DatumReader[_] = createDatumReader(schema, schema)
   })
+
+  def createGenericDatumReader[T](writer: Schema, reader: Schema): GenericDatumReader[T] = {
+    StringForcingDatumReaderProvider.genericDatumReader[T](writer, reader, genericData)
+  }
 
   def specificData: SpecificData = addLogicalTypeConversions(new SpecificData(_) {
     override def createDatumReader(writer: Schema, reader: Schema): DatumReader[_] = StringForcingDatumReaderProvider
@@ -97,6 +102,15 @@ object AvroUtils extends LazyLogging {
   def nonRestrictiveParseSchema(avroSchema: String): Schema =
     parserNotValidatingDefaults.parse(avroSchema)
 
+
+  // This method use Confluent's class under the hood but it hasn't got any Confluent specific logic
+  def getSchema(obj: Any): Schema = {
+    AvroSchemaUtils.getSchema(obj)
+  }
+
+  def extractSchema(parsedSchema: ParsedSchema): Schema =
+    parsedSchema.rawSchema().asInstanceOf[Schema]
+
   // Copy from LogicalTypesAvroFactory
   def extractAvroSpecificSchema(clazz: Class[_]): Schema = {
     tryExtractAvroSchemaViaInstance(clazz).getOrElse(specificData.getSchema(clazz))
@@ -112,14 +126,10 @@ object AvroUtils extends LazyLogging {
         None
     }
 
-
   def serializeContainerToBytesArray(container: GenericContainer): Array[Byte] = {
-    val output = new ByteArrayOutputStream()
-    try {
+    Using.resource(new ByteArrayOutputStream()) { output =>
       serializeContainerToBytesArray(container, output)
       output.toByteArray
-    } finally {
-      output.close()
     }
   }
 
@@ -156,7 +166,7 @@ object AvroUtils extends LazyLogging {
       util.Arrays.copyOfRange(payload, offset, payload.length).asInstanceOf[T]
     } else {
       val decoder = DecoderFactory.get().binaryDecoder(payload, offset, payload.length - offset, null)
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[T](readerWriterSchema, readerWriterSchema, AvroUtils.genericData)
+      val reader = createGenericDatumReader[T](readerWriterSchema, readerWriterSchema)
       reader.read(null.asInstanceOf[T], decoder)
     }
   }

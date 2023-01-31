@@ -1,17 +1,10 @@
 package pl.touk.nussknacker.engine.schemedkafka.schemaregistry
 
-import cats.data.ValidatedNel
-import io.confluent.kafka.schemaregistry.ParsedSchema
-import pl.touk.nussknacker.engine.schemedkafka.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 import pl.touk.nussknacker.engine.kafka.RecordFormatterFactory
+import pl.touk.nussknacker.engine.schemedkafka.schema.SchemaValidator
+import pl.touk.nussknacker.engine.schemedkafka.serialization.{KafkaSchemaBasedDeserializationSchemaFactory, KafkaSchemaBasedSerializationSchemaFactory}
 
-trait SchemaBasedSerdeProvider extends Serializable {
-
-  def deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory
-
-  def serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory
-
-  def recordFormatterFactory: RecordFormatterFactory
-
-  def validateSchema[T <: ParsedSchema](schema: T): ValidatedNel[SchemaRegistryError, T]
-}
+case class SchemaBasedSerdeProvider(serializationSchemaFactory: KafkaSchemaBasedSerializationSchemaFactory,
+                                    deserializationSchemaFactory: KafkaSchemaBasedDeserializationSchemaFactory,
+                                    recordFormatterFactory: RecordFormatterFactory,
+                                    schemaValidator: SchemaValidator)

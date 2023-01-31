@@ -86,7 +86,7 @@ class UniversalCrossSourceLiteTest extends AnyFunSuite with Matchers with Valida
     //Then
     result.errors shouldBe empty
     val expectedRecord = AvroUtils.createRecord(avroSchema, Map("first" -> "John", "last" -> "Doe", "age" -> 21))
-    val resultRecord = runner.deserializeAvroData[GenericData.Record](result.success.head.value())
+    val resultRecord = runner.deserializeAvroData[GenericData.Record](result.success.head.value(), new RecordHeaders(), isKey = false)
     resultRecord shouldBe expectedRecord
   }
 

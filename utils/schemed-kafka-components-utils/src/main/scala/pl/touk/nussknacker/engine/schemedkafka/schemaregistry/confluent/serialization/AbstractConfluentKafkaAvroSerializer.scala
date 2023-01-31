@@ -2,7 +2,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 
 import io.confluent.kafka.schemaregistry.avro.{AvroSchema, AvroSchemaUtils}
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.serializers.{AbstractKafkaAvroSerializer, AbstractKafkaSchemaSerDe}
+import io.confluent.kafka.serializers.{AbstractKafkaAvroSerializer, AbstractKafkaSchemaSerDe, NonRecordContainer}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.io.{Encoder, EncoderFactory}
@@ -35,10 +35,14 @@ class AbstractConfluentKafkaAvroSerializer(avroSchemaEvolution: AvroSchemaEvolut
         case (Some(schema), other) => (schema, other)
         case (None, other) => (new AvroSchema(AvroSchemaUtils.getSchema(data, this.useSchemaReflection, false, false)), other)
       }
+      val extracted = record match {
+        case nonRecord: NonRecordContainer => nonRecord.getValue
+        case other => other
+      }
 
       try {
         val schemaId: Int = autoRegisterSchemaIfNeeded(topic, data, isKey, avroSchema)
-        writeData(record, avroSchema.rawSchema(), schemaId)
+        writeData(extracted, avroSchema.rawSchema(), schemaId)
       } catch {
         case exc@(_: RuntimeException | _: IOException) =>
           throw new SerializationException("Error serializing Avro message", exc)

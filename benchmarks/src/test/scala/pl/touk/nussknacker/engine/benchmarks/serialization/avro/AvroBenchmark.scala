@@ -1,17 +1,17 @@
 package pl.touk.nussknacker.engine.benchmarks.serialization.avro
 
 import com.typesafe.config.ConfigFactory
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClient
 import org.apache.avro.generic.GenericData
 import org.apache.flink.api.common.ExecutionConfig
 import org.apache.flink.api.common.typeinfo.TypeInformation
 import org.openjdk.jmh.annotations._
+import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
+import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.kryo.AvroSerializersRegistrar
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{CachedConfluentSchemaRegistryClientFactory, MockSchemaRegistryClient}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.MockSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.kryo.SchemaIdBasedAvroGenericRecordSerializer
-import pl.touk.nussknacker.engine.benchmarks.serialization.SerializationBenchmarkSetup
-import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.MockSchemaRegistryClientFactory
 
 import java.util.concurrent.TimeUnit
 
@@ -28,11 +28,7 @@ class AvroBenchmark {
       val schemaRegistryMockClient = new MockSchemaRegistryClient
       val parsedSchema = ConfluentUtils.convertToAvroSchema(AvroSamples.sampleSchema, Some(1))
       schemaRegistryMockClient.register("foo-value", parsedSchema, 1, AvroSamples.sampleSchemaId.asInt)
-      val factory: CachedConfluentSchemaRegistryClientFactory =
-        new CachedConfluentSchemaRegistryClientFactory {
-          override protected def confluentClient(kafkaConfig: SchemaRegistryClientKafkaConfig): SchemaRegistryClient =
-            schemaRegistryMockClient
-        }
+      val factory = MockSchemaRegistryClientFactory.confluentBased(schemaRegistryMockClient)
       val serializer = SchemaIdBasedAvroGenericRecordSerializer(factory, KafkaConfig(Some(Map("bootstrap.servers" -> "fooKafkaAddress")), None))
       config.getRegisteredTypesWithKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))
       config.getDefaultKryoSerializers.put(serializer.clazz, new ExecutionConfig.SerializableSerializer(serializer))

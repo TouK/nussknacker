@@ -16,7 +16,10 @@
 * [#3916](https://github.com/TouK/nussknacker/pull/3916) `environmentAlert.cssClass` setting renamed to `environmentAlert.color`
 * [#3922](https://github.com/TouK/nussknacker/pull/3922) Bumps: jwks 0.19.0 -> 0.21.3, jackson: 2.11.3 -> 2.13.4 
 * [#3958](https://github.com/TouK/nussknacker/pull/3958) OpenAPI: specify Content-Type header based on schema 
-
+* [#3948](https://github.com/TouK/nussknacker/pull/3948) 
+  * Performance fix: `kafka` source on Flink engine doesn't serialize schema during record serialization
+  * Configuration handling fixes: `avroKryoGenericRecordSchemaIdSerialization` wasn't checked properly
+  * Avro: added support for top level array schema
 
 1.7.0 (19 Dec 2022)
 ------------------------

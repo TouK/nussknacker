@@ -1,13 +1,14 @@
 package pl.touk.nussknacker.engine.schemedkafka.schema
 
+import io.confluent.kafka.serializers.NonRecordContainer
 import org.apache.avro.Schema
 import org.apache.avro.generic._
-import org.apache.avro.io.{DatumReader, DecoderFactory, EncoderFactory}
-import pl.touk.nussknacker.engine.schemedkafka.{AvroUtils, RuntimeSchemaData}
+import org.apache.avro.io.DecoderFactory
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
-import java.io.{ByteArrayOutputStream, IOException}
+import java.io.IOException
 import java.nio.ByteBuffer
-import scala.util.{Try, Using}
+import scala.util.Try
 
 /**
   * It's base implementation of AvroSchemaEvolution. In this case strategy to evolve record to schema is as follows:
@@ -19,40 +20,37 @@ import scala.util.{Try, Using}
   *
   * For now it's easiest way to convert GenericContainer record to wanted schema.
   */
-class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin with RecordDeserializer {
+class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWriterMixin  {
 
-  /**
-    * In future we can try to configure it
-    */
-  protected final  val useSchemaReflection = false
+  private def recordDeserializer = new AvroRecordDeserializer(DecoderFactory.get())
 
-  protected final val encoderFactory: EncoderFactory = EncoderFactory.get
-
-  override protected final val decoderFactory = DecoderFactory.get
+  override def canBeEvolved(record: GenericContainer, schema: Schema): Boolean =
+    Try(alignRecordToSchema(record, schema)).isSuccess
 
   override def alignRecordToSchema(record: GenericContainer, schema: Schema): GenericContainer = {
     val writerSchema = record.getSchema
     if (writerSchema.equals(schema)) {
       record
     } else {
-      val serializedObject = serializeRecord(record)
+      val serializedObject = AvroUtils.serializeContainerToBytesArray(record)
       deserializePayloadToSchema(serializedObject, writerSchema, schema)
     }
   }
-
-  override def canBeEvolved(record: GenericContainer, schema: Schema): Boolean =
-    Try(alignRecordToSchema(record, schema)).isSuccess
 
   /**
     * It's copy paste from AbstractKafkaAvroDeserializer#DeserializationContext.read with some modification.
     * We pass there record buffer data and schema which will be used to convert record.
     */
-  protected def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): GenericContainer = {
+   private def deserializePayloadToSchema(payload: Array[Byte], writerSchema: Schema, readerSchema: Schema): GenericContainer = {
     try {
-      // We always want to create generic record at the end, because speecific can has other fields than expected
-      val reader = StringForcingDatumReaderProvider.genericDatumReader[AnyRef](writerSchema, readerSchema, AvroUtils.genericData).asInstanceOf[DatumReader[AnyRef]]
+      // We always want to create generic record at the end, because specific can has other fields than expected
+      val reader = AvroUtils.createGenericDatumReader[AnyRef](writerSchema, readerSchema)
       val buffer = ByteBuffer.wrap(payload)
-      deserializeRecord(RuntimeSchemaData(readerSchema, None), reader, buffer, 0).asInstanceOf[GenericContainer]
+      val data = recordDeserializer.deserializeRecord(readerSchema, reader, buffer)
+      data match {
+        case c: GenericContainer => c
+        case _ => new NonRecordContainer(readerSchema, data)
+      }
     } catch {
       case exc@(_: RuntimeException | _: IOException) =>
         // avro deserialization may throw IOException, AvroRuntimeException, NullPointerException, etc
@@ -60,33 +58,4 @@ class DefaultAvroSchemaEvolution extends AvroSchemaEvolution with DatumReaderWri
     }
   }
 
-  // Currently schema evolution doesn't support schema id serialization. We assume that it is used only on the end of process,
-  // when there won't be any subsequent serializations done
-  override protected def schemaIdSerializationEnabled: Boolean = false
-
-  /**
-    * Record serialization method, kind of copy paste from AbstractKafkaAvroSerializer#DeserializationContext.read.
-    * We use confluent serialization mechanism without some specifics features like:
-    *
-    * - fetching schema from registry
-    * - fetching schema Id
-    * - we don't serialize MagicByte and version
-    *
-    * To serialization we use schema from record.
-    */
-  protected def serializeRecord(record: GenericContainer): Array[Byte] = {
-    Using.resource(new ByteArrayOutputStream) { out =>
-      try {
-        val encoder = encoderFactory.directBinaryEncoder(out, null)
-        val writer = createDatumWriter(record, record.getSchema, useSchemaReflection = useSchemaReflection)
-        writer.write(record, encoder)
-        encoder.flush()
-        out.toByteArray
-      } catch {
-        case exc@(_: RuntimeException | _: IOException) =>
-          // avro serialization may throw IOException, AvroRuntimeException, NullPointerException, etc
-          throw new AvroSchemaEvolutionException(s"Error at serialization record to payload.", exc)
-      }
-    }
-  }
 }

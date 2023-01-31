@@ -3,12 +3,13 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client
 import cats.data.Validated
 import cats.data.Validated.{invalid, valid}
 import com.typesafe.scalalogging.LazyLogging
+import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
-import io.confluent.kafka.schemaregistry.client.{SchemaMetadata, SchemaRegistryClient => CSchemaRegistryClient}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
+import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry._
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 
 import scala.jdk.CollectionConverters._
 
@@ -34,7 +35,9 @@ trait ConfluentSchemaRegistryClient extends SchemaRegistryClient with LazyLoggin
     }
 }
 
-class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient, config: SchemaRegistryClientKafkaConfig) extends ConfluentSchemaRegistryClient {
+class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryClient,
+                                           config: SchemaRegistryClientKafkaConfig)
+  extends ConfluentSchemaRegistryClient with SchemaRegistryClientWithRegistration {
 
   override def getLatestFreshSchema(topic: String, isKey: Boolean): Validated[SchemaRegistryError, SchemaWithMetadata] =
     handleClientError {
@@ -64,6 +67,11 @@ class DefaultConfluentSchemaRegistryClient(override val client: CSchemaRegistryC
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     val rawSchema = client.getSchemaById(id.asInt)
     SchemaWithMetadata(AvroUtils.adjustParsedSchema(rawSchema, config), id)
+  }
+
+  override def registerSchema(topic: String, isKey: Boolean, schema: ParsedSchema): SchemaId = {
+    val subject = ConfluentUtils.topicSubject(topic, isKey)
+    SchemaId.fromInt(client.register(subject, schema))
   }
 
 }

@@ -4,26 +4,25 @@ import com.esotericsoftware.kryo.Kryo
 import com.esotericsoftware.kryo.io.{Input, Output}
 import org.apache.avro.generic.GenericData
 import org.apache.avro.io.{DecoderFactory, EncoderFactory}
-import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, IntSchemaId, SchemaId, StringSchemaId}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClientFactory
 import pl.touk.nussknacker.engine.flink.api.serialization.SerializerWithSpecifiedClass
 import pl.touk.nussknacker.engine.kafka.{KafkaConfig, SchemaRegistryClientKafkaConfig}
+import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
+import pl.touk.nussknacker.engine.schemedkafka.schema.DatumReaderWriterMixin
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{GenericRecordWithSchemaId, IntSchemaId, SchemaId, SchemaRegistryClientFactory, StringSchemaId}
 
 import java.io.ByteArrayOutputStream
 
 object SchemaIdBasedAvroGenericRecordSerializer {
-  def apply(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, kafkaConfig: KafkaConfig): SchemaIdBasedAvroGenericRecordSerializer = {
+  def apply(schemaRegistryClientFactory: SchemaRegistryClientFactory, kafkaConfig: KafkaConfig): SchemaIdBasedAvroGenericRecordSerializer = {
     new SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory, kafkaConfig.schemaRegistryClientKafkaConfig)
   }
 }
 
 @SerialVersionUID(42553325228495L)
-class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: ConfluentSchemaRegistryClientFactory, schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig)
+class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: SchemaRegistryClientFactory, schemaRegistryClientKafkaConfig: SchemaRegistryClientKafkaConfig)
   extends SerializerWithSpecifiedClass[GenericRecordWithSchemaId](false, false) with DatumReaderWriterMixin {
 
-  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig).client
+  @transient private lazy val schemaRegistry = schemaRegistryClientFactory.create(schemaRegistryClientKafkaConfig)
 
   @transient protected lazy val encoderFactory: EncoderFactory = EncoderFactory.get
 
@@ -73,8 +72,8 @@ class SchemaIdBasedAvroGenericRecordSerializer(schemaRegistryClientFactory: Conf
   }
 
   private def readRecord(lengthOfData: Int, schemaId: SchemaId, dataBuffer: Array[Byte]) = {
-    val parsedSchema = schemaRegistry.getSchemaById(schemaId.asInt)
-    val writerSchema = ConfluentUtils.extractSchema(parsedSchema)
+    val parsedSchema = schemaRegistry.getSchemaById(schemaId).schema
+    val writerSchema = AvroUtils.extractSchema(parsedSchema)
     val reader = createDatumReader(writerSchema, writerSchema, useSchemaReflection = false, useSpecificAvroReader = false)
     val binaryDecoder = decoderFactory.binaryDecoder(dataBuffer, 0, lengthOfData, null)
     reader.read(null, binaryDecoder).asInstanceOf[GenericData.Record]
