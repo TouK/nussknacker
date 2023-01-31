@@ -1,28 +1,33 @@
-import {defaults} from "lodash"
-import * as queryString from "query-string"
-import {ParseOptions} from "query-string"
-import {useEffect, useMemo, useState} from "react"
-import {useHistory} from "react-router"
-import {defaultArrayFormat, setAndPreserveLocationParams} from "../../common/VisualizationUrl"
-import {UnknownRecord} from "../../types/common"
+import * as queryString from "query-string";
+import React, { PropsWithChildren, useContext, useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { defaultArrayFormat, setAndPreserveLocationParams } from "../../common/VisualizationUrl";
 
-export function useSearchQuery<T extends UnknownRecord>(options?: ParseOptions): [T, (v: T) => void] {
-  const history = useHistory()
+const SearchContext = React.createContext(null);
 
-  const parsedQuery = useMemo(
-    () => queryString.parse(
-      history.location.search,
-      defaults(options, {arrayFormat: defaultArrayFormat, parseBooleans: true}),
-    ) as T,
-    [history.location.search, options]
-  )
+export function SearchContextProvider(props: PropsWithChildren<unknown>) {
+    const [, setSearchParams] = useSearchParams();
 
-  const [state, setState] = useState<T>(parsedQuery)
+    const value = useState(() =>
+        queryString.parse(window.location.search, {
+            arrayFormat: defaultArrayFormat,
+            parseBooleans: true,
+            parseNumbers: true,
+        }),
+    );
 
-  useEffect(
-    () => history.replace({search: setAndPreserveLocationParams(state)}),
-    [history, state]
-  )
+    const [state] = value;
+    useEffect(() => {
+        setSearchParams(setAndPreserveLocationParams(state), { replace: true });
+    }, [setSearchParams, state]);
 
-  return [state, setState]
+    return <SearchContext.Provider {...props} value={value} />;
+}
+
+export function useSearchQuery<T>(options): [T, (value: ((prevState: T) => T) | T) => void] {
+    const context = useContext(SearchContext);
+    if (!context) {
+        throw "SearchContext not initialized!";
+    }
+    return context;
 }

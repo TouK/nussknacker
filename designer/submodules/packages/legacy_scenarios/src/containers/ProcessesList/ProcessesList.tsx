@@ -1,60 +1,58 @@
-import React, {useCallback, useEffect, useMemo} from "react"
-import {ProcessType} from "../../components/Process/types"
-import HttpService, {StatusesType} from "../../http/HttpService"
-import {useFetch} from "../hooks/useFetch"
-import styles from "../processesTable.styl"
-import {ProcessesTable} from "../processesTable/ProcessesTable"
-import {ProcessTableTools} from "../ProcessTableTools"
-import {SearchQuery} from "../SearchQuery"
-import {BaseProcessesOwnProps} from "./types"
-import {useFilteredProcesses} from "./UseFilteredProcesses"
-import {useFiltersState} from "./UseFiltersState"
-import {useIntervalRefresh} from "./UseIntervalRefresh"
-import {useTextFilter} from "./UseTextFilter"
+import React, { useCallback, useEffect, useMemo } from "react";
+import { ProcessType } from "../../components/Process/types";
+import HttpService, { StatusesType } from "../../http/HttpService";
+import { useFetch } from "../hooks/useFetch";
+import styles from "../processesTable.styl";
+import { ProcessesTable } from "../processesTable/ProcessesTable";
+import { ProcessTableTools } from "../ProcessTableTools";
+import { SearchQuery } from "../SearchQuery";
+import { BaseProcessesOwnProps } from "./types";
+import { useFilteredProcesses } from "./UseFilteredProcesses";
+import { useFiltersState } from "./UseFiltersState";
+import { useIntervalRefresh } from "./UseIntervalRefresh";
+import { useTextFilter } from "./UseTextFilter";
+import { SearchContextProvider } from "../hooks/useSearchQuery";
 
-export const getProcessState = (statuses?: StatusesType) => (process: ProcessType) => statuses?.[process.name] || null
+export const getProcessState = (statuses?: StatusesType) => (process: ProcessType) => statuses?.[process.name] || null;
 
 export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
-  const {allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children} = props
+    const { allowAdd, columns, RowsRenderer, filterable, defaultQuery, searchItems, sortable, withStatuses, children } = props;
 
-  const {search, filters, setFilters} = useFiltersState(defaultQuery)
-  const {processes, getProcesses, isLoading} = useFilteredProcesses(filters)
-  useIntervalRefresh(getProcesses)
+    const { search, filters, setFilters } = useFiltersState(defaultQuery);
+    const { processes, getProcesses, isLoading } = useFilteredProcesses(filters);
+    useIntervalRefresh(getProcesses);
 
-  const fetchAction = useCallback(() => HttpService.fetchProcessesStates(), [])
-  const [statuses, getStatuses] = useFetch(fetchAction)
-  useEffect(
-    () => {
-      if (withStatuses && processes.length) {
-        getStatuses()
-      }
-    },
-    [withStatuses, processes, getStatuses],
-  )
+    const fetchAction = useCallback(() => HttpService.fetchProcessesStates(), []);
+    const [statuses, getStatuses] = useFetch(fetchAction);
+    useEffect(() => {
+        if (withStatuses && processes.length) {
+            getStatuses();
+        }
+    }, [withStatuses, processes, getStatuses]);
 
-  const filtered = useTextFilter(search, processes, filterable)
+    const filtered = useTextFilter(search, processes, filterable);
 
-  const elements = useMemo(
-    () => RowsRenderer({processes: filtered, getProcesses, statuses}),
-    [RowsRenderer, filtered, getProcesses, statuses],
-  )
+    const elements = useMemo(
+        () => RowsRenderer({ processes: filtered, getProcesses, statuses }),
+        [RowsRenderer, filtered, getProcesses, statuses],
+    );
 
-  return (
-    <>
-      <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
-        <SearchQuery filters={searchItems} onChange={setFilters}/>
-      </ProcessTableTools>
+    return (
+        <SearchContextProvider>
+            <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
+                <SearchQuery filters={searchItems} onChange={setFilters} />
+            </ProcessTableTools>
 
-      {children}
+            {children}
 
-      <ProcessesTable
-        className={styles.table}
-        isLoading={isLoading}
-        sortable={sortable.map(column => ({column, sortFunction: Intl.Collator().compare}))}
-        columns={columns}
-      >
-        {elements}
-      </ProcessesTable>
-    </>
-  )
+            <ProcessesTable
+                className={styles.table}
+                isLoading={isLoading}
+                sortable={sortable.map((column) => ({ column, sortFunction: Intl.Collator().compare }))}
+                columns={columns}
+            >
+                {elements}
+            </ProcessesTable>
+        </SearchContextProvider>
+    );
 }
