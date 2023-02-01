@@ -4,7 +4,6 @@ import cats.data.Validated
 import com.github.ghik.silencer.silent
 import org.everit.json.schema._
 import org.json.JSONException
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 import java.util.regex.Pattern
 import scala.util.Try
@@ -47,7 +46,7 @@ object JsonSchemaImplicits {
 
     def requiredPropertiesSchemas: Map[String, Schema] = {
       val requiredProperties = schema.getRequiredProperties.asScala.toSet
-      schema.getPropertySchemas.asScala.toMap.filterKeysNow(requiredProperties.contains)
+      schema.getPropertySchemas.asScala.toMap.filterKeys(requiredProperties.contains)
     }
   }
 

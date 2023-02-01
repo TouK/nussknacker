@@ -151,7 +151,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def validateRecordExplicitProperties(typingResult: TypedObjectTypingResult, schemaFields: Map[String, Schema], parentSchema: Schema, path: Option[String]): ValidatedNel[OutputValidatorError, Unit] = {
-    validateFieldsType(typingResult.fields.filterKeysNow(schemaFields.contains), schemaFields, parentSchema, path)
+    validateFieldsType(typingResult.fields.filterKeys(schemaFields.contains), schemaFields, parentSchema, path)
   }
 
   private def validateRecordRedundantProps(typingResult: TypedObjectTypingResult, schema: ObjectSchema, schemaFields: Map[String, Schema], path: Option[String]): ValidatedNel[OutputValidatorRedundantFieldsError, Unit] = {
@@ -161,7 +161,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
 
   private def validateRecordPatternProps(typingResult: TypedObjectTypingResult, schema: ObjectSchema, parentSchema: Schema, path: Option[String]): (Validated[NonEmptyList[OutputValidatorError], Unit], Set[String]) = {
     val fieldsWithMatchedPatternsProperties = typingResult.fields.toList
-      .map { case (fieldName, _) => fieldName -> schema.patternProperties.filterKeysNow(p => p.asPredicate().test(fieldName)).values.toList }
+      .map { case (fieldName, _) => fieldName -> schema.patternProperties.filterKeys(p => p.asPredicate().test(fieldName)).values.toList }
       .filter { case (_, schemas) => schemas.nonEmpty }
 
     val validation = fieldsWithMatchedPatternsProperties.flatMap { case (fieldName, schemas) =>
@@ -173,7 +173,7 @@ class JsonSchemaOutputValidator(validationMode: ValidationMode) extends LazyLogg
   }
 
   private def findRecordAdditionalProps(typingResult: TypedObjectTypingResult, schemaFields: Set[String], propertiesMatchedByPatternProperties: Set[String]): Map[String, TypingResult] = {
-    typingResult.fields.filterKeysNow(k => !schemaFields.contains(k) && !propertiesMatchedByPatternProperties.contains(k))
+    typingResult.fields.filterKeys(k => !schemaFields.contains(k) && !propertiesMatchedByPatternProperties.contains(k))
   }
 
   private def validateRecordAdditionalProps(schema: ObjectSchema, path: Option[String], additionalFieldsToValidate: Map[String, TypingResult], parentSchema: Schema): ValidatedNel[OutputValidatorError, Unit] = {

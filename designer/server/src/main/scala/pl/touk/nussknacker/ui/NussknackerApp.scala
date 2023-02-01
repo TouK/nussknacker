@@ -4,7 +4,6 @@ import akka.actor.ActorSystem
 import akka.http.scaladsl.server.{Directives, Route}
 import akka.http.scaladsl.{Http, HttpsConnectionContext}
 import akka.stream.Materializer
-import akka.util.Timeout
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import fr.davit.akka.http.metrics.core.HttpMetrics._
@@ -36,7 +35,6 @@ import pl.touk.nussknacker.ui.process.migrate.{HttpRemoteEnvironment, TestModelM
 import pl.touk.nussknacker.ui.process.processingtypedata._
 import pl.touk.nussknacker.ui.process.repository._
 import pl.touk.nussknacker.ui.process.subprocess.{DbSubprocessRepository, SubprocessResolver}
-import pl.touk.nussknacker.ui.process.test.ScenarioTestService
 import pl.touk.nussknacker.ui.processreport.ProcessCounter
 import pl.touk.nussknacker.ui.security.api._
 import pl.touk.nussknacker.ui.security.ssl._
@@ -48,8 +46,8 @@ import slick.jdbc.{HsqldbProfile, JdbcBackend, JdbcProfile, PostgresProfile}
 import sttp.client.akkahttp.AkkaHttpBackend
 import sttp.client.{NothingT, SttpBackend}
 
-import java.util.concurrent.TimeUnit
-
+import java.lang.Thread.UncaughtExceptionHandler
+import scala.collection.JavaConverters.getClass
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Try
 import scala.util.control.NonFatal
@@ -65,6 +63,7 @@ object NusskanckerDefaultAppRouter extends NusskanckerDefaultAppRouter
 trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
   import net.ceedubs.ficus.Ficus._
+  import pl.touk.nussknacker.engine.util.config.FicusReaders._
 
   //override this method to e.g. run UI with local model
   protected def prepareProcessingTypeData(config: Config, getDeploymentService: () => DeploymentService, categoriesService: ProcessCategoryService)
@@ -142,13 +141,12 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
 
     val newProcessPreparer = NewProcessPreparer(typeToConfig, additionalProperties)
 
-    val systemRequestTimeout = Timeout(system.settings.config.getDuration("akka.http.server.request-timeout").toMillis, TimeUnit.MILLISECONDS)
+    val systemRequestTimeout = system.settings.config.getDuration("akka.http.server.request-timeout")
     val managementActor = system.actorOf(ManagementActor.props(managers, processRepository, scenarioResolver, deploymentService), "management")
     val processService = new DBProcessService(managementActor, systemRequestTimeout, newProcessPreparer,
       processCategoryService, processResolving, dbRepositoryManager, processRepository, actionRepository,
       writeProcessRepository, processValidation
     )
-    val scenarioTestService = ScenarioTestService(modelData, featureTogglesConfig.testDataSettings, processResolving, counter, managementActor, systemRequestTimeout)
 
     val configProcessToolbarService = new ConfigProcessToolbarService(config, processCategoryService.getAllCategories)
 
@@ -177,13 +175,14 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
         new NodesResources(processRepository, subprocessRepository, typeToConfig.mapValues(_.modelData), processValidation),
         new ProcessesExportResources(processRepository, processActivityRepository, processResolving),
         new ProcessActivityResource(processActivityRepository, processRepository, processAuthorizer),
-        ManagementResources(managementActor, processAuthorizer, processRepository, featureTogglesConfig, processService, metricsRegistry, scenarioTestService),
+        ManagementResources(counter, managementActor, processAuthorizer, processRepository, featureTogglesConfig, processResolving, processService, metricsRegistry),
         new ValidationResources(processRepository ,processResolving),
         new DefinitionResources(modelData, typeToConfig, subprocessRepository, processCategoryService),
+        new SignalsResources(modelData, processRepository, processAuthorizer),
         new UserResources(processCategoryService),
         new NotificationResources(notificationService),
         appResources,
-        new TestInfoResources(processAuthorizer, processRepository, scenarioTestService),
+        TestInfoResources(modelData, processAuthorizer, processRepository, featureTogglesConfig),
         new ServiceRoutes(modelData),
         new ComponentResource(componentService),
         new AttachmentResources(new ProcessAttachmentService(AttachmentsConfig.create(config), processActivityRepository), processRepository, processAuthorizer)
@@ -194,7 +193,13 @@ trait NusskanckerDefaultAppRouter extends NusskanckerAppRouter {
           .map(migrationConfig => new HttpRemoteEnvironment(migrationConfig, new TestModelMigrations(modelData.mapValues(_.migrations), processValidation), environment))
           .map(remoteEnvironment => new RemoteEnvironmentResources(remoteEnvironment, processRepository, processAuthorizer)),
         countsReporter
-          .map(reporter => new ProcessReportResources(reporter, counter, processRepository))
+          .map(reporter => new ProcessReportResources(reporter, counter, processRepository)),
+        Some(new QueryableStateResources(
+          typeToConfig = typeToConfig,
+          processRepository = processRepository,
+          processService = processService,
+          processAuthorizer = processAuthorizer
+        ))
       ).flatten
       routes ++ optionalRoutes
     }
@@ -268,8 +273,6 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
   def init(router: NusskanckerAppRouter): (Route, Iterable[AutoCloseable]) = {
     JavaClassVersionChecker.check()
     SLF4JBridgeHandlerRegistrar.register()
-    //we prepare temporary ExceptionHandler to shutdown actorSystem in case of exception during creation
-    prepareUncaughtExceptionHandler(Nil)
 
     val db = initDb(config)
     val metricsRegistry = new MetricRegistry
@@ -278,6 +281,7 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
 
     prepareUncaughtExceptionHandler(objectsToClose)
     Runtime.getRuntime.addShutdownHook(new ShutdownHandler(objectsToClose))
+
 
     //JmxReporter does not allocate resources, safe to close
     JmxReporter.forRegistry(metricsRegistry).build().start()
@@ -332,16 +336,17 @@ class NussknackerAppInitializer(baseUnresolvedConfig: Config) extends LazyLoggin
       case Some(jdbcUrlPattern("postgresql")) => PostgresProfile
       case Some(jdbcUrlPattern("hsqldb")) => HsqldbProfile
       case None => HsqldbProfile
-      case _ => throw new IllegalStateException("unsupported jdbc url")
     }
   }
 
   //we do it, because akka creates non-daemon threads, so we have to stop ActorSystem explicitly, if initialization fails
   private def prepareUncaughtExceptionHandler(objectsToClose: Iterable[AutoCloseable]): Unit = {
     //TODO: should we set it only on main thread?
-    Thread.currentThread().setUncaughtExceptionHandler((t: Thread, e: Throwable) => {
-      logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
-      closeAndShutdownAll(objectsToClose)
+    Thread.currentThread().setUncaughtExceptionHandler(new UncaughtExceptionHandler {
+      override def uncaughtException(t: Thread, e: Throwable): Unit = {
+        logger.error("Main thread stopped unexpectedly, terminating ActorSystem", e)
+        closeAndShutdownAll(objectsToClose)
+      }
     })
   }
 
