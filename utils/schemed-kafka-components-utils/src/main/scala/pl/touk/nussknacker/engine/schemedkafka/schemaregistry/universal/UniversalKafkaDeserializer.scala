@@ -17,6 +17,8 @@ class UniversalKafkaDeserializer[T](schemaRegistryClient: SchemaRegistryClient,
                                     readerSchemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
                                     isKey: Boolean) extends Deserializer[T] {
 
+  private val schemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
+
   override def deserialize(topic: String, data: Array[Byte]): T = {
     throw new IllegalAccessException(s"Operation not supported. ${this.getClass.getSimpleName} requires kafka headers to perform deserialization.")
   }
@@ -34,8 +36,8 @@ class UniversalKafkaDeserializer[T](schemaRegistryClient: SchemaRegistryClient,
 
     val writerSchemaData = new RuntimeSchemaData(new NkSerializableParsedSchema[ParsedSchema](writerSchema), Some(writerSchemaId.value))
 
-    UniversalSchemaSupport.forSchemaType(writerSchema.schemaType())
-      .payloadDeserializer(kafkaConfig)
+    schemaSupportDispatcher.forSchemaType(writerSchema.schemaType())
+      .payloadDeserializer
       .deserialize(readerSchemaDataOpt, writerSchemaData, writerSchemaId.buffer)
       .asInstanceOf[T]
   }

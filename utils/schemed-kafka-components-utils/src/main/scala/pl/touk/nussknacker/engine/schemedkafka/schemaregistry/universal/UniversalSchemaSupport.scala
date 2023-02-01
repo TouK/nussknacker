@@ -14,25 +14,30 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClie
 import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
-object UniversalSchemaSupport {
-  val supportedSchemaTypes: Set[String] = Set(AvroSchema.TYPE, JsonSchema.TYPE)
+class UniversalSchemaSupportDispatcher private(kafkaConfig: KafkaConfig) {
 
-  def forSchemaType(schemaType: String): UniversalSchemaSupport = schemaType match {
-    case AvroSchema.TYPE => AvroSchemaSupport
-    case JsonSchema.TYPE => JsonSchemaSupport
-    case _ => throw new UnsupportedSchemaType(schemaType)
-  }
+  val supportBySchemaType: Map[String, UniversalSchemaSupport] =
+    Map(
+      AvroSchema.TYPE -> new AvroSchemaSupport(kafkaConfig),
+      JsonSchema.TYPE -> JsonSchemaSupport)
+
+  def forSchemaType(schemaType: String): UniversalSchemaSupport =
+    supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))
 
 }
 
+object UniversalSchemaSupportDispatcher {
+  def apply(kafkaConfig: KafkaConfig): UniversalSchemaSupportDispatcher = new UniversalSchemaSupportDispatcher(kafkaConfig)
+}
+
 trait UniversalSchemaSupport {
-  def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer
-  def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[Any]
+  def payloadDeserializer: UniversalSchemaPayloadDeserializer
+  def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any]
   def typeDefinition(schema: ParsedSchema): TypingResult
   def extractSinkValueParameter(schema: ParsedSchema)(implicit nodeId: NodeId): ValidatedNel[ProcessCompilationError, SinkValueParameter]
   def sinkValueEncoder(schema: ParsedSchema, mode: ValidationMode): Any => AnyRef
   def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit]
-  def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
+  def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport
 }
 
 class UnsupportedSchemaType(schemaType: String) extends IllegalArgumentException(s"Unsupported schema type: $schemaType")
