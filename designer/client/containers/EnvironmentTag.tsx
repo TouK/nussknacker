@@ -1,5 +1,5 @@
 import {useSelector} from "react-redux"
-import {getFeatureSettings} from "../reducers/selectors/settings"
+import {getEnvironmentAlert} from "../reducers/selectors/settings"
 import React, {useMemo} from "react"
 import styled from "@emotion/styled"
 
@@ -34,7 +34,7 @@ const Tag = styled.div(
 )
 
 export function EnvironmentTag() {
-  const {environmentAlert: {content, color} = {}} = useSelector(getFeatureSettings)
+  const {content, color} = useSelector(getEnvironmentAlert)
   const background = useMemo(
     () => {
       switch (color) {
