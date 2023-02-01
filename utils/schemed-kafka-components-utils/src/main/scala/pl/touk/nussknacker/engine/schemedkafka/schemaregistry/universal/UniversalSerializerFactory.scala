@@ -14,7 +14,7 @@ object UniversalSerializerFactory extends SchemaRegistryBasedSerializerFactory {
                                 schemaDataOpt: Option[RuntimeSchemaData[ParsedSchema]],
                                 isKey: Boolean): Serializer[Any] = {
     val schema: ParsedSchema = schemaDataOpt.map(_.schema).getOrElse(throw new IllegalArgumentException("SchemaData should be defined for universal serializer"))
-    UniversalSchemaSupport.forSchemaType(schema.schemaType()).serializer(Some(schema), schemaRegistryClient, kafkaConfig, isKey = false)
+    UniversalSchemaSupportDispatcher(kafkaConfig).forSchemaType(schema.schemaType()).serializer(Some(schema), schemaRegistryClient, isKey = false)
   }
 
 }

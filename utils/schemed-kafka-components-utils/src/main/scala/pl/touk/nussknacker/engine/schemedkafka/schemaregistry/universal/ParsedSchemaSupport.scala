@@ -32,8 +32,8 @@ sealed trait ParsedSchemaSupport[+S <: ParsedSchema] extends UniversalSchemaSupp
   }
 }
 
-object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
-  override def payloadDeserializer(kafkaConfig: KafkaConfig): UniversalSchemaPayloadDeserializer = {
+class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[AvroSchema] {
+  override val payloadDeserializer: UniversalSchemaPayloadDeserializer = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadDeserializer
     } else {
@@ -41,7 +41,7 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
     }
   }
 
-  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, kafkaConfig: KafkaConfig, isKey: Boolean): Serializer[Any] = {
+  override def serializer(schemaOpt: Option[ParsedSchema], client: SchemaRegistryClient, isKey: Boolean): Serializer[Any] = {
     client match {
       case confluentClient: ConfluentSchemaRegistryClient if kafkaConfig.avroAsJsonSerialization.contains(true) =>
         new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast()), isKey = isKey)
@@ -66,13 +66,13 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
     new AvroSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
-  override def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
+  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport = {
     if (kafkaConfig.avroAsJsonSerialization.contains(true)) {
       JsonPayloadRecordFormatterSupport
     } else {
       // We pass None to schema, because message readers should not do schema evolution.
       // It is done this way because we want to keep messages in the original format as they were serialized on Kafka
-      val createSerializer = serializer(None, schemaRegistryClient, kafkaConfig, _)
+      val createSerializer = serializer(None, schemaRegistryClient, _)
       val avroKeySerializer = createSerializer(true)
       val avroValueSerializer = createSerializer(false)
       new AvroPayloadRecordFormatterSupport(new AvroMessageReader(avroKeySerializer), new AvroMessageReader(avroValueSerializer))
@@ -82,9 +82,9 @@ object AvroSchemaSupport extends ParsedSchemaSupport[AvroSchema] {
 
 
 object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
-  override def payloadDeserializer(k: KafkaConfig): UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
+  override val payloadDeserializer: UniversalSchemaPayloadDeserializer = JsonSchemaPayloadDeserializer
 
-  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, k: KafkaConfig, isKey: Boolean): Serializer[Any] =
+  override def serializer(schemaOpt: Option[ParsedSchema], c: SchemaRegistryClient, isKey: Boolean): Serializer[Any] =
     (topic: String, data: Any) => data match {
       case j: Json => j.noSpaces.getBytes()
       case _ => throw new SerializationException(s"Expecting json but got: $data")
@@ -102,6 +102,6 @@ object JsonSchemaSupport extends ParsedSchemaSupport[OpenAPIJsonSchema] {
   override def validateRawOutput(schema: ParsedSchema, t: TypingResult, mode: ValidationMode): ValidatedNel[OutputValidatorError, Unit] =
     new JsonSchemaOutputValidator(mode).validateTypingResultAgainstSchema(t, schema.cast().rawSchema())
 
-  override def recordFormatterSupport(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
+  override def recordFormatterSupport(schemaRegistryClient: SchemaRegistryClient): RecordFormatterSupport =
     JsonPayloadRecordFormatterSupport
 }

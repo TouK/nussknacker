@@ -7,14 +7,15 @@ import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.formatter.{AvroMessageFormatter, AvroMessageReader}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
+import pl.touk.nussknacker.engine.util.Implicits._
 
 import java.nio.charset.StandardCharsets
 
 class RecordFormatterSupportDispatcher(kafkaConfig: KafkaConfig, schemaRegistryClient: SchemaRegistryClient) {
 
-  private val supportBySchemaType = UniversalSchemaSupport.supportedSchemaTypes.toList.map { schemaType =>
-    schemaType -> UniversalSchemaSupport.forSchemaType(schemaType).recordFormatterSupport(kafkaConfig, schemaRegistryClient)
-  }.toMap
+  private val supportBySchemaType =
+    UniversalSchemaSupportDispatcher(kafkaConfig).supportBySchemaType
+      .mapValuesNow(_.recordFormatterSupport(schemaRegistryClient))
 
   def forSchemaType(schemaType: String): RecordFormatterSupport =
     supportBySchemaType.getOrElse(schemaType, throw new UnsupportedSchemaType(schemaType))

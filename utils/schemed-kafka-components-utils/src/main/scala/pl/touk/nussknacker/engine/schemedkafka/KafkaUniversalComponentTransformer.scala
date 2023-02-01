@@ -13,6 +13,7 @@ import pl.touk.nussknacker.engine.api.NodeId
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.validator.WithCachedTopicsExistenceValidator
 import pl.touk.nussknacker.engine.kafka.{KafkaComponentsUtils, KafkaConfig, PreparedKafkaTopic}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupportDispatcher
 
 object KafkaUniversalComponentTransformer {
   final val SchemaVersionParamName = "Schema version"
@@ -44,6 +45,8 @@ trait KafkaUniversalComponentTransformer[T] extends SingleInputGenericNodeTransf
   protected def topicSelectionStrategy: TopicSelectionStrategy = new AllTopicsSelectionStrategy
 
   protected val kafkaConfig: KafkaConfig = prepareKafkaConfig
+
+  protected val schemaSupportDispatcher: UniversalSchemaSupportDispatcher = UniversalSchemaSupportDispatcher(kafkaConfig)
 
   protected def prepareKafkaConfig: KafkaConfig = {
     KafkaConfig.parseConfig(processObjectDependencies.config)

@@ -10,7 +10,6 @@ import pl.touk.nussknacker.engine.api.process.{ProcessObjectDependencies, Sink, 
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.api.{LazyParameter, MetaData, NodeId}
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer._
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.universal.UniversalSchemaSupport
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaBasedSerdeProvider, SchemaRegistryClientFactory}
 import pl.touk.nussknacker.engine.schemedkafka.sink.UniversalKafkaSinkFactory.TransformationState
 import pl.touk.nussknacker.engine.schemedkafka.{KafkaUniversalComponentTransformer, RuntimeSchemaData, SchemaDeterminerErrorHandler}
@@ -67,7 +66,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
             .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
             .map(_ => schema)
         }.andThen { schema =>
-          UniversalSchemaSupport.forSchemaType(schema.schemaType())
+          schemaSupportDispatcher.forSchemaType(schema.schemaType())
             .validateRawOutput(schema, value.returnType, extractValidationMode(mode))
             .leftMap(outputValidatorErrorsConverter.convertValidationErrors)
             .leftMap(NonEmptyList.one)
@@ -94,7 +93,7 @@ class UniversalKafkaSinkFactory(val schemaRegistryClientFactory: SchemaRegistryC
           .leftMap(_.map(e => CustomNodeError(nodeId.id, e.getMessage, None)))
       }
       validatedSchema.andThen { schemaData =>
-        UniversalSchemaSupport.forSchemaType(schemaData.schema.schemaType())
+        schemaSupportDispatcher.forSchemaType(schemaData.schema.schemaType())
           .extractSinkValueParameter(schemaData.schema)
           .map { valueParam =>
           val state = TransformationState(schemaData, valueParam)
