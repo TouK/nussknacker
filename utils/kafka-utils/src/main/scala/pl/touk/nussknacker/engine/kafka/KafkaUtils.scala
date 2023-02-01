@@ -1,18 +1,17 @@
 package pl.touk.nussknacker.engine.kafka
 
-import java.util.concurrent.TimeUnit
-import java.util.{Collections, Locale, Properties}
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.KafkaClient
 import org.apache.kafka.clients.admin.{Admin, AdminClient}
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, KafkaConsumer}
 import org.apache.kafka.clients.producer.{Callback, Producer, ProducerRecord, RecordMetadata}
-import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.common.IsolationLevel
+import org.apache.kafka.common.{IsolationLevel, TopicPartition}
 import org.apache.kafka.common.serialization.{ByteArrayDeserializer, ByteArraySerializer}
 import pl.touk.nussknacker.engine.util.ThreadUtils
 
 import java.time
+import java.util.concurrent.TimeUnit
+import java.util.{Collections, Properties}
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -23,8 +22,8 @@ object KafkaUtils extends KafkaUtils
 
 trait KafkaUtils extends LazyLogging {
 
-  import scala.jdk.CollectionConverters._
   import scala.concurrent.ExecutionContext.Implicits.global
+  import scala.jdk.CollectionConverters._
 
   val defaultTimeoutMillis = 10000
 
@@ -86,12 +85,6 @@ trait KafkaUtils extends LazyLogging {
     props
   }
 
-  def toTransactionalAwareConsumerProperties(config: KafkaConfig, group: Option[String]): Properties = {
-    val props = toConsumerProperties(config, group)
-    // default is read uncommitted which is pretty weird and harmful
-    props.setProperty(ConsumerConfig.ISOLATION_LEVEL_CONFIG, IsolationLevel.READ_COMMITTED.toString.toLowerCase(Locale.ROOT))
-    props
-  }
 
   def toConsumerProperties(config: KafkaConfig, groupId: Option[String]): Properties = {
     val props = new Properties()
@@ -139,11 +132,17 @@ trait KafkaUtils extends LazyLogging {
     // there has to be Kafka's classloader
     // http://stackoverflow.com/questions/40037857/intermittent-exception-in-tests-using-the-java-kafka-client
     ThreadUtils.withThisAsContextClassLoader(classOf[KafkaClient].getClassLoader) {
-      val properties = toTransactionalAwareConsumerProperties(config, groupId)
+      val properties = KafkaUtils.toConsumerProperties(config, groupId)
+      // default is read uncommitted which is not a good default
+      setIsolationLevelIfAbsent(properties, IsolationLevel.READ_COMMITTED)
       properties.setProperty("session.timeout.ms", readTimeoutForTempConsumer(config).toString)
       val consumer: KafkaConsumer[Array[Byte], Array[Byte]] = new KafkaConsumer(properties)
       Using.resource(consumer)(fun)
     }
+  }
+
+  def setIsolationLevelIfAbsent(consumerProperties: Properties, isolationLevel: IsolationLevel): Unit = {
+    consumerProperties.putIfAbsent(ConsumerConfig.ISOLATION_LEVEL_CONFIG, isolationLevel.toString.toLowerCase)
   }
 
   private def readTimeoutForTempConsumer(config: KafkaConfig): Long = config.kafkaProperties.flatMap(_.get("session.timeout.ms").map(_.toLong)).getOrElse(defaultTimeoutMillis)

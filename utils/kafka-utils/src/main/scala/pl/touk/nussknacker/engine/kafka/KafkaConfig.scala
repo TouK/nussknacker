@@ -33,6 +33,10 @@ case class KafkaConfig(kafkaProperties: Option[Map[String, String]],
 
   def defaultMaxOutOfOrdernessMillis: Option[Long]
   = kafkaEspProperties.flatMap(_.get("defaultMaxOutOfOrdernessMillis")).map(_.toLong)
+
+  def kafkaBootstrapServers: Option[String] = kafkaProperties.getOrElse(Map.empty)
+    .get("bootstrap.servers").orElse(kafkaAddress)
+
 }
 
 object ConsumerGroupNamingStrategy extends Enumeration {
