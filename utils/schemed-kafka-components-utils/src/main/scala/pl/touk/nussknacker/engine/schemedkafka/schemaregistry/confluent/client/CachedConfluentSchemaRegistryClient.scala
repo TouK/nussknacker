@@ -7,10 +7,9 @@ import io.confluent.kafka.schemaregistry.avro.AvroSchemaProvider
 import io.confluent.kafka.schemaregistry.client.{CachedSchemaRegistryClient => CCachedSchemaRegistryClient, SchemaRegistryClient => CSchemaRegistryClient}
 import io.confluent.kafka.schemaregistry.json.JsonSchemaProvider
 import io.confluent.kafka.serializers.KafkaAvroDeserializerConfig
+import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryError, SchemaWithMetadata}
-import pl.touk.nussknacker.engine.kafka.SchemaRegistryClientKafkaConfig
-import pl.touk.nussknacker.engine.schemedkafka.AvroUtils
 
 import scala.jdk.CollectionConverters._
 
@@ -64,8 +63,8 @@ class CachedConfluentSchemaRegistryClient(val client: CSchemaRegistryClient, cac
   override def getSchemaById(id: SchemaId): SchemaWithMetadata = {
     //Confluent client caches the schema, but in SchemaWithMetadata we do additional processing (e.g. for JSON schema) so we shouldn't do it on each event
     caches.schemaByIdCache.getOrCreate(id) {
-      val rawSchema = client.getSchemaById(id.asInt)
-      SchemaWithMetadata(AvroUtils.adjustParsedSchema(rawSchema, config), id)
+      val schema = client.getSchemaById(id.asInt)
+      SchemaWithMetadata(schema, id)
     }
   }
 

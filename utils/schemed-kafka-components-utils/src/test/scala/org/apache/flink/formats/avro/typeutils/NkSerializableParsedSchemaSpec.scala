@@ -7,7 +7,7 @@ import org.apache.commons.io.output.ByteArrayOutputStream
 import org.everit.json.schema.{ObjectSchema, StringSchema}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.{AvroSchemaWithJsonPayload, OpenAPIJsonSchema}
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.OpenAPIJsonSchema
 
 import java.io.{ByteArrayInputStream, ObjectInputStream, ObjectOutputStream}
 
@@ -28,7 +28,6 @@ class NkSerializableParsedSchemaSpec extends AnyFunSuite with Matchers {
     }.endRecord()
     
     checkRoundTrip(new AvroSchema(schema))
-    checkRoundTrip(new AvroSchemaWithJsonPayload(new AvroSchema(schema)))
   }
 
   private def checkRoundTrip(parsedSchema: ParsedSchema) = {

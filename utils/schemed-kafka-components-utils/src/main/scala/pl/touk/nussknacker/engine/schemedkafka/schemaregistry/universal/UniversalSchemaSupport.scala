@@ -11,16 +11,14 @@ import pl.touk.nussknacker.engine.api.typed.typing.TypingResult
 import pl.touk.nussknacker.engine.api.validation.ValidationMode
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.AvroSchemaWithJsonPayload
 import pl.touk.nussknacker.engine.util.output.OutputValidatorError
 import pl.touk.nussknacker.engine.util.sinkvalue.SinkValueData.SinkValueParameter
 
 object UniversalSchemaSupport {
-  val supportedSchemaTypes: Set[String] = Set(AvroSchema.TYPE, AvroSchemaWithJsonPayload.TYPE, JsonSchema.TYPE)
+  val supportedSchemaTypes: Set[String] = Set(AvroSchema.TYPE, JsonSchema.TYPE)
 
   def forSchemaType(schemaType: String): UniversalSchemaSupport = schemaType match {
     case AvroSchema.TYPE => AvroSchemaSupport
-    case AvroSchemaWithJsonPayload.TYPE => AvroSchemaWithJsonPayloadSupport
     case JsonSchema.TYPE => JsonSchemaSupport
     case _ => throw new UnsupportedSchemaType(schemaType)
   }
