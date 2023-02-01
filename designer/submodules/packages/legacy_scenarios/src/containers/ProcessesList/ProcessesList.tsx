@@ -37,6 +37,7 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
         [RowsRenderer, filtered, getProcesses, statuses],
     );
 
+    const sortableValue = useMemo(() => sortable.map((column) => ({ column, sortFunction: Intl.Collator().compare })), []);
     return (
         <SearchContextProvider>
             <ProcessTableTools allowAdd={allowAdd} isSubprocess={defaultQuery.isSubprocess}>
@@ -45,12 +46,7 @@ export function ProcessesList(props: BaseProcessesOwnProps): JSX.Element {
 
             {children}
 
-            <ProcessesTable
-                className={styles.table}
-                isLoading={isLoading}
-                sortable={sortable.map((column) => ({ column, sortFunction: Intl.Collator().compare }))}
-                columns={columns}
-            >
+            <ProcessesTable className={styles.table} isLoading={isLoading} sortable={sortableValue} columns={columns}>
                 {elements}
             </ProcessesTable>
         </SearchContextProvider>

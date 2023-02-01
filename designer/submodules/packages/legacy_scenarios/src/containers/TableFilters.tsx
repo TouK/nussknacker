@@ -1,74 +1,53 @@
-import {isEqual} from "lodash"
-import React, {useEffect, useState} from "react"
-import {CategoriesFilter} from "../components/table/CategoriesFilter"
-import {StatusFilter} from "../components/table/StatusFilter"
-import SearchFilter from "../components/table/SearchFilter"
-import {SubprocessFilter} from "../components/table/SubprocessFilter"
-import {ensureArray} from "../common/arrayUtils"
-import {usePrevious} from "./hooks/usePrevious"
+import React, { Dispatch, SetStateAction } from "react";
+import { CategoriesFilter } from "../components/table/CategoriesFilter";
+import { StatusFilter } from "../components/table/StatusFilter";
+import SearchFilter from "../components/table/SearchFilter";
+import { SubprocessFilter } from "../components/table/SubprocessFilter";
+import { ensureArray } from "../common/arrayUtils";
 
 export enum SearchItem {
-  categories = "categories",
-  isSubprocess = "isSubprocess",
-  isDeployed = "isDeployed",
+    categories = "categories",
+    isSubprocess = "isSubprocess",
+    isDeployed = "isDeployed",
 }
 
-export type CategoryName = string
+export type CategoryName = string;
 
 export type FiltersState = Partial<{
-  search: string,
-  categories: CategoryName[],
-  isSubprocess: boolean,
-  isDeployed: boolean,
-}>
+    search: string;
+    categories: CategoryName[];
+    isSubprocess: boolean;
+    isDeployed: boolean;
+}>;
 
 type Props = {
-  filters: SearchItem[],
-  value: FiltersState,
-  onChange: (value: FiltersState, prevValue: FiltersState) => void,
-}
+    filters: SearchItem[];
+    value: FiltersState;
+    onChange: Dispatch<SetStateAction<FiltersState>>;
+};
 
 export function TableFilters(props: Props): JSX.Element {
-  const {filters = []} = props
-  const {value, onChange} = props
+    const { filters = [] } = props;
+    const { value, onChange } = props;
 
-  const [state, setState] = useState<FiltersState>(() => value)
-  const prev = usePrevious(state)
+    return (
+        <>
+            <SearchFilter onChange={(search) => onChange((s) => ({ ...s, search }))} value={value.search} />
 
-  useEffect(() => {
-    if (!isEqual(value, state)) {
-      onChange(state, prev)
-    }
-  }, [onChange, prev, state, value])
+            {filters.includes(SearchItem.categories) && (
+                <CategoriesFilter
+                    onChange={(categories) => onChange((s) => ({ ...s, categories }))}
+                    value={ensureArray(value.categories)}
+                />
+            )}
 
-  return (
-    <>
-      <SearchFilter
-        onChange={search => setState(s => ({...s, search}))}
-        value={state.search}
-      />
+            {filters.includes(SearchItem.isSubprocess) && (
+                <SubprocessFilter onChange={(isSubprocess) => onChange((s) => ({ ...s, isSubprocess }))} value={value.isSubprocess} />
+            )}
 
-      {filters.includes(SearchItem.categories) && (
-        <CategoriesFilter
-          onChange={categories => setState(s => ({...s, categories}))}
-          value={ensureArray(state.categories)}
-        />
-      )}
-
-      {filters.includes(SearchItem.isSubprocess) && (
-        <SubprocessFilter
-          onChange={isSubprocess => setState(s => ({...s, isSubprocess}))}
-          value={state.isSubprocess}
-        />
-      )}
-
-      {filters.includes(SearchItem.isDeployed) && (
-        <StatusFilter
-          onChange={isDeployed => setState(s => ({...s, isDeployed}))}
-          value={state.isDeployed}
-        />
-      )}
-    </>
-  )
+            {filters.includes(SearchItem.isDeployed) && (
+                <StatusFilter onChange={(isDeployed) => onChange((s) => ({ ...s, isDeployed }))} value={value.isDeployed} />
+            )}
+        </>
+    );
 }
-
