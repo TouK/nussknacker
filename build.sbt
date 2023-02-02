@@ -48,7 +48,8 @@ val dockerPort = propOrEnv("dockerPort", "8080").toInt
 val dockerUserName = Option(propOrEnv("dockerUserName", "touk"))
 val dockerPackageName = propOrEnv("dockerPackageName", "nussknacker")
 val dockerUpLatestFromProp = propOrEnv("dockerUpLatest").flatMap(p => Try(p.toBoolean).toOption)
-val prepareManagersArtifacts = propOrEnv("prepareManagersArtifacts", "false").toBoolean
+val addDevArtifacts = propOrEnv("addDevArtifacts", "false").toBoolean
+val addManagerArtifacts = propOrEnv("addManagerArtifacts", "false").toBoolean
 
 val requestResponseManagementPort = propOrEnv("requestResponseManagementPort", "8070").toInt
 val requestResponseProcessesPort = propOrEnv("requestResponseProcessesPort", "8080").toInt
@@ -454,7 +455,10 @@ lazy val dist = sbt.Project("dist", file("nussknacker-dist"))
   .enablePlugins(JavaAgent, SbtNativePackager, JavaServerAppPackaging)
   .settings(
     Universal / packageName := ("nussknacker" + "-" + version.value),
-    Universal / mappings ++= (root / managerArtifacts).value ++ (root / componentArtifacts).value,
+    Universal / mappings ++= (root / managerArtifacts).value
+      ++ (root / componentArtifacts).value
+      ++ (if (addDevArtifacts) Seq((developmentTestsDeploymentManager / assembly).value -> "managers/development-tests-manager.jar") else Nil)
+      ++ (if (addDevArtifacts) (root / devModelArtifacts).value: @sbtUnchecked else (root / modelArtifacts).value: @sbtUnchecked),
     Universal / packageZipTarball / mappings := {
       val universalMappings = (Universal / mappings).value
       //we don't want docker-* stuff in .tgz
@@ -1599,7 +1603,7 @@ lazy val prepareDev = taskKey[Unit]("Prepare components and model for running fr
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
-    (if (prepareManagersArtifacts) managerArtifacts.value else Nil)
+    (if (addManagerArtifacts) managerArtifacts.value else Nil)
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
 }

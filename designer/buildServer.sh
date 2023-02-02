@@ -3,4 +3,4 @@
 set -e
 
 cd "$(dirname -- "$0")"/..
-prepareManagersArtifacts=true sbt "designer/assembly; prepareDev"
+addManagerArtifacts=true sbt "designer/assembly; prepareDev"
