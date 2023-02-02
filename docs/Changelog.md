@@ -20,6 +20,10 @@
   * Performance fix: `kafka` source on Flink engine doesn't serialize schema during record serialization
   * Configuration handling fixes: `avroKryoGenericRecordSchemaIdSerialization` wasn't checked properly
   * Avro: added support for top level array schema
+* [#3972](https://github.com/TouK/nussknacker/pull/3972) Lite engine: Kafka transactions are now optional and by default disabled 
+  for Azure's Event Hubs which doesn't support them so far. For other Kafka clusters they are enabled. You can change this behavior 
+  by setting `kafkaTransactionsEnabled` configuration option
+ 
 
 1.7.0 (19 Dec 2022)
 ------------------------

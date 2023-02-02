@@ -1,11 +1,10 @@
 package pl.touk.nussknacker.engine.lite.kafka
 
 import cats.implicits.toTraverseOps
-import com.github.ghik.silencer.silent
 import com.typesafe.scalalogging.LazyLogging
 import org.apache.kafka.clients.CommonClientConfigs
 import org.apache.kafka.clients.consumer.{ConsumerConfig, ConsumerRecord, ConsumerRecords, KafkaConsumer, OffsetAndMetadata}
-import org.apache.kafka.clients.producer.{KafkaProducer, ProducerRecord}
+import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.common.errors.{AuthorizationException, InterruptException, OutOfOrderSequenceException, ProducerFencedException}
 import pl.touk.nussknacker.engine.api.exception.WithExceptionExtractor
@@ -17,17 +16,16 @@ import pl.touk.nussknacker.engine.lite.ScenarioInterpreterFactory.ScenarioInterp
 import pl.touk.nussknacker.engine.lite.api.commonTypes.{ErrorType, ResultType}
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes
 import pl.touk.nussknacker.engine.lite.api.interpreterTypes.{ScenarioInputBatch, SourceId}
-import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{KafkaInterpreterConfig, Input, Output}
+import pl.touk.nussknacker.engine.lite.kafka.KafkaTransactionalScenarioInterpreter.{Input, KafkaInterpreterConfig, Output}
 import pl.touk.nussknacker.engine.lite.kafka.api.LiteKafkaSource
 import pl.touk.nussknacker.engine.lite.metrics.SourceMetrics
+import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 import pl.touk.nussknacker.engine.util.exception.DefaultWithExceptionExtractor
 
-import java.util.UUID
 import scala.compat.java8.DurationConverters.FiniteDurationops
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.jdk.CollectionConverters._
 import scala.util.control.NonFatal
-import pl.touk.nussknacker.engine.util.Implicits.RichScalaMap
 
 class KafkaSingleScenarioTaskRun(taskId: String,
                                  metaData: MetaData,
@@ -40,7 +38,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   private val groupId = metaData.id
 
   private var consumer: KafkaConsumer[Array[Byte], Array[Byte]] = _
-  private var producer: KafkaProducer[Array[Byte], Array[Byte]] = _
+  private var producer: KafkaProducerRecordsHandler = _
 
   private var consumerMetricsRegistrar: KafkaMetricsRegistrar = _
   private var producerMetricsRegistrar: KafkaMetricsRegistrar = _
@@ -58,26 +56,23 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     configSanityCheck()
     new KafkaErrorTopicInitializer(engineConfig.kafka, engineConfig.exceptionHandlingConfig).init()
 
-    consumer = prepareConsumer
     producer = prepareProducer
-    producer.initTransactions()
+    consumer = prepareConsumer
     consumer.subscribe(sourceToTopic.keys.toSet.asJavaCollection)
 
     registerMetrics()
   }
 
   private def prepareConsumer: KafkaConsumer[Array[Byte], Array[Byte]] = {
-    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, Some(groupId))
-    // offset commit is done manually via sendOffsetsToTransaction
-    properties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
-    new KafkaConsumer[Array[Byte], Array[Byte]](properties)
+    val consumerProperties = KafkaUtils.toConsumerProperties(engineConfig.kafka,  Some(groupId))
+    producer.enrichConsumerProperties(consumerProperties)
+    new KafkaConsumer[Array[Byte], Array[Byte]](consumerProperties)
   }
 
-  private def prepareProducer: KafkaProducer[Array[Byte], Array[Byte]] = {
-    val producerProps = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
-    //FIXME generate correct id - how to connect to topic/partition??
-    producerProps.put("transactional.id", groupId + UUID.randomUUID().toString)
-    new KafkaProducer[Array[Byte], Array[Byte]](producerProps)
+  private def prepareProducer: KafkaProducerRecordsHandler = {
+    val producerProperties = KafkaUtils.toProducerProperties(engineConfig.kafka, groupId)
+    KafkaProducerRecordsHandler.
+      apply(engineConfig, producerProperties, groupId)
   }
 
   private def registerMetrics(): Unit = {
@@ -90,20 +85,16 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   // We have both "mostly" side-effect-less interpreter.invoke and sendOutputToKafka in a body of transaction to avoid situation
   // when beginTransaction fails and we keep restarting interpreter.invoke which can cause e.g. sending many unnecessary requests
   // to rest services. beginTransaction is costless (doesn't communicate with transaction coordinator)
-  @silent("deprecated")
   def run(): Unit = {
     val records = consumer.poll(engineConfig.pollDuration.toJava)
     if (records.isEmpty) {
       logger.trace("No records, skipping")
       return
     }
-    producer.beginTransaction()
+    producer.beforeRecordsProcessing()
     try {
       processRecords(records)
-      val offsetsMap: Map[TopicPartition, OffsetAndMetadata] = retrieveMaxOffsetsOffsets(records)
-      // group metadata commit API requires brokers to be on version 2.5 or above so for now we use deprecated api
-      producer.sendOffsetsToTransaction(offsetsMap.asJava, consumer.groupMetadata().groupId())
-      producer.commitTransaction()
+      producer.onRecordsSuccessfullyProcessed(records, consumer)
     } catch {
       // Those are rather not our cases but their shouldn't cause transaction abortion:
       // https://stackoverflow.com/a/63837803
@@ -112,7 +103,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
         throw e
       case NonFatal(e) =>
         logger.warn(s"Unhandled error: ${e.getMessage}. Aborting kafka transaction")
-        producer.abortTransaction()
+        producer.onRecordsProcessingFailure()
         throw e
     }
   }
@@ -148,7 +139,7 @@ class KafkaSingleScenarioTaskRun(taskId: String,
     })
 
     val errors = output.written.map(serializeError)
-    (resultsWithEventTimestamp ++ errors).map(KafkaUtils.sendToKafka(_)(producer)).sequence
+    (resultsWithEventTimestamp ++ errors).map(producer.send).sequence
   }
 
   //TODO: test behaviour on transient exceptions
@@ -175,8 +166,8 @@ class KafkaSingleScenarioTaskRun(taskId: String,
   }
 
   private def configSanityCheck(): Unit = {
-    val properties = KafkaUtils.toTransactionalAwareConsumerProperties(engineConfig.kafka, None)
-    val maxPollInterval = new ConsumerConfig(properties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
+    val consumerProperties = KafkaUtils.toConsumerProperties(engineConfig.kafka, None)
+    val maxPollInterval = new ConsumerConfig(consumerProperties).getInt(CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG)
     if (maxPollInterval <= (engineConfig.interpreterTimeout + engineConfig.publishTimeout).toMillis) {
       throw new IllegalArgumentException(s"publishTimeout + interpreterTimeout cannot exceed " +
         s"${CommonClientConfigs.MAX_POLL_INTERVAL_MS_CONFIG}")
