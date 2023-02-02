@@ -49,9 +49,8 @@ class AvroSchemaSupport(kafkaConfig: KafkaConfig) extends ParsedSchemaSupport[Av
         new ConfluentJsonPayloadKafkaSerializer(kafkaConfig, confluentClient, new DefaultAvroSchemaEvolution, schemaOpt.map(_.cast()), isKey = isKey)
       case confluentClient: ConfluentSchemaRegistryClient =>
         ConfluentKafkaAvroSerializer(kafkaConfig, confluentClient, schemaOpt.map(_.cast()), isKey = isKey)
-      // TODO: handle avroAsJsonSerialization
-      case _: AzureSchemaRegistryClient =>
-        AzureAvroSerializerFactory.createSerializer(kafkaConfig, schemaOpt.map(_.cast()))
+      case azureClient: AzureSchemaRegistryClient =>
+        AzureAvroSerializerFactory.createSerializer(azureClient, kafkaConfig, schemaOpt.map(_.cast()), isKey)
       case _ =>
         throw new IllegalArgumentException(s"Not supported schema registry client: ${client.getClass}. " +
           s"Avro serialization is currently supported only for Confluent schema registry implementation")

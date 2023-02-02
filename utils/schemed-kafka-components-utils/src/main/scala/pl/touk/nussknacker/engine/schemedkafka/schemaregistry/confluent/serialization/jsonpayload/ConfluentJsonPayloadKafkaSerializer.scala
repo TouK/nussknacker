@@ -4,11 +4,12 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.Schema
 import org.apache.avro.io.{Encoder, NoWrappingJsonEncoder}
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.schemedkafka.RuntimeSchemaData
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
-import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.SchemaRegistryClient
+import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaRegistryClient}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.client.ConfluentSchemaRegistryClient
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.serialization.ConfluentKafkaAvroSerializer
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.serialization.SchemaRegistryBasedSerializerFactory
@@ -24,7 +25,7 @@ class ConfluentJsonPayloadKafkaSerializer(kafkaConfig: KafkaConfig,
 
   override protected def encoderToUse(schema: Schema, out: OutputStream): Encoder = new NoWrappingJsonEncoder(schema, out)
 
-  override protected def writeHeader(data: Any, avroSchema: Schema, schemaId: Int, out: OutputStream): Unit = {}
+  override protected def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = {}
 
 }
 

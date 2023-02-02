@@ -2,6 +2,7 @@ package pl.touk.nussknacker.engine.lite.components
 
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigValueFactory.fromAnyRef
+import io.circe.Json
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import org.apache.avro.generic.{GenericRecord, GenericRecordBuilder}
 import org.apache.avro.{Schema, SchemaBuilder}
@@ -10,9 +11,10 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.tags.Network
 import pl.touk.nussknacker.engine.build.ScenarioBuilder
+import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.kafka.KafkaConfig
 import pl.touk.nussknacker.engine.lite.components.LiteKafkaComponentProvider.KafkaUniversalName
-import pl.touk.nussknacker.engine.lite.util.test.KafkaAvroConsumerRecord
+import pl.touk.nussknacker.engine.lite.util.test.{KafkaAvroConsumerRecord, KafkaConsumerRecord}
 import pl.touk.nussknacker.engine.lite.util.test.LiteKafkaTestScenarioRunner._
 import pl.touk.nussknacker.engine.schemedkafka.KafkaUniversalComponentTransformer.{SchemaVersionParamName, SinkKeyParamName, SinkRawEditorParamName, SinkValueParamName, TopicParamName}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.azure.{AzureSchemaRegistryClientFactory, AzureUtils, SchemaNameTopicMatchStrategy}
@@ -42,6 +44,46 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
   private val schemaRegistryClient = schemaRegistryClientFactory.create(KafkaConfig.parseConfig(config).schemaRegistryClientKafkaConfig)
 
   test("round-trip Avro serialization using Azure Schema Registry") {
+    val (
+      inputTopic: String, inputSchema: Schema, inputSchemaId: SchemaId,
+      outputSchema: Schema, outputSchemaId: SchemaId,
+      scenario: CanonicalProcess) = prepareAvroSetup
+
+    val inputValue = new GenericRecordBuilder(inputSchema)
+      .set("a", "aValue")
+      .build()
+    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
+
+    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
+    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+    val expectedValue = new GenericRecordBuilder(outputSchema)
+      .set("a", "aValue")
+      .build()
+    resultProducerRecord.value() shouldEqual expectedValue
+    resultSchemaIdHeader shouldEqual outputSchemaId
+  }
+
+  test("round-trip Avro schema with json payload serialization on Azure") {
+    val (
+      inputTopic: String, _: Schema, _: SchemaId,
+      _: Schema, outputSchemaId: SchemaId,
+      scenario: CanonicalProcess) = prepareAvroSetup
+
+    val jsonPayloadTestRunner = TestScenarioRunner
+      .kafkaLiteBased(config.withValue("kafka.avroAsJsonSerialization", fromAnyRef(true)))
+      .withSchemaRegistryClientFactory(schemaRegistryClientFactory)
+      .build()
+
+    val inputValue = Json.fromFields(Map("a" -> Json.fromString("aValue"))).noSpaces
+    val inputConsumerRecord = KafkaConsumerRecord[String, String](inputTopic, inputValue)
+
+    val result = jsonPayloadTestRunner.runWithStringData(scenario, List(inputConsumerRecord))
+    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
+    resultProducerRecord.value() shouldEqual inputValue
+    resultSchemaIdHeader shouldEqual outputSchemaId
+  }
+
+  private def prepareAvroSetup = {
     val scenarioName = "avro"
     val inputTopic = s"$scenarioName-input"
     val outputTopic = s"$scenarioName-output"
@@ -58,19 +100,7 @@ class AzureSchemaRegistryKafkaAvroTest extends AnyFunSuite with Matchers with Va
       .source("source", KafkaUniversalName, TopicParamName -> s"'$inputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'")
       .emptySink("sink", KafkaUniversalName, TopicParamName -> s"'$outputTopic'", SchemaVersionParamName -> s"'${SchemaVersionOption.LatestOptionName}'",
         SinkKeyParamName -> "", SinkRawEditorParamName -> "true", SinkValueParamName -> "#input")
-
-    val inputValue = new GenericRecordBuilder(inputSchema)
-      .set("a", "aValue")
-      .build()
-    val inputConsumerRecord = KafkaAvroConsumerRecord(inputTopic, inputValue, inputSchemaId)
-
-    val result = testRunner.runWithAvroData[String, GenericRecord](scenario, List(inputConsumerRecord))
-    val (resultProducerRecord, resultSchemaIdHeader) = verifyOneSuccessRecord(result)
-    val expectedValue = new GenericRecordBuilder(outputSchema)
-      .set("a", "aValue")
-      .build()
-    resultProducerRecord.value() shouldEqual expectedValue
-    resultSchemaIdHeader shouldEqual outputSchemaId
+    (inputTopic, inputSchema, inputSchemaId, outputSchema, outputSchemaId, scenario)
   }
 
   test("round-trip Avro serialization with primitive types on Azure") {

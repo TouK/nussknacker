@@ -3,6 +3,7 @@ package pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.seriali
 import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.avro.AvroSchema
 import io.confluent.kafka.serializers.KafkaAvroSerializerConfig
+import org.apache.kafka.common.header.Headers
 import org.apache.kafka.common.serialization.Serializer
 import pl.touk.nussknacker.engine.schemedkafka.schema.{AvroSchemaEvolution, DefaultAvroSchemaEvolution}
 import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.confluent.ConfluentUtils
@@ -33,8 +34,14 @@ class ConfluentKafkaAvroSerializer(kafkaConfig: KafkaConfig, confluentSchemaRegi
     this.isKey = isKey
   }
 
-  override def serialize(topic: String, data: Any): Array[Byte] =
-    serialize(avroSchemaOpt, topic, data, isKey)
+
+  override def serialize(topic: String, data: Any): Array[Byte] = {
+    serialize(topic, null, data)
+  }
+
+  override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] = {
+    serialize(avroSchemaOpt, topic, data, isKey, headers)
+  }
 
   override def close(): Unit = {}
 }

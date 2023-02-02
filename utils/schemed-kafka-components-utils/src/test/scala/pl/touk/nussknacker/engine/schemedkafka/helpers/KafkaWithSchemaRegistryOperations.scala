@@ -157,7 +157,9 @@ class SimpleKafkaAvroSerializer(schemaRegistryVal: CSchemaRegistryClient, isKey:
 
   this.schemaRegistry = schemaRegistryVal
 
-  override def serialize(topic: String, data: Any): Array[Byte] = serialize(None, topic, data, isKey)
+  override def serialize(topic: String, data: Any): Array[Byte] = serialize(topic, null, data)
+
+  override def serialize(topic: String, headers: Headers, data: Any): Array[Byte] = serialize(None, topic, data, isKey, headers)
 }
 
 object SimpleKafkaJsonDeserializer extends Deserializer[Any] {

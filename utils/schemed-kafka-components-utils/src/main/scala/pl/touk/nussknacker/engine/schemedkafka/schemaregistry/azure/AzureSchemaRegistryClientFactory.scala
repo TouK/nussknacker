@@ -160,6 +160,10 @@ class AzureSchemaRegistryClient(config: SchemaRegistryClientKafkaConfig) extends
     }
   }
 
+  def getSchemaIdByContent(schema: AvroSchema): SchemaId = {
+    SchemaId.fromString(schemaRegistryClient.getSchemaProperties(schemaGroup, schema.rawSchema().getFullName, schema.canonicalString(), SchemaFormat.AVRO).getId)
+  }
+
   private def checkAvroSchema(schema: ParsedSchema): AvroSchema = {
     schema match {
       case avroSchema: AvroSchema => avroSchema

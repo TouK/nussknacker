@@ -11,8 +11,9 @@ import pl.touk.nussknacker.engine.schemedkafka.schemaregistry.{SchemaId, SchemaI
 object AzureKafkaAvroElementSerde extends KafkaAvroElementSerde {
 
   override def serializeAvroElement(containerData: GenericContainer, schemaId: SchemaId, headers: Headers, isKey: Boolean): Array[Byte] = {
-    require(!isKey, "Azure implementation only support avro data in value")
-    headers.add(AzureUtils.avroContentTypeHeader(schemaId))
+    if (!isKey) {
+      headers.add(AzureUtils.avroContentTypeHeader(schemaId))
+    }
     AvroUtils.serializeContainerToBytesArray(containerData)
   }
 
