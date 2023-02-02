@@ -183,6 +183,10 @@ trait KafkaUtils extends LazyLogging {
         promise.complete(result)
       }
     }
+
+  // It can't be in AzureUtils because it must be accessible from Lite Runtime
+  val azureEventHubsUrl = ".servicebus.windows.net"
+
 }
 
 case class PreparedKafkaTopic(original: String, prepared: String)

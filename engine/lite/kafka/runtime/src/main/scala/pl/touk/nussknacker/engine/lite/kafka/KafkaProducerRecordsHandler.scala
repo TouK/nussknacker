@@ -32,9 +32,8 @@ object KafkaProducerRecordsHandler extends LazyLogging {
     }
   }
 
-  // TODO: move to some AzureUtils
   private def isAzureEventHubsBootstrapServersUrl(url: String) = {
-    url.contains(".servicebus.windows.net")
+    url.contains(KafkaUtils.azureEventHubsUrl)
   }
 
 }
