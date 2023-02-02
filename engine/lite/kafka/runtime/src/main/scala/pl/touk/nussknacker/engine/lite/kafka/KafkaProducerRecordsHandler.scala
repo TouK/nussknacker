@@ -20,7 +20,7 @@ object KafkaProducerRecordsHandler extends LazyLogging {
     val shouldProcessRecordsInTransactions = engineConfig.kafkaTransactionsEnabled.getOrElse {
       // Event hubs doesn't support transactional producers for now - it causes error on KafkaProducer.initTransactions()
       // see https://github.com/Azure/azure-event-hubs-for-kafka/issues/209#issuecomment-1412041269
-      !engineConfig.kafka.kafkaBootstrapServers.exists(_.contains(".servicebus.windows.net"))
+      !engineConfig.kafka.kafkaBootstrapServers.exists(isAzureEventHubsBootstrapServersUrl)
     }
     if (shouldProcessRecordsInTransactions) {
       logger.info("Kafka transactions enabled")
@@ -30,6 +30,11 @@ object KafkaProducerRecordsHandler extends LazyLogging {
       val producer = new KafkaProducer[Array[Byte], Array[Byte]](producerProperties)
       new ManuallyCommittingProducerRecordsHandler(producer)
     }
+  }
+
+  // TODO: move to some AzureUtils
+  private def isAzureEventHubsBootstrapServersUrl(url: String) = {
+    url.contains(".servicebus.windows.net")
   }
 
 }
@@ -59,7 +64,7 @@ trait KafkaProducerRecordsHandler extends AutoCloseable {
 
 }
 
-class TransactionalProducerRecordsHandler(protected val producer: KafkaProducer[Array[Byte], Array[Byte]], consumerGroupId: String)
+private class TransactionalProducerRecordsHandler private(protected val producer: KafkaProducer[Array[Byte], Array[Byte]], consumerGroupId: String)
   extends KafkaProducerRecordsHandler {
 
   override def enrichConsumerProperties(consumerProperties: Properties): Unit = {
@@ -94,7 +99,7 @@ class TransactionalProducerRecordsHandler(protected val producer: KafkaProducer[
 
 }
 
-object TransactionalProducerRecordsHandler {
+private object TransactionalProducerRecordsHandler {
 
   def apply(producerProperties: Properties, consumerGroupId: String): TransactionalProducerRecordsHandler = {
     //FIXME generate correct id - how to connect to topic/partition??
@@ -106,7 +111,7 @@ object TransactionalProducerRecordsHandler {
 
 }
 
-class ManuallyCommittingProducerRecordsHandler(protected val producer: KafkaProducer[Array[Byte], Array[Byte]]) extends KafkaProducerRecordsHandler {
+private class ManuallyCommittingProducerRecordsHandler(protected val producer: KafkaProducer[Array[Byte], Array[Byte]]) extends KafkaProducerRecordsHandler {
 
   override def enrichConsumerProperties(consumerProperties: Properties): Unit = {
     consumerProperties.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
