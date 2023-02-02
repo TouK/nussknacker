@@ -115,7 +115,7 @@
     "copy-webpack-plugin": "11.0.0",
     "crypto-browserify": "3.12.0",
     "util": "0.12.5",
-    "css-loader": "6.7.1",
+    "legacy-css-loader": "npm:css-loader@5.2.7",
     "enzyme": "3.11.0",
     "eslint": "8.25.0",
     "eslint-plugin-i18next": "6.0.0-4",
