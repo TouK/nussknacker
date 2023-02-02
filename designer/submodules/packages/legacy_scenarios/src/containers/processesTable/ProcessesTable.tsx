@@ -1,4 +1,4 @@
-import { isArray, isString } from "lodash";
+import { isArray, isNumber, isString } from "lodash";
 import React, { PropsWithChildren, useCallback, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { SortType, TableComponentProperties } from "reactable";
@@ -53,6 +53,7 @@ export function ProcessesTable(props: Props) {
     );
 
     const sortBy = useMemo(() => ({ column, direction }), []);
+    const currentPage = useMemo(() => (isNumber(page) ? page : parseInt(page) || 0), [page]);
     return (
         <>
             <LoaderSpinner show={isLoading} />
@@ -61,7 +62,7 @@ export function ProcessesTable(props: Props) {
                     {...passProps}
                     noDataText={isLoading ? t("table.loading", "Loading data...") : t("table.noData", "No matching records found.")}
                     onPageChange={onPageChange}
-                    currentPage={page}
+                    currentPage={currentPage}
                     sortable={sortable}
                     columns={columns}
                     sortBy={sortBy}
