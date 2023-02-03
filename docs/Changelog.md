@@ -23,7 +23,7 @@
 * [#3972](https://github.com/TouK/nussknacker/pull/3972) Lite engine: Kafka transactions are now optional and by default disabled 
   for Azure's Event Hubs which doesn't support them so far. For other Kafka clusters they are enabled. You can change this behavior 
   by setting `kafkaTransactionsEnabled` configuration option
- 
+* [#3914](https://github.com/TouK/nussknacker/pull/3914) Azure Schema Registry and Azure's Avro (de)serialization support 
 
 1.7.0 (19 Dec 2022)
 ------------------------

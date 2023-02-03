@@ -20,12 +20,30 @@ Kafka topics are native streaming data input to Nussknacker and the native outpu
 
 ## Schema Registry integration
 
-Nussknacker integrates with Schema Registry. It is the source of topics available to choose from in Kafka sources and sinks. It also allows Nussknacker to provide syntax suggestions and validation. Nussknacker assumes that for the topic `topic-name` a schema `topic-name-value` and optionally `topic-name-key` (for the Kafka topic key) will be defined in the schema registry.
+Nussknacker integrates with Schema Registries. It is the source of knowledge about:
+- Which topics are available in Kafka sources and sinks
+- What schema versions are available for topic
+- How code completions and validations on types described by schemas should work
+- How messages will be deserialized and serialized
 
-Schemas are stored and managed by Confluent Schema Registry; it is [bundled with Nussknacker](/about/TypicalImplementation) in all deployment versions. Schemas can be registered in Schema Registry by means of REST API based CLI or using AKHQ, an open source GUI for Apache Kafka and Confluent Schema Registry. AKHQ is bundled with Nussknacker in all deployment versions.
+Currently, Nussknacker supports two implementations of schema registries: based on *Confluent Schema Registry* and based on *Azure Schema Registry*. 
+During runtime, it deserializes and serializes messages in the way that is compatible with standard Kafka serializers and deserializers 
+delivered by those schema registries providers. Thanks to that you should be able to send messages to Nussknacker and read messages 
+produced by Nussknacker using standard tooling available around those Schema Registries.
 
-Nussknacker supports both JSON and Avro schemas, and JSON and Avro topic payloads. Detailed information on how Avro data should be serialized/deserialized can be found in [Confluent Wire Documentation](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format).
+Given implementation is picked based on `schema.registry.url` property. By default, it is used Confluent-based implementation. 
+For urls ended with `.servicebus.windows.net` it is used Azure-based implementation.
 
+### Schema with topic association
+
+To properly present information about topics and version and to recognize which schema is assigned to version, Nussknacker follow conventions:
+- For Confluent-based implementation it uses [TopicNameStrategy for subject names](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#subject-name-strategy).
+  It means that it looks for schemas available at topic-name-(key or value). For example for topic transactions, it looks for schemas at transactions-key for key and transactions-value subject for value
+- In Azure Schema Registry, subjects concept doesn't exist - schemas are grouped by the same schema name. Because of that, Nussknacker introduces
+  own convention for schema with topic association: schema name should be in format: CamelCasedTopicNameKey for keys and CamelCasedTopicNameValue for values.
+  For example for `input-events` topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
+  not only in Azure portal but also inside schema content - those names should be the same to make serialization works correctly
+  
 ### Schema and payload types
 
 By default, Nussknacker supports two combinations of schema type and payload type:
@@ -42,11 +60,21 @@ Nussknacker supports schema evolution.
 For sources and sinks, you can choose which schema version should be used for syntax [suggestions and validation](/docs/integration/DataTypingAndSchemasHandling.md).
 
 At runtime Nussknacker determines the schema version of a message value and key in the following way:
-1. it checks `value.schemaId` and `key.schemaId` headers;
-2. if there are no such headers, it looks for a magic byte and schema version in the message, [in a format used by Confluent](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format);
-3. if the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
+1. It checks in  `key.schemaId`, `value.schemaId` and Azure-specific `content-type` header;
+2. If there are no such headers, it looks for the magic byte (0x00) and a schema id in the message, [in a format used by Confluent](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format);
+3. If the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
 
-  
+### Comparison
+
+Below you can find a quick comparison of how given schema registry types are handled:
+
+| Schema registry type | What is used for schema with topic association | Convention                                           | The way how schema id is passed in message                            |
+|----------------------|------------------------------------------------|------------------------------------------------------|-----------------------------------------------------------------------|
+| Confluent            | Subjects                                       | Subject = ${topic name}-(key or value)               | For Avro: in payload in format: 0x00, 4 bytes schema id, Avro payload |
+|                      |                                                |                                                      | For JSON: in  `key.schemaId` or `value.schemaId` headers              |
+| Azure                | Schema names                                   | Schema name = ${CamelCased topic name)(Key or Value) | For Avro: In header: content-type: avro/binary+schemaId               |
+|                      |                                                |                                                      | For JSON: not supported yet                                           |
+
 ## Configuration
 
 ### Common part
