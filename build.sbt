@@ -187,15 +187,21 @@ lazy val commonSettings =
         "-feature",
         "-language:postfixOps",
         "-language:existentials",
-        // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
-        // -release option has no influence on class version so we at least setup target to 8 and check java version
-        // at the begining of our Apps
-        "-target:jvm-1.8",
+
         "-release",
         "11"
       ) ++ forScalaVersion(scalaVersion.value, Seq(),
-        (2, 12) -> Seq("-Ypartial-unification"),
-        (2, 13) -> Seq("-Ymacro-annotations")
+        (2, 12) -> Seq(
+          "-Ypartial-unification",
+          // We use jdk standard lib classes from java 11, but Scala 2.12 does not support target > 8 and
+          // -release option has no influence on class version so we at least setup target to 8 and check java version
+          // at the begining of our Apps
+          "-target:jvm-1.8",
+        ),
+        (2, 13) -> Seq(
+          "-Ymacro-annotations",
+          "-target:jvm-11",
+        )
       ),
       javacOptions := Seq(
         "-Xlint:deprecation",
