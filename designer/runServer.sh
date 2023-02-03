@@ -3,13 +3,16 @@
 set -e
 
 export WORKING_DIR=`dirname "$0" | xargs -I{} readlink -f {}/server/work`
+export NUSSKNACKER_DIR=$WORKING_DIR
 mkdir -p "$WORKING_DIR"
 cd $WORKING_DIR
 
-SCALA_VERSION=${SCALA_VERSION:-2.12}
+SCALA_VERSION=${SCALA_VERSION:-2.13}
 PROJECT_BASE_DIR="../../.."
 
-DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/target/universal/stage"
+DIST_BASE_DIR="$PROJECT_BASE_DIR/nussknacker-dist/src/universal"
+export LIB_DIR="${PROJECT_BASE_DIR}/designer/server/target/scala-$SCALA_VERSION"
+export CONF_DIR="${DIST_BASE_DIR}/conf"
 export CONFIG_FILE="$DIST_BASE_DIR/conf/dev-application.conf"
 export NUSSKNACKER_LOG_LEVEL=DEBUG
 export CONSOLE_THRESHOLD_LEVEL=DEBUG
