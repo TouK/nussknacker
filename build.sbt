@@ -21,6 +21,13 @@ val scala213 = "2.13.10"
 val defaultScalaV = scala213
 lazy val supportedScalaVersions = List(scala212, scala213)
 
+initialize := {
+  val _ = initialize.value
+  val javaVersion = sys.props("java.specification.version")
+  if (javaVersion != "11")
+    sys.error("This project requires running sbt on Java 11. Found " + javaVersion + " instead.")
+}
+
 // Silencer must be compatible with exact scala version - see compatibility matrix: https://search.maven.org/search?q=silencer-plugin
 // Silencer 1.7.x require Scala 2.12.11 (see warning above)
 // Silencer (and all '@silent' annotations) can be removed after we can upgrade to 2.12.13...
