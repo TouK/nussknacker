@@ -24,23 +24,23 @@ Nussknacker integrates with Schema Registries. It is the source of knowledge abo
 - Which topics are available in Kafka sources and sinks
 - What schema versions are available for topic
 - How code completions and validations on types described by schemas should work
-- How messages will be deserialized and serialized
+- How messages will be serialized and deserialized
 
 Currently, Nussknacker supports two implementations of schema registries: based on *Confluent Schema Registry* and based on *Azure Schema Registry*. 
-During runtime, it deserializes and serializes messages in the way that is compatible with standard Kafka serializers and deserializers 
+During runtime, it serializes and deserializes messages in the way that is compatible with standard Kafka serializers and deserializers 
 delivered by those schema registries providers. Thanks to that you should be able to send messages to Nussknacker and read messages 
 produced by Nussknacker using standard tooling available around those Schema Registries.
 
-Given implementation is picked based on `schema.registry.url` property. By default, it is used Confluent-based implementation. 
-For urls ended with `.servicebus.windows.net` it is used Azure-based implementation.
+Given implementation is picked based on `schema.registry.url` property. By default, Confluent-based implementation is used. 
+For urls ended with `.servicebus.windows.net` Azure-based implementation is used.
 
-### Schema with topic association
+### Association between schema with topic
 
 To properly present information about topics and version and to recognize which schema is assigned to version, Nussknacker follow conventions:
 - For Confluent-based implementation it uses [TopicNameStrategy for subject names](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#subject-name-strategy).
   It means that it looks for schemas available at topic-name-(key or value). For example for topic transactions, it looks for schemas at transactions-key for key and transactions-value subject for value
 - In Azure Schema Registry, subjects concept doesn't exist - schemas are grouped by the same schema name. Because of that, Nussknacker introduces
-  own convention for schema with topic association: schema name should be in format: CamelCasedTopicNameKey for keys and CamelCasedTopicNameValue for values.
+  own convention for association between schema and topic: schema name should be in format: CamelCasedTopicNameKey for keys and CamelCasedTopicNameValue for values.
   For example for `input-events` topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
   not only in Azure portal but also inside schema content - those names should be the same to make serialization works correctly
   
@@ -60,7 +60,7 @@ Nussknacker supports schema evolution.
 For sources and sinks, you can choose which schema version should be used for syntax [suggestions and validation](/docs/integration/DataTypingAndSchemasHandling.md).
 
 At runtime Nussknacker determines the schema version of a message value and key in the following way:
-1. It checks in  `key.schemaId`, `value.schemaId` and Azure-specific `content-type` header;
+1. It checks in `key.schemaId`, `value.schemaId` and Azure-specific `content-type` headers;
 2. If there are no such headers, it looks for the magic byte (0x00) and a schema id in the message, [in a format used by Confluent](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#wire-format);
 3. If the magic byte is not found, it assumes the schema version chosen by the user in the scenario.
 
@@ -68,12 +68,12 @@ At runtime Nussknacker determines the schema version of a message value and key 
 
 Below you can find a quick comparison of how given schema registry types are handled:
 
-| Schema registry type | What is used for schema with topic association | Convention                                           | The way how schema id is passed in message                            |
-|----------------------|------------------------------------------------|------------------------------------------------------|-----------------------------------------------------------------------|
-| Confluent            | Subjects                                       | Subject = ${topic name}-(key or value)               | For Avro: in payload in format: 0x00, 4 bytes schema id, Avro payload |
-|                      |                                                |                                                      | For JSON: in  `key.schemaId` or `value.schemaId` headers              |
-| Azure                | Schema names                                   | Schema name = ${CamelCased topic name)(Key or Value) | For Avro: In header: content-type: avro/binary+schemaId               |
-|                      |                                                |                                                      | For JSON: not supported yet                                           |
+| Schema registry type | What is used for association between schema with topic | Convention                                        | The way how schema id is passed in message                            |
+|----------------------|--------------------------------------------------------|---------------------------------------------------|-----------------------------------------------------------------------|
+| Confluent            | Subjects                                               | Subject = <topic-name>-(key or value)             | For Avro: in payload in format: 0x00, 4 bytes schema id, Avro payload |
+|                      |                                                        |                                                   | For JSON: in  `key.schemaId` or `value.schemaId` headers              |
+| Azure                | Schema names                                           | Schema name = <CamelCasedTopicName>(Key or Value) | For Avro: In header: content-type: avro/binary+schemaId               |
+|                      |                                                        |                                                   | For JSON: not supported yet                                           |
 
 ## Configuration
 
@@ -91,7 +91,7 @@ Important thing to remember is that Kafka server addresses/Schema Registry addre
 | Name                                                                        | Importance | Type     | Default value    | Description                                                                                                                                                                                                                                                  |
 |-----------------------------------------------------------------------------|------------|----------|------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | kafkaProperties."bootstrap.servers"                                         | High       | string   |                  | Comma separated list of [bootstrap servers](https://kafka.apache.org/documentation/#producerconfigs_bootstrap.servers)                                                                                                                                       |
-| kafkaProperties."schema.registry.url"                                       | High       | string   |                  | Comma separated list of [schema registry](https://docs.confluent.io/platform/current/schema-registry/index.html)                                                                                                                                             |
+| kafkaProperties."schema.registry.url"                                       | High       | string   |                  | Comma separated list of schema registry urls                                                                                                                                                                                                                 |
 | kafkaProperties                                                             | Medium     | map      |                  | Additional configuration of [producers](https://kafka.apache.org/documentation/#producerconfigs) or [consumers](https://kafka.apache.org/documentation/#consumerconfigs)                                                                                     |
 | useStringForKey                                                             | Medium     | boolean  | true             | Should we assume that Kafka message keys are in plain string format (not in Avro)                                                                                                                                                                            |
 | kafkaEspProperties.forceLatestRead                                          | Medium     | boolean  | false            | If scenario is restarted, should offsets of source consumers be reset to latest (can be useful in test enrivonments)                                                                                                                                         |
