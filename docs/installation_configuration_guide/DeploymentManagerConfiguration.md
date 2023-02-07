@@ -241,12 +241,12 @@ In Request-Response processing mode additional ingress resource can be created w
 For now only [nginx based](https://docs.nginx.com/nginx-ingress-controller/) K8s ingress controller is supported.
 It can be configured with following options.
 
-| Parameter | Type    | Default value | Description                                                                                                |
-|-----------|---------|---------------|------------------------------------------------------------------------------------------------------------|
-| enabled   | boolean |               | Either streaming or request-response                                                                       |
-| host      | string  |               | Name of the [ingress host](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules) |
-| rootPath  | string  | "/"           | Root path for the ingress path                                                                             |
-| config    | config  | {}            | Additional ingress config customization                                                                    |
+| Parameter | Type    | Default value | Description                                                                                                                   |
+|-----------|---------|---------------|-------------------------------------------------------------------------------------------------------------------------------|
+| enabled   | boolean |               | Either streaming or request-response                                                                                          |
+| host      | string  |               | Name of the [ingress host](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules)                    |
+| rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](../scenarios_authoring/RRDataSourcesAndSinks.md) |
+| config    | config  | {}            | Additional ingress config customization                                                                                       |
 
 ### Configuring Prometheus metrics
 
