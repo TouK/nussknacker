@@ -61,7 +61,7 @@ For example via Azure CLI or Azure PowerShell.
 
 To properly present information about topics and version and to recognize which schema is assigned to version, Nussknacker follow conventions:
 - For Confluent-based implementation it uses [TopicNameStrategy for subject names](https://docs.confluent.io/platform/current/schema-registry/serdes-develop/index.html#subject-name-strategy).
-  It means that it looks for schemas available at topic-name-(key or value). For example for topic transactions, it looks for schemas at transactions-key for key and transactions-value subject for value
+  It means that it looks for schemas available at `\<topic-name\>-(key or value)`. For example for topic `transactions`, it looks for schemas at `transactions-key` for key and `transactions-value` subject for value
 - In Azure Schema Registry, subjects concept doesn't exist - schemas are grouped by the same schema name. Because of that, Nussknacker introduces
   own convention for association between schema and topic: schema name should be in format: CamelCasedTopicNameKey for keys and CamelCasedTopicNameValue for values.
   For example for `input-events` topic, schema name should be named `InputEventsKey` for key or `InputEventsValue` for value. Be aware that it may require change of schema name
