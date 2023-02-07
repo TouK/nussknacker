@@ -1,4 +1,6 @@
 {
   "name": "nussknackerUi_legacy",
-  "exposes": {}
+  "exposes": {
+    "./test": "./src/test"
+  }
 }

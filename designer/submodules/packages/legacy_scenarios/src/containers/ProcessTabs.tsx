@@ -15,14 +15,14 @@ interface ProcessTabsProps {
     onFragmentAdd: () => void;
     scenarioLinkGetter: (scenarioId: string) => string;
     metricsLinkGetter: (scenarioId: string) => string;
-    basename?: string;
+    basepath?: string;
 }
 
 export const ScenariosContext = createContext<ProcessTabsProps>(null);
 
-function ProcessTabs({ basename = BASE_PATH, ...props }: ProcessTabsProps) {
+function ProcessTabs({ basepath = BASE_PATH, ...props }: ProcessTabsProps) {
     return (
-        <BrowserRouter basename={basename}>
+        <BrowserRouter basename={basepath}>
             <NkThemeProvider theme={(outerTheme) => defaultsDeep(darkTheme, outerTheme)}>
                 <ScenariosContext.Provider value={props}>
                     <Tabs tabs={[ProcessesTabData, SubProcessesTabData, ArchiveTabData]}>

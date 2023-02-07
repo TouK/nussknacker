@@ -1,23 +1,37 @@
-import {isEqual} from "lodash"
-import {useCallback, useMemo} from "react"
-import {useDebounce} from "use-debounce"
-import {normalizeParams} from "../../common/VisualizationUrl"
-import HttpService from "../../http/HttpService"
-import {useFetch} from "../hooks/useFetch"
-import {FiltersState} from "../TableFilters"
-import {Queries} from "./types"
+import { isEqual } from "lodash";
+import { useContext, useMemo } from "react";
+import { useDebounce } from "use-debounce";
+import { normalizeParams } from "../../common/VisualizationUrl";
+import { FiltersState } from "../TableFilters";
+import { Queries } from "./types";
+import { NkApiContext } from "../../settings/nkApiProvider";
+import { useQuery } from "react-query";
+import { useBaseIntervalTime } from "../../reducers/selectors/settings";
 
 export function useFilteredProcesses(filters: FiltersState & Queries) {
-  const normalizedFilters = useMemo(() => filters && normalizeParams(filters), [filters])
-  const [params] = useDebounce(normalizedFilters, 200, {equalityFn: isEqual})
+    const normalizedFilters = useMemo(() => filters && normalizeParams(filters), [filters]);
+    const [params] = useDebounce(normalizedFilters, 200, { equalityFn: isEqual });
+    const api = useContext(NkApiContext);
+    const refetchInterval = useBaseIntervalTime();
 
-  const fetchAction = useCallback(() => {
-    if (params) {
-      const {...rest} = params
-      return HttpService.fetchProcesses(rest)
-    }
-  }, [params])
+    const {
+        data = [],
+        refetch,
+        isLoading,
+    } = useQuery({
+        queryKey: ["processes", params],
+        queryFn: async () => {
+            const { ...rest } = params;
+            const { data } = await api.fetchProcesses(rest);
+            return data;
+        },
+        refetchInterval,
+        enabled: !!api,
+    });
 
-  const [processes, getProcesses, isLoading] = useFetch(fetchAction, [])
-  return {processes, getProcesses, isLoading}
+    return {
+        processes: data,
+        getProcesses: refetch,
+        isLoading,
+    };
 }

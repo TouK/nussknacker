@@ -1,22 +1,48 @@
-import {createSelector} from "reselect"
-import {SettingsState} from "../settings"
-import {map} from "lodash"
-import {useSelector} from "react-redux"
+import { useContext, useMemo } from "react";
+import User from "../../common/models/User";
+import { NkApiContext } from "../../settings/nkApiProvider";
+import { useQuery } from "react-query";
+import { useNkSettingsQuery } from "../../settings/useNkSettingsQuery";
 
-const getAuthenticationSettings = (s: SettingsState) => s.authenticationSettings
-const getLoggedUser = (s: SettingsState) => s.loggedUser
-const getBaseIntervalTime = (s: SettingsState) => s.featuresSettings?.intervalTimeSettings?.processes || 15000
-const getHealthcheckIntervalTime = (s: SettingsState) => s.featuresSettings?.intervalTimeSettings?.healthCheck || 40000
-const getFilterCategories = createSelector(
-  getLoggedUser,
-  u => map(
-    (u.categories || []).filter(c => u.canRead(c)),
-    (e) => ({value: e, label: e})
-  ) || []
-)
+export const useLoggedUser = () => {
+    const api = useContext(NkApiContext);
+    const { data: user, isFetched } = useQuery({
+        queryKey: "user",
+        queryFn: async () => {
+            const { data } = await api.fetchLoggedUser();
+            return data;
+        },
+        enabled: !!api,
+    });
+    return useMemo(() => (isFetched ? new User(user) : null), [isFetched, user]);
+};
 
-export const useAuthenticationSettings = () => useSelector(getAuthenticationSettings)
-export const useLoggedUser = () => useSelector(getLoggedUser)
-export const useBaseIntervalTime = () => useSelector(getBaseIntervalTime)
-export const useHealthcheckIntervalTime = () => useSelector(getHealthcheckIntervalTime)
-export const useFilterCategories = () => useSelector(getFilterCategories)
+export const useBaseIntervalTime = () => {
+    const { data: settings } = useNkSettingsQuery();
+    return useMemo(
+        () => settings?.features?.intervalTimeSettings?.processes || 15000,
+        [settings?.features?.intervalTimeSettings?.processes],
+    );
+};
+
+export const useHealthcheckIntervalTime = () => {
+    const { data: settings } = useNkSettingsQuery();
+    return useMemo(
+        () => settings?.features?.intervalTimeSettings?.healthCheck || 40000,
+        [settings?.features?.intervalTimeSettings?.healthCheck],
+    );
+};
+
+export const useFilterCategories = () => {
+    const user = useLoggedUser();
+    return useMemo(
+        () =>
+            (user?.categories || [])
+                .filter((c) => user.canRead(c))
+                .map((e) => ({
+                    value: e,
+                    label: e,
+                })),
+        [user],
+    );
+};

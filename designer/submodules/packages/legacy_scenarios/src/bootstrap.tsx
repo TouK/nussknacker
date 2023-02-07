@@ -2,12 +2,14 @@ import React, { Suspense } from "react";
 import ReactDOM from "react-dom";
 import ErrorBoundary from "./components/common/ErrorBoundary";
 import LoaderSpinner from "./components/Spinner";
-import NussknackerInitializer from "./containers/NussknackerInitializer";
-import { SettingsProvider } from "./containers/SettingsInitializer";
 import { NkThemeProvider } from "./containers/theme";
 import "./i18n";
-import { StoreProvider } from "./store/provider";
 import ProcessTabs from "./containers/ProcessTabs";
+import { NkApiProvider } from "./settings/nkApiProvider";
+import { Auth } from "./settings/auth";
+import { QueryClient, QueryClientProvider } from "react-query";
+
+const queryClient = new QueryClient();
 
 const rootContainer = document.createElement(`div`);
 rootContainer.id = "root";
@@ -16,9 +18,9 @@ document.body.appendChild(rootContainer);
 const Root = () => (
     <Suspense fallback={<LoaderSpinner show />}>
         <ErrorBoundary>
-            <StoreProvider>
-                <SettingsProvider>
-                    <NussknackerInitializer>
+            <NkApiProvider>
+                <QueryClientProvider client={queryClient}>
+                    <Auth>
                         <NkThemeProvider>
                             <ProcessTabs
                                 onFragmentAdd={() => alert("fragment")}
@@ -27,9 +29,9 @@ const Root = () => (
                                 scenarioLinkGetter={(id) => `/visualization/${encodeURIComponent(id)}`}
                             />
                         </NkThemeProvider>
-                    </NussknackerInitializer>
-                </SettingsProvider>
-            </StoreProvider>
+                    </Auth>
+                </QueryClientProvider>
+            </NkApiProvider>
         </ErrorBoundary>
     </Suspense>
 );
