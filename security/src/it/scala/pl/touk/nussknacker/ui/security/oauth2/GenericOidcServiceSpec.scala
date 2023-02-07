@@ -2,7 +2,7 @@ package pl.touk.nussknacker.ui.security.oauth2
 
 import com.dimafeng.testcontainers.{ForAllTestContainer, SingleContainer}
 import dasniko.testcontainers.keycloak.KeycloakContainer
-import org.apache.commons.lang3.StringEscapeUtils
+import org.apache.commons.text.StringEscapeUtils
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.util.SynchronousExecutionContext._

@@ -16,7 +16,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
-val scala212 = "2.12.10"f
+val scala212 = "2.12.10"
 val scala213 = "2.13.10"
 val defaultScalaV = scala213
 lazy val supportedScalaVersions = List(scala212, scala213)
@@ -293,7 +293,7 @@ val scalaCompatV = "1.0.2"
 val ficusV = "1.5.2"
 val configV = "1.4.2"
 val commonsLangV = "3.12.0"
-val commonsTextV = "1.8"
+val commonsTextV = "1.10.0"
 val commonsIOV = "2.4"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
 //In Flink metrics we use bundled dropwizard metrics v. 3.x

@@ -27,7 +27,7 @@ object OpenAPIsConfig {
   import net.ceedubs.ficus.Ficus._
   import pl.touk.nussknacker.engine.util.config.ConfigEnrichments._
 
-  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig]
+  implicit val openAPIServicesConfigVR: ValueReader[OpenAPIServicesConfig] = ArbitraryTypeReader.arbitraryTypeValueReader[OpenAPIServicesConfig].value
 
   implicit val regexReader: ValueReader[Regex] = (config: Config, path: String) => new Regex(config.getString(path))
 

@@ -34,7 +34,7 @@ object ComponentProviderConfig {
     import net.ceedubs.ficus.Ficus._
     private val normalReader = ArbitraryTypeReader.arbitraryTypeValueReader[ComponentProviderConfig]
     override def read(config: Config, path: String): ComponentProviderConfig = {
-      normalReader.read(config, path).copy(config = config.getConfig(path))
+      normalReader.value.read(config, path).copy(config = config.getConfig(path))
     }
   }
 }
