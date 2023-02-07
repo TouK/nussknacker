@@ -4,6 +4,7 @@
 1.9.0 (Not released yet)
 ------------------------
 * [#3986](https://github.com/TouK/nussknacker/pull/3986) Updated sttp 2.2.9 -> 3.8.11
+* [#3979](https://github.com/TouK/nussknacker/pull/3979) Updated Flink 1.16.0 -> 1.16.1
 
 1.8.0 (Not released yet)
 ------------------------
