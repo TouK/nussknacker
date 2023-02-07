@@ -1,17 +1,17 @@
 /* eslint-disable i18next/no-literal-string */
 // overrides bugs in typings
 
-import * as React from "react"
+import * as React from "react";
 
 declare module "react-bootstrap/lib/Panel" {
-  interface PanelProps {
-    bsClass?: string,
-  }
+    interface PanelProps {
+        bsClass?: string;
+    }
 
-  export class Panel extends React.Component<PanelProps> {}
+    export class Panel extends React.Component<PanelProps> {}
 }
 
 declare module "react-select" {
-  // eslint-disable-next-line import/no-unresolved
-  export {defaultTheme} from "react-select/src/theme"
+    // eslint-disable-next-line import/no-unresolved
+    export { defaultTheme } from "react-select/src/theme";
 }

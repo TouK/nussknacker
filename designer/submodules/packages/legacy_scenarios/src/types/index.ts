@@ -1,2 +1,2 @@
-export type NodeId = string
-export type ProcessId = string
+export type NodeId = string;
+export type ProcessId = string;

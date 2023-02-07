@@ -1,6 +1,6 @@
-import "@fontsource/open-sans"
-import bootstrapStyles from "./stylesheets/bootstrap.styl"
-import "./stylesheets/mainMenu.styl"
-import "./app.styl"
+import "@fontsource/open-sans";
+import bootstrapStyles from "./stylesheets/bootstrap.styl";
+import "./stylesheets/mainMenu.styl";
+import "./app.styl";
 
-export {bootstrapStyles}
+export { bootstrapStyles };

@@ -8,11 +8,11 @@
   It's not really elegant, but we don't see better way without moving to hash router.
  */
 
-const publicUrl: URL | null = __webpack_public_path__ ? new URL(__webpack_public_path__?.replace(/static\/$/, "")) : null
-const href = publicUrl?.href.replace(/\/$/, "") || ""
+const publicUrl: URL | null = __webpack_public_path__ ? new URL(__webpack_public_path__?.replace(/static\/$/, "")) : null;
+const href = publicUrl?.href.replace(/\/$/, "") || "";
 
-export const BASE_PATH = publicUrl?.pathname || "/"
-export const API_URL = `${href}/api`
-export const BACKEND_STATIC_URL = __DEV__ ? `${href}/be-static/` : __webpack_public_path__
+export const BASE_PATH = publicUrl?.pathname || "/";
+export const API_URL = `${href}/api`;
+export const BACKEND_STATIC_URL = __DEV__ ? `${href}/be-static/` : __webpack_public_path__;
 
-export const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm"
+export const DISPLAY_DATE_FORMAT = "YYYY-MM-DD|HH:mm";
