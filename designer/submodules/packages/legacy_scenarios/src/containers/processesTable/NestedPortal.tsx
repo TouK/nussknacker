@@ -21,7 +21,7 @@ export function NestedPortal<I extends Element = Element>(
             element.classList.add(classname);
             return () => element.classList.remove(classname);
         }
-    }, [children, element]);
+    }, [children, classname, element]);
 
     if (!element?.childElementCount) {
         return null;

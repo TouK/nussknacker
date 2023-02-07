@@ -16,7 +16,7 @@ if (process.env.NUSSKNACKER_VERSION) {
 
 // https://werxltd.com/wp/2010/05/13/javascript-implementation-of-javas-string-hashcode-method/
 function hash(str) {
-    var hash = 0,
+    let hash = 0,
         i,
         chr;
     if (str.length === 0) return hash;

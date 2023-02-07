@@ -52,7 +52,7 @@ export function ProcessesTable(props: Props) {
         [setQuery],
     );
 
-    const sortBy = useMemo(() => ({ column, direction }), []);
+    const sortBy = useMemo(() => ({ column, direction }), [column, direction]);
     const currentPage = useMemo(() => (isNumber(page) ? page : parseInt(page) || 0), [page]);
     return (
         <>
