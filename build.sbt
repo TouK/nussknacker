@@ -16,7 +16,7 @@ import scala.xml.transform.{RewriteRule, RuleTransformer}
 
 // Warning: Flink doesn't work correctly with 2.12.11
 // Warning: 2.12.13 + crossVersion break sbt-scoverage: https://github.com/scoverage/sbt-scoverage/issues/319
-val scala212 = "2.12.10"
+val scala212 = "2.12.10"f
 val scala213 = "2.13.10"
 val defaultScalaV = scala213
 lazy val supportedScalaVersions = List(scala212, scala213)
@@ -284,16 +284,15 @@ val logbackV = "1.2.11"
 val logbackJsonV = "0.1.5"
 val circeV = "0.14.3"
 val jwtCirceV = "9.1.2"
-val jacksonV = "2.13.4"
+val jacksonV = "2.14.2"
 val catsV = "2.6.1"
-val scalaParsersV = "1.0.4"
 val everitSchemaV = "1.14.1"
 val slf4jV = "1.7.36"
 val scalaLoggingV = "3.9.5"
 val scalaCompatV = "1.0.2"
-val ficusV = "1.4.7"
+val ficusV = "1.5.2"
 val configV = "1.4.2"
-val commonsLangV = "3.3.2"
+val commonsLangV = "3.12.0"
 val commonsTextV = "1.8"
 val commonsIOV = "2.4"
 //we want to use 5.x for lite metrics to have tags, however dropwizard development kind of freezed. Maybe we should consider micrometer?
@@ -310,7 +309,7 @@ val akkaHttpCirceV = "1.39.2"
 val slickV = "3.4.1"
 val hikariCpV = "5.0.1"
 val hsqldbV = "2.7.1"
-val postgresV = "42.5.1"
+val postgresV = "42.5.3"
 val flywayV = "6.3.3"
 val confluentV = "7.3.0"
 val azureKafkaSchemaRegistryV = "1.0.0-beta.9"
@@ -320,7 +319,7 @@ val jbcryptV = "0.4"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.2"
-val sttpV = "2.2.9"
+val sttpV = "2.3.0"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.16.1"

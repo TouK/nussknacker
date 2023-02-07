@@ -24,6 +24,12 @@
   for Azure's Event Hubs which doesn't support them so far. For other Kafka clusters they are enabled. You can change this behavior 
   by setting `kafkaTransactionsEnabled` configuration option
 * [#3914](https://github.com/TouK/nussknacker/pull/3914) Azure Schema Registry and Azure's Avro (de)serialization support 
+* [#3914](https://github.com/TouK/nussknacker/pull/3914) Bumps libs:
+  * jackson: 2.13.4 -> 2.14.2
+  * ficus: 1.4.7 -> 1.5.2
+  * commons-lang: 3.3.2 -> 3.12.0
+  * postgres: 42.5.1 -> 42.5.3
+  * sttp: 2.2.9 -> 2.3.0
 
 1.7.0 (19 Dec 2022)
 ------------------------
