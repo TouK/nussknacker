@@ -142,6 +142,13 @@ They will use local `KUBECONFIG` to connect to K8s cluster. If you want to setup
 Tests use some images that should be available on your cluster. Importing of them is done automatically for `k3d`. 
 For other clusters you can select other image tag using `dockerTagName` system environment variable or import image manually.  
 
+#### Azure integration tests
+
+Azure integration tests are not run by default using `sbt test`. You need to run tests in `ExternalDepsTests` scope e.g. `sbt schemedKafkaComponentsUtils/ExternalDepsTests/test`.
+To run them you should have configured one of authentication options described here:
+https://github.com/Azure/azure-sdk-for-java/wiki/Azure-Identity-Examples#authenticating-with-defaultazurecredential e.g. Intellij plugin, Azure CLI or environment variables.
+Tests connect to schema registry registered in Event Hubs Namespace from AZURE_EVENT_HUBS_NAMESPACE environment variable (by default nu-cloud).
+
 ### Code conventions
 
 #### Java interoperability

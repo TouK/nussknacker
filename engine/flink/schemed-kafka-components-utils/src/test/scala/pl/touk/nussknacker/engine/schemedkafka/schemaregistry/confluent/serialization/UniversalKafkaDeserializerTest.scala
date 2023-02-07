@@ -4,6 +4,7 @@ import io.confluent.kafka.schemaregistry.ParsedSchema
 import io.confluent.kafka.schemaregistry.client.{SchemaRegistryClient => CSchemaRegistryClient}
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericRecord
+import org.apache.kafka.common.header.Headers
 import org.scalatest.Assertion
 import org.scalatest.prop.{TableDrivenPropertyChecks, TableFor6}
 import pl.touk.nussknacker.engine.kafka.{KafkaRecordUtils, SchemaRegistryCacheConfig, SchemaRegistryClientKafkaConfig}
@@ -28,7 +29,7 @@ class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrive
 
   type CreateSetup = RuntimeSchemaData[ParsedSchema] => SchemaRegistryProviderSetup
 
-  private val schemaIdExtractor: ChainedSchemaIdFromMessageExtractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true)
+  private val schemaIdExtractor: ChainedSchemaIdFromMessageExtractor = UniversalSchemaBasedSerdeProvider.createSchemaIdFromMessageExtractor(isConfluent = true, isAzure = false)
 
   lazy val payloadWithSchemaIdSetup: CreateSetup = readerSchema => SchemaRegistryProviderSetup(SchemaRegistryProviderSetupType.avro,
     UniversalSchemaBasedSerdeProvider.create(MockSchemaRegistry.factory),
@@ -36,7 +37,7 @@ class UniversalKafkaDeserializerTest extends SchemaRegistryMixin with TableDrive
     new UniversalKafkaDeserializer(confluentSchemaRegistryClient, kafkaConfig, schemaIdExtractor, Some(readerSchema), isKey = false))
 
   lazy val payloadWithoutSchemaIdSetup: CreateSetup = readerSchema => payloadWithSchemaIdSetup(readerSchema).copy(valueSerializer = new SimpleKafkaAvroSerializer(MockSchemaRegistry.schemaRegistryMockClient, isKey = false) {
-    override def writeHeader(data: Any, avroSchema: Schema, schemaId: Int, out: OutputStream): Unit = ()
+    override def writeHeader(schemaId: SchemaId, out: OutputStream, headers: Headers): Unit = ()
   })
 
   test("should properly deserialize record to object with same schema version") {
