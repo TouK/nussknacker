@@ -1609,7 +1609,7 @@ lazy val prepareDev = taskKey[Unit]("Prepare components and model for running fr
 prepareDev := {
   val workTarget = (designer / baseDirectory).value / "work"
   val artifacts = componentArtifacts.value ++ devModelArtifacts.value ++ developmentTestsDeployManagerArtifacts.value ++
-    (if (addManagerArtifacts) managerArtifacts.value else Nil)
+    Def.taskDyn(if (addManagerArtifacts) managerArtifacts else Def.task[List[(File, String)]](Nil)).value
   IO.copy(artifacts.map { case (source, target) => (source, workTarget / target) })
   (designer / copyClientDist).value
 }
