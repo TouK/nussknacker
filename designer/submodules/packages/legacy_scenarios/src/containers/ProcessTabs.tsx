@@ -8,7 +8,7 @@ import { SubProcessesTabData } from "./SubProcesses";
 import { Tabs } from "../components/tabs/Tabs";
 import { NkThemeProvider } from "./theme";
 import { BrowserRouter } from "react-router-dom";
-import { BASE_PATH } from "../config";
+import { BASE_PATH } from "nussknackerUi/config";
 
 interface ProcessTabsProps {
     onScenarioAdd: () => void;

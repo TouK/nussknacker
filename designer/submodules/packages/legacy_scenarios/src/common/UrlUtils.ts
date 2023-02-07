@@ -1,4 +1,4 @@
-import { BACKEND_STATIC_URL } from "../config";
+import { BACKEND_STATIC_URL } from "nussknackerUi/config";
 import urljoin from "url-join";
 
 const absoluteIconPatternRegexp = /^((http|https|ftp):\/\/)/;
