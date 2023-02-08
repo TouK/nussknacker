@@ -1,26 +1,9 @@
 {
   "name": "@nu/legacy_scenarios",
+  "description": "Nussknacker designer - client",
+  "version": "0.0.0",
   "author": "",
   "contextPath": "legacy_scenarios",
-  "version": "0.0.0",
-  "description": "Nussknacker designer - client",
-  "license": "UNLICENSED",
-  "private": true,
-  "scripts": {
-    "build": "NODE_ENV=production webpack",
-    "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",
-    "make-types": "make-federated-types",
-    "prebuild": "npm run make-translations",
-    "start": "PORT=5002 webpack serve",
-    "test": "jest --reporters=default --reporters=jest-junit",
-    "pretest": "npm run check",
-    "check": "npm run lint -- . --rule 'i18next/no-literal-string: warn'",
-    "lint": "eslint --fix .",
-    "svgo": "svgo --folder src/assets --recursive",
-    "@comment translations json has higher priority than default labels in code, so we remove them before each start script, to make development faster": "",
-    "clean-translations": "rm -rf ./translations/*",
-    "prestart": "npm run clean-translations"
-  },
   "dependencies": {
     "@emotion/css": "11.9.0",
     "@emotion/react": "11.9.0",
@@ -42,10 +25,10 @@
     "react-dom": "17.0.2",
     "react-error-boundary": "1.2.5",
     "react-i18next": "11.15.5",
+    "react-query": "3.34.16",
     "react-router-dom": "6.6.1",
     "react-select": "5.2.2",
     "react-transition-group": "4.4.2",
-    "react-query": "3.34.16",
     "reactable": "1.1.0",
     "url-join": "5.0.0",
     "use-debounce": "3.4.3"
@@ -83,7 +66,6 @@
     "babel-plugin-istanbul": "6.1.1",
     "color": "4.2.0",
     "copy-webpack-plugin": "11.0.0",
-    "legacy-css-loader": "npm:css-loader@5.2.7",
     "enzyme": "3.11.0",
     "eslint": "8.25.0",
     "eslint-plugin-i18next": "6.0.0-4",
@@ -105,6 +87,7 @@
     "jest-css-modules": "2.1.0",
     "jest-junit": "13.0.0",
     "jest-mock": "27.4.6",
+    "legacy-css-loader": "npm:css-loader@5.2.7",
     "lint-staged": "13.0.3",
     "moment-locales-webpack-plugin": "1.2.0",
     "path-browserify": "1.0.1",
@@ -140,8 +123,19 @@
       "git add"
     ]
   },
-  "engines": {
-    "node": ">=16.0.0",
-    "npm": ">=7.0.0"
+  "private": true,
+  "scripts": {
+    "build": "NODE_ENV=production webpack",
+    "check": "npm run lint -- . --rule 'i18next/no-literal-string: warn'",
+    "clean-translations": "rm -rf ./translations/*",
+    "lint": "eslint --fix .",
+    "make-translations": "i18next 'src/**/*.{js,ts,tsx}'",
+    "make-types": "make-federated-types",
+    "prebuild": "npm run make-translations",
+    "prestart": "npm run clean-translations",
+    "pretest": "npm run check",
+    "start": "PORT=5002 webpack serve",
+    "svgo": "svgo --folder src/assets --recursive",
+    "test": "jest --reporters=default --reporters=jest-junit"
   }
 }
