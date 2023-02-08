@@ -76,6 +76,7 @@
   "private": true,
   "scripts": {
     "#prepare": "husky install",
+    "test": "npm run test -workspaces --if-present",
     "build": "npm run build -workspaces --if-present",
     "docker-build": "docker build . -t nu.submodules",
     "docker-run": "docker run -it -p 127.0.0.1:13011:80/tcp nu.submodules:latest",

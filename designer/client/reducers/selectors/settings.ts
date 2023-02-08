@@ -13,7 +13,7 @@ export const getAuthenticationSettings = createSelector(getSettings, (s): Authen
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
 export const getEnvironmentAlert = createSelector(getFeatureSettings, s => s?.environmentAlert || {})
 export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => {
-  return uniqBy(s.tabs || [], t => t.id).map(t => t.id==="scenarios"? {...t, url: "nussknackerUi_legacy/test@http://localhost:5002/remoteEntry.js"}: t)
+  return uniqBy(s.tabs || [], t => t.id).map(t => t.id==="scenarios"? {...t, url: "nussknackerUi_legacy/list@http://localhost:5002/remoteEntry.js"}: t)
 })
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
 export const getSurveySettings = createSelector(getFeatureSettings, s => s?.surveySettings)

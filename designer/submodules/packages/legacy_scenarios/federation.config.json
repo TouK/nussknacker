@@ -1,6 +1,6 @@
 {
   "name": "nussknackerUi_legacy",
   "exposes": {
-    "./test": "./src/test"
+    "./list": "./src/remote"
   }
 }
