@@ -4,8 +4,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.engine.api.CirceUtil
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.Identity
-import sttp.client.monad.IdMonad
+import sttp.client3.Identity
+import sttp.client3.monad.IdMonad
 
 import java.time.Instant
 

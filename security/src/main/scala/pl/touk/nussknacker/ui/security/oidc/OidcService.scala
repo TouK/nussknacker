@@ -6,14 +6,14 @@ import pdi.jwt.JwtAlgorithm
 import pl.touk.nussknacker.ui.security.oauth2.jwt.JwtValidator
 import pl.touk.nussknacker.ui.security.oauth2.{DefaultJwtAccessToken, DefaultOidcAuthorizationData, GenericOidcService, OAuth2ClientApi, OpenIdConnectUserInfo}
 import pl.touk.nussknacker.ui.security.oidc.OidcService.createJwtValidator
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.nio.charset.StandardCharsets
 import javax.crypto.spec.SecretKeySpec
 import scala.concurrent.{ExecutionContext, Future}
 
 class OidcService(configuration: OidcAuthenticationConfiguration)
-                 (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+                 (implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
   extends GenericOidcService[OpenIdConnectUserInfo, DefaultOidcAuthorizationData, DefaultJwtAccessToken](
     OAuth2ClientApi[OpenIdConnectUserInfo, DefaultOidcAuthorizationData](configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), implicitly[Decoder[DefaultOidcAuthorizationData]], ec, sttpBackend),
     configuration.oAuth2Configuration)(OpenIdConnectUserInfo.decoderWithCustomRolesClaim(configuration.rolesClaims), implicitly[Decoder[DefaultJwtAccessToken]], ec) {

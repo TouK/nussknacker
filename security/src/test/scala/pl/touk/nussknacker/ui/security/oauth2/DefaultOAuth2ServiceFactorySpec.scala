@@ -7,8 +7,8 @@ import pl.touk.nussknacker.security.Permission
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.api.LoggedUser
 import pl.touk.nussknacker.ui.security.oauth2.OAuth2ErrorHandler.{OAuth2CompoundException, OAuth2ServerError}
-import sttp.client.Response
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.Response
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{StatusCode, Uri}
 
 import scala.concurrent.ExecutionContext

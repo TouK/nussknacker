@@ -12,11 +12,11 @@ import io.circe.generic.JsonCodec
 import io.circe.syntax.EncoderOps
 import pl.touk.nussknacker.ui.security.CertificatesAndKeys
 import pl.touk.nussknacker.ui.security.api.{AnonymousAccess, AuthenticatedUser, AuthenticationResources, FrontendStrategySettings}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class OAuth2AuthenticationResources(override val name: String, realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Nothing, NothingT])
+class OAuth2AuthenticationResources(override val name: String, realm: String, service: OAuth2Service[AuthenticatedUser, OAuth2AuthorizationData], configuration: OAuth2Configuration)(implicit ec: ExecutionContext, sttpBackend: SttpBackend[Future, Any])
   extends AuthenticationResources with Directives with LazyLogging with AnonymousAccess {
 
   import pl.touk.nussknacker.engine.util.Implicits.RichIterable

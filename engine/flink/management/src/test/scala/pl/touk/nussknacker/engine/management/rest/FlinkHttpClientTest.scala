@@ -8,11 +8,12 @@ import org.scalatest.time.Span.convertSpanToDuration
 import pl.touk.nussknacker.engine.deployment.ExternalDeploymentId
 import pl.touk.nussknacker.engine.management.FlinkConfig
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.{JarFile, JarsResponse, UploadJarResponse}
+import pl.touk.nussknacker.engine.sttp.HttpClientError
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.monad.FutureMonad
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{HttpClientError, HttpError, Response}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{HttpError, Response}
 import sttp.model.{Method, StatusCode}
+import sttp.monad.FutureMonad
 
 import java.io.File
 import java.util.UUID
@@ -112,14 +113,14 @@ class FlinkHttpClientTest extends AnyFunSuite
   }
 
   test("should throw FlinkError if action failed") {
-    implicit val backend = new SttpBackendStub[Future, Nothing, Nothing](new FutureMonad(), {
+    implicit val backend = new SttpBackendStub[Future, Any](new FutureMonad(), {
       case req if req.uri.path == List("jars") =>
         Future.successful(Response.ok(Right(JarsResponse(files = Some(List(JarFile(id = jarId, name = jarFileName)))))))
       case req if req.uri.path == List("jars", jarId, "run") =>
         Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
       case req if req.uri.path == List("jobs", deploymentId.value) && req.method == Method.PATCH =>
         Future.failed(HttpError("Error, error".asJson.noSpaces, StatusCode.InternalServerError))
-    }, PartialFunction.empty, None)
+    }, None)
 
     val flinkClient = new HttpFlinkClient(config)
 

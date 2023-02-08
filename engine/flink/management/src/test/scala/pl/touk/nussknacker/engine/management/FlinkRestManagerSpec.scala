@@ -14,8 +14,8 @@ import pl.touk.nussknacker.engine.deployment.{DeploymentData, DeploymentId, Exte
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel._
 import pl.touk.nussknacker.engine.testing.LocalModelData
 import pl.touk.nussknacker.test.PatientScalaFutures
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{NothingT, Response, SttpBackend, SttpClientException}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend, SttpClientException}
 import sttp.model.{Method, StatusCode}
 
 import java.net.NoRouteToHostException
@@ -101,7 +101,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
           exceptionOnDeploy
             //see e.g. AsyncHttpClientBackend.adjustExceptions.adjustExceptions
             //TODO: can be make behaviour more robust?
-            .flatMap(SttpClientException.defaultExceptionToSttpClientException)
+            .flatMap { ex => SttpClientException.defaultExceptionToSttpClientException(req, ex) }
             .foreach(throw _)
           RunResponse(returnedJobId)
         case (List("jars", "upload"), Method.POST) if acceptDeploy =>
@@ -320,8 +320,8 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
     ))
   }
 
-  private def createManagerWithBackend(backend: SttpBackend[Future, Nothing, NothingT]): FlinkRestManager = {
-    implicit val b: SttpBackend[Future, Nothing, NothingT] = backend
+  private def createManagerWithBackend(backend: SttpBackend[Future, Any]): FlinkRestManager = {
+    implicit val b: SttpBackend[Future, Any] = backend
     new FlinkRestManager(
       config = config,
       modelData = LocalModelData(ConfigFactory.empty, new EmptyProcessConfigCreator()), mainClassName = "UNUSED"

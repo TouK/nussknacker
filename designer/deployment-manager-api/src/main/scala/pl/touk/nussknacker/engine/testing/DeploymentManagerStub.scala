@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{DeploymentData, ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.testmode.TestProcess
 import pl.touk.nussknacker.engine.{BaseModelData, DeploymentManagerProvider, TypeSpecificInitialData}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -50,7 +50,7 @@ class DeploymentManagerProviderStub extends DeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = new DeploymentManagerStub
 
   override def name: String = "stub"

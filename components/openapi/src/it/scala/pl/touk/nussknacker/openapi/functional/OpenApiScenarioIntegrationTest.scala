@@ -18,8 +18,8 @@ import pl.touk.nussknacker.openapi.enrichers.SwaggerEnricher
 import pl.touk.nussknacker.openapi.parser.SwaggerParser
 import pl.touk.nussknacker.openapi.{OpenAPIServicesConfig, SingleBodyParameter}
 import pl.touk.nussknacker.test.{ValidatedValuesDetailedMessage, VeryPatientScalaFutures}
-import sttp.client.testing.SttpBackendStub
-import sttp.client.{Response, SttpBackend}
+import sttp.client3.testing.SttpBackendStub
+import sttp.client3.{Response, SttpBackend}
 import sttp.model.{Header, HeaderNames, MediaType, StatusCode}
 
 import java.net.URL
@@ -32,19 +32,19 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
   import spel.Implicits._
 
   // This tests don't use StubService implementation for handling requests - only for serving openapi definition. Invocation is handled by provided sttp backend.
-  def withSwagger(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService().withCustomerService { port =>
+  def withSwagger(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService().withCustomerService { port =>
     test(prepareScenarioRunner(port, sttpBackend))
   }
 
-  def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
+  def withPrimitiveRequestBody(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-swagger.yaml").withCustomerService { port =>
     test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
   }
 
-  def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Nothing, Nothing])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
+  def withPrimitiveReturnType(sttpBackend: SttpBackend[Future, Any])(test: ClassBasedTestScenarioRunner => Any) = new StubService("/customer-primitive-return-swagger.yaml").withCustomerService { port =>
     test(prepareScenarioRunner(port, sttpBackend, _.copy(allowedMethods = List("POST"))))
   }
 
-  val stubbedBackend: SttpBackendStub[Future, Nothing, Nothing] = SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
+  val stubbedBackend: SttpBackendStub[Future, Any] = SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
     case request =>
       request.headers match {
         case headers if headers.exists(_.name == HeaderNames.ContentType)
@@ -79,7 +79,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
     result.validValue shouldBe RunResult.success(TypedMap(Map("name" -> "Robert Wright", "id" -> 10L, "category" -> "GOLD")))
   }
 
-  it should "call enricher returning string" in withPrimitiveReturnType(SttpBackendStub.asynchronousFuture[Nothing].whenRequestMatchesPartial {
+  it should "call enricher returning string" in withPrimitiveReturnType(SttpBackendStub.asynchronousFuture.whenRequestMatchesPartial {
     case _ => Response.ok((s""""justAString""""))
   }) { testScenarioRunner =>
     //given
@@ -102,7 +102,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
       .processorEnd("end", TestScenarioRunner.testResultService, "value" -> "#customer")
   }
 
-  private def prepareScenarioRunner(port: Int, sttpBackend: SttpBackend[Future, Nothing, Nothing],
+  private def prepareScenarioRunner(port: Int, sttpBackend: SttpBackend[Future, Any],
                                     openAPIsConfigCustomize: OpenAPIServicesConfig => OpenAPIServicesConfig = identity) = {
     val url = new URL(s"http://localhost:$port/swagger")
     val rootUrl = new URL(s"http://localhost:$port/customers")
@@ -115,7 +115,7 @@ class OpenApiScenarioIntegrationTest extends AnyFlatSpec with BeforeAndAfterAll 
       .build()
   }
 
-  private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Nothing, Nothing], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
+  private def prepareStubbedComponent(sttpBackend: SttpBackend[Future, Any], openAPIsConfig: OpenAPIServicesConfig, url: URL) = {
     val definition = IOUtils.toString(url, StandardCharsets.UTF_8)
     val services = SwaggerParser.parse(definition, openAPIsConfig).collect {
       case Valid(service) => service

@@ -9,11 +9,11 @@ import pl.touk.nussknacker.engine.lite.utils.NuRuntimeDockerTestUtils._
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils
 import pl.touk.nussknacker.engine.lite.utils.NuRuntimeTestUtils.testCaseId
 import pl.touk.nussknacker.test.{EitherValuesDetailedMessage, VeryPatientScalaFutures}
-import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, UriContext, basicRequest}
+import sttp.client3.{HttpURLConnectionBackend, Identity, SttpBackend, UriContext, basicRequest}
 
 class NuReqRespRuntimeDockerTest extends AnyFunSuite with ForAllTestContainer with Matchers with VeryPatientScalaFutures with LazyLogging with EitherValuesDetailedMessage {
 
-  private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   protected var runtimeContainer: GenericContainer = null
 
@@ -29,13 +29,13 @@ class NuReqRespRuntimeDockerTest extends AnyFunSuite with ForAllTestContainer wi
   test("docker image should handle ping pong via http") {
     val host = runtimeContainer.host
     val request = basicRequest.post(uri"http://$host".port(mappedRuntimeApiPort))
-    request.body(jsonPingMessage("dockerFoo")).send().body shouldBe Right(jsonPongMessage("dockerFoo"))
+    request.body(jsonPingMessage("dockerFoo")).send(backend).body shouldBe Right(jsonPongMessage("dockerFoo"))
   }
 
   test("should get scenario definition via http") {
-    val definitionReq = basicRequest.get(uri"http://${runtimeContainer.host}".port(mappedRuntimeApiPort).path("definition"))
+    val definitionReq = basicRequest.get(uri"http://${runtimeContainer.host}".port(mappedRuntimeApiPort).withPath("definition"))
 
-    val definition = definitionReq.send().body.rightValue
+    val definition = definitionReq.send(backend).body.rightValue
 
     definition should include ("\"openapi\"")
   }

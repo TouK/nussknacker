@@ -3,11 +3,9 @@ package pl.touk.nussknacker.engine.lite.metrics.dropwizard.influxdb
 import com.typesafe.scalalogging.LazyLogging
 import io.dropwizard.metrics5.influxdb._
 import io.dropwizard.metrics5.{MetricName, MetricRegistry}
-import sttp.client._
-import sttp.model.Uri
+import sttp.client3._
 
 import java.lang
-import java.net.URI
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.duration.{Duration, DurationInt}
@@ -23,7 +21,7 @@ object InfluxDbHttpReporter {
 }
 
 class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with LazyLogging {
-  private implicit val backend: SttpBackend[Try, Nothing, NothingT] = TryHttpURLConnectionBackend()
+  private implicit val backend: SttpBackend[Try, Any] = TryHttpURLConnectionBackend()
 
   private val buffer = ArrayBuffer[String]()
 
@@ -48,7 +46,7 @@ class InfluxDbHttpSender(conf: InfluxSenderConfig) extends InfluxDbSender with L
       val data = buffer.mkString
       logger.debug(s"Sending ${buffer.size} metrics for conf $conf")
       buffer.clear()
-      val answer = conf.req.body(data).send()
+      val answer = conf.req.body(data).send(backend)
 
       answer match {
         case Success(res) if res.code.isSuccess => // nothing
@@ -77,7 +75,7 @@ case class InfluxSenderConfig(url: String,
   private val params = ("db" -> database) :: username.map("u" -> _).toList ::: password.map("p" -> _).toList ::: retentionPolicy.map("rp" -> _).toList
 
   // must be eager (val) because we want to validate uri during parsing
-  val req: RequestT[Identity, Either[String, String], Nothing] = basicRequest.post(uri"$url?$params")
+  val req: RequestT[Identity, Either[String, String], Any] = basicRequest.post(uri"$url?$params")
     .contentType("application/json", StandardCharsets.UTF_8.name())
 
 }

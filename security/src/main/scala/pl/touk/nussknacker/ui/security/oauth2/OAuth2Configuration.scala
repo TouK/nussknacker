@@ -37,9 +37,9 @@ case class OAuth2Configuration(usersFile: URI,
 
   def authorizeUrl: Option[URI] = Option(
     Uri(authorizeUri)
-      .param("client_id", clientId)
-      .param("redirect_uri", redirectUri.map(_.toString))
-      .params(authorizeParams))
+      .addParam("client_id", clientId)
+      .addParam("redirect_uri", redirectUri.map(_.toString))
+      .addParams(authorizeParams))
     .map(_.toJavaUri)
 
   def authSeverPublicKey: Option[PublicKey] = Option.empty

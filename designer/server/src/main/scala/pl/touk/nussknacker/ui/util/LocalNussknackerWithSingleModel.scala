@@ -10,7 +10,7 @@ import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
 import pl.touk.nussknacker.ui.process.processingtypedata.{BasicProcessingTypeDataReload, DefaultProcessingTypeDeploymentService, Initialization, MapBasedProcessingTypeDataProvider, ProcessingTypeDataProvider, ProcessingTypeDataReload}
 import pl.touk.nussknacker.ui.{NusskanckerDefaultAppRouter, NussknackerAppInitializer}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.io.File
 import java.nio.file.Files
@@ -32,7 +32,7 @@ object LocalNussknackerWithSingleModel  {
                                                        getDeploymentService: () => DeploymentService,
                                                        categoriesService: ProcessCategoryService)
                                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                                       sttpBackend: SttpBackend[Future, Nothing, NothingT]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
+                                                       sttpBackend: SttpBackend[Future, Any]): (ProcessingTypeDataProvider[ProcessingTypeData], ProcessingTypeDataReload with Initialization) = {
         //TODO: figure out how to perform e.g. hotswap
         BasicProcessingTypeDataReload.wrapWithReloader(() => {
           val deploymentService: DeploymentService = getDeploymentService()
