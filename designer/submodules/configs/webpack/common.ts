@@ -16,11 +16,7 @@ export const svgRule = {
     exclude: /node_modules/,
     oneOf: [
         {
-            issuer: (path) => {
-                const test = /\.[tj]sx?$/.test(path);
-                console.log(11, path);
-                return test;
-            },
+            issuer: /\.[tj]sx?$/,
             type: "asset/resource",
             use: [
                 {
