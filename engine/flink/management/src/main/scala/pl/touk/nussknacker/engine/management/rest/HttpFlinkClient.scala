@@ -30,7 +30,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   private def checkThatJarWithNameExists(jarName: String): Future[Option[JarFile]] = {
     basicRequest
-      .get(flinkUrl.withPath("jars"))
+      .get(flinkUrl.addPath("jars"))
       .response(asJson[JarsResponse])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -41,7 +41,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
     logger.debug(s"Uploading new jar: ${jarFile.getAbsolutePath}")
 
     basicRequest
-      .post(flinkUrl.withPath("jars", "upload"))
+      .post(flinkUrl.addPath("jars", "upload"))
       .multipartBody( multipartFile("jarfile", jarFile).contentType("application/x-java-archive"))
       .response(asJson[UploadJarResponse])
       .send(backend)
@@ -72,7 +72,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
   private def deleteJar(jarId: String): Future[Unit] = {
     logger.info(s"Delete jar id: $jarId")
     basicRequest
-      .delete(flinkUrl.withPath("jars", jarId))
+      .delete(flinkUrl.addPath("jars", jarId))
       .send(backend)
       .flatMap(handleUnitResponse("delete jar"))
       .recoverWith(recoverWithMessage("delete jar"))
@@ -82,7 +82,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def findJobsByName(jobName: String): Future[List[JobOverview]] = {
     basicRequest
-      .get(flinkUrl.withPath("jobs", "overview"))
+      .get(flinkUrl.addPath("jobs", "overview"))
       .response(asJson[JobsResponse])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -98,7 +98,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def getJobConfig(jobId: String): Future[flinkRestModel.ExecutionConfig] = {
     basicRequest
-      .get(flinkUrl.withPath("jobs", jobId, "config"))
+      .get(flinkUrl.addPath("jobs", jobId, "config"))
       .response(asJson[JobConfig])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -112,7 +112,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
       return Future.failed(new Exception(s"Failed to complete savepoint in time for $jobId and trigger $savepointId"))
     }
     basicRequest
-      .get(flinkUrl.withPath("jobs", jobId.value, "savepoints", savepointId))
+      .get(flinkUrl.addPath("jobs", jobId.value, "savepoints", savepointId))
       .response(asJson[GetSavepointStatusResponse])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -134,7 +134,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def cancel(deploymentId: ExternalDeploymentId): Future[Unit] = {
     basicRequest
-      .patch(flinkUrl.withPath("jobs", deploymentId.value))
+      .patch(flinkUrl.addPath("jobs", deploymentId.value))
       .send(backend)
       .flatMap(handleUnitResponse("cancel scenario"))
       .recoverWith(recoverWithMessage("cancel scenario"))
@@ -143,14 +143,14 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def makeSavepoint(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val savepointRequest = basicRequest
-      .post(flinkUrl.withPath("jobs", deploymentId.value, "savepoints"))
+      .post(flinkUrl.addPath("jobs", deploymentId.value, "savepoints"))
       .body(SavepointTriggerRequest(`target-directory` = savepointDir, `cancel-job` = false))
     processSavepointRequest(deploymentId, savepointRequest, "make savepoint")
   }
 
   def stop(deploymentId: ExternalDeploymentId, savepointDir: Option[String]): Future[SavepointResult] = {
     val stopRequest = basicRequest
-      .post(flinkUrl.withPath("jobs", deploymentId.value, "stop"))
+      .post(flinkUrl.addPath("jobs", deploymentId.value, "stop"))
       .body(StopRequest(targetDirectory = savepointDir, drain = false))
     processSavepointRequest(deploymentId, stopRequest, "stop scenario")
   }
@@ -181,7 +181,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
         programArgs = FlinkArgsEncodeHack.prepareProgramArgs(args).mkString(" "))
     uploadJarFileIfNotExists(jarFile).flatMap { flinkJarFile =>
       basicRequest
-        .post(flinkUrl.withPath("jars", flinkJarFile.id, "run"))
+        .post(flinkUrl.addPath("jars", flinkJarFile.id, "run"))
         .body(program)
         .response(asJson[RunResponse])
         .send(backend)
@@ -202,7 +202,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def getClusterOverview: Future[ClusterOverview] = {
     basicRequest
-      .get(flinkUrl.withPath("overview"))
+      .get(flinkUrl.addPath("overview"))
       .response(asJson[ClusterOverview])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)
@@ -210,7 +210,7 @@ class HttpFlinkClient(config: FlinkConfig)(implicit backend: SttpBackend[Future,
 
   def getJobManagerConfig: Future[Configuration] = {
     basicRequest
-      .get(flinkUrl.withPath("jobmanager", "config"))
+      .get(flinkUrl.addPath("jobmanager", "config"))
       .response(asJson[List[KeyValueEntry]])
       .send(backend)
       .flatMap(SttpJson.failureToFuture)

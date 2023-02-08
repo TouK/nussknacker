@@ -32,7 +32,7 @@ class OAuth2AuthenticationResourcesSpec extends AnyFunSpec with Matchers with Sc
       SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
-      .thenRespondF(Future(Response(Option.empty, StatusCode.InternalServerError, "Bad Request")))
+      .thenRespond(Response(Option.empty, StatusCode.InternalServerError, "Bad Request"))
     )
 
     new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
@@ -42,7 +42,7 @@ class OAuth2AuthenticationResourcesSpec extends AnyFunSpec with Matchers with Sc
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(defaultConfig.accessTokenUri)))
-      .thenRespondF(Future(Response(Option.empty, StatusCode.BadRequest, "Bad Request")))
+      .thenRespond(Response(Option.empty, StatusCode.BadRequest, "Bad Request"))
 
     new OAuth2AuthenticationResources(defaultConfig.name, realm, DefaultOAuth2ServiceFactory.service(defaultConfig), defaultConfig)
   }

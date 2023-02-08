@@ -25,7 +25,7 @@ class ExampleOAuth2ServiceFactorySpec extends AnyFlatSpec with Matchers with Pat
     implicit val testingBackend = SttpBackendStub
       .asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(uri)))
-      .thenRespondF(Future(Response(Option.empty, code)))
+      .thenRespond(Response(Option.empty, code))
 
     ExampleOAuth2ServiceFactory.service(config)
   }
