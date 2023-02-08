@@ -320,7 +320,7 @@ val jbcryptV = "0.4"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.2"
-val sttpV = "3.8.10"
+val sttpV = "3.8.11"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.16.1"
