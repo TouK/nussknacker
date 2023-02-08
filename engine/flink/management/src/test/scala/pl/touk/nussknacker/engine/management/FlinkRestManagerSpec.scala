@@ -145,16 +145,18 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       ).futureValue shouldBe None
   }
 
-  test("not continue on random exception exception") {
+  test("not continue on random exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 
-    expectException(manager.deploy(
-        defaultVersion,
-        defaultDeploymentData,
-        canonicalProcess,
-        None
-      ), "java.net.NoRouteToHostException: heeelo?")
+    val result = manager.deploy(
+      defaultVersion,
+      defaultDeploymentData,
+      canonicalProcess,
+      None
+    )
+    expectException(result, "Exception when sending request: POST http://test.pl/jars/file/run")
+    result.failed.futureValue.getCause.getMessage shouldBe "heeelo?"
   }
 
   private val defaultVersion = ProcessVersion(VersionId.initialVersionId, ProcessName("p1"), ProcessId(1), "user", None)
