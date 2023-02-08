@@ -25,7 +25,7 @@ const importBackend: ImportBackend = {
     },
 };
 
-const i18n = i18next.use(intervalPlural).use(importBackend).use(LanguageDetector).use(initReactI18next);
+const i18n = i18next.createInstance().use(intervalPlural).use(importBackend).use(LanguageDetector).use(initReactI18next);
 
 i18n.init({
     ns: "main",
