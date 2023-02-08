@@ -19,14 +19,6 @@ const configuration = withDefaultConfig(
                 singleton: true,
                 requiredVersion: dependencies["@emotion/react"],
             },
-            "@mui/private-theming/ThemeProvider": {
-                singleton: true,
-                requiredVersion: dependencies["@mui/private-theming/ThemeProvider"],
-            },
-            "@mui/private-theming/useTheme": {
-                singleton: true,
-                requiredVersion: dependencies["@mui/private-theming/useTheme"],
-            },
             react: {
                 eager: true,
                 singleton: true,
