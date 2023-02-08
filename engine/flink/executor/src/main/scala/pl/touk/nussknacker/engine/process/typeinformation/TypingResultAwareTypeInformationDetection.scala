@@ -86,7 +86,7 @@ class TypingResultAwareTypeInformationDetection(customisation:
   }
 
   //we have def here, as Scala 2.11 has problems with serialization of PartialFunctions...
-  private def additionalTypeInfoDeterminer = customisation.customise(this)
+  private def additionalTypeInfoDeterminer: PartialFunction[TypingResult, TypeInformation[_]] = customisation.customise(this)
 
   private def fallback[T: ClassTag]: TypeInformation[T] = fallback(implicitly[ClassTag[T]].runtimeClass.asInstanceOf[Class[T]])
 

@@ -65,11 +65,7 @@ private[registrar] class AsyncInterpretationFunction(val compiledProcessWithDeps
       interpreter.interpret[IO](compiledNode, metaData, input).unsafeRunAsync(callback)
     } else {
       implicit val future: FutureShape = new FutureShape()
-      interpreter.interpret[Future](compiledNode, metaData, input).onComplete {
-        //use result.toEither after dropping Scala 2.11 support
-        case Success(a) => callback(Right(a))
-        case Failure(a) => callback(Left(a))
-      }
+      interpreter.interpret[Future](compiledNode, metaData, input).onComplete(_.toEither)
     }
   }
 
