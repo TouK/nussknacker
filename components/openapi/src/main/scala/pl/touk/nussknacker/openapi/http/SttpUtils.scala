@@ -1,15 +1,16 @@
 package pl.touk.nussknacker.openapi.http
 
-import sttp.client.{Response, ResponseError, SttpBackend}
+import sttp.client3.{Response, ResponseException, SttpBackend}
 import sttp.model.StatusCode
+
 import scala.language.higherKinds
 
 object SttpUtils {
 
   def handleOptionalResponse[R[_], T](
-    response: Response[Either[ResponseError[io.circe.Error], Option[T]]],
+    response: Response[Either[ResponseException[String, io.circe.Error], Option[T]]],
     codesToInterpretAsEmpty: List[StatusCode]
-  )(implicit backend: SttpBackend[R, Nothing, Nothing]): R[Option[T]] = {
+  )(implicit backend: SttpBackend[R, Any]): R[Option[T]] = {
     val responseMonad = backend.responseMonad
     response.body match {
       case Left(_) if codesToInterpretAsEmpty.contains(response.code) => responseMonad.unit(None)

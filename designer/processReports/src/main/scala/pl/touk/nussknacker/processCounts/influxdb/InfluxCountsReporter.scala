@@ -3,9 +3,9 @@ package pl.touk.nussknacker.processCounts.influxdb
 import com.typesafe.config.Config
 import com.typesafe.scalalogging.LazyLogging
 import pl.touk.nussknacker.processCounts._
-import sttp.client.monad.MonadError
-import sttp.client.monad.syntax._
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
+import sttp.monad.MonadError
+import sttp.monad.syntax._
 
 import java.time.Instant
 import scala.concurrent.duration.DurationInt
@@ -15,7 +15,7 @@ import scala.language.higherKinds
 /*
   Base reporter for counts
  */
-class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig, waitForClose: F[Unit] => Unit)(implicit backend: SttpBackend[F, Nothing, NothingT]) extends CountsReporter[F] with LazyLogging {
+class InfluxCountsReporter[F[_]](env: String, config: InfluxConfig, waitForClose: F[Unit] => Unit)(implicit backend: SttpBackend[F, Any]) extends CountsReporter[F] with LazyLogging {
 
   val influxGenerator = new InfluxGenerator(config, env)
 
@@ -60,7 +60,7 @@ class InfluxCountsReporterCreator extends CountsReporterCreator {
   import net.ceedubs.ficus.readers.EnumerationReader._
 
   override def createReporter(env: String, config: Config)
-                             (implicit backend: SttpBackend[Future, Nothing, NothingT]): CountsReporter[Future] = {
+                             (implicit backend: SttpBackend[Future, Any]): CountsReporter[Future] = {
     //TODO: logger
     new InfluxCountsReporter(env, config.as[InfluxConfig](CountsReporterCreator.reporterCreatorConfigPath), Await.result(_, 10 seconds))
   }

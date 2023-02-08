@@ -320,7 +320,7 @@ val jbcryptV = "0.4"
 val cronParserV = "9.1.6" // 9.1.7+ requires JDK 16+
 val javaxValidationApiV = "2.0.1.Final"
 val caffeineCacheV = "3.1.2"
-val sttpV = "2.2.9"
+val sttpV = "3.8.10"
 //we use legacy version because this one supports Scala 2.12
 val monocleV = "2.1.0"
 val jmxPrometheusJavaagentV = "0.16.1"
@@ -546,7 +546,7 @@ lazy val flinkDeploymentManager = (project in flink("management")).
           ExclusionRule("org.slf4j", "slf4j-log4j12")
         ),
         "org.apache.flink" % "flink-statebackend-rocksdb" % flinkV % flinkScope,
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it,test"
       )
@@ -1053,7 +1053,7 @@ lazy val liteEngineRuntime = (project in lite("runtime")).
         "io.dropwizard.metrics5" % "metrics-core" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-influxdb" % dropWizardV,
         "io.dropwizard.metrics5" % "metrics-jmx" % dropWizardV,
-        "com.softwaremill.sttp.client" %% "core" % sttpV,
+        "com.softwaremill.sttp.client3" %% "core" % sttpV,
         "ch.qos.logback" % "logback-classic" % logbackV,
         "ch.qos.logback.contrib" % "logback-json-classic" % logbackJsonV,
         "ch.qos.logback.contrib" % "logback-jackson" % logbackJsonV,
@@ -1076,7 +1076,7 @@ lazy val liteEngineKafkaIntegrationTest: Project = (project in lite("integration
     libraryDependencies ++= Seq(
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it",
       "com.dimafeng" %% "testcontainers-scala-kafka" % testcontainersScalaV % "it",
-      "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it"
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it"
     )
   ).dependsOn(interpreter % "it", schemedKafkaComponentsUtils % "it", testUtils % "it", kafkaTestUtils % "it", httpUtils % "it")
 
@@ -1283,7 +1283,7 @@ lazy val security = (project in file("security")).
       "com.github.jwt-scala" %% "jwt-circe" % jwtCirceV,
       "com.typesafe.scala-logging" %% "scala-logging" % scalaLoggingV,
       "com.auth0" % "jwks-rsa" % "0.21.3", // a tool library for reading a remote JWK store, not an Auth0 service dependency
-      "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
       "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
       "com.github.dasniko" % "testcontainers-keycloak" % "1.6.0" % "it,test"
     )
@@ -1322,7 +1322,7 @@ lazy val processReports = (project in file("designer/processReports")).
     name := "nussknacker-process-reports",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV % "it,test",
+        "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-scalatest" % testcontainersScalaV % "it,test",
         "com.dimafeng" %% "testcontainers-scala-influxdb" % testcontainersScalaV % "it,test",
         "org.influxdb" % "influxdb-java" % "2.21" % "it,test"
@@ -1336,10 +1336,9 @@ lazy val httpUtils = (project in utils("http-utils")).
     name := "nussknacker-http-utils",
     libraryDependencies ++= {
       Seq(
-        "com.softwaremill.sttp.client" %% "core" % sttpV,
-        "com.softwaremill.sttp.client" %% "json-common" % sttpV,
-        //we copy code as we use newer circe
-        //"com.softwaremill.sttp.client" %% "circe" % sttpV
+        "com.softwaremill.sttp.client3" %% "core" % sttpV,
+        "com.softwaremill.sttp.client3" %% "json-common" % sttpV,
+        "com.softwaremill.sttp.client3" %% "circe" % sttpV,
       )
     }
   ).dependsOn(componentsApi % Provided, testUtils % "test")
@@ -1360,7 +1359,7 @@ lazy val openapiComponents = (project in component("openapi")).
         ExclusionRule(organization = "jakarta.activation"),
         ExclusionRule(organization = "jakarta.validation")
       ),
-      "com.softwaremill.sttp.client" %% "async-http-client-backend-future" % sttpV excludeAll (
+      "com.softwaremill.sttp.client3" %% "async-http-client-backend-future" % sttpV excludeAll (
         ExclusionRule(organization = "com.sun.activation", name = "javax.activation"),
         ),
       "io.netty" % "netty-transport-native-epoll" % nettyV,
@@ -1436,7 +1435,7 @@ lazy val deploymentManagerApi = (project in file("designer/deployment-manager-ap
     libraryDependencies ++= {
       Seq(
         "com.typesafe.akka" %% "akka-actor" % akkaV,
-        "com.softwaremill.sttp.client" %% "core" % sttpV
+        "com.softwaremill.sttp.client3" %% "core" % sttpV
       )
     }
   )
@@ -1484,7 +1483,7 @@ lazy val designer = (project in file("designer/server"))
         "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpV % "test",
         "com.typesafe.akka" %% "akka-testkit" % akkaV % "test",
         "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
-        "com.softwaremill.sttp.client" %% "akka-http-backend" % sttpV,
+        "com.softwaremill.sttp.client3" %% "akka-http-backend" % sttpV,
 
         "ch.qos.logback" % "logback-core" % logbackV,
         "ch.qos.logback" % "logback-classic" % logbackV,

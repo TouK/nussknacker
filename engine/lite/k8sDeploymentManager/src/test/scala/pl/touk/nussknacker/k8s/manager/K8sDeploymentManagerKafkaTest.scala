@@ -22,7 +22,7 @@ import skuber.LabelSelector.dsl._
 import skuber.Resource.{Quantity, Quota}
 import skuber.json.format._
 import skuber.{ConfigMap, EnvVar, ListResource, ObjectMeta, Pod, Resource, Volume}
-import sttp.client.{HttpURLConnectionBackend, Identity, NothingT, SttpBackend, _}
+import sttp.client3._
 
 import java.nio.file.Files
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,7 +36,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
   with OptionValues with EitherValuesDetailedMessage with LazyLogging {
 
   private lazy val kafka = new KafkaK8sSupport(k8s)
-  private implicit val backend: SttpBackend[Identity, Nothing, NothingT] = HttpURLConnectionBackend()
+  private implicit val backend: SttpBackend[Identity, Any] = HttpURLConnectionBackend()
 
   test("deployment of kafka ping-pong") {
     val f = createKafkaFixture()
@@ -260,7 +260,7 @@ class K8sDeploymentManagerKafkaTest extends BaseK8sDeploymentManagerTest
 
       k8sTestUtils.withPortForwarded(pod, port) { localPort =>
         eventually {
-          basicRequest.get(uri"http://localhost:$localPort").send().body.toOption.get.contains("jvm_memory_bytes_committed") shouldBe true
+          basicRequest.get(uri"http://localhost:$localPort").send(backend).body.toOption.get.contains("jvm_memory_bytes_committed") shouldBe true
         }
       }
     }

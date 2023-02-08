@@ -6,8 +6,8 @@ import pl.touk.nussknacker.engine.json.swagger.{SwaggerObject, SwaggerString}
 import pl.touk.nussknacker.engine.util.json.BestEffortJsonEncoder
 import pl.touk.nussknacker.openapi._
 import pl.touk.nussknacker.openapi.extractor.ServiceRequest.SwaggerRequestType
-import sttp.client._
-import sttp.client.circe._
+import sttp.client3._
+import sttp.client3.circe._
 import sttp.model.Uri.PathSegment
 import sttp.model.{Header, MediaType, Method, Uri}
 
@@ -15,12 +15,12 @@ import java.net.URL
 
 object ServiceRequest {
 
-  type SwaggerRequestType = RequestT[Identity, Either[ResponseError[circe.Error], Option[Json]], Nothing]
+  type SwaggerRequestType = RequestT[Identity, Either[ResponseException[String, circe.Error], Option[Json]], Any]
 
   def apply(rootUrl: URL, swaggerService: SwaggerService, inputParams: Map[String, Any]): SwaggerRequestType =
     addSecurities(swaggerService, new ServiceRequest(rootUrl, swaggerService, inputParams).apply)
 
-  def addSecurities(swaggerService: SwaggerService, request: SwaggerRequestType) =
+  def addSecurities(swaggerService: SwaggerService, request: SwaggerRequestType): SwaggerRequestType =
     swaggerService.securities.foldLeft(request) {
       (request, security) =>
         security.addSecurity(request)
@@ -43,8 +43,8 @@ private class ServiceRequest(rootUrl: URL, swaggerService: SwaggerService, input
     }.flatten
       .map(qs => Uri.QuerySegment.KeyValue(qs._1, qs._2))
 
-    val path = root.pathSegments(root.pathSegments ++ paramParts)
-    queryParams.foldLeft(path)(_ querySegment _)
+    val path = root.addPathSegments(paramParts)
+    queryParams.foldLeft(path)(_ addQuerySegment _)
   }
 
   def apply: SwaggerRequestType = {

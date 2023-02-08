@@ -11,7 +11,7 @@ import pl.touk.nussknacker.engine.canonicalgraph.CanonicalProcess
 import pl.touk.nussknacker.engine.deployment.{ExternalDeploymentId, User}
 import pl.touk.nussknacker.engine.management.rest.HttpFlinkClient
 import pl.touk.nussknacker.engine.management.rest.flinkRestModel.JobOverview
-import sttp.client._
+import sttp.client3._
 
 import java.io.File
 import java.util.concurrent.TimeUnit
@@ -19,7 +19,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class FlinkRestManager(config: FlinkConfig, modelData: BaseModelData, mainClassName: String)
-                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Nothing, NothingT])
+                      (implicit ec: ExecutionContext, backend: SttpBackend[Future, Any])
     extends FlinkDeploymentManager(modelData, config.shouldVerifyBeforeDeploy, mainClassName) with LazyLogging {
 
   protected lazy val jarFile: File = new FlinkModelJar().buildJobJar(modelData)

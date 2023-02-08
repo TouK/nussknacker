@@ -5,12 +5,13 @@ import org.scalatest.{BeforeAndAfter, Suite}
 import org.scalatest.matchers.should.Matchers
 import pl.touk.nussknacker.test.PatientScalaFutures
 import pl.touk.nussknacker.ui.security.http.RecordingSttpBackend
-import sttp.client.StringBody
-import sttp.client.testing.SttpBackendStub
+import sttp.client3.StringBody
+import sttp.client3.testing.SttpBackendStub
 import sttp.model.{Header, HeaderNames, MediaType, Uri}
 import org.scalatest.flatspec.AnyFlatSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter with PatientScalaFutures with Suite  {
   import io.circe.syntax._
@@ -19,7 +20,7 @@ class OAuth2ClientApiSpec extends AnyFlatSpec with Matchers with BeforeAndAfter 
 
   val body = DefaultOidcAuthorizationData(accessToken = "9IDpWSEYetSNRX41", tokenType = "Bearer", refreshToken = None)
 
-  implicit val testingBackend = new RecordingSttpBackend(
+  implicit val testingBackend: RecordingSttpBackend[Future, Any] = new RecordingSttpBackend[Future, Any](
     SttpBackendStub.asynchronousFuture
       .whenRequestMatches(_.uri.equals(Uri(config.accessTokenUri)))
       .thenRespond(body.asJson.toString())

@@ -6,7 +6,7 @@ import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
 import pl.touk.nussknacker.engine.api.deployment.{DeploymentManager, ProcessingTypeDeploymentService}
 import pl.touk.nussknacker.engine.api.process.ProcessName
 import pl.touk.nussknacker.engine.api.{FragmentSpecificData, NamedServiceProvider, ScenarioSpecificData}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -16,7 +16,7 @@ trait DeploymentManagerProvider extends NamedServiceProvider {
 
   def createDeploymentManager(modelData: BaseModelData, config: Config)
                              (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                              sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                              sttpBackend: SttpBackend[Future, Any],
                               deploymentService: ProcessingTypeDeploymentService): DeploymentManager
 
   def typeSpecificInitialData(config: Config): TypeSpecificInitialData

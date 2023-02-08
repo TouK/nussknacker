@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine.management
 
-import _root_.sttp.client.{NothingT, SttpBackend}
+import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine._
@@ -17,7 +17,7 @@ class FlinkStreamingDeploymentManagerProvider extends DeploymentManagerProvider 
 
   override def createDeploymentManager(modelData: BaseModelData, config: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val flinkConfig = config.rootAs[FlinkConfig]
     new FlinkStreamingRestManager(flinkConfig, modelData)
@@ -33,7 +33,7 @@ object FlinkStreamingDeploymentManagerProvider {
 
   def defaultDeploymentManager(config: Config)
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                               sttpBackend: SttpBackend[Future, Nothing, NothingT], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
+                               sttpBackend: SttpBackend[Future, Any], deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val typeConfig = ProcessingTypeConfig.read(config)
     new FlinkStreamingDeploymentManagerProvider().createDeploymentManager(ModelData(typeConfig), typeConfig.deploymentConfig)
   }

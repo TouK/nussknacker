@@ -10,7 +10,7 @@ import pl.touk.nussknacker.engine.{DeploymentManagerProvider, ProcessingTypeConf
 import pl.touk.nussknacker.restmodel.process.ProcessingType
 import pl.touk.nussknacker.ui.process.ProcessCategoryService
 import pl.touk.nussknacker.ui.process.deployment.DeploymentService
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,7 +19,7 @@ object ProcessingTypeDataReader extends ProcessingTypeDataReader
 trait ProcessingTypeDataReader extends LazyLogging {
 
   def loadProcessingTypeData(config: Config)(implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                             sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                             sttpBackend: SttpBackend[Future, Any],
                                              deploymentService: DeploymentService,
                                              categoriesService: ProcessCategoryService): ProcessingTypeDataProvider[ProcessingTypeData] = {
     val types: Map[ProcessingType, ProcessingTypeConfig] = ProcessingTypeDataConfigurationReader.readProcessingTypeConfig(config)
@@ -34,7 +34,7 @@ trait ProcessingTypeDataReader extends LazyLogging {
 
   protected def createProcessingTypeData(name: ProcessingType, typeConfig: ProcessingTypeConfig)
                                         (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                         sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                         sttpBackend: SttpBackend[Future, Any],
                                          deploymentService: DeploymentService): ProcessingTypeData = {
     logger.debug(s"Creating scenario manager: $name with config: $typeConfig")
     val managerProvider = ScalaServiceLoader.loadNamed[DeploymentManagerProvider](typeConfig.engineType)

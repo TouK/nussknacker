@@ -1,6 +1,6 @@
 package pl.touk.nussknacker.engine
 
-import _root_.sttp.client.{NothingT, SttpBackend}
+import _root_.sttp.client3.SttpBackend
 import akka.actor.ActorSystem
 import com.typesafe.config.Config
 import pl.touk.nussknacker.engine.api.component.AdditionalPropertyConfig
@@ -27,7 +27,7 @@ object ProcessingTypeData {
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, modelData: ModelData, managerConfig: Config)
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                               sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                               sttpBackend: SttpBackend[Future, Any],
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val manager = deploymentManagerProvider.createDeploymentManager(modelData, managerConfig)
     import net.ceedubs.ficus.Ficus._
@@ -46,7 +46,7 @@ object ProcessingTypeData {
 
   def createProcessingTypeData(deploymentManagerProvider: DeploymentManagerProvider, processTypeConfig: ProcessingTypeConfig)
                               (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                               sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                               sttpBackend: SttpBackend[Future, Any],
                                deploymentService: ProcessingTypeDeploymentService): ProcessingTypeData = {
     val managerConfig = processTypeConfig.deploymentConfig
     createProcessingTypeData(deploymentManagerProvider, ModelData(processTypeConfig), managerConfig)

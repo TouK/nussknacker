@@ -15,7 +15,7 @@ import pl.touk.nussknacker.engine.lite.api.runtimecontext.LiteEngineRuntimeConte
 import pl.touk.nussknacker.engine.lite.metrics.dropwizard.{DropwizardMetricsProviderFactory, LiteMetricRegistryFactory}
 import pl.touk.nussknacker.engine.{BaseModelData, CustomProcessValidator, ModelData}
 import pl.touk.nussknacker.lite.manager.{LiteDeploymentManager, LiteDeploymentManagerProvider}
-import sttp.client.{NothingT, SttpBackend}
+import sttp.client3.SttpBackend
 
 import java.util.UUID
 import scala.concurrent.duration.DurationInt
@@ -26,7 +26,7 @@ class EmbeddedDeploymentManagerProvider extends LiteDeploymentManagerProvider {
 
   override def createDeploymentManager(modelData: BaseModelData, engineConfig: Config)
                                       (implicit ec: ExecutionContext, actorSystem: ActorSystem,
-                                       sttpBackend: SttpBackend[Future, Nothing, NothingT],
+                                       sttpBackend: SttpBackend[Future, Any],
                                        deploymentService: ProcessingTypeDeploymentService): DeploymentManager = {
     val strategy = forMode(engineConfig)(
       new StreamingDeploymentStrategy,
