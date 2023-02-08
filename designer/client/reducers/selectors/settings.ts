@@ -12,11 +12,7 @@ export const getSettings = (state: RootState): SettingsState => state.settings
 export const getAuthenticationSettings = createSelector(getSettings, (s): AuthenticationSettings => s.authenticationSettings)
 export const getFeatureSettings = createSelector(getSettings, s => s.featuresSettings)
 export const getEnvironmentAlert = createSelector(getFeatureSettings, s => s?.environmentAlert || {})
-export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => {
-  const uniq = uniqBy(s.tabs || [], t => t.id)
-  const scenarios = uniq.find(t => t.id==="scenarios")
-  return [...uniq, {...scenarios, id: "legacy", url: "nu_legacy_scenarios/list@http://localhost:5002/remoteEntry.js"}]
-})
+export const getTabs = createSelector(getFeatureSettings, (s): DynamicTabData[] => uniqBy(s.tabs || [], t => t.id))
 export const getTargetEnvironmentId = createSelector(getFeatureSettings, s => s?.remoteEnvironment?.targetEnvironmentId)
 export const getSurveySettings = createSelector(getFeatureSettings, s => s?.surveySettings)
 export const getLoggedUser = createSelector(getSettings, s => s.loggedUser)
