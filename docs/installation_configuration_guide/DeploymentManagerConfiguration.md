@@ -21,7 +21,7 @@ deploymentConfig {
 
 `type` parameter determines engine to which the scenario is deployed.The `type` parameter is set in both the minimal
 working configuration file (Docker image and binary distribution) and Helm chart - you will not need to set it on your
-won.
+own.
 
 ## Kubernetes native Lite engine configuration
 
@@ -49,7 +49,7 @@ other Nussknacker non K8s configuration.
 | nussknackerInstanceName   | string                                              | {?NUSSKNACKER_INSTANCE_NAME}      | see [below](#nussknacker-instance-name)                                                  |
 | logbackConfigPath         | string                                              | {}                                | see [below](#configuring-runtime-logging)                                                |
 | commonConfigMapForLogback | string                                              | {}                                | see [below](#configuring-runtime-logging)                                                |
-| ingress                   | config                                              | {}                                | (Request-Response only) see [below](#configuring-runtime-ingress)                        |
+| ingress                   | config                                              | {enabled: false}                  | (Request-Response only) see [below](#configuring-runtime-ingress)                        |
 | servicePort               | int                                                 | 80                                | (Request-Response only) Port of service exposed                                          |
 
 ### Customizing K8s deployment resource definition
@@ -243,7 +243,7 @@ It can be configured with following options.
 
 | Parameter | Type    | Default value | Description                                                                                                                   |
 |-----------|---------|---------------|-------------------------------------------------------------------------------------------------------------------------------|
-| enabled   | boolean |               | Either streaming or request-response                                                                                          |
+| enabled   | boolean | false         | Either streaming or request-response                                                                                          |
 | host      | string  |               | Name of the [ingress host](https://kubernetes.io/docs/concepts/services-networking/ingress/#ingress-rules)                    |
 | rootPath  | string  | "/"           | Root path for the ingress path, by default ingress path is rootPath + [slug](../scenarios_authoring/RRDataSourcesAndSinks.md) |
 | config    | config  | {}            | Additional ingress config customization                                                                                       |
