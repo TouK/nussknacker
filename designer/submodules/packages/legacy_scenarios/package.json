@@ -8,7 +8,6 @@
     "@emotion/css": "11.9.0",
     "@emotion/react": "11.9.0",
     "@emotion/styled": "11.10.4",
-    "@fontsource/open-sans": "4.5.13",
     "@juggle/resize-observer": "3.3.1",
     "@loadable/component": "5.15.2",
     "bootstrap": "npm:bootstrap-styl@5.0.9",
@@ -37,6 +36,7 @@
     "use-debounce": "3.4.3"
   },
   "devDependencies": {
+    "@fontsource/open-sans": "4.5.13",
     "@testing-library/dom": "8.11.3",
     "@testing-library/react": "12.1.2",
     "@types/color": "3.0.2",
