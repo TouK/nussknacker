@@ -78,4 +78,5 @@ case class InfluxSenderConfig(url: String,
   val req: RequestT[Identity, Either[String, String], Any] = basicRequest.post(uri"$url?$params")
     .contentType("application/json", StandardCharsets.UTF_8.name())
 
+  require(req.uri.isAbsolute, s"URL should be absolute, but got '$url'")
 }

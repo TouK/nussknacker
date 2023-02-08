@@ -145,7 +145,7 @@ class FlinkRestManagerSpec extends AnyFunSuite with Matchers with PatientScalaFu
       ).futureValue shouldBe None
   }
 
-  test("not continue on random exception") {
+  test("not continue on random network exception") {
     statuses = List(JobOverview("2343", "p1", 10L, 10L, JobStatus.FAILED.name(), tasksOverview(failed = 1)))
     val manager = createManager(statuses, acceptDeploy = true, exceptionOnDeploy = Some(new NoRouteToHostException("heeelo?")))
 

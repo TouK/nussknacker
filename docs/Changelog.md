@@ -1,6 +1,10 @@
 
 # Changelog
 
+1.9.0 (Not released yet)
+------------------------
+* [#3985](https://github.com/TouK/nussknacker/pull/3985) Updated sttp 2.2.9 -> 3.8.10
+
 1.8.0 (Not released yet)
 ------------------------
 * [#3963](https://github.com/TouK/nussknacker/pull/3963) - Secure processDefinitionData/services endpoint by filtering based on user category "Read" permission
