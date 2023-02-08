@@ -4,63 +4,9 @@ import { dependencies } from "./package.json";
 import bootstrap from "bootstrap";
 import webpack from "webpack";
 import ver from "./version";
-
 import MomentLocalesPlugin from "moment-locales-webpack-plugin";
-
-const cssPreLoaders = [
-    {
-        loader: "postcss-loader",
-        options: {
-            postcssOptions: {
-                plugins: [require("autoprefixer"), require("postcss-move-props-to-bg-image-query")],
-            },
-        },
-    },
-];
-
-const fileLoader = {
-    loader: "file-loader",
-    options: {
-        name: "assets/images/[name][hash].[ext]",
-    },
-};
-
-const proxy = {
-    "/api": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-        onProxyRes: (proxyRes, req) => {
-            if (req.headers?.origin) {
-                proxyRes.headers["Access-Control-Allow-Origin"] = req.headers.origin;
-            }
-        },
-    },
-    "/be-static": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-        pathRewrite: {
-            "^/be-static": "/static",
-        },
-    },
-    "/submodules/components": {
-        target: "http://localhost:5001",
-        changeOrigin: true,
-        pathRewrite: {
-            "^/submodules/components": "/",
-        },
-    },
-    "/submodules": {
-        target: process.env.BACKEND_DOMAIN,
-        changeOrigin: true,
-    },
-    "/static": {
-        target: "http://localhost:3013",
-        changeOrigin: true,
-        pathRewrite: {
-            "^/static": "/",
-        },
-    },
-};
+import { svgRule } from "../../configs/webpack/common";
+import { resolve } from "path";
 
 const configuration = withDefaultConfig(
     withModuleFederationPlugins({
@@ -95,36 +41,51 @@ const configuration = withDefaultConfig(
     }),
 );
 
-configuration.resolve.fallback = {
-    crypto: require.resolve("crypto-browserify"), //reason: jsonwebtoken
-    stream: require.resolve("stream-browserify"), //reason: jsonwebtoken
-    buffer: require.resolve("buffer-browserify"), //reason: jsonwebtoken
-    util: require.resolve("util"), //reason: jsonwebtoken
-    events: false,
-    fs: false,
-};
-
 configuration.module.rules = [
+    ...configuration.module.rules.filter((r) => r !== svgRule),
     {
-        test: /\.html$/,
-        use: {
-            loader: "html-loader",
-            options: {
-                minimize: false,
-            },
-        },
-    },
-    {
-        test: /\.[tj]sx?$/,
-        exclude: /node_modules/,
-        use: ["babel-loader"],
-    },
-    {
-        test: /\.(css|styl|less)?$/,
-        use: [
-            "style-loader",
+        test: /\.svg$/i,
+        oneOf: [
             {
-                loader: "legacy-css-loader",
+                issuer: /\.[tj]sx?$/,
+                use: [
+                    require.resolve("babel-loader"),
+                    {
+                        loader: require.resolve("@svgr/webpack"),
+                        options: {
+                            svgo: true,
+                        },
+                    },
+                    {
+                        loader: require.resolve("file-loader"),
+                        options: {
+                            name: "assets/images/[name][hash].[ext]",
+                        },
+                    },
+                    require.resolve("svg-transform-loader"),
+                    require.resolve("svgo-loader"),
+                ],
+            },
+            {
+                type: "asset/resource",
+                use: [
+                    {
+                        loader: require.resolve("svgo-loader"),
+                        options: {
+                            externalConfig: resolve(__dirname, "../../.svgo.yml"),
+                        },
+                    },
+                ],
+            },
+        ],
+    },
+    {
+        test: /\.styl$/,
+        exclude: /node_modules/,
+        use: [
+            require.resolve("style-loader"),
+            {
+                loader: require.resolve("legacy-css-loader"),
                 options: {
                     modules: {
                         mode: "global",
@@ -134,22 +95,16 @@ configuration.module.rules = [
                     },
                 },
             },
-        ],
-    },
-    {
-        test: /\.css?$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: cssPreLoaders,
-    },
-    {
-        test: /\.styl$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: [
-            ...cssPreLoaders,
             {
-                loader: "stylus-loader",
+                loader: require.resolve("postcss-loader"),
+                options: {
+                    postcssOptions: {
+                        plugins: [require("autoprefixer"), require("postcss-move-props-to-bg-image-query")],
+                    },
+                },
+            },
+            {
+                loader: require.resolve("stylus-loader"),
                 options: {
                     stylusOptions: {
                         use: [bootstrap()],
@@ -159,44 +114,13 @@ configuration.module.rules = [
         ],
     },
     {
-        test: /\.less$/,
-        enforce: "pre",
-        exclude: /node_modules/,
-        use: [...cssPreLoaders, "less-loader"],
-    },
-    {
         test: /\.(eot|ttf|woff|woff2)$/,
-        use: [fileLoader],
-    },
-    {
-        test: /\.(png|jpg)$/,
-        use: [fileLoader],
-    },
-    {
-        test: /\.svg$/,
-        enforce: "pre",
-        exclude: /font/,
-        use: ["svg-transform-loader", "svgo-loader"],
-    },
-
-    {
-        test: /\.svg$/,
-        oneOf: [
+        use: [
             {
-                issuer: /\.[tj]sx?$/,
-                use: [
-                    "babel-loader",
-                    {
-                        loader: "@svgr/webpack",
-                        options: {
-                            svgo: true,
-                        },
-                    },
-                    fileLoader,
-                ],
-            },
-            {
-                use: [fileLoader],
+                loader: require.resolve("file-loader"),
+                options: {
+                    name: "assets/images/[name][hash].[ext]",
+                },
             },
         ],
     },
@@ -209,8 +133,6 @@ configuration.plugins.push(
     }),
     new webpack.DefinePlugin({
         __DEV__: NODE_ENV !== "production",
-        "process.version": JSON.stringify(process.version), //reason: jsonwebtoken
-        "process.browser": true, //reason: jsonwebtoken
         "process.env": {
             NODE_ENV: JSON.stringify(NODE_ENV),
         },
